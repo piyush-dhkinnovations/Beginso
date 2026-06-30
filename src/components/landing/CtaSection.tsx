@@ -13,7 +13,7 @@ export default function CtaSection() {
           Join thousands of teams who use Onboarding Platform to collect, manage, and analyze their data securely.
         </p>
         <Link href="/signup">
-          <Button 
+          <Button
             className="h-[48px] px-10 text-[15px] bg-white text-brand-700 hover:bg-neutral-100 hover:text-brand-900 border-none shadow-md"
           >
             Start for free
