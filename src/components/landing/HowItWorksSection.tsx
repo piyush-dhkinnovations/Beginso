@@ -38,13 +38,13 @@ export default function HowItWorksSection() {
           </p>
         </div>
 
-        <div 
+        <div
           ref={ref as React.RefObject<HTMLDivElement>}
           className="relative max-w-5xl mx-auto"
         >
           {/* Connecting Line (Desktop) */}
           <div className="hidden md:block absolute top-[24px] left-[10%] right-[10%] h-[2px] bg-neutral-200" />
-          
+
           {/* Connecting Line (Mobile) */}
           <div className="md:hidden absolute top-[24px] bottom-[24px] left-[24px] w-[2px] bg-neutral-200" />
 
@@ -52,7 +52,7 @@ export default function HowItWorksSection() {
             {STEPS.map((step, index) => {
               const delay = index * 120;
               return (
-                <div 
+                <div
                   key={step.title}
                   className={cn(
                     "flex flex-row md:flex-col items-start md:items-center relative z-10 flex-1 gap-4 md:gap-6",
