@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/common/Toast';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 
 export function SignupForm() {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -42,9 +43,7 @@ export function SignupForm() {
       login(data.token, data.user);
       router.push('/dashboard');
     } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
-      const apiMessage = axiosError.response?.data?.error?.message || axiosError.message;
-      setServerError(apiMessage || 'An unexpected error occurred. Please try again.');
+      setServerError(getFriendlyErrorMessage(error));
     }
   };
 

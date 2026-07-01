@@ -10,6 +10,7 @@ import * as AuthService from '@/services/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 
 export function LoginForm() {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -53,9 +54,7 @@ export function LoginForm() {
         clearTimeout(timeoutRef.current);
       }
       setIsUiLoading(false);
-      const axiosError = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
-      const apiMessage = axiosError.response?.data?.error?.message || axiosError.message;
-      setServerError(apiMessage || 'An error occurred, please try again.');
+      setServerError(getFriendlyErrorMessage(error));
     }
   };
 
