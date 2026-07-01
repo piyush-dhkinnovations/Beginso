@@ -1,8 +1,11 @@
-// Placeholder for auth hook. Will be implemented in Auth tasks.
+import { useContext } from 'react';
+import { AuthContext } from '@/lib/authContext';
+
 export function useAuth() {
-  return {
-    isAuthenticated: false,
-    isLoading: false,
-    user: null,
-  };
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 }
+

@@ -1,0 +1,125 @@
+'use client';
+
+import React, { useState, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
+import { Eye, EyeOff } from 'lucide-react';
+import { loginSchema, LoginFormValues } from '@/lib/schemas/loginSchema';
+import * as AuthService from '@/services/auth';
+import { useAuth } from '@/hooks/useAuth';
+import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/Button';
+
+export function LoginForm() {
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isUiLoading, setIsUiLoading] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const router = useRouter();
+  const { login } = useAuth();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+
+  const onSubmit = async (values: LoginFormValues) => {
+    setServerError(null);
+    setIsUiLoading(true);
+
+    // Start 30-second UI timeout
+    timeoutRef.current = setTimeout(() => {
+      setIsUiLoading(false);
+      setServerError('Connection timeout. Please try again.');
+    }, 30000);
+
+    try {
+      const data = await AuthService.login(values.email, values.password);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      login(data.token, data.user);
+      router.push('/dashboard');
+    } catch (error: unknown) {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      setIsUiLoading(false);
+      const axiosError = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
+      const apiMessage = axiosError.response?.data?.error?.message || axiosError.message;
+      setServerError(apiMessage || 'An error occurred, please try again.');
+    }
+  };
+
+  const clearError = () => {
+    if (serverError) {
+      setServerError(null);
+    }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  };
+
+  const passwordToggleSlot = (
+    <button
+      type="button"
+      onClick={togglePasswordVisibility}
+      className="text-neutral-400 hover:text-neutral-600 focus:outline-none flex items-center justify-center min-w-[44px] min-h-[44px]"
+      aria-label={showPassword ? 'Hide password' : 'Show password'}
+    >
+      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+    </button>
+  );
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full">
+      <Input
+        id="email"
+        label="Email Address"
+        placeholder="Enter your email..."
+        error={errors.email?.message}
+        disabled={isUiLoading}
+        {...register('email', { onChange: clearError })}
+      />
+
+      <Input
+        id="password"
+        label="Password"
+        type={showPassword ? 'text' : 'password'}
+        placeholder="Enter your password..."
+        error={errors.password?.message}
+        rightSlot={passwordToggleSlot}
+        disabled={isUiLoading}
+        {...register('password', { onChange: clearError })}
+      />
+
+      {serverError && (
+        <div
+          role="alert"
+          className="p-3 text-[13px] font-semibold text-error bg-red-50 border border-error/20 rounded-md"
+        >
+          {serverError}
+        </div>
+      )}
+
+      <Button
+        type="submit"
+        variant="primary"
+        className="w-full mt-2"
+        isLoading={isUiLoading}
+        disabled={isUiLoading}
+      >
+        Log In
+      </Button>
+    </form>
+  );
+}
