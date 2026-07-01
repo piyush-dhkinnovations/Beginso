@@ -15,7 +15,7 @@ export default function ProductMockup() {
           <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
           <div className="w-3 h-3 rounded-full bg-green-400"></div>
         </div>
-        
+
         <div className="space-y-6">
           <div className="space-y-2">
             <label className="text-[13px] font-semibold text-neutral-800">Full Name</label>
