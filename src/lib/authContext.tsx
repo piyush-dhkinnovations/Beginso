@@ -86,13 +86,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const data = await AuthService.getMe();
         dispatch({ type: 'SET_USER', payload: { user: data.user } });
-      } catch (err: unknown) {
+      } catch {
         clearToken();
         dispatch({ type: 'LOGOUT' });
-        const axiosError = err as { response?: { status?: number } };
-        if (!axiosError.response || axiosError.response?.status === 401) {
-          router.push('/login');
-        }
+        router.push('/login');
       }
     };
 

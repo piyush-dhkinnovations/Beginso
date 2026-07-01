@@ -4,15 +4,19 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
+import { Eye, EyeOff } from 'lucide-react';
 import { signupSchema, SignupFormValues } from '@/lib/schemas/signupSchema';
 import * as AuthService from '@/services/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/common/Toast';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 
 export function SignupForm() {
   const [serverError, setServerError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
   const { login } = useAuth();
   const { toast } = useToast();
@@ -39,9 +43,7 @@ export function SignupForm() {
       login(data.token, data.user);
       router.push('/dashboard');
     } catch (error: unknown) {
-      const axiosError = error as { response?: { data?: { error?: { message?: string } } }; message?: string };
-      const apiMessage = axiosError.response?.data?.error?.message || axiosError.message;
-      setServerError(apiMessage || 'An unexpected error occurred. Please try again.');
+      setServerError(getFriendlyErrorMessage(error));
     }
   };
 
@@ -50,6 +52,36 @@ export function SignupForm() {
       setServerError(null);
     }
   };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword((prev) => !prev);
+  };
+
+  const passwordToggleSlot = (
+    <button
+      type="button"
+      onClick={togglePasswordVisibility}
+      className="text-neutral-400 hover:text-neutral-600 focus:outline-none flex items-center justify-center min-w-[44px] min-h-[44px]"
+      aria-label={showPassword ? 'Hide password' : 'Show password'}
+    >
+      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+    </button>
+  );
+
+  const confirmPasswordToggleSlot = (
+    <button
+      type="button"
+      onClick={toggleConfirmPasswordVisibility}
+      className="text-neutral-400 hover:text-neutral-600 focus:outline-none flex items-center justify-center min-w-[44px] min-h-[44px]"
+      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+    >
+      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+    </button>
+  );
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full">
@@ -74,9 +106,10 @@ export function SignupForm() {
       <Input
         id="password"
         label="Password"
-        type="password"
+        type={showPassword ? 'text' : 'password'}
         placeholder="Create a password (min. 8 characters)..."
         error={errors.password?.message}
+        rightSlot={passwordToggleSlot}
         disabled={isSubmitting}
         {...register('password', { onChange: clearError })}
       />
@@ -84,9 +117,10 @@ export function SignupForm() {
       <Input
         id="confirmPassword"
         label="Confirm Password"
-        type="password"
+        type={showConfirmPassword ? 'text' : 'password'}
         placeholder="Confirm your password..."
         error={errors.confirmPassword?.message}
+        rightSlot={confirmPasswordToggleSlot}
         disabled={isSubmitting}
         {...register('confirmPassword', { onChange: clearError })}
       />
