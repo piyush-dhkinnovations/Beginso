@@ -50,11 +50,11 @@ export function SignupForm() {
       if (fields) {
         if (Array.isArray(fields)) {
           fields.forEach((f) => {
-            setError(f.field as any, { type: 'server', message: f.message });
+            setError(f.field as keyof SignupFormValues, { type: 'server', message: f.message });
           });
         } else if (typeof fields === 'object') {
           Object.keys(fields).forEach((key) => {
-            setError(key as any, { type: 'server', message: (fields as Record<string, string>)[key] });
+            setError(key as keyof SignupFormValues, { type: 'server', message: (fields as Record<string, string>)[key] });
           });
         }
       }
