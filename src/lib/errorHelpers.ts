@@ -43,3 +43,14 @@ export function getFriendlyErrorMessage(error: unknown): string {
 
   return message || 'An unexpected error occurred. Please try again.';
 }
+
+export function extractApiErrorMessage(error: unknown, fallback: string): string {
+  if (!error) return fallback;
+  const err = error as { response?: { data?: { error?: { message?: string } } } };
+  
+  if (err.response) {
+    return err.response.data?.error?.message || fallback;
+  }
+  
+  return 'Unable to connect. Please check your connection and try again.';
+}

@@ -1,5 +1,5 @@
 import { auth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import axiosInstance from '@/lib/axios';
 import { getToken } from '@/lib/tokenStorage';
 
@@ -64,4 +64,29 @@ export async function logout() {
   await axiosInstance.post('/api/auth/logout', {}, {
     headers: { Authorization: `Bearer ${token}` },
   }).catch(() => { });
+}
+
+export async function loginWithGoogle() {
+  if (MOCK) {
+    const { data } = await axiosInstance.post('/api/auth/session', {
+      token: 'mock.jwt.token',
+      email: 'mock-google-user@example.com',
+      name: 'Mock Google User',
+    });
+    return data;
+  }
+  try {
+    const provider = new GoogleAuthProvider();
+    const userCredential = await signInWithPopup(auth, provider);
+    const idToken = await userCredential.user.getIdToken();
+    const { data } = await axiosInstance.post(
+      '/api/auth/session',
+      { token: idToken, name: userCredential.user.displayName || undefined },
+      { timeout: 10_000 }
+    );
+    return data;
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : 'failed';
+    throw new Error(errMessage);
+  }
 }
