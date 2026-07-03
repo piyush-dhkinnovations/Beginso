@@ -57,7 +57,7 @@ export default function Navbar() {
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center gap-2">
               <span className="text-heading-2 text-neutral-900 font-bold">
-                Onboarding Platform
+                Beingso
               </span>
             </Link>
           </div>

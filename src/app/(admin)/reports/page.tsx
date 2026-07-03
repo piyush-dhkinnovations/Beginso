@@ -7,9 +7,9 @@ import { Card } from '@/components/ui/Card';
 export default function ReportsPage() {
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto animate-fade-in">
-      <DashboardHeader 
-        title="Reports" 
-        subtitle="Export and summarize workspace onboarding reports."
+      <DashboardHeader
+        title="Reports"
+        subtitle="Export and summarize workspace Beingso reports."
       />
       <Card className="flex flex-col items-center justify-center p-12 text-center bg-neutral-50/50">
         <h2 className="text-heading-2 font-bold text-neutral-800">Export & Reports Page</h2>

@@ -9,7 +9,7 @@ export default function LoginPage() {
       <div className="flex flex-col gap-1.5 text-center">
         <h2 className="text-heading-2 text-neutral-800">Log In to Your Account</h2>
         <p className="text-body-sm text-neutral-500">
-          Enter your credentials to access the onboarding dashboard
+          Enter your credentials to access the Beingso dashboard
         </p>
       </div>
 

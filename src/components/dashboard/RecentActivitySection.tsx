@@ -28,7 +28,7 @@ export function RecentActivitySection({
     },
     {
       id: '2',
-      description: 'New response received on "Developer Onboarding Survey".',
+      description: 'New response received on "Developer Beingso Survey".',
       timestamp: '4 hours ago',
       type: 'form_submission'
     },
@@ -73,7 +73,7 @@ export function RecentActivitySection({
         <EmptyState
           icon={<FileInput size={24} />}
           heading="No forms created yet"
-          body="Get started by creating your first onboarding form."
+          body="Get started by creating your first Beingso form."
           action={
             <Link href="/forms/new">
               <Button variant="primary" className="flex items-center gap-2">

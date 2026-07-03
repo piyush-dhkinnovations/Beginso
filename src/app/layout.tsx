@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Onboarding Platform",
-  description: "Automated onboarding platform",
+  title: "Beingso",
+  description: "Automated Beingso",
 };
 
 export default function RootLayout({
