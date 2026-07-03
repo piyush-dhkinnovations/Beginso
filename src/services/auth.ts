@@ -1,5 +1,5 @@
 import { auth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo } from 'firebase/auth';
 import axiosInstance from '@/lib/axios';
 import { getToken } from '@/lib/tokenStorage';
 
@@ -78,10 +78,16 @@ export async function loginWithGoogle() {
   try {
     const provider = new GoogleAuthProvider();
     const userCredential = await signInWithPopup(auth, provider);
+    const additionalInfo = getAdditionalUserInfo(userCredential);
+    const isNewUser = additionalInfo?.isNewUser || false;
     const idToken = await userCredential.user.getIdToken();
     const { data } = await axiosInstance.post(
       '/api/auth/session',
-      { token: idToken, name: userCredential.user.displayName || undefined },
+      { 
+        token: idToken, 
+        name: userCredential.user.displayName || undefined,
+        isNewUser
+      },
       { timeout: 10_000 }
     );
     return data;

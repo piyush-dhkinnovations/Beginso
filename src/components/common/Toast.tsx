@@ -6,12 +6,12 @@ import { cn } from "@/lib/utils";
 export interface ToastMessage {
   id: string;
   message: string;
-  type: "success" | "error";
+  type: "success" | "error" | "warning" | "info";
   duration?: number;
 }
 
 interface ToastContextType {
-  toast: (message: string, type: "success" | "error", duration?: number) => void;
+  toast: (message: string, type: "success" | "error" | "warning" | "info", duration?: number) => void;
 }
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
@@ -19,7 +19,7 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const toast = (message: string, type: "success" | "error", duration = 4000) => {
+  const toast = (message: string, type: "success" | "error" | "warning" | "info", duration = 4000) => {
     const id = Math.random().toString(36).substring(2, 9);
     setToasts((prev) => [...prev, { id, message, type, duration }]);
   };
@@ -60,13 +60,14 @@ function ToastItem({ toast, onClose }: { toast: ToastMessage; onClose: () => voi
     <div
       className={cn(
         "pointer-events-auto w-full flex items-center justify-between p-4 rounded-md shadow-lg border bg-white animate-fade-in transition-all duration-300",
-        toast.type === "success"
-          ? "border-l-4 border-success border-neutral-200 text-neutral-900"
-          : "border-l-4 border-error border-neutral-200 text-neutral-900"
+        toast.type === "success" && "border-l-4 border-success border-neutral-200 text-neutral-900",
+        toast.type === "error" && "border-l-4 border-error border-neutral-200 text-neutral-900",
+        toast.type === "warning" && "border-l-4 border-warning border-neutral-200 text-neutral-900",
+        toast.type === "info" && "border-l-4 border-brand-500 border-neutral-200 text-neutral-900"
       )}
     >
       <div className="flex items-center gap-2">
-        {toast.type === "success" ? (
+        {toast.type === "success" && (
           <svg
             className="w-5 h-5 text-success shrink-0"
             fill="none"
@@ -80,7 +81,8 @@ function ToastItem({ toast, onClose }: { toast: ToastMessage; onClose: () => voi
               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-        ) : (
+        )}
+        {toast.type === "error" && (
           <svg
             className="w-5 h-5 text-error shrink-0"
             fill="none"
@@ -92,6 +94,36 @@ function ToastItem({ toast, onClose }: { toast: ToastMessage; onClose: () => voi
               strokeLinejoin="round"
               strokeWidth={2}
               d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        )}
+        {toast.type === "warning" && (
+          <svg
+            className="w-5 h-5 text-warning shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+            />
+          </svg>
+        )}
+        {toast.type === "info" && (
+          <svg
+            className="w-5 h-5 text-brand-500 shrink-0"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
         )}
