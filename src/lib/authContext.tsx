@@ -4,6 +4,8 @@ import React, { createContext, useReducer, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation';
 import { getToken, saveToken, clearToken } from './tokenStorage';
 import * as AuthService from '@/services/auth';
+import { signOut } from 'firebase/auth';
+import { auth } from './firebase';
 
 interface User {
   id: string;
@@ -103,6 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     AuthService.logout().catch(() => { });
+    signOut(auth).catch(() => { });
     clearToken();
     dispatch({ type: 'LOGOUT' });
     router.push('/login');

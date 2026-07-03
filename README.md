@@ -170,4 +170,46 @@ PRs require a description of what it does, how to test it, and screenshots for a
 
 ---
 
+## Getting Started
+
+### Prerequisites
+- **Node.js**: `20.x` LTS version or higher
+
+### Installation & Setup
+
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+2. **Configure Environment Variables**:
+   Create a `.env.local` file in the root of the project and populate it with the required Firebase and API environment variables:
+   ```env
+   # Backend API Configuration
+   NEXT_PUBLIC_API_URL=http://localhost:4000
+   NEXT_PUBLIC_USE_MOCK=true
+
+   # Firebase Client SDK Configuration
+   NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
+   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-auth-domain
+   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-storage-bucket
+   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
+   NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+   ```
+
+3. **Firebase Setup**:
+   - Create a project on the [Firebase Console](https://console.firebase.google.com/).
+   - Enable **Email/Password** and **Google** sign-in providers in the Authentication section.
+   - Copy the web app configuration values and add them to `.env.local` as shown above.
+
+### Available NPM Scripts
+
+- `npm run dev`: Runs the Next.js development server locally.
+- `npm run build`: Generates the optimized production build of the Next.js application.
+- `npm run start`: Starts the Next.js production server locally after building.
+- `npm run lint`: Runs ESLint to check code quality and static typing.
+
+---
+
 *MVP v1.0 · June 2026 · Confidential — Internal Use*

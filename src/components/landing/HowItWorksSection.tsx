@@ -63,9 +63,9 @@ export default function HowItWorksSection() {
                     animationFillMode: "both"
                   }}
                 >
-                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-white border-2 border-brand-700 flex items-center justify-center text-[14px] font-[700] text-brand-700 shadow-sm ml-2 md:ml-0">
-                    {index + 1}
-                  </div>
+                  <span className="text-[14px] font-[700] text-brand-700 shrink-0">
+                    0{index + 1}
+                  </span>
                   <div className="md:text-center mt-1 md:mt-0">
                     <h3 className="text-heading-2 text-neutral-900 mb-2">
                       {step.title}
