@@ -1,12 +1,12 @@
-# Onboarding Platform
+# Beingso
 
-A web-based form management platform that goes beyond just collecting responses. Onboarding Platform lets admins create forms, share them publicly, manage incoming submissions with status tracking, and view auto-generated dashboards — all in one place, without a spreadsheet in sight.
+A web-based form management platform that goes beyond just collecting responses. Beingso lets admins create forms, share them publicly, manage incoming submissions with status tracking, and view auto-generated dashboards — all in one place, without a spreadsheet in sight.
 
 ---
 
 ## What Is This?
 
-Most form tools stop at collection. Onboarding Platform picks up where they leave off.
+Most form tools stop at collection. Beingso picks up where they leave off.
 
 After a response comes in, the admin can track it through a workflow (New → In Progress → Completed), view a dashboard that builds itself automatically, and export reports as CSV or PDF — all inside the same product. The goal is to make post-submission work as smooth as the collection itself, for users with zero technical background.
 
@@ -88,7 +88,7 @@ Frontend → Vercel · Backend → Render / Railway / VPS
 ## Project Structure
 
 ```
-Onboarding-platform/
+Beingso-platform/
 ├── frontend/       # Next.js app — UI, routing, state, API calls
 └── backend/        # Express API — auth, business logic, DB, file handling
 ```
@@ -110,7 +110,7 @@ The two sides communicate exclusively over HTTPS REST APIs. Auth is handled thro
 
 ## Screens (20 Total)
 
-**Auth & Onboarding** — Login, Sign Up, Forgot Password, OTP Verification
+**Auth & Beingso** — Login, Sign Up, Forgot Password, OTP Verification
 
 **Admin Platform** — Workspace Home, Forms Manager, Templates Gallery, Form Builder, Responses Hub, Submission Detail, Reports & Exports, Auto-Dashboard, Settings, Modals & Dialogs, Feeds & Feedback, Design System Elements
 

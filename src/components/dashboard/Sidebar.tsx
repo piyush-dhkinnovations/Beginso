@@ -3,14 +3,14 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  LayoutDashboard, 
-  FileText, 
-  MessageSquare, 
-  BarChart3, 
-  PieChart, 
-  Settings, 
-  ChevronLeft, 
+import {
+  LayoutDashboard,
+  FileText,
+  MessageSquare,
+  BarChart3,
+  PieChart,
+  Settings,
+  ChevronLeft,
   ChevronRight,
   X
 } from 'lucide-react';
@@ -23,11 +23,11 @@ interface SidebarProps {
   onCloseMobile?: () => void;
 }
 
-export function Sidebar({ 
-  collapsed = false, 
-  onToggleCollapse, 
-  isMobile = false, 
-  onCloseMobile 
+export function Sidebar({
+  collapsed = false,
+  onToggleCollapse,
+  isMobile = false,
+  onCloseMobile
 }: SidebarProps) {
   const pathname = usePathname();
 
@@ -41,7 +41,7 @@ export function Sidebar({
   ];
 
   return (
-    <aside 
+    <aside
       className={cn(
         "flex flex-col h-full bg-neutral-50 border-r-[2.5px] border-neutral-200 transition-all duration-300 ease-in-out",
         isMobile ? "w-[240px] fixed inset-y-0 left-0 z-50 shadow-xl animate-slide-in-left" : (collapsed ? "w-[56px]" : "w-[200px]")
@@ -55,12 +55,12 @@ export function Sidebar({
           </div>
           {(!collapsed || isMobile) && (
             <span className="text-body font-bold text-neutral-800 tracking-tight whitespace-nowrap">
-              Onboarding
+              Beingso
             </span>
           )}
         </Link>
         {isMobile && onCloseMobile && (
-          <button 
+          <button
             onClick={onCloseMobile}
             className="p-1 rounded-md text-neutral-500 hover:bg-neutral-200 transition-colors md:hidden"
             aria-label="Close menu"
@@ -83,8 +83,8 @@ export function Sidebar({
               onClick={onCloseMobile}
               className={cn(
                 "flex items-center gap-3 px-3 rounded-md min-h-[44px] transition-all duration-150 ease-in-out",
-                isActive 
-                  ? "bg-brand-50 text-brand-700 font-semibold" 
+                isActive
+                  ? "bg-brand-50 text-brand-700 font-semibold"
                   : "text-neutral-600 hover:bg-neutral-100"
               )}
               title={collapsed && !isMobile ? item.name : undefined}

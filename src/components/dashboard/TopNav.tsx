@@ -23,7 +23,7 @@ export function TopNav({ onToggleMobileSidebar }: TopNavProps) {
         
         {/* Brand/App Title */}
         <span className="text-body font-bold text-neutral-900 tracking-tight">
-          Onboarding Platform
+          Beingso
         </span>
       </div>
 

@@ -9,7 +9,7 @@ export default function SignupPage() {
       <div className="flex flex-col gap-1.5 text-center">
         <h2 className="text-heading-2 text-neutral-800">Create an Account</h2>
         <p className="text-body-sm text-neutral-500">
-          Sign up to start setting up onboarding workflows
+          Sign up to start setting up Beingso workflows
         </p>
       </div>
 
