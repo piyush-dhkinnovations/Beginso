@@ -1,6 +1,5 @@
 import Navbar from "@/components/landing/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
-import ProductMockup from "@/components/landing/ProductMockup";
 import StatsBar from "@/components/landing/StatsBar";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
@@ -12,7 +11,6 @@ export default function Home() {
     <main className="min-h-screen bg-white selection:bg-brand-100 selection:text-brand-900">
       <Navbar />
       <HeroSection />
-      <ProductMockup />
       <StatsBar />
       <FeaturesSection />
       <HowItWorksSection />

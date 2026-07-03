@@ -8,7 +8,7 @@ export default function ProductMockup() {
   const field2 = useTypingEffect("john@example.com", 1800, 60);
 
   return (
-    <div className="w-full max-w-2xl mx-auto mt-[-40px] mb-20 relative z-20 px-4">
+    <div className="w-full max-w-2xl mx-auto relative z-20 px-4">
       <div className="bg-white border border-neutral-200 rounded-lg shadow-xl p-6 md:p-8 animate-fade-up" style={{ animationDelay: "320ms", animationFillMode: "both" }}>
         <div className="flex items-center gap-2 mb-6 border-b border-neutral-100 pb-4">
           <div className="w-3 h-3 rounded-full bg-red-400"></div>

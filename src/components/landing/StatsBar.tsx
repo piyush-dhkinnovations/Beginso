@@ -14,7 +14,7 @@ export default function StatsBar() {
           {stats.map((stat, i) => (
             <div key={i} className="text-center">
               <div className="text-display text-neutral-900 mb-1">{stat.metric}</div>
-              <div className="text-body-sm text-neutral-500 uppercase tracking-wider font-semibold">
+              <div className="text-body-sm text-neutral-500">
                 {stat.label}
               </div>
             </div>

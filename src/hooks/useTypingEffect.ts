@@ -20,11 +20,9 @@ export function useTypingEffect(text: string, startDelay: number, charDelay: num
       let currentIndex = 0;
       
       interval = setInterval(() => {
-        if (currentIndex < text.length - 1) {
-          setDisplayedText((prev) => prev + text[currentIndex]);
-          currentIndex++;
-        } else {
-          setDisplayedText(text);
+        currentIndex++;
+        setDisplayedText(text.slice(0, currentIndex));
+        if (currentIndex >= text.length) {
           setIsTyping(false);
           clearInterval(interval);
         }
