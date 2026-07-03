@@ -12,7 +12,7 @@ import { RecentActivitySection } from '@/components/dashboard/RecentActivitySect
 
 export default function DashboardPage() {
   const { isLoading } = useAuth();
-  
+
   // Demonstration states to allow the user/tester to toggle loading and empty states
   const [demoLoading, setDemoLoading] = useState(false);
   const [demoHasNoForms, setDemoHasNoForms] = useState(false);
@@ -41,19 +41,19 @@ export default function DashboardPage() {
       <div className="flex items-center gap-3 p-3 bg-neutral-50 border border-neutral-200 rounded-lg text-body-xs font-medium shrink-0">
         <span className="text-neutral-500 font-bold uppercase tracking-wider">QA Demo Controls:</span>
         <label className="flex items-center gap-1.5 cursor-pointer">
-          <input 
-            type="checkbox" 
-            checked={demoLoading} 
-            onChange={(e) => setDemoLoading(e.target.checked)} 
+          <input
+            type="checkbox"
+            checked={demoLoading}
+            onChange={(e) => setDemoLoading(e.target.checked)}
             className="rounded border-neutral-300 text-brand-600 focus:ring-brand-500"
           />
           <span>Simulate Stats Load</span>
         </label>
         <label className="flex items-center gap-1.5 cursor-pointer">
-          <input 
-            type="checkbox" 
-            checked={demoHasNoForms} 
-            onChange={(e) => setDemoHasNoForms(e.target.checked)} 
+          <input
+            type="checkbox"
+            checked={demoHasNoForms}
+            onChange={(e) => setDemoHasNoForms(e.target.checked)}
             className="rounded border-neutral-300 text-brand-600 focus:ring-brand-500"
           />
           <span>Simulate Empty State (0 Forms)</span>
@@ -61,17 +61,17 @@ export default function DashboardPage() {
       </div>
 
       {/* Header */}
-      <DashboardHeader 
-        title="Dashboard" 
-        subtitle="Manage and analyze onboarding pipeline interactions."
+      <DashboardHeader
+        title="Dashboard"
+        subtitle="Manage and analyze Beingso pipeline interactions."
       />
 
       {/* Welcome Widget */}
       <WelcomeSection />
 
       {/* Statistics Cards */}
-      <StatisticsCards 
-        isLoading={demoLoading} 
+      <StatisticsCards
+        isLoading={demoLoading}
         counts={mockCounts}
       />
 
@@ -79,9 +79,9 @@ export default function DashboardPage() {
       <QuickActionsSection />
 
       {/* Recent Activity */}
-      <RecentActivitySection 
-        hasForms={!demoHasNoForms} 
-        activities={demoHasNoForms ? [] : undefined} 
+      <RecentActivitySection
+        hasForms={!demoHasNoForms}
+        activities={demoHasNoForms ? [] : undefined}
       />
     </div>
   );
