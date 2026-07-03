@@ -13,7 +13,7 @@ export function WelcomeSection() {
         {userName ? `Welcome back, ${userName}!` : 'Welcome back!'}
       </h2>
       <p className="text-body text-neutral-600 mt-1">
-        Here is the current overview of your Beingso pipelines and forms.
+        Here is the current overview of your Beginso pipelines and forms.
       </p>
     </div>
   );

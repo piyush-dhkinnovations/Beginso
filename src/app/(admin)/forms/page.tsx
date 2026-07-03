@@ -9,7 +9,7 @@ export default function FormsPage() {
     <div className="flex flex-col gap-6 max-w-6xl mx-auto animate-fade-in">
       <DashboardHeader
         title="Forms"
-        subtitle="Manage, build, and configure Beingso form pipelines."
+        subtitle="Manage, build, and configure Beginso form pipelines."
       />
       <Card className="flex flex-col items-center justify-center p-12 text-center bg-neutral-50/50">
         <h2 className="text-heading-2 font-bold text-neutral-800">Forms Builder & Manager</h2>

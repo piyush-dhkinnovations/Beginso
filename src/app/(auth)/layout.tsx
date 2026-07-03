@@ -10,7 +10,7 @@ export default function AuthLayout({
       <div className="w-full max-w-[440px] flex flex-col gap-6">
         <div className="text-center">
           <h1 className="text-display text-neutral-900">
-            Beingso
+            Beginso
           </h1>
         </div>
         {children}
