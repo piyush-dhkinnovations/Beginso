@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/Card';
 import { FileText, MessageSquare, Files, Calendar } from 'lucide-react';
-import { cn } from '@/lib/utils';
+
 
 interface StatisticsCardsProps {
   isLoading?: boolean;
@@ -71,10 +71,7 @@ export function StatisticsCards({
               </div>
             ) : (
               <div>
-                <span className={cn(
-                  "text-display font-bold leading-none",
-                  card.value === 0 ? "text-neutral-400" : "text-neutral-900"
-                )}>
+                <span className="text-display font-bold text-neutral-900 leading-none">
                   {card.value}
                 </span>
               </div>

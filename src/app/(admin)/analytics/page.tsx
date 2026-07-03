@@ -1,19 +1,22 @@
-import React from "react";
+'use client';
+
+import React from 'react';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { Card } from '@/components/ui/Card';
 
 export default function AnalyticsPage() {
   return (
-    <div className="flex flex-col gap-6 max-w-4xl mx-auto">
-      <div className="border-b border-neutral-200 pb-4">
-        <h1 className="text-display text-neutral-900 font-bold">Analytics</h1>
-        <p className="text-body text-neutral-500">Visualize form submissions and performance trends.</p>
-      </div>
-
-      <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-8 text-center flex flex-col items-center justify-center gap-4">
-        <h2 className="text-heading-1 text-neutral-800">Analytics Dashboard coming soon — Sprint 2</h2>
-        <p className="text-body text-neutral-600 max-w-md">
-          This placeholder page will be replaced in Sprint 2 with full chart integrations, response distributions, and analytics trends.
+    <div className="flex flex-col gap-6 max-w-6xl mx-auto animate-fade-in">
+      <DashboardHeader 
+        title="Analytics" 
+        subtitle="Inspect graphs and performance metrics."
+      />
+      <Card className="flex flex-col items-center justify-center p-12 text-center bg-neutral-50/50">
+        <h2 className="text-heading-2 font-bold text-neutral-800">Auto Analytics Dashboard</h2>
+        <p className="text-body text-neutral-500 max-w-md mt-2">
+          This area is scheduled for development in Sprint 2. Performance charts, response rates, and completion stats will display here.
         </p>
-      </div>
+      </Card>
     </div>
   );
 }
