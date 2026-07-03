@@ -63,7 +63,7 @@ export default function DashboardPage() {
       {/* Header */}
       <DashboardHeader
         title="Dashboard"
-        subtitle="Manage and analyze Beingso pipeline interactions."
+        subtitle="Manage and analyze Beginso pipeline interactions."
       />
 
       {/* Welcome Widget */}

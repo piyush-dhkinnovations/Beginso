@@ -56,7 +56,7 @@ export default function FeaturesSection() {
             Everything you need to collect and manage data
           </h2>
           <p className="text-body-lg text-neutral-500">
-            We built Beingso to handle the entire lifecycle of a form—from creation to analysis to export.
+            We built Beginso to handle the entire lifecycle of a form—from creation to analysis to export.
           </p>
         </div>
 

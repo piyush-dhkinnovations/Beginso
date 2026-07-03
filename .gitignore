@@ -40,7 +40,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .vscode
-.beingso_document
+.Beginso_document
 .kiro
 .document
 /markdown

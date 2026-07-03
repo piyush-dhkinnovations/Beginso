@@ -55,7 +55,7 @@ export function Sidebar({
           </div>
           {(!collapsed || isMobile) && (
             <span className="text-body font-bold text-neutral-800 tracking-tight whitespace-nowrap">
-              Beingso
+              Beginso
             </span>
           )}
         </Link>

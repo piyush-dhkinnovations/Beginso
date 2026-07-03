@@ -10,7 +10,7 @@ export default function CtaSection() {
           Ready to build your first form?
         </h2>
         <p className="text-[18px] font-[400] text-white/90 mb-10 max-w-2xl mx-auto">
-          Join thousands of teams who use Beingso to collect, manage, and analyze their data securely.
+          Join thousands of teams who use Beginso to collect, manage, and analyze their data securely.
         </p>
         <Link href="/signup">
           <Button

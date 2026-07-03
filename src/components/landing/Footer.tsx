@@ -10,12 +10,12 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
             <span className="text-[16px] font-bold text-white tracking-tight">
-              Beingso
+              Beginso
             </span>
           </div>
           
           <div className="text-neutral-400 text-[13px]">
-            &copy; {currentYear} Beingso. All rights reserved.
+            &copy; {currentYear} Beginso. All rights reserved.
           </div>
 
           <div className="flex items-center gap-6 text-[13px] text-neutral-400">
