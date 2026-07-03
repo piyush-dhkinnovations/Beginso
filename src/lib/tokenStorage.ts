@@ -8,7 +8,8 @@ export function saveToken(token: string): void {
     // SecurityError / QuotaExceededError -> silent
   }
   // Cookie sync for Edge middleware
-  document.cookie = `${TOKEN_KEY}=${token}; path=/; SameSite=Lax; Secure`;
+  const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  document.cookie = `${TOKEN_KEY}=${token}; path=/; SameSite=Lax${isSecure ? '; Secure' : ''}`;
 }
 
 export function getToken(): string | null {
@@ -29,5 +30,7 @@ export function clearToken(): void {
     // silent
   }
   // Remove cookie
-  document.cookie = `${TOKEN_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure`;
+  const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
+  document.cookie = `${TOKEN_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax${isSecure ? '; Secure' : ''}`;
 }
+
