@@ -15,11 +15,13 @@ export default function DashboardLayout({
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
     const stored = localStorage.getItem('sidebar_collapsed');
-    if (stored === 'true') {
-      setCollapsed(true);
-    }
+    setTimeout(() => {
+      setIsMounted(true);
+      if (stored === 'true') {
+        setCollapsed(true);
+      }
+    }, 0);
   }, []);
 
   const handleToggleCollapse = () => {

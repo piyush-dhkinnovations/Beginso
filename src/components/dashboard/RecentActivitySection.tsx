@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { UserCheck, FileInput, CheckCircle2, MessageSquare, AlertCircle, Plus } from 'lucide-react';

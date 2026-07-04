@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Card } from '@/components/ui/Card';
 
