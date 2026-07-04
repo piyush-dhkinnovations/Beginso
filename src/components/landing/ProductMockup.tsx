@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { useTypingEffect } from "@/hooks/useTypingEffect";
 
 export default function ProductMockup() {
