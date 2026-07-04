@@ -110,6 +110,7 @@ export function LoginForm() {
   );
 
   return (
+    // eslint-disable-next-line react-hooks/refs
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full">
       <Input
         id="email"

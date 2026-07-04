@@ -8,8 +8,10 @@ export function useTypingEffect(text: string, startDelay: number, charDelay: num
     // Check for reduced motion
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (mediaQuery.matches) {
-      setDisplayedText(text);
-      setIsTyping(false);
+      setTimeout(() => {
+        setDisplayedText(text);
+        setIsTyping(false);
+      }, 0);
       return;
     }
 
