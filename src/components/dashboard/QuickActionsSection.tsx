@@ -9,7 +9,7 @@ export function QuickActionsSection() {
     <div className="space-y-4">
       <h3 className="text-heading-2 text-neutral-900 font-bold">Quick Actions</h3>
       <div className="flex flex-col sm:flex-row gap-3">
-        <Link href="/forms/new" className="inline-block w-full sm:w-auto">
+        <Link href="/forms" className="inline-block w-full sm:w-auto">
           <Button variant="primary" className="w-full sm:w-auto flex items-center justify-center gap-2">
             <Plus size={16} />
             <span>Create new form</span>
