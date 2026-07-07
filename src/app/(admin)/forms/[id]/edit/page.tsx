@@ -34,10 +34,22 @@ export default function BuilderPageShell() {
   const canUndo = undoStack.length > 0;
   const canRedo = redoStack.length > 0;
 
-  // Query to fetch the form details
+  // Query to fetch the form details (TEMPORARY MOCK FOR DEMO)
   const { data: form, isLoading, error } = useQuery({
     queryKey: ['form', id],
-    queryFn: () => formsService.getFormById(id),
+    queryFn: () => Promise.resolve({
+      _id: id,
+      workspaceId: 'test-workspace',
+      title: 'My Awesome Monday/Tuesday Form',
+      status: 'draft' as const,
+      fields: [],
+      branding: {},
+      settings: { honeypotEnabled: true },
+      schemaVersion: 1,
+      responseCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }),
     retry: false,
   });
 
