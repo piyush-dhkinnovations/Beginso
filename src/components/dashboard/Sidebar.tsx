@@ -47,25 +47,50 @@ export function Sidebar({
       )}
     >
       {/* Sidebar Header/Logo slot */}
-      <div className="h-[56px] border-b border-neutral-200 flex items-center justify-between px-3 shrink-0">
-        <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden" onClick={onCloseMobile}>
-          <div className="w-8 h-8 rounded bg-brand-600 flex items-center justify-center text-white font-bold shrink-0">
-            OP
-          </div>
-          {(!collapsed || isMobile) && (
-            <span className="text-body font-bold text-neutral-800 tracking-tight whitespace-nowrap">
-              Beginso
-            </span>
-          )}
-        </Link>
-        {isMobile && onCloseMobile && (
-          <button
-            onClick={onCloseMobile}
-            className="p-1 rounded-md text-neutral-500 hover:bg-neutral-200 transition-colors md:hidden"
-            aria-label="Close menu"
-          >
-            <X size={20} />
-          </button>
+      <div className={cn(
+        "h-[56px] border-b border-neutral-200 flex items-center px-3 shrink-0",
+        collapsed && !isMobile ? "justify-center" : "justify-between"
+      )}>
+        {(!collapsed || isMobile) ? (
+          <>
+            <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden" onClick={onCloseMobile}>
+              <div className="w-8 h-8 rounded bg-brand-600 flex items-center justify-center text-white font-bold shrink-0">
+                OP
+              </div>
+              <span className="text-body font-bold text-neutral-800 tracking-tight whitespace-nowrap">
+                Beginso
+              </span>
+            </Link>
+            {isMobile && onCloseMobile ? (
+              <button
+                onClick={onCloseMobile}
+                className="p-1 rounded-md text-neutral-500 hover:bg-neutral-200 transition-colors md:hidden"
+                aria-label="Close menu"
+              >
+                <X size={20} />
+              </button>
+            ) : (
+              !isMobile && onToggleCollapse && (
+                <button
+                  onClick={onToggleCollapse}
+                  className="p-1 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors shrink-0 flex items-center justify-center min-h-[32px] min-w-[32px]"
+                  aria-label="Collapse sidebar"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+              )
+            )}
+          </>
+        ) : (
+          !isMobile && onToggleCollapse && (
+            <button
+              onClick={onToggleCollapse}
+              className="p-1 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors shrink-0 flex items-center justify-center min-h-[32px] min-w-[32px]"
+              aria-label="Expand sidebar"
+            >
+              <ChevronRight size={20} />
+            </button>
+          )
         )}
       </div>
 
@@ -99,23 +124,6 @@ export function Sidebar({
         })}
       </nav>
 
-      {/* Desktop Collapse Button at bottom */}
-      {!isMobile && onToggleCollapse && (
-        <div className="p-2 border-t border-neutral-200 shrink-0">
-          <button
-            onClick={onToggleCollapse}
-            className="w-full flex items-center justify-center min-h-[40px] rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            {collapsed ? <ChevronRight size={20} /> : (
-              <div className="flex items-center gap-2">
-                <ChevronLeft size={20} />
-                <span className="text-body-sm font-medium">Collapse</span>
-              </div>
-            )}
-          </button>
-        </div>
-      )}
     </aside>
   );
 }
