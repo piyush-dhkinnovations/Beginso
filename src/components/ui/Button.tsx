@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { LoadingSpinner } from "../common/LoadingSpinner";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "destructive";
+  variant?: "primary" | "secondary" | "destructive" | "ghost";
   size?: "default" | "small";
   isLoading?: boolean;
 }
@@ -34,6 +34,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         "bg-white border border-[#CBD5E1] text-[#0F172A] hover:bg-neutral-100",
       destructive:
         "bg-[#FEE2E2] border border-[#EF4444] text-[#B91C1C] hover:bg-[#EF4444] hover:text-white",
+      ghost:
+        "bg-transparent text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 border-none",
     };
 
     const sizes = {

@@ -64,24 +64,26 @@ export function BuilderHeader({
 
       {/* Centre Section: Undo / Redo */}
       <div className="flex items-center gap-1">
-        <button
+        <Button
           onClick={onUndo}
           disabled={!canUndo}
-          type="button"
-          className="p-2 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-[6px] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          variant="ghost"
+          size="small"
+          className="p-2 min-h-[36px] min-w-[36px]"
           title="Undo"
         >
           <Undo2 size={16} />
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={onRedo}
           disabled={!canRedo}
-          type="button"
-          className="p-2 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-[6px] disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          variant="ghost"
+          size="small"
+          className="p-2 min-h-[36px] min-w-[36px]"
           title="Redo"
         >
           <Redo2 size={16} />
-        </button>
+        </Button>
       </div>
 
       {/* Right Section: Save State Indicator & Preview/Publish */}
@@ -98,14 +100,15 @@ export function BuilderHeader({
         </div>
 
         {/* Action Buttons */}
-        <button
+        <Button
           onClick={onPreview}
-          type="button"
-          className="flex items-center gap-1.5 px-3 py-1.5 text-body-sm font-semibold text-neutral-700 hover:text-neutral-900 hover:bg-neutral-100 rounded-[6px] transition-all"
+          variant="ghost"
+          size="small"
+          className="flex items-center gap-1.5 px-3"
         >
           <Eye size={16} />
           <span>Preview</span>
-        </button>
+        </Button>
 
         <Button
           variant="secondary"
