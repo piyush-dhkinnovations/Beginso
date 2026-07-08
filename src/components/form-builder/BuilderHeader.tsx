@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Undo2, Redo2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -28,10 +28,12 @@ export function BuilderHeader({
   onPreview,
 }: BuilderHeaderProps) {
   const [title, setTitle] = useState(formTitle);
+  const [prevFormTitle, setPrevFormTitle] = useState(formTitle);
 
-  useEffect(() => {
+  if (formTitle !== prevFormTitle) {
+    setPrevFormTitle(formTitle);
     setTitle(formTitle);
-  }, [formTitle]);
+  }
 
   const handleBlur = () => {
     if (title.trim() && title !== formTitle) {
