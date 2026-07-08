@@ -1,7 +1,7 @@
 'use client';
 
+import React from 'react';
 import { useDraggable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
 import {
   Type,
   AlignLeft,
@@ -38,20 +38,22 @@ export const FIELD_TYPE_CONFIG: FieldTypeConfig[] = [
 
 interface DraggableItemProps {
   config: FieldTypeConfig;
+  onAdd?: (type: FieldType) => void;
 }
 
-function DraggableToolboxItem({ config }: DraggableItemProps) {
+function DraggableToolboxItem({ config, onAdd }: DraggableItemProps) {
   const { type, icon: Icon, label } = config;
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `toolbox-${type}`,
     data: {
-      source: 'toolbox',
-      fieldType: type,
+      from: 'toolbox',
+      type,
     },
   });
 
-  const style = {
-    transform: CSS.Translate.toString(transform),
+  const style: React.CSSProperties = {
+    touchAction: 'none',
+    opacity: isDragging ? 0.4 : 1,
   };
 
   return (
@@ -60,7 +62,8 @@ function DraggableToolboxItem({ config }: DraggableItemProps) {
       style={style}
       {...listeners}
       {...attributes}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-md bg-white border border-neutral-200 cursor-grab active:cursor-grabbing hover:bg-neutral-50 hover:border-neutral-300 transition-all select-none shadow-sm min-h-[44px] ${
+      onClick={() => onAdd?.(type)}
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-md bg-white border border-neutral-200 cursor-grab active:cursor-grabbing hover:bg-neutral-50 hover:border-neutral-300 transition-colors select-none shadow-sm min-h-[44px] ${
         isDragging ? 'opacity-50 border-brand-500 ring-1 ring-brand-500/20' : ''
       }`}
     >
@@ -70,7 +73,11 @@ function DraggableToolboxItem({ config }: DraggableItemProps) {
   );
 }
 
-export function Toolbox() {
+export interface ToolboxProps {
+  onAdd?: (type: FieldType) => void;
+}
+
+export function Toolbox({ onAdd }: ToolboxProps) {
   return (
     <aside className="w-[280px] flex flex-col gap-4 p-4 border-r bg-white overflow-y-auto shrink-0 shadow-sm">
       <div>
@@ -82,7 +89,7 @@ export function Toolbox() {
 
       <div className="flex flex-col gap-2">
         {FIELD_TYPE_CONFIG.map((config) => (
-          <DraggableToolboxItem key={config.type} config={config} />
+          <DraggableToolboxItem key={config.type} config={config} onAdd={onAdd} />
         ))}
       </div>
     </aside>
