@@ -8,8 +8,7 @@ import { useBuilderStore } from '@/store/builderStore';
 import { BuilderHeader } from '@/components/form-builder/BuilderHeader';
 import { BuilderTabs, BuilderTab } from '@/components/form-builder/BuilderTabs';
 import { useToast } from '@/components/common/Toast';
-import { DndContext } from '@dnd-kit/core';
-import { Toolbox } from '@/components/form-builder/Toolbox';
+import { Canvas } from '@/components/form-builder/Canvas';
 
 export default function BuilderPageShell() {
   const router = useRouter();
@@ -23,10 +22,15 @@ export default function BuilderPageShell() {
   const formId = useBuilderStore((state) => state.formId);
   const formTitle = useBuilderStore((state) => state.formTitle);
   const fields = useBuilderStore((state) => state.fields);
+  const activeFieldId = useBuilderStore((state) => state.activeFieldId);
   const dirty = useBuilderStore((state) => state.dirty);
   
   const initForm = useBuilderStore((state) => state.initForm);
   const setFormTitle = useBuilderStore((state) => state.setFormTitle);
+  const addField = useBuilderStore((state) => state.addField);
+  const reorderFields = useBuilderStore((state) => state.reorderFields);
+  const softDeleteField = useBuilderStore((state) => state.softDeleteField);
+  const setActiveFieldId = useBuilderStore((state) => state.setActiveFieldId);
   const markSaved = useBuilderStore((state) => state.markSaved);
   const undo = useBuilderStore((state) => state.undo);
   const redo = useBuilderStore((state) => state.redo);
@@ -141,19 +145,14 @@ export default function BuilderPageShell() {
             
             <div className="flex flex-1 overflow-hidden">
               {activeTab === 'build' ? (
-                <DndContext>
-                  <Toolbox />
-                  
-                  {/* Center panel placeholder for Canvas */}
-                  <div className="flex-1 bg-neutral-50 flex items-center justify-center p-6 text-neutral-400 text-body text-center overflow-y-auto">
-                    Canvas Coming in Thursday Tasks
-                  </div>
-                  
-                  {/* Right panel placeholder for PropertiesPanel */}
-                  <div className="w-[320px] border-l bg-white flex items-center justify-center p-6 text-neutral-400 text-body text-center shrink-0">
-                    Properties Panel Coming in Friday Tasks
-                  </div>
-                </DndContext>
+                <Canvas
+                  fields={fields}
+                  activeFieldId={activeFieldId}
+                  onFieldSelect={setActiveFieldId}
+                  onFieldDelete={softDeleteField}
+                  onFieldsReorder={reorderFields}
+                  onFieldDrop={addField}
+                />
               ) : (
                 <div className="flex-1 flex items-center justify-center text-neutral-400 text-body">
                   Coming in Sprint 2 Part 2
