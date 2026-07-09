@@ -27,19 +27,19 @@ export function BuilderHeader({
   onRedo,
   onPreview,
 }: BuilderHeaderProps) {
-  const [title, setTitle] = useState(formTitle);
-  const [prevFormTitle, setPrevFormTitle] = useState(formTitle);
+  const [title, setTitle] = useState(formTitle || '');
+  const [prevFormTitle, setPrevFormTitle] = useState<string | undefined>(formTitle);
 
   if (formTitle !== prevFormTitle) {
     setPrevFormTitle(formTitle);
-    setTitle(formTitle);
+    setTitle(formTitle || '');
   }
 
   const handleBlur = () => {
-    if (title.trim() && title !== formTitle) {
+    if ((title || '').trim() && title !== formTitle) {
       onTitleChange(title);
     } else {
-      setTitle(formTitle);
+      setTitle(formTitle || '');
     }
   };
 
@@ -55,7 +55,7 @@ export function BuilderHeader({
       <div className="flex items-center gap-3 flex-1 max-w-[30%]">
         <input
           type="text"
-          value={title}
+          value={title ?? ''}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}

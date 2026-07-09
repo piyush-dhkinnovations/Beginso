@@ -59,9 +59,10 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
   const mutation = useMutation({
     mutationFn: (data: CreateFormValues) => formsService.createForm(data),
     onSuccess: (response) => {
+      const formId = response._id || (response as any).id;
       // Seed the store with a fresh empty form so the builder page hydrates instantly
       initForm({
-        _id: response._id,
+        _id: formId,
         title: response.title,
         description: undefined,
         workspaceId: '',
@@ -75,7 +76,7 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
         updatedAt: new Date().toISOString(),
       });
       onClose();
-      router.push(`/forms/${response._id}/edit`);
+      router.push(`/forms/${formId}/edit`);
     },
     onError: () => {
       toast('Failed to create form. Please try again.', 'error');
