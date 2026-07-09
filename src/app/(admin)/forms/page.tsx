@@ -45,6 +45,8 @@ function FormRow({
     year: 'numeric',
   });
 
+  const formId = form._id || (form as any).id;
+
   return (
     <div className="flex items-center gap-4 px-4 py-3 border-b border-neutral-100 last:border-0 hover:bg-neutral-50 transition-colors group">
       {/* Icon */}
@@ -55,7 +57,7 @@ function FormRow({
       {/* Title + meta */}
       <div className="flex flex-col flex-1 min-w-0">
         <Link
-          href={`/forms/${form._id}/edit`}
+          href={`/forms/${formId}/edit`}
           className="text-body font-semibold text-neutral-800 hover:text-brand-600 transition-colors truncate"
         >
           {form.title}
@@ -76,7 +78,7 @@ function FormRow({
           variant="ghost"
           size="small"
           isLoading={isDuplicating}
-          onClick={() => onDuplicate(form._id)}
+          onClick={() => onDuplicate(formId)}
           title="Duplicate form"
           aria-label={`Duplicate ${form.title}`}
         >
@@ -84,7 +86,7 @@ function FormRow({
           Duplicate
         </Button>
 
-        <Link href={`/forms/${form._id}/edit`}>
+        <Link href={`/forms/${formId}/edit`}>
           <Button variant="secondary" size="small" aria-label={`Edit ${form.title}`}>
             Edit
             <ChevronRight size={14} className="ml-1" />
