@@ -167,11 +167,6 @@ export function Canvas({
             </div>
           </SortableContext>
         </DroppableCanvas>
-
-        {/* Right properties panel placeholder */}
-        <div className="w-[320px] border-l bg-white flex items-center justify-center p-6 text-neutral-400 text-body text-center shrink-0">
-          Properties Panel Coming in Friday Tasks
-        </div>
       </div>
 
       {/* ── Drag Overlay: floating preview under the cursor ─────────────────── */}
