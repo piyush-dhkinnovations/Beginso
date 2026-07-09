@@ -20,21 +20,19 @@ export interface FieldTypeConfig {
   type: FieldType;
   icon: LucideIcon;
   label: string;
-  color: string;       // icon chip background
-  iconColor: string;   // icon color
 }
 
 export const FIELD_TYPE_CONFIG: FieldTypeConfig[] = [
-  { type: 'short_text', icon: Type, label: 'Short Text', color: 'bg-blue-50', iconColor: 'text-blue-500' },
-  { type: 'long_text', icon: AlignLeft, label: 'Long Text', color: 'bg-violet-50', iconColor: 'text-violet-500' },
-  { type: 'email', icon: Mail, label: 'Email', color: 'bg-emerald-50', iconColor: 'text-emerald-500' },
-  { type: 'phone', icon: Phone, label: 'Phone', color: 'bg-sky-50', iconColor: 'text-sky-500' },
-  { type: 'number', icon: Hash, label: 'Number', color: 'bg-amber-50', iconColor: 'text-amber-500' },
-  { type: 'date', icon: Calendar, label: 'Date', color: 'bg-rose-50', iconColor: 'text-rose-500' },
-  { type: 'dropdown', icon: ChevronDown, label: 'Dropdown', color: 'bg-orange-50', iconColor: 'text-orange-500' },
-  { type: 'multiple_choice', icon: List, label: 'Multiple Choice', color: 'bg-teal-50', iconColor: 'text-teal-500' },
-  { type: 'checkbox', icon: CheckSquare, label: 'Checkbox', color: 'bg-indigo-50', iconColor: 'text-indigo-500' },
-  { type: 'file_upload', icon: Upload, label: 'File Upload', color: 'bg-pink-50', iconColor: 'text-pink-500' },
+  { type: 'short_text', icon: Type, label: 'Short Text' },
+  { type: 'long_text', icon: AlignLeft, label: 'Long Text' },
+  { type: 'email', icon: Mail, label: 'Email' },
+  { type: 'phone', icon: Phone, label: 'Phone' },
+  { type: 'number', icon: Hash, label: 'Number' },
+  { type: 'date', icon: Calendar, label: 'Date' },
+  { type: 'dropdown', icon: ChevronDown, label: 'Dropdown' },
+  { type: 'multiple_choice', icon: List, label: 'Multiple Choice' },
+  { type: 'checkbox', icon: CheckSquare, label: 'Checkbox' },
+  { type: 'file_upload', icon: Upload, label: 'File Upload' },
 ];
 
 interface DraggableItemProps {
@@ -43,37 +41,33 @@ interface DraggableItemProps {
 }
 
 function DraggableToolboxItem({ config, onAdd }: DraggableItemProps) {
-  const { type, icon: Icon, label, color, iconColor } = config;
+  const { type, icon: Icon, label } = config;
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `toolbox-${type}`,
-    data: { from: 'toolbox', type },
+    data: {
+      from: 'toolbox',
+      type,
+    },
   });
+
+  const style: React.CSSProperties = {
+    touchAction: 'none',
+    opacity: isDragging ? 0.4 : 1,
+  };
 
   return (
     <div
       ref={setNodeRef}
-      style={{ touchAction: 'none', opacity: isDragging ? 0.45 : 1 }}
+      style={style}
       {...listeners}
       {...attributes}
       onClick={() => onAdd?.(type)}
-      title={label}
-      className={`
-        flex items-center gap-3 px-3 py-2 rounded-lg border cursor-grab active:cursor-grabbing
-        select-none transition-all duration-150
-        ${isDragging
-          ? 'bg-brand-50 border-brand-400 ring-2 ring-brand-400/20 shadow-md'
-          : 'bg-white border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50 hover:shadow-sm'
-        }
-      `}
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-md bg-white border border-neutral-200 cursor-grab active:cursor-grabbing hover:bg-neutral-50 hover:border-neutral-300 transition-colors select-none shadow-sm min-h-[44px] ${
+        isDragging ? 'opacity-50 border-brand-500 ring-1 ring-brand-500/20' : ''
+      }`}
     >
-      {/* Colored icon chip */}
-      <div className={`w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${color}`}>
-        <Icon size={14} className={iconColor} />
-      </div>
-      {/* Label */}
-      <span className="text-[13px] font-medium text-neutral-700 leading-none whitespace-nowrap">
-        {label}
-      </span>
+      <Icon size={18} className="text-neutral-500 shrink-0" />
+      <span className="text-body font-medium text-neutral-700">{label}</span>
     </div>
   );
 }
@@ -84,25 +78,19 @@ export interface ToolboxProps {
 
 export function Toolbox({ onAdd }: ToolboxProps) {
   return (
-    <aside className="w-[220px] flex flex-col gap-3 p-3 border-r border-neutral-200 bg-white overflow-y-auto shrink-0">
-      {/* Header */}
-      <div className="px-1 pt-1">
-        <h3 className="text-[11px] font-bold text-neutral-400 uppercase tracking-widest">
-          Field Types
-        </h3>
+    <aside className="w-[280px] flex flex-col gap-4 p-4 border-r bg-white overflow-y-auto shrink-0 shadow-sm">
+      <div>
+        <h3 className="text-heading-3 font-bold text-neutral-800 tracking-tight">Field Types</h3>
+        <p className="text-body-sm text-neutral-400 mt-1">
+          Drag and drop fields onto the canvas to customize your form.
+        </p>
       </div>
 
-      {/* Items */}
-      <div className="flex flex-col gap-1.5">
+      <div className="flex flex-col gap-2">
         {FIELD_TYPE_CONFIG.map((config) => (
           <DraggableToolboxItem key={config.type} config={config} onAdd={onAdd} />
         ))}
       </div>
-
-      {/* Footer hint */}
-      <p className="text-[10px] text-neutral-400 text-center px-2 pb-1 leading-relaxed">
-        Click or drag to add fields
-      </p>
     </aside>
   );
 }
