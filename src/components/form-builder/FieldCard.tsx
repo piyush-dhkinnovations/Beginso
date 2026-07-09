@@ -51,6 +51,10 @@ export function FieldCard({ field, isActive, onSelect, onDelete }: FieldCardProp
       onClick={onSelect}
       onKeyDown={handleKeyDown}
       tabIndex={0}
+      role="button"
+      aria-label={`Select ${field.label} field`}
+      aria-pressed={isActive}
+
       className={`group flex items-center justify-between p-4 bg-white border rounded-lg transition-colors focus:outline-none focus:border-brand-500 shadow-card min-h-[56px] select-none ${
         isActive
           ? 'border-brand-700 ring-2 ring-brand-700/20'
@@ -58,12 +62,11 @@ export function FieldCard({ field, isActive, onSelect, onDelete }: FieldCardProp
       } ${isDragging ? 'opacity-50 border-brand-500 ring-1 ring-brand-500/10' : ''}`}
     >
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        {/* Grip Handle */}
+        {/* Grip Handle — drag listeners only, no click propagation interference */}
         <div
           {...listeners}
           {...attributes}
           className="text-neutral-400 hover:text-neutral-600 cursor-grab active:cursor-grabbing p-1 -ml-1 rounded transition-colors shrink-0 min-w-[32px] min-h-[32px] flex items-center justify-center"
-          onClick={(e) => e.stopPropagation()} // Prevent select on grip drag-start
         >
           <GripVertical size={16} />
         </div>

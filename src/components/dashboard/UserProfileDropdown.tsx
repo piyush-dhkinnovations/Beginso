@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 
 
 export function UserProfileDropdown() {
-  const { user, logout } = useAuth();
+  const { user, logout, isLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -60,22 +60,38 @@ export function UserProfileDropdown() {
         onClick={toggleDropdown}
         className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-neutral-100 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20"
         aria-expanded={isOpen}
-        aria-haspopup="true"
+        aria-haspopup="menu"
+
       >
-        {/* Avatar Initials Fallback */}
-        <div className="w-8 h-8 rounded-full bg-brand-600 text-white flex items-center justify-center text-body-sm font-bold shadow-sm">
-          {getInitials(user?.name)}
+        {/* Avatar — real initials from user, or skeleton ring while loading */}
+        <div className="w-8 h-8 rounded-full bg-brand-600 text-white flex items-center justify-center text-body-sm font-bold shadow-sm shrink-0">
+          {isLoading ? (
+            <span className="w-3 h-3 rounded-full border-2 border-white/60 border-t-white animate-spin" />
+          ) : (
+            getInitials(user?.name)
+          )}
         </div>
         
-        {/* User Info (Hidden on very small mobile if needed, but we keep it simple) */}
-        <div className="hidden sm:flex flex-col text-left">
-          <span className="text-body-sm font-semibold text-neutral-800 leading-none">
-            {user?.name || 'Admin'}
-          </span>
-          <span className="text-[10px] text-neutral-500 leading-none mt-0.5">
-            {user?.email || 'admin@dhkinnovations.com'}
-          </span>
-        </div>
+        {/* User info — only rendered once auth has resolved */}
+        {!isLoading && user && (
+          <div className="hidden sm:flex flex-col text-left">
+            <span className="text-body-sm font-semibold text-neutral-800 leading-none">
+              {user.name}
+            </span>
+            {user.email && (
+              <span className="text-[10px] text-neutral-500 leading-none mt-0.5">
+                {user.email}
+              </span>
+            )}
+          </div>
+        )}
+        {/* Skeleton name lines while loading */}
+        {isLoading && (
+          <div className="hidden sm:flex flex-col gap-1">
+            <div className="w-20 h-2.5 rounded bg-neutral-200 animate-pulse" />
+            <div className="w-28 h-2 rounded bg-neutral-100 animate-pulse" />
+          </div>
+        )}
 
         <ChevronDown size={16} className={cn("text-neutral-500 transition-transform duration-200", isOpen && "rotate-180")} />
       </button>
@@ -83,11 +99,15 @@ export function UserProfileDropdown() {
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-neutral-100 focus:outline-none z-50 animate-fade-in">
-          {/* User Details Header */}
-          <div className="px-4 py-3 sm:hidden">
-            <p className="text-body-sm font-semibold text-neutral-800 truncate">{user?.name || 'Admin'}</p>
-            <p className="text-[11px] text-neutral-500 truncate">{user?.email}</p>
-          </div>
+          {/* User Details Header (mobile only) — real data only */}
+          {user && (
+            <div className="px-4 py-3 sm:hidden">
+              <p className="text-body-sm font-semibold text-neutral-800 truncate">{user.name}</p>
+              {user.email && (
+                <p className="text-[11px] text-neutral-500 truncate">{user.email}</p>
+              )}
+            </div>
+          )}
 
           <div className="py-1">
             <Link

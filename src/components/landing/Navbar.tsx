@@ -39,7 +39,7 @@ export default function Navbar() {
   const navLinks = [
     { name: "Features", href: "#features" },
     { name: "How it works", href: "#how-it-works" },
-    { name: "Pricing", href: "#pricing" },
+    // Pricing section not yet built — link removed until #pricing section exists
   ];
 
   return (
@@ -102,6 +102,8 @@ export default function Navbar() {
               className="hamburger-btn min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 rounded-md text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 focus:outline-none"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-expanded={isMobileMenuOpen}
+              aria-label={isMobileMenuOpen ? 'Close main menu' : 'Open main menu'}
+              aria-controls="mobile-menu"
             >
               <span className="sr-only">Open main menu</span>
               {isMobileMenuOpen ? (
@@ -116,7 +118,7 @@ export default function Navbar() {
 
       {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
-        <div className="md:hidden mobile-menu-container bg-white border-b border-neutral-200 shadow-md absolute w-full">
+            <div id="mobile-menu" className="md:hidden mobile-menu-container bg-white border-b border-neutral-200 shadow-md absolute w-full">
           <div className="px-4 pt-2 pb-4 space-y-1 sm:px-3">
             {navLinks.map((link) => (
               <a

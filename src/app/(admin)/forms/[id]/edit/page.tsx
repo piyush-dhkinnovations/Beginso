@@ -3,6 +3,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverlay,
+  DragStartEvent,
+  KeyboardSensor,
+  PointerSensor,
+  pointerWithin,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { formsService } from '@/services/forms';
 import { useBuilderStore } from '@/store/builderStore';
 import { BuilderHeader } from '@/components/form-builder/BuilderHeader';
@@ -10,6 +22,8 @@ import { BuilderTabs, BuilderTab } from '@/components/form-builder/BuilderTabs';
 import { useToast } from '@/components/common/Toast';
 import { Canvas } from '@/components/form-builder/Canvas';
 import { PropertiesPanel } from '@/components/form-builder/PropertiesPanel';
+import { Toolbox, FIELD_TYPE_CONFIG } from '@/components/form-builder/Toolbox';
+import type { FieldType } from '@/types/form';
 
 export default function BuilderPageShell() {
   const router = useRouter();
@@ -18,6 +32,8 @@ export default function BuilderPageShell() {
   
   const [activeTab, setActiveTab] = useState<BuilderTab>('build');
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Read state and actions from builderStore
   const formId = useBuilderStore((state) => state.formId);
@@ -77,20 +93,70 @@ export default function BuilderPageShell() {
         await formsService.updateForm(formId, { fields, title: formTitle });
         markSaved();
         setSaveState('saved');
-        
+        setSavedAt(new Date());
+
         // Reset save state back to idle after showing success indicator for 2 seconds
-        const idleTimer = setTimeout(() => {
+        if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = setTimeout(() => {
           setSaveState('idle');
         }, 2000);
-        
-        return () => clearTimeout(idleTimer);
       } catch (err) {
         setSaveState('error');
       }
     }, 2000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
   }, [dirty, fields, formTitle, formId, markSaved]);
+
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
+
+  // Sensors: require 8px movement before drag activates (preserves click)
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  // ─── Drag start: track which item is being dragged ────────────────────────
+  function handleDragStart(event: DragStartEvent) {
+    setActiveDragId(String(event.active.id));
+  }
+
+  // ─── Drag end: determine action based on source and over target ───────────
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    setActiveDragId(null);
+
+    if (!over) return;
+
+    // Drop from toolbox → create new field regardless of what element is under the cursor
+    // (canvas empty area, an existing FieldCard, or any canvas child)
+    if (active.data.current?.from === 'toolbox') {
+      addField(active.data.current.type as FieldType);
+      return;
+    }
+
+    // Reorder existing canvas fields → sortable handles this
+    if (
+      active.data.current?.from === 'canvas' &&
+      active.id !== over.id
+    ) {
+      reorderFields(active.id as string, over.id as string);
+    }
+  }
+
+  // ─── DragOverlay preview label ─────────────────────────────────────────────
+  const activeDragConfig = activeDragId?.startsWith('toolbox-')
+    ? FIELD_TYPE_CONFIG.find(
+        (c) => `toolbox-${c.type}` === activeDragId
+      )
+    : null;
 
   return (
     <>
@@ -128,6 +194,7 @@ export default function BuilderPageShell() {
               canRedo={canRedo}
               isSaving={saveState === 'saving'}
               saveState={saveState}
+              savedAt={savedAt}
               onTitleChange={setFormTitle}
               onUndo={undo}
               onRedo={redo}
@@ -138,14 +205,30 @@ export default function BuilderPageShell() {
             
             <div className="flex flex-1 overflow-hidden">
               {activeTab === 'build' ? (
-                <Canvas
-                  fields={fields}
-                  activeFieldId={activeFieldId}
-                  onFieldSelect={setActiveFieldId}
-                  onFieldDelete={softDeleteField}
-                  onFieldsReorder={reorderFields}
-                  onFieldDrop={addField}
-                />
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={pointerWithin}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                >
+                  <Toolbox onAdd={addField} />
+                  <Canvas
+                    fields={fields}
+                    activeFieldId={activeFieldId}
+                    onFieldSelect={setActiveFieldId}
+                    onFieldDelete={softDeleteField}
+                  />
+                  <DragOverlay dropAnimation={null}>
+                    {activeDragConfig ? (
+                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-white border border-blue-400 shadow-lg opacity-90 min-h-[44px] cursor-grabbing pointer-events-none">
+                        <activeDragConfig.icon size={18} className="text-blue-500 shrink-0" />
+                        <span className="text-body font-medium text-neutral-700">
+                          {activeDragConfig.label}
+                        </span>
+                      </div>
+                    ) : null}
+                  </DragOverlay>
+                </DndContext>
               ) : (
                 <div className="flex-1 flex items-center justify-center text-neutral-400 text-body">
                   Coming in Sprint 2 Part 2

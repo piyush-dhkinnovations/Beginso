@@ -18,39 +18,8 @@ interface RecentActivitySectionProps {
 }
 
 export function RecentActivitySection({
-  activities = [
-    {
-      id: '1',
-      description: 'Form "Employee Feedback" was published successfully.',
-      timestamp: '2 hours ago',
-      type: 'form_published'
-    },
-    {
-      id: '2',
-      description: 'New response received on "Developer Beginso Survey".',
-      timestamp: '4 hours ago',
-      type: 'form_submission'
-    },
-    {
-      id: '3',
-      description: 'New team member John Doe signed up.',
-      timestamp: '1 day ago',
-      type: 'signup'
-    },
-    {
-      id: '4',
-      description: 'Form "Offboarding Checklist" was updated.',
-      timestamp: '2 days ago',
-      type: 'form_published'
-    },
-    {
-      id: '5',
-      description: 'System maintenance completed.',
-      timestamp: '3 days ago',
-      type: 'system'
-    }
-  ],
-  hasForms = true
+  activities = [],
+  hasForms = false
 }: RecentActivitySectionProps) {
   const getIcon = (type: ActivityItem['type']) => {
     switch (type) {
@@ -74,7 +43,7 @@ export function RecentActivitySection({
           heading="No forms created yet"
           body="Get started by creating your first Beginso form."
           action={
-            <Link href="/forms/new">
+            <Link href="/forms">
               <Button variant="primary" className="flex items-center gap-2">
                 <Plus size={16} />
                 <span>Create your first form</span>

@@ -1,7 +1,12 @@
-import Link from "next/link";
+"use client";
+
+import { useCallback } from "react";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const handlePlaceholderLink = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+  }, []);
 
   return (
     <footer className="bg-neutral-900 py-12 border-t border-neutral-800">
@@ -18,15 +23,30 @@ export default function Footer() {
           </div>
 
           <div className="flex items-center gap-6 text-[13px] text-neutral-400">
-            <Link href="/privacy" className="hover:text-white transition-colors">
+            <a
+              href="#"
+              onClick={handlePlaceholderLink}
+              className="hover:text-white transition-colors cursor-not-allowed opacity-70"
+              title="Coming soon"
+            >
               Privacy Policy
-            </Link>
-            <Link href="/terms" className="hover:text-white transition-colors">
+            </a>
+            <a
+              href="#"
+              onClick={handlePlaceholderLink}
+              className="hover:text-white transition-colors cursor-not-allowed opacity-70"
+              title="Coming soon"
+            >
               Terms of Service
-            </Link>
-            <Link href="/contact" className="hover:text-white transition-colors">
+            </a>
+            <a
+              href="#"
+              onClick={handlePlaceholderLink}
+              className="hover:text-white transition-colors cursor-not-allowed opacity-70"
+              title="Coming soon"
+            >
               Contact
-            </Link>
+            </a>
           </div>
         </div>
       </div>

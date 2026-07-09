@@ -10,6 +10,7 @@ export interface BuilderHeaderProps {
   canRedo: boolean;
   isSaving: boolean;
   saveState?: 'idle' | 'saving' | 'saved' | 'error';
+  savedAt: Date | null;
   onTitleChange: (title: string) => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -22,6 +23,7 @@ export function BuilderHeader({
   canRedo,
   isSaving,
   saveState = 'idle',
+  savedAt,
   onTitleChange,
   onUndo,
   onRedo,
@@ -95,7 +97,9 @@ export function BuilderHeader({
           {isSaving || saveState === 'saving' ? (
             <span className="text-neutral-500 font-medium animate-pulse">Saving…</span>
           ) : saveState === 'saved' ? (
-            <span className="text-emerald-600 font-medium">Saved ✓</span>
+            <span className="text-emerald-600 font-medium">
+              Saved{savedAt ? ` at ${savedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ' ✓'}
+            </span>
           ) : saveState === 'error' ? (
             <span className="text-rose-600 font-medium font-mono">⚠ Save failed</span>
           ) : null}
@@ -120,6 +124,9 @@ export function BuilderHeader({
         >
           Publish
         </Button>
+
+        {/* TODO [Sprint 2 Part 2 - Requirement 9]: Add an overflow (⋯) menu here containing 'Delete form'. 
+            This will trigger the exact same <DeleteFormModal> used in the forms list page. */}
       </div>
     </header>
   );
