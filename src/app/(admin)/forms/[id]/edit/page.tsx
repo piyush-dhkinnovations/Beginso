@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { formsService } from '@/services/forms';
@@ -42,22 +42,10 @@ export default function BuilderPageShell() {
   const canUndo = undoStack.length > 0;
   const canRedo = redoStack.length > 0;
 
-  // Query to fetch the form details (TEMPORARY MOCK FOR DEMO)
+  // Query to fetch the form details
   const { data: form, isLoading, error } = useQuery({
     queryKey: ['form', id],
-    queryFn: () => Promise.resolve({
-      _id: id,
-      workspaceId: 'test-workspace',
-      title: 'My Awesome Monday/Tuesday Form',
-      status: 'draft' as const,
-      fields: [],
-      branding: {},
-      settings: { honeypotEnabled: true },
-      schemaVersion: 1,
-      responseCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }),
+    queryFn: () => formsService.getFormById(id),
     retry: false,
   });
 
@@ -68,9 +56,12 @@ export default function BuilderPageShell() {
     }
   }, [form, initForm]);
 
+  const hasRedirected = useRef(false);
+
   // Handle data fetch error
   useEffect(() => {
-    if (error) {
+    if (error && !hasRedirected.current) {
+      hasRedirected.current = true;
       toast('Form not found or access denied', 'error');
       router.push('/forms');
     }
@@ -78,7 +69,7 @@ export default function BuilderPageShell() {
 
   // Debounced Autosave effect
   useEffect(() => {
-    if (!dirty || !formId) return;
+    if (!dirty || !formId || formId === 'undefined') return;
 
     const timer = setTimeout(async () => {
       try {

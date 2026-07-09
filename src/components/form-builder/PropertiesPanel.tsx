@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useId, useState } from 'react';
+import React, { useId, useState } from 'react';
 import { Settings2 } from 'lucide-react';
 import type { FormField } from '@/types/form';
 import { Input } from '@/components/ui/Input';
@@ -47,14 +47,12 @@ function Switch({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
-        checked ? 'bg-brand-600' : 'bg-neutral-300'
-      }`}
+      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${checked ? 'bg-brand-600' : 'bg-neutral-300'
+        }`}
     >
       <span
-        className={`pointer-events-none block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-          checked ? 'translate-x-4' : 'translate-x-0'
-        }`}
+        className={`pointer-events-none block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${checked ? 'translate-x-4' : 'translate-x-0'
+          }`}
       />
     </button>
   );
@@ -76,8 +74,12 @@ function BlurField({
   onCommit: (value: string) => void;
 }) {
   const [local, setLocal] = useState(defaultValue);
-  // Sync when the field switches
-  useEffect(() => setLocal(defaultValue), [defaultValue]);
+  const [prevDefault, setPrevDefault] = useState(defaultValue);
+
+  if (defaultValue !== prevDefault) {
+    setLocal(defaultValue);
+    setPrevDefault(defaultValue);
+  }
 
   const commit = () => {
     const trimmed = local.trim();

@@ -16,10 +16,13 @@ import { GoogleSignInButton } from './GoogleSignInButton';
 export function LoginForm() {
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [isUiLoading, setIsUiLoading] = useState(false);
+  const [isEmailLoading, setIsEmailLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const router = useRouter();
   const { login } = useAuth();
+
+  const isAnyLoading = isEmailLoading || isGoogleLoading;
 
   const {
     register,
@@ -36,11 +39,11 @@ export function LoginForm() {
 
   const onSubmit = async (values: LoginFormValues) => {
     setServerError(null);
-    setIsUiLoading(true);
+    setIsEmailLoading(true);
 
     // Start 30-second UI timeout
     timeoutRef.current = setTimeout(() => {
-      setIsUiLoading(false);
+      setIsEmailLoading(false);
       setServerError('Connection timeout. Please try again.');
     }, 30000);
 
@@ -55,7 +58,7 @@ export function LoginForm() {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      setIsUiLoading(false);
+      setIsEmailLoading(false);
 
       const err = error as { response?: { data?: { error?: { message?: string; fields?: Array<{ field: string; message: string }> | Record<string, string> } } } };
       const fields = err.response?.data?.error?.fields;
@@ -77,13 +80,13 @@ export function LoginForm() {
 
   const handleGoogleLogin = async () => {
     setServerError(null);
-    setIsUiLoading(true);
+    setIsGoogleLoading(true);
     try {
       const data = await AuthService.loginWithGoogle();
       login(data.token, data.user);
       router.push('/dashboard');
     } catch (error: unknown) {
-      setIsUiLoading(false);
+      setIsGoogleLoading(false);
       setServerError(getFriendlyErrorMessage(error));
     }
   };
@@ -117,7 +120,7 @@ export function LoginForm() {
         label="Email Address"
         placeholder="you@company.com"
         error={errors.email?.message}
-        disabled={isUiLoading}
+        disabled={isAnyLoading}
         {...register('email', { onChange: clearError })}
       />
 
@@ -128,7 +131,7 @@ export function LoginForm() {
         placeholder="Password"
         error={errors.password?.message}
         rightSlot={passwordToggleSlot}
-        disabled={isUiLoading}
+        disabled={isAnyLoading}
         {...register('password', { onChange: clearError })}
       />
 
@@ -145,8 +148,8 @@ export function LoginForm() {
         type="submit"
         variant="primary"
         className="w-full mt-2"
-        isLoading={isUiLoading}
-        disabled={isUiLoading}
+        isLoading={isEmailLoading}
+        disabled={isAnyLoading}
       >
         Log In
       </Button>
@@ -162,8 +165,8 @@ export function LoginForm() {
 
       <GoogleSignInButton
         onClick={handleGoogleLogin}
-        isLoading={isUiLoading}
-        disabled={isUiLoading}
+        isLoading={isGoogleLoading}
+        disabled={isAnyLoading}
         label="Sign in with Google"
       />
     </form>
