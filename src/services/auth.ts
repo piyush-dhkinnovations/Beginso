@@ -1,7 +1,7 @@
 import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo } from 'firebase/auth';
 import axiosInstance from '@/lib/axios';
-import { getToken } from '@/lib/tokenStorage';
+
 
 const MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 
@@ -48,10 +48,7 @@ export async function getMe() {
       user: { id: 'mock-user-id', name: 'Mock User', email: 'mock@example.com', workspaceId: 'mock-ws-id' }
     };
   }
-  const token = getToken();
-  const { data } = await axiosInstance.get('/api/auth/me', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const { data } = await axiosInstance.get('/api/auth/me');
   return data;
 }
 
@@ -60,10 +57,7 @@ export async function logout() {
     await axiosInstance.post('/api/auth/logout').catch(() => { });
     return;
   }
-  const token = getToken();
-  await axiosInstance.post('/api/auth/logout', {}, {
-    headers: { Authorization: `Bearer ${token}` },
-  }).catch(() => { });
+  await axiosInstance.post('/api/auth/logout').catch(() => { });
 }
 
 export async function loginWithGoogle() {

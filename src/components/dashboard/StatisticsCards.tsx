@@ -17,10 +17,10 @@ interface StatisticsCardsProps {
 export function StatisticsCards({ 
   isLoading = false,
   counts = {
-    totalForms: 12,
-    totalResponses: 148,
-    publishedForms: 8,
-    responsesThisMonth: 45
+    totalForms: 0,
+    totalResponses: 0,
+    publishedForms: 0,
+    responsesThisMonth: 0
   }
 }: StatisticsCardsProps) {
   const cards = [
@@ -70,7 +70,7 @@ export function StatisticsCards({
               </div>
             ) : (
               <div>
-                <span className="text-display font-bold text-neutral-900 leading-none">
+                <span className={`text-display font-bold leading-none ${card.value === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}>
                   {card.value}
                 </span>
               </div>

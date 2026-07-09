@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import { formsService } from '@/services/forms';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { WelcomeSection } from '@/components/dashboard/WelcomeSection';
@@ -9,57 +10,46 @@ import { StatisticsCards } from '@/components/dashboard/StatisticsCards';
 import { QuickActionsSection } from '@/components/dashboard/QuickActionsSection';
 import { RecentActivitySection } from '@/components/dashboard/RecentActivitySection';
 
-
 export default function DashboardPage() {
-  const { isLoading } = useAuth();
+  const { isLoading: authLoading } = useAuth();
 
-  // Demonstration states to allow the user/tester to toggle loading and empty states
-  const [demoLoading, setDemoLoading] = useState(false);
-  const [demoHasNoForms, setDemoHasNoForms] = useState(false);
+  // Fetch real forms data to derive statistics
+  const { data: formsData, isLoading: formsLoading } = useQuery({
+    queryKey: ['forms'],
+    queryFn: () => formsService.getForms(),
+    // Don't refetch while auth is loading — wait for session to be established
+    enabled: !authLoading,
+  });
 
   // If AuthContext is verifying the session, render full page overlay loader
-  if (isLoading) {
+  if (authLoading) {
     return <LoadingSpinner variant="overlay" />;
   }
 
-  // Define counts based on the demo state
-  const mockCounts = demoHasNoForms ? {
-    totalForms: 0,
-    totalResponses: 0,
-    publishedForms: 0,
-    responsesThisMonth: 0
-  } : {
-    totalForms: 12,
-    totalResponses: 148,
-    publishedForms: 8,
-    responsesThisMonth: 45
+  // Derive real statistics from the fetched forms list
+  const forms = formsData?.forms ?? [];
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+
+  const realCounts = {
+    totalForms: formsData?.total ?? 0,
+    totalResponses: forms.reduce((sum, f) => sum + (f.responseCount ?? 0), 0),
+    publishedForms: forms.filter((f) => f.status === 'published').length,
+    responsesThisMonth: forms.reduce((sum, f) => {
+      // Count responses on forms published in the current calendar month
+      if (!f.publishedAt) return sum;
+      const pub = new Date(f.publishedAt);
+      if (pub.getMonth() === currentMonth && pub.getFullYear() === currentYear) {
+        return sum + (f.responseCount ?? 0);
+      }
+      return sum;
+    }, 0),
   };
+
+  const hasForms = forms.length > 0;
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto">
-      {/* Demo Controls - Helpful for QA to test Loading & Empty states */}
-      <div className="flex items-center gap-3 p-3 bg-neutral-50 border border-neutral-200 rounded-lg text-body-xs font-medium shrink-0">
-        <span className="text-neutral-500 font-bold uppercase tracking-wider">QA Demo Controls:</span>
-        <label className="flex items-center gap-1.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={demoLoading}
-            onChange={(e) => setDemoLoading(e.target.checked)}
-            className="rounded border-neutral-300 text-brand-600 focus:ring-brand-500"
-          />
-          <span>Simulate Stats Load</span>
-        </label>
-        <label className="flex items-center gap-1.5 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={demoHasNoForms}
-            onChange={(e) => setDemoHasNoForms(e.target.checked)}
-            className="rounded border-neutral-300 text-brand-600 focus:ring-brand-500"
-          />
-          <span>Simulate Empty State (0 Forms)</span>
-        </label>
-      </div>
-
       {/* Header */}
       <DashboardHeader
         title="Dashboard"
@@ -69,10 +59,10 @@ export default function DashboardPage() {
       {/* Welcome Widget */}
       <WelcomeSection />
 
-      {/* Statistics Cards */}
+      {/* Statistics Cards — driven by real API data */}
       <StatisticsCards
-        isLoading={demoLoading}
-        counts={mockCounts}
+        isLoading={formsLoading}
+        counts={realCounts}
       />
 
       {/* Quick Actions */}
@@ -80,8 +70,7 @@ export default function DashboardPage() {
 
       {/* Recent Activity */}
       <RecentActivitySection
-        hasForms={!demoHasNoForms}
-        activities={demoHasNoForms ? [] : undefined}
+        hasForms={hasForms}
       />
     </div>
   );
