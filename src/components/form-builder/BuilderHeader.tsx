@@ -120,6 +120,9 @@ export function BuilderHeader({
         >
           Publish
         </Button>
+
+        {/* TODO [Sprint 2 Part 2 - Requirement 9]: Add an overflow (⋯) menu here containing 'Delete form'. 
+            This will trigger the exact same <DeleteFormModal> used in the forms list page. */}
       </div>
     </header>
   );
