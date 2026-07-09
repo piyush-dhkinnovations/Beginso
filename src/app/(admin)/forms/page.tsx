@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Copy, FileText, ChevronRight } from 'lucide-react';
+import { Plus, Copy, FileText, Trash2, Edit2 } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { useToast } from '@/components/common/Toast';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -34,10 +34,14 @@ function FormRow({
   form,
   onDuplicate,
   isDuplicating,
+  onDelete,
+  isDeleting,
 }: {
   form: Form;
   onDuplicate: (id: string) => void;
   isDuplicating: boolean;
+  onDelete: (id: string) => void;
+  isDeleting: boolean;
 }) {
   const updatedAt = new Date(form.updatedAt).toLocaleDateString('en-US', {
     day: 'numeric',
@@ -69,12 +73,14 @@ function FormRow({
       </div>
 
       {/* Status badge */}
-      <Badge variant={STATUS_VARIANT[form.status]}>
-        {STATUS_LABEL[form.status]}
-      </Badge>
+      <div className="w-24 shrink-0 flex justify-center">
+        <Badge variant={STATUS_VARIANT[form.status]}>
+          {STATUS_LABEL[form.status]}
+        </Badge>
+      </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="flex items-center justify-end gap-1.5 w-32 shrink-0">
         <Button
           variant="ghost"
           size="small"
@@ -82,15 +88,36 @@ function FormRow({
           onClick={() => onDuplicate(formId)}
           title="Duplicate form"
           aria-label={`Duplicate ${form.title}`}
+          className="w-8 h-8 p-0 shrink-0"
         >
-          <Copy size={14} className="mr-1.5" />
-          Duplicate
+          <Copy size={16} />
+          <span className="sr-only">Duplicate</span>
         </Button>
 
-        <Link href={`/forms/${formId}/edit`}>
-          <Button variant="secondary" size="small" aria-label={`Edit ${form.title}`}>
-            Edit
-            <ChevronRight size={14} className="ml-1" />
+        <Button
+          variant="ghost"
+          size="small"
+          isLoading={isDeleting}
+          onClick={() => {
+            // TODO [Sprint 2 Part 2 - Requirement 9]: This native confirm() is a temporary fallback.
+            // It must be replaced with the official <DeleteFormModal> component featuring a 
+            // type-to-confirm input, and the action button itself may move into a 3-dot dropdown.
+            if (confirm('Are you sure you want to delete this form?')) {
+              onDelete(formId);
+            }
+          }}
+          title="Delete form"
+          aria-label={`Delete ${form.title}`}
+          className="w-8 h-8 p-0 shrink-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+        >
+          <Trash2 size={16} />
+          <span className="sr-only">Delete</span>
+        </Button>
+
+        <Link href={`/forms/${formId}/edit`} className="shrink-0">
+          <Button variant="secondary" size="small" aria-label={`Edit ${form.title}`} className="w-8 h-8 p-0 shrink-0">
+            <Edit2 size={16} />
+            <span className="sr-only">Edit</span>
           </Button>
         </Link>
       </div>
@@ -105,6 +132,7 @@ export default function FormsPage() {
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   // Fetch forms list
   const { data, isLoading, error } = useQuery({
@@ -126,24 +154,36 @@ export default function FormsPage() {
     onSettled: () => setDuplicatingId(null),
   });
 
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => formsService.deleteForm(id),
+    onMutate: (id) => setDeletingId(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['forms'] });
+      toast('Form deleted successfully', 'success');
+    },
+    onError: () => {
+      toast('Failed to delete form. Please try again.', 'error');
+    },
+    onSettled: () => setDeletingId(null),
+  });
+
   return (
-    <div className="flex flex-col gap-6 max-w-5xl mx-auto animate-fade-in">
+    <div className="flex flex-col gap-6 max-w-6xl mx-auto animate-fade-in">
       {/* Page header */}
-      <div className="flex items-start justify-between">
-        <DashboardHeader
-          title="Forms"
-          subtitle="Build, manage, and publish your forms."
-        />
+      <DashboardHeader
+        title="Forms"
+        subtitle="Build, manage, and publish your forms."
+      >
         <Button
           variant="primary"
           onClick={() => setIsModalOpen(true)}
           aria-label="Create new form"
-          className="mt-1 shrink-0"
         >
           <Plus size={16} className="mr-2" />
           Create Form
         </Button>
-      </div>
+      </DashboardHeader>
 
       {/* Content area */}
       {isLoading ? (
@@ -174,10 +214,10 @@ export default function FormsPage() {
             <span className="flex-1 text-caption font-semibold text-neutral-500 uppercase tracking-wider">
               Form Title
             </span>
-            <span className="text-caption font-semibold text-neutral-500 uppercase tracking-wider w-24 text-center">
+            <span className="text-caption font-semibold text-neutral-500 uppercase tracking-wider w-24 shrink-0 text-center">
               Status
             </span>
-            <div className="w-40 shrink-0" />
+            <div className="w-32 shrink-0" />
           </div>
 
           {/* Rows */}
@@ -187,6 +227,8 @@ export default function FormsPage() {
               form={form}
               onDuplicate={(id) => duplicateMutation.mutate(id)}
               isDuplicating={duplicatingId === form._id}
+              onDelete={(id) => deleteMutation.mutate(id)}
+              isDeleting={deletingId === form._id}
             />
           ))}
 
