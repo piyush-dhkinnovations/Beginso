@@ -34,7 +34,8 @@ export function TopNav({ onToggleMobileSidebar }: TopNavProps) {
           aria-label="View notifications"
         >
           <Bell size={20} />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-brand-600 ring-2 ring-white"></span>
+          {/* notification dot removed — add back when real notifications exist */}
+
         </button>
 
         {/* User Dropdown */}

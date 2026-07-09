@@ -45,7 +45,8 @@ function FormRow({
     year: 'numeric',
   });
 
-  const formId = form._id || (form as any).id;
+  const formId = form._id;
+
 
   return (
     <div className="flex items-center gap-4 px-4 py-3 border-b border-neutral-100 last:border-0 hover:bg-neutral-50 transition-colors group">
