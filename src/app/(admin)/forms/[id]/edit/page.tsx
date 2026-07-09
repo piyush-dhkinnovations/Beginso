@@ -9,6 +9,7 @@ import { BuilderHeader } from '@/components/form-builder/BuilderHeader';
 import { BuilderTabs, BuilderTab } from '@/components/form-builder/BuilderTabs';
 import { useToast } from '@/components/common/Toast';
 import { Canvas } from '@/components/form-builder/Canvas';
+import { PropertiesPanel } from '@/components/form-builder/PropertiesPanel';
 
 export default function BuilderPageShell() {
   const router = useRouter();
@@ -31,6 +32,7 @@ export default function BuilderPageShell() {
   const reorderFields = useBuilderStore((state) => state.reorderFields);
   const softDeleteField = useBuilderStore((state) => state.softDeleteField);
   const setActiveFieldId = useBuilderStore((state) => state.setActiveFieldId);
+  const updateField = useBuilderStore((state) => state.updateField);
   const markSaved = useBuilderStore((state) => state.markSaved);
   const undo = useBuilderStore((state) => state.undo);
   const redo = useBuilderStore((state) => state.redo);
@@ -157,6 +159,18 @@ export default function BuilderPageShell() {
                 <div className="flex-1 flex items-center justify-center text-neutral-400 text-body">
                   Coming in Sprint 2 Part 2
                 </div>
+              )}
+
+              {/* Properties Panel — only shown in Build tab */}
+              {activeTab === 'build' && (
+                <PropertiesPanel
+                  field={
+                    fields.find(
+                      (f) => f.fieldId === activeFieldId && !f.deleted
+                    ) ?? null
+                  }
+                  onUpdate={updateField}
+                />
               )}
             </div>
           </>
