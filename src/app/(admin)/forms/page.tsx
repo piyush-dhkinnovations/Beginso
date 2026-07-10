@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { CreateFormModal } from '@/components/form-builder/CreateFormModal';
+import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
 import type { Form, FormStatus } from '@/types/form';
 
 // ─── Status badge variant helper ─────────────────────────────────────────────
@@ -98,14 +99,7 @@ function FormRow({
           variant="ghost"
           size="small"
           isLoading={isDeleting}
-          onClick={() => {
-            // TODO [Sprint 2 Part 2 - Requirement 9]: This native confirm() is a temporary fallback.
-            // It must be replaced with the official <DeleteFormModal> component featuring a 
-            // type-to-confirm input, and the action button itself may move into a 3-dot dropdown.
-            if (confirm('Are you sure you want to delete this form?')) {
-              onDelete(formId);
-            }
-          }}
+          onClick={() => onDelete(formId)}
           title="Delete form"
           aria-label={`Delete ${form.title}`}
           className="w-8 h-8 p-0 shrink-0 text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -133,6 +127,7 @@ export default function FormsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [formToDelete, setFormToDelete] = useState<string | null>(null);
 
   // Fetch forms list
   const { data, isLoading, error } = useQuery({
@@ -227,7 +222,7 @@ export default function FormsPage() {
               form={form}
               onDuplicate={(id) => duplicateMutation.mutate(id)}
               isDuplicating={duplicatingId === form._id}
-              onDelete={(id) => deleteMutation.mutate(id)}
+              onDelete={(id) => setFormToDelete(id)}
               isDeleting={deletingId === form._id}
             />
           ))}
@@ -245,6 +240,19 @@ export default function FormsPage() {
       <CreateFormModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+      />
+
+      {/* Delete Form Modal */}
+      <DeleteFormModal
+        isOpen={formToDelete !== null}
+        onClose={() => setFormToDelete(null)}
+        onConfirm={() => {
+          if (formToDelete) {
+            deleteMutation.mutate(formToDelete);
+            setFormToDelete(null);
+          }
+        }}
+        isDeleting={deletingId !== null}
       />
     </div>
   );

@@ -96,8 +96,10 @@ export default function BuilderPageShell() {
         setSavedAt(new Date());
 
         // Reset save state back to idle after showing success indicator for 2 seconds
+        // idleTimerRef keeps this handle so the unmount cleanup below can cancel it
         if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
         idleTimerRef.current = setTimeout(() => {
+          idleTimerRef.current = null;
           setSaveState('idle');
         }, 2000);
       } catch (err) {
@@ -107,9 +109,43 @@ export default function BuilderPageShell() {
 
     return () => {
       clearTimeout(timer);
-      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
   }, [dirty, fields, formTitle, formId, markSaved]);
+
+  // Cancel the idle reset timer on unmount to prevent setState on unmounted component
+  useEffect(() => {
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, []);
+
+  // Use refs to avoid re-binding and firing effect on every stroke
+  const saveStateRef = useRef({ dirty, fields, formTitle, formId });
+  useEffect(() => {
+    saveStateRef.current = { dirty, fields, formTitle, formId };
+  }, [dirty, fields, formTitle, formId]);
+
+  // Synchronous flush on unmount or tab close
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (saveStateRef.current.dirty) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes.';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      
+      const current = saveStateRef.current;
+      // Flush save on unmount if still dirty
+      if (current.dirty && current.formId && current.formId !== 'undefined') {
+        formsService.updateForm(current.formId, { fields: current.fields, title: current.formTitle }).catch(() => {});
+      }
+    };
+  }, []);
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
@@ -135,10 +171,23 @@ export default function BuilderPageShell() {
 
     if (!over) return;
 
-    // Drop from toolbox → create new field regardless of what element is under the cursor
-    // (canvas empty area, an existing FieldCard, or any canvas child)
+    // Drop from toolbox → create new field
     if (active.data.current?.from === 'toolbox') {
-      addField(active.data.current.type as FieldType);
+      const type = active.data.current.type as FieldType;
+      const overIndex = fields.filter((f) => !f.deleted).findIndex((f) => f.fieldId === over.id);
+      
+      if (overIndex !== -1) {
+        // We calculate if we are dropping below the center of the hovered item
+        const isBelowOverItem =
+          active.rect.current.translated &&
+          over.rect &&
+          active.rect.current.translated.top > over.rect.top + over.rect.height / 2;
+
+        const modifier = isBelowOverItem ? 1 : 0;
+        addField(type, overIndex + modifier);
+      } else {
+        addField(type);
+      }
       return;
     }
 
