@@ -2,15 +2,7 @@ import { auth } from '@/lib/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo } from 'firebase/auth';
 import axiosInstance from '@/lib/axios';
 
-
-const MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
-
-
 export async function signup(name: string, email: string, password: string) {
-  if (MOCK) {
-    const { data } = await axiosInstance.post('/api/auth/session', { token: 'mock.jwt.token', name, email });
-    return data;
-  }
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const idToken = await userCredential.user.getIdToken();
@@ -23,10 +15,6 @@ export async function signup(name: string, email: string, password: string) {
 }
 
 export async function login(email: string, password: string) {
-  if (MOCK) {
-    const { data } = await axiosInstance.post('/api/auth/session', { token: 'mock.jwt.token', email });
-    return data;
-  }
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const idToken = await userCredential.user.getIdToken();
@@ -43,32 +31,15 @@ export async function login(email: string, password: string) {
 }
 
 export async function getMe() {
-  if (MOCK) {
-    return {
-      user: { id: 'mock-user-id', name: 'Mock User', email: 'mock@example.com', workspaceId: 'mock-ws-id' }
-    };
-  }
   const { data } = await axiosInstance.get('/api/auth/me');
   return data;
 }
 
 export async function logout() {
-  if (MOCK) {
-    await axiosInstance.post('/api/auth/logout').catch(() => { });
-    return;
-  }
   await axiosInstance.post('/api/auth/logout').catch(() => { });
 }
 
 export async function loginWithGoogle() {
-  if (MOCK) {
-    const { data } = await axiosInstance.post('/api/auth/session', {
-      token: 'mock.jwt.token',
-      email: 'mock-google-user@example.com',
-      name: 'Mock Google User',
-    });
-    return data;
-  }
   try {
     const provider = new GoogleAuthProvider();
     const userCredential = await signInWithPopup(auth, provider);
@@ -77,8 +48,8 @@ export async function loginWithGoogle() {
     const idToken = await userCredential.user.getIdToken();
     const { data } = await axiosInstance.post(
       '/api/auth/session',
-      { 
-        token: idToken, 
+      {
+        token: idToken,
         name: userCredential.user.displayName || undefined,
         isNewUser
       },
