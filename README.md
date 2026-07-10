@@ -74,7 +74,7 @@ Admin exports CSV or PDF report
 
 ## Tech Stack
 
-- **Frontend:** Next.js 15 (App Router) · TypeScript · Tailwind CSS · shadcn/ui · Zustand · TanStack Query · React Hook Form · Zod · dnd-kit · Apache ECharts · Lucide React
+- **Frontend:** Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Zustand · TanStack Query · React Hook Form · Zod · dnd-kit · Apache ECharts (planned, Sprint 5) · Lucide React
 - **Backend:** Express.js · Node.js 20 LTS · TypeScript · Mongoose · Zod · Multer · Puppeteer · Helmet · CORS · express-rate-limit · pino
 - **Database:** MongoDB Atlas (application data) · Firebase Authentication (login credentials only)
 - **Authentication:** Firebase Auth login → Express JWT session → HttpOnly Secure cookie (`SameSite=Strict`)
@@ -85,28 +85,24 @@ Admin exports CSV or PDF report
 
 ## Project Structure
 
+This repository holds the **frontend only** — the Express/MongoDB backend lives in a separate repository and is consumed over HTTPS REST via `NEXT_PUBLIC_API_URL` (see `markdown/backend_api_updates.md` for the current contract).
+
 ```
-Beginso-platform/
-├── frontend/             # Next.js 15 client-side application
-│   ├── src/
-│   │   ├── app/          # App router pages & layouts (auth, admin, superadmin, f/)
-│   │   ├── components/   # UI components (ui/, layout/, form-builder/, charts/, superadmin/)
-│   │   ├── services/     # API integration services (auth, forms, responses, superadmin, etc.)
-│   │   ├── store/        # Zustand state stores (auth, builder, workspace)
-│   │   └── middleware.ts # Edge routing middleware (admin & superadmin route guards)
-│   └── .env.local        # Environment variables configuration
-└── backend/              # Express.js REST API
-    ├── src/
-    │   ├── routes/       # API route definitions
-    │   ├── controllers/  # Request parsing & response handling
-    │   ├── services/     # Core business logic (auth, form builder, superadmin, etc.)
-    │   ├── repositories/ # Workspace-scoped database queries
-    │   ├── models/       # Mongoose schemas (User, Workspace, Form, Response, AuditLog, etc.)
-    │   └── middleware/   # Custom middlewares (auth validation, superadmin guard, suspend checker)
-    └── server.ts         # Server bootstrap
+Onboarding Platform/     # Next.js 16 client-side application (this repo)
+├── src/
+│   ├── app/           # App router pages & layouts: (auth), (admin), api/
+│   ├── components/    # UI components (ui/, common/, dashboard/, form-builder/, landing/, auth/, providers/)
+│   ├── services/      # API integration services (auth.ts, forms.ts)
+│   ├── store/         # Zustand state stores (builderStore.ts)
+│   ├── lib/           # Firebase client, axios instance, schemas, auth context, helpers
+│   ├── hooks/         # Shared hooks (useAuth)
+│   └── types/         # Shared TypeScript types (form.ts, etc.)
+├── middleware.ts      # Edge routing middleware (admin route guards)
+├── __tests__/         # Vitest unit/property-based tests
+└── .env.local         # Environment variables configuration
 ```
 
-The frontend and backend communicate exclusively over HTTPS REST APIs. Authentication is verified through Firebase, which issues a JWT stored in an HttpOnly cookie.
+Authentication is verified through Firebase; the session is tracked via an `auth_token` cookie read by `middleware.ts`.
 
 ---
 
@@ -118,25 +114,22 @@ The frontend and backend communicate exclusively over HTTPS REST APIs. Authentic
 - **Saturday:** Testing only — no new feature code. Manual smoke testing, API checks, cross-device testing, and bug logging.
 - **Sprint Boundaries:** A sprint milestone is only marked as "done" when the Saturday test pass is green and all exit criteria are met.
 
-### Sprint Overview Table
+### Week Overview Table (v2 — revised 8-week timeline, compressed from the original 11-week plan)
 
-| Sprint | Focus | Duration | Status | Dates |
+> Full week-by-week detail (day-by-day tasks, exit criteria) lives in `.beginso_document/05_Sprint_Plan.md` — treat that file as authoritative; this table is a summary.
+
+| Wk | Sprint / Track | Focus | Status | Dates |
 |:---|:---|:---|:---|:---|
-| **Sprint 1** | Auth + Landing + Dashboard foundation | 7 Days | ✅ **Complete** | 29 Jun – 04 Jul |
-| **Sprint 2 (Part 1)** | Form Builder core: toolbox, dnd-kit canvas, basic properties, CRUD integration | 6 Days | Next | 06 Jul – 11 Jul |
-| **Sprint 2 (Part 2)** | Form Builder completion: full field properties, Logic Rules, Branding, publish flow | 6 Days | Planned | 13 Jul – 18 Jul |
-| **Sprint 3** | Public Form: SSR rendering, validation, Cloudflare R2 file uploads, spam prevention | 7–10 Days | Planned | 20 Jul – 30 Jul |
-| **Sprint 4** | Response Management: paginated response table, filters, submission details, status updates | 7–10 Days | Planned | 31 Jul – 11 Aug |
-| **Sprint 5** | Analytics Dashboard: ECharts integration, stats, workspace analytics | 5–7 Days | Planned | 12 Aug – 19 Aug |
-| **Sprint 6** | Reports & Templates: CSV/PDF export generation, Templates Gallery | 5–7 Days | Planned | 20 Aug – 27 Aug |
-| **Sprint 7** | Settings & Forms Manager: profile, workspace branding, form actions | 5–7 Days | Planned | 28 Aug – 04 Sep |
-| **Sprint 8** | QA, Hardening & Launch: smoke tests, performance/accessibility audit, production deploy | 5–7 Days | Planned | 05 Sep – 12 Sep |
+| 1 | Sprint 1 | Auth + Landing + Dashboard foundation | ✅ **Complete** | 29 Jun – 04 Jul |
+| 2 | Sprint 2 (Part 1) | Form Builder core: toolbox, dnd-kit canvas, basic properties, CRUD integration | ✅ **Complete** | 06 Jul – 11 Jul |
+| 3 | Sprint 2 (Part 2) | Form Builder completion: full field properties, Logic Rules, Branding, publish flow | 🔄 **In Progress** (DnD architecture fix, CSS fixes, and Delete Form modal shipped; Properties/Logic/Branding/Settings/Share tabs still pending) | 13 Jul – 18 Jul |
+| 4 | Sprint 3 | Public Form: SSR rendering, validation, Cloudflare R2 file uploads, spam prevention | Planned | 20 Jul – 25 Jul |
+| 5 | Super Admin (merged) | Developer console: logs, admin CRUD, audit trail — now its own dedicated week, not a parallel track | Planned | 27 Jul – 01 Aug |
+| 6 | Sprint 4 | Response Management: paginated response table, filters, submission details, status updates | Planned | 03 Aug – 08 Aug |
+| 7 | Sprint 5+6 (merged) | Analytics & Reports: ECharts integration, CSV/PDF export, Templates Gallery polish | Planned | 10 Aug – 15 Aug |
+| 8 | Sprint 7+8 (merged) | Settings, Forms Manager, QA/Hardening & Launch | Planned | 17 Aug – 22 Aug |
 
-*Note: Sprints assume a start date of Monday 06 July 2026 for Sprint 2 and shift together if any slips occur.*
-
-### Parallel Tracks
-- **Backend Track (Sprints 2–5):** Express API, MongoDB repository scoping, Zod schemas, Bruno testing collection, and Property-Based Testing (PBT) coverage.
-- **Super Admin Track (starts post-Sprint 2):** Developer console, structured system log viewer, admin account CRUD, account suspension checks, cascading hard-deletes, and audit logging. Scheduled for Mon 20 Jul – Tue 11 Aug.
+*Note: Weeks 1–3 dates are confirmed; Weeks 4–8 are computed forward as consecutive Mon–Sat working weeks and shift together if any slips occur. MVP target: 22 Aug 2026 (down from the original 12 Sep 2026 target).*
 
 ---
 
@@ -210,8 +203,7 @@ The frontend and backend communicate exclusively over HTTPS REST APIs. Authentic
 
 ## Contributing
 
-Branch naming: `fe/feature-name` for frontend, `be/feature-name` for backend.
-All changes go through pull requests — no direct commits to `main`.
+Branch naming in this repo: `feature/feature-name` or `bugfix/fix-name`, merged into `main` via pull request — no direct commits to `main`.
 PRs require a description of what it does, how to test it, and screenshots for any frontend work.
 
 ---
@@ -233,7 +225,6 @@ PRs require a description of what it does, how to test it, and screenshots for a
    ```env
    # Backend API Configuration
    NEXT_PUBLIC_API_URL=http://localhost:4000
-   NEXT_PUBLIC_USE_MOCK=true
 
    # Firebase Client SDK Configuration
    NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
