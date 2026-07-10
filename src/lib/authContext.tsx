@@ -102,6 +102,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback((token: string, user: User) => {
     saveToken(token);
     dispatch({ type: 'LOGIN', payload: { user } });
+    
+    // Fetch complete user profile from the backend to ensure all fields (like name) are populated.
+    AuthService.getMe()
+      .then((data) => {
+        dispatch({ type: 'SET_USER', payload: { user: data.user } });
+      })
+      .catch(() => {
+        // Fallback to the initial user object if fetching fails
+      });
   }, []);
 
   const logout = useCallback(async () => {

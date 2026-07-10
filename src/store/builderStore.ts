@@ -1,18 +1,24 @@
 import { create } from 'zustand';
 import type { Form, FormField, FieldType } from '@/types/form';
 
+// Snapshot captures both fields and title so undo/redo restores the full editor state
+interface BuilderSnapshot {
+  fields: FormField[];
+  formTitle: string;
+}
+
 export interface BuilderState {
   formId: string | null;
   formTitle: string;
   fields: FormField[];
   activeFieldId: string | null;
   dirty: boolean;
-  undoStack: FormField[][];
-  redoStack: FormField[][];
+  undoStack: BuilderSnapshot[];
+  redoStack: BuilderSnapshot[];
 
   initForm: (form: Form) => void;
   setFormTitle: (title: string) => void;
-  addField: (type: FieldType) => void;
+  addField: (type: FieldType, insertIndex?: number) => void;
   reorderFields: (activeId: string, overId: string) => void;
   updateField: (fieldId: string, updates: Partial<FormField>) => void;
   softDeleteField: (fieldId: string) => void;
@@ -22,13 +28,15 @@ export interface BuilderState {
   markSaved: () => void;
 }
 
-// Helper to push a clone of current fields to the undoStack (capped at 50) and clear the redoStack
-function pushSnapshot(fields: FormField[], undoStack: FormField[][]) {
-  const snapshot = structuredClone(fields);
+// Helper to push a snapshot of current fields + title to the undoStack (capped at 50) and clear the redoStack
+function pushSnapshot(fields: FormField[], formTitle: string, undoStack: BuilderSnapshot[]) {
+  // ponytail: O(N) full deep clone ceiling. Safe for MVP, but memory/perf trap for huge forms.
+  // Upgrade path: replace with minimal JSON patches or immer.
+  const snapshot: BuilderSnapshot = { fields: structuredClone(fields), formTitle };
   const newUndoStack = [...undoStack, snapshot].slice(-50);
   return {
     undoStack: newUndoStack,
-    redoStack: [],
+    redoStack: [] as BuilderSnapshot[],
   };
 }
 
@@ -70,13 +78,15 @@ export const useBuilderStore = create<BuilderState>((set) => ({
 
   setFormTitle: (title) =>
     set((state) => ({
-      ...pushSnapshot(state.fields, state.undoStack),
+      ...pushSnapshot(state.fields, state.formTitle, state.undoStack),
       formTitle: title,
       dirty: true,
     })),
 
-  addField: (type) =>
+  addField: (type, insertIndex) =>
     set((state) => {
+      const snapshot = pushSnapshot(state.fields, state.formTitle, state.undoStack);
+      const visibleFields = state.fields.filter((f) => !f.deleted);
       const defaultField: FormField = {
         fieldId: crypto.randomUUID(),
         type,
@@ -85,7 +95,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
         required: false,
         helpText: '',
         deleted: false,
-        order: state.fields.filter((f) => !f.deleted).length,
+        order: visibleFields.length,
       } as FormField;
 
       // Choice field default options config
@@ -93,9 +103,26 @@ export const useBuilderStore = create<BuilderState>((set) => ({
         (defaultField as Extract<FormField, { options: string[] }>).options = ['Option 1'];
       }
 
+      let newVisible = [...visibleFields];
+      if (typeof insertIndex === 'number' && insertIndex >= 0 && insertIndex <= newVisible.length) {
+        newVisible.splice(insertIndex, 0, defaultField);
+      } else {
+        newVisible.push(defaultField);
+      }
+
+      // Re-assign order based on the new visible index sequence
+      newVisible.forEach((f, idx) => {
+        f.order = idx;
+      });
+
+      const finalFields = [
+        ...newVisible,
+        ...state.fields.filter((f) => f.deleted),
+      ];
+
       return {
-        ...pushSnapshot(state.fields, state.undoStack),
-        fields: [...state.fields, defaultField],
+        ...snapshot,
+        fields: finalFields,
         dirty: true,
       };
     }),
@@ -104,6 +131,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
     set((state) => {
       if (activeId === overId) return {};
 
+      const snapshot = pushSnapshot(state.fields, state.formTitle, state.undoStack);
       const visibleFields = state.fields.filter((f) => !f.deleted);
       const activeIndex = visibleFields.findIndex((f) => f.fieldId === activeId);
       const overIndex = visibleFields.findIndex((f) => f.fieldId === overId);
@@ -126,7 +154,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       ];
 
       return {
-        ...pushSnapshot(state.fields, state.undoStack),
+        ...snapshot,
         fields: finalFields,
         dirty: true,
       };
@@ -154,7 +182,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       });
 
       return {
-        ...pushSnapshot(state.fields, state.undoStack),
+        ...pushSnapshot(state.fields, state.formTitle, state.undoStack),
         fields: updatedFields,
         dirty: true,
       };
@@ -175,7 +203,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       const nextActiveFieldId = state.activeFieldId === fieldId ? null : state.activeFieldId;
 
       return {
-        ...pushSnapshot(state.fields, state.undoStack),
+        ...pushSnapshot(state.fields, state.formTitle, state.undoStack),
         fields: updatedFields,
         activeFieldId: nextActiveFieldId,
         dirty: true,
@@ -192,9 +220,10 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       if (state.undoStack.length === 0) return {};
       const prev = state.undoStack[state.undoStack.length - 1];
       return {
-        fields: structuredClone(prev),
+        fields: structuredClone(prev.fields),
+        formTitle: prev.formTitle,
         undoStack: state.undoStack.slice(0, -1),
-        redoStack: [structuredClone(state.fields), ...state.redoStack],
+        redoStack: [{ fields: structuredClone(state.fields), formTitle: state.formTitle }, ...state.redoStack],
         dirty: true,
       };
     }),
@@ -204,8 +233,9 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       if (state.redoStack.length === 0) return {};
       const next = state.redoStack[0];
       return {
-        fields: structuredClone(next),
-        undoStack: [...state.undoStack, structuredClone(state.fields)],
+        fields: structuredClone(next.fields),
+        formTitle: next.formTitle,
+        undoStack: [...state.undoStack, { fields: structuredClone(state.fields), formTitle: state.formTitle }],
         redoStack: state.redoStack.slice(1),
         dirty: true,
       };

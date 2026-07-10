@@ -28,22 +28,15 @@ export default function DashboardPage() {
 
   // Derive real statistics from the fetched forms list
   const forms = formsData?.forms ?? [];
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
 
   const realCounts = {
     totalForms: formsData?.total ?? 0,
     totalResponses: forms.reduce((sum, f) => sum + (f.responseCount ?? 0), 0),
     publishedForms: forms.filter((f) => f.status === 'published').length,
-    responsesThisMonth: forms.reduce((sum, f) => {
-      // Count responses on forms published in the current calendar month
-      if (!f.publishedAt) return sum;
-      const pub = new Date(f.publishedAt);
-      if (pub.getMonth() === currentMonth && pub.getFullYear() === currentYear) {
-        return sum + (f.responseCount ?? 0);
-      }
-      return sum;
-    }, 0),
+    // ponytail: Cannot compute responsesThisMonth accurately from Form[] without time-series data.
+    // Upgrade path: Backend should return a dedicated aggregate stat for this.
+    // Falling back to 0 for MVP to avoid misleading data.
+    responsesThisMonth: 0,
   };
 
   const hasForms = forms.length > 0;
