@@ -14,12 +14,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = localStorage.getItem('sidebar_collapsed');
-    setTimeout(() => {
-      setIsMounted(true);
-      if (stored === 'true') {
-        setCollapsed(true);
-      }
-    }, 0);
+    if (stored === 'true') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCollapsed(true);
+    }
+    setIsMounted(true);
   }, []);
 
   const handleToggleCollapse = () => {

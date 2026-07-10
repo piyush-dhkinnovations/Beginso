@@ -65,12 +65,14 @@ function BlurField({
   label,
   defaultValue,
   placeholder,
+  allowEmpty = false,
   onCommit,
 }: {
   id: string;
   label: string;
   defaultValue: string;
   placeholder?: string;
+  allowEmpty?: boolean;
   onCommit: (value: string) => void;
 }) {
   const [local, setLocal] = useState(defaultValue);
@@ -83,7 +85,9 @@ function BlurField({
 
   const commit = () => {
     const trimmed = local.trim();
-    if (trimmed !== defaultValue) onCommit(trimmed || defaultValue);
+    if (trimmed !== defaultValue) {
+      onCommit(!allowEmpty && !trimmed ? defaultValue : trimmed);
+    }
   };
 
   return (
@@ -171,6 +175,7 @@ export function PropertiesPanel({ field, onUpdate }: PropertiesPanelProps) {
                 label=""
                 defaultValue={field.placeholder ?? ''}
                 placeholder="Hint shown inside the field"
+                allowEmpty={true}
                 onCommit={(v) => onUpdate(field.fieldId, { placeholder: v })}
               />
             </PanelSection>
@@ -182,6 +187,7 @@ export function PropertiesPanel({ field, onUpdate }: PropertiesPanelProps) {
                 label=""
                 defaultValue={field.helpText ?? ''}
                 placeholder="Optional helper copy below the field"
+                allowEmpty={true}
                 onCommit={(v) => onUpdate(field.fieldId, { helpText: v })}
               />
             </PanelSection>
