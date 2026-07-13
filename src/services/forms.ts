@@ -19,4 +19,12 @@ export const formsService = {
 
   duplicateForm: (id: string) =>
     axiosInstance.post<{ _id: string; title: string }>(`/api/forms/${id}/duplicate`).then(r => r.data),
+
+  publishForm: (id: string) =>
+    axiosInstance
+      .post<{ _id: string; status: 'published'; slug: string; publishedAt: string }>(`/api/forms/${id}/publish`)
+      .then(r => r.data),
+
+  closeForm: (id: string) =>
+    axiosInstance.post<{ _id: string; status: 'closed' }>(`/api/forms/${id}/close`).then(r => r.data),
 };

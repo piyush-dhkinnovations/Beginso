@@ -28,9 +28,26 @@ export interface BaseField {
   helpText?: string;
   deleted: boolean;      // soft-delete flag — never remove from array
   order: number;
+  logicRules?: LogicRule[]; // rules where THIS field is the source
 }
 
-export interface TextField extends BaseField {
+// ─── Field constraint interfaces (Sprint 2 Part 2) ───────────────────────────
+
+export interface NumberConstraints {
+  min?: number;
+  max?: number;
+}
+
+export interface TextConstraints {
+  maxLength?: number;
+}
+
+export interface DateConstraints {
+  minDate?: string;      // ISO 8601 date string
+  maxDate?: string;      // ISO 8601 date string
+}
+
+export interface TextField extends BaseField, NumberConstraints, TextConstraints, DateConstraints {
   type: 'short_text' | 'long_text' | 'email' | 'phone' | 'number' | 'date';
 }
 
@@ -54,11 +71,11 @@ export type FormStatus = 'draft' | 'published' | 'closed';
 export interface LogicRule {
   condition: {
     fieldId: string;
-    operator: string;    // e.g. 'equals', 'not_equals', 'contains'
+    operator: 'equals';  // Sprint 2 MVP: only 'equals' supported
     value: string;
   };
   action: 'show' | 'hide';
-  targetFieldId: string;
+  targetFieldId: string; // must never equal condition.fieldId
 }
 
 export interface FormBranding {
@@ -119,4 +136,25 @@ export interface FormsListResponse {
 export interface CreateFormResponse {
   _id: string;
   title: string;
+}
+
+// ─── Templates Gallery ────────────────────────────────────────────────────────
+
+export interface Template {
+  _id: string;
+  name: string;
+  description: string;
+  category: string;      // e.g. 'contact' | 'event' | 'feedback' | 'hiring'
+  fields: FormField[];
+  settings: FormSettings;
+  isActive: boolean;
+}
+
+// ─── File Upload ──────────────────────────────────────────────────────────────
+// Files are stored on the backend server's local filesystem (not a cloud storage
+// service); `url` is a backend-served route, not a pre-signed cloud storage URL.
+
+export interface UploadResponse {
+  url: string;            // Backend-served URL to access the uploaded file
+  key: string;             // Backend file identifier / storage path (never displayed to user)
 }

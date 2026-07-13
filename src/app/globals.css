@@ -76,6 +76,8 @@
   --animate-blink: blink 1s step-end infinite;
   --animate-slide-in-left: slideInLeft 0.25s ease-out both;
   --animate-slide-up: slideUp 0.25s ease-out both;
+  --animate-drop-indicator: dropIndicatorIn 0.15s ease-out both;
+  --animate-sort-line: sortLineIn 0.1s ease-out both;
 
   /* Shadow tokens */
   --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 0 0 1px #E2E8F0;
@@ -126,6 +128,28 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  @keyframes dropIndicatorIn {
+    from {
+      opacity: 0;
+      transform: scaleY(0.6);
+    }
+    to {
+      opacity: 1;
+      transform: scaleY(1);
+    }
+  }
+
+  @keyframes sortLineIn {
+    from {
+      opacity: 0;
+      transform: scaleX(0.7);
+    }
+    to {
+      opacity: 1;
+      transform: scaleX(1);
     }
   }
 }

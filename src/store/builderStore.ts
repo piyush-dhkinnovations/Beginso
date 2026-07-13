@@ -1,5 +1,13 @@
 import { create } from 'zustand';
-import type { Form, FormField, FieldType } from '@/types/form';
+import type {
+  Form,
+  FormField,
+  FieldType,
+  FormBranding,
+  FormSettings,
+  FormStatus,
+  LogicRule,
+} from '@/types/form';
 
 // Snapshot captures both fields and title so undo/redo restores the full editor state
 interface BuilderSnapshot {
@@ -15,6 +23,10 @@ export interface BuilderState {
   dirty: boolean;
   undoStack: BuilderSnapshot[];
   redoStack: BuilderSnapshot[];
+  branding: FormBranding;
+  settings: FormSettings;
+  status: FormStatus;
+  slug: string | undefined;
 
   initForm: (form: Form) => void;
   setFormTitle: (title: string) => void;
@@ -26,6 +38,12 @@ export interface BuilderState {
   undo: () => void;
   redo: () => void;
   markSaved: () => void;
+  setBranding: (updates: Partial<FormBranding>) => void;
+  setSettings: (updates: Partial<FormSettings>) => void;
+  setStatus: (status: FormStatus, slug?: string) => void;
+  updateFieldOptions: (fieldId: string, options: string[]) => void;
+  addLogicRule: (fieldId: string, rule: LogicRule) => void;
+  deleteLogicRule: (fieldId: string, ruleIndex: number) => void;
 }
 
 // Helper to push a snapshot of current fields + title to the undoStack (capped at 50) and clear the redoStack
@@ -64,12 +82,20 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   dirty: false,
   undoStack: [],
   redoStack: [],
+  branding: {},
+  settings: { honeypotEnabled: true },
+  status: 'draft',
+  slug: undefined,
 
   initForm: (form) =>
     set({
       formId: form._id,
       formTitle: form.title,
       fields: form.fields || [],
+      branding: form.branding ?? {},
+      settings: form.settings ?? { honeypotEnabled: true },
+      status: form.status,
+      slug: form.slug,
       activeFieldId: null,
       dirty: false,
       undoStack: [],
@@ -244,5 +270,76 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   markSaved: () =>
     set({
       dirty: false,
+    }),
+
+  setBranding: (updates) =>
+    set((state) => ({
+      branding: { ...state.branding, ...updates },
+      dirty: true,
+    })),
+
+  setSettings: (updates) =>
+    set((state) => ({
+      settings: { ...state.settings, ...updates },
+      dirty: true,
+    })),
+
+  setStatus: (status, slug) =>
+    set({ status, ...(slug ? { slug } : {}) }),
+
+  updateFieldOptions: (fieldId, options) =>
+    set((state) => {
+      // Guard: never allow an empty options array — no-op instead
+      if (options.length === 0) return {};
+      const fieldIndex = state.fields.findIndex((f) => f.fieldId === fieldId);
+      if (fieldIndex === -1) return {};
+
+      const updatedFields = state.fields.map((f) =>
+        f.fieldId === fieldId ? ({ ...f, options } as FormField) : f
+      );
+
+      return {
+        ...pushSnapshot(state.fields, state.formTitle, state.undoStack),
+        fields: updatedFields,
+        dirty: true,
+      };
+    }),
+
+  addLogicRule: (fieldId, rule) =>
+    set((state) => {
+      // Guard: target field can never be the source field
+      if (rule.targetFieldId === fieldId) return {};
+      const fieldIndex = state.fields.findIndex((f) => f.fieldId === fieldId);
+      if (fieldIndex === -1) return {};
+
+      const updatedFields = state.fields.map((f) => {
+        if (f.fieldId !== fieldId) return f;
+        const existingRules = f.logicRules ?? [];
+        return { ...f, logicRules: [...existingRules, rule] } as FormField;
+      });
+
+      return {
+        ...pushSnapshot(state.fields, state.formTitle, state.undoStack),
+        fields: updatedFields,
+        dirty: true,
+      };
+    }),
+
+  deleteLogicRule: (fieldId, ruleIndex) =>
+    set((state) => {
+      const fieldIndex = state.fields.findIndex((f) => f.fieldId === fieldId);
+      if (fieldIndex === -1) return {};
+
+      const updatedFields = state.fields.map((f) => {
+        if (f.fieldId !== fieldId || !f.logicRules) return f;
+        const updatedRules = f.logicRules.filter((_, i) => i !== ruleIndex);
+        return { ...f, logicRules: updatedRules } as FormField;
+      });
+
+      return {
+        ...pushSnapshot(state.fields, state.formTitle, state.undoStack),
+        fields: updatedFields,
+        dirty: true,
+      };
     }),
 }));
