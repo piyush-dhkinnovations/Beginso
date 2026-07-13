@@ -4,26 +4,40 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
+  Active,
   DndContext,
   DragEndEvent,
+  DragOverEvent,
   DragOverlay,
   DragStartEvent,
   KeyboardSensor,
+  Over,
   PointerSensor,
   pointerWithin,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { GripVertical } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { useBuilderStore } from '@/store/builderStore';
 import { BuilderHeader } from '@/components/form-builder/BuilderHeader';
 import { BuilderTabs, BuilderTab } from '@/components/form-builder/BuilderTabs';
 import { useToast } from '@/components/common/Toast';
-import { Canvas } from '@/components/form-builder/Canvas';
+import { Canvas, CANVAS_ID } from '@/components/form-builder/Canvas';
 import { PropertiesPanel } from '@/components/form-builder/PropertiesPanel';
 import { Toolbox, FIELD_TYPE_CONFIG } from '@/components/form-builder/Toolbox';
 import type { FieldType } from '@/types/form';
+
+// Shared by handleDragOver (visual indicator) and handleDragEnd (actual insert)
+// so the two never disagree about which side of the hovered card the drag is on.
+function isDroppingBelow(active: Active, over: Over | null): boolean {
+  return Boolean(
+    active.rect.current.translated &&
+    over?.rect &&
+    active.rect.current.translated.top > over.rect.top + over.rect.height / 2
+  );
+}
 
 export default function BuilderPageShell() {
   const router = useRouter();
@@ -41,6 +55,8 @@ export default function BuilderPageShell() {
   const fields = useBuilderStore((state) => state.fields);
   const activeFieldId = useBuilderStore((state) => state.activeFieldId);
   const dirty = useBuilderStore((state) => state.dirty);
+  const branding = useBuilderStore((state) => state.branding);
+  const settings = useBuilderStore((state) => state.settings);
   
   const initForm = useBuilderStore((state) => state.initForm);
   const setFormTitle = useBuilderStore((state) => state.setFormTitle);
@@ -90,7 +106,7 @@ export default function BuilderPageShell() {
     const timer = setTimeout(async () => {
       try {
         setSaveState('saving');
-        await formsService.updateForm(formId, { fields, title: formTitle });
+        await formsService.updateForm(formId, { fields, title: formTitle, branding, settings });
         markSaved();
         setSaveState('saved');
         setSavedAt(new Date());
@@ -110,7 +126,7 @@ export default function BuilderPageShell() {
     return () => {
       clearTimeout(timer);
     };
-  }, [dirty, fields, formTitle, formId, markSaved]);
+  }, [dirty, fields, formTitle, formId, branding, settings, markSaved]);
 
   // Cancel the idle reset timer on unmount to prevent setState on unmounted component
   useEffect(() => {
@@ -120,10 +136,10 @@ export default function BuilderPageShell() {
   }, []);
 
   // Use refs to avoid re-binding and firing effect on every stroke
-  const saveStateRef = useRef({ dirty, fields, formTitle, formId });
+  const saveStateRef = useRef({ dirty, fields, formTitle, formId, branding, settings });
   useEffect(() => {
-    saveStateRef.current = { dirty, fields, formTitle, formId };
-  }, [dirty, fields, formTitle, formId]);
+    saveStateRef.current = { dirty, fields, formTitle, formId, branding, settings };
+  }, [dirty, fields, formTitle, formId, branding, settings]);
 
   // Synchronous flush on unmount or tab close
   useEffect(() => {
@@ -142,12 +158,20 @@ export default function BuilderPageShell() {
       const current = saveStateRef.current;
       // Flush save on unmount if still dirty
       if (current.dirty && current.formId && current.formId !== 'undefined') {
-        formsService.updateForm(current.formId, { fields: current.fields, title: current.formTitle }).catch(() => {});
+        formsService.updateForm(current.formId, {
+          fields: current.fields,
+          title: current.formTitle,
+          branding: current.branding,
+          settings: current.settings,
+        }).catch(() => {});
       }
     };
   }, []);
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [dragOverInfo, setDragOverInfo] = useState<{ fieldId: string; position: 'above' | 'below' } | null>(null);
+  // true when a toolbox item hovers over the canvas droppable (to tint the canvas)
+  const [isToolboxOver, setIsToolboxOver] = useState(false);
 
   // Sensors: require 8px movement before drag activates (preserves click)
   const sensors = useSensors(
@@ -160,14 +184,53 @@ export default function BuilderPageShell() {
   );
 
   // ─── Drag start: track which item is being dragged ────────────────────────
+  // dropAnimation is set here (not derived from activeDragId state) so it
+  // stays correct during the re-render triggered by setActiveDragId(null) in
+  // handleDragEnd — otherwise activeDragId is already null and dnd-kit picks
+  // up the default snap-back animation, flying the overlay to the toolbox.
+  const [dropAnimation, setDropAnimation] = useState<null | undefined>(undefined);
   function handleDragStart(event: DragStartEvent) {
-    setActiveDragId(String(event.active.id));
+    const id = String(event.active.id);
+    setDropAnimation(id.startsWith('toolbox-') ? null : undefined);
+    setActiveDragId(id);
+  }
+
+  // ─── Drag over: track exact insertion point for toolbox → canvas drops ────
+  function handleDragOver(event: DragOverEvent) {
+    const { active, over } = event;
+
+    if (active.data.current?.from !== 'toolbox') {
+      setDragOverInfo(null);
+      setIsToolboxOver(false);
+      return;
+    }
+
+    if (!over) {
+      setDragOverInfo(null);
+      setIsToolboxOver(false);
+      return;
+    }
+
+    // Hovering the empty canvas area — no per-field indicator, just canvas tint
+    if (over.id === CANVAS_ID) {
+      setDragOverInfo(null);
+      setIsToolboxOver(true);
+      return;
+    }
+
+    // Hovering over an existing FieldCard — compute above/below
+    const position = isDroppingBelow(active, over) ? 'below' : 'above';
+
+    setDragOverInfo({ fieldId: String(over.id), position });
+    setIsToolboxOver(true);
   }
 
   // ─── Drag end: determine action based on source and over target ───────────
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveDragId(null);
+    setDragOverInfo(null);
+    setIsToolboxOver(false);
 
     if (!over) return;
 
@@ -175,15 +238,9 @@ export default function BuilderPageShell() {
     if (active.data.current?.from === 'toolbox') {
       const type = active.data.current.type as FieldType;
       const overIndex = fields.filter((f) => !f.deleted).findIndex((f) => f.fieldId === over.id);
-      
-      if (overIndex !== -1) {
-        // We calculate if we are dropping below the center of the hovered item
-        const isBelowOverItem =
-          active.rect.current.translated &&
-          over.rect &&
-          active.rect.current.translated.top > over.rect.top + over.rect.height / 2;
 
-        const modifier = isBelowOverItem ? 1 : 0;
+      if (overIndex !== -1) {
+        const modifier = isDroppingBelow(active, over) ? 1 : 0;
         addField(type, overIndex + modifier);
       } else {
         addField(type);
@@ -200,11 +257,19 @@ export default function BuilderPageShell() {
     }
   }
 
-  // ─── DragOverlay preview label ─────────────────────────────────────────────
+  // ─── DragOverlay preview content ───────────────────────────────────────────
   const activeDragConfig = activeDragId?.startsWith('toolbox-')
     ? FIELD_TYPE_CONFIG.find(
         (c) => `toolbox-${c.type}` === activeDragId
       )
+    : null;
+
+  // Reordering an existing canvas field → render a floating ghost of that card
+  const activeDragField = !activeDragConfig
+    ? fields.find((f) => f.fieldId === activeDragId)
+    : null;
+  const activeDragFieldConfig = activeDragField
+    ? FIELD_TYPE_CONFIG.find((c) => c.type === activeDragField.type)
     : null;
 
   return (
@@ -258,6 +323,7 @@ export default function BuilderPageShell() {
                   sensors={sensors}
                   collisionDetection={pointerWithin}
                   onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
                   onDragEnd={handleDragEnd}
                 >
                   <Toolbox onAdd={addField} />
@@ -266,14 +332,31 @@ export default function BuilderPageShell() {
                     activeFieldId={activeFieldId}
                     onFieldSelect={setActiveFieldId}
                     onFieldDelete={softDeleteField}
+                    dragOverFieldId={dragOverInfo?.fieldId ?? null}
+                    dragOverPosition={dragOverInfo?.position ?? null}
+                    isToolboxOver={isToolboxOver}
                   />
-                  <DragOverlay dropAnimation={null}>
+                  <DragOverlay dropAnimation={dropAnimation}>
                     {activeDragConfig ? (
                       <div className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-white border border-blue-400 shadow-lg opacity-90 min-h-[44px] cursor-grabbing pointer-events-none">
                         <activeDragConfig.icon size={18} className="text-blue-500 shrink-0" />
                         <span className="text-body font-medium text-neutral-700">
                           {activeDragConfig.label}
                         </span>
+                      </div>
+                    ) : activeDragField ? (
+                      <div className="w-full flex items-center justify-between p-4 bg-white border border-neutral-200 rounded-lg min-h-[56px] cursor-grabbing pointer-events-none"
+                        style={{ boxShadow: '0 8px 24px rgba(15,23,42,0.14), 0 2px 8px rgba(15,23,42,0.08)', transform: 'scale(1.015)' }}
+                      >
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                          <GripVertical size={16} className="text-neutral-400 shrink-0" />
+                          {activeDragFieldConfig && (
+                            <activeDragFieldConfig.icon size={16} className="text-neutral-500 shrink-0" />
+                          )}
+                          <span className="text-body font-medium text-neutral-800 truncate pr-4">
+                            {activeDragField.label}
+                          </span>
+                        </div>
                       </div>
                     ) : null}
                   </DragOverlay>

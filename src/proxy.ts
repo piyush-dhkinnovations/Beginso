@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 const PROTECTED_PATHS = ['/dashboard', '/forms', '/responses', '/analytics', '/reports', '/settings'];
 const AUTH_PATHS = ['/login', '/signup'];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('auth_token')?.value ?? null;
 
@@ -36,4 +36,3 @@ export const config = {
     '/signup'
   ],
 };
-
