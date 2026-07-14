@@ -89,7 +89,6 @@ export interface FormSettings {
   successMessage?: string;
   responseLimit?: number;
   closeDate?: string;        // ISO 8601 date string
-  [key: string]: unknown;
 }
 
 export interface Form {
