@@ -56,7 +56,7 @@ export function Sidebar({
       )}>
         {(!collapsed || isMobile) ? (
           <>
-            <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden" onClick={onCloseMobile}>
+            <Link href="/dashboard" prefetch={false} className="flex items-center gap-2 overflow-hidden" onClick={onCloseMobile}>
               <div className="w-8 h-8 rounded bg-brand-600 flex items-center justify-center text-white font-bold shrink-0">
                 OP
               </div>
@@ -107,6 +107,7 @@ export function Sidebar({
             <Link
               key={item.name}
               href={item.href}
+              prefetch={false}
               onClick={onCloseMobile}
               className={cn(
                 "flex items-center gap-3 px-3 rounded-md min-h-[44px] transition-all duration-150 ease-in-out",
