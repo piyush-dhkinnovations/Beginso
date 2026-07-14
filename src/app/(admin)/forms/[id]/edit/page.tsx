@@ -65,6 +65,7 @@ export default function BuilderPageShell() {
   const softDeleteField = useBuilderStore((state) => state.softDeleteField);
   const setActiveFieldId = useBuilderStore((state) => state.setActiveFieldId);
   const updateField = useBuilderStore((state) => state.updateField);
+  const updateFieldOptions = useBuilderStore((state) => state.updateFieldOptions);
   const markSaved = useBuilderStore((state) => state.markSaved);
   const undo = useBuilderStore((state) => state.undo);
   const redo = useBuilderStore((state) => state.redo);
@@ -104,6 +105,14 @@ export default function BuilderPageShell() {
     if (!dirty || !formId || formId === 'undefined') return;
 
     const timer = setTimeout(async () => {
+      const hasEmptyChoiceOptions = fields.some(
+        (f) => !f.deleted && 'options' in f && f.options.length === 0
+      );
+      if (hasEmptyChoiceOptions) {
+        setSaveState('error');
+        return;
+      }
+
       try {
         setSaveState('saving');
         await formsService.updateForm(formId, { fields, title: formTitle, branding, settings });
@@ -275,7 +284,8 @@ export default function BuilderPageShell() {
   return (
     <>
       {/* Mobile Gate (visible at viewport width <= 520px) */}
-      <div className="flex max-[520px]:flex items-center justify-center h-screen min-[521px]:hidden bg-neutral-50 px-6">
+      {/* -m-6 cancels the (admin) layout's <main className="p-6">; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar */}
+      <div className="flex max-[520px]:flex items-center justify-center h-[calc(100vh-56px)] -m-6 min-[521px]:hidden bg-neutral-50 px-6">
         <div className="text-center bg-white p-8 rounded-xl shadow-card border border-neutral-200 max-w-sm">
           <p className="text-neutral-600 font-semibold text-body-lg">
             For the best experience, use a desktop or laptop to build forms.
@@ -284,7 +294,8 @@ export default function BuilderPageShell() {
       </div>
 
       {/* Desktop Wrapper (visible at viewport width >= 521px) */}
-      <div className="hidden min-[521px]:flex flex-col h-screen overflow-hidden bg-neutral-50">
+      {/* -m-6 cancels the (admin) layout's <main className="p-6">; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar. Canvas and PropertiesPanel keep their own internal overflow-y-auto below. */}
+      <div className="hidden min-[521px]:flex flex-col h-[calc(100vh-56px)] -m-6 overflow-hidden bg-neutral-50">
         {isLoading ? (
           /* Loading Skeleton */
           <div className="flex flex-col h-full w-full">
@@ -313,6 +324,7 @@ export default function BuilderPageShell() {
               onUndo={undo}
               onRedo={redo}
               onPreview={() => {}}
+              onBack={() => router.push('/forms')}
             />
             
             <BuilderTabs activeTab={activeTab} onChange={setActiveTab} />
@@ -376,6 +388,7 @@ export default function BuilderPageShell() {
                     ) ?? null
                   }
                   onUpdate={updateField}
+                  onUpdateOptions={updateFieldOptions}
                 />
               )}
             </div>
