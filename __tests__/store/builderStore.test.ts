@@ -166,4 +166,56 @@ describe('Zustand builderStore Property Tests', () => {
       { numRuns: 100 }
     );
   });
+
+  // ─── duplicateField: clones in-place, deep-copies arrays, drops logicRules ───
+  it('duplicateField inserts a deep-cloned copy right after the original and drops its logicRules', () => {
+    const store = useBuilderStore.getState();
+    store.initForm(mockForm('test-form', 'My Form'));
+
+    store.addField('dropdown');
+    store.addField('short_text');
+    let fields = useBuilderStore.getState().fields;
+    const dropdownId = fields[0].fieldId;
+    const shortTextId = fields[1].fieldId;
+
+    store.updateFieldOptions(dropdownId, ['A', 'B']);
+    store.updateField(dropdownId, { label: 'Pick one', required: true });
+    store.addLogicRule(dropdownId, {
+      condition: { fieldId: dropdownId, operator: 'equals', value: 'A' },
+      action: 'show',
+      targetFieldId: shortTextId,
+    });
+
+    const original = useBuilderStore.getState().fields.find((f) => f.fieldId === dropdownId)!;
+
+    store.duplicateField(dropdownId);
+    fields = useBuilderStore.getState().fields;
+
+    expect(fields.length).toBe(3);
+    const duplicate = fields[1]; // inserted immediately after the original at index 0
+    expect(duplicate.fieldId).toMatch(UUID_REGEX);
+    expect(duplicate.fieldId).not.toBe(dropdownId);
+    expect(duplicate.label).toBe('Pick one (Copy)');
+    expect(duplicate.required).toBe(true);
+    expect((duplicate as { options: string[] }).options).toEqual(['A', 'B']);
+    expect((duplicate as { options: string[] }).options).not.toBe(
+      (original as { options: string[] }).options
+    );
+    expect(duplicate.logicRules ?? []).toEqual([]);
+
+    // Order is reassigned sequentially across all visible fields
+    expect(fields.map((f) => f.order)).toEqual([0, 1, 2]);
+
+    // The original is untouched — still has its own logic rule
+    const originalAfter = fields.find((f) => f.fieldId === dropdownId)!;
+    expect(originalAfter.logicRules).toHaveLength(1);
+
+    // The new duplicate is auto-selected
+    expect(useBuilderStore.getState().activeFieldId).toBe(duplicate.fieldId);
+
+    // Mutating the duplicate's options must never affect the original's
+    store.updateFieldOptions(duplicate.fieldId, ['A', 'B', 'C']);
+    const originalStillTwo = useBuilderStore.getState().fields.find((f) => f.fieldId === dropdownId)!;
+    expect((originalStillTwo as { options: string[] }).options).toEqual(['A', 'B']);
+  });
 });

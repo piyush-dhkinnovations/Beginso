@@ -3,7 +3,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Trash2, GripVertical } from 'lucide-react';
+import { Trash2, Copy, GripVertical } from 'lucide-react';
 import type { FormField } from '@/types/form';
 import { FIELD_TYPE_CONFIG } from './Toolbox';
 
@@ -12,6 +12,10 @@ interface FieldCardProps {
   isActive: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  onDuplicate: () => void;
+  /** Undefined when there's no adjacent field to swap with (top/bottom of the list) */
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   /** Shows a dashed drop-zone card above/below this card while a toolbox field is dragged over it */
   insertIndicator?: 'above' | 'below' | null;
 }
@@ -28,7 +32,7 @@ function DropZoneCard() {
   );
 }
 
-export function FieldCard({ field, isActive, onSelect, onDelete, insertIndicator = null }: FieldCardProps) {
+export function FieldCard({ field, isActive, onSelect, onDelete, onDuplicate, onMoveUp, onMoveDown, insertIndicator = null }: FieldCardProps) {
   const {
     attributes,
     listeners,
@@ -53,9 +57,17 @@ export function FieldCard({ field, isActive, onSelect, onDelete, insertIndicator
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (isActive && (e.key === 'Delete' || e.key === 'Backspace')) {
+    if (!isActive) return;
+
+    if (e.key === 'Delete' || e.key === 'Backspace') {
       e.preventDefault();
       onDelete();
+    } else if (e.altKey && e.key === 'ArrowUp' && onMoveUp) {
+      e.preventDefault();
+      onMoveUp();
+    } else if (e.altKey && e.key === 'ArrowDown' && onMoveDown) {
+      e.preventDefault();
+      onMoveDown();
     }
   };
 
@@ -107,17 +119,30 @@ export function FieldCard({ field, isActive, onSelect, onDelete, insertIndicator
         </div>
 
         {/* Action Buttons */}
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-2 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-all shrink-0 min-w-[36px] min-h-[36px] flex items-center justify-center"
-          title="Delete Field"
-        >
-          <Trash2 size={16} />
-        </button>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all shrink-0">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDuplicate();
+            }}
+            className="p-2 text-neutral-400 hover:text-brand-700 hover:bg-brand-50 rounded-md transition-all min-w-[36px] min-h-[36px] flex items-center justify-center"
+            title="Duplicate Field"
+          >
+            <Copy size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="p-2 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-all min-w-[36px] min-h-[36px] flex items-center justify-center"
+            title="Delete Field"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Drop zone BELOW this card */}

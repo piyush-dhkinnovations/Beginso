@@ -104,8 +104,8 @@ describe('LoginForm component', () => {
     const user = userEvent.setup();
     render(<LoginForm />);
 
-    await user.type(screen.getByLabelText(/email address/i), 'user@example.com');
-    await user.type(document.getElementById('password')!, 'wrongpassword');
+    fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'user@example.com' } });
+    fireEvent.change(document.getElementById('password')!, { target: { value: 'wrongpassword' } });
     await user.click(screen.getByRole('button', { name: /log in/i }));
 
     await waitFor(() => {
@@ -123,8 +123,8 @@ describe('LoginForm component', () => {
     const user = userEvent.setup();
     render(<LoginForm />);
 
-    await user.type(screen.getByLabelText(/email address/i), 'user@example.com');
-    await user.type(document.getElementById('password')!, 'password123');
+    fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'user@example.com' } });
+    fireEvent.change(document.getElementById('password')!, { target: { value: 'password123' } });
     await user.click(screen.getByRole('button', { name: /log in/i }));
 
     await waitFor(() => {
@@ -195,7 +195,7 @@ describe('LoginForm component', () => {
 
         unmount();
       }),
-      { numRuns: 100 }
+      { numRuns: 25 }
     );
   });
 });

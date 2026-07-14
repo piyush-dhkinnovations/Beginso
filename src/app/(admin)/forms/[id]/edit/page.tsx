@@ -61,6 +61,7 @@ export default function BuilderPageShell() {
   const initForm = useBuilderStore((state) => state.initForm);
   const setFormTitle = useBuilderStore((state) => state.setFormTitle);
   const addField = useBuilderStore((state) => state.addField);
+  const duplicateField = useBuilderStore((state) => state.duplicateField);
   const reorderFields = useBuilderStore((state) => state.reorderFields);
   const softDeleteField = useBuilderStore((state) => state.softDeleteField);
   const setActiveFieldId = useBuilderStore((state) => state.setActiveFieldId);
@@ -345,6 +346,8 @@ export default function BuilderPageShell() {
                     activeFieldId={activeFieldId}
                     onFieldSelect={setActiveFieldId}
                     onFieldDelete={softDeleteField}
+                    onFieldDuplicate={duplicateField}
+                    onFieldReorder={reorderFields}
                     dragOverFieldId={dragOverInfo?.fieldId ?? null}
                     dragOverPosition={dragOverInfo?.position ?? null}
                     isToolboxOver={isToolboxOver}

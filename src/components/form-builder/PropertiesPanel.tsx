@@ -71,6 +71,7 @@ function BlurField({
   placeholder,
   allowEmpty = false,
   type = 'text',
+  min,
   onCommit,
 }: {
   id: string;
@@ -79,6 +80,7 @@ function BlurField({
   placeholder?: string;
   allowEmpty?: boolean;
   type?: string;
+  min?: number;
   onCommit: (value: string) => void;
 }) {
   const [local, setLocal] = useState(defaultValue);
@@ -101,6 +103,7 @@ function BlurField({
       id={id}
       label={label}
       type={type}
+      min={min}
       value={local}
       placeholder={placeholder}
       onChange={(e) => setLocal(e.target.value)}
@@ -239,6 +242,7 @@ function NumberRangeSection({
           id={`${fieldId}-min`}
           label="Min"
           type="number"
+          placeholder="No minimum"
           value={minStr}
           onChange={(e) => setMinStr(e.target.value)}
           onBlur={commit}
@@ -247,6 +251,7 @@ function NumberRangeSection({
           id={`${fieldId}-max`}
           label="Max"
           type="number"
+          placeholder="No maximum"
           value={maxStr}
           onChange={(e) => setMaxStr(e.target.value)}
           onBlur={commit}
@@ -367,6 +372,7 @@ export function PropertiesPanel({ field, onUpdate, onUpdateOptions }: Properties
                   id={`${uid}-maxlength`}
                   label=""
                   type="number"
+                  min={1}
                   defaultValue={field.maxLength?.toString() ?? ''}
                   placeholder="No limit"
                   allowEmpty={true}
