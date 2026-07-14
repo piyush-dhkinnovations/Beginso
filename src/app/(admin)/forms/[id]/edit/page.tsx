@@ -128,6 +128,7 @@ export default function BuilderPageShell() {
           setSaveState('idle');
         }, 2000);
       } catch (err) {
+        console.error('Autosave failed:', err);
         setSaveState('error');
       }
     }, 2000);
