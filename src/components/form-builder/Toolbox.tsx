@@ -62,12 +62,13 @@ function DraggableToolboxItem({ config, onAdd }: DraggableItemProps) {
       {...listeners}
       {...attributes}
       onClick={() => onAdd?.(type)}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-md bg-white border border-neutral-200 cursor-grab active:cursor-grabbing hover:bg-neutral-50 hover:border-neutral-300 transition-colors select-none shadow-sm min-h-[44px] ${
+      title={label}
+      className={`flex items-center justify-center lg:justify-start gap-3 px-3 py-2.5 rounded-md bg-white border border-neutral-200 cursor-grab active:cursor-grabbing hover:bg-neutral-50 hover:border-neutral-300 transition-colors select-none shadow-sm min-h-[44px] ${
         isDragging ? 'opacity-50 border-brand-500 ring-1 ring-brand-500/20' : ''
       }`}
     >
       <Icon size={18} className="text-neutral-500 shrink-0" />
-      <span className="text-body font-medium text-neutral-700">{label}</span>
+      <span className="hidden lg:inline text-body font-medium text-neutral-700">{label}</span>
     </div>
   );
 }
@@ -78,8 +79,10 @@ export interface ToolboxProps {
 
 export function Toolbox({ onAdd }: ToolboxProps) {
   return (
-    <aside className="w-[280px] flex flex-col gap-4 p-4 border-r bg-white overflow-y-auto shrink-0 shadow-sm">
-      <div>
+    // Icon-only below `lg` (tablet) so the toolbox doesn't crowd out the canvas
+    // and properties panel; full labelled list returns at `lg` and up.
+    <aside className="w-[64px] lg:w-[280px] flex flex-col gap-4 p-2 lg:p-4 border-r bg-white overflow-y-auto shrink-0 shadow-sm">
+      <div className="hidden lg:block">
         <h3 className="text-heading-3 font-bold text-neutral-800 tracking-tight">Field Types</h3>
         <p className="text-body-sm text-neutral-400 mt-1">
           Drag and drop fields onto the canvas to customize your form.

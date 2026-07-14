@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Undo2, Redo2, Eye } from 'lucide-react';
+import { ArrowLeft, Undo2, Redo2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 export interface BuilderHeaderProps {
@@ -15,6 +15,7 @@ export interface BuilderHeaderProps {
   onUndo: () => void;
   onRedo: () => void;
   onPreview: () => void;
+  onBack: () => void;
 }
 
 export function BuilderHeader({
@@ -28,6 +29,7 @@ export function BuilderHeader({
   onUndo,
   onRedo,
   onPreview,
+  onBack,
 }: BuilderHeaderProps) {
   const [title, setTitle] = useState(formTitle || '');
   const [prevFormTitle, setPrevFormTitle] = useState<string | undefined>(formTitle);
@@ -53,8 +55,17 @@ export function BuilderHeader({
 
   return (
     <header className="flex items-center justify-between px-4 h-14 border-b bg-white shrink-0 shadow-sm">
-      {/* Left Section: Editable Title */}
-      <div className="flex items-center gap-3 flex-1 max-w-[30%]">
+      {/* Left Section: Back + Editable Title */}
+      <div className="flex items-center gap-2 flex-1 max-w-[30%]">
+        <Button
+          onClick={onBack}
+          variant="ghost"
+          size="small"
+          className="p-2 min-h-[36px] min-w-[36px] shrink-0"
+          title="Back to Forms"
+        >
+          <ArrowLeft size={16} />
+        </Button>
         <input
           type="text"
           value={title ?? ''}
