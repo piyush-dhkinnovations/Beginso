@@ -1,12 +1,10 @@
 "use client";
 
-import { useCallback } from "react";
-
 export default function Footer() {
   const currentYear = new Date().getFullYear();
-  const handlePlaceholderLink = useCallback((e: React.MouseEvent) => {
+  const handlePlaceholderLink = (e: React.MouseEvent) => {
     e.preventDefault();
-  }, []);
+  };
 
   return (
     <footer className="bg-neutral-900 py-12 border-t border-neutral-800">
