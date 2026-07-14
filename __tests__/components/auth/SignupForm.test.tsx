@@ -6,8 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { SignupForm } from '@/components/auth/SignupForm';
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────
@@ -59,7 +58,10 @@ vi.mock('@/services/auth', () => ({
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-async function fillAndSubmitForm(user: ReturnType<typeof userEvent.setup>, opts?: {
+// Uses fireEvent (sets the final value directly) rather than userEvent.type
+// (simulates every keystroke) — these tests only care about the submitted
+// value, not real per-key interaction, and this cut the suite's time noticeably.
+async function fillAndSubmitForm(opts?: {
   name?: string;
   email?: string;
   password?: string;
@@ -72,13 +74,13 @@ async function fillAndSubmitForm(user: ReturnType<typeof userEvent.setup>, opts?
     confirmPassword = 'StrongPass1!',
   } = opts ?? {};
 
-  await user.type(screen.getByLabelText(/full name/i), name);
-  await user.type(screen.getByLabelText(/email address/i), email);
+  fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: name } });
+  fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: email } });
   // Password field (first password input)
   const pwInputs = document.querySelectorAll('input[type="password"]');
-  await user.type(pwInputs[0] as HTMLElement, password);
-  await user.type(pwInputs[1] as HTMLElement, confirmPassword);
-  await user.click(screen.getByRole('button', { name: /sign up$/i }));
+  fireEvent.change(pwInputs[0] as HTMLElement, { target: { value: password } });
+  fireEvent.change(pwInputs[1] as HTMLElement, { target: { value: confirmPassword } });
+  fireEvent.click(screen.getByRole('button', { name: /sign up$/i }));
 }
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
@@ -108,10 +110,9 @@ describe('SignupForm component', () => {
     // Keep pending indefinitely
     mockAuthSignup.mockReturnValueOnce(new Promise(() => {}));
 
-    const user = userEvent.setup();
     render(<SignupForm />);
 
-    await fillAndSubmitForm(user);
+    await fillAndSubmitForm();
 
     await waitFor(() => {
       const submitBtn = screen.getByRole('button', { name: /sign up$/i });
@@ -126,9 +127,8 @@ describe('SignupForm component', () => {
       workspace: { id: 'ws1', name: 'Jane WS' },
     });
 
-    const user = userEvent.setup();
     render(<SignupForm />);
-    await fillAndSubmitForm(user);
+    await fillAndSubmitForm();
 
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith(
@@ -148,9 +148,8 @@ describe('SignupForm component', () => {
       })
     );
 
-    const user = userEvent.setup();
     render(<SignupForm />);
-    await fillAndSubmitForm(user);
+    await fillAndSubmitForm();
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeInTheDocument();
@@ -162,10 +161,9 @@ describe('SignupForm component', () => {
   });
 
   it('shows inline Zod validation error for mismatched passwords without submitting', async () => {
-    const user = userEvent.setup();
     render(<SignupForm />);
 
-    await fillAndSubmitForm(user, {
+    await fillAndSubmitForm({
       password: 'StrongPass1!',
       confirmPassword: 'DifferentPass1!',
     });
@@ -178,10 +176,9 @@ describe('SignupForm component', () => {
   });
 
   it('shows inline validation error for short password without API call', async () => {
-    const user = userEvent.setup();
     render(<SignupForm />);
 
-    await fillAndSubmitForm(user, {
+    await fillAndSubmitForm({
       password: 'short',
       confirmPassword: 'short',
     });
