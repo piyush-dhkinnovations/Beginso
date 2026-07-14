@@ -57,7 +57,7 @@ function OptionRow({
         type="button"
         {...listeners}
         {...attributes}
-        className="text-neutral-400 hover:text-neutral-600 cursor-grab active:cursor-grabbing p-1 shrink-0"
+        className="text-neutral-400 hover:text-neutral-600 cursor-grab active:cursor-grabbing shrink-0 min-w-[32px] min-h-[32px] flex items-center justify-center"
         aria-label="Reorder option"
       >
         <GripVertical size={14} />
@@ -79,7 +79,7 @@ function OptionRow({
         type="button"
         onClick={onDelete}
         disabled={disabled}
-        className="text-neutral-400 hover:text-rose-600 disabled:opacity-30 disabled:pointer-events-none p-1 shrink-0"
+        className="text-neutral-400 hover:text-rose-600 disabled:opacity-30 disabled:pointer-events-none shrink-0 min-w-[32px] min-h-[32px] flex items-center justify-center"
         aria-label="Delete option"
       >
         <X size={14} />
@@ -174,7 +174,7 @@ export function OptionsEditor({ fieldId, options, onUpdate }: OptionsEditorProps
       <button
         type="button"
         onClick={handleAdd}
-        className="flex items-center gap-1.5 text-body-sm font-medium text-brand-700 hover:text-brand-800 py-1.5 px-1 self-start"
+        className="flex items-center gap-1.5 text-body-sm font-medium text-brand-700 hover:text-brand-900 py-1.5 px-1 self-start"
       >
         <Plus size={14} />
         Add option

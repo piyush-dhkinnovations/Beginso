@@ -29,11 +29,12 @@ function DroppableCanvas({
   return (
     <main
       ref={setNodeRef}
-      className={`flex-1 p-6 overflow-y-auto transition-colors duration-200 min-h-[500px] ${
-        showOver ? 'bg-blue-50/50' : 'bg-neutral-50'
+      className={`flex-1 min-w-0 p-6 overflow-y-auto transition-colors duration-200 min-h-[500px] ${
+        showOver ? 'bg-brand-50/50' : 'bg-neutral-50'
       }`}
     >
-      <div className="max-w-xl mx-auto min-h-[500px] flex flex-col justify-start">
+      {/* Design system: "Builder canvas: max-width 440px within canvas panel" */}
+      <div className="max-w-[440px] mx-auto min-h-[500px] flex flex-col justify-start">
         {isEmpty ? (
           <div className="flex-1 flex items-center justify-center py-12">
             <EmptyState
@@ -81,7 +82,7 @@ export function Canvas({
   const visibleFieldIds = visibleFields.map((f) => f.fieldId);
 
   return (
-    <div className="flex flex-1 w-full" style={{ overflow: 'visible' }}>
+    <div className="flex flex-1 w-full min-w-0" style={{ overflow: 'visible' }}>
       {/* Center Droppable Canvas */}
       <DroppableCanvas isEmpty={visibleFields.length === 0} isOver={isToolboxOver}>
         <SortableContext

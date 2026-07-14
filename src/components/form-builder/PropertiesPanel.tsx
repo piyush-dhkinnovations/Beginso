@@ -272,11 +272,12 @@ function DateRangeSection({
 }) {
   return (
     <PanelSection label="Date range">
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2">
         <Input
           id={`${fieldId}-mindate`}
           label="From"
           type="date"
+          lang="en-GB"
           value={minDate ?? ''}
           onChange={(e) => onUpdate(fieldId, { minDate: e.target.value || undefined })}
         />
@@ -284,6 +285,7 @@ function DateRangeSection({
           id={`${fieldId}-maxdate`}
           label="To"
           type="date"
+          lang="en-GB"
           value={maxDate ?? ''}
           onChange={(e) => onUpdate(fieldId, { maxDate: e.target.value || undefined })}
         />
@@ -308,9 +310,9 @@ export function PropertiesPanel({ field, onUpdate, onUpdateOptions }: Properties
   // ── Empty state ─────────────────────────────────────────────────────────────
   if (!field) {
     return (
-      <aside className="w-[320px] border-l bg-white flex flex-col items-center justify-center p-6 text-center shrink-0 gap-3">
+      <aside className="w-[240px] min-[881px]:w-[320px] border-l bg-white flex flex-col items-center justify-center p-6 text-center shrink-0 gap-3">
         <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center">
-          <Settings2 size={18} className="text-neutral-400" />
+          <Settings2 size={24} className="text-neutral-400" />
         </div>
         <p className="text-body-sm text-neutral-400 max-w-[180px] leading-relaxed">
           Select a field to configure its properties
@@ -322,7 +324,7 @@ export function PropertiesPanel({ field, onUpdate, onUpdateOptions }: Properties
   const isTextField = TEXT_TYPES.has(field.type);
 
   return (
-    <aside className="w-[320px] border-l bg-white overflow-y-auto shrink-0 flex flex-col">
+    <aside className="w-[240px] min-[881px]:w-[320px] border-l bg-white overflow-y-auto shrink-0 flex flex-col">
       {/* Header */}
       <div className="px-4 py-3 border-b bg-neutral-50">
         <h3 className="text-heading-3 font-bold text-neutral-800 tracking-tight">

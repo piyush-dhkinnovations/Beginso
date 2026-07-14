@@ -350,8 +350,8 @@ export default function BuilderPageShell() {
                   />
                   <DragOverlay dropAnimation={dropAnimation}>
                     {activeDragConfig ? (
-                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-white border border-blue-400 shadow-lg opacity-90 min-h-[44px] cursor-grabbing pointer-events-none">
-                        <activeDragConfig.icon size={18} className="text-blue-500 shrink-0" />
+                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-white border border-brand-500 shadow-lg opacity-90 min-h-[44px] cursor-grabbing pointer-events-none">
+                        <activeDragConfig.icon size={16} className="text-brand-500 shrink-0" />
                         <span className="text-body font-medium text-neutral-700">
                           {activeDragConfig.label}
                         </span>
