@@ -23,8 +23,7 @@ interface AuthState {
 type AuthAction =
   | { type: 'LOGIN'; payload: { user: User } }
   | { type: 'LOGOUT' }
-  | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'SET_USER'; payload: { user: User } };
+  | { type: 'SET_LOADING'; payload: boolean };
 
 interface AuthContextValue extends AuthState {
   login: (token: string, user: User) => void;
@@ -58,13 +57,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         ...state,
         isLoading: action.payload,
       };
-    case 'SET_USER':
-      return {
-        ...state,
-        user: action.payload.user,
-        isAuthenticated: true,
-        isLoading: false,
-      };
     default:
       return state;
   }
@@ -87,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'SET_LOADING', payload: true });
       try {
         const data = await AuthService.getMe();
-        dispatch({ type: 'SET_USER', payload: { user: data.user } });
+        dispatch({ type: 'LOGIN', payload: { user: data.user } });
       } catch {
         clearToken();
         dispatch({ type: 'LOGOUT' });
@@ -106,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Fetch complete user profile from the backend to ensure all fields (like name) are populated.
     AuthService.getMe()
       .then((data) => {
-        dispatch({ type: 'SET_USER', payload: { user: data.user } });
+        dispatch({ type: 'LOGIN', payload: { user: data.user } });
       })
       .catch(() => {
         // Fallback to the initial user object if fetching fails

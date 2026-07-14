@@ -31,6 +31,7 @@ export interface BuilderState {
   initForm: (form: Form) => void;
   setFormTitle: (title: string) => void;
   addField: (type: FieldType, insertIndex?: number) => void;
+  duplicateField: (fieldId: string) => void;
   reorderFields: (activeId: string, overId: string) => void;
   updateField: (fieldId: string, updates: Partial<FormField>) => void;
   softDeleteField: (fieldId: string) => void;
@@ -149,6 +150,44 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       return {
         ...snapshot,
         fields: finalFields,
+        dirty: true,
+      };
+    }),
+
+  duplicateField: (fieldId) =>
+    set((state) => {
+      const visibleFields = state.fields.filter((f) => !f.deleted);
+      const originalIndex = visibleFields.findIndex((f) => f.fieldId === fieldId);
+      if (originalIndex === -1) return {};
+
+      const snapshot = pushSnapshot(state.fields, state.formTitle, state.undoStack);
+
+      // Deep-clone so the duplicate's own arrays (e.g. choice options) never share a
+      // reference with the original — editing one must never silently edit the other.
+      // logicRules is dropped: those rules describe *this* field as the source, and
+      // copying them would make the duplicate silently drive the same target field.
+      const { logicRules: _logicRules, ...clonedBase } = structuredClone(visibleFields[originalIndex]);
+      const duplicate = {
+        ...clonedBase,
+        fieldId: crypto.randomUUID(),
+        label: `${clonedBase.label} (Copy)`,
+      } as FormField;
+
+      const newVisible = [...visibleFields];
+      newVisible.splice(originalIndex + 1, 0, duplicate);
+      newVisible.forEach((f, idx) => {
+        f.order = idx;
+      });
+
+      const finalFields = [
+        ...newVisible,
+        ...state.fields.filter((f) => f.deleted),
+      ];
+
+      return {
+        ...snapshot,
+        fields: finalFields,
+        activeFieldId: duplicate.fieldId,
         dirty: true,
       };
     }),

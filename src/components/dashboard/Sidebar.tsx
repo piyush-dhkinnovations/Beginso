@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard,
+  Home,
   FileText,
-  MessageSquare,
-  BarChart3,
+  Table2,
   PieChart,
+  Download,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -30,12 +30,15 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
 
+  // Icon choice matches the design system's sidebar-nav vocabulary (04_Design_System.md §4.8):
+  // home, file-text, layout, table, pie-chart, download, settings — "layout" is reserved for
+  // the not-yet-built Templates nav item (Thursday's task 4.7).
   const navItems = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Forms', href: '/forms', icon: FileText },
-    { name: 'Responses', href: '/responses', icon: MessageSquare },
-    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-    { name: 'Reports', href: '/reports', icon: PieChart },
+    { name: 'Responses', href: '/responses', icon: Table2 },
+    { name: 'Analytics', href: '/analytics', icon: PieChart },
+    { name: 'Reports', href: '/reports', icon: Download },
     { name: 'Settings', href: '/settings', icon: Settings },
   ];
 
@@ -53,7 +56,7 @@ export function Sidebar({
       )}>
         {(!collapsed || isMobile) ? (
           <>
-            <Link href="/dashboard" className="flex items-center gap-2 overflow-hidden" onClick={onCloseMobile}>
+            <Link href="/dashboard" prefetch={false} className="flex items-center gap-2 overflow-hidden" onClick={onCloseMobile}>
               <div className="w-8 h-8 rounded bg-brand-600 flex items-center justify-center text-white font-bold shrink-0">
                 OP
               </div>
@@ -104,6 +107,7 @@ export function Sidebar({
             <Link
               key={item.name}
               href={item.href}
+              prefetch={false}
               onClick={onCloseMobile}
               className={cn(
                 "flex items-center gap-3 px-3 rounded-md min-h-[44px] transition-all duration-150 ease-in-out",
@@ -113,7 +117,7 @@ export function Sidebar({
               )}
               title={collapsed && !isMobile ? item.name : undefined}
             >
-              <Icon size={20} className={cn("shrink-0", isActive ? "text-brand-700" : "text-neutral-500")} />
+              <Icon size={16} className={cn("shrink-0", isActive ? "text-brand-700" : "text-neutral-500")} />
               {(!collapsed || isMobile) && (
                 <span className="text-body-sm whitespace-nowrap overflow-hidden text-ellipsis">
                   {item.name}

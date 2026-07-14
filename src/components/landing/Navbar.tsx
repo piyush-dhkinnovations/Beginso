@@ -2,16 +2,22 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useScrolled } from "@/hooks/useScrolled";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Navbar() {
-  const isScrolled = useScrolled(60);
   const { isAuthenticated } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 60);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Close mobile menu on escape
   useEffect(() => {

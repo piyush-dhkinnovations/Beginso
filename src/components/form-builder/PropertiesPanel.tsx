@@ -4,6 +4,7 @@ import React, { useId, useState } from 'react';
 import { Settings2 } from 'lucide-react';
 import type { FormField } from '@/types/form';
 import { Input } from '@/components/ui/Input';
+import { OptionsEditor } from './OptionsEditor';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -15,6 +16,9 @@ const TEXT_TYPES = new Set([
   'number',
   'date',
 ]);
+
+// Platform-enforced allowlist (Req 2.11) — not configurable per-field, so it's a constant, not state.
+const ALLOWED_FILE_TYPE_LABELS = ['PDF', 'Word', 'Excel', 'Images', 'Video (MP4)', 'ZIP', 'Plain text'];
 
 // ─── Small sub-component: a labelled section ───────────────────────────────────
 
@@ -66,6 +70,8 @@ function BlurField({
   defaultValue,
   placeholder,
   allowEmpty = false,
+  type = 'text',
+  min,
   onCommit,
 }: {
   id: string;
@@ -73,6 +79,8 @@ function BlurField({
   defaultValue: string;
   placeholder?: string;
   allowEmpty?: boolean;
+  type?: string;
+  min?: number;
   onCommit: (value: string) => void;
 }) {
   const [local, setLocal] = useState(defaultValue);
@@ -94,6 +102,8 @@ function BlurField({
     <Input
       id={id}
       label={label}
+      type={type}
+      min={min}
       value={local}
       placeholder={placeholder}
       onChange={(e) => setLocal(e.target.value)}
@@ -108,24 +118,206 @@ function BlurField({
   );
 }
 
+// ─── Shared property sections (label / help text / required — reused across field-type branches) ──
+
+function LabelField({
+  uid,
+  fieldId,
+  label,
+  onUpdate,
+}: {
+  uid: string;
+  fieldId: string;
+  label: string;
+  onUpdate: (fieldId: string, updates: Partial<FormField>) => void;
+}) {
+  return (
+    <PanelSection label="Label">
+      <BlurField
+        id={`${uid}-label`}
+        label=""
+        defaultValue={label}
+        placeholder="Field label"
+        onCommit={(v) => onUpdate(fieldId, { label: v })}
+      />
+    </PanelSection>
+  );
+}
+
+function HelpTextField({
+  uid,
+  fieldId,
+  helpText,
+  onUpdate,
+}: {
+  uid: string;
+  fieldId: string;
+  helpText: string;
+  onUpdate: (fieldId: string, updates: Partial<FormField>) => void;
+}) {
+  return (
+    <PanelSection label="Help text">
+      <BlurField
+        id={`${uid}-help`}
+        label=""
+        defaultValue={helpText}
+        placeholder="Optional helper copy below the field"
+        allowEmpty={true}
+        onCommit={(v) => onUpdate(fieldId, { helpText: v })}
+      />
+    </PanelSection>
+  );
+}
+
+function RequiredToggle({
+  uid,
+  fieldId,
+  required,
+  onUpdate,
+}: {
+  uid: string;
+  fieldId: string;
+  required: boolean;
+  onUpdate: (fieldId: string, updates: Partial<FormField>) => void;
+}) {
+  return (
+    <PanelSection label="Validation">
+      <div className="flex items-center justify-between py-1">
+        <label
+          htmlFor={`${uid}-required`}
+          className="text-body-sm font-medium text-neutral-700 cursor-pointer"
+        >
+          Required field
+        </label>
+        <Switch
+          id={`${uid}-required`}
+          checked={required}
+          onChange={(v) => onUpdate(fieldId, { required: v })}
+        />
+      </div>
+    </PanelSection>
+  );
+}
+
+// ─── Number field: min/max range (cross-field validation on blur) ─────────────
+
+function NumberRangeSection({
+  fieldId,
+  min,
+  max,
+  onUpdate,
+}: {
+  fieldId: string;
+  min?: number;
+  max?: number;
+  onUpdate: (fieldId: string, updates: Partial<FormField>) => void;
+}) {
+  const [minStr, setMinStr] = useState(min?.toString() ?? '');
+  const [maxStr, setMaxStr] = useState(max?.toString() ?? '');
+  const [error, setError] = useState<string | null>(null);
+  const [prevFieldId, setPrevFieldId] = useState(fieldId);
+
+  if (fieldId !== prevFieldId) {
+    setMinStr(min?.toString() ?? '');
+    setMaxStr(max?.toString() ?? '');
+    setError(null);
+    setPrevFieldId(fieldId);
+  }
+
+  const commit = () => {
+    const nextMin = minStr.trim() === '' ? undefined : Number(minStr);
+    const nextMax = maxStr.trim() === '' ? undefined : Number(maxStr);
+    if (nextMin !== undefined && nextMax !== undefined && nextMin >= nextMax) {
+      setError('Min must be less than max');
+      return;
+    }
+    setError(null);
+    onUpdate(fieldId, { min: nextMin, max: nextMax } as Partial<FormField>);
+  };
+
+  return (
+    <PanelSection label="Value range">
+      <div className="flex gap-2">
+        <Input
+          id={`${fieldId}-min`}
+          label="Min"
+          type="number"
+          placeholder="No minimum"
+          value={minStr}
+          onChange={(e) => setMinStr(e.target.value)}
+          onBlur={commit}
+        />
+        <Input
+          id={`${fieldId}-max`}
+          label="Max"
+          type="number"
+          placeholder="No maximum"
+          value={maxStr}
+          onChange={(e) => setMaxStr(e.target.value)}
+          onBlur={commit}
+        />
+      </div>
+      {error && <p className="text-caption text-error font-semibold">{error}</p>}
+    </PanelSection>
+  );
+}
+
+// ─── Date field: minDate/maxDate (commits on change — discrete picks) ─────────
+
+function DateRangeSection({
+  fieldId,
+  minDate,
+  maxDate,
+  onUpdate,
+}: {
+  fieldId: string;
+  minDate?: string;
+  maxDate?: string;
+  onUpdate: (fieldId: string, updates: Partial<FormField>) => void;
+}) {
+  return (
+    <PanelSection label="Date range">
+      <div className="flex flex-col gap-2">
+        <Input
+          id={`${fieldId}-mindate`}
+          label="From"
+          type="date"
+          lang="en-GB"
+          value={minDate ?? ''}
+          onChange={(e) => onUpdate(fieldId, { minDate: e.target.value || undefined })}
+        />
+        <Input
+          id={`${fieldId}-maxdate`}
+          label="To"
+          type="date"
+          lang="en-GB"
+          value={maxDate ?? ''}
+          onChange={(e) => onUpdate(fieldId, { maxDate: e.target.value || undefined })}
+        />
+      </div>
+    </PanelSection>
+  );
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface PropertiesPanelProps {
   field: FormField | null;
   onUpdate: (fieldId: string, updates: Partial<FormField>) => void;
+  onUpdateOptions: (fieldId: string, options: string[]) => void;
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function PropertiesPanel({ field, onUpdate }: PropertiesPanelProps) {
+export function PropertiesPanel({ field, onUpdate, onUpdateOptions }: PropertiesPanelProps) {
   const uid = useId();
 
   // ── Empty state ─────────────────────────────────────────────────────────────
   if (!field) {
     return (
-      <aside className="w-[320px] border-l bg-white flex flex-col items-center justify-center p-6 text-center shrink-0 gap-3">
+      <aside className="w-[240px] min-[881px]:w-[320px] border-l bg-white flex flex-col items-center justify-center p-6 text-center shrink-0 gap-3">
         <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center">
-          <Settings2 size={18} className="text-neutral-400" />
+          <Settings2 size={24} className="text-neutral-400" />
         </div>
         <p className="text-body-sm text-neutral-400 max-w-[180px] leading-relaxed">
           Select a field to configure its properties
@@ -135,14 +327,9 @@ export function PropertiesPanel({ field, onUpdate }: PropertiesPanelProps) {
   }
 
   const isTextField = TEXT_TYPES.has(field.type);
-  const isChoiceOrFile =
-    field.type === 'dropdown' ||
-    field.type === 'multiple_choice' ||
-    field.type === 'checkbox' ||
-    field.type === 'file_upload';
 
   return (
-    <aside className="w-[320px] border-l bg-white overflow-y-auto shrink-0 flex flex-col">
+    <aside className="w-[240px] min-[881px]:w-[320px] border-l bg-white overflow-y-auto shrink-0 flex flex-col">
       {/* Header */}
       <div className="px-4 py-3 border-b bg-neutral-50">
         <h3 className="text-heading-3 font-bold text-neutral-800 tracking-tight">
@@ -157,16 +344,7 @@ export function PropertiesPanel({ field, onUpdate }: PropertiesPanelProps) {
       <div className="flex flex-col gap-5 p-4">
         {isTextField && (
           <>
-            {/* Label */}
-            <PanelSection label="Label">
-              <BlurField
-                id={`${uid}-label`}
-                label=""
-                defaultValue={field.label}
-                placeholder="Field label"
-                onCommit={(v) => onUpdate(field.fieldId, { label: v })}
-              />
-            </PanelSection>
+            <LabelField uid={uid} fieldId={field.fieldId} label={field.label} onUpdate={onUpdate} />
 
             {/* Placeholder */}
             <PanelSection label="Placeholder text">
@@ -180,47 +358,76 @@ export function PropertiesPanel({ field, onUpdate }: PropertiesPanelProps) {
               />
             </PanelSection>
 
-            {/* Help text */}
-            <PanelSection label="Help text">
-              <BlurField
-                id={`${uid}-help`}
-                label=""
-                defaultValue={field.helpText ?? ''}
-                placeholder="Optional helper copy below the field"
-                allowEmpty={true}
-                onCommit={(v) => onUpdate(field.fieldId, { helpText: v })}
-              />
-            </PanelSection>
+            <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
 
-            {/* Required toggle */}
-            <PanelSection label="Validation">
-              <div className="flex items-center justify-between py-1">
-                <label
-                  htmlFor={`${uid}-required`}
-                  className="text-body-sm font-medium text-neutral-700 cursor-pointer"
-                >
-                  Required field
-                </label>
-                <Switch
-                  id={`${uid}-required`}
-                  checked={field.required}
-                  onChange={(v) => onUpdate(field.fieldId, { required: v })}
+            <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
+
+            {field.type === 'number' && (
+              <NumberRangeSection fieldId={field.fieldId} min={field.min} max={field.max} onUpdate={onUpdate} />
+            )}
+
+            {(field.type === 'short_text' || field.type === 'long_text') && (
+              <PanelSection label="Max length">
+                <BlurField
+                  id={`${uid}-maxlength`}
+                  label=""
+                  type="number"
+                  min={1}
+                  defaultValue={field.maxLength?.toString() ?? ''}
+                  placeholder="No limit"
+                  allowEmpty={true}
+                  onCommit={(v) => {
+                    const n = v.trim() === '' ? undefined : Math.max(1, Math.trunc(Number(v)));
+                    onUpdate(field.fieldId, { maxLength: n });
+                  }}
                 />
-              </div>
+              </PanelSection>
+            )}
+
+            {field.type === 'date' && (
+              <DateRangeSection fieldId={field.fieldId} minDate={field.minDate} maxDate={field.maxDate} onUpdate={onUpdate} />
+            )}
+          </>
+        )}
+
+        {(field.type === 'dropdown' || field.type === 'multiple_choice' || field.type === 'checkbox') && (
+          <>
+            <LabelField uid={uid} fieldId={field.fieldId} label={field.label} onUpdate={onUpdate} />
+
+            <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
+
+            <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
+
+            <PanelSection label="Options">
+              <OptionsEditor fieldId={field.fieldId} options={field.options} onUpdate={onUpdateOptions} />
             </PanelSection>
           </>
         )}
 
-        {isChoiceOrFile && (
-          <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
-            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
-              <Settings2 size={16} className="text-blue-400" />
-            </div>
-            <p className="text-body-sm text-neutral-500 max-w-[220px] leading-relaxed">
-              Full configuration for this field type is coming in{' '}
-              <span className="font-semibold text-neutral-700">Sprint 2 Part 2</span>
-            </p>
-          </div>
+        {field.type === 'file_upload' && (
+          <>
+            <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
+
+            <PanelSection label="Allowed file types">
+              <div className="flex flex-wrap gap-1.5">
+                {ALLOWED_FILE_TYPE_LABELS.map((label) => (
+                  <span
+                    key={label}
+                    className="text-caption font-medium text-neutral-600 bg-neutral-100 rounded px-2 py-1"
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+              <p className="text-caption text-neutral-400 mt-1">
+                Platform-enforced — cannot be changed.
+              </p>
+            </PanelSection>
+
+            <PanelSection label="Max file size">
+              <p className="text-body-sm text-neutral-600">100 MB maximum file size</p>
+            </PanelSection>
+          </>
         )}
       </div>
     </aside>

@@ -19,7 +19,7 @@ const TABS: { id: BuilderTab; label: string }[] = [
 
 export function BuilderTabs({ activeTab, onChange }: BuilderTabsProps) {
   return (
-    <nav className="flex border-b bg-white shrink-0 shadow-sm" aria-label="Form Builder Tabs">
+    <nav className="flex flex-wrap border-b bg-white shrink-0 shadow-sm" aria-label="Form Builder Tabs">
       {TABS.map((tab) => {
         const isActive = activeTab === tab.id;
         return (
