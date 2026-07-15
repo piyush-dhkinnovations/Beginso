@@ -28,6 +28,7 @@ describe('Next.js Edge Proxy (auth guard)', () => {
       '/dashboard/settings',
       '/forms',
       '/forms/new',
+      '/templates',
       '/responses',
       '/analytics',
       '/reports',
@@ -48,7 +49,7 @@ describe('Next.js Edge Proxy (auth guard)', () => {
   // ─── Protected routes (with token) → allow through ─────────────────────────
 
   describe('Protected route + cookie present → NextResponse.next()', () => {
-    const protectedPaths = ['/dashboard', '/forms', '/responses', '/analytics', '/reports', '/settings'];
+    const protectedPaths = ['/dashboard', '/forms', '/templates', '/responses', '/analytics', '/reports', '/settings'];
 
     it.each(protectedPaths)(
       '%s with valid auth_token passes through',

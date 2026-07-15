@@ -35,7 +35,7 @@ function PanelSection({ label, children }: { label: string; children: React.Reac
 
 // ─── Toggle Switch (no shadcn dep) ────────────────────────────────────────────
 
-function Switch({
+export function Switch({
   id,
   checked,
   onChange,
