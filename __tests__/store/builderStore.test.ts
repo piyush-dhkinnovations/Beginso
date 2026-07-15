@@ -218,4 +218,59 @@ describe('Zustand builderStore Property Tests', () => {
     const originalStillTwo = useBuilderStore.getState().fields.find((f) => f.fieldId === dropdownId)!;
     expect((originalStillTwo as { options: string[] }).options).toEqual(['A', 'B']);
   });
+
+  // ─── updateLogicRule: in-place replace vs. relocate across a source-field change ─
+  it('updateLogicRule replaces in place when the source field is unchanged, and relocates the rule when it is', () => {
+    const store = useBuilderStore.getState();
+    store.initForm(mockForm('test-form', 'My Form'));
+
+    store.addField('short_text'); // A
+    store.addField('short_text'); // B
+    store.addField('short_text'); // C
+    const [a, b, c] = useBuilderStore.getState().fields;
+
+    store.addLogicRule(a.fieldId, {
+      condition: { fieldId: a.fieldId, operator: 'equals', value: 'x' },
+      action: 'show',
+      targetFieldId: b.fieldId,
+    });
+
+    // Same-field edit: replace in place, still one rule on A
+    store.updateLogicRule(a.fieldId, 0, a.fieldId, {
+      condition: { fieldId: a.fieldId, operator: 'equals', value: 'y' },
+      action: 'hide',
+      targetFieldId: c.fieldId,
+    });
+    let fields = useBuilderStore.getState().fields;
+    let updatedA = fields.find((f) => f.fieldId === a.fieldId)!;
+    expect(updatedA.logicRules).toHaveLength(1);
+    expect(updatedA.logicRules![0]).toEqual({
+      condition: { fieldId: a.fieldId, operator: 'equals', value: 'y' },
+      action: 'hide',
+      targetFieldId: c.fieldId,
+    });
+
+    // Moved-field edit: source field changes from A to B — rule relocates
+    store.updateLogicRule(a.fieldId, 0, b.fieldId, {
+      condition: { fieldId: b.fieldId, operator: 'equals', value: 'z' },
+      action: 'show',
+      targetFieldId: c.fieldId,
+    });
+    fields = useBuilderStore.getState().fields;
+    updatedA = fields.find((f) => f.fieldId === a.fieldId)!;
+    const updatedB = fields.find((f) => f.fieldId === b.fieldId)!;
+    expect(updatedA.logicRules ?? []).toEqual([]);
+    expect(updatedB.logicRules).toHaveLength(1);
+    expect(updatedB.logicRules![0].condition.fieldId).toBe(b.fieldId);
+
+    // Guard: target field can never equal the source field — no-op
+    store.updateLogicRule(b.fieldId, 0, b.fieldId, {
+      condition: { fieldId: b.fieldId, operator: 'equals', value: 'z' },
+      action: 'show',
+      targetFieldId: b.fieldId,
+    });
+    const unchangedB = useBuilderStore.getState().fields.find((f) => f.fieldId === b.fieldId)!;
+    expect(unchangedB.logicRules).toHaveLength(1);
+    expect(unchangedB.logicRules![0].targetFieldId).toBe(c.fieldId);
+  });
 });

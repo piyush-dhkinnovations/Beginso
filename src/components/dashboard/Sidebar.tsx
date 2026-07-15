@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import {
   Home,
   FileText,
+  LayoutTemplate,
   Table2,
   PieChart,
   Download,
@@ -31,11 +32,11 @@ export function Sidebar({
   const pathname = usePathname();
 
   // Icon choice matches the design system's sidebar-nav vocabulary (04_Design_System.md §4.8):
-  // home, file-text, layout, table, pie-chart, download, settings — "layout" is reserved for
-  // the not-yet-built Templates nav item (Thursday's task 4.7).
+  // home, file-text, layout, table, pie-chart, download, settings.
   const navItems = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Forms', href: '/forms', icon: FileText },
+    { name: 'Templates', href: '/templates', icon: LayoutTemplate },
     { name: 'Responses', href: '/responses', icon: Table2 },
     { name: 'Analytics', href: '/analytics', icon: PieChart },
     { name: 'Reports', href: '/reports', icon: Download },

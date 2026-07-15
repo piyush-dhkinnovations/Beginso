@@ -44,6 +44,7 @@ export interface BuilderState {
   setStatus: (status: FormStatus, slug?: string) => void;
   updateFieldOptions: (fieldId: string, options: string[]) => void;
   addLogicRule: (fieldId: string, rule: LogicRule) => void;
+  updateLogicRule: (oldFieldId: string, oldRuleIndex: number, newFieldId: string, rule: LogicRule) => void;
   deleteLogicRule: (fieldId: string, ruleIndex: number) => void;
 }
 
@@ -355,6 +356,39 @@ export const useBuilderStore = create<BuilderState>((set) => ({
         if (f.fieldId !== fieldId) return f;
         const existingRules = f.logicRules ?? [];
         return { ...f, logicRules: [...existingRules, rule] } as FormField;
+      });
+
+      return {
+        ...pushSnapshot(state.fields, state.formTitle, state.undoStack),
+        fields: updatedFields,
+        dirty: true,
+      };
+    }),
+
+  updateLogicRule: (oldFieldId, oldRuleIndex, newFieldId, rule) =>
+    set((state) => {
+      // Guard: target field can never be the (possibly new) source field
+      if (rule.targetFieldId === newFieldId) return {};
+      const oldFieldIndex = state.fields.findIndex((f) => f.fieldId === oldFieldId);
+      const newFieldIndex = state.fields.findIndex((f) => f.fieldId === newFieldId);
+      if (oldFieldIndex === -1 || newFieldIndex === -1) return {};
+
+      // Editing the "If field" moves the rule to a different field's logicRules array;
+      // keeping it on the same field replaces it in place at the same index.
+      const updatedFields = state.fields.map((f) => {
+        if (f.fieldId === oldFieldId && f.fieldId === newFieldId) {
+          const rules = [...(f.logicRules ?? [])];
+          rules[oldRuleIndex] = rule;
+          return { ...f, logicRules: rules } as FormField;
+        }
+        if (f.fieldId === oldFieldId) {
+          const rules = (f.logicRules ?? []).filter((_, i) => i !== oldRuleIndex);
+          return { ...f, logicRules: rules } as FormField;
+        }
+        if (f.fieldId === newFieldId) {
+          return { ...f, logicRules: [...(f.logicRules ?? []), rule] } as FormField;
+        }
+        return f;
       });
 
       return {
