@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PROTECTED_PATHS = ['/dashboard', '/forms', '/responses', '/analytics', '/reports', '/settings'];
+const PROTECTED_PATHS = ['/dashboard', '/forms', '/templates', '/responses', '/analytics', '/reports', '/settings'];
 const AUTH_PATHS = ['/login', '/signup'];
 
 export function proxy(request: NextRequest) {
@@ -28,6 +28,7 @@ export const config = {
   matcher: [
     '/dashboard/:path*',
     '/forms/:path*',
+    '/templates/:path*',
     '/responses/:path*',
     '/analytics/:path*',
     '/reports/:path*',

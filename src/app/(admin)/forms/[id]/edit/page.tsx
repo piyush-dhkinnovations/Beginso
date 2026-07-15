@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { isAxiosError } from 'axios';
 import { useQuery } from '@tanstack/react-query';
 import {
   Active,
@@ -27,6 +28,10 @@ import { useToast } from '@/components/common/Toast';
 import { Canvas, CANVAS_ID } from '@/components/form-builder/Canvas';
 import { PropertiesPanel } from '@/components/form-builder/PropertiesPanel';
 import { Toolbox, FIELD_TYPE_CONFIG } from '@/components/form-builder/Toolbox';
+import { LogicRulesPanel } from '@/components/form-builder/LogicRulesPanel';
+import { BrandingPanel } from '@/components/form-builder/BrandingPanel';
+import { SettingsPanel } from '@/components/form-builder/SettingsPanel';
+import { SharePanel } from '@/components/form-builder/SharePanel';
 import type { FieldType } from '@/types/form';
 
 // Shared by handleDragOver (visual indicator) and handleDragEnd (actual insert)
@@ -39,12 +44,24 @@ function isDroppingBelow(active: Active, over: Over | null): boolean {
   );
 }
 
+const VALID_TABS: BuilderTab[] = ['build', 'logic', 'branding', 'settings', 'share'];
+
 export default function BuilderPageShell() {
   const router = useRouter();
   const { id } = useParams() as { id: string };
+  const searchParams = useSearchParams();
   const { toast } = useToast();
-  
-  const [activeTab, setActiveTab] = useState<BuilderTab>('build');
+
+  // Active tab lives in the URL (?tab=logic) so it survives a page reload instead
+  // of always resetting to Build.
+  const tabFromUrl = searchParams.get('tab') as BuilderTab | null;
+  const [activeTab, setActiveTabState] = useState<BuilderTab>(
+    tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'build'
+  );
+  const setActiveTab = (tab: BuilderTab) => {
+    setActiveTabState(tab);
+    router.replace(`/forms/${id}/edit?tab=${tab}`, { scroll: false });
+  };
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -57,6 +74,8 @@ export default function BuilderPageShell() {
   const dirty = useBuilderStore((state) => state.dirty);
   const branding = useBuilderStore((state) => state.branding);
   const settings = useBuilderStore((state) => state.settings);
+  const status = useBuilderStore((state) => state.status);
+  const slug = useBuilderStore((state) => state.slug);
   
   const initForm = useBuilderStore((state) => state.initForm);
   const setFormTitle = useBuilderStore((state) => state.setFormTitle);
@@ -67,6 +86,11 @@ export default function BuilderPageShell() {
   const setActiveFieldId = useBuilderStore((state) => state.setActiveFieldId);
   const updateField = useBuilderStore((state) => state.updateField);
   const updateFieldOptions = useBuilderStore((state) => state.updateFieldOptions);
+  const addLogicRule = useBuilderStore((state) => state.addLogicRule);
+  const updateLogicRule = useBuilderStore((state) => state.updateLogicRule);
+  const deleteLogicRule = useBuilderStore((state) => state.deleteLogicRule);
+  const setBranding = useBuilderStore((state) => state.setBranding);
+  const setSettings = useBuilderStore((state) => state.setSettings);
   const markSaved = useBuilderStore((state) => state.markSaved);
   const undo = useBuilderStore((state) => state.undo);
   const redo = useBuilderStore((state) => state.redo);
@@ -132,7 +156,11 @@ export default function BuilderPageShell() {
           setSaveState('idle');
         }, 2000);
       } catch (err) {
-        console.error('Autosave failed:', err);
+        if (isAxiosError(err)) {
+          console.error('Autosave failed:', err.response?.status, err.response?.data ?? err.message);
+        } else {
+          console.error('Autosave failed:', err);
+        }
         setSaveState('error');
       }
     }, 2000);
@@ -380,6 +408,34 @@ export default function BuilderPageShell() {
                     ) : null}
                   </DragOverlay>
                 </DndContext>
+              ) : activeTab === 'logic' ? (
+                <div className="flex-1 overflow-y-auto p-6">
+                  <LogicRulesPanel
+                    fields={fields}
+                    onAddRule={addLogicRule}
+                    onUpdateRule={updateLogicRule}
+                    onDeleteRule={deleteLogicRule}
+                  />
+                </div>
+              ) : activeTab === 'branding' ? (
+                <div className="flex-1 overflow-y-auto p-6">
+                  <BrandingPanel branding={branding} formTitle={formTitle} onUpdate={setBranding} />
+                </div>
+              ) : activeTab === 'settings' ? (
+                <div className="flex-1 overflow-y-auto p-6">
+                  <SettingsPanel settings={settings} status={status} slug={slug} onUpdate={setSettings} />
+                </div>
+              ) : activeTab === 'share' ? (
+                <div className="flex-1 overflow-y-auto p-6">
+                  <SharePanel
+                    status={status}
+                    slug={slug}
+                    formTitle={formTitle}
+                    // Full publish confirm-modal flow lands Friday (Requirement 7) — for now
+                    // this is an honest stub rather than a dead button.
+                    onPublish={() => toast('Publish flow is coming Friday.', 'info')}
+                  />
+                </div>
               ) : (
                 <div className="flex-1 flex items-center justify-center text-neutral-400 text-body">
                   Coming in Sprint 2 Part 2
