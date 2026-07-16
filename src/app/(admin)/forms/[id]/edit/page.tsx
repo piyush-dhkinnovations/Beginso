@@ -231,6 +231,10 @@ export default function BuilderPageShell() {
     mutationFn: () => formsService.publishForm(formId!),
     onSuccess: (data) => {
       setStatus('published', data.slug);
+      // Update the query cache so navigating away and back serves the correct status/slug immediately
+      queryClient.setQueryData(['form', formId], (oldData: any) => 
+        oldData ? { ...oldData, status: 'published', slug: data.slug } : oldData
+      );
       setShowPublishModal(false);
       setActiveTab('share');
       toast('Form published successfully!', 'success');
@@ -278,6 +282,9 @@ export default function BuilderPageShell() {
     mutationFn: () => formsService.closeForm(formId!),
     onSuccess: () => {
       setStatus('closed');
+      queryClient.setQueryData(['form', formId], (oldData: any) => 
+        oldData ? { ...oldData, status: 'closed' } : oldData
+      );
       setShowCloseModal(false);
       toast('Form closed. It will no longer accept new responses.', 'success');
     },
