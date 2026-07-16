@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { isAxiosError } from 'axios';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Active,
   DndContext,
@@ -32,6 +32,10 @@ import { LogicRulesPanel } from '@/components/form-builder/LogicRulesPanel';
 import { BrandingPanel } from '@/components/form-builder/BrandingPanel';
 import { SettingsPanel } from '@/components/form-builder/SettingsPanel';
 import { SharePanel } from '@/components/form-builder/SharePanel';
+import { PublishModal } from '@/components/form-builder/PublishModal';
+import { CloseFormModal } from '@/components/form-builder/CloseFormModal';
+import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
+import { LeaveBuilderModal } from '@/components/form-builder/LeaveBuilderModal';
 import type { FieldType } from '@/types/form';
 
 // Shared by handleDragOver (visual indicator) and handleDragEnd (actual insert)
@@ -50,6 +54,7 @@ export default function BuilderPageShell() {
   const router = useRouter();
   const { id } = useParams() as { id: string };
   const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
 
   // Active tab lives in the URL (?tab=logic) so it survives a page reload instead
@@ -65,6 +70,13 @@ export default function BuilderPageShell() {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Modal visibility state
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [pendingNavUrl, setPendingNavUrl] = useState<string | null>(null);
 
   // Read state and actions from builderStore
   const formId = useBuilderStore((state) => state.formId);
@@ -91,6 +103,7 @@ export default function BuilderPageShell() {
   const deleteLogicRule = useBuilderStore((state) => state.deleteLogicRule);
   const setBranding = useBuilderStore((state) => state.setBranding);
   const setSettings = useBuilderStore((state) => state.setSettings);
+  const setStatus = useBuilderStore((state) => state.setStatus);
   const markSaved = useBuilderStore((state) => state.markSaved);
   const undo = useBuilderStore((state) => state.undo);
   const redo = useBuilderStore((state) => state.redo);
@@ -124,6 +137,8 @@ export default function BuilderPageShell() {
       router.push('/forms');
     }
   }, [error, router, toast]);
+
+  // ─── Autosave ────────────────────────────────────────────────────────────────
 
   // Debounced Autosave effect
   useEffect(() => {
@@ -209,6 +224,138 @@ export default function BuilderPageShell() {
       }
     };
   }, []);
+
+  // ─── Publish flow ─────────────────────────────────────────────────────────────
+
+  const publishMutation = useMutation({
+    mutationFn: () => formsService.publishForm(formId!),
+    onSuccess: (data) => {
+      setStatus('published', data.slug);
+      setShowPublishModal(false);
+      setActiveTab('share');
+      toast('Form published successfully!', 'success');
+    },
+    onError: () => {
+      toast('Failed to publish form. Please try again.', 'error');
+    },
+  });
+
+  // Validate before opening the publish confirm modal
+  const handlePublishClick = useCallback(async () => {
+    const visibleFields = fields.filter((f) => !f.deleted);
+    if (visibleFields.length === 0) {
+      toast('Add at least one field before publishing.', 'error');
+      return;
+    }
+    const hasEmptyOptions = visibleFields.some(
+      (f) => 'options' in f && (f as { options: string[] }).options.length === 0
+    );
+    if (hasEmptyOptions) {
+      toast('All choice fields must have at least one option before publishing.', 'error');
+      return;
+    }
+
+    // If dirty, flush save first so the published snapshot is current
+    if (dirty && formId && formId !== 'undefined') {
+      try {
+        setSaveState('saving');
+        await formsService.updateForm(formId, { fields, title: formTitle, branding, settings });
+        markSaved();
+        setSaveState('saved');
+      } catch {
+        setSaveState('error');
+        toast('Could not save before publishing. Please try again.', 'error');
+        return;
+      }
+    }
+
+    setShowPublishModal(true);
+  }, [fields, dirty, formId, formTitle, branding, settings, markSaved, toast]);
+
+  // ─── Close form flow ──────────────────────────────────────────────────────────
+
+  const closeMutation = useMutation({
+    mutationFn: () => formsService.closeForm(formId!),
+    onSuccess: () => {
+      setStatus('closed');
+      setShowCloseModal(false);
+      toast('Form closed. It will no longer accept new responses.', 'success');
+    },
+    onError: () => {
+      toast('Failed to close form. Please try again.', 'error');
+    },
+  });
+
+  // ─── Delete form flow (from builder) ─────────────────────────────────────────
+
+  const deleteMutation = useMutation({
+    mutationFn: () => formsService.deleteForm(formId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['forms'] });
+      setShowDeleteModal(false);
+      toast('Form deleted.', 'success');
+      router.push('/forms');
+    },
+    onError: () => {
+      toast('Failed to delete form. Please try again.', 'error');
+    },
+  });
+
+  // ─── Leave-Builder guard ──────────────────────────────────────────────────────
+
+  // Intercept in-app navigation when dirty: capture the intended URL, show modal.
+  // We patch router.push so sidebar Link clicks get caught too.
+  const dirtyRef = useRef(dirty);
+  useEffect(() => { dirtyRef.current = dirty; }, [dirty]);
+
+  const handleBack = useCallback(() => {
+    if (dirtyRef.current) {
+      setPendingNavUrl('/forms');
+      setShowLeaveModal(true);
+    } else {
+      router.push('/forms');
+    }
+  }, [router]);
+
+  // "Save and leave" in the leave-guard modal
+  const handleSaveAndLeave = useCallback(async () => {
+    const current = saveStateRef.current;
+    if (current.dirty && current.formId && current.formId !== 'undefined') {
+      try {
+        setSaveState('saving');
+        await formsService.updateForm(current.formId, {
+          fields: current.fields,
+          title: current.formTitle,
+          branding: current.branding,
+          settings: current.settings,
+        });
+        markSaved();
+        setSaveState('saved');
+      } catch {
+        setSaveState('error');
+        toast('Could not save. Please try again.', 'error');
+        return;
+      }
+    }
+    const dest = pendingNavUrl ?? '/forms';
+    setPendingNavUrl(null);
+    setShowLeaveModal(false);
+    router.push(dest);
+  }, [pendingNavUrl, markSaved, toast, router]);
+
+  const handleLeaveWithoutSaving = useCallback(() => {
+    const dest = pendingNavUrl ?? '/forms';
+    setPendingNavUrl(null);
+    setShowLeaveModal(false);
+    router.push(dest);
+  }, [pendingNavUrl, router]);
+
+  const handleStay = useCallback(() => {
+    setPendingNavUrl(null);
+    setShowLeaveModal(false);
+  }, []);
+
+  // ─── DnD ─────────────────────────────────────────────────────────────────────
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [dragOverInfo, setDragOverInfo] = useState<{ fieldId: string; position: 'above' | 'below' } | null>(null);
@@ -353,11 +500,15 @@ export default function BuilderPageShell() {
               isSaving={saveState === 'saving'}
               saveState={saveState}
               savedAt={savedAt}
+              status={status}
               onTitleChange={setFormTitle}
               onUndo={undo}
               onRedo={redo}
               onPreview={() => {}}
-              onBack={() => router.push('/forms')}
+              onBack={handleBack}
+              onPublish={handlePublishClick}
+              onClose={() => setShowCloseModal(true)}
+              onDelete={() => setShowDeleteModal(true)}
             />
             
             <BuilderTabs activeTab={activeTab} onChange={setActiveTab} />
@@ -431,9 +582,7 @@ export default function BuilderPageShell() {
                     status={status}
                     slug={slug}
                     formTitle={formTitle}
-                    // Full publish confirm-modal flow lands Friday (Requirement 7) — for now
-                    // this is an honest stub rather than a dead button.
-                    onPublish={() => toast('Publish flow is coming Friday.', 'info')}
+                    onPublish={handlePublishClick}
                   />
                 </div>
               ) : (
@@ -458,6 +607,37 @@ export default function BuilderPageShell() {
           </>
         )}
       </div>
+
+      {/* ── Lifecycle Modals ── */}
+      <PublishModal
+        isOpen={showPublishModal}
+        onClose={() => setShowPublishModal(false)}
+        onConfirm={() => publishMutation.mutate()}
+        isPending={publishMutation.isPending}
+      />
+
+      <CloseFormModal
+        isOpen={showCloseModal}
+        onClose={() => setShowCloseModal(false)}
+        onConfirm={() => closeMutation.mutate()}
+        isPending={closeMutation.isPending}
+      />
+
+      <DeleteFormModal
+        isOpen={showDeleteModal}
+        formTitle={formTitle}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={() => deleteMutation.mutate()}
+        isDeleting={deleteMutation.isPending}
+      />
+
+      <LeaveBuilderModal
+        isOpen={showLeaveModal}
+        onSaveAndLeave={handleSaveAndLeave}
+        onLeaveWithoutSaving={handleLeaveWithoutSaving}
+        onStay={handleStay}
+        isSaving={saveState === 'saving'}
+      />
     </>
   );
 }
