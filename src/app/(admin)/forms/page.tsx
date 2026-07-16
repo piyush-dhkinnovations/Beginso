@@ -127,7 +127,7 @@ export default function FormsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [formToDelete, setFormToDelete] = useState<string | null>(null);
+  const [formToDelete, setFormToDelete] = useState<Form | null>(null);
 
   // Fetch forms list
   const { data, isLoading, error } = useQuery({
@@ -222,7 +222,7 @@ export default function FormsPage() {
               form={form}
               onDuplicate={(id) => duplicateMutation.mutate(id)}
               isDuplicating={duplicatingId === form._id}
-              onDelete={(id) => setFormToDelete(id)}
+              onDelete={(id) => setFormToDelete(data.forms.find((f) => f._id === id) ?? null)}
               isDeleting={deletingId === form._id}
             />
           ))}
@@ -245,10 +245,11 @@ export default function FormsPage() {
       {/* Delete Form Modal */}
       <DeleteFormModal
         isOpen={formToDelete !== null}
+        formTitle={formToDelete?.title ?? ''}
         onClose={() => setFormToDelete(null)}
         onConfirm={() => {
           if (formToDelete) {
-            deleteMutation.mutate(formToDelete);
+            deleteMutation.mutate(formToDelete._id);
             setFormToDelete(null);
           }
         }}

@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ArrowLeft, Undo2, Redo2, Eye } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { ArrowLeft, CheckCircle2, ChevronDown, Undo2, Redo2, Eye, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import type { FormStatus } from '@/types/form';
 
 export interface BuilderHeaderProps {
   formTitle: string;
@@ -11,11 +12,15 @@ export interface BuilderHeaderProps {
   isSaving: boolean;
   saveState?: 'idle' | 'saving' | 'saved' | 'error';
   savedAt: Date | null;
+  status: FormStatus;
   onTitleChange: (title: string) => void;
   onUndo: () => void;
   onRedo: () => void;
   onPreview: () => void;
   onBack: () => void;
+  onPublish: () => void;
+  onClose: () => void;
+  onDelete: () => void;
 }
 
 export function BuilderHeader({
@@ -25,14 +30,20 @@ export function BuilderHeader({
   isSaving,
   saveState = 'idle',
   savedAt,
+  status,
   onTitleChange,
   onUndo,
   onRedo,
   onPreview,
   onBack,
+  onPublish,
+  onClose,
+  onDelete,
 }: BuilderHeaderProps) {
   const [title, setTitle] = useState(formTitle || '');
   const [prevFormTitle, setPrevFormTitle] = useState<string | undefined>(formTitle);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   if (formTitle !== prevFormTitle) {
     setPrevFormTitle(formTitle);
@@ -52,6 +63,18 @@ export function BuilderHeader({
       e.currentTarget.blur();
     }
   };
+
+  // Close overflow menu when clicking outside
+  React.useEffect(() => {
+    if (!menuOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [menuOpen]);
 
   return (
     <header className="flex items-center justify-between px-4 h-14 border-b bg-white shrink-0 shadow-sm">
@@ -101,7 +124,7 @@ export function BuilderHeader({
         </Button>
       </div>
 
-      {/* Right Section: Save State Indicator & Preview/Publish */}
+      {/* Right Section: Save State Indicator & Preview/Publish/Overflow */}
       <div className="flex items-center gap-4 flex-1 justify-end">
         {/* Save State Label */}
         <div className="text-body-sm select-none">
@@ -116,7 +139,7 @@ export function BuilderHeader({
           ) : null}
         </div>
 
-        {/* Action Buttons */}
+        {/* Preview */}
         <Button
           onClick={onPreview}
           variant="ghost"
@@ -127,17 +150,57 @@ export function BuilderHeader({
           <span>Preview</span>
         </Button>
 
-        <Button
-          variant="secondary"
-          size="small"
-          disabled
-          className="cursor-not-allowed bg-neutral-100 border-neutral-200 text-neutral-400 font-medium"
-        >
-          Publish
-        </Button>
+        {/* Publish / Status control */}
+        {status === 'published' ? (
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1.5 text-emerald-600 font-semibold text-body-sm px-2">
+              <CheckCircle2 size={15} />
+              Published
+            </span>
+            <Button variant="secondary" size="small" onClick={onClose}>
+              Close form
+            </Button>
+          </div>
+        ) : (
+          <Button variant="primary" size="small" onClick={onPublish}>
+            {status === 'closed' ? 'Re-publish' : 'Publish'}
+          </Button>
+        )}
 
-        {/* TODO [Sprint 2 Part 2 - Requirement 9]: Add an overflow (⋯) menu here containing 'Delete form'. 
-            This will trigger the exact same <DeleteFormModal> used in the forms list page. */}
+        {/* Overflow menu: Delete form */}
+        <div className="relative" ref={menuRef}>
+          <Button
+            variant="ghost"
+            size="small"
+            className="p-2 min-h-[36px] min-w-[36px]"
+            title="More actions"
+            aria-label="More actions"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-expanded={menuOpen}
+          >
+            <ChevronDown size={16} />
+          </Button>
+
+          {menuOpen && (
+            <div
+              role="menu"
+              className="absolute right-0 top-full mt-1 w-44 bg-white border border-neutral-200 rounded-lg shadow-lg z-50 py-1"
+            >
+              <button
+                role="menuitem"
+                type="button"
+                className="flex items-center gap-2 w-full px-3 py-2 text-body-sm text-red-600 hover:bg-red-50 transition-colors"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onDelete();
+                }}
+              >
+                <Trash2 size={14} />
+                Delete form
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
