@@ -4,21 +4,26 @@ import type {
   FormField,
   FieldType,
   FormBranding,
+  FormPage,
   FormSettings,
   FormStatus,
   LogicRule,
 } from '@/types/form';
 
-// Snapshot captures both fields and title so undo/redo restores the full editor state
+// Snapshot captures everything undo/redo needs to restore the full editor state.
+// Page titles/descriptions live inside `pages`, so no separate fields are needed for them.
 interface BuilderSnapshot {
   fields: FormField[];
   formTitle: string;
+  pages: FormPage[];
 }
 
 export interface BuilderState {
   formId: string | null;
-  formTitle: string;
+  formTitle: string;          // admin-facing name — top bar / Forms Manager
   fields: FormField[];
+  pages: FormPage[];          // always at least one page; each carries its own title/description
+  activePageId: string | null; // which page's fields the canvas currently shows
   activeFieldId: string | null;
   dirty: boolean;
   undoStack: BuilderSnapshot[];
@@ -46,13 +51,22 @@ export interface BuilderState {
   addLogicRule: (fieldId: string, rule: LogicRule) => void;
   updateLogicRule: (oldFieldId: string, oldRuleIndex: number, newFieldId: string, rule: LogicRule) => void;
   deleteLogicRule: (fieldId: string, ruleIndex: number) => void;
+  setActivePageId: (pageId: string) => void;
+  addPage: () => void;
+  setPageTitle: (pageId: string, title: string) => void;
+  setPageDescription: (pageId: string, description: string) => void;
+  deletePage: (pageId: string) => void;
 }
 
-// Helper to push a snapshot of current fields + title to the undoStack (capped at 50) and clear the redoStack
-function pushSnapshot(fields: FormField[], formTitle: string, undoStack: BuilderSnapshot[]) {
+// Helper to push a full-state snapshot to the undoStack (capped at 50) and clear the redoStack
+function pushSnapshot(fields: FormField[], formTitle: string, pages: FormPage[], undoStack: BuilderSnapshot[]) {
   // ponytail: O(N) full deep clone ceiling. Safe for MVP, but memory/perf trap for huge forms.
   // Upgrade path: replace with minimal JSON patches or immer.
-  const snapshot: BuilderSnapshot = { fields: structuredClone(fields), formTitle };
+  const snapshot: BuilderSnapshot = {
+    fields: structuredClone(fields),
+    formTitle,
+    pages: structuredClone(pages),
+  };
   const newUndoStack = [...undoStack, snapshot].slice(-50);
   return {
     undoStack: newUndoStack,
@@ -76,10 +90,23 @@ const defaultLabelFor = (type: FieldType): string => {
   return labels[type] || 'New Field';
 };
 
+// Fields belonging to a single page, in display order (deleted fields excluded)
+function pageFields(fields: FormField[], pageId: string): FormField[] {
+  return fields.filter((f) => !f.deleted && f.pageId === pageId);
+}
+
+// Everything NOT in that page's visible set (other pages' fields + deleted fields of any page) —
+// relative order among themselves is irrelevant since they're never rendered together.
+function otherFields(fields: FormField[], pageId: string): FormField[] {
+  return fields.filter((f) => f.deleted || f.pageId !== pageId);
+}
+
 export const useBuilderStore = create<BuilderState>((set) => ({
   formId: null,
   formTitle: '',
   fields: [],
+  pages: [],
+  activePageId: null,
   activeFieldId: null,
   dirty: false,
   undoStack: [],
@@ -90,43 +117,71 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   slug: undefined,
 
   initForm: (form) =>
-    set((state) => ({
-      formId: form._id,
-      formTitle: form.title,
-      fields: form.fields || [],
-      branding: form.branding ?? {},
-      settings: form.settings ?? { honeypotEnabled: true },
-      status: form.status,
-      // The GET /api/forms/:id endpoint may not return `slug` even when the form is published
-      // (only POST /publish does). Preserve whatever slug the store already has for this same
-      // form so the Share tab stays functional after navigating away and back.
-      slug: form.slug ?? (form.status === 'published' && state.formId === form._id ? state.slug : undefined),
-      activeFieldId: null,
-      dirty: false,
-      undoStack: [],
-      redoStack: [],
-    })),
+    set((state) => {
+      // Backend may not have `pages` yet (pre-migration forms) — synthesize a single
+      // default page so the rest of the app can always assume pages.length >= 1.
+      const pages: FormPage[] =
+        form.pages && form.pages.length > 0
+          ? form.pages
+          : [{ id: crypto.randomUUID(), order: 0 }];
+
+      // Page 1 defaults its title to the admin's form name so a freshly created form
+      // isn't blank on first open — every page after that starts genuinely blank
+      // (shows the "Untitled form" placeholder) until the admin sets its own title.
+      if (!pages[0].title) {
+        pages[0] = { ...pages[0], title: form.title };
+      }
+      const defaultPageId = pages[0].id;
+
+      // Backfill pageId on any field that predates the pages feature.
+      const fields = (form.fields || []).map((f) =>
+        f.pageId ? f : ({ ...f, pageId: defaultPageId } as FormField)
+      );
+
+      return {
+        formId: form._id,
+        formTitle: form.title,
+        fields,
+        pages,
+        activePageId: defaultPageId,
+        branding: form.branding ?? {},
+        settings: form.settings ?? { honeypotEnabled: true },
+        status: form.status,
+        // The GET /api/forms/:id endpoint may not return `slug` even when the form is published
+        // (only POST /publish does). Preserve whatever slug the store already has for this same
+        // form so the Share tab stays functional after navigating away and back.
+        slug: form.slug ?? (form.status === 'published' && state.formId === form._id ? state.slug : undefined),
+        activeFieldId: null,
+        dirty: false,
+        undoStack: [],
+        redoStack: [],
+      };
+    }),
 
   setFormTitle: (title) =>
     set((state) => ({
-      ...pushSnapshot(state.fields, state.formTitle, state.undoStack),
+      ...pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack),
       formTitle: title,
       dirty: true,
     })),
 
   addField: (type, insertIndex) =>
     set((state) => {
-      const snapshot = pushSnapshot(state.fields, state.formTitle, state.undoStack);
-      const visibleFields = state.fields.filter((f) => !f.deleted);
+      const activePageId = state.activePageId ?? state.pages[0]?.id;
+      if (!activePageId) return {};
+
+      const snapshot = pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack);
+      const currentPageFields = pageFields(state.fields, activePageId);
       const defaultField: FormField = {
         fieldId: crypto.randomUUID(),
+        pageId: activePageId,
         type,
         label: defaultLabelFor(type),
         placeholder: '',
         required: false,
         helpText: '',
         deleted: false,
-        order: visibleFields.length,
+        order: currentPageFields.length,
       } as FormField;
 
       // Choice field default options config
@@ -134,22 +189,19 @@ export const useBuilderStore = create<BuilderState>((set) => ({
         (defaultField as Extract<FormField, { options: string[] }>).options = ['Option 1'];
       }
 
-      let newVisible = [...visibleFields];
-      if (typeof insertIndex === 'number' && insertIndex >= 0 && insertIndex <= newVisible.length) {
-        newVisible.splice(insertIndex, 0, defaultField);
+      const newPageFields = [...currentPageFields];
+      if (typeof insertIndex === 'number' && insertIndex >= 0 && insertIndex <= newPageFields.length) {
+        newPageFields.splice(insertIndex, 0, defaultField);
       } else {
-        newVisible.push(defaultField);
+        newPageFields.push(defaultField);
       }
 
-      // Re-assign order based on the new visible index sequence
-      newVisible.forEach((f, idx) => {
+      // Re-assign order based on the new in-page index sequence
+      newPageFields.forEach((f, idx) => {
         f.order = idx;
       });
 
-      const finalFields = [
-        ...newVisible,
-        ...state.fields.filter((f) => f.deleted),
-      ];
+      const finalFields = [...newPageFields, ...otherFields(state.fields, activePageId)];
 
       return {
         ...snapshot,
@@ -160,33 +212,33 @@ export const useBuilderStore = create<BuilderState>((set) => ({
 
   duplicateField: (fieldId) =>
     set((state) => {
-      const visibleFields = state.fields.filter((f) => !f.deleted);
-      const originalIndex = visibleFields.findIndex((f) => f.fieldId === fieldId);
+      const original = state.fields.find((f) => f.fieldId === fieldId);
+      if (!original) return {};
+
+      const currentPageFields = pageFields(state.fields, original.pageId);
+      const originalIndex = currentPageFields.findIndex((f) => f.fieldId === fieldId);
       if (originalIndex === -1) return {};
 
-      const snapshot = pushSnapshot(state.fields, state.formTitle, state.undoStack);
+      const snapshot = pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack);
 
       // Deep-clone so the duplicate's own arrays (e.g. choice options) never share a
       // reference with the original — editing one must never silently edit the other.
       // logicRules is dropped: those rules describe *this* field as the source, and
       // copying them would make the duplicate silently drive the same target field.
-      const { logicRules: _logicRules, ...clonedBase } = structuredClone(visibleFields[originalIndex]);
+      const { logicRules: _logicRules, ...clonedBase } = structuredClone(currentPageFields[originalIndex]);
       const duplicate = {
         ...clonedBase,
         fieldId: crypto.randomUUID(),
         label: `${clonedBase.label} (Copy)`,
       } as FormField;
 
-      const newVisible = [...visibleFields];
-      newVisible.splice(originalIndex + 1, 0, duplicate);
-      newVisible.forEach((f, idx) => {
+      const newPageFields = [...currentPageFields];
+      newPageFields.splice(originalIndex + 1, 0, duplicate);
+      newPageFields.forEach((f, idx) => {
         f.order = idx;
       });
 
-      const finalFields = [
-        ...newVisible,
-        ...state.fields.filter((f) => f.deleted),
-      ];
+      const finalFields = [...newPageFields, ...otherFields(state.fields, original.pageId)];
 
       return {
         ...snapshot,
@@ -200,27 +252,27 @@ export const useBuilderStore = create<BuilderState>((set) => ({
     set((state) => {
       if (activeId === overId) return {};
 
-      const snapshot = pushSnapshot(state.fields, state.formTitle, state.undoStack);
-      const visibleFields = state.fields.filter((f) => !f.deleted);
-      const activeIndex = visibleFields.findIndex((f) => f.fieldId === activeId);
-      const overIndex = visibleFields.findIndex((f) => f.fieldId === overId);
+      const activeField = state.fields.find((f) => f.fieldId === activeId);
+      if (!activeField) return {};
+      const pageId = activeField.pageId;
+
+      const snapshot = pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack);
+      const currentPageFields = pageFields(state.fields, pageId);
+      const activeIndex = currentPageFields.findIndex((f) => f.fieldId === activeId);
+      const overIndex = currentPageFields.findIndex((f) => f.fieldId === overId);
 
       if (activeIndex === -1 || overIndex === -1) return {};
 
-      const newVisible = [...visibleFields];
-      const [removed] = newVisible.splice(activeIndex, 1);
-      newVisible.splice(overIndex, 0, removed);
+      const newPageFields = [...currentPageFields];
+      const [removed] = newPageFields.splice(activeIndex, 1);
+      newPageFields.splice(overIndex, 0, removed);
 
-      // Re-assign order based on the new visible index sequence
-      newVisible.forEach((f, idx) => {
+      // Re-assign order based on the new in-page index sequence
+      newPageFields.forEach((f, idx) => {
         f.order = idx;
       });
 
-      // Reconstruct final fields: visible ordered ones first, followed by deleted ones
-      const finalFields = [
-        ...newVisible,
-        ...state.fields.filter((f) => f.deleted),
-      ];
+      const finalFields = [...newPageFields, ...otherFields(state.fields, pageId)];
 
       return {
         ...snapshot,
@@ -251,7 +303,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       });
 
       return {
-        ...pushSnapshot(state.fields, state.formTitle, state.undoStack),
+        ...pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack),
         fields: updatedFields,
         dirty: true,
       };
@@ -272,7 +324,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       const nextActiveFieldId = state.activeFieldId === fieldId ? null : state.activeFieldId;
 
       return {
-        ...pushSnapshot(state.fields, state.formTitle, state.undoStack),
+        ...pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack),
         fields: updatedFields,
         activeFieldId: nextActiveFieldId,
         dirty: true,
@@ -288,11 +340,21 @@ export const useBuilderStore = create<BuilderState>((set) => ({
     set((state) => {
       if (state.undoStack.length === 0) return {};
       const prev = state.undoStack[state.undoStack.length - 1];
+      // If the page the user is currently looking at no longer exists in the
+      // restored state, fall back to the restored form's first page.
+      const activePageId = prev.pages.some((p) => p.id === state.activePageId)
+        ? state.activePageId
+        : prev.pages[0]?.id ?? null;
       return {
         fields: structuredClone(prev.fields),
         formTitle: prev.formTitle,
+        pages: structuredClone(prev.pages),
+        activePageId,
         undoStack: state.undoStack.slice(0, -1),
-        redoStack: [{ fields: structuredClone(state.fields), formTitle: state.formTitle }, ...state.redoStack],
+        redoStack: [
+          { fields: structuredClone(state.fields), formTitle: state.formTitle, pages: structuredClone(state.pages) },
+          ...state.redoStack,
+        ],
         dirty: true,
       };
     }),
@@ -301,10 +363,18 @@ export const useBuilderStore = create<BuilderState>((set) => ({
     set((state) => {
       if (state.redoStack.length === 0) return {};
       const next = state.redoStack[0];
+      const activePageId = next.pages.some((p) => p.id === state.activePageId)
+        ? state.activePageId
+        : next.pages[0]?.id ?? null;
       return {
         fields: structuredClone(next.fields),
         formTitle: next.formTitle,
-        undoStack: [...state.undoStack, { fields: structuredClone(state.fields), formTitle: state.formTitle }],
+        pages: structuredClone(next.pages),
+        activePageId,
+        undoStack: [
+          ...state.undoStack,
+          { fields: structuredClone(state.fields), formTitle: state.formTitle, pages: structuredClone(state.pages) },
+        ],
         redoStack: state.redoStack.slice(1),
         dirty: true,
       };
@@ -342,7 +412,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       );
 
       return {
-        ...pushSnapshot(state.fields, state.formTitle, state.undoStack),
+        ...pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack),
         fields: updatedFields,
         dirty: true,
       };
@@ -362,7 +432,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       });
 
       return {
-        ...pushSnapshot(state.fields, state.formTitle, state.undoStack),
+        ...pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack),
         fields: updatedFields,
         dirty: true,
       };
@@ -395,7 +465,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       });
 
       return {
-        ...pushSnapshot(state.fields, state.formTitle, state.undoStack),
+        ...pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack),
         fields: updatedFields,
         dirty: true,
       };
@@ -413,8 +483,96 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       });
 
       return {
-        ...pushSnapshot(state.fields, state.formTitle, state.undoStack),
+        ...pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack),
         fields: updatedFields,
+        dirty: true,
+      };
+    }),
+
+  // ─── Pages ────────────────────────────────────────────────────────────────
+
+  setActivePageId: (pageId) =>
+    set({
+      activePageId: pageId,
+    }),
+
+  addPage: () =>
+    set((state) => {
+      // Deliberately blank — new pages must never inherit another page's title/description.
+      const newPage: FormPage = {
+        id: crypto.randomUUID(),
+        order: state.pages.length,
+      };
+
+      return {
+        ...pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack),
+        pages: [...state.pages, newPage],
+        activePageId: newPage.id,
+        dirty: true,
+      };
+    }),
+
+  setPageTitle: (pageId, title) =>
+    set((state) => {
+      const page = state.pages.find((p) => p.id === pageId);
+      if (!page) return {};
+      if ((page.title ?? '') === title) return {};
+
+      const updatedPages = state.pages.map((p) => (p.id === pageId ? { ...p, title } : p));
+
+      return {
+        ...pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack),
+        pages: updatedPages,
+        dirty: true,
+      };
+    }),
+
+  setPageDescription: (pageId, description) =>
+    set((state) => {
+      const page = state.pages.find((p) => p.id === pageId);
+      if (!page) return {};
+      if ((page.description ?? '') === description) return {};
+
+      const updatedPages = state.pages.map((p) => (p.id === pageId ? { ...p, description } : p));
+
+      return {
+        ...pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack),
+        pages: updatedPages,
+        dirty: true,
+      };
+    }),
+
+  deletePage: (pageId) =>
+    set((state) => {
+      // A form must always have at least one page — refuse to delete the last one.
+      if (state.pages.length <= 1) return {};
+      const pageIndex = state.pages.findIndex((p) => p.id === pageId);
+      if (pageIndex === -1) return {};
+
+      const remainingPages = state.pages.filter((p) => p.id !== pageId);
+      // Merge the deleted page's fields onto the nearest remaining page (the one before it,
+      // or the new first page if it was page 1) so nothing is silently lost.
+      const targetPage = remainingPages[Math.max(0, pageIndex - 1)] ?? remainingPages[0];
+
+      const targetExisting = pageFields(state.fields, targetPage.id);
+      const merged = state.fields
+        .filter((f) => !f.deleted && f.pageId === pageId)
+        .map((f) => ({ ...f, pageId: targetPage.id }) as FormField);
+      const mergedPageFields = [...targetExisting, ...merged];
+      mergedPageFields.forEach((f, idx) => {
+        f.order = idx;
+      });
+
+      const untouched = state.fields.filter((f) => f.deleted || (f.pageId !== targetPage.id && f.pageId !== pageId));
+      const finalFields = [...mergedPageFields, ...untouched];
+
+      const nextActivePageId = state.activePageId === pageId ? targetPage.id : state.activePageId;
+
+      return {
+        ...pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack),
+        pages: remainingPages,
+        fields: finalFields,
+        activePageId: nextActivePageId,
         dirty: true,
       };
     }),

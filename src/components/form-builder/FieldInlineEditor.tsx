@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useId, useState } from 'react';
-import { Settings2 } from 'lucide-react';
+import React, { useState } from 'react';
 import type { FormField } from '@/types/form';
 import { Input } from '@/components/ui/Input';
+import { Switch } from '@/components/ui/Switch';
 import { OptionsEditor } from './OptionsEditor';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -17,12 +17,12 @@ const TEXT_TYPES = new Set([
   'date',
 ]);
 
-// Platform-enforced allowlist (Req 2.11) — not configurable per-field, so it's a constant, not state.
+// Platform-enforced allowlist — not configurable per-field, so it's a constant, not state.
 const ALLOWED_FILE_TYPE_LABELS = ['PDF', 'Word', 'Excel', 'Images', 'Video (MP4)', 'ZIP', 'Plain text'];
 
 // ─── Small sub-component: a labelled section ───────────────────────────────────
 
-function PanelSection({ label, children }: { label: string; children: React.ReactNode }) {
+export function PanelSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
       <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
@@ -30,35 +30,6 @@ function PanelSection({ label, children }: { label: string; children: React.Reac
       </span>
       {children}
     </div>
-  );
-}
-
-// ─── Toggle Switch (no shadcn dep) ────────────────────────────────────────────
-
-export function Switch({
-  id,
-  checked,
-  onChange,
-}: {
-  id: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <button
-      id={id}
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${checked ? 'bg-brand-600' : 'bg-neutral-300'
-        }`}
-    >
-      <span
-        className={`pointer-events-none block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${checked ? 'translate-x-4' : 'translate-x-0'
-          }`}
-      />
-    </button>
   );
 }
 
@@ -277,7 +248,7 @@ function DateRangeSection({
 }) {
   return (
     <PanelSection label="Date range">
-      <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 min-[881px]:grid-cols-2 gap-2">
         <Input
           id={`${fieldId}-mindate`}
           label="From"
@@ -301,52 +272,30 @@ function DateRangeSection({
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
-export interface PropertiesPanelProps {
-  field: FormField | null;
+export interface FieldInlineEditorProps {
+  field: FormField;
   onUpdate: (fieldId: string, updates: Partial<FormField>) => void;
   onUpdateOptions: (fieldId: string, options: string[]) => void;
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
+// Rendered inline inside the selected FieldCard on the canvas — replaces the old
+// right-side PropertiesPanel. Only ever mounted when its field is selected, so
+// there is no "no field selected" empty state to handle here.
 
-export function PropertiesPanel({ field, onUpdate, onUpdateOptions }: PropertiesPanelProps) {
-  const uid = useId();
-
-  // ── Empty state ─────────────────────────────────────────────────────────────
-  if (!field) {
-    return (
-      <aside className="w-[240px] min-[881px]:w-[320px] border-l bg-white flex flex-col items-center justify-center p-6 text-center shrink-0 gap-3">
-        <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center">
-          <Settings2 size={24} className="text-neutral-400" />
-        </div>
-        <p className="text-body-sm text-neutral-400 max-w-[180px] leading-relaxed">
-          Select a field to configure its properties
-        </p>
-      </aside>
-    );
-  }
-
+export function FieldInlineEditor({ field, onUpdate, onUpdateOptions }: FieldInlineEditorProps) {
+  // Field identity is stable and unique across the form, so it doubles as the id prefix.
+  const uid = field.fieldId;
   const isTextField = TEXT_TYPES.has(field.type);
+  const isChoiceField = field.type === 'dropdown' || field.type === 'multiple_choice' || field.type === 'checkbox';
 
   return (
-    <aside className="w-[240px] min-[881px]:w-[320px] border-l bg-white overflow-y-auto shrink-0 flex flex-col">
-      {/* Header */}
-      <div className="px-4 py-3 border-b bg-neutral-50">
-        <h3 className="text-heading-3 font-bold text-neutral-800 tracking-tight">
-          Field Properties
-        </h3>
-        <p className="text-caption text-neutral-400 mt-0.5">
-          {field.type.replace(/_/g, ' ')}
-        </p>
-      </div>
-
-      {/* Body */}
-      <div className="flex flex-col gap-5 p-4">
-        {isTextField && (
-          <>
+    <div className="flex flex-col gap-4">
+      {isTextField && (
+        <>
+          <div className="grid grid-cols-1 min-[881px]:grid-cols-2 gap-4">
             <LabelField uid={uid} fieldId={field.fieldId} label={field.label} onUpdate={onUpdate} />
 
-            {/* Placeholder */}
             <PanelSection label="Placeholder text">
               <BlurField
                 id={`${uid}-placeholder`}
@@ -357,79 +306,83 @@ export function PropertiesPanel({ field, onUpdate, onUpdateOptions }: Properties
                 onCommit={(v) => onUpdate(field.fieldId, { placeholder: v })}
               />
             </PanelSection>
+          </div>
 
-            <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
+          <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
 
-            <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
+          <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
 
-            {field.type === 'number' && (
-              <NumberRangeSection fieldId={field.fieldId} min={field.min} max={field.max} onUpdate={onUpdate} />
-            )}
+          {field.type === 'number' && (
+            <NumberRangeSection fieldId={field.fieldId} min={field.min} max={field.max} onUpdate={onUpdate} />
+          )}
 
-            {(field.type === 'short_text' || field.type === 'long_text') && (
-              <PanelSection label="Max length">
-                <BlurField
-                  id={`${uid}-maxlength`}
-                  label=""
-                  type="number"
-                  min={1}
-                  defaultValue={field.maxLength?.toString() ?? ''}
-                  placeholder="No limit"
-                  allowEmpty={true}
-                  onCommit={(v) => {
-                    const n = v.trim() === '' ? undefined : Math.max(1, Math.trunc(Number(v)));
-                    onUpdate(field.fieldId, { maxLength: n });
-                  }}
-                />
-              </PanelSection>
-            )}
-
-            {field.type === 'date' && (
-              <DateRangeSection fieldId={field.fieldId} minDate={field.minDate} maxDate={field.maxDate} onUpdate={onUpdate} />
-            )}
-          </>
-        )}
-
-        {(field.type === 'dropdown' || field.type === 'multiple_choice' || field.type === 'checkbox') && (
-          <>
-            <LabelField uid={uid} fieldId={field.fieldId} label={field.label} onUpdate={onUpdate} />
-
-            <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
-
-            <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
-
-            <PanelSection label="Options">
-              <OptionsEditor fieldId={field.fieldId} options={field.options} onUpdate={onUpdateOptions} />
+          {(field.type === 'short_text' || field.type === 'long_text') && (
+            <PanelSection label="Max length">
+              <BlurField
+                id={`${uid}-maxlength`}
+                label=""
+                type="number"
+                min={1}
+                defaultValue={field.maxLength?.toString() ?? ''}
+                placeholder="No limit"
+                allowEmpty={true}
+                onCommit={(v) => {
+                  const n = v.trim() === '' ? undefined : Math.max(1, Math.trunc(Number(v)));
+                  onUpdate(field.fieldId, { maxLength: n });
+                }}
+              />
             </PanelSection>
-          </>
-        )}
+          )}
 
-        {field.type === 'file_upload' && (
-          <>
-            <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
+          {field.type === 'date' && (
+            <DateRangeSection fieldId={field.fieldId} minDate={field.minDate} maxDate={field.maxDate} onUpdate={onUpdate} />
+          )}
+        </>
+      )}
 
-            <PanelSection label="Allowed file types">
-              <div className="flex flex-wrap gap-1.5">
-                {ALLOWED_FILE_TYPE_LABELS.map((label) => (
-                  <span
-                    key={label}
-                    className="text-caption font-medium text-neutral-600 bg-neutral-100 rounded px-2 py-1"
-                  >
-                    {label}
-                  </span>
-                ))}
-              </div>
-              <p className="text-caption text-neutral-400 mt-1">
-                Platform-enforced — cannot be changed.
-              </p>
-            </PanelSection>
+      {isChoiceField && (
+        <>
+          <LabelField uid={uid} fieldId={field.fieldId} label={field.label} onUpdate={onUpdate} />
 
-            <PanelSection label="Max file size">
-              <p className="text-body-sm text-neutral-600">100 MB maximum file size</p>
-            </PanelSection>
-          </>
-        )}
-      </div>
-    </aside>
+          <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
+
+          <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
+
+          <PanelSection label="Options">
+            <OptionsEditor fieldId={field.fieldId} options={field.options} onUpdate={onUpdateOptions} />
+          </PanelSection>
+        </>
+      )}
+
+      {field.type === 'file_upload' && (
+        <>
+          <LabelField uid={uid} fieldId={field.fieldId} label={field.label} onUpdate={onUpdate} />
+
+          <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
+
+          <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
+
+          <PanelSection label="Allowed file types">
+            <div className="flex flex-wrap gap-1.5">
+              {ALLOWED_FILE_TYPE_LABELS.map((label) => (
+                <span
+                  key={label}
+                  className="text-caption font-medium text-neutral-600 bg-neutral-100 rounded px-2 py-1"
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+            <p className="text-caption text-neutral-400 mt-1">
+              Platform-enforced — cannot be changed.
+            </p>
+          </PanelSection>
+
+          <PanelSection label="Max file size">
+            <p className="text-body-sm text-neutral-600">100 MB maximum file size</p>
+          </PanelSection>
+        </>
+      )}
+    </div>
   );
 }
