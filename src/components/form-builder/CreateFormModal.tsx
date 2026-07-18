@@ -62,6 +62,7 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
         workspaceId: '',
         status: 'draft',
         fields: [],
+        pages: [],
         branding: {},
         settings: { honeypotEnabled: true },
         schemaVersion: 1,

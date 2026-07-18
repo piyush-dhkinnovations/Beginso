@@ -27,6 +27,7 @@ const mockForm = (id: string = 'test-form-id', title: string = 'Initial Title'):
   description: '',
   status: 'draft',
   fields: [],
+  pages: [],
   branding: {},
   settings: {
     honeypotEnabled: true,

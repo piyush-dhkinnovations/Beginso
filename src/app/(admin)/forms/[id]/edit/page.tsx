@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { isAxiosError } from 'axios';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -26,9 +26,8 @@ import { BuilderHeader } from '@/components/form-builder/BuilderHeader';
 import { BuilderTabs, BuilderTab } from '@/components/form-builder/BuilderTabs';
 import { useToast } from '@/components/common/Toast';
 import { Canvas, CANVAS_ID } from '@/components/form-builder/Canvas';
-import { PropertiesPanel } from '@/components/form-builder/PropertiesPanel';
+import { PagesPanel } from '@/components/form-builder/PagesPanel';
 import { Toolbox, FIELD_TYPE_CONFIG } from '@/components/form-builder/Toolbox';
-import { LogicRulesPanel } from '@/components/form-builder/LogicRulesPanel';
 import { BrandingPanel } from '@/components/form-builder/BrandingPanel';
 import { SettingsPanel } from '@/components/form-builder/SettingsPanel';
 import { SharePanel } from '@/components/form-builder/SharePanel';
@@ -48,7 +47,7 @@ function isDroppingBelow(active: Active, over: Over | null): boolean {
   );
 }
 
-const VALID_TABS: BuilderTab[] = ['build', 'logic', 'branding', 'settings', 'share'];
+const VALID_TABS: BuilderTab[] = ['build', 'branding', 'settings', 'share'];
 
 export default function BuilderPageShell() {
   const router = useRouter();
@@ -82,6 +81,8 @@ export default function BuilderPageShell() {
   const formId = useBuilderStore((state) => state.formId);
   const formTitle = useBuilderStore((state) => state.formTitle);
   const fields = useBuilderStore((state) => state.fields);
+  const pages = useBuilderStore((state) => state.pages);
+  const activePageId = useBuilderStore((state) => state.activePageId);
   const activeFieldId = useBuilderStore((state) => state.activeFieldId);
   const dirty = useBuilderStore((state) => state.dirty);
   const branding = useBuilderStore((state) => state.branding);
@@ -96,6 +97,11 @@ export default function BuilderPageShell() {
   const reorderFields = useBuilderStore((state) => state.reorderFields);
   const softDeleteField = useBuilderStore((state) => state.softDeleteField);
   const setActiveFieldId = useBuilderStore((state) => state.setActiveFieldId);
+  const setActivePageId = useBuilderStore((state) => state.setActivePageId);
+  const addPage = useBuilderStore((state) => state.addPage);
+  const setPageTitle = useBuilderStore((state) => state.setPageTitle);
+  const setPageDescription = useBuilderStore((state) => state.setPageDescription);
+  const deletePage = useBuilderStore((state) => state.deletePage);
   const updateField = useBuilderStore((state) => state.updateField);
   const updateFieldOptions = useBuilderStore((state) => state.updateFieldOptions);
   const addLogicRule = useBuilderStore((state) => state.addLogicRule);
@@ -155,7 +161,13 @@ export default function BuilderPageShell() {
 
       try {
         setSaveState('saving');
-        await formsService.updateForm(formId, { fields, title: formTitle, branding, settings });
+        await formsService.updateForm(formId, {
+          fields,
+          title: formTitle,
+          pages,
+          branding,
+          settings,
+        });
         markSaved();
         setSaveState('saved');
         setSavedAt(new Date());
@@ -180,7 +192,7 @@ export default function BuilderPageShell() {
     return () => {
       clearTimeout(timer);
     };
-  }, [dirty, fields, formTitle, formId, branding, settings, markSaved]);
+  }, [dirty, fields, formTitle, pages, formId, branding, settings, markSaved]);
 
   // Cancel the idle reset timer on unmount to prevent setState on unmounted component
   useEffect(() => {
@@ -190,10 +202,10 @@ export default function BuilderPageShell() {
   }, []);
 
   // Use refs to avoid re-binding and firing effect on every stroke
-  const saveStateRef = useRef({ dirty, fields, formTitle, formId, branding, settings });
+  const saveStateRef = useRef({ dirty, fields, formTitle, pages, formId, branding, settings });
   useEffect(() => {
-    saveStateRef.current = { dirty, fields, formTitle, formId, branding, settings };
-  }, [dirty, fields, formTitle, formId, branding, settings]);
+    saveStateRef.current = { dirty, fields, formTitle, pages, formId, branding, settings };
+  }, [dirty, fields, formTitle, pages, formId, branding, settings]);
 
   // Synchronous flush on unmount or tab close
   useEffect(() => {
@@ -215,6 +227,7 @@ export default function BuilderPageShell() {
         formsService.updateForm(current.formId, {
           fields: current.fields,
           title: current.formTitle,
+          pages: current.pages,
           branding: current.branding,
           settings: current.settings,
         }).catch(() => {});
@@ -260,7 +273,13 @@ export default function BuilderPageShell() {
     if (dirty && formId && formId !== 'undefined') {
       try {
         setSaveState('saving');
-        await formsService.updateForm(formId, { fields, title: formTitle, branding, settings });
+        await formsService.updateForm(formId, {
+          fields,
+          title: formTitle,
+          pages,
+          branding,
+          settings,
+        });
         markSaved();
         setSaveState('saved');
       } catch {
@@ -271,7 +290,7 @@ export default function BuilderPageShell() {
     }
 
     setShowPublishModal(true);
-  }, [fields, dirty, formId, formTitle, branding, settings, markSaved, toast]);
+  }, [fields, dirty, formId, formTitle, pages, branding, settings, markSaved, toast]);
 
   // ─── Close form flow ──────────────────────────────────────────────────────────
 
@@ -330,6 +349,7 @@ export default function BuilderPageShell() {
         await formsService.updateForm(current.formId, {
           fields: current.fields,
           title: current.formTitle,
+          pages: current.pages,
           branding: current.branding,
           settings: current.settings,
         });
@@ -427,10 +447,12 @@ export default function BuilderPageShell() {
 
     if (!over) return;
 
-    // Drop from toolbox → create new field
+    // Drop from toolbox → create new field on the currently active page
     if (active.data.current?.from === 'toolbox') {
       const type = active.data.current.type as FieldType;
-      const overIndex = fields.filter((f) => !f.deleted).findIndex((f) => f.fieldId === over.id);
+      const overIndex = fields
+        .filter((f) => !f.deleted && f.pageId === activePageId)
+        .findIndex((f) => f.fieldId === over.id);
 
       if (overIndex !== -1) {
         const modifier = isDroppingBelow(active, over) ? 1 : 0;
@@ -465,6 +487,19 @@ export default function BuilderPageShell() {
     ? FIELD_TYPE_CONFIG.find((c) => c.type === activeDragField.type)
     : null;
 
+  // Non-deleted field count per page, for the Pages panel's badges
+  const pageFieldCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    fields.forEach((f) => {
+      if (!f.deleted) counts[f.pageId] = (counts[f.pageId] ?? 0) + 1;
+    });
+    return counts;
+  }, [fields]);
+
+  // The currently active page's own title/description — every page holds an
+  // independent value (see builderStore's setPageTitle/setPageDescription).
+  const activePage = pages.find((p) => p.id === activePageId) ?? null;
+
   return (
     <>
       {/* Mobile Gate (visible at viewport width <= 520px) */}
@@ -478,7 +513,7 @@ export default function BuilderPageShell() {
       </div>
 
       {/* Desktop Wrapper (visible at viewport width >= 521px) */}
-      {/* -m-6 cancels the (admin) layout's <main className="p-6">; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar. Canvas and PropertiesPanel keep their own internal overflow-y-auto below. */}
+      {/* -m-6 cancels the (admin) layout's <main className="p-6">; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar. Canvas keeps its own internal overflow-y-auto below. */}
       <div className="hidden min-[521px]:flex flex-col h-[calc(100vh-56px)] -m-6 overflow-hidden bg-neutral-50">
         {isLoading ? (
           /* Loading Skeleton */
@@ -527,13 +562,32 @@ export default function BuilderPageShell() {
                   onDragEnd={handleDragEnd}
                 >
                   <Toolbox onAdd={addField} />
+                  <PagesPanel
+                    pages={pages}
+                    activePageId={activePageId}
+                    fieldCounts={pageFieldCounts}
+                    onSelectPage={setActivePageId}
+                    onAddPage={addPage}
+                    onDeletePage={deletePage}
+                  />
                   <Canvas
                     fields={fields}
+                    activePageId={activePageId}
+                    pageTitle={activePage?.title ?? ''}
+                    pageDescription={activePage?.description ?? ''}
+                    onPageTitleChange={(title) => activePageId && setPageTitle(activePageId, title)}
+                    onPageDescriptionChange={(description) => activePageId && setPageDescription(activePageId, description)}
                     activeFieldId={activeFieldId}
                     onFieldSelect={setActiveFieldId}
                     onFieldDelete={softDeleteField}
                     onFieldDuplicate={duplicateField}
                     onFieldReorder={reorderFields}
+                    onFieldDeselect={() => setActiveFieldId(null)}
+                    onFieldUpdate={updateField}
+                    onFieldUpdateOptions={updateFieldOptions}
+                    onAddLogicRule={addLogicRule}
+                    onUpdateLogicRule={updateLogicRule}
+                    onDeleteLogicRule={deleteLogicRule}
                     dragOverFieldId={dragOverInfo?.fieldId ?? null}
                     dragOverPosition={dragOverInfo?.position ?? null}
                     isToolboxOver={isToolboxOver}
@@ -563,15 +617,6 @@ export default function BuilderPageShell() {
                     ) : null}
                   </DragOverlay>
                 </DndContext>
-              ) : activeTab === 'logic' ? (
-                <div className="flex-1 overflow-y-auto p-6">
-                  <LogicRulesPanel
-                    fields={fields}
-                    onAddRule={addLogicRule}
-                    onUpdateRule={updateLogicRule}
-                    onDeleteRule={deleteLogicRule}
-                  />
-                </div>
               ) : activeTab === 'branding' ? (
                 <div className="flex-1 overflow-y-auto p-6">
                   <BrandingPanel branding={branding} formTitle={formTitle} onUpdate={setBranding} />
@@ -593,19 +638,6 @@ export default function BuilderPageShell() {
                 <div className="flex-1 flex items-center justify-center text-neutral-400 text-body">
                   Coming in Sprint 2 Part 2
                 </div>
-              )}
-
-              {/* Properties Panel — only shown in Build tab */}
-              {activeTab === 'build' && (
-                <PropertiesPanel
-                  field={
-                    fields.find(
-                      (f) => f.fieldId === activeFieldId && !f.deleted
-                    ) ?? null
-                  }
-                  onUpdate={updateField}
-                  onUpdateOptions={updateFieldOptions}
-                />
               )}
             </div>
           </>

@@ -21,13 +21,14 @@ export type FieldType =
 
 export interface BaseField {
   fieldId: string;       // UUID — immutable once created; assigned via crypto.randomUUID()
+  pageId: string;        // FormPage.id this field belongs to — always present (see FormPage below)
   type: FieldType;
   label: string;
   placeholder?: string;
   required: boolean;
   helpText?: string;
   deleted: boolean;      // soft-delete flag — never remove from array
-  order: number;
+  order: number;         // position within its page (not global across all pages)
   logicRules?: LogicRule[]; // rules where THIS field is the source
 }
 
@@ -64,6 +65,19 @@ export interface FileUploadField extends BaseField {
 
 export type FormField = TextField | ChoiceField | FileUploadField;
 
+// ─── Pages (multi-page / multi-step forms) ───────────────────────────────────
+// Every form has at least one page, even simple single-page forms — a page is
+// not an opt-in feature, it's the always-present unit fields belong to.
+
+export interface FormPage {
+  id: string;    // UUID — immutable once created; assigned via crypto.randomUUID()
+  order: number; // position among the form's pages
+  title?: string;       // shown to respondents at the top of THIS page; independent per page.
+                         // Undefined shows a generic "Untitled form" placeholder — never falls
+                         // back to another page's title or the admin-facing Form.title.
+  description?: string; // shown to respondents at the top of THIS page; independent per page
+}
+
 // ─── Form Definition ─────────────────────────────────────────────────────────
 
 export type FormStatus = 'draft' | 'published' | 'closed';
@@ -89,16 +103,18 @@ export interface FormSettings {
   successMessage?: string;
   responseLimit?: number;
   closeDate?: string;        // ISO 8601 date string
+  layout?: 'single_column' | 'two_column' | 'compact'; // undefined treated as 'single_column'
 }
 
 export interface Form {
   _id: string;
   workspaceId: string;
-  title: string;
-  description?: string;
+  title: string;              // admin-facing name — Forms Manager, browser tab, BuilderHeader top bar
+  description?: string;       // admin-facing note — set once at creation, not builder-editable
   status: FormStatus;
   slug?: string;             // nanoid(10) — generated on publish only
   fields: FormField[];
+  pages: FormPage[];         // always at least one page
   branding: FormBranding;
   settings: FormSettings;
   schemaVersion: number;
@@ -119,6 +135,7 @@ export interface UpdateFormPayload {
   title?: string;
   description?: string;
   fields?: FormField[];
+  pages?: FormPage[];  // each page carries its own title/description — see FormPage
   branding?: Partial<FormBranding>;
   settings?: Partial<FormSettings>;
 }
