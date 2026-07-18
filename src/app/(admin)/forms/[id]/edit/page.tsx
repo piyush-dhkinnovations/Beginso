@@ -126,9 +126,17 @@ export default function BuilderPageShell() {
     retry: false,
   });
 
-  // Init builderStore state when query returns data
+  // Init builderStore state when query returns data. Guarded to run once per
+  // form id — not on every query-cache update. Publish/close success handlers
+  // call queryClient.setQueryData to patch status/slug into the cache, which
+  // creates a new `form` object reference; without this guard that re-triggers
+  // initForm() with the STALE data those handlers spread from (the original
+  // GET response, never refreshed after autosave PATCHes), wiping out any
+  // fields added since the form was first loaded.
+  const initializedFormId = useRef<string | null>(null);
   useEffect(() => {
-    if (form) {
+    if (form && initializedFormId.current !== form._id) {
+      initializedFormId.current = form._id;
       initForm(form);
     }
   }, [form, initForm]);
