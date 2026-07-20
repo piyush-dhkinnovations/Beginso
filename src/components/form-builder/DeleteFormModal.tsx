@@ -69,7 +69,7 @@ export function DeleteFormModal({
             onClick={onConfirm}
             isLoading={isDeleting}
             disabled={!canDelete}
-            className="bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 disabled:bg-red-200 disabled:border-red-200"
+            className="bg-rose-600 text-white hover:bg-rose-700 focus:ring-rose-500 disabled:bg-rose-200 disabled:border-rose-200"
           >
             Delete permanently
           </Button>

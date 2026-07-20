@@ -12,23 +12,23 @@ export function Badge({ variant, children, className, ...props }: BadgeProps) {
   const truncatedText = text.length > 30 ? text.slice(0, 30) + "..." : text;
 
   const badgeStyles = {
-    draft: "bg-[#F8FAFC] border-[#CBD5E1] text-[#475569]",
-    closed: "bg-[#FFF1F2] border-[#FECDD3] text-[#9F1239]",
-    published: "bg-[#EFF6FF] border-[#93C5FD] text-[#1E40AF]",
-    active: "bg-[#ECFDF5] border-[#6EE7B7] text-[#065F46]",
-    new: "bg-[#EEF2FF] border-[#A5B4FC] text-[#3730A3]",
-    in_progress: "bg-[#FFFBEB] border-[#FCD34D] text-[#92400E]",
-    completed: "bg-[#F0FDFA] border-[#5EEAD4] text-[#115E59]",
+    draft: "bg-neutral-50 border-slate-300 text-neutral-600",
+    closed: "bg-rose-50 border-rose-200 text-rose-800",
+    published: "bg-brand-50 border-blue-300 text-blue-800",
+    active: "bg-emerald-50 border-emerald-300 text-emerald-800",
+    new: "bg-indigo-50 border-indigo-300 text-indigo-800",
+    in_progress: "bg-amber-50 border-amber-300 text-amber-800",
+    completed: "bg-teal-50 border-teal-300 text-teal-800",
   };
 
   const dotStyles = {
-    draft: "bg-[#475569]",
-    closed: "bg-[#9F1239]",
-    published: "bg-[#1E40AF]",
-    active: "bg-[#065F46]",
-    new: "bg-[#3730A3]",
-    in_progress: "bg-[#92400E]",
-    completed: "bg-[#115E59]",
+    draft: "bg-neutral-600",
+    closed: "bg-rose-800",
+    published: "bg-blue-800",
+    active: "bg-emerald-800",
+    new: "bg-indigo-800",
+    in_progress: "bg-amber-800",
+    completed: "bg-teal-800",
   };
 
   return (

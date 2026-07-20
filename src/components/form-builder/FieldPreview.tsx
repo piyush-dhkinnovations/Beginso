@@ -9,7 +9,7 @@ import type { FormField } from '@/types/form';
 // (placeholder text, options, etc). Purely decorative — no inputs, no state.
 
 const inputPreviewClass =
-  'h-[34px] rounded-md border border-neutral-200 bg-neutral-50 flex items-center gap-2 px-3 text-body-sm text-neutral-400 truncate';
+  'h-[34px] rounded-md border border-neutral-200 bg-neutral-50 flex items-center gap-2 px-3 text-body-sm text-neutral-500 truncate';
 
 function OptionMarker({ shape }: { shape: 'round' | 'square' }) {
   return (
@@ -34,7 +34,7 @@ export function FieldPreview({ field }: { field: FormField }) {
 
     case 'long_text':
       return (
-        <div className="min-h-[52px] rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-body-sm text-neutral-400">
+        <div className="min-h-[52px] rounded-md border border-neutral-200 bg-neutral-50 px-3 py-2 text-body-sm text-neutral-500">
           {field.placeholder || 'Long answer text'}
         </div>
       );
@@ -76,7 +76,7 @@ export function FieldPreview({ field }: { field: FormField }) {
             </div>
           ))}
           {remaining > 0 && (
-            <span className="text-caption text-neutral-400 pl-[23px]">+ {remaining} more</span>
+            <span className="text-caption text-neutral-500 pl-[23px]">+ {remaining} more</span>
           )}
         </div>
       );
