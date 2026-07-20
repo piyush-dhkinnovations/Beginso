@@ -83,6 +83,7 @@ export function BuilderHeader({
           onKeyDown={handleKeyDown}
           className="w-full text-heading-2 font-bold text-neutral-900 bg-transparent border-b-2 border-transparent focus:border-neutral-500 focus:outline-none px-1 py-0.5 rounded transition-colors"
           placeholder="Untitled Form"
+          aria-label="Form name (admin-facing)"
         />
       </div>
 
