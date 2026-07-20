@@ -84,7 +84,7 @@ export function Toolbox({ onAdd }: ToolboxProps) {
     <aside className="w-[64px] min-[881px]:w-[280px] flex flex-col gap-4 p-2 min-[881px]:p-4 border-r bg-white overflow-y-auto shrink-0 shadow-sm">
       <div className="hidden min-[881px]:block">
         <h3 className="text-heading-3 font-bold text-neutral-800 tracking-tight">Field Types</h3>
-        <p className="text-body-sm text-neutral-400 mt-1">
+        <p className="text-body-sm text-neutral-500 mt-1">
           Drag and drop fields onto the canvas to customize your form.
         </p>
       </div>

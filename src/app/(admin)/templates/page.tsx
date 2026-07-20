@@ -82,7 +82,7 @@ export default function TemplatesPage() {
             ))}
           </div>
 
-          <p className="text-caption text-neutral-400">
+          <p className="text-caption text-neutral-500">
             Showing {filtered?.length ?? 0} template{(filtered?.length ?? 0) !== 1 ? 's' : ''}
           </p>
 

@@ -158,7 +158,7 @@ export function LoginForm() {
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-neutral-200"></div>
         </div>
-        <span className="relative bg-white px-3 text-[12px] text-neutral-400 font-medium uppercase">
+        <span className="relative bg-white px-3 text-[12px] text-neutral-500 font-medium uppercase">
           Or continue with
         </span>
       </div>

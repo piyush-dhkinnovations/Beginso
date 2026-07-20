@@ -1,44 +1,34 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowLeft, CheckCircle2, Undo2, Redo2, Eye, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { FormStatus } from '@/types/form';
 
 export interface BuilderHeaderProps {
   formTitle: string;
-  canUndo: boolean;
-  canRedo: boolean;
   isSaving: boolean;
   saveState?: 'idle' | 'saving' | 'saved' | 'error';
   savedAt: Date | null;
   status: FormStatus;
   onTitleChange: (title: string) => void;
-  onUndo: () => void;
-  onRedo: () => void;
   onPreview: () => void;
   onBack: () => void;
   onPublish: () => void;
   onClose: () => void;
-  onDelete: () => void;
 }
 
 export function BuilderHeader({
   formTitle,
-  canUndo,
-  canRedo,
   isSaving,
   saveState = 'idle',
   savedAt,
   status,
   onTitleChange,
-  onUndo,
-  onRedo,
   onPreview,
   onBack,
   onPublish,
   onClose,
-  onDelete,
 }: BuilderHeaderProps) {
   const [title, setTitle] = useState(formTitle || '');
   const [prevFormTitle, setPrevFormTitle] = useState<string | undefined>(formTitle);
@@ -87,30 +77,6 @@ export function BuilderHeader({
         />
       </div>
 
-      {/* Centre Section: Undo / Redo */}
-      <div className="flex items-center gap-1">
-        <Button
-          onClick={onUndo}
-          disabled={!canUndo}
-          variant="ghost"
-          size="small"
-          className="p-2 min-h-[36px] min-w-[36px]"
-          title="Undo"
-        >
-          <Undo2 size={16} />
-        </Button>
-        <Button
-          onClick={onRedo}
-          disabled={!canRedo}
-          variant="ghost"
-          size="small"
-          className="p-2 min-h-[36px] min-w-[36px]"
-          title="Redo"
-        >
-          <Redo2 size={16} />
-        </Button>
-      </div>
-
       {/* Right Section: Save State Indicator & Preview/Publish/Delete */}
       <div className="flex items-center gap-4 flex-1 justify-end">
         {/* Save State Label */}
@@ -153,18 +119,6 @@ export function BuilderHeader({
             {status === 'closed' ? 'Re-publish' : 'Publish'}
           </Button>
         )}
-
-        {/* Delete form — direct action, no overflow dropdown */}
-        <Button
-          onClick={onDelete}
-          variant="ghost"
-          size="small"
-          className="p-2 min-h-[36px] min-w-[36px] hover:text-rose-600 hover:bg-rose-50"
-          title="Delete form"
-          aria-label="Delete form"
-        >
-          <Trash2 size={16} />
-        </Button>
       </div>
     </header>
   );

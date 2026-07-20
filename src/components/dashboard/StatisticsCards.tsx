@@ -70,7 +70,7 @@ export function StatisticsCards({
               </div>
             ) : (
               <div>
-                <span className={`text-display font-bold leading-none ${card.value === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}>
+                <span className={`text-display font-bold leading-none ${card.value === 0 ? 'text-neutral-500' : 'text-neutral-900'}`}>
                   {card.value}
                 </span>
               </div>

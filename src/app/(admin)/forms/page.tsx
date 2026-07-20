@@ -67,7 +67,7 @@ function FormRow({
         >
           {form.title}
         </Link>
-        <span className="text-caption text-neutral-400 mt-0.5">
+        <span className="text-caption text-neutral-500 mt-0.5">
           Updated {updatedAt} · {form.responseCount} response{form.responseCount !== 1 ? 's' : ''}
         </span>
       </div>
@@ -101,7 +101,7 @@ function FormRow({
           onClick={() => onDelete(formId)}
           title="Delete form"
           aria-label={`Delete ${form.title}`}
-          className="w-8 h-8 p-0 shrink-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+          className="w-8 h-8 p-0 shrink-0 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
         >
           <Trash2 size={16} />
           <span className="sr-only">Delete</span>
@@ -260,7 +260,7 @@ export default function FormsPage() {
 
           {/* Footer */}
           <div className="px-4 py-2.5 border-t border-neutral-100 bg-neutral-50">
-            <span className="text-caption text-neutral-400">
+            <span className="text-caption text-neutral-500">
               {data.total} form{data.total !== 1 ? 's' : ''} total
             </span>
           </div>

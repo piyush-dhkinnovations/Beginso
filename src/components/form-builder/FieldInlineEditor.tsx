@@ -373,7 +373,7 @@ export function FieldInlineEditor({ field, onUpdate, onUpdateOptions }: FieldInl
                 </span>
               ))}
             </div>
-            <p className="text-caption text-neutral-400 mt-1">
+            <p className="text-caption text-neutral-500 mt-1">
               Platform-enforced — cannot be changed.
             </p>
           </PanelSection>

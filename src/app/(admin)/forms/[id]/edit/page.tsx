@@ -33,7 +33,6 @@ import { SettingsPanel } from '@/components/form-builder/SettingsPanel';
 import { SharePanel } from '@/components/form-builder/SharePanel';
 import { PublishModal } from '@/components/form-builder/PublishModal';
 import { CloseFormModal } from '@/components/form-builder/CloseFormModal';
-import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
 import { LeaveBuilderModal } from '@/components/form-builder/LeaveBuilderModal';
 import type { FieldType } from '@/types/form';
 
@@ -73,7 +72,6 @@ export default function BuilderPageShell() {
   // Modal visibility state
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [pendingNavUrl, setPendingNavUrl] = useState<string | null>(null);
 
@@ -322,21 +320,6 @@ export default function BuilderPageShell() {
     },
   });
 
-  // ─── Delete form flow (from builder) ─────────────────────────────────────────
-
-  const deleteMutation = useMutation({
-    mutationFn: () => formsService.deleteForm(formId!),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['forms'] });
-      setShowDeleteModal(false);
-      toast('Form deleted.', 'success');
-      router.push('/forms');
-    },
-    onError: () => {
-      toast('Failed to delete form. Please try again.', 'error');
-    },
-  });
-
   // ─── Leave-Builder guard ──────────────────────────────────────────────────────
 
   // Intercept in-app navigation when dirty: capture the intended URL, show modal.
@@ -547,23 +530,25 @@ export default function BuilderPageShell() {
           <>
             <BuilderHeader
               formTitle={formTitle}
-              canUndo={canUndo}
-              canRedo={canRedo}
               isSaving={saveState === 'saving'}
               saveState={saveState}
               savedAt={savedAt}
               status={status}
               onTitleChange={setFormTitle}
-              onUndo={undo}
-              onRedo={redo}
               onPreview={() => {}}
               onBack={handleBack}
               onPublish={handlePublishClick}
               onClose={() => setShowCloseModal(true)}
-              onDelete={() => setShowDeleteModal(true)}
             />
-            
-            <BuilderTabs activeTab={activeTab} onChange={setActiveTab} />
+
+            <BuilderTabs
+              activeTab={activeTab}
+              onChange={setActiveTab}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onUndo={undo}
+              onRedo={redo}
+            />
             
             <div className="flex flex-1 overflow-hidden">
               {activeTab === 'build' ? (
@@ -648,7 +633,7 @@ export default function BuilderPageShell() {
                   />
                 </div>
               ) : (
-                <div className="flex-1 flex items-center justify-center text-neutral-400 text-body">
+                <div className="flex-1 flex items-center justify-center text-neutral-500 text-body">
                   Coming in Sprint 2 Part 2
                 </div>
               )}
@@ -670,14 +655,6 @@ export default function BuilderPageShell() {
         onClose={() => setShowCloseModal(false)}
         onConfirm={() => closeMutation.mutate()}
         isPending={closeMutation.isPending}
-      />
-
-      <DeleteFormModal
-        isOpen={showDeleteModal}
-        formTitle={formTitle}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={() => deleteMutation.mutate()}
-        isDeleting={deleteMutation.isPending}
       />
 
       <LeaveBuilderModal
