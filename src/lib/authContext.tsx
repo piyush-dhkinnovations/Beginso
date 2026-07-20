@@ -94,6 +94,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback((token: string, user: User) => {
     saveToken(token);
     dispatch({ type: 'LOGIN', payload: { user } });
+    // POST /api/auth/session's `user` can be missing fields (e.g. `name`) that GET
+    // /api/auth/me returns fully — reuses the same call initAuth() already makes on every
+    // reload, so the full profile shows immediately instead of only after a reload.
+    AuthService.getMe()
+      .then((data) => dispatch({ type: 'LOGIN', payload: { user: data.user } }))
+      .catch(() => { });
   }, []);
 
   const logout = useCallback(async () => {

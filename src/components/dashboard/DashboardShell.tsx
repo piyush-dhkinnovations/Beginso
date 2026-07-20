@@ -1,30 +1,24 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { TopNav } from '@/components/dashboard/TopNav';
 import { Sidebar } from '@/components/dashboard/Sidebar';
 import { cn } from '@/lib/utils';
 
 // DashboardShell is a client component that manages the interactive sidebar/topnav shell.
 // The admin layout itself remains a Server Component so child pages keep RSC benefits.
-export function DashboardShell({ children }: { children: React.ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
+// Collapse state is read from a cookie server-side (DashboardLayout) and passed in as
+// initialCollapsed, so the very first render — server and client — is already correct.
+// This replaces the previous localStorage + effect approach, which could only correct
+// itself after mount and caused a visible expanded-then-collapsed flash on reload.
+export function DashboardShell({ children, initialCollapsed }: { children: React.ReactNode; initialCollapsed: boolean }) {
+  const [collapsed, setCollapsed] = useState(initialCollapsed);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem('sidebar_collapsed');
-    if (stored === 'true') {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCollapsed(true);
-    }
-    setIsMounted(true);
-  }, []);
 
   const handleToggleCollapse = () => {
     const newState = !collapsed;
     setCollapsed(newState);
-    localStorage.setItem('sidebar_collapsed', String(newState));
+    document.cookie = `sidebar_collapsed=${newState}; path=/; max-age=31536000; SameSite=Lax`;
   };
 
   const handleToggleMobileSidebar = () => {
@@ -78,9 +72,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           className={cn(
             "flex-1 p-6 overflow-y-auto min-h-full transition-all duration-300 ease-in-out",
             "ml-0", // mobile default
-            isMounted
-              ? (collapsed ? "md:ml-[56px]" : "md:ml-[200px]")
-              : "md:ml-[200px]" // fallback before hydration
+            collapsed ? "md:ml-[56px]" : "md:ml-[200px]"
           )}
         >
           {children}

@@ -41,8 +41,19 @@ export default function TemplatesPage() {
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-48 rounded-lg border border-neutral-200 bg-white animate-pulse" />
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-3 rounded-lg border border-neutral-200 bg-white p-6 animate-pulse">
+              <div className="flex items-start justify-between gap-2">
+                <div className="h-5 bg-neutral-200 rounded w-2/5" />
+                <div className="h-5 w-16 bg-neutral-100 rounded shrink-0" />
+              </div>
+              <div className="flex-1 space-y-2">
+                <div className="h-3 bg-neutral-100 rounded w-full" />
+                <div className="h-3 bg-neutral-100 rounded w-4/5" />
+              </div>
+              <div className="h-3 bg-neutral-100 rounded w-1/4" />
+              <div className="h-9 bg-neutral-200 rounded w-full" />
+            </div>
           ))}
         </div>
       ) : error ? (
@@ -76,9 +87,9 @@ export default function TemplatesPage() {
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered?.map((template) => (
+            {filtered?.map((template, index) => (
               <TemplateCard
-                key={template._id}
+                key={`${template._id}-${index}`}
                 template={template}
                 onUse={(id) => useMutationHook.mutate(id)}
                 isLoading={usingId === template._id}

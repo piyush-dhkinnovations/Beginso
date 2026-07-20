@@ -273,7 +273,9 @@ export default function BuilderPageShell() {
       return;
     }
     const hasEmptyOptions = visibleFields.some(
-      (f) => 'options' in f && (f as { options: string[] }).options.length === 0
+      (f) =>
+        (f.type === 'dropdown' || f.type === 'multiple_choice' || f.type === 'checkbox') &&
+        (!f.options || f.options.length === 0)
     );
     if (hasEmptyOptions) {
       toast('All choice fields must have at least one option before publishing.', 'error');
