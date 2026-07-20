@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 
@@ -21,18 +21,23 @@ export function DeleteFormModal({
 }: DeleteFormModalProps) {
   const [typed, setTyped] = useState('');
 
-  // Reset input whenever the modal opens/closes
-  const handleClose = () => {
-    setTyped('');
-    onClose();
-  };
+  // Reset whenever the modal opens — the component stays mounted across opens (the
+  // caller just toggles isOpen), and closing via onConfirm doesn't route through onClose,
+  // so relying only on a close-time reset left stale input from the previous form typed
+  // into the confirm field the next time this modal opened for a different form.
+  useEffect(() => {
+    if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setTyped('');
+    }
+  }, [isOpen]);
 
   const canDelete = typed === formTitle;
 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={handleClose}
+      onClose={onClose}
       title="Delete form?"
       description="This action cannot be undone. All responses will be permanently deleted."
     >
@@ -56,7 +61,7 @@ export function DeleteFormModal({
         </div>
 
         <div className="flex items-center justify-end gap-3 pt-2 border-t border-neutral-100">
-          <Button type="button" variant="secondary" onClick={handleClose} disabled={isDeleting}>
+          <Button type="button" variant="secondary" onClick={onClose} disabled={isDeleting}>
             Cancel
           </Button>
           <Button
