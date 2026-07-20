@@ -147,7 +147,7 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
           rows={3}
           className="w-full rounded-md border-2 border-neutral-200 px-3 py-2 text-[13px] bg-white outline-none focus:border-neutral-500 resize-none"
         />
-        <p className="text-caption text-neutral-400 text-right">{message.length}/500</p>
+        <p className="text-caption text-neutral-500 text-right">{message.length}/500</p>
       </PanelCard>
 
       <PanelCard label="Response limit" description="Automatically stop accepting responses after a set number.">

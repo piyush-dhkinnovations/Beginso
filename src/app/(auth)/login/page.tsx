@@ -22,7 +22,7 @@ export default function LoginPage() {
           </Link>
         </div>
         <div>
-          <Link href="/forgot-password" className="text-neutral-400 hover:text-neutral-600 transition-colors">
+          <Link href="/forgot-password" className="text-neutral-500 hover:text-neutral-600 transition-colors">
             Forgot password?
           </Link>
         </div>

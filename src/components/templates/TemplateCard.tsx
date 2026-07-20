@@ -20,7 +20,7 @@ export function TemplateCard({ template, onUse, isLoading }: TemplateCardProps) 
         </span>
       </div>
       <p className="text-body text-neutral-500 flex-1">{template.description}</p>
-      <span className="text-caption text-neutral-400">
+      <span className="text-caption text-neutral-500">
         {template.fields.length} {template.fields.length === 1 ? 'field' : 'fields'}
       </span>
       <Button onClick={() => onUse(template._id)} isLoading={isLoading} className="w-full">

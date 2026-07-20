@@ -29,7 +29,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       "inline-flex shrink-0 items-center justify-center font-semibold whitespace-nowrap transition-all outline-none select-none disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px] min-w-[44px]";
 
     const variants = {
-      primary: "bg-[#334155] text-white hover:bg-[#0F172A]",
+      primary: "bg-slate-700 text-white hover:bg-slate-900",
       secondary:
         "bg-white border border-[#CBD5E1] text-[#0F172A] hover:bg-neutral-100",
       destructive:
