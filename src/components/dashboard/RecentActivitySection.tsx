@@ -20,7 +20,7 @@ export function RecentActivitySection({ hasForms = false }: RecentActivitySectio
         heading={hasForms ? 'No recent activity' : 'No forms created yet'}
         body={
           hasForms
-            ? 'Activity will show up here as your forms collect responses.'
+            ? 'Activity feed is coming soon — check back once this is available.'
             : 'Get started by creating your first Beginso form.'
         }
         action={

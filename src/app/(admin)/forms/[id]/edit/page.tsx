@@ -160,7 +160,10 @@ export default function BuilderPageShell() {
 
     const timer = setTimeout(async () => {
       const hasEmptyChoiceOptions = fields.some(
-        (f) => !f.deleted && 'options' in f && f.options.length === 0
+        (f) =>
+          !f.deleted &&
+          (f.type === 'dropdown' || f.type === 'multiple_choice' || f.type === 'checkbox') &&
+          (!f.options || f.options.length === 0)
       );
       if (hasEmptyChoiceOptions) {
         setSaveState('error');

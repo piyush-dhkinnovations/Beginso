@@ -76,6 +76,7 @@ export function CanvasFormHeader({
         onBlur={commitTitle}
         onKeyDown={blurOnEnter}
         placeholder="Untitled form"
+        aria-label="Page title (shown to respondents)"
         className="w-full text-display font-extrabold text-neutral-900 bg-transparent border-none outline-none placeholder:text-neutral-300"
       />
       <input
