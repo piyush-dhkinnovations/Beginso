@@ -76,9 +76,9 @@ export default function TemplatesPage() {
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filtered?.map((template) => (
+            {filtered?.map((template, index) => (
               <TemplateCard
-                key={template._id}
+                key={`${template._id}-${index}`}
                 template={template}
                 onUse={(id) => useMutationHook.mutate(id)}
                 isLoading={usingId === template._id}

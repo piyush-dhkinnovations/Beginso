@@ -109,6 +109,38 @@ describe('Auth Service', () => {
     });
   });
 
+  // ─── loginWithGoogle() ─────────────────────────────────────────────────────
+
+  describe('loginWithGoogle()', () => {
+    it('signs in with a Google popup then posts the ID token to /api/auth/session', async () => {
+      const { signInWithPopup, getAdditionalUserInfo } = await import('firebase/auth');
+      (signInWithPopup as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        user: { displayName: 'Test User', getIdToken: vi.fn().mockResolvedValueOnce('real.id.token') },
+      });
+      (getAdditionalUserInfo as ReturnType<typeof vi.fn>).mockReturnValueOnce({ isNewUser: true });
+      const mockSessionData = { token: 'session.jwt', user: { id: 'u1', name: 'Test User', email: 'test@test.com' } };
+      mockPost.mockResolvedValueOnce({ data: mockSessionData });
+
+      const { loginWithGoogle } = await import('@/services/auth');
+      const result = await loginWithGoogle();
+
+      expect(mockPost).toHaveBeenCalledWith(
+        '/api/auth/session',
+        { token: 'real.id.token', name: 'Test User', isNewUser: true },
+        { timeout: 10_000 }
+      );
+      expect(result).toEqual(mockSessionData);
+    });
+
+    it('throws when the Google popup fails', async () => {
+      const { signInWithPopup } = await import('firebase/auth');
+      (signInWithPopup as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('popup-closed-by-user'));
+
+      const { loginWithGoogle } = await import('@/services/auth');
+      await expect(loginWithGoogle()).rejects.toThrow('popup-closed-by-user');
+    });
+  });
+
   // ─── getMe() ──────────────────────────────────────────────────────────────
 
   describe('getMe()', () => {
