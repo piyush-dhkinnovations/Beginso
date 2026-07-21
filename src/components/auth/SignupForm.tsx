@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { signupSchema, SignupFormValues } from '@/lib/schemas/signupSchema';
 import * as AuthService from '@/services/auth';
@@ -19,7 +18,6 @@ export function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const router = useRouter();
   const { login } = useAuth();
   const { toast } = useToast();
 
@@ -44,7 +42,6 @@ export function SignupForm() {
       const data = await AuthService.signup(values.name, values.email, values.password);
       toast('Account created successfully!', 'success');
       login(data.token, data.user);
-      router.push('/dashboard');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: { message?: string; fields?: Array<{ field: string; message: string }> | Record<string, string> } } } };
       const fields = err.response?.data?.error?.fields;
@@ -70,7 +67,6 @@ export function SignupForm() {
       const data = await AuthService.loginWithGoogle();
       toast('Account created successfully!', 'success');
       login(data.token, data.user);
-      router.push('/dashboard');
     } catch (error: unknown) {
       setIsGoogleLoading(false);
       setServerError(getFriendlyErrorMessage(error));
@@ -170,7 +166,7 @@ export function SignupForm() {
         type="submit"
         variant="primary"
         className="w-full mt-2"
-        isLoading={isUiLoading}
+        isLoading={isSubmitting}
         disabled={isUiLoading}
       >
         Sign Up
