@@ -3,7 +3,6 @@
 import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { loginSchema, LoginFormValues } from '@/lib/schemas/loginSchema';
 import * as AuthService from '@/services/auth';
@@ -19,7 +18,6 @@ export function LoginForm() {
   const [isEmailLoading, setIsEmailLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const router = useRouter();
   const { login } = useAuth();
 
   const isAnyLoading = isEmailLoading || isGoogleLoading;
@@ -53,7 +51,6 @@ export function LoginForm() {
         clearTimeout(timeoutRef.current);
       }
       login(data.token, data.user);
-      router.push('/dashboard');
     } catch (error: unknown) {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -84,7 +81,6 @@ export function LoginForm() {
     try {
       const data = await AuthService.loginWithGoogle();
       login(data.token, data.user);
-      router.push('/dashboard');
     } catch (error: unknown) {
       setIsGoogleLoading(false);
       setServerError(getFriendlyErrorMessage(error));
