@@ -34,15 +34,20 @@ export const publicFormService = {
     return { schema: (await res.json()) as PublicFormSchema };
   },
 
-  /** Sends multipart/form-data: `data` (JSON), `_hp` (honeypot, always empty), one part per file field. */
+  /**
+   * Sends multipart/form-data: `data` (JSON), `_hp` (honeypot), one part per file field.
+   * `honeypot` defaults to '' for real respondents — passed through as-is (not hardcoded)
+   * so a bot that actually fills the hidden `_hp` input is still reported to the backend.
+   */
   async submitForm(
     slug: string,
     data: SubmissionData,
-    files: Record<string, File>
+    files: Record<string, File>,
+    honeypot: string = ''
   ): Promise<{ ok: boolean; status: number; message?: string }> {
     const formData = new FormData();
     formData.append('data', JSON.stringify(data));
-    formData.append('_hp', '');
+    formData.append('_hp', honeypot);
     for (const [fieldId, file] of Object.entries(files)) {
       formData.append(fieldId, file);
     }

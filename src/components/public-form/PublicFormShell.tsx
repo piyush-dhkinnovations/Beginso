@@ -1,44 +1,255 @@
 'use client';
 
-import type { PublicFormSchema } from '@/types/publicForm';
+import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
+import { useForm, type FieldError, type Resolver } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
+import type { FormField } from '@/types/form';
+import type { PublicFormSchema, FieldValue, UploadState, FieldRendererProps } from '@/types/publicForm';
+import { evaluateLogicRules, getVisiblePageFields, buildAnswers } from '@/lib/logicEngine';
+import { buildPublicFormSchema } from '@/lib/schemas/publicFormSchema';
+import { publicFormService } from '@/services/publicForm';
+import { Button } from '@/components/ui/Button';
 import { FormBanner } from './FormBanner';
+import { FormProgress } from './FormProgress';
+import { ShortTextRenderer } from './fields/ShortTextRenderer';
+import { LongTextRenderer } from './fields/LongTextRenderer';
+import { EmailRenderer } from './fields/EmailRenderer';
+import { PhoneRenderer } from './fields/PhoneRenderer';
+import { NumberRenderer } from './fields/NumberRenderer';
+import { DateRenderer } from './fields/DateRenderer';
+import { DropdownRenderer } from './fields/DropdownRenderer';
+import { MultipleChoiceRenderer } from './fields/MultipleChoiceRenderer';
+import { CheckboxRenderer } from './fields/CheckboxRenderer';
+import { FileUploadRenderer } from './fields/FileUploadRenderer';
 
 interface PublicFormShellProps {
   schema: PublicFormSchema;
   slug: string;
 }
 
-/**
- * Day 2 placeholder — proves the SSR → schema → render pipeline works end to
- * end against the mock fixtures. Field renderers (Thu), RHF/logic-engine
- * wiring, page navigation, and submission (Fri) replace this body without
- * changing the component's props contract.
- */
-export function PublicFormShell({ schema }: PublicFormShellProps) {
-  const firstPage = schema.pages[0];
+// file_upload is dispatched separately below — it needs onFileChange/onUploadStateChange,
+// which the other 9 renderers don't take, so it doesn't fit this shared prop shape.
+const RENDERER_MAP: Record<Exclude<FormField['type'], 'file_upload'>, ComponentType<FieldRendererProps>> = {
+  short_text: ShortTextRenderer,
+  long_text: LongTextRenderer,
+  email: EmailRenderer,
+  phone: PhoneRenderer,
+  number: NumberRenderer,
+  date: DateRenderer,
+  dropdown: DropdownRenderer,
+  multiple_choice: MultipleChoiceRenderer,
+  checkbox: CheckboxRenderer,
+};
+
+export function PublicFormShell({ schema, slug }: PublicFormShellProps) {
+  const router = useRouter();
+  const sortedPages = useMemo(() => [...schema.pages].sort((a, b) => a.order - b.order), [schema.pages]);
+
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadStates, setUploadStates] = useState<Record<string, UploadState>>({});
+  const [files, setFiles] = useState<Record<string, File>>({});
+
+  // Read fresh inside the resolver (called at validation time) — avoids a stale schema
+  // if we captured hiddenFieldIds by closure at useForm() call time instead.
+  const hiddenFieldIdsRef = useRef<Set<string>>(new Set());
+
+  const methods = useForm<Record<string, FieldValue>>({
+    mode: 'onSubmit',
+    reValidateMode: 'onChange',
+    // buildPublicFormSchema's shape is dynamic (keyed by fieldId), so Zod infers its output as
+    // Record<string, unknown> rather than our known Record<string, FieldValue> — safe to assert,
+    // every branch in buildPublicFormSchema only ever produces a string/string[]/number/undefined.
+    resolver: ((values, context, options) =>
+      zodResolver(buildPublicFormSchema(schema.fields, hiddenFieldIdsRef.current))(
+        values as Record<string, unknown>,
+        context,
+        options as never
+      )) as Resolver<Record<string, FieldValue>>,
+  });
+
+  // eslint-disable-next-line react-hooks/incompatible-library -- watch() must return live values every render for real-time logic evaluation (Requirement 5.1); this is inherent to RHF's watch() API, not a bug.
+  const watchedValues = methods.watch();
+  const hiddenFieldIds = evaluateLogicRules(schema.fields, watchedValues);
+  const hiddenFieldIdsKey = Array.from(hiddenFieldIds).sort().join(',');
+
+  useEffect(() => {
+    hiddenFieldIdsRef.current = hiddenFieldIds;
+  });
+
+  // Fields hidden by a logic rule are unmounted from RHF state so they're never submitted
+  // and never contribute a required-validation error (Requirements 5.3, 5.5).
+  useEffect(() => {
+    hiddenFieldIds.forEach((fieldId) => {
+      methods.unregister(fieldId);
+      methods.setValue(fieldId, undefined);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the stable string form of the set on purpose
+  }, [hiddenFieldIdsKey]);
+
+  const currentPage = sortedPages[currentPageIndex];
+  const currentPageFields = currentPage
+    ? getVisiblePageFields(schema.fields, currentPage.id, hiddenFieldIds)
+    : [];
+  const totalPages = sortedPages.length;
+  const isLastPage = currentPageIndex === totalPages - 1;
+  const primaryColor = schema.branding.primaryColor ?? '#1D4ED8';
+
+  async function handleNext() {
+    const fieldIds = currentPageFields.map((f) => f.fieldId);
+    const valid = await methods.trigger(fieldIds);
+    if (!valid) {
+      const firstErrorId = fieldIds.find((id) => methods.formState.errors[id]);
+      if (firstErrorId) {
+        document.getElementById(firstErrorId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+    setCurrentPageIndex((i) => i + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function handleBack() {
+    setCurrentPageIndex((i) => i - 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  async function onSubmit(values: Record<string, FieldValue>) {
+    setSubmitError(null);
+    setIsSubmitting(true);
+
+    const answers = buildAnswers(schema.fields, hiddenFieldIds, values);
+    const honeypot = typeof values._hp === 'string' ? values._hp : '';
+    const result = await publicFormService.submitForm(slug, { answers }, files, honeypot);
+
+    if (result.ok) {
+      const params = new URLSearchParams({ title: schema.title });
+      if (schema.settings.successMessage) params.set('message', schema.settings.successMessage);
+      router.push(`/f/${slug}/success?${params.toString()}`);
+      return;
+    }
+
+    setIsSubmitting(false);
+    if (result.status === 429) {
+      setSubmitError('Too many submissions from your connection. Please wait a minute and try again.');
+    } else if (result.status === 422 && result.message) {
+      setSubmitError(result.message);
+    } else {
+      setSubmitError('Something went wrong. Please try again.');
+    }
+  }
+
+  function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
+    if (!isLastPage) {
+      e.preventDefault();
+      return;
+    }
+    methods.handleSubmit(onSubmit)(e);
+  }
+
+  const anyUploading = Object.values(uploadStates).some((s) => s.status === 'uploading');
+  const submitDisabled = isSubmitting || anyUploading;
 
   return (
     <div className="min-h-screen bg-neutral-50 flex justify-center p-4">
       <div className="bg-white rounded-xl border border-neutral-200 shadow-card max-w-[520px] w-full overflow-hidden">
         <FormBanner branding={schema.branding} />
-        <div className={schema.branding.logoUrl ? 'p-6 pt-8' : 'p-6'}>
-          <h1 className="text-display text-neutral-900">
-            {firstPage?.title ?? schema.title}
-          </h1>
-          {firstPage?.description && (
-            <p className="text-body text-neutral-500 mt-1">{firstPage.description}</p>
+        <form onSubmit={handleFormSubmit} noValidate className={schema.branding.logoUrl ? 'p-6 pt-8' : 'p-6'}>
+          <FormProgress currentPage={currentPageIndex + 1} totalPages={totalPages} />
+
+          <h1 className="text-display text-neutral-900">{currentPage?.title ?? schema.title}</h1>
+          {currentPage?.description && <p className="text-body text-neutral-500 mt-1">{currentPage.description}</p>}
+
+          {/* Honeypot: real respondents never see or reach this; a bot's scripted fill-everything
+              behavior does, and that value is passed through to the backend as-is (Requirement 6.5). */}
+          <input
+            type="text"
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="absolute -left-[9999px] w-px h-px overflow-hidden"
+            {...methods.register('_hp')}
+          />
+
+          <div className="mt-6 flex flex-col gap-5">
+            {currentPageFields.map((field) => {
+              const fieldError = methods.formState.errors[field.fieldId] as FieldError | undefined;
+
+              if (field.type === 'file_upload') {
+                return (
+                  <FileUploadRenderer
+                    key={field.fieldId}
+                    field={field}
+                    control={methods.control}
+                    register={methods.register}
+                    trigger={methods.trigger}
+                    setValue={methods.setValue}
+                    error={fieldError}
+                    disabled={isSubmitting}
+                    onFileChange={(file) =>
+                      setFiles((prev) => {
+                        const next = { ...prev };
+                        if (file) next[field.fieldId] = file;
+                        else delete next[field.fieldId];
+                        return next;
+                      })
+                    }
+                    onUploadStateChange={(state) =>
+                      setUploadStates((prev) => ({ ...prev, [field.fieldId]: state }))
+                    }
+                  />
+                );
+              }
+
+              const Renderer = RENDERER_MAP[field.type];
+              return (
+                <Renderer
+                  key={field.fieldId}
+                  field={field}
+                  control={methods.control}
+                  register={methods.register}
+                  trigger={methods.trigger}
+                  setValue={methods.setValue}
+                  error={fieldError}
+                  disabled={isSubmitting}
+                />
+              );
+            })}
+          </div>
+
+          {submitError && (
+            <p role="alert" className="text-caption text-error font-semibold mt-4">
+              {submitError}
+            </p>
           )}
-          <ul className="mt-6 space-y-2">
-            {schema.fields
-              .filter((f) => f.pageId === firstPage?.id && !f.deleted)
-              .map((f) => (
-                <li key={f.fieldId} className="text-body text-neutral-800">
-                  {f.label}
-                  {f.required && <span className="text-error"> *</span>}
-                </li>
-              ))}
-          </ul>
-        </div>
+
+          <div className="mt-6 flex gap-3">
+            {currentPageIndex > 0 && (
+              <Button key="back" type="button" variant="secondary" className="flex-1" onClick={handleBack} disabled={isSubmitting}>
+                Back
+              </Button>
+            )}
+            {isLastPage ? (
+              <Button
+                key="submit"
+                type="submit"
+                className="flex-1"
+                style={{ backgroundColor: primaryColor }}
+                isLoading={isSubmitting}
+                disabled={submitDisabled}
+                aria-label={isSubmitting ? 'Submitting your response...' : undefined}
+              >
+                Submit
+              </Button>
+            ) : (
+              <Button key="next" type="button" className="flex-1" style={{ backgroundColor: primaryColor }} onClick={handleNext}>
+                Next
+              </Button>
+            )}
+          </div>
+        </form>
       </div>
     </div>
   );

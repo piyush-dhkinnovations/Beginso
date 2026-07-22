@@ -78,13 +78,13 @@ describe('getVisiblePageFields', () => {
 });
 
 describe('buildAnswers', () => {
-  it('excludes hidden and deleted fields, maps fieldId/pageId/value', () => {
+  it('excludes hidden and deleted fields, maps fieldId/fieldType/fieldLabel/value', () => {
     const fields: FormField[] = [
       field({ fieldId: 'a', pageId: 'p1', type: 'short_text' }),
       field({ fieldId: 'hidden', pageId: 'p1', type: 'short_text' }),
       field({ fieldId: 'deleted', pageId: 'p1', type: 'short_text', deleted: true }),
     ];
     const answers = buildAnswers(fields, new Set(['hidden']), { a: 'hello' });
-    expect(answers).toEqual([{ fieldId: 'a', pageId: 'p1', value: 'hello' }]);
+    expect(answers).toEqual([{ fieldId: 'a', fieldType: 'short_text', fieldLabel: 'Label', value: 'hello' }]);
   });
 });

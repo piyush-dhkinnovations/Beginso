@@ -3,7 +3,7 @@
  * Augments — does not replace — the admin-side types in src/types/form.ts.
  */
 
-import type { Control, FieldError, UseFormRegister } from 'react-hook-form';
+import type { Control, FieldError, UseFormRegister, UseFormSetValue, UseFormTrigger } from 'react-hook-form';
 import type { FormField, FormPage, FormSettings } from '@/types/form';
 
 // ─── API Response: GET /api/public/:slug ──────────────────────────────────────
@@ -30,10 +30,18 @@ export type FieldValue = string | string[] | number | undefined;
 
 // ─── Submission Payload ─────────────────────────────────────────────────────────
 
+/**
+ * Matches the backend's documented Answer schema (.beginso_document/03_TDD.md §3.6) —
+ * fieldType/fieldLabel are snapshotted at submission time so a later rename/type-change
+ * never rewrites historical responses. No pageId: the backend already knows each
+ * field's page from the form snapshot it validates against.
+ */
 export interface Answer {
   fieldId: string;
-  pageId: string;
-  value: FieldValue;
+  fieldType: FormField['type'];
+  fieldLabel: string;
+  value?: FieldValue;
+  fileKey?: string; // file_upload fields only — backend fills this in after R2/storage upload
 }
 
 /** The `data` part of the multipart/form-data submission. */
@@ -67,6 +75,15 @@ export interface FieldRendererProps {
   field: FormField;
   control: Control<Record<string, FieldValue>>;
   register: UseFormRegister<Record<string, FieldValue>>;
+  trigger: UseFormTrigger<Record<string, FieldValue>>;
+  setValue: UseFormSetValue<Record<string, FieldValue>>;
   error?: FieldError;
   disabled?: boolean; // true while form is submitting
+}
+
+export interface FileUploadRendererProps extends FieldRendererProps {
+  /** Hands the raw File up to PublicFormShell's files map (submitForm's third argument) — RHF only ever holds a string placeholder, never the binary. Called with null on remove. */
+  onFileChange?: (file: File | null) => void;
+  /** Lets PublicFormShell disable Submit while this field's (simulated) upload is in-flight. */
+  onUploadStateChange?: (state: UploadState) => void;
 }

@@ -64,7 +64,8 @@ export function buildAnswers(
     .filter((f) => !f.deleted && !hiddenFieldIds.has(f.fieldId))
     .map((f) => ({
       fieldId: f.fieldId,
-      pageId: f.pageId,
+      fieldType: f.type,
+      fieldLabel: f.label,
       value: values[f.fieldId],
     }));
 }
