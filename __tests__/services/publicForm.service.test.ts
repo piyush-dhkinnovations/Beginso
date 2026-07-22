@@ -33,19 +33,31 @@ describe('publicFormService', () => {
 
       expect(fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/public/abc123'),
-        expect.objectContaining({ next: { revalidate: 60 } })
+        expect.objectContaining({ cache: 'no-store' })
       );
-      expect(result).toEqual(mockSchema);
+      expect(result).toEqual({ schema: mockSchema });
     });
 
-    it('returns null on 404', async () => {
+    it('returns a null schema and no adminNote on a bodyless 404', async () => {
       (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         status: 404,
         ok: false,
+        json: () => Promise.reject(new Error('not json')),
       });
 
       const result = await publicFormService.getFormSchema('missing-slug');
-      expect(result).toBeNull();
+      expect(result).toEqual({ schema: null, adminNote: undefined });
+    });
+
+    it('extracts settings.successMessage as adminNote when the 404 body includes one', async () => {
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        status: 404,
+        ok: false,
+        json: () => Promise.resolve({ settings: { successMessage: 'This survey closed on Friday.' } }),
+      });
+
+      const result = await publicFormService.getFormSchema('closed-slug');
+      expect(result).toEqual({ schema: null, adminNote: 'This survey closed on Friday.' });
     });
 
     it('throws on a 500 response', async () => {

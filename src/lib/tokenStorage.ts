@@ -1,4 +1,9 @@
 const TOKEN_KEY = 'auth_token';
+// Edge middleware (src/proxy.ts) only needs to know "is someone logged in", never the
+// real token — so it gets a value-less marker cookie instead of a second script-readable
+// copy of the bearer token. Real fix is backend-issued httpOnly session cookies; tracked
+// in markdown/backend_api_updates.md until the backend contract supports it.
+const SESSION_MARKER_KEY = 'has_session';
 
 export function saveToken(token: string): void {
   if (!token) return;
@@ -7,9 +12,8 @@ export function saveToken(token: string): void {
   } catch {
     // SecurityError / QuotaExceededError -> silent
   }
-  // Cookie sync for Edge middleware
   const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
-  document.cookie = `${TOKEN_KEY}=${token}; path=/; SameSite=Lax${isSecure ? '; Secure' : ''}`;
+  document.cookie = `${SESSION_MARKER_KEY}=1; path=/; SameSite=Lax${isSecure ? '; Secure' : ''}`;
 }
 
 export function getToken(): string | null {
@@ -29,8 +33,7 @@ export function clearToken(): void {
   } catch {
     // silent
   }
-  // Remove cookie
   const isSecure = typeof window !== 'undefined' && window.location.protocol === 'https:';
-  document.cookie = `${TOKEN_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax${isSecure ? '; Secure' : ''}`;
+  document.cookie = `${SESSION_MARKER_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax${isSecure ? '; Secure' : ''}`;
 }
 

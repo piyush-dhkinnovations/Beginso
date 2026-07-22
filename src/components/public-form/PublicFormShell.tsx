@@ -1,6 +1,7 @@
 'use client';
 
 import type { PublicFormSchema } from '@/types/publicForm';
+import { FormBanner } from './FormBanner';
 
 interface PublicFormShellProps {
   schema: PublicFormSchema;
@@ -19,11 +20,8 @@ export function PublicFormShell({ schema }: PublicFormShellProps) {
   return (
     <div className="min-h-screen bg-neutral-50 flex justify-center p-4">
       <div className="bg-white rounded-xl border border-neutral-200 shadow-card max-w-[520px] w-full overflow-hidden">
-        <div
-          className="h-[112px] w-full"
-          style={{ backgroundColor: schema.branding.primaryColor ?? '#1D4ED8' }}
-        />
-        <div className="p-6">
+        <FormBanner branding={schema.branding} />
+        <div className={schema.branding.logoUrl ? 'p-6 pt-8' : 'p-6'}>
           <h1 className="text-display text-neutral-900">
             {firstPage?.title ?? schema.title}
           </h1>

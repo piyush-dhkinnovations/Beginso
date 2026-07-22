@@ -36,7 +36,12 @@ export function buildPublicFormSchema(
         break;
       }
       case 'number': {
-        let n = z.coerce.number();
+        // z.coerce.number() converts '' to 0 (Number('') === 0), so a required field left
+        // blank would silently pass as "0" instead of failing — preprocess blank input to
+        // undefined first so the required check actually fires.
+        let n = field.required
+          ? z.coerce.number({ error: 'This field is required' })
+          : z.coerce.number();
         if (field.min !== undefined && field.max !== undefined) {
           n = n
             .min(field.min, `Must be between ${field.min} and ${field.max}.`)
@@ -46,7 +51,11 @@ export function buildPublicFormSchema(
         } else if (field.max !== undefined) {
           n = n.max(field.max, `Must be at most ${field.max}.`);
         }
-        schema = field.required ? n : n.optional();
+        const numberSchema = field.required ? n : n.optional();
+        schema = z.preprocess(
+          (val) => (val === '' || val === null ? undefined : val),
+          numberSchema
+        );
         break;
       }
       case 'date': {

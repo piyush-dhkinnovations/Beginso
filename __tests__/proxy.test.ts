@@ -9,12 +9,12 @@ import { describe, it, expect } from 'vitest';
 import { proxy } from '../src/proxy';
 import { NextRequest } from 'next/server';
 
-/** Helper: build a NextRequest with optional auth_token cookie */
+/** Helper: build a NextRequest with optional has_session marker cookie */
 function makeRequest(path: string, hasToken = false): NextRequest {
   const url = `http://localhost:3000${path}`;
   const req = new NextRequest(url);
   if (hasToken) {
-    req.cookies.set('auth_token', 'mock.jwt.token');
+    req.cookies.set('has_session', '1');
   }
   return req;
 }
