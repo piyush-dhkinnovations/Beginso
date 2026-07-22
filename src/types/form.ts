@@ -102,6 +102,7 @@ export interface FormSettings {
   honeypotEnabled: boolean;  // default: true
   successMessage?: string;
   responseLimit?: number;
+  responseLimitEnabled?: boolean; // backend's actual enforcement flag — must be sent alongside responseLimit, it is NOT derived from responseLimit's presence
   closeDate?: string;        // ISO 8601 date string
   layout?: 'single_column' | 'two_column' | 'compact'; // undefined treated as 'single_column'
 }
