@@ -53,9 +53,16 @@ function pad(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-// Local (not UTC) "now" formatted for <input type="datetime-local">
-function nowForDateTimeLocal(): string {
-  const d = new Date();
+// <input type="datetime-local"> values are timezone-naive ("2026-07-22T16:17", no offset) —
+// the browser and whatever later reads that string (a server, a different admin's browser)
+// can disagree on what instant it means. Always store closeDate as a real UTC ISO string
+// (with the "Z" suffix) so "4:17 PM" means the same moment everywhere, and only convert
+// to/from the naive local format at the point the <input> itself needs it.
+function localInputToIso(localValue: string): string {
+  return new Date(localValue).toISOString();
+}
+function isoToLocalInput(iso: string): string {
+  const d = new Date(iso);
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
@@ -78,7 +85,11 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
   }
 
   // ── Response limit ───────────────────────────────────────────────────────────
-  const limitEnabled = settings.responseLimit !== undefined;
+  // Bug fixed 22 Jul 2026: the backend enforces this off a separate responseLimitEnabled
+  // flag, not off whether responseLimit has a value — this panel used to only ever send
+  // responseLimit, so the toggle displayed as "on" while the backend silently never
+  // enforced the limit. Falls back to the old inference for forms saved before this fix.
+  const limitEnabled = settings.responseLimitEnabled ?? settings.responseLimit !== undefined;
   const [limitStr, setLimitStr] = useState(settings.responseLimit?.toString() ?? '');
   const [prevLimit, setPrevLimit] = useState(settings.responseLimit);
   const [limitError, setLimitError] = useState<string | null>(null);
@@ -95,7 +106,7 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
       return;
     }
     setLimitError(null);
-    onUpdate({ responseLimit: n });
+    onUpdate({ responseLimit: n, responseLimitEnabled: true });
   };
 
   // ── Close date ────────────────────────────────────────────────────────────────
@@ -167,7 +178,7 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
           <Switch
             id="response-limit-toggle"
             checked={limitEnabled}
-            onChange={(v) => onUpdate({ responseLimit: v ? 1 : undefined })}
+            onChange={(v) => onUpdate({ responseLimit: v ? 1 : undefined, responseLimitEnabled: v })}
           />
         </div>
         <Input
@@ -188,15 +199,15 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
           <Switch
             id="close-date-toggle"
             checked={closeDateEnabled}
-            onChange={(v) => onUpdate({ closeDate: v ? nowForDateTimeLocal() : undefined })}
+            onChange={(v) => onUpdate({ closeDate: v ? new Date().toISOString() : undefined })}
           />
         </div>
         <Input
           id="close-date-value"
           type="datetime-local"
           disabled={!closeDateEnabled}
-          value={settings.closeDate ?? ''}
-          onChange={(e) => onUpdate({ closeDate: e.target.value || undefined })}
+          value={settings.closeDate ? isoToLocalInput(settings.closeDate) : ''}
+          onChange={(e) => onUpdate({ closeDate: e.target.value ? localInputToIso(e.target.value) : undefined })}
         />
         {isPastDate && (
           <p className="text-caption text-warning font-semibold">
