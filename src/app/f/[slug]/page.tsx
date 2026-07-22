@@ -14,7 +14,7 @@ export const viewport: Viewport = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const schema = await publicFormService.getFormSchema(slug).catch(() => null);
+  const { schema } = await publicFormService.getFormSchema(slug).catch(() => ({ schema: null }));
   const description = schema?.pages?.[0]?.description;
 
   return {
@@ -29,10 +29,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PublicFormPage({ params }: Props) {
   const { slug } = await params;
-  const schema = await publicFormService.getFormSchema(slug).catch(() => null);
+  const { schema, adminNote } = await publicFormService.getFormSchema(slug).catch(() => ({ schema: null, adminNote: undefined }));
 
   if (!schema) {
-    return <FormUnavailable />;
+    return <FormUnavailable adminNote={adminNote} />;
   }
 
   return <PublicFormShell schema={schema} slug={slug} />;

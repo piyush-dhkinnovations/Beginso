@@ -31,9 +31,14 @@ function ImageUploadZone({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const { toast } = useToast();
 
   const handleFile = async (file: File | null | undefined) => {
-    if (!file || !ACCEPTED_IMAGE_TYPES.includes(file.type)) return;
+    if (!file) return;
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      toast('File type not supported. Use JPG, PNG, GIF, or WEBP.', 'error');
+      return;
+    }
     setIsUploading(true);
     try {
       await onUpload(file);

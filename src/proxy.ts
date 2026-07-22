@@ -6,7 +6,8 @@ const AUTH_PATHS = ['/login', '/signup'];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = request.cookies.get('auth_token')?.value ?? null;
+  // Presence-only marker, not the real bearer token — see src/lib/tokenStorage.ts.
+  const token = request.cookies.get('has_session')?.value ?? null;
 
   const isProtected = PROTECTED_PATHS.some((p) => pathname.startsWith(p));
   const isAuthPage = AUTH_PATHS.some((p) => pathname.startsWith(p));
