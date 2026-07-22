@@ -33,19 +33,31 @@ describe('publicFormService', () => {
 
       expect(fetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/public/abc123'),
-        expect.objectContaining({ next: { revalidate: 60 } })
+        expect.objectContaining({ cache: 'no-store' })
       );
-      expect(result).toEqual(mockSchema);
+      expect(result).toEqual({ schema: mockSchema });
     });
 
-    it('returns null on 404', async () => {
+    it('returns a null schema and no adminNote on a bodyless 404', async () => {
       (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         status: 404,
         ok: false,
+        json: () => Promise.reject(new Error('not json')),
       });
 
       const result = await publicFormService.getFormSchema('missing-slug');
-      expect(result).toBeNull();
+      expect(result).toEqual({ schema: null, adminNote: undefined });
+    });
+
+    it('extracts settings.successMessage as adminNote when the 404 body includes one', async () => {
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        status: 404,
+        ok: false,
+        json: () => Promise.resolve({ settings: { successMessage: 'This survey closed on Friday.' } }),
+      });
+
+      const result = await publicFormService.getFormSchema('closed-slug');
+      expect(result).toEqual({ schema: null, adminNote: 'This survey closed on Friday.' });
     });
 
     it('throws on a 500 response', async () => {
@@ -66,7 +78,7 @@ describe('publicFormService', () => {
 
   describe('submitForm()', () => {
     const submissionData: SubmissionData = {
-      answers: [{ fieldId: 'f1', pageId: 'page-1', value: 'hello' }],
+      answers: [{ fieldId: 'f1', fieldType: 'short_text', fieldLabel: 'Full Name', value: 'hello' }],
     };
 
     it('builds FormData with a data field, honeypot, and file parts', async () => {
@@ -85,6 +97,15 @@ describe('publicFormService', () => {
       expect(JSON.parse(sentBody.get('data') as string)).toEqual(submissionData);
       expect(sentBody.get('_hp')).toBe('');
       expect(sentBody.get('f-file')).toBe(file);
+    });
+
+    it('passes a non-empty honeypot value through instead of hardcoding it empty', async () => {
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ ok: true, status: 200 });
+
+      await publicFormService.submitForm('abc123', submissionData, {}, 'a-bot-filled-this-in');
+
+      const sentBody = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body as FormData;
+      expect(sentBody.get('_hp')).toBe('a-bot-filled-this-in');
     });
 
     it('returns ok:true on 200', async () => {

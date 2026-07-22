@@ -8,10 +8,13 @@ import { useToast } from '@/components/common/Toast';
 import { Switch } from '@/components/ui/Switch';
 import { PanelCard } from './PanelCard';
 
-const LAYOUT_OPTIONS: { value: NonNullable<FormSettings['layout']>; label: string }[] = [
+// Two Column / Compact aren't rendered by the public form yet (it's single-column
+// only — see sprint-3-public-form design). Shown but disabled so the picker doesn't
+// promise a layout change that won't actually happen.
+const LAYOUT_OPTIONS: { value: NonNullable<FormSettings['layout']>; label: string; comingSoon?: boolean }[] = [
   { value: 'single_column', label: 'Single Column' },
-  { value: 'two_column', label: 'Two Column' },
-  { value: 'compact', label: 'Compact' },
+  { value: 'two_column', label: 'Two Column', comingSoon: true },
+  { value: 'compact', label: 'Compact', comingSoon: true },
 ];
 
 // Small non-interactive shape preview per layout option — no new icon asset needed.
@@ -117,14 +120,22 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
               <button
                 key={option.value}
                 type="button"
-                onClick={() => onUpdate({ layout: option.value })}
+                onClick={() => !option.comingSoon && onUpdate({ layout: option.value })}
+                disabled={option.comingSoon}
                 aria-pressed={isSelected}
-                className={`flex flex-col items-center gap-3 rounded-lg border-2 p-3 min-h-[44px] transition-colors ${
-                  isSelected
+                className={`relative flex flex-col items-center gap-3 rounded-lg border-2 p-3 min-h-[44px] transition-colors ${
+                  option.comingSoon
+                    ? 'border-neutral-200 bg-neutral-50 opacity-60 cursor-not-allowed'
+                    : isSelected
                     ? 'border-brand-700 bg-brand-50 ring-2 ring-brand-700/10'
                     : 'border-neutral-200 bg-white hover:border-neutral-300'
                 }`}
               >
+                {option.comingSoon && (
+                  <span className="absolute top-1.5 right-1.5 text-caption font-semibold text-neutral-400 bg-white border border-neutral-200 rounded px-1.5 py-0.5">
+                    Soon
+                  </span>
+                )}
                 <div className="w-full h-10 flex items-center justify-center bg-neutral-100 rounded-md px-2">
                   <LayoutPreview value={option.value} />
                 </div>

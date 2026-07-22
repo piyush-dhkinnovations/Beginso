@@ -38,6 +38,54 @@ describe('buildPublicFormSchema', () => {
     }
   });
 
+  it('reports "This field is required" (not the email-format message) for an empty required email', () => {
+    const f = field({ fieldId: 'a', pageId: 'p1', type: 'email', required: true });
+    const schema = buildPublicFormSchema([f], new Set());
+    const result = schema.safeParse({ a: '' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('This field is required');
+    }
+  });
+
+  it('passes an optional email left as an empty string', () => {
+    const f = field({ fieldId: 'a', pageId: 'p1', type: 'email', required: false });
+    const schema = buildPublicFormSchema([f], new Set());
+    expect(schema.safeParse({ a: '' }).success).toBe(true);
+  });
+
+  it('reports "This field is required" (not the phone-format message) for an empty required phone', () => {
+    const f = field({ fieldId: 'a', pageId: 'p1', type: 'phone', required: true });
+    const schema = buildPublicFormSchema([f], new Set());
+    const result = schema.safeParse({ a: '' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('This field is required');
+    }
+  });
+
+  it('passes an optional phone left as an empty string', () => {
+    const f = field({ fieldId: 'a', pageId: 'p1', type: 'phone', required: false });
+    const schema = buildPublicFormSchema([f], new Set());
+    expect(schema.safeParse({ a: '' }).success).toBe(true);
+  });
+
+  it('fails a required number left empty, instead of silently coercing "" to 0', () => {
+    const f = field({ fieldId: 'a', pageId: 'p1', type: 'number', required: true });
+    const schema = buildPublicFormSchema([f], new Set());
+    const result = schema.safeParse({ a: '' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('This field is required');
+    }
+  });
+
+  it('passes an optional number left empty', () => {
+    const f = field({ fieldId: 'a', pageId: 'p1', type: 'number', required: false });
+    const schema = buildPublicFormSchema([f], new Set());
+    expect(schema.safeParse({ a: '' }).success).toBe(true);
+  });
+
   it('fails number below min', () => {
     const f = field({ fieldId: 'a', pageId: 'p1', type: 'number', required: true, min: 10 });
     const schema = buildPublicFormSchema([f], new Set());

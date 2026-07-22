@@ -101,9 +101,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .then((data) => dispatch({ type: 'LOGIN', payload: { user: data.user } }))
       .catch(() => { });
     // Hard navigation, not router.push: proxy.ts middleware gates /dashboard on the
-    // auth_token cookie we just wrote via document.cookie above. A soft client-side
-    // transition can reuse a Router Cache entry for /dashboard from before the cookie
-    // existed and bounce back to /login with no error (the login button spins forever).
+    // has_session marker cookie saveToken() just wrote. A soft client-side transition
+    // can reuse a Router Cache entry for /dashboard from before the cookie existed and
+    // bounce back to /login with no error (the login button spins forever).
     // A full navigation always sends a fresh request, so middleware sees the new cookie.
     window.location.href = '/dashboard';
   }, []);

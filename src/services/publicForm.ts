@@ -7,26 +7,47 @@ import type { PublicFormSchema, SubmissionData } from '@/types/publicForm';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 
+export interface FormSchemaResult {
+  schema: PublicFormSchema | null;
+  /** Closed form's settings.successMessage, only present if the backend includes one on the 404 body. */
+  adminNote?: string;
+}
+
 export const publicFormService = {
-  /** Returns null on 404 (draft/closed/not found). Throws on other non-ok status or network error. */
-  async getFormSchema(slug: string): Promise<PublicFormSchema | null> {
+  /**
+   * schema is null on 404 (draft/closed/not found). Throws on other non-ok status or network error.
+   * Uncached (`cache: 'no-store'`) — a form closed on the backend must stop accepting
+   * respondents immediately, not up to 60s later via a stale ISR entry.
+   */
+  async getFormSchema(slug: string): Promise<FormSchemaResult> {
     const res = await fetch(`${BASE}/api/public/${slug}`, {
-      next: { revalidate: 60 },
+      cache: 'no-store',
     });
-    if (res.status === 404) return null;
+    if (res.status === 404) {
+      const adminNote = await res
+        .json()
+        .then((body: { settings?: { successMessage?: string } }) => body?.settings?.successMessage)
+        .catch(() => undefined);
+      return { schema: null, adminNote };
+    }
     if (!res.ok) throw new Error(`Failed to load form: ${res.status}`);
-    return res.json() as Promise<PublicFormSchema>;
+    return { schema: (await res.json()) as PublicFormSchema };
   },
 
-  /** Sends multipart/form-data: `data` (JSON), `_hp` (honeypot, always empty), one part per file field. */
+  /**
+   * Sends multipart/form-data: `data` (JSON), `_hp` (honeypot), one part per file field.
+   * `honeypot` defaults to '' for real respondents — passed through as-is (not hardcoded)
+   * so a bot that actually fills the hidden `_hp` input is still reported to the backend.
+   */
   async submitForm(
     slug: string,
     data: SubmissionData,
-    files: Record<string, File>
+    files: Record<string, File>,
+    honeypot: string = ''
   ): Promise<{ ok: boolean; status: number; message?: string }> {
     const formData = new FormData();
     formData.append('data', JSON.stringify(data));
-    formData.append('_hp', '');
+    formData.append('_hp', honeypot);
     for (const [fieldId, file] of Object.entries(files)) {
       formData.append(fieldId, file);
     }

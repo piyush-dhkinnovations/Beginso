@@ -26,17 +26,26 @@ export function buildPublicFormSchema(
         break;
       }
       case 'email': {
-        const s = z.string().email('Please enter a valid email address.');
-        schema = field.required ? s.min(1, 'This field is required') : s.optional();
+        // "required" must be checked before "email format" — an empty string fails both,
+        // and whichever check is chained first wins the reported error message.
+        schema = field.required
+          ? z.string().min(1, 'This field is required').email('Please enter a valid email address.')
+          : z.string().email('Please enter a valid email address.').optional().or(z.literal(''));
         break;
       }
       case 'phone': {
-        const s = z.string().regex(/^[\d\s\-+]+$/, 'Please enter a valid phone number.');
-        schema = field.required ? s.min(1, 'This field is required') : s.optional();
+        schema = field.required
+          ? z.string().min(1, 'This field is required').regex(/^[\d\s\-+]+$/, 'Please enter a valid phone number.')
+          : z.string().regex(/^[\d\s\-+]+$/, 'Please enter a valid phone number.').optional().or(z.literal(''));
         break;
       }
       case 'number': {
-        let n = z.coerce.number();
+        // z.coerce.number() converts '' to 0 (Number('') === 0), so a required field left
+        // blank would silently pass as "0" instead of failing — preprocess blank input to
+        // undefined first so the required check actually fires.
+        let n = field.required
+          ? z.coerce.number({ error: 'This field is required' })
+          : z.coerce.number();
         if (field.min !== undefined && field.max !== undefined) {
           n = n
             .min(field.min, `Must be between ${field.min} and ${field.max}.`)
@@ -46,7 +55,11 @@ export function buildPublicFormSchema(
         } else if (field.max !== undefined) {
           n = n.max(field.max, `Must be at most ${field.max}.`);
         }
-        schema = field.required ? n : n.optional();
+        const numberSchema = field.required ? n : n.optional();
+        schema = z.preprocess(
+          (val) => (val === '' || val === null ? undefined : val),
+          numberSchema
+        );
         break;
       }
       case 'date': {
