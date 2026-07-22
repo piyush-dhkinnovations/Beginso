@@ -78,7 +78,7 @@ describe('publicFormService', () => {
 
   describe('submitForm()', () => {
     const submissionData: SubmissionData = {
-      answers: [{ fieldId: 'f1', pageId: 'page-1', value: 'hello' }],
+      answers: [{ fieldId: 'f1', fieldType: 'short_text', fieldLabel: 'Full Name', value: 'hello' }],
     };
 
     it('builds FormData with a data field, honeypot, and file parts', async () => {
@@ -97,6 +97,15 @@ describe('publicFormService', () => {
       expect(JSON.parse(sentBody.get('data') as string)).toEqual(submissionData);
       expect(sentBody.get('_hp')).toBe('');
       expect(sentBody.get('f-file')).toBe(file);
+    });
+
+    it('passes a non-empty honeypot value through instead of hardcoding it empty', async () => {
+      (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ ok: true, status: 200 });
+
+      await publicFormService.submitForm('abc123', submissionData, {}, 'a-bot-filled-this-in');
+
+      const sentBody = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][1].body as FormData;
+      expect(sentBody.get('_hp')).toBe('a-bot-filled-this-in');
     });
 
     it('returns ok:true on 200', async () => {

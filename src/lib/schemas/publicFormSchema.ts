@@ -26,13 +26,17 @@ export function buildPublicFormSchema(
         break;
       }
       case 'email': {
-        const s = z.string().email('Please enter a valid email address.');
-        schema = field.required ? s.min(1, 'This field is required') : s.optional();
+        // "required" must be checked before "email format" — an empty string fails both,
+        // and whichever check is chained first wins the reported error message.
+        schema = field.required
+          ? z.string().min(1, 'This field is required').email('Please enter a valid email address.')
+          : z.string().email('Please enter a valid email address.').optional().or(z.literal(''));
         break;
       }
       case 'phone': {
-        const s = z.string().regex(/^[\d\s\-+]+$/, 'Please enter a valid phone number.');
-        schema = field.required ? s.min(1, 'This field is required') : s.optional();
+        schema = field.required
+          ? z.string().min(1, 'This field is required').regex(/^[\d\s\-+]+$/, 'Please enter a valid phone number.')
+          : z.string().regex(/^[\d\s\-+]+$/, 'Please enter a valid phone number.').optional().or(z.literal(''));
         break;
       }
       case 'number': {
