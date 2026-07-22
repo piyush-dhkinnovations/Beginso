@@ -9,6 +9,10 @@ import type { PublicFormSchema, FieldValue, UploadState, FieldRendererProps } fr
 import { evaluateLogicRules, getVisiblePageFields, buildAnswers } from '@/lib/logicEngine';
 import { buildPublicFormSchema } from '@/lib/schemas/publicFormSchema';
 import { publicFormService } from '@/services/publicForm';
+<<<<<<< Updated upstream
+=======
+import { saveDraft, loadDraft, clearDraft } from '@/lib/formDraft';
+>>>>>>> Stashed changes
 import { Button } from '@/components/ui/Button';
 import { FormBanner } from './FormBanner';
 import { FormProgress } from './FormProgress';
@@ -89,6 +93,41 @@ export function PublicFormShell({ schema, slug }: PublicFormShellProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the stable string form of the set on purpose
   }, [hiddenFieldIdsKey]);
 
+<<<<<<< Updated upstream
+=======
+  // File values are placeholder filenames, not the actual File — there's nothing
+  // real to restore for them after a reload, so they're excluded from the saved draft.
+  const fileFieldIds = useMemo(
+    () => new Set(schema.fields.filter((f) => f.type === 'file_upload').map((f) => f.fieldId)),
+    [schema.fields]
+  );
+
+  // Restore an in-progress draft once on mount, so a reload or dropped connection
+  // mid-fill doesn't force the respondent to re-enter everything from scratch.
+  useEffect(() => {
+    const draft = loadDraft(slug);
+    if (!draft) return;
+    methods.reset(draft.values);
+    setCurrentPageIndex((i) => {
+      const restored = draft.pageIndex;
+      return restored >= 0 && restored < sortedPages.length ? restored : i;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- restore-on-mount only, deliberately not re-run on every field change
+  }, [slug]);
+
+  // Save the draft after a short pause in typing — every keystroke would be wasteful.
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const values = Object.fromEntries(
+        Object.entries(watchedValues).filter(([fieldId]) => fieldId !== '_hp' && !fileFieldIds.has(fieldId))
+      );
+      saveDraft(slug, { pageIndex: currentPageIndex, values });
+    }, 400);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- watchedValues is a new object every render; JSON below is the real dependency
+  }, [JSON.stringify(watchedValues), currentPageIndex, slug]);
+
+>>>>>>> Stashed changes
   const currentPage = sortedPages[currentPageIndex];
   const currentPageFields = currentPage
     ? getVisiblePageFields(schema.fields, currentPage.id, hiddenFieldIds)
@@ -125,6 +164,10 @@ export function PublicFormShell({ schema, slug }: PublicFormShellProps) {
     const result = await publicFormService.submitForm(slug, { answers }, files, honeypot);
 
     if (result.ok) {
+<<<<<<< Updated upstream
+=======
+      clearDraft(slug);
+>>>>>>> Stashed changes
       const params = new URLSearchParams({ title: schema.title });
       if (schema.settings.successMessage) params.set('message', schema.settings.successMessage);
       router.push(`/f/${slug}/success?${params.toString()}`);
