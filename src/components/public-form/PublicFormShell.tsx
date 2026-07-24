@@ -57,6 +57,12 @@ export function PublicFormShell({ schema, slug }: PublicFormShellProps) {
   // if we captured hiddenFieldIds by closure at useForm() call time instead.
   const hiddenFieldIdsRef = useRef<Set<string>>(new Set());
 
+  // Guards the debounced draft-save effect below against a real race: a save scheduled
+  // just before Submit is clicked can still be pending when the submission succeeds and
+  // clearDraft() runs — without this, that stale timeout fires afterward and resurrects
+  // the just-submitted draft. Found via the e2e suite, not by inspection.
+  const submittedRef = useRef(false);
+
   const methods = useForm<Record<string, FieldValue>>({
     mode: 'onSubmit',
     reValidateMode: 'onChange',
@@ -113,6 +119,7 @@ export function PublicFormShell({ schema, slug }: PublicFormShellProps) {
   // Save the draft after a short pause in typing — every keystroke would be wasteful.
   useEffect(() => {
     const timeout = setTimeout(() => {
+      if (submittedRef.current) return; // see submittedRef's comment above
       const values = Object.fromEntries(
         Object.entries(watchedValues).filter(([fieldId]) => fieldId !== '_hp' && !fileFieldIds.has(fieldId))
       );
@@ -158,6 +165,7 @@ export function PublicFormShell({ schema, slug }: PublicFormShellProps) {
     const result = await publicFormService.submitForm(slug, { answers }, files, honeypot);
 
     if (result.ok) {
+      submittedRef.current = true;
       clearDraft(slug);
       const params = new URLSearchParams({ title: schema.title });
       if (schema.settings.successMessage) params.set('message', schema.settings.successMessage);
