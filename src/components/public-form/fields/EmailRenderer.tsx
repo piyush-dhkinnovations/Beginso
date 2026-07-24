@@ -2,11 +2,11 @@ import { cn } from '@/lib/utils';
 import type { FieldRendererProps } from '@/types/publicForm';
 import { FieldShell, FIELD_INPUT_CLASSES, FIELD_INPUT_ERROR_CLASSES, FIELD_INPUT_DISABLED_CLASSES } from './FieldShell';
 
-export function EmailRenderer({ field, register, trigger, error, disabled }: FieldRendererProps) {
+export function EmailRenderer({ field, register, trigger, error, disabled, inline }: FieldRendererProps) {
   const { onBlur, ...rest } = register(field.fieldId);
 
   return (
-    <FieldShell fieldId={field.fieldId} label={field.label} required={field.required} helpText={field.helpText} error={error}>
+    <FieldShell fieldId={field.fieldId} label={field.label} required={field.required} helpText={field.helpText} error={error} inline={inline}>
       <input
         type="email"
         id={field.fieldId}

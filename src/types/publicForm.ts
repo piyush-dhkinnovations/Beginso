@@ -20,7 +20,7 @@ export interface PublicFormSchema {
   pages: FormPage[];
   fields: FormField[]; // all non-deleted fields across all pages, order preserved
   branding: PublicFormBranding;
-  settings: Pick<FormSettings, 'honeypotEnabled' | 'successMessage' | 'responseLimit' | 'closeDate'>;
+  settings: Pick<FormSettings, 'honeypotEnabled' | 'successMessage' | 'responseLimit' | 'closeDate' | 'layout'>;
 }
 
 // ─── Field Value Types ──────────────────────────────────────────────────────────
@@ -79,6 +79,8 @@ export interface FieldRendererProps {
   setValue: UseFormSetValue<Record<string, FieldValue>>;
   error?: FieldError;
   disabled?: boolean; // true while form is submitting
+  /** Compact layout's label-left row style — passed through to FieldShell, ignored by renderers that don't use it. */
+  inline?: boolean;
 }
 
 export interface FileUploadRendererProps extends FieldRendererProps {
