@@ -99,6 +99,9 @@ Onboarding Platform/     # Next.js 16 client-side application (this repo)
 │   └── types/         # Shared TypeScript types (form.ts, etc.)
 ├── middleware.ts      # Edge routing middleware (admin route guards)
 ├── __tests__/         # Vitest unit/property-based tests
+├── e2e/               # Playwright end-to-end tests + mock backend server
+├── playwright.config.ts
+├── vitest.config.ts
 └── .env.local         # Environment variables configuration
 ```
 
@@ -246,6 +249,37 @@ PRs require a description of what it does, how to test it, and screenshots for a
 - `npm run build`: Generates the optimized production build of the Next.js application.
 - `npm run start`: Starts the Next.js production server locally after building.
 - `npm run lint`: Runs ESLint to check code quality and static typing.
+- `npm run type-check`: Runs `tsc --noEmit` — no build output, just verifies the whole project type-checks cleanly.
+- `npm test`: Runs the Vitest unit/property-based test suite once (used in CI).
+- `npm run test:watch`: Runs Vitest in watch mode — reruns affected tests as files change.
+- `npm run test:e2e`: Runs the Playwright end-to-end suite headlessly against a mocked backend.
+- `npm run test:e2e:ui`: Runs the same E2E suite in Playwright's interactive UI mode (step through each test, inspect the DOM/network at every point).
+
+---
+
+## Testing
+
+The project has two independent layers of automated tests. Both must pass before a PR is considered done; `npm run type-check` and `npm run lint` should be clean too.
+
+### Unit & Property Tests (Vitest)
+
+**Location:** `__tests__/` · **Run:** `npm test` (once) or `npm run test:watch` (watch mode)
+
+Covers pure logic in isolation — the conditional-logic engine, the dynamic Zod schema builder, file validation, the honeypot/draft-persistence helpers — plus individual components via `@testing-library/react`, and API services with `fetch` mocked at the network layer. A subset are **property-based tests** (via `fast-check`): instead of asserting one hand-picked example, they assert an invariant holds across 100 randomly generated inputs per run — e.g. "a field hidden by conditional logic is never present in the submitted answers, no matter what the rest of the form looks like."
+
+These tests never touch a real backend, a real browser, or the filesystem beyond `localStorage` mocks — they're fast and fully deterministic.
+
+### End-to-End Tests (Playwright)
+
+**Location:** `e2e/` · **Run:** `npm run test:e2e` (headless) or `npm run test:e2e:ui` (interactive)
+
+Drives a real Chromium browser against the actual rendered public form pipeline (`/f/[slug]` and `/f/[slug]/success`) — real inputs, real page navigation, real client-side validation, real file picker interactions. `playwright.config.ts` starts two local servers automatically before the suite runs: the Next.js dev server, and `e2e/mockServer.ts`, a small stateless mock standing in for the real backend (pointed to via `NEXT_PUBLIC_API_URL` for the duration of the test run only). This means the suite is fully deterministic and never depends on the real backend being up, rate limits, or its current known issues — see `markdown/backend_bugs_public_form_submit.md` for those.
+
+Test scenarios are chosen by the slug itself (e.g. `/f/mock-valid`, `/f/mock-not-found`, `/f/mock-submit-422`) — see the conventions documented at the top of `e2e/mockServer.ts`.
+
+Current coverage (9 spec files, ~40 tests): SSR rendering, accessibility basics, mobile viewport (320px), field validation for all 10 field types, multi-page navigation, conditional logic (including inspecting the real submitted payload to confirm hidden fields never appear in it), file upload (valid/oversized/disallowed-type/remove), submission outcomes (200/422/429/500 + honeypot), the Form Unavailable screen, the Success screen, and draft persistence.
+
+If a spec file fails, Playwright saves a screenshot and a full trace under `test-results/` — `npx playwright show-trace <path-to-trace.zip>` opens an interactive timeline of exactly what the browser saw.
 
 ---
 

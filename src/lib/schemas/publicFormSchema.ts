@@ -69,13 +69,22 @@ export function buildPublicFormSchema(
       }
       case 'dropdown':
       case 'multiple_choice': {
-        const s = z.string();
-        schema = field.required ? s.min(1, 'This field is required') : s.optional();
+        // Controller-managed fields (no RHF register()) start as `undefined`, not `''`,
+        // until touched — z.string() rejects undefined at the base type check before
+        // .min(1, ...) ever runs, surfacing Zod's raw "expected string" message instead
+        // of ours. Preprocess undefined/null to '' so the intended message actually fires.
+        const s = z.string().min(1, 'This field is required');
+        schema = field.required
+          ? z.preprocess((v) => (v === undefined || v === null ? '' : v), s)
+          : z.string().optional();
         break;
       }
       case 'checkbox': {
-        const s = z.array(z.string());
-        schema = field.required ? s.min(1, 'Please select at least one option.') : s.optional();
+        // Same issue as dropdown/multiple_choice, for the array base type.
+        const s = z.array(z.string()).min(1, 'Please select at least one option.');
+        schema = field.required
+          ? z.preprocess((v) => (v === undefined || v === null ? [] : v), s)
+          : z.array(z.string()).optional();
         break;
       }
       case 'file_upload': {
