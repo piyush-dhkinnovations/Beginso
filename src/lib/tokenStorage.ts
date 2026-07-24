@@ -2,7 +2,7 @@ const TOKEN_KEY = 'auth_token';
 // Edge middleware (src/proxy.ts) only needs to know "is someone logged in", never the
 // real token — so it gets a value-less marker cookie instead of a second script-readable
 // copy of the bearer token. Real fix is backend-issued httpOnly session cookies; tracked
-// in markdown/backend_api_updates.md until the backend contract supports it.
+// in docs/backend-contract/api-reference.md until the backend contract supports it.
 const SESSION_MARKER_KEY = 'has_session';
 
 export function saveToken(token: string): void {

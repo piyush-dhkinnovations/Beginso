@@ -4,7 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
  * E2E tests for the public form pipeline (Sprint 3). Runs against `next dev` on a
  * dedicated port, with the backend mocked via route interception (see e2e/mockBackend.ts)
  * so tests are deterministic and don't depend on the real backend's availability,
- * rate limits, or current bugs — those are tracked separately in markdown/backend_bugs_*.md.
+ * rate limits, or current bugs — those are tracked separately in docs/backend-contract/known-issues/.
  */
 export default defineConfig({
   testDir: './e2e',
