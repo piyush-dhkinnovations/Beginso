@@ -85,7 +85,7 @@ Admin exports CSV or PDF report
 
 ## Project Structure
 
-This repository holds the **frontend only** — the Express/MongoDB backend lives in a separate repository and is consumed over HTTPS REST via `NEXT_PUBLIC_API_URL` (see `markdown/backend_api_updates.md` for the current contract).
+This repository holds the **frontend only** — the Express/MongoDB backend lives in a separate repository and is consumed over HTTPS REST via `NEXT_PUBLIC_API_URL` (see `docs/backend-contract/api-reference.md` for the current contract).
 
 ```
 Onboarding Platform/     # Next.js 16 client-side application (this repo)
@@ -119,7 +119,7 @@ Authentication is verified through Firebase; the session is tracked via an `auth
 
 ### Week Overview Table (v2 — revised 8-week timeline, compressed from the original 11-week plan)
 
-> Full week-by-week detail (day-by-day tasks, exit criteria) lives in `.beginso_document/05_Sprint_Plan.md` — treat that file as authoritative; this table is a summary.
+> Full week-by-week detail (day-by-day tasks, exit criteria) lives in `docs/planning/sprint-plan.md` — treat that file as authoritative; this table is a summary. See `docs/README.md` for the full documentation map.
 
 | Wk | Sprint / Track | Focus | Status | Dates |
 |:---|:---|:---|:---|:---|
@@ -273,7 +273,7 @@ These tests never touch a real backend, a real browser, or the filesystem beyond
 
 **Location:** `e2e/` · **Run:** `npm run test:e2e` (headless) or `npm run test:e2e:ui` (interactive)
 
-Drives a real Chromium browser against the actual rendered public form pipeline (`/f/[slug]` and `/f/[slug]/success`) — real inputs, real page navigation, real client-side validation, real file picker interactions. `playwright.config.ts` starts two local servers automatically before the suite runs: the Next.js dev server, and `e2e/mockServer.ts`, a small stateless mock standing in for the real backend (pointed to via `NEXT_PUBLIC_API_URL` for the duration of the test run only). This means the suite is fully deterministic and never depends on the real backend being up, rate limits, or its current known issues — see `markdown/backend_bugs_public_form_submit.md` for those.
+Drives a real Chromium browser against the actual rendered public form pipeline (`/f/[slug]` and `/f/[slug]/success`) — real inputs, real page navigation, real client-side validation, real file picker interactions. `playwright.config.ts` starts two local servers automatically before the suite runs: the Next.js dev server, and `e2e/mockServer.ts`, a small stateless mock standing in for the real backend (pointed to via `NEXT_PUBLIC_API_URL` for the duration of the test run only). This means the suite is fully deterministic and never depends on the real backend being up, rate limits, or its current known issues — see `docs/backend-contract/known-issues/public-form-submit.md` for those.
 
 Test scenarios are chosen by the slug itself (e.g. `/f/mock-valid`, `/f/mock-not-found`, `/f/mock-submit-422`) — see the conventions documented at the top of `e2e/mockServer.ts`.
 

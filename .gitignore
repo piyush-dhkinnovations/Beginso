@@ -44,10 +44,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .vscode
-.Beginso_document
 .kiro
 .document
-/markdown
 .agents
 .gemini
-CLAUDE.md
