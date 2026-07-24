@@ -303,6 +303,28 @@ export default function BuilderPageShell() {
     setShowPublishModal(true);
   }, [fields, dirty, formId, formTitle, pages, branding, settings, markSaved, toast]);
 
+  // Flush any pending autosave first so the new tab shows current edits, not a stale snapshot
+  const handlePreview = useCallback(async () => {
+    if (dirty && formId && formId !== 'undefined') {
+      try {
+        setSaveState('saving');
+        await formsService.updateForm(formId, {
+          fields,
+          title: formTitle,
+          pages,
+          branding,
+          settings,
+        });
+        markSaved();
+        setSaveState('saved');
+      } catch {
+        setSaveState('error');
+        // Preview will just open with the last successfully saved state — not worth blocking on
+      }
+    }
+    window.open(`/forms/${id}/preview`, '_blank');
+  }, [dirty, formId, fields, formTitle, pages, branding, settings, markSaved, id]);
+
   // ─── Close form flow ──────────────────────────────────────────────────────────
 
   const closeMutation = useMutation({
@@ -535,7 +557,7 @@ export default function BuilderPageShell() {
               savedAt={savedAt}
               status={status}
               onTitleChange={setFormTitle}
-              onPreview={() => {}}
+              onPreview={handlePreview}
               onBack={handleBack}
               onPublish={handlePublishClick}
               onClose={() => setShowCloseModal(true)}

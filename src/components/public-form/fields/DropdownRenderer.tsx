@@ -3,11 +3,11 @@ import { cn } from '@/lib/utils';
 import type { FieldRendererProps } from '@/types/publicForm';
 import { FieldShell, FIELD_INPUT_CLASSES, FIELD_INPUT_ERROR_CLASSES, FIELD_INPUT_DISABLED_CLASSES } from './FieldShell';
 
-export function DropdownRenderer({ field, control, error, disabled }: FieldRendererProps) {
+export function DropdownRenderer({ field, control, error, disabled, inline }: FieldRendererProps) {
   const options = field.type === 'dropdown' ? field.options : [];
 
   return (
-    <FieldShell fieldId={field.fieldId} label={field.label} required={field.required} helpText={field.helpText} error={error}>
+    <FieldShell fieldId={field.fieldId} label={field.label} required={field.required} helpText={field.helpText} error={error} inline={inline}>
       <Controller
         name={field.fieldId}
         control={control}
