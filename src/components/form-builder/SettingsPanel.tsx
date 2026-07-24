@@ -8,13 +8,10 @@ import { useToast } from '@/components/common/Toast';
 import { Switch } from '@/components/ui/Switch';
 import { PanelCard } from './PanelCard';
 
-// Two Column / Compact aren't rendered by the public form yet (it's single-column
-// only — see sprint-3-public-form design). Shown but disabled so the picker doesn't
-// promise a layout change that won't actually happen.
-const LAYOUT_OPTIONS: { value: NonNullable<FormSettings['layout']>; label: string; comingSoon?: boolean }[] = [
+const LAYOUT_OPTIONS: { value: NonNullable<FormSettings['layout']>; label: string }[] = [
   { value: 'single_column', label: 'Single Column' },
-  { value: 'two_column', label: 'Two Column', comingSoon: true },
-  { value: 'compact', label: 'Compact', comingSoon: true },
+  { value: 'two_column', label: 'Two Column' },
+  { value: 'compact', label: 'Compact' },
 ];
 
 // Small non-interactive shape preview per layout option — no new icon asset needed.
@@ -32,10 +29,14 @@ function LayoutPreview({ value }: { value: NonNullable<FormSettings['layout']> }
     );
   }
   if (value === 'compact') {
+    // Label-left rows — distinct from Single Column's label-above stack.
     return (
-      <div className="flex flex-col gap-0.5 w-full">
-        {[0, 1, 2, 3, 4].map((row) => (
-          <div key={row} className="h-1.5 w-full rounded-sm bg-neutral-300" />
+      <div className="flex flex-col gap-1 w-full">
+        {[0, 1, 2].map((row) => (
+          <div key={row} className="flex items-center gap-1">
+            <div className="h-1.5 w-3 rounded-sm bg-neutral-400" />
+            <div className="h-1.5 flex-1 rounded-sm bg-neutral-300" />
+          </div>
         ))}
       </div>
     );
@@ -131,22 +132,14 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
               <button
                 key={option.value}
                 type="button"
-                onClick={() => !option.comingSoon && onUpdate({ layout: option.value })}
-                disabled={option.comingSoon}
+                onClick={() => onUpdate({ layout: option.value })}
                 aria-pressed={isSelected}
                 className={`relative flex flex-col items-center gap-3 rounded-lg border-2 p-3 min-h-[44px] transition-colors ${
-                  option.comingSoon
-                    ? 'border-neutral-200 bg-neutral-50 opacity-60 cursor-not-allowed'
-                    : isSelected
+                  isSelected
                     ? 'border-brand-700 bg-brand-50 ring-2 ring-brand-700/10'
                     : 'border-neutral-200 bg-white hover:border-neutral-300'
                 }`}
               >
-                {option.comingSoon && (
-                  <span className="absolute top-1.5 right-1.5 text-caption font-semibold text-neutral-400 bg-white border border-neutral-200 rounded px-1.5 py-0.5">
-                    Soon
-                  </span>
-                )}
                 <div className="w-full h-10 flex items-center justify-center bg-neutral-100 rounded-md px-2">
                   <LayoutPreview value={option.value} />
                 </div>
