@@ -31,7 +31,7 @@ export type FieldValue = string | string[] | number | undefined;
 // ─── Submission Payload ─────────────────────────────────────────────────────────
 
 /**
- * Matches the backend's documented Answer schema (.beginso_document/03_TDD.md §3.6) —
+ * Matches the backend's documented Answer schema (docs/product/03-technical-design.md §3.6) —
  * fieldType/fieldLabel are snapshotted at submission time so a later rename/type-change
  * never rewrites historical responses. No pageId: the backend already knows each
  * field's page from the form snapshot it validates against.

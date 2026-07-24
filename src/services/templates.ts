@@ -2,7 +2,7 @@ import axiosInstance from '@/lib/axios';
 import type { Template } from '@/types/form';
 
 export const templatesService = {
-  // Response shape isn't finalized on the backend yet (markdown/backend_sprint2_checklist.md
+  // Response shape isn't finalized on the backend yet (docs/backend-contract/checklists/sprint-2-checklist.md
   // item 4 is unconfirmed). This backend wraps every response in `{ success, ... }` (see
   // /api/health, and getForms's `{ forms: [...] }` shape) rather than returning bodies raw,
   // so accept that convention here too (`{ templates: [...] }` or `{ data: [...] }`) as well
