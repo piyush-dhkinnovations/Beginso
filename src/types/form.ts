@@ -170,8 +170,21 @@ export interface Template {
 // ─── File Upload ──────────────────────────────────────────────────────────────
 // Files are stored on the backend server's local filesystem (not a cloud storage
 // service); `url` is a backend-served route, not a pre-signed cloud storage URL.
+// Matches the backend's actual response shape (confirmed against its Sprint 2
+// checklist reply — there is no top-level `key`, only `url` + `metadata`).
 
 export interface UploadResponse {
-  url: string;            // Backend-served URL to access the uploaded file
-  key: string;             // Backend file identifier / storage path (never displayed to user)
+  success: boolean;
+  message: string;
+  url: string;             // Backend-served URL to access the uploaded file
+  metadata: {
+    id: string;
+    name: string;           // original filename
+    size: number;           // bytes
+    type: string;           // MIME type
+    path: string;           // backend storage filename
+    owner: string;          // uploader's user id
+    uploadTime: string;     // ISO-8601
+    isBranding: boolean;
+  };
 }
