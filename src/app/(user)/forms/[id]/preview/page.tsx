@@ -32,7 +32,7 @@ export default function FormPreviewPage() {
   };
 
   return (
-    // Fixed full-viewport overlay, independent of the admin shell's <main> box model
+    // Fixed full-viewport overlay, independent of the user shell's <main> box model
     // (padding/min-height/overflow-y-auto) — avoids relying on negative-margin math to
     // exactly cancel it out, which is what produced the double-scrollbar bug.
     <div className="fixed inset-0 z-50 overflow-hidden flex flex-col bg-neutral-50">

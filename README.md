@@ -1,6 +1,6 @@
 # Beginso
 
-A web-based form management platform that goes beyond just collecting responses. Beginso lets admins create forms, share them publicly, manage incoming submissions with status tracking, and view auto-generated dashboards — all in one place, without a spreadsheet in sight.
+A web-based form management platform that goes beyond just collecting responses. Beginso lets users create forms, share them publicly, manage incoming submissions with status tracking, and view auto-generated dashboards — all in one place, without a spreadsheet in sight.
 
 ---
 
@@ -8,7 +8,7 @@ A web-based form management platform that goes beyond just collecting responses.
 
 Most form tools stop at collection. Beginso picks up where they leave off.
 
-After a response comes in, the admin can track it through a workflow (New → In Progress → Completed), view a dashboard that builds itself automatically, and export reports as CSV or PDF — all inside the same product. The goal is to make post-submission work as smooth as the collection itself, for users with zero technical background.
+After a response comes in, the user can track it through a workflow (New → In Progress → Completed), view a dashboard that builds itself automatically, and export reports as CSV or PDF — all inside the same product. The goal is to make post-submission work as smooth as the collection itself, for users with zero technical background.
 
 ---
 
@@ -16,22 +16,22 @@ After a response comes in, the admin can track it through a workflow (New → In
 
 | Role | Target Users | Authentication | Core Functions |
 |:---|:---|:---|:---|
-| **Admin** | Small businesses, freelancers, educators, recruiters, event organisers, NGOs | Firebase Authentication (Email/Password or Google) | Creates forms, configures branding/logic, tracks response statuses, views dashboard, exports reports |
+| **User** | Small businesses, freelancers, educators, recruiters, event organisers, NGOs | Firebase Authentication (Email/Password or Google) | Creates forms, configures branding/logic, tracks response statuses, views dashboard, exports reports |
 | **Respondent** | Anyone with the shared form link | No login required | Fills public forms, uploads files, submits responses |
-| **Super Admin** | Platform developers & operators | Firebase Auth + manual DB role flag | Internal operations: monitors logs, manages admin accounts, tracks usage, audit trail |
+| **Admin** | Platform developers & operators | Firebase Auth + manual DB role flag | Internal operations: monitors logs, manages user accounts, tracks usage, audit trail |
 
 ---
 
 ## Core User Flow
 
 ```
-Admin creates form → Publishes & shares link
+User creates form → Publishes & shares link
      ↓
 Respondent submits → Files upload to Cloudflare R2
      ↓
-Admin reviews responses → Tracks status (New → In Progress → Completed) → Views auto-dashboard
+User reviews responses → Tracks status (New → In Progress → Completed) → Views auto-dashboard
      ↓
-Admin exports CSV or PDF report
+User exports CSV or PDF report
 ```
 
 ---
@@ -64,11 +64,11 @@ Admin exports CSV or PDF report
 - Form Unavailable indicators for draft or closed forms.
 - Success confirmation screen with optional redirect countdowns.
 
-### Super Admin Console (Internal)
-- Platform Overview: Global stats (admins, workspaces, forms, responses, storage) and error/abuse monitors.
+### Admin Console (Internal)
+- Platform Overview: Global stats (users, workspaces, forms, responses, storage) and error/abuse monitors.
 - System Logs: Paginated, filterable structured log viewer (info/warn/error) with expandable stack traces.
-- Admin CRUD: Manage workspace details, suspend accounts, and hard-delete admins with cascading cleanups.
-- Audit Trail: Immutable record of all Super Admin operations.
+- User CRUD: Manage workspace details, suspend accounts, and hard-delete users with cascading cleanups.
+- Audit Trail: Immutable record of all Admin operations.
 
 ---
 
@@ -90,14 +90,14 @@ This repository holds the **frontend only** — the Express/MongoDB backend live
 ```
 Onboarding Platform/     # Next.js 16 client-side application (this repo)
 ├── src/
-│   ├── app/           # App router pages & layouts: (auth), (admin), api/
+│   ├── app/           # App router pages & layouts: (auth), (user), api/
 │   ├── components/    # UI components (ui/, common/, dashboard/, form-builder/, landing/, auth/, providers/)
 │   ├── services/      # API integration services (auth.ts, forms.ts)
 │   ├── store/         # Zustand state stores (builderStore.ts)
 │   ├── lib/           # Firebase client, axios instance, schemas, auth context, helpers
 │   ├── hooks/         # Shared hooks (useAuth)
 │   └── types/         # Shared TypeScript types (form.ts, etc.)
-├── middleware.ts      # Edge routing middleware (admin route guards)
+├── middleware.ts      # Edge routing middleware (user route guards)
 ├── __tests__/         # Vitest unit/property-based tests
 ├── e2e/               # Playwright end-to-end tests + mock backend server
 ├── playwright.config.ts
@@ -127,7 +127,7 @@ Authentication is verified through Firebase; the session is tracked via an `auth
 | 2 | Sprint 2 (Part 1) | Form Builder core: toolbox, dnd-kit canvas, basic properties, CRUD integration | ✅ **Complete** | 06 Jul – 11 Jul |
 | 3 | Sprint 2 (Part 2) | Form Builder completion: full field properties, Logic Rules, Branding, publish flow | 🔄 **In Progress** (DnD architecture fix, CSS fixes, and Delete Form modal shipped; Properties/Logic/Branding/Settings/Share tabs still pending) | 13 Jul – 18 Jul |
 | 4 | Sprint 3 | Public Form: SSR rendering, validation, Cloudflare R2 file uploads, spam prevention | Planned | 20 Jul – 25 Jul |
-| 5 | Super Admin (merged) | Developer console: logs, admin CRUD, audit trail — now its own dedicated week, not a parallel track | Planned | 27 Jul – 01 Aug |
+| 5 | Admin (merged) | Developer console: logs, user CRUD, audit trail — now its own dedicated week, not a parallel track | Planned | 27 Jul – 01 Aug |
 | 6 | Sprint 4 | Response Management: paginated response table, filters, submission details, status updates | Planned | 03 Aug – 08 Aug |
 | 7 | Sprint 5+6 (merged) | Analytics & Reports: ECharts integration, CSV/PDF export, Templates Gallery polish | Planned | 10 Aug – 15 Aug |
 | 8 | Sprint 7+8 (merged) | Settings, Forms Manager, QA/Hardening & Launch | Planned | 17 Aug – 22 Aug |
@@ -139,10 +139,10 @@ Authentication is verified through Firebase; the session is tracked via an `auth
 ## Screens Reference (24 Total)
 
 - **Auth & Onboarding (4 Screens):** Login, Sign Up, Forgot Password, OTP Verification
-- **Core Admin Platform (11 Screens):** Workspace Home, Forms Manager, Templates Gallery, Form Builder, Responses Hub (Table/Kanban/Calendar/Analytics), Submission Detail, Reports & Exports, Auto-Dashboard, Settings Panel, Modals & Dialogs, Feeds & Feedback
+- **Core User Platform (11 Screens):** Workspace Home, Forms Manager, Templates Gallery, Form Builder, Responses Hub (Table/Kanban/Calendar/Analytics), Submission Detail, Reports & Exports, Auto-Dashboard, Settings Panel, Modals & Dialogs, Feeds & Feedback
 - **Design System Showcase (1 Screen):** Interactive UI Elements Showcase
 - **Respondent Side (3 Screens):** Published Public Form, Form Unavailable Screen, Success Confirmation
-- **Super Admin Console (4 Screens, Desktop-only):** Overview Dashboard, System Logs Viewer, Admin User Management, Audit Log Viewer
+- **Admin Console (4 Screens, Desktop-only):** Overview Dashboard, System Logs Viewer, User Management, Audit Log Viewer
 - **Resource Guide (1 Screen):** Responsive Breakpoint Guide
 
 ---
@@ -165,8 +165,8 @@ Authentication is verified through Firebase; the session is tracked via an `auth
 
 - **Role Protection:** Backend API endpoints `/api/superadmin/*` and frontend `/superadmin/*` routes are protected by a `requireSuperAdmin` middleware checking JWT claims.
 - **Access Control:** User database queries are strictly scoped using `workspaceId` extracted from verified JWT tokens.
-- **Admin Suspension:** `blockSuspended` middleware immediately rejects suspended admin accounts (returning 403 `ACCOUNT_SUSPENDED`).
-- **Audit Logs:** Every Super Admin mutation (e.g., suspending accounts, purging data) writes a read-only record in the `audit_logs` collection.
+- **User Suspension:** `blockSuspended` middleware immediately rejects suspended user accounts (returning 403 `ACCOUNT_SUSPENDED`).
+- **Audit Logs:** Every Admin mutation (e.g., suspending accounts, purging data) writes a read-only record in the `audit_logs` collection.
 - **Spam Protection:** Rate limiting (10 requests/IP/min per form) and a hidden honeypot field are active on public form submissions.
 - **Anonymization:** IP addresses are processed into SHA-256 hashes before storage; raw IPs are never saved.
 - **File Upload Security:** Multer constraints validate file sizes (max 100 MB) and MIME types before sending files to Cloudflare R2 storage. Temporary uploads in `/uploads` are purged hourly.
@@ -181,10 +181,10 @@ Authentication is verified through Firebase; the session is tracked via an `auth
 - Public form page with progress bar, validation, and drag-and-drop file uploads.
 - Response Hub with data table, workflow status tracking, and ECharts dashboards.
 - CSV and PDF reports export.
-- Internal **Super Admin Console** for developer log viewing, admin account suspension/CRUD, platform stats, and audit trails.
+- Internal **Admin Console** for developer log viewing, user account suspension/CRUD, platform stats, and audit trails.
 
 ### Deferred (Post-MVP)
-- Multi-admin workspaces and custom user roles.
+- Multi-user workspaces and custom user roles.
 - Kanban, Calendar, and Gallery as primary response views.
 - Custom dashboard builders.
 - Stripe payment inputs.

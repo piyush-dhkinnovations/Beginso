@@ -8,7 +8,7 @@ interface FormBannerProps {
  * 16:9 cover banner + optional overlapping logo. Uses a plain <img> (not
  * next/image) for coverImageUrl/logoUrl — these are arbitrary backend-served
  * upload URLs with no remotePatterns configured, matching the same tradeoff
- * BrandingLivePreview already made in the admin builder.
+ * BrandingLivePreview already made in the user builder.
  */
 export function FormBanner({ branding }: FormBannerProps) {
   const { coverImageUrl, logoUrl, primaryColor } = branding;

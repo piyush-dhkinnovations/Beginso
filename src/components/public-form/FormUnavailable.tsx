@@ -1,15 +1,15 @@
 import { Lock } from 'lucide-react';
 
 interface FormUnavailableProps {
-  /** Admin-provided note (from settings.successMessage) — only shown for closed forms. */
-  adminNote?: string;
+  /** User-provided note (from settings.successMessage) — only shown for closed forms. */
+  userNote?: string;
 }
 
 /**
  * Shown for draft, closed, or nonexistent forms. Deliberately identical in all
  * three cases — never reveals which one it is (Requirement 7.4).
  */
-export function FormUnavailable({ adminNote }: FormUnavailableProps) {
+export function FormUnavailable({ userNote }: FormUnavailableProps) {
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl border border-neutral-200 shadow-card p-8 max-w-[520px] w-full text-center">
@@ -20,8 +20,8 @@ export function FormUnavailable({ adminNote }: FormUnavailableProps) {
         <p className="text-body text-neutral-500">
           If you believe this is an error, please contact the form owner.
         </p>
-        {adminNote && (
-          <p className="text-body-sm text-neutral-400 mt-4">{adminNote}</p>
+        {userNote && (
+          <p className="text-body-sm text-neutral-400 mt-4">{userNote}</p>
         )}
       </div>
     </div>

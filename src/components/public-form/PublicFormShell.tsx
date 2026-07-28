@@ -27,7 +27,7 @@ import { FileUploadRenderer } from './fields/FileUploadRenderer';
 interface PublicFormShellProps {
   schema: PublicFormSchema;
   slug: string;
-  /** Admin-only "see it as a respondent would" mode — disables the real submit network call. */
+  /** User-only "see it as a respondent would" mode — disables the real submit network call. */
   previewMode?: boolean;
 }
 

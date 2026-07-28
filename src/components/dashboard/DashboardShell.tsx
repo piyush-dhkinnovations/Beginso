@@ -6,7 +6,7 @@ import { Sidebar } from '@/components/dashboard/Sidebar';
 import { cn } from '@/lib/utils';
 
 // DashboardShell is a client component that manages the interactive sidebar/topnav shell.
-// The admin layout itself remains a Server Component so child pages keep RSC benefits.
+// The user layout itself remains a Server Component so child pages keep RSC benefits.
 // Collapse state is read from a cookie server-side (DashboardLayout) and passed in as
 // initialCollapsed, so the very first render — server and client — is already correct.
 // This replaces the previous localStorage + effect approach, which could only correct

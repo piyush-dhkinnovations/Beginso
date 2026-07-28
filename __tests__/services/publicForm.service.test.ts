@@ -38,7 +38,7 @@ describe('publicFormService', () => {
       expect(result).toEqual({ schema: mockSchema });
     });
 
-    it('returns a null schema and no adminNote on a bodyless 404', async () => {
+    it('returns a null schema and no userNote on a bodyless 404', async () => {
       (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         status: 404,
         ok: false,
@@ -46,10 +46,10 @@ describe('publicFormService', () => {
       });
 
       const result = await publicFormService.getFormSchema('missing-slug');
-      expect(result).toEqual({ schema: null, adminNote: undefined });
+      expect(result).toEqual({ schema: null, userNote: undefined });
     });
 
-    it('extracts settings.successMessage as adminNote when the 404 body includes one', async () => {
+    it('extracts settings.successMessage as userNote when the 404 body includes one', async () => {
       (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
         status: 404,
         ok: false,
@@ -57,7 +57,7 @@ describe('publicFormService', () => {
       });
 
       const result = await publicFormService.getFormSchema('closed-slug');
-      expect(result).toEqual({ schema: null, adminNote: 'This survey closed on Friday.' });
+      expect(result).toEqual({ schema: null, userNote: 'This survey closed on Friday.' });
     });
 
     it('throws on a 500 response', async () => {

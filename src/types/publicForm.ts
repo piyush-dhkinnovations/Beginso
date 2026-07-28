@@ -1,6 +1,6 @@
 /**
  * Types for the respondent-facing public form (Sprint 3).
- * Augments — does not replace — the admin-side types in src/types/form.ts.
+ * Augments — does not replace — the user-side types in src/types/form.ts.
  */
 
 import type { Control, FieldError, UseFormRegister, UseFormSetValue, UseFormTrigger } from 'react-hook-form';
@@ -14,7 +14,7 @@ export interface PublicFormBranding {
   coverImageUrl?: string;
 }
 
-/** Shape returned by GET /api/public/:slug — admin-only fields omitted. */
+/** Shape returned by GET /api/public/:slug — user-only fields omitted. */
 export interface PublicFormSchema {
   title: string;
   pages: FormPage[];

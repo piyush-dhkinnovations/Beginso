@@ -55,7 +55,7 @@ function pad(n: number): string {
 }
 
 // <input type="datetime-local"> values are timezone-naive ("2026-07-22T16:17", no offset) —
-// the browser and whatever later reads that string (a server, a different admin's browser)
+// the browser and whatever later reads that string (a server, a different user's browser)
 // can disagree on what instant it means. Always store closeDate as a real UTC ISO string
 // (with the "Z" suffix) so "4:17 PM" means the same moment everywhere, and only convert
 // to/from the naive local format at the point the <input> itself needs it.

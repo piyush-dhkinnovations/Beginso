@@ -521,7 +521,7 @@ export default function BuilderPageShell() {
   return (
     <>
       {/* Mobile Gate (visible at viewport width <= 520px) */}
-      {/* -m-6 cancels the (admin) layout's <main className="p-6">; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar */}
+      {/* -m-6 cancels the (user) layout's <main className="p-6">; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar */}
       <div className="flex max-[520px]:flex items-center justify-center h-[calc(100vh-56px)] -m-6 min-[521px]:hidden bg-neutral-50 px-6">
         <div className="text-center bg-white p-8 rounded-xl shadow-card border border-neutral-200 max-w-sm">
           <p className="text-neutral-600 font-semibold text-body-lg">
@@ -531,7 +531,7 @@ export default function BuilderPageShell() {
       </div>
 
       {/* Desktop Wrapper (visible at viewport width >= 521px) */}
-      {/* -m-6 cancels the (admin) layout's <main className="p-6">; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar. Canvas keeps its own internal overflow-y-auto below. */}
+      {/* -m-6 cancels the (user) layout's <main className="p-6">; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar. Canvas keeps its own internal overflow-y-auto below. */}
       <div className="hidden min-[521px]:flex flex-col h-[calc(100vh-56px)] -m-6 overflow-hidden bg-neutral-50">
         {isLoading ? (
           /* Loading Skeleton */
