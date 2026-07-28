@@ -79,7 +79,7 @@ User exports CSV or PDF report
 - **Database:** MongoDB Atlas (application data) · Firebase Authentication (login credentials only)
 - **Authentication:** Firebase Auth login → Express JWT session → HttpOnly Secure cookie (`SameSite=Strict`)
 - **Storage:** Cloudflare R2 (permanent file storage) · Local `/uploads` (temporary staging)
-- **Deployment:** Vercel (Frontend) · Render / Railway / VPS (Backend — necessary for headless Puppeteer)
+- **Deployment:** Vercel (Frontend — `beginso.com`) · Render / Railway / VPS (Backend — necessary for headless Puppeteer)
 
 ---
 
