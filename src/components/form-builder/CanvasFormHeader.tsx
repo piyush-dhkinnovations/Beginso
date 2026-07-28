@@ -15,7 +15,7 @@ export interface CanvasFormHeaderProps {
 // fields yet. Editing here writes to the CURRENTLY ACTIVE PAGE's own
 // title/description — every page holds an independent value, switching pages
 // shows that page's own title (never shared or copied from another page).
-// This is intentionally SEPARATE from `formTitle` (the admin-facing name shown
+// This is intentionally SEPARATE from `formTitle` (the user-facing name shown
 // in the top bar and Forms Manager, edited only via BuilderHeader). Commits on
 // blur/Enter, same pattern as BuilderHeader's title editor. Clicks here are NOT
 // stopped from bubbling — clicking into this header (away from any field card)

@@ -10,7 +10,7 @@ const BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
 export interface FormSchemaResult {
   schema: PublicFormSchema | null;
   /** Closed form's settings.successMessage, only present if the backend includes one on the 404 body. */
-  adminNote?: string;
+  userNote?: string;
 }
 
 export const publicFormService = {
@@ -24,11 +24,11 @@ export const publicFormService = {
       cache: 'no-store',
     });
     if (res.status === 404) {
-      const adminNote = await res
+      const userNote = await res
         .json()
         .then((body: { settings?: { successMessage?: string } }) => body?.settings?.successMessage)
         .catch(() => undefined);
-      return { schema: null, adminNote };
+      return { schema: null, userNote };
     }
     if (!res.ok) throw new Error(`Failed to load form: ${res.status}`);
     return { schema: (await res.json()) as PublicFormSchema };

@@ -74,7 +74,7 @@ export interface FormPage {
   order: number; // position among the form's pages
   title?: string;       // shown to respondents at the top of THIS page; independent per page.
                          // Undefined shows a generic "Untitled form" placeholder — never falls
-                         // back to another page's title or the admin-facing Form.title.
+                         // back to another page's title or the user-facing Form.title.
   description?: string; // shown to respondents at the top of THIS page; independent per page
 }
 
@@ -110,8 +110,8 @@ export interface FormSettings {
 export interface Form {
   _id: string;
   workspaceId: string;
-  title: string;              // admin-facing name — Forms Manager, browser tab, BuilderHeader top bar
-  description?: string;       // admin-facing note — set once at creation, not builder-editable
+  title: string;              // user-facing name — Forms Manager, browser tab, BuilderHeader top bar
+  description?: string;       // user-facing note — set once at creation, not builder-editable
   status: FormStatus;
   slug?: string;             // nanoid(10) — generated on publish only
   fields: FormField[];

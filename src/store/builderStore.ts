@@ -20,7 +20,7 @@ interface BuilderSnapshot {
 
 export interface BuilderState {
   formId: string | null;
-  formTitle: string;          // admin-facing name — top bar / Forms Manager
+  formTitle: string;          // user-facing name — top bar / Forms Manager
   fields: FormField[];
   pages: FormPage[];          // always at least one page; each carries its own title/description
   activePageId: string | null; // which page's fields the canvas currently shows
@@ -125,9 +125,9 @@ export const useBuilderStore = create<BuilderState>((set) => ({
           ? form.pages
           : [{ id: crypto.randomUUID(), order: 0 }];
 
-      // Page 1 defaults its title to the admin's form name so a freshly created form
+      // Page 1 defaults its title to the user's form name so a freshly created form
       // isn't blank on first open — every page after that starts genuinely blank
-      // (shows the "Untitled form" placeholder) until the admin sets its own title.
+      // (shows the "Untitled form" placeholder) until the user sets its own title.
       if (!pages[0].title) {
         pages[0] = { ...pages[0], title: form.title };
       }

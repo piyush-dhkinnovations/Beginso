@@ -30,12 +30,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function PublicFormPage({ params }: Props) {
   const { slug } = await params;
-  const { schema, adminNote } = await publicFormService.getFormSchema(slug).catch(() => ({ schema: null, adminNote: undefined }));
+  const { schema, userNote } = await publicFormService.getFormSchema(slug).catch(() => ({ schema: null, userNote: undefined }));
 
   // Client-side courtesy only — the backend must independently reject submissions
   // (and ideally this GET too) past closeDate; this just avoids showing a stale form.
   if (!schema || isPastCloseDate(schema.settings.closeDate)) {
-    return <FormUnavailable adminNote={adminNote} />;
+    return <FormUnavailable userNote={userNote} />;
   }
 
   return <PublicFormShell schema={schema} slug={slug} />;
