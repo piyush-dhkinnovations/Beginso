@@ -11,7 +11,9 @@ import type { Answer, FieldValue } from '@/types/publicForm';
  *
  * Rules are embedded on the *source* field (field.logicRules[]).
  * Each rule: IF source-field equals value THEN show|hide targetFieldId.
- * Fields not targeted by any matching rule are visible by default.
+ * A field targeted by at least one 'show' rule defaults to HIDDEN (whitelist:
+ * only visible when a show rule matches). A field targeted only by 'hide'
+ * rules defaults to visible (blacklist: hidden only when a hide rule matches).
  * When multiple rules target the same field, the LAST matching rule wins.
  *
  * @returns Set of fieldIds that are currently HIDDEN.
@@ -21,10 +23,13 @@ export function evaluateLogicRules(
   answers: Record<string, unknown>
 ): Set<string> {
   const resolved = new Map<string, 'show' | 'hide'>();
+  const whitelisted = new Set<string>();
 
   for (const field of fields) {
     const rules = field.logicRules ?? [];
     for (const rule of rules) {
+      if (rule.action === 'show') whitelisted.add(rule.targetFieldId);
+
       const sourceValue = answers[rule.condition.fieldId];
       const conditionMet =
         rule.condition.operator === 'equals' &&
@@ -36,9 +41,10 @@ export function evaluateLogicRules(
     }
   }
 
-  const hiddenIds = new Set<string>();
+  const hiddenIds = new Set<string>(whitelisted);
   for (const [targetId, action] of resolved) {
     if (action === 'hide') hiddenIds.add(targetId);
+    else hiddenIds.delete(targetId);
   }
   return hiddenIds;
 }
