@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
@@ -21,6 +21,16 @@ export function LoginForm() {
   const { login } = useAuth();
 
   const isAnyLoading = isEmailLoading || isGoogleLoading;
+
+  // Set by axios.ts's response interceptor / authContext's initAuth() when a 403 mid-session
+  // (blockSuspended()) bounces the user back here — otherwise they'd land on a blank login
+  // form with no explanation for why they were signed out.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('reason') === 'suspended') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setServerError('Your account has been suspended. Please contact support for assistance.');
+    }
+  }, []);
 
   const {
     register,
