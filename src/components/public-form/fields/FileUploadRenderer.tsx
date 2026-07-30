@@ -23,7 +23,27 @@ function formatFileSize(bytes: number): string {
  */
 export function FileUploadRenderer({ field, setValue, error, disabled, onFileChange, onUploadStateChange }: FileUploadRendererProps) {
   const [state, setState] = useState<UploadState>({ status: 'idle' });
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // Tracked separately from state so the unmount cleanup below always revokes whatever URL is
+  // actually live, regardless of render timing — a plain closure over `previewUrl` in that
+  // effect would only ever see the value from the render that registered it.
+  const previewUrlRef = useRef<string | null>(null);
+
+  // Object URLs are only ever created client-side for a File that hasn't been uploaded
+  // anywhere yet (see file-level comment) — they must be revoked or the blob leaks for the
+  // life of the tab. Revoke on unmount in case the field/page goes away mid-upload.
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    };
+  }, []);
+
+  function setPreview(file: File | null) {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = file && file.type.startsWith('image/') ? URL.createObjectURL(file) : null;
+    setPreviewUrl(previewUrlRef.current);
+  }
 
   useEffect(() => {
     onUploadStateChange?.(state);
@@ -48,15 +68,18 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
   function handleFile(file: File) {
     const validationError = validateFile(file);
     if (validationError) {
+      setPreview(null);
       setState({ status: 'failed', fileName: file.name, error: validationError });
       return;
     }
+    setPreview(file);
     setState({ status: 'uploading', fileName: file.name, fileSize: file.size, progress: 0 });
     setValue(field.fieldId, file.name);
     onFileChange?.(file);
   }
 
   function handleRemove() {
+    setPreview(null);
     setState({ status: 'idle' });
     setValue(field.fieldId, undefined);
     onFileChange?.(null);
@@ -109,6 +132,10 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
       {state.status === 'uploading' && (
         <div className="flex flex-col gap-2 w-full min-h-[44px] rounded-md border-2 border-neutral-200 px-3 py-2">
           <div className="flex items-center gap-2">
+            {previewUrl && (
+              // eslint-disable-next-line @next/next/no-img-element -- ephemeral blob: URL for a file the browser hasn't uploaded anywhere yet, not a static asset
+              <img src={previewUrl} alt="" className="h-8 w-8 shrink-0 rounded object-cover border border-neutral-200" />
+            )}
             <LoadingSpinner variant="inline" />
             <span className="text-body-sm text-neutral-800 truncate">{state.fileName}</span>
             <span className="text-caption text-neutral-400 ml-auto">{state.progress ?? 0}%</span>
@@ -124,7 +151,12 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
 
       {state.status === 'uploaded' && (
         <div className="flex items-center gap-2 w-full min-h-[44px] rounded-md border-2 border-neutral-200 px-3 py-2">
-          <Check size={16} className="text-success shrink-0" />
+          {previewUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- ephemeral blob: URL for a file the browser hasn't uploaded anywhere yet, not a static asset
+            <img src={previewUrl} alt="" className="h-10 w-10 shrink-0 rounded object-cover border border-neutral-200" />
+          ) : (
+            <Check size={16} className="text-success shrink-0" />
+          )}
           <span className="text-body-sm text-neutral-800 truncate">{state.fileName}</span>
           {state.fileSize !== undefined && (
             <span className="text-caption text-neutral-400">{formatFileSize(state.fileSize)}</span>
