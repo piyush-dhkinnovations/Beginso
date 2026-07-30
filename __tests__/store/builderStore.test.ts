@@ -220,6 +220,95 @@ describe('Zustand builderStore Property Tests', () => {
     expect((originalStillTwo as { options: string[] }).options).toEqual(['A', 'B']);
   });
 
+  it('duplicateField copies incoming rules (where another field targets it) onto the duplicate', () => {
+    const store = useBuilderStore.getState();
+    store.initForm(mockForm('test-form', 'My Form'));
+
+    store.addField('dropdown');
+    store.addField('short_text');
+    const fields = useBuilderStore.getState().fields;
+    const dropdownId = fields[0].fieldId;
+    const targetId = fields[1].fieldId;
+
+    store.updateFieldOptions(dropdownId, ['A', 'B']);
+    store.addLogicRule(dropdownId, {
+      condition: { fieldId: dropdownId, operator: 'equals', value: 'A' },
+      action: 'show',
+      targetFieldId: targetId,
+    });
+
+    store.duplicateField(targetId);
+    const after = useBuilderStore.getState().fields;
+    const duplicate = after.find((f) => f.fieldId !== targetId && f.fieldId !== dropdownId)!;
+
+    const dropdownAfter = after.find((f) => f.fieldId === dropdownId)!;
+    expect(dropdownAfter.logicRules).toHaveLength(2);
+    expect(dropdownAfter.logicRules).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ targetFieldId: targetId }),
+        expect.objectContaining({ targetFieldId: duplicate.fieldId }),
+      ])
+    );
+
+    // The original target's own incoming rule is untouched
+    const targetAfter = after.find((f) => f.fieldId === targetId)!;
+    expect(targetAfter.logicRules ?? []).toEqual([]);
+  });
+
+  it('updateFieldOptions rewrites a logic rule condition value when an option is renamed', () => {
+    const store = useBuilderStore.getState();
+    store.initForm(mockForm('test-form', 'My Form'));
+
+    store.addField('dropdown');
+    store.addField('short_text');
+    const fields = useBuilderStore.getState().fields;
+    const dropdownId = fields[0].fieldId;
+    const targetId = fields[1].fieldId;
+
+    store.updateFieldOptions(dropdownId, ['A', 'B']);
+    store.addLogicRule(dropdownId, {
+      condition: { fieldId: dropdownId, operator: 'equals', value: 'A' },
+      action: 'show',
+      targetFieldId: targetId,
+    });
+
+    // Renaming 'A' -> 'A renamed' is a 1-for-1 swap in the option set
+    store.updateFieldOptions(dropdownId, ['A renamed', 'B']);
+
+    const dropdownAfter = useBuilderStore.getState().fields.find((f) => f.fieldId === dropdownId)!;
+    expect(dropdownAfter.logicRules).toEqual([
+      expect.objectContaining({ condition: expect.objectContaining({ value: 'A renamed' }) }),
+    ]);
+  });
+
+  it('updateFieldOptions leaves rules alone on a plain add or delete (not a 1-for-1 rename)', () => {
+    const store = useBuilderStore.getState();
+    store.initForm(mockForm('test-form', 'My Form'));
+
+    store.addField('dropdown');
+    store.addField('short_text');
+    const fields = useBuilderStore.getState().fields;
+    const dropdownId = fields[0].fieldId;
+    const targetId = fields[1].fieldId;
+
+    store.updateFieldOptions(dropdownId, ['A', 'B']);
+    store.addLogicRule(dropdownId, {
+      condition: { fieldId: dropdownId, operator: 'equals', value: 'A' },
+      action: 'show',
+      targetFieldId: targetId,
+    });
+
+    // Adding an option (no removal) must not touch the existing rule
+    store.updateFieldOptions(dropdownId, ['A', 'B', 'C']);
+    let dropdownAfter = useBuilderStore.getState().fields.find((f) => f.fieldId === dropdownId)!;
+    expect(dropdownAfter.logicRules![0].condition.value).toBe('A');
+
+    // Deleting 'B' (no addition) leaves the dangling 'A' rule as-is — nothing to rename it to
+    store.updateFieldOptions(dropdownId, ['A', 'C']);
+    dropdownAfter = useBuilderStore.getState().fields.find((f) => f.fieldId === dropdownId)!;
+    expect(dropdownAfter.logicRules![0].condition.value).toBe('A');
+  });
+
   // ─── updateLogicRule: in-place replace vs. relocate across a source-field change ─
   it('updateLogicRule replaces in place when the source field is unchanged, and relocates the rule when it is', () => {
     const store = useBuilderStore.getState();
@@ -273,5 +362,28 @@ describe('Zustand builderStore Property Tests', () => {
     const unchangedB = useBuilderStore.getState().fields.find((f) => f.fieldId === b.fieldId)!;
     expect(unchangedB.logicRules).toHaveLength(1);
     expect(unchangedB.logicRules![0].targetFieldId).toBe(c.fieldId);
+  });
+
+  // ─── deletePage: order must stay contiguous, or a later addPage collides ───
+  it('deletePage renumbers remaining pages so a later addPage cannot collide on order', () => {
+    const store = useBuilderStore.getState();
+    store.initForm(mockForm('test-form', 'My Form'));
+    // initForm synthesizes page 1 (order 0); add two more (order 1, order 2)
+    store.addPage();
+    store.addPage();
+    let pages = useBuilderStore.getState().pages;
+    expect(pages.map((p) => p.order)).toEqual([0, 1, 2]);
+
+    // Delete the middle page (order 1)
+    store.deletePage(pages[1].id);
+    pages = useBuilderStore.getState().pages;
+    expect(pages.map((p) => p.order)).toEqual([0, 1]);
+
+    // A new page must not collide with the surviving page's order
+    store.addPage();
+    pages = useBuilderStore.getState().pages;
+    const orders = pages.map((p) => p.order);
+    expect(new Set(orders).size).toBe(orders.length);
+    expect(orders).toEqual([0, 1, 2]);
   });
 });

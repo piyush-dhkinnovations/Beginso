@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
-import { useForm, type FieldError, type Resolver } from 'react-hook-form';
+import { useForm, type FieldError, type FieldErrors, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import type { FormField } from '@/types/form';
@@ -197,12 +197,32 @@ export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellPr
     }
   }
 
+  // Final-submit validation covers every page's fields (see resolver above), but only the
+  // current page's fields are rendered — a stale draft can leave an earlier page's required
+  // field (e.g. a file upload, which can't survive a reload) failing invisibly, making Submit
+  // look like it does nothing. Jump back to the earliest page with an error instead.
+  function onInvalid(errors: FieldErrors<Record<string, FieldValue>>) {
+    const erroredFieldIds = new Set(Object.keys(errors));
+    const erroredPageIndices = schema.fields
+      .filter((f) => erroredFieldIds.has(f.fieldId))
+      .map((f) => sortedPages.findIndex((p) => p.id === f.pageId))
+      .filter((i) => i >= 0);
+    if (erroredPageIndices.length === 0) return;
+
+    const earliestPageIndex = Math.min(...erroredPageIndices);
+    if (earliestPageIndex < currentPageIndex) {
+      setCurrentPageIndex(earliestPageIndex);
+      setSubmitError('Please complete all required fields before submitting.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
   function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
     if (!isLastPage) {
       e.preventDefault();
       return;
     }
-    methods.handleSubmit(onSubmit)(e);
+    methods.handleSubmit(onSubmit, onInvalid)(e);
   }
 
   const anyUploading = Object.values(uploadStates).some((s) => s.status === 'uploading');

@@ -126,6 +126,59 @@ describe('buildPublicFormSchema', () => {
     }
   });
 
+  it('fails a date before minDate', () => {
+    const f = field({ fieldId: 'a', pageId: 'p1', type: 'date', required: true, minDate: '2026-01-10' });
+    const schema = buildPublicFormSchema([f], new Set());
+    const result = schema.safeParse({ a: '2026-01-01' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('Must be on or after 2026-01-10.');
+    }
+  });
+
+  it('fails a date after maxDate', () => {
+    const f = field({ fieldId: 'a', pageId: 'p1', type: 'date', required: true, maxDate: '2026-01-10' });
+    const schema = buildPublicFormSchema([f], new Set());
+    const result = schema.safeParse({ a: '2026-02-01' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('Must be on or before 2026-01-10.');
+    }
+  });
+
+  it('passes a date within a minDate/maxDate range', () => {
+    const f = field({ fieldId: 'a', pageId: 'p1', type: 'date', required: true, minDate: '2026-01-01', maxDate: '2026-01-31' });
+    const schema = buildPublicFormSchema([f], new Set());
+    expect(schema.safeParse({ a: '2026-01-15' }).success).toBe(true);
+  });
+
+  it('reports "This field is required" (not the range message) for an empty required date with a range', () => {
+    const f = field({ fieldId: 'a', pageId: 'p1', type: 'date', required: true, minDate: '2026-01-01' });
+    const schema = buildPublicFormSchema([f], new Set());
+    const result = schema.safeParse({ a: '' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('This field is required');
+    }
+  });
+
+  it('passes an optional date with a range left empty', () => {
+    const f = field({ fieldId: 'a', pageId: 'p1', type: 'date', required: false, minDate: '2026-01-01' });
+    const schema = buildPublicFormSchema([f], new Set());
+    expect(schema.safeParse({ a: '' }).success).toBe(true);
+    expect(schema.safeParse({}).success).toBe(true);
+  });
+
+  it('fails a required file_upload left undefined, not just empty string', () => {
+    const f = field({ fieldId: 'a', pageId: 'p1', type: 'file_upload', required: true });
+    const schema = buildPublicFormSchema([f], new Set());
+    const result = schema.safeParse({ a: undefined });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0].message).toBe('This field is required');
+    }
+  });
+
   it('skips hidden fields entirely — no key in the resulting schema shape', () => {
     const f = field({ fieldId: 'a', pageId: 'p1', type: 'short_text', required: true });
     const schema = buildPublicFormSchema([f], new Set(['a']));

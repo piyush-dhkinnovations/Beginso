@@ -63,8 +63,22 @@ export function buildPublicFormSchema(
         break;
       }
       case 'date': {
-        const s = z.string();
-        schema = field.required ? s.min(1, 'This field is required') : s.optional();
+        // minDate/maxDate are only enforced by the native <input min/max> hint otherwise —
+        // unlike number's min/max just above, which is checked here too. Values are ISO
+        // 'YYYY-MM-DD' strings, so lexicographic comparison is chronological comparison.
+        // .refine() must come after .min(1, ...) — it returns ZodEffects, which drops
+        // ZodString's own .min()/.optional(), so "required" has to be applied first.
+        const { minDate, maxDate } = field;
+        const inRange = (v: string) => v === '' || ((!minDate || v >= minDate) && (!maxDate || v <= maxDate));
+        const rangeMessage = minDate && maxDate
+          ? `Must be between ${minDate} and ${maxDate}.`
+          : minDate
+          ? `Must be on or after ${minDate}.`
+          : `Must be on or before ${maxDate}.`;
+
+        const base = field.required ? z.string().min(1, 'This field is required') : z.string();
+        const withRange = minDate || maxDate ? base.refine(inRange, rangeMessage) : base;
+        schema = field.required ? withRange : withRange.optional();
         break;
       }
       case 'dropdown':
@@ -89,7 +103,11 @@ export function buildPublicFormSchema(
       }
       case 'file_upload': {
         // Value is the uploaded file's R2 key once the file finishes uploading.
-        schema = field.required ? z.string().min(1, 'This field is required') : z.string().optional();
+        // Same undefined-preprocess issue as dropdown/multiple_choice/checkbox above.
+        const s = z.string().min(1, 'This field is required');
+        schema = field.required
+          ? z.preprocess((v) => (v === undefined || v === null ? '' : v), s)
+          : z.string().optional();
         break;
       }
     }
