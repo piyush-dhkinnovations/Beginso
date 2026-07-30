@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
@@ -50,7 +50,7 @@ export function LoginForm() {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      login(data.token, data.user);
+      await login(data.token);
     } catch (error: unknown) {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -80,7 +80,7 @@ export function LoginForm() {
     setIsGoogleLoading(true);
     try {
       const data = await AuthService.loginWithGoogle();
-      login(data.token, data.user);
+      await login(data.token);
     } catch (error: unknown) {
       setIsGoogleLoading(false);
       setServerError(getFriendlyErrorMessage(error));

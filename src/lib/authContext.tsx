@@ -26,7 +26,7 @@ type AuthAction =
   | { type: 'SET_LOADING'; payload: boolean };
 
 interface AuthContextValue extends AuthState {
-  login: (token: string, user: User) => void;
+  login: (token: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -80,10 +80,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const data = await AuthService.getMe();
         dispatch({ type: 'LOGIN', payload: { user: data.user } });
-      } catch {
+      } catch (error: unknown) {
         clearToken();
         dispatch({ type: 'LOGOUT' });
-        router.push('/login');
+        // A 403 here (as opposed to 401 for a merely expired/invalid token) means the
+        // account was suspended after this session started — e.g. suspended in the
+        // Super Admin Console while this tab stayed open. Flag it on the redirect so the
+        // login page can show why, instead of silently bouncing with no explanation.
+        const status = (error as { response?: { status?: number } })?.response?.status;
+        router.push(status === 403 ? '/login?reason=suspended' : '/login');
       }
     };
 
@@ -91,15 +96,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const login = useCallback((token: string, user: User) => {
+  const login = useCallback(async (token: string) => {
     saveToken(token);
-    dispatch({ type: 'LOGIN', payload: { user } });
     // POST /api/auth/session's `user` can be missing fields (e.g. `name`) that GET
     // /api/auth/me returns fully — reuses the same call initAuth() already makes on every
     // reload, so the full profile shows immediately instead of only after a reload.
-    AuthService.getMe()
-      .then((data) => dispatch({ type: 'LOGIN', payload: { user: data.user } }))
-      .catch(() => { });
+    //
+    // Awaited, not fire-and-forget: a suspended account still gets a valid JWT from
+    // /api/auth/session (blockSuspended() only guards routes that require an existing
+    // session), so this getMe() call is the first point that actually reveals suspension.
+    // The previous version swallowed this error and hard-navigated to /dashboard
+    // regardless, landing the user on a broken page with no explanation before silently
+    // bouncing back to /login — this is what showed up as "just reloading and showing
+    // a 403 error" during testing. Now it never navigates on failure; it clears the
+    // session and rethrows so LoginForm's existing catch block shows the backend's real
+    // error message via getFriendlyErrorMessage (e.g. "Account is suspended"), the same
+    // way any other login failure already displays.
+    let data;
+    try {
+      data = await AuthService.getMe();
+    } catch (error) {
+      clearToken();
+      dispatch({ type: 'LOGOUT' });
+      throw error;
+    }
+    dispatch({ type: 'LOGIN', payload: { user: data.user } });
     // Hard navigation, not router.push: proxy.ts middleware gates /dashboard on the
     // has_session marker cookie saveToken() just wrote. A soft client-side transition
     // can reuse a Router Cache entry for /dashboard from before the cookie existed and
