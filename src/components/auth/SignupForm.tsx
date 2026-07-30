@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -41,7 +41,7 @@ export function SignupForm() {
     try {
       const data = await AuthService.signup(values.name, values.email, values.password);
       toast('Account created successfully!', 'success');
-      login(data.token, data.user);
+      await login(data.token);
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: { message?: string; fields?: Array<{ field: string; message: string }> | Record<string, string> } } } };
       const fields = err.response?.data?.error?.fields;
@@ -66,7 +66,7 @@ export function SignupForm() {
     try {
       const data = await AuthService.loginWithGoogle();
       toast('Account created successfully!', 'success');
-      login(data.token, data.user);
+      await login(data.token);
     } catch (error: unknown) {
       setIsGoogleLoading(false);
       setServerError(getFriendlyErrorMessage(error));
