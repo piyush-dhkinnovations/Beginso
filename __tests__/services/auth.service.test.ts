@@ -70,8 +70,8 @@ describe('Auth Service', () => {
       };
       mockPost.mockResolvedValueOnce({ data: mockSessionData });
 
-      const { signup } = await import('@/services/auth');
-      const result = await signup('Test User', 'test@test.com', 'password123');
+      const { authService } = await import('@/services/auth');
+      const result = await authService.signup('Test User', 'test@test.com', 'password123');
 
       expect(createUserWithEmailAndPassword).toHaveBeenCalledWith(expect.anything(), 'test@test.com', 'password123');
       expect(mockPost).toHaveBeenCalledWith('/api/auth/session', { token: 'real.id.token', name: 'Test User' });
@@ -82,8 +82,8 @@ describe('Auth Service', () => {
       const { createUserWithEmailAndPassword } = await import('firebase/auth');
       (createUserWithEmailAndPassword as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('Email already in use'));
 
-      const { signup } = await import('@/services/auth');
-      await expect(signup('Test User', 'test@test.com', 'password123')).rejects.toThrow('Email already in use');
+      const { authService } = await import('@/services/auth');
+      await expect(authService.signup('Test User', 'test@test.com', 'password123')).rejects.toThrow('Email already in use');
     });
   });
 
@@ -101,8 +101,8 @@ describe('Auth Service', () => {
       };
       mockPost.mockResolvedValueOnce({ data: mockSessionData });
 
-      const { login } = await import('@/services/auth');
-      const result = await login('test@test.com', 'password123');
+      const { authService } = await import('@/services/auth');
+      const result = await authService.login('test@test.com', 'password123');
 
       expect(mockPost).toHaveBeenCalledWith('/api/auth/session', { token: 'real.id.token' }, { timeout: 10_000 });
       expect(result).toEqual(mockSessionData);
@@ -121,8 +121,8 @@ describe('Auth Service', () => {
       const mockSessionData = { token: 'session.jwt', user: { id: 'u1', name: 'Test User', email: 'test@test.com' } };
       mockPost.mockResolvedValueOnce({ data: mockSessionData });
 
-      const { loginWithGoogle } = await import('@/services/auth');
-      const result = await loginWithGoogle();
+      const { authService } = await import('@/services/auth');
+      const result = await authService.loginWithGoogle();
 
       expect(mockPost).toHaveBeenCalledWith(
         '/api/auth/session',
@@ -136,8 +136,8 @@ describe('Auth Service', () => {
       const { signInWithPopup } = await import('firebase/auth');
       (signInWithPopup as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error('popup-closed-by-user'));
 
-      const { loginWithGoogle } = await import('@/services/auth');
-      await expect(loginWithGoogle()).rejects.toThrow('popup-closed-by-user');
+      const { authService } = await import('@/services/auth');
+      await expect(authService.loginWithGoogle()).rejects.toThrow('popup-closed-by-user');
     });
   });
 
@@ -147,8 +147,8 @@ describe('Auth Service', () => {
     it('fetches the current user from /api/auth/me', async () => {
       mockGet.mockResolvedValueOnce({ data: { user: { id: 'u1', name: 'Test User', email: 'test@test.com' } } });
 
-      const { getMe } = await import('@/services/auth');
-      const result = await getMe();
+      const { authService } = await import('@/services/auth');
+      const result = await authService.getMe();
 
       expect(mockGet).toHaveBeenCalledWith('/api/auth/me');
       expect(result.user.id).toBe('u1');
@@ -161,8 +161,8 @@ describe('Auth Service', () => {
     it('posts to /api/auth/logout', async () => {
       mockPost.mockResolvedValueOnce({ data: {} });
 
-      const { logout } = await import('@/services/auth');
-      await logout();
+      const { authService } = await import('@/services/auth');
+      await authService.logout();
 
       expect(mockPost).toHaveBeenCalledWith('/api/auth/logout');
     });
@@ -170,8 +170,8 @@ describe('Auth Service', () => {
     it('catches backend errors silently — does not throw', async () => {
       mockPost.mockRejectedValueOnce(new Error('Network error'));
 
-      const { logout } = await import('@/services/auth');
-      await expect(logout()).resolves.toBeUndefined();
+      const { authService } = await import('@/services/auth');
+      await expect(authService.logout()).resolves.toBeUndefined();
     });
   });
 });

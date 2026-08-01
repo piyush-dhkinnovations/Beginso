@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
 import { signupSchema, SignupFormValues } from '@/lib/schemas/signupSchema';
-import * as AuthService from '@/services/auth';
+import { authService } from '@/services/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/common/Toast';
 import { Input } from '@/components/ui/Input';
@@ -39,7 +39,7 @@ export function SignupForm() {
   const onSubmit = async (values: SignupFormValues) => {
     setServerError(null);
     try {
-      const data = await AuthService.signup(values.name, values.email, values.password);
+      const data = await authService.signup(values.name, values.email, values.password);
       toast('Account created successfully!', 'success');
       await login(data.token);
     } catch (error: unknown) {
@@ -64,7 +64,7 @@ export function SignupForm() {
     setServerError(null);
     setIsGoogleLoading(true);
     try {
-      const data = await AuthService.loginWithGoogle();
+      const data = await authService.loginWithGoogle();
       toast('Account created successfully!', 'success');
       await login(data.token);
     } catch (error: unknown) {

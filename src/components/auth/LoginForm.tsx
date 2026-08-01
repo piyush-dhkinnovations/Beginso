@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
 import { loginSchema, LoginFormValues } from '@/lib/schemas/loginSchema';
-import * as AuthService from '@/services/auth';
+import { authService } from '@/services/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -56,7 +56,7 @@ export function LoginForm() {
     }, 30000);
 
     try {
-      const data = await AuthService.login(values.email, values.password);
+      const data = await authService.login(values.email, values.password);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -89,7 +89,7 @@ export function LoginForm() {
     setServerError(null);
     setIsGoogleLoading(true);
     try {
-      const data = await AuthService.loginWithGoogle();
+      const data = await authService.loginWithGoogle();
       await login(data.token);
     } catch (error: unknown) {
       setIsGoogleLoading(false);

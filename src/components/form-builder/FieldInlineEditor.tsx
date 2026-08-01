@@ -25,7 +25,7 @@ const ALLOWED_FILE_TYPE_LABELS = ['PDF', 'Word', 'Excel', 'Images', 'Video (MP4)
 export function PanelSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+      <span className="text-label text-neutral-500">
         {label}
       </span>
       {children}

@@ -108,7 +108,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+        <span className="text-label text-neutral-500">
           Conditional Logic
         </span>
         <Switch id={`${field.fieldId}-logic-toggle`} checked={expanded} onChange={setExpanded} />
@@ -175,7 +175,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
             <div className="flex flex-col gap-3 p-3 bg-white border border-neutral-200 rounded-lg">
               <div className="grid grid-cols-1 min-[881px]:grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">If field</span>
+                  <span className="text-label text-neutral-500">If field</span>
                   <select
                     value={sourceFieldId}
                     onChange={(e) => handleSourceChange(e.target.value)}
@@ -190,7 +190,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
                 </label>
 
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Operator</span>
+                  <span className="text-label text-neutral-500">Operator</span>
                   <input
                     value="equals"
                     disabled
@@ -200,7 +200,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
                 </label>
 
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Value</span>
+                  <span className="text-label text-neutral-500">Value</span>
                   {sourceField && isChoiceField(sourceField) ? (
                     <select value={value} onChange={(e) => setValue(e.target.value)} className={selectClass}>
                       <option value="">Select a value</option>
@@ -221,7 +221,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
                 </label>
 
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Then</span>
+                  <span className="text-label text-neutral-500">Then</span>
                   <div className="flex rounded-md border-2 border-neutral-200 overflow-hidden h-[38px]">
                     {(['show', 'hide'] as const).map((a) => (
                       <button

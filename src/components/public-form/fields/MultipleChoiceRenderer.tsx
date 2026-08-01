@@ -7,12 +7,12 @@ export function MultipleChoiceRenderer({ field, control, error, disabled }: Fiel
   const options = field.type === 'multiple_choice' ? field.options : [];
 
   return (
-    <FieldShell fieldId={field.fieldId} label={field.label} required={field.required} helpText={field.helpText} error={error}>
+    <FieldShell fieldId={field.fieldId} label={field.label} required={field.required} helpText={field.helpText} error={error} asGroup>
       <Controller
         name={field.fieldId}
         control={control}
         render={({ field: controllerField }) => (
-          <div id={field.fieldId} className="flex flex-col gap-2">
+          <div role="group" aria-labelledby={`${field.fieldId}-label`} className="flex flex-col gap-2">
             {options.map((opt) => (
               <label
                 key={opt}

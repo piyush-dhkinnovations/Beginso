@@ -155,12 +155,15 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
             // eslint-disable-next-line @next/next/no-img-element -- ephemeral blob: URL for a file the browser hasn't uploaded anywhere yet, not a static asset
             <img src={previewUrl} alt="" className="h-10 w-10 shrink-0 rounded object-cover border border-neutral-200" />
           ) : (
-            <Check size={16} className="text-success shrink-0" />
+            // Neutral, not text-success/Check-as-done — the real transfer hasn't
+            // happened yet (it's part of the final multipart submit), so this
+            // state means "ready to submit", not "uploaded".
+            <Check size={16} className="text-neutral-400 shrink-0" />
           )}
           <span className="text-body-sm text-neutral-800 truncate">{state.fileName}</span>
-          {state.fileSize !== undefined && (
-            <span className="text-caption text-neutral-400">{formatFileSize(state.fileSize)}</span>
-          )}
+          <span className="text-caption text-neutral-400">
+            Ready{state.fileSize !== undefined ? ` · ${formatFileSize(state.fileSize)}` : ''}
+          </span>
           <button
             type="button"
             onClick={handleRemove}

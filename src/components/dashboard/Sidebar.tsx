@@ -15,6 +15,7 @@ import {
   X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useBuilderStore } from '@/store/builderStore';
 
 interface SidebarProps {
   collapsed?: boolean;
@@ -30,6 +31,12 @@ export function Sidebar({
   onCloseMobile
 }: SidebarProps) {
   const pathname = usePathname();
+  const dirty = useBuilderStore((state) => state.dirty);
+  const setPendingLeaveUrl = useBuilderStore((state) => state.setPendingLeaveUrl);
+  // Only the builder route holds unsaved state the rest of the app cares about —
+  // gating on pathname too (not just `dirty`) keeps a stale dirty flag from a
+  // previous builder session from blocking navigation everywhere else.
+  const isInBuilder = pathname.startsWith('/forms/') && pathname.endsWith('/edit');
 
   // Icon choice matches the design system's sidebar-nav vocabulary (04_Design_System.md §4.8):
   // home, file-text, layout, table, pie-chart, download, settings.
@@ -57,9 +64,21 @@ export function Sidebar({
       )}>
         {(!collapsed || isMobile) ? (
           <>
-            <Link href="/dashboard" prefetch={false} className="flex items-center gap-2 overflow-hidden" onClick={onCloseMobile}>
+            <Link
+              href="/dashboard"
+              prefetch={false}
+              className="flex items-center gap-2 overflow-hidden"
+              onClick={(e) => {
+                if (isInBuilder && dirty) {
+                  e.preventDefault();
+                  setPendingLeaveUrl('/dashboard');
+                  return;
+                }
+                onCloseMobile?.();
+              }}
+            >
               <div className="w-8 h-8 rounded bg-brand-600 flex items-center justify-center text-white font-bold shrink-0">
-                OP
+                B
               </div>
               <span className="text-body font-bold text-neutral-800 tracking-tight whitespace-nowrap">
                 Beginso
@@ -77,7 +96,7 @@ export function Sidebar({
               !isMobile && onToggleCollapse && (
                 <button
                   onClick={onToggleCollapse}
-                  className="p-1 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors shrink-0 flex items-center justify-center min-h-[32px] min-w-[32px]"
+                  className="p-1 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors shrink-0 flex items-center justify-center min-h-[40px] min-w-[40px]"
                   aria-label="Collapse sidebar"
                 >
                   <ChevronLeft size={20} />
@@ -89,7 +108,7 @@ export function Sidebar({
           !isMobile && onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
-              className="p-1 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors shrink-0 flex items-center justify-center min-h-[32px] min-w-[32px]"
+              className="p-1 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors shrink-0 flex items-center justify-center min-h-[40px] min-w-[40px]"
               aria-label="Expand sidebar"
             >
               <ChevronRight size={20} />
@@ -109,7 +128,14 @@ export function Sidebar({
               key={item.name}
               href={item.href}
               prefetch={false}
-              onClick={onCloseMobile}
+              onClick={(e) => {
+                if (isInBuilder && dirty) {
+                  e.preventDefault();
+                  setPendingLeaveUrl(item.href);
+                  return;
+                }
+                onCloseMobile?.();
+              }}
               className={cn(
                 "flex items-center gap-3 px-3 rounded-md min-h-[44px] transition-all duration-150 ease-in-out",
                 isActive

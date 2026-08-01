@@ -11,14 +11,16 @@ import { QuickActionsSection } from '@/components/dashboard/QuickActionsSection'
 import { RecentActivitySection } from '@/components/dashboard/RecentActivitySection';
 
 export default function DashboardPage() {
-  const { isLoading: authLoading } = useAuth();
+  const { isLoading: authLoading, isAuthenticated } = useAuth();
 
   // Fetch real forms data to derive statistics
   const { data: formsData, isLoading: formsLoading } = useQuery({
     queryKey: ['forms'],
     queryFn: () => formsService.getForms(),
-    // Don't refetch while auth is loading — wait for session to be established
-    enabled: !authLoading,
+    // Don't fetch until auth has finished loading AND actually succeeded —
+    // otherwise a stale/missing session can render the dashboard shell for a
+    // frame before the axios interceptor's 401 redirect fires.
+    enabled: !authLoading && isAuthenticated,
   });
 
   // If AuthContext is verifying the session, render full page overlay loader

@@ -3,7 +3,7 @@
 import React, { createContext, useReducer, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { getToken, saveToken, clearToken } from './tokenStorage';
-import * as AuthService from '@/services/auth';
+import { authService } from '@/services/auth';
 import { signOut } from 'firebase/auth';
 import { auth } from './firebase';
 
@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       dispatch({ type: 'SET_LOADING', payload: true });
       try {
-        const data = await AuthService.getMe();
+        const data = await authService.getMe();
         dispatch({ type: 'LOGIN', payload: { user: data.user } });
       } catch (error: unknown) {
         clearToken();
@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // way any other login failure already displays.
     let data;
     try {
-      data = await AuthService.getMe();
+      data = await authService.getMe();
     } catch (error) {
       clearToken();
       dispatch({ type: 'LOGOUT' });
@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    AuthService.logout().catch(() => { });
+    authService.logout().catch(() => { });
     signOut(auth).catch(() => { });
     clearToken();
     dispatch({ type: 'LOGOUT' });
