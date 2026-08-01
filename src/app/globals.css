@@ -40,6 +40,29 @@
   --color-error: #EF4444;
   --color-warning: #EAB308;
 
+  /* Status Badge Scale — 04-design-system.md §4.7. "Completed" intentionally
+     reuses the "active" tokens (the doc gives them the identical treatment). */
+  --color-status-active-bg: #F0FDF4;
+  --color-status-active-border: #86EFAC;
+  --color-status-active-text: #065F46;
+  --color-status-active-dot: #22C55E;
+  --color-status-new-bg: #EFF6FF;
+  --color-status-new-border: #93C5FD;
+  --color-status-new-text: #1E40AF;
+  --color-status-new-dot: #3B82F6;
+  --color-status-progress-bg: #FEFCE8;
+  --color-status-progress-border: #FDE047;
+  --color-status-progress-text: #92400E;
+  --color-status-progress-dot: #EAB308;
+  --color-status-draft-bg: #F8FAFC;
+  --color-status-draft-border: #CBD5E1;
+  --color-status-draft-text: #475569;
+  --color-status-draft-dot: #94A3B8;
+  --color-status-closed-bg: #FFF1F2;
+  --color-status-closed-border: #FECDD3;
+  --color-status-closed-text: #9F1239;
+  --color-status-closed-dot: #F43F5E;
+
   /* Custom animations */
   --animate-fade-up: fadeUp 0.4s ease-out both;
   --animate-fade-in: fadeIn 0.35s ease-out both;

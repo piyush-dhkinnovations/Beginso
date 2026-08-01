@@ -32,6 +32,9 @@ export interface BuilderState {
   settings: FormSettings;
   status: FormStatus;
   slug: string | undefined;
+  // Set by Sidebar when it intercepts a nav-link click while dirty; the builder page
+  // watches this to open the same Leave-Builder modal used for its own Back button.
+  pendingLeaveUrl: string | null;
 
   initForm: (form: Form) => void;
   setFormTitle: (title: string) => void;
@@ -56,6 +59,7 @@ export interface BuilderState {
   setPageTitle: (pageId: string, title: string) => void;
   setPageDescription: (pageId: string, description: string) => void;
   deletePage: (pageId: string) => void;
+  setPendingLeaveUrl: (url: string | null) => void;
 }
 
 // Helper to push a full-state snapshot to the undoStack (capped at 50) and clear the redoStack
@@ -115,6 +119,9 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   settings: { honeypotEnabled: true },
   status: 'draft',
   slug: undefined,
+  pendingLeaveUrl: null,
+
+  setPendingLeaveUrl: (url) => set({ pendingLeaveUrl: url }),
 
   initForm: (form) =>
     set((state) => {

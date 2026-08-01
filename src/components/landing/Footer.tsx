@@ -24,6 +24,7 @@ export default function Footer() {
             <a
               href="#"
               onClick={handlePlaceholderLink}
+              aria-disabled="true"
               className="hover:text-white transition-colors cursor-not-allowed opacity-70"
               title="Coming soon"
             >
@@ -32,6 +33,7 @@ export default function Footer() {
             <a
               href="#"
               onClick={handlePlaceholderLink}
+              aria-disabled="true"
               className="hover:text-white transition-colors cursor-not-allowed opacity-70"
               title="Coming soon"
             >
@@ -40,6 +42,7 @@ export default function Footer() {
             <a
               href="#"
               onClick={handlePlaceholderLink}
+              aria-disabled="true"
               className="hover:text-white transition-colors cursor-not-allowed opacity-70"
               title="Coming soon"
             >

@@ -35,7 +35,10 @@ export default async function PublicFormPage({ params }: Props) {
   // Client-side courtesy only — the backend must independently reject submissions
   // (and ideally this GET too) past closeDate; this just avoids showing a stale form.
   if (!schema || isPastCloseDate(schema.settings.closeDate)) {
-    return <FormUnavailable userNote={userNote} />;
+    // On the true-404 path, `schema` is null and `userNote` (if any) came from the
+    // 404 response body. On the closeDate-detected-closed path, `schema` loaded fine —
+    // its own settings.successMessage is the admin's custom message and takes priority.
+    return <FormUnavailable userNote={schema ? schema.settings.successMessage : userNote} />;
   }
 
   return <PublicFormShell schema={schema} slug={slug} />;

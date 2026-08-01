@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowLeft, CheckCircle2, Eye } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Eye, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { FormStatus } from '@/types/form';
 
@@ -16,6 +16,7 @@ export interface BuilderHeaderProps {
   onBack: () => void;
   onPublish: () => void;
   onClose: () => void;
+  onDelete: () => void;
 }
 
 export function BuilderHeader({
@@ -29,6 +30,7 @@ export function BuilderHeader({
   onBack,
   onPublish,
   onClose,
+  onDelete,
 }: BuilderHeaderProps) {
   const [title, setTitle] = useState(formTitle || '');
   const [prevFormTitle, setPrevFormTitle] = useState<string | undefined>(formTitle);
@@ -91,6 +93,19 @@ export function BuilderHeader({
             <span className="text-rose-600 font-medium font-mono">⚠ Save failed</span>
           ) : null}
         </div>
+
+        {/* Delete */}
+        <Button
+          onClick={onDelete}
+          variant="ghost"
+          size="small"
+          className="w-9 h-9 p-0 shrink-0 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+          title="Delete form"
+          aria-label="Delete form"
+        >
+          <Trash2 size={16} />
+          <span className="sr-only">Delete</span>
+        </Button>
 
         {/* Preview */}
         <Button

@@ -27,6 +27,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={id}
             type={type}
             disabled={disabled}
+            aria-invalid={!!error}
+            aria-describedby={error ? `${id}-error` : undefined}
             className={cn(
               "w-full rounded-md px-3 text-[13px] h-[38px] min-h-[44px] bg-white transition-colors duration-200 outline-none",
               // Default border: 2px solid #E2E8F0
@@ -50,6 +52,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         </div>
         {error && (
           <p
+            id={`${id}-error`}
             role="alert"
             className="text-caption text-error font-semibold flex items-center gap-1 mt-0.5"
           >

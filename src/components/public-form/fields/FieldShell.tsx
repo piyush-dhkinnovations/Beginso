@@ -17,16 +17,28 @@ interface FieldShellProps {
   error?: FieldError;
   /** Compact layout's label-left row style — label beside the input instead of above it. */
   inline?: boolean;
+  /**
+   * Radio/checkbox groups don't have one focusable input `fieldId` can target — the
+   * child is a `role="group"` container, not a labelable element. When true, the
+   * label renders as a plain `<span id={`${fieldId}-label`}>` instead of a
+   * `<label htmlFor>`; the group container should reference it via aria-labelledby.
+   */
+  asGroup?: boolean;
   children: ReactNode;
 }
 
 /** Shared label/helpText/error chrome around every field renderer's input (Requirement 4, shared rules 1–4). */
-export function FieldShell({ fieldId, label, required, helpText, error, inline, children }: FieldShellProps) {
-  const labelEl = (
-    <label
-      htmlFor={fieldId}
-      className={inline ? 'text-body-sm font-semibold text-neutral-800 pt-2.5 shrink-0 w-28' : 'text-heading-3 text-neutral-800'}
-    >
+export function FieldShell({ fieldId, label, required, helpText, error, inline, asGroup, children }: FieldShellProps) {
+  const labelClassName = inline
+    ? 'text-body-sm font-semibold text-neutral-800 pt-2.5 shrink-0 w-28'
+    : 'text-heading-3 text-neutral-800';
+  const labelEl = asGroup ? (
+    <span id={`${fieldId}-label`} className={labelClassName}>
+      {label}
+      {required && <span className="text-error"> *</span>}
+    </span>
+  ) : (
+    <label htmlFor={fieldId} className={labelClassName}>
       {label}
       {required && <span className="text-error"> *</span>}
     </label>
