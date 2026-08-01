@@ -34,7 +34,8 @@ import { SharePanel } from '@/components/form-builder/SharePanel';
 import { PublishModal } from '@/components/form-builder/PublishModal';
 import { CloseFormModal } from '@/components/form-builder/CloseFormModal';
 import { LeaveBuilderModal } from '@/components/form-builder/LeaveBuilderModal';
-import type { FieldType } from '@/types/form';
+import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
+import type { FieldType, FormBranding, FormField, FormPage, FormSettings } from '@/types/form';
 
 // Shared by handleDragOver (visual indicator) and handleDragEnd (actual insert)
 // so the two never disagree about which side of the hovered card the drag is on.
@@ -47,6 +48,22 @@ function isDroppingBelow(active: Active, over: Over | null): boolean {
 }
 
 const VALID_TABS: BuilderTab[] = ['build', 'branding', 'settings', 'share'];
+
+// Single source of truth for the PATCH payload shape — the debounced autosave, the
+// unmount flush, the publish-click flush, and the leave-guard flush all call this
+// instead of each hand-rolling the same field-name mapping.
+function saveFormSnapshot(
+  formId: string,
+  snap: { fields: FormField[]; formTitle: string; pages: FormPage[]; branding: FormBranding; settings: FormSettings }
+) {
+  return formsService.updateForm(formId, {
+    fields: snap.fields,
+    title: snap.formTitle,
+    pages: snap.pages,
+    branding: snap.branding,
+    settings: snap.settings,
+  });
+}
 
 export default function BuilderPageShell() {
   const router = useRouter();
@@ -74,6 +91,7 @@ export default function BuilderPageShell() {
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [pendingNavUrl, setPendingNavUrl] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Read state and actions from builderStore
   const formId = useBuilderStore((state) => state.formId);
@@ -170,13 +188,7 @@ export default function BuilderPageShell() {
 
       try {
         setSaveState('saving');
-        await formsService.updateForm(formId, {
-          fields,
-          title: formTitle,
-          pages,
-          branding,
-          settings,
-        });
+        await saveFormSnapshot(formId, { fields, formTitle, pages, branding, settings });
         markSaved();
         setSaveState('saved');
         setSavedAt(new Date());
@@ -233,13 +245,7 @@ export default function BuilderPageShell() {
       const current = saveStateRef.current;
       // Flush save on unmount if still dirty
       if (current.dirty && current.formId && current.formId !== 'undefined') {
-        formsService.updateForm(current.formId, {
-          fields: current.fields,
-          title: current.formTitle,
-          pages: current.pages,
-          branding: current.branding,
-          settings: current.settings,
-        }).catch(() => {});
+        saveFormSnapshot(current.formId, current).catch(() => {});
       }
     };
   }, []);
@@ -284,13 +290,7 @@ export default function BuilderPageShell() {
     if (dirty && formId && formId !== 'undefined') {
       try {
         setSaveState('saving');
-        await formsService.updateForm(formId, {
-          fields,
-          title: formTitle,
-          pages,
-          branding,
-          settings,
-        });
+        await saveFormSnapshot(formId, { fields, formTitle, pages, branding, settings });
         markSaved();
         setSaveState('saved');
       } catch {
@@ -308,13 +308,7 @@ export default function BuilderPageShell() {
     if (dirty && formId && formId !== 'undefined') {
       try {
         setSaveState('saving');
-        await formsService.updateForm(formId, {
-          fields,
-          title: formTitle,
-          pages,
-          branding,
-          settings,
-        });
+        await saveFormSnapshot(formId, { fields, formTitle, pages, branding, settings });
         markSaved();
         setSaveState('saved');
       } catch {
@@ -342,12 +336,42 @@ export default function BuilderPageShell() {
     },
   });
 
+  // ─── Delete form flow ─────────────────────────────────────────────────────────
+
+  const deleteMutation = useMutation({
+    mutationFn: () => formsService.deleteForm(formId!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['forms'] });
+      toast('Form deleted successfully', 'success');
+      router.push('/forms');
+    },
+    onError: () => {
+      toast('Failed to delete form. Please try again.', 'error');
+    },
+  });
+
   // ─── Leave-Builder guard ──────────────────────────────────────────────────────
 
   // Intercept in-app navigation when dirty: capture the intended URL, show modal.
-  // We patch router.push so sidebar Link clicks get caught too.
+  // Sidebar link clicks are caught too — it reads `dirty` from builderStore directly
+  // and, when on this route, redirects the click into `pendingLeaveUrl` instead of
+  // navigating; the effect below picks that up and opens the same modal.
   const dirtyRef = useRef(dirty);
   useEffect(() => { dirtyRef.current = dirty; }, [dirty]);
+
+  const pendingLeaveUrl = useBuilderStore((state) => state.pendingLeaveUrl);
+  const setPendingLeaveUrlInStore = useBuilderStore((state) => state.setPendingLeaveUrl);
+  // Syncing local modal-visibility state from an external store value set by
+  // Sidebar — same pattern already used in DeleteFormModal.tsx for the same
+  // kind of sync.
+  useEffect(() => {
+    if (pendingLeaveUrl) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setPendingNavUrl(pendingLeaveUrl);
+      setShowLeaveModal(true);
+      setPendingLeaveUrlInStore(null);
+    }
+  }, [pendingLeaveUrl, setPendingLeaveUrlInStore]);
 
   const handleBack = useCallback(() => {
     if (dirtyRef.current) {
@@ -364,13 +388,7 @@ export default function BuilderPageShell() {
     if (current.dirty && current.formId && current.formId !== 'undefined') {
       try {
         setSaveState('saving');
-        await formsService.updateForm(current.formId, {
-          fields: current.fields,
-          title: current.formTitle,
-          pages: current.pages,
-          branding: current.branding,
-          settings: current.settings,
-        });
+        await saveFormSnapshot(current.formId, current);
         markSaved();
         setSaveState('saved');
       } catch {
@@ -561,6 +579,7 @@ export default function BuilderPageShell() {
               onBack={handleBack}
               onPublish={handlePublishClick}
               onClose={() => setShowCloseModal(true)}
+              onDelete={() => setShowDeleteModal(true)}
             />
 
             <BuilderTabs
@@ -645,7 +664,7 @@ export default function BuilderPageShell() {
                 <div className="flex-1 overflow-y-auto p-6">
                   <SettingsPanel settings={settings} status={status} slug={slug} onUpdate={setSettings} />
                 </div>
-              ) : activeTab === 'share' ? (
+              ) : (
                 <div className="flex-1 overflow-y-auto p-6">
                   <SharePanel
                     status={status}
@@ -653,10 +672,6 @@ export default function BuilderPageShell() {
                     formTitle={formTitle}
                     onPublish={handlePublishClick}
                   />
-                </div>
-              ) : (
-                <div className="flex-1 flex items-center justify-center text-neutral-500 text-body">
-                  Coming in Sprint 2 Part 2
                 </div>
               )}
             </div>
@@ -685,6 +700,17 @@ export default function BuilderPageShell() {
         onLeaveWithoutSaving={handleLeaveWithoutSaving}
         onStay={handleStay}
         isSaving={saveState === 'saving'}
+      />
+
+      <DeleteFormModal
+        isOpen={showDeleteModal}
+        formTitle={formTitle}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={() => {
+          deleteMutation.mutate();
+          setShowDeleteModal(false);
+        }}
+        isDeleting={deleteMutation.isPending}
       />
     </>
   );

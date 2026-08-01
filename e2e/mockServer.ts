@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { mockPublicFormSchema } from '../src/lib/mocks/publicFormMocks.ts';
+import { mockPublicFormSchema } from './mocks/publicFormMocks.ts';
 import type { PublicFormSchema } from '../src/types/publicForm.ts';
 
 /**

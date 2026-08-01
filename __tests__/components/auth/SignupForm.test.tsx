@@ -50,10 +50,12 @@ vi.mock('@/components/auth/GoogleSignInButton', () => ({
 
 const mockAuthSignup = vi.fn();
 vi.mock('@/services/auth', () => ({
-  signup: (...args: unknown[]) => mockAuthSignup(...args),
-  loginWithGoogle: vi.fn(),
-  logout: vi.fn(),
-  getMe: vi.fn(),
+  authService: {
+    signup: (...args: unknown[]) => mockAuthSignup(...args),
+    loginWithGoogle: vi.fn(),
+    logout: vi.fn(),
+    getMe: vi.fn(),
+  },
 }));
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
