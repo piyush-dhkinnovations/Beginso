@@ -19,6 +19,7 @@
     "@dnd-kit/utilities": "3.2.2",
     "@hookform/resolvers": "5.4.0",
     "@tanstack/react-query": "5.81.5",
+    "@vercel/analytics": "^2.0.1",
     "axios": "1.18.1",
     "clsx": "2.1.1",
     "firebase": "12.15.0",
