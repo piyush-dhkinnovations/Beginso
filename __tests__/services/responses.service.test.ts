@@ -1,0 +1,85 @@
+/**
+ * __tests__/services/responses.service.test.ts
+ * Feature: sprint-4-responses
+ * Tests: responsesService — getResponses, getResponseById, updateStatus, deleteResponse, getFileDownloadUrl
+ * Requirements: 9.1-9.7
+ */
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('@/lib/axios', () => {
+  const mockGet = vi.fn();
+  const mockPatch = vi.fn();
+  const mockDelete = vi.fn();
+  return {
+    default: {
+      get: mockGet,
+      patch: mockPatch,
+      delete: mockDelete,
+      interceptors: { response: { use: vi.fn() } },
+    },
+  };
+});
+
+import axiosInstance from '@/lib/axios';
+import { responsesService } from '@/services/responses';
+
+const mockGet = axiosInstance.get as ReturnType<typeof vi.fn>;
+const mockPatch = axiosInstance.patch as ReturnType<typeof vi.fn>;
+const mockDelete = axiosInstance.delete as ReturnType<typeof vi.fn>;
+
+describe('responsesService', () => {
+  beforeEach(() => {
+    mockGet.mockReset();
+    mockPatch.mockReset();
+    mockDelete.mockReset();
+  });
+
+  it('getResponses calls GET /api/responses with params and returns paginated data', async () => {
+    const payload = { data: [], total: 0, page: 1, limit: 50, totalPages: 0 };
+    mockGet.mockResolvedValueOnce({ data: payload });
+
+    const result = await responsesService.getResponses({ formId: 'form-1', status: 'new', page: 1 });
+
+    expect(mockGet).toHaveBeenCalledWith('/api/responses', { params: { formId: 'form-1', status: 'new', page: 1 } });
+    expect(result).toEqual(payload);
+  });
+
+  it('getResponseById calls GET /api/responses/:id and returns the response detail', async () => {
+    const payload = { _id: 'r1', responseFiles: [] };
+    mockGet.mockResolvedValueOnce({ data: payload });
+
+    const result = await responsesService.getResponseById('r1');
+
+    expect(mockGet).toHaveBeenCalledWith('/api/responses/r1');
+    expect(result).toEqual(payload);
+  });
+
+  it('updateStatus calls PATCH /api/responses/:id with the new status', async () => {
+    const payload = { _id: 'r1', status: 'completed' };
+    mockPatch.mockResolvedValueOnce({ data: payload });
+
+    const result = await responsesService.updateStatus('r1', 'completed');
+
+    expect(mockPatch).toHaveBeenCalledWith('/api/responses/r1', { status: 'completed' });
+    expect(result).toEqual(payload);
+  });
+
+  it('deleteResponse calls DELETE /api/responses/:id and resolves to void', async () => {
+    mockDelete.mockResolvedValueOnce({ data: undefined });
+
+    const result = await responsesService.deleteResponse('r1');
+
+    expect(mockDelete).toHaveBeenCalledWith('/api/responses/r1');
+    expect(result).toBeUndefined();
+  });
+
+  it('getFileDownloadUrl calls GET /api/responses/:id/file/:fileId and returns the url', async () => {
+    mockGet.mockResolvedValueOnce({ data: { url: 'https://mock-r2.example.com/file.pdf' } });
+
+    const result = await responsesService.getFileDownloadUrl('r1', 'f1');
+
+    expect(mockGet).toHaveBeenCalledWith('/api/responses/r1/file/f1');
+    expect(result).toEqual({ url: 'https://mock-r2.example.com/file.pdf' });
+  });
+});
