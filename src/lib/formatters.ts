@@ -1,4 +1,4 @@
-import type { IAnswer } from '@/types/response';
+import type { ResponseAnswers } from '@/types/response';
 
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -47,11 +47,11 @@ export function shortId(id: string): string {
   return (id.length <= 6 ? id : id.slice(-6)).toUpperCase();
 }
 
-export function buildAnswerPreview(answers: IAnswer[], maxLength = 60): string {
-  const preview = answers
-    .filter(a => a.value !== null && a.value !== undefined && a.value !== '')
+export function buildAnswerPreview(answers: ResponseAnswers, maxLength = 60): string {
+  const preview = Object.values(answers)
+    .filter((value) => value !== null && value !== undefined && value !== '')
     .slice(0, 2)
-    .map(a => (Array.isArray(a.value) ? a.value.join(', ') : String(a.value)))
+    .map((value) => (Array.isArray(value) ? value.join(', ') : String(value)))
     .join(' · ');
   return preview.length > maxLength ? preview.slice(0, maxLength) : preview;
 }

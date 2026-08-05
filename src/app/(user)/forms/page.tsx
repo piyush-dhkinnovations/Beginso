@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Copy, FileText, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Copy, FileText, Table2, Trash2, Edit2 } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { useToast } from '@/components/common/Toast';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -80,7 +80,14 @@ function FormRow({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-end gap-1.5 w-32 shrink-0">
+      <div className="flex items-center justify-end gap-1.5 w-40 shrink-0">
+        <Link href={`/forms/${formId}/responses`} className="shrink-0">
+          <Button variant="ghost" size="small" title="View responses" aria-label={`View responses for ${form.title}`} className="w-8 h-8 p-0 shrink-0">
+            <Table2 size={16} />
+            <span className="sr-only">Responses</span>
+          </Button>
+        </Link>
+
         <Button
           variant="ghost"
           size="small"
@@ -191,7 +198,7 @@ export default function FormsPage() {
             <span className="text-caption font-semibold text-neutral-500 uppercase tracking-wider w-24 shrink-0 text-center">
               Status
             </span>
-            <div className="w-32 shrink-0" />
+            <div className="w-40 shrink-0" />
           </div>
 
           {/* Row placeholders */}
@@ -208,7 +215,8 @@ export default function FormsPage() {
               <div className="w-24 shrink-0 flex justify-center">
                 <div className="h-5 w-16 bg-neutral-200 rounded-full" />
               </div>
-              <div className="flex items-center justify-end gap-1.5 w-32 shrink-0">
+              <div className="flex items-center justify-end gap-1.5 w-40 shrink-0">
+                <div className="w-8 h-8 rounded-md bg-neutral-100" />
                 <div className="w-8 h-8 rounded-md bg-neutral-100" />
                 <div className="w-8 h-8 rounded-md bg-neutral-100" />
                 <div className="w-8 h-8 rounded-md bg-neutral-100" />
@@ -243,7 +251,7 @@ export default function FormsPage() {
             <span className="text-caption font-semibold text-neutral-500 uppercase tracking-wider w-24 shrink-0 text-center">
               Status
             </span>
-            <div className="w-32 shrink-0" />
+            <div className="w-40 shrink-0" />
           </div>
 
           {/* Rows */}

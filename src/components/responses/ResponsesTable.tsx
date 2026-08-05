@@ -16,6 +16,9 @@ interface ResponsesTableProps {
   onSelectRow: (id: string, checked: boolean) => void;
   onViewResponse: (id: string) => void;
   onDeleteResponse: (id: string) => void;
+  /** True when a search term is active — swaps the empty state to the "no match" variant. */
+  hasActiveSearch?: boolean;
+  onClearSearch?: () => void;
 }
 
 function MasterCheckbox({ responses, selectedIds, onSelectAll }: Pick<ResponsesTableProps, 'responses' | 'selectedIds' | 'onSelectAll'>) {
@@ -47,6 +50,8 @@ export function ResponsesTable({
   onSelectRow,
   onViewResponse,
   onDeleteResponse,
+  hasActiveSearch = false,
+  onClearSearch,
 }: ResponsesTableProps) {
   const { id: formId } = useParams<{ id: string }>();
   const router = useRouter();
@@ -64,6 +69,25 @@ export function ResponsesTable({
           </div>
         ))}
       </div>
+    );
+  }
+
+  if (responses.length === 0 && hasActiveSearch) {
+    return (
+      <EmptyState
+        icon={<FileText />}
+        heading="No responses match your search."
+        body="Try a different search term."
+        action={
+          <button
+            type="button"
+            onClick={onClearSearch}
+            className="text-brand-600 hover:underline text-body-sm font-medium"
+          >
+            Clear search
+          </button>
+        }
+      />
     );
   }
 

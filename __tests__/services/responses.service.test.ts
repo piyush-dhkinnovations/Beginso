@@ -45,19 +45,32 @@ describe('responsesService', () => {
     expect(result).toEqual(payload);
   });
 
-  it('getResponseById calls GET /api/responses/:id and returns the response detail', async () => {
-    const payload = { _id: 'r1', responseFiles: [] };
-    mockGet.mockResolvedValueOnce({ data: payload });
+  it('getResponseById calls GET /api/responses/:id and unwraps the {success, response} envelope', async () => {
+    // Real backend wraps the detail payload and uses snake_case `response_files` — see
+    // docs/backend-contract/api-reference.md §3.
+    const rawResponse = {
+      _id: 'r1',
+      formId: 'form-1',
+      answers: { Email: 'a@b.com' },
+      status: 'new',
+      ipHash: 'a1b2c3d4e5f60718',
+      submittedAt: '2026-08-05T06:00:00.000Z',
+      createdAt: '2026-08-05T06:00:00.000Z',
+      updatedAt: '2026-08-05T06:00:00.000Z',
+      response_files: [],
+    };
+    mockGet.mockResolvedValueOnce({ data: { success: true, response: rawResponse } });
 
     const result = await responsesService.getResponseById('r1');
 
     expect(mockGet).toHaveBeenCalledWith('/api/responses/r1');
-    expect(result).toEqual(payload);
+    const { response_files, ...rest } = rawResponse;
+    expect(result).toEqual({ ...rest, responseFiles: response_files });
   });
 
-  it('updateStatus calls PATCH /api/responses/:id with the new status', async () => {
-    const payload = { _id: 'r1', status: 'completed' };
-    mockPatch.mockResolvedValueOnce({ data: payload });
+  it('updateStatus calls PATCH /api/responses/:id and unwraps the {success, message, response} envelope', async () => {
+    const payload = { _id: 'r1', status: 'completed', updatedAt: '2026-08-05T06:10:00.000Z' };
+    mockPatch.mockResolvedValueOnce({ data: { success: true, message: 'Response status updated successfully', response: payload } });
 
     const result = await responsesService.updateStatus('r1', 'completed');
 

@@ -19,11 +19,11 @@ function makeResponse(id: string, overrides: Partial<IResponse> = {}): IResponse
   return {
     _id: id,
     formId: 'form-1',
-    workspaceId: 'ws-1',
-    answers: [{ fieldId: 'f1', fieldType: 'short_text', fieldLabel: 'Name', value: 'Test' }],
+    answers: { Name: 'Test' },
     status: 'new',
-    metadata: { ipHash: 'a1b2c3d4e5f60718', userAgent: 'Mozilla/5.0' },
+    ipHash: 'a1b2c3d4e5f60718',
     submittedAt: '2026-08-03T09:50:00.000Z',
+    createdAt: '2026-08-03T09:50:00.000Z',
     updatedAt: '2026-08-03T09:50:00.000Z',
     ...overrides,
   };
@@ -47,6 +47,25 @@ describe('ResponsesTable', () => {
   it('renders EmptyState when responses is empty and not loading', () => {
     render(<ResponsesTable {...baseProps} responses={[]} isLoading={false} selectedIds={new Set()} />);
     expect(screen.getByText('No responses yet')).toBeInTheDocument();
+  });
+
+  it('renders the "no match" empty state when a search is active and returns nothing', () => {
+    // Feature: sprint-4-responses, Requirement 3.5
+    const onClearSearch = vi.fn();
+    render(
+      <ResponsesTable
+        {...baseProps}
+        responses={[]}
+        isLoading={false}
+        selectedIds={new Set()}
+        hasActiveSearch
+        onClearSearch={onClearSearch}
+      />
+    );
+    expect(screen.getByText('No responses match your search.')).toBeInTheDocument();
+    expect(screen.queryByText('No responses yet')).not.toBeInTheDocument();
+    screen.getByText('Clear search').click();
+    expect(onClearSearch).toHaveBeenCalledOnce();
   });
 
   it('renders one row per response', () => {

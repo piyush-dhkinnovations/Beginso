@@ -14,14 +14,11 @@ import type { IResponse } from '@/types/response';
 const response: IResponse = {
   _id: 'resp-1',
   formId: 'form-1',
-  workspaceId: 'ws-1',
-  answers: [
-    { fieldId: 'f1', fieldType: 'short_text', fieldLabel: 'Name', value: 'Priya Sharma' },
-    { fieldId: 'f2', fieldType: 'email', fieldLabel: 'Email', value: 'priya@example.com' },
-  ],
+  answers: { Name: 'Priya Sharma', Email: 'priya@example.com' },
   status: 'new',
-  metadata: { ipHash: 'a1b2c3d4e5f60718', userAgent: 'Mozilla/5.0' },
+  ipHash: 'a1b2c3d4e5f60718',
   submittedAt: '2026-08-03T09:50:00.000Z',
+  createdAt: '2026-08-03T09:50:00.000Z',
   updatedAt: '2026-08-03T09:50:00.000Z',
 };
 

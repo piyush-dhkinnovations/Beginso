@@ -120,7 +120,12 @@ export function Sidebar({
       {/* Navigation Links */}
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          // The Responses nav item also covers /forms/[id]/responses — a form's
+          // response table is reached from the Forms Manager, not from /responses.
+          const isActive =
+            pathname === item.href ||
+            pathname.startsWith(item.href + '/') ||
+            (item.href === '/responses' && /^\/forms\/[^/]+\/responses(\/|$)/.test(pathname));
           const Icon = item.icon;
 
           return (

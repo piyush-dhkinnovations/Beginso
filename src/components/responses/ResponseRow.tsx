@@ -4,13 +4,7 @@ import { Eye, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { formatResponseDate, buildAnswerPreview } from '@/lib/formatters';
-import type { IResponse } from '@/types/response';
-
-const STATUS_LABELS: Record<IResponse['status'], string> = {
-  new: 'New',
-  in_progress: 'In Progress',
-  completed: 'Completed',
-};
+import { STATUS_LABELS, type IResponse } from '@/types/response';
 
 interface ResponseRowProps {
   response: IResponse;
