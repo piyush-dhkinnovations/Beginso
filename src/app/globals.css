@@ -68,6 +68,7 @@
   --animate-fade-in: fadeIn 0.35s ease-out both;
   --animate-blink: blink 1s step-end infinite;
   --animate-slide-in-left: slideInLeft 0.25s ease-out both;
+  --animate-slide-in-right: slideInRight 0.25s ease-out both;
   --animate-slide-up: slideUp 0.25s ease-out both;
   --animate-drop-indicator: dropIndicatorIn 0.15s ease-out both;
   --animate-sort-line: sortLineIn 0.1s ease-out both;
@@ -107,6 +108,15 @@
   @keyframes slideInLeft {
     from {
       transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
     }
     to {
       transform: translateX(0);

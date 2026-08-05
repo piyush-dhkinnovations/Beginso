@@ -5,17 +5,20 @@ interface AnswerBlockProps {
   value: AnswerValue;
 }
 
+function renderValue(value: AnswerValue) {
+  if (value === null || value === undefined || value === '') {
+    return <span className="text-neutral-400 italic">—</span>;
+  }
+  return Array.isArray(value) ? value.join(', ') : String(value);
+}
+
 export function AnswerBlock({ label, value }: AnswerBlockProps) {
   return (
-    <div className="flex flex-col gap-1 p-4 bg-white border border-neutral-200 rounded-lg">
-      <span className="text-heading-3 font-semibold text-neutral-800">{label}</span>
-      {value === null || value === undefined || value === '' ? (
-        <span className="text-neutral-400 italic">—</span>
-      ) : Array.isArray(value) ? (
-        <p className="text-body text-neutral-700">{value.join(', ')}</p>
-      ) : (
-        <p className="text-body text-neutral-700 whitespace-pre-wrap">{String(value)}</p>
-      )}
+    <div className="flex items-start justify-between gap-4 py-2.5 border-b border-neutral-100 last:border-0">
+      <span className="text-body-sm text-neutral-500 shrink-0">{label}</span>
+      <span className="text-body-sm font-medium text-neutral-800 text-right break-words whitespace-pre-wrap">
+        {renderValue(value)}
+      </span>
     </div>
   );
 }

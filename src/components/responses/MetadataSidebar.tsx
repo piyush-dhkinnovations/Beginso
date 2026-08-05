@@ -1,47 +1,70 @@
 'use client';
 
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { StatusSelector } from './StatusSelector';
-import { formatResponseDate } from '@/lib/formatters';
-import { STATUS_LABELS, type ResponseDetail, type ResponseStatus } from '@/types/response';
+import { CalendarDays, Hash, Shield, Workflow as WorkflowIcon } from 'lucide-react';
+import { StatusDropdown } from './StatusDropdown';
+import { formatResponseDate, shortId } from '@/lib/formatters';
+import type { ResponseDetail, ResponseStatus } from '@/types/response';
 
 interface MetadataSidebarProps {
   response: ResponseDetail;
   onStatusChange: (s: ResponseStatus) => void;
-  onDeleteClick: () => void;
   isUpdatingStatus: boolean;
 }
 
 const ORIGIN_TOOLTIP = 'Anonymised origin hash — raw IPs are never stored.';
 
-export function MetadataSidebar({ response, onStatusChange, onDeleteClick, isUpdatingStatus }: MetadataSidebarProps) {
+const SECTION_LABEL = 'flex items-center gap-1.5 text-caption font-semibold text-neutral-500 uppercase tracking-wide';
+const CARD = 'flex flex-col gap-3 p-4 bg-white border border-neutral-200 rounded-lg';
+const META_ROW = 'flex items-center justify-between gap-3 py-2 border-b border-neutral-100 last:border-0 last:pb-0';
+const META_LABEL = 'flex items-center gap-1.5 shrink-0 text-caption text-neutral-500';
+
+export function MetadataSidebar({ response, onStatusChange, isUpdatingStatus }: MetadataSidebarProps) {
   const ipHash = response.ipHash.slice(0, 16);
 
   return (
-    <aside className="w-full md:w-[280px] shrink-0 flex flex-col gap-4 p-4 bg-white border border-neutral-200 rounded-lg md:border-l md:border-t-0 md:rounded-none md:rounded-r-lg">
-      <div className="flex flex-col gap-2">
-        <h3 className="text-heading-3 font-semibold text-neutral-800">Status</h3>
-        <Badge variant={response.status}>{STATUS_LABELS[response.status]}</Badge>
-        <StatusSelector currentStatus={response.status} onChange={onStatusChange} disabled={isUpdatingStatus} />
+    <aside className="w-full shrink-0 flex flex-col gap-4">
+      <div className={CARD}>
+        <span className={SECTION_LABEL}>
+          <WorkflowIcon size={13} />
+          Workflow
+        </span>
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-body-sm font-medium text-neutral-700">Status</span>
+          <StatusDropdown currentStatus={response.status} onChange={onStatusChange} disabled={isUpdatingStatus} />
+        </div>
       </div>
 
-      <div className="flex flex-col gap-1">
-        <h3 className="text-heading-3 font-semibold text-neutral-800">Submitted</h3>
-        <p className="text-body-sm text-neutral-600">{formatResponseDate(response.submittedAt)}</p>
-      </div>
+      <div className={CARD}>
+        <span className={SECTION_LABEL}>Submission</span>
 
-      <div className="flex flex-col gap-1">
-        <h3 className="text-heading-3 font-semibold text-neutral-800">Origin</h3>
-        <code title={ORIGIN_TOOLTIP} className="font-mono text-caption text-neutral-600 break-all">
-          {ipHash}
-        </code>
-        <p className="text-caption text-neutral-400 mt-0.5">{ORIGIN_TOOLTIP}</p>
-      </div>
+        <div className="flex flex-col">
+          <div className={META_ROW}>
+            <span className={META_LABEL}>
+              <CalendarDays size={13} />
+              Date
+            </span>
+            <span className="text-body-sm text-neutral-700 text-right">{formatResponseDate(response.submittedAt)}</span>
+          </div>
 
-      <Button variant="destructive" size="small" className="w-full mt-2" onClick={onDeleteClick}>
-        Delete Response
-      </Button>
+          <div className={META_ROW}>
+            <span className={META_LABEL} title={ORIGIN_TOOLTIP}>
+              <Shield size={13} />
+              Origin
+            </span>
+            <code title={ORIGIN_TOOLTIP} className="font-mono text-caption text-neutral-600 break-all text-right">
+              {ipHash}
+            </code>
+          </div>
+
+          <div className={META_ROW}>
+            <span className={META_LABEL}>
+              <Hash size={13} />
+              Response ID
+            </span>
+            <code className="font-mono text-caption text-neutral-600">{shortId(response._id)}</code>
+          </div>
+        </div>
+      </div>
     </aside>
   );
 }

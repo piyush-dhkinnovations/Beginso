@@ -11,7 +11,6 @@ import { ResponsesTable } from '@/components/responses/ResponsesTable';
 import type { IResponse } from '@/types/response';
 
 vi.mock('next/navigation', () => ({
-  useParams: () => ({ id: 'form-1' }),
   useRouter: () => ({ push: vi.fn() }),
 }));
 
@@ -47,6 +46,16 @@ describe('ResponsesTable', () => {
   it('renders EmptyState when responses is empty and not loading', () => {
     render(<ResponsesTable {...baseProps} responses={[]} isLoading={false} selectedIds={new Set()} />);
     expect(screen.getByText('No responses yet')).toBeInTheDocument();
+  });
+
+  it('shows a "Share Form" empty-state CTA when formId is given', () => {
+    render(<ResponsesTable {...baseProps} responses={[]} isLoading={false} selectedIds={new Set()} formId="form-1" />);
+    expect(screen.getByRole('button', { name: 'Share Form' })).toBeInTheDocument();
+  });
+
+  it('falls back to a "Go to Forms" empty-state CTA on the all-forms view (no formId)', () => {
+    render(<ResponsesTable {...baseProps} responses={[]} isLoading={false} selectedIds={new Set()} />);
+    expect(screen.getByRole('button', { name: 'Go to Forms' })).toBeInTheDocument();
   });
 
   it('renders the "no match" empty state when a search is active and returns nothing', () => {

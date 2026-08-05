@@ -4,7 +4,9 @@ import type {
   PaginatedResponsesResult,
   IResponse,
   IResponseFile,
+  ResponseAnswers,
   ResponseDetail,
+  ResponseStats,
   ResponseStatus,
 } from '@/types/response';
 
@@ -32,9 +34,17 @@ interface FileUrlEnvelope {
   url: string;
 }
 
+// The backend sends each answer twice — once keyed by the field's raw MongoDB ObjectId, once
+// by its human label, both pointing at the identical value. Strip the ObjectId-keyed
+// duplicates so labels never render as raw hex strings in the UI.
+const OBJECT_ID_KEY_RE = /^[0-9a-f]{24}$/i;
+function cleanAnswers(answers: ResponseAnswers): ResponseAnswers {
+  return Object.fromEntries(Object.entries(answers).filter(([key]) => !OBJECT_ID_KEY_RE.test(key)));
+}
+
 function toResponseDetail(raw: RawResponseDetail): ResponseDetail {
-  const { response_files, ...rest } = raw;
-  return { ...rest, responseFiles: response_files };
+  const { response_files, answers, ...rest } = raw;
+  return { ...rest, answers: cleanAnswers(answers), responseFiles: response_files };
 }
 
 export const responsesService = {
@@ -43,7 +53,7 @@ export const responsesService = {
       .get<ListEnvelope>('/api/responses', { params })
       .then((r): PaginatedResponsesResult => {
         const { data, total, page, limit, totalPages } = r.data;
-        return { data, total, page, limit, totalPages };
+        return { data: data.map((item) => ({ ...item, answers: cleanAnswers(item.answers) })), total, page, limit, totalPages };
       }),
 
   getResponseById: (id: string) =>
@@ -61,4 +71,22 @@ export const responsesService = {
     axiosInstance
       .get<FileUrlEnvelope>(`/api/responses/${responseId}/file/${fileId}`)
       .then((r) => ({ url: r.data.url })),
+
+  // GET /api/responses/stats is requested but not yet implemented backend-side (see
+  // docs/backend-contract/api-reference.md §3), so counts are computed client-side from the
+  // existing list endpoint's `total` — one cheap limit:1 request per status. Swap this for the
+  // dedicated endpoint (a single call) once it ships.
+  getStats: (formId?: string): Promise<ResponseStats> =>
+    Promise.all(
+      (['new', 'in_progress', 'completed'] as const).map((status) =>
+        axiosInstance
+          .get<ListEnvelope>('/api/responses', { params: { formId, status, limit: 1 } })
+          .then((r) => r.data.total)
+      )
+    ).then(([newCount, inProgressCount, completedCount]) => ({
+      total: newCount + inProgressCount + completedCount,
+      new: newCount,
+      in_progress: inProgressCount,
+      completed: completedCount,
+    })),
 };

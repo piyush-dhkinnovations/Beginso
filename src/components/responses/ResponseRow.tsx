@@ -3,7 +3,7 @@
 import { Eye, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { formatResponseDate, buildAnswerPreview } from '@/lib/formatters';
+import { formatResponseDate, buildAnswerPreview, detectRespondentIdentity } from '@/lib/formatters';
 import { STATUS_LABELS, type IResponse } from '@/types/response';
 
 interface ResponseRowProps {
@@ -15,6 +15,10 @@ interface ResponseRowProps {
 }
 
 export function ResponseRow({ response, isSelected, onSelect, onView, onDelete }: ResponseRowProps) {
+  const identity = detectRespondentIdentity(response.answers);
+  const hasIdentity = !!(identity.label || identity.email);
+  const initial = (identity.label ?? identity.email ?? '?').charAt(0).toUpperCase();
+
   return (
     <tr onClick={onView} className="hover:bg-neutral-50 cursor-pointer border-b border-neutral-100 last:border-0">
       <td className="hidden md:table-cell w-10 px-4 py-3" onClick={(e) => e.stopPropagation()}>
@@ -33,7 +37,22 @@ export function ResponseRow({ response, isSelected, onSelect, onView, onDelete }
         <Badge variant={response.status}>{STATUS_LABELS[response.status]}</Badge>
       </td>
       <td className="hidden md:table-cell px-4 py-3 text-body-sm text-neutral-500 truncate max-w-[300px]">
-        {buildAnswerPreview(response.answers)}
+        <div className="flex items-center gap-2 min-w-0">
+          {hasIdentity && (
+            <span
+              aria-hidden="true"
+              className="w-6 h-6 shrink-0 rounded-full bg-brand-100 text-brand-700 text-caption font-semibold flex items-center justify-center"
+            >
+              {initial}
+            </span>
+          )}
+          <div className="min-w-0 flex flex-col">
+            {hasIdentity && (
+              <span className="text-neutral-700 font-medium truncate">{identity.label ?? identity.email}</span>
+            )}
+            <span className="truncate">{buildAnswerPreview(response.answers)}</span>
+          </div>
+        </div>
       </td>
       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-end gap-1">

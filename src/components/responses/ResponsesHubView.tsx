@@ -1,0 +1,265 @@
+'use client';
+
+import { useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { FileText } from 'lucide-react';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { EmptyState } from '@/components/common/EmptyState';
+import { Button } from '@/components/ui/Button';
+import { Modal } from '@/components/ui/Modal';
+import { useToast } from '@/components/common/Toast';
+import { ResponsesTable } from './ResponsesTable';
+import { ResponsesToolbar } from './ResponsesToolbar';
+import { PaginationControls } from './PaginationControls';
+import { BulkActionBar } from './BulkActionBar';
+import { ResponsesStatCards } from './ResponsesStatCards';
+import { ResponseDrawer } from './ResponseDrawer';
+import { formsService } from '@/services/forms';
+import { responsesService } from '@/services/responses';
+import { responseKeys } from '@/lib/queryKeys';
+import type { PaginatedResponsesResult, ResponseStatus } from '@/types/response';
+
+interface ConfirmDeleteState {
+  mode: 'single' | 'bulk';
+  ids: string[];
+}
+
+const PAGE_LIMIT = 50;
+
+interface ResponsesHubViewProps {
+  /** Undefined for the all-forms view reached from the sidebar's "Responses" link. */
+  formId?: string;
+}
+
+export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const search = searchParams.get('search') ?? '';
+  const status = (searchParams.get('status') as ResponseStatus | null) ?? undefined;
+  const page = Number(searchParams.get('page') ?? '1');
+  const responseId = searchParams.get('responseId');
+  const listKey = responseKeys.list(formId, { search: search || undefined, status, page, limit: PAGE_LIMIT });
+
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [confirmDelete, setConfirmDelete] = useState<ConfirmDeleteState | null>(null);
+
+  function updateParams(updates: Record<string, string | undefined>, resetPage = false) {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value) params.set(key, value);
+      else params.delete(key);
+    });
+    if (resetPage) params.set('page', '1');
+    router.replace(`${pathname}?${params.toString()}`);
+  }
+
+  function openResponse(id: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('responseId', id);
+    // push, not updateParams (which always replaces) — the back button must close the drawer.
+    router.push(`${pathname}?${params.toString()}`);
+  }
+
+  function closeResponse() {
+    updateParams({ responseId: undefined }); // replace is fine here, closing doesn't need a new history entry
+  }
+
+  const { data: form } = useQuery({
+    queryKey: ['form', formId],
+    queryFn: () => formsService.getFormById(formId as string),
+    enabled: !!formId,
+  });
+
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: responseKeys.stats(formId),
+    queryFn: () => responsesService.getStats(formId),
+  });
+
+  const {
+    data,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: listKey,
+    queryFn: () => responsesService.getResponses({ formId, search: search || undefined, status, page, limit: PAGE_LIMIT }),
+    refetchInterval: 30_000,
+  });
+
+  const responses = data?.data ?? [];
+
+  const invalidateResponses = () => queryClient.invalidateQueries({ queryKey: responseKeys.all(formId) });
+
+  const bulkStatusMutation = useMutation({
+    mutationFn: async ({ ids, newStatus }: { ids: string[]; newStatus: ResponseStatus }) => {
+      await Promise.all(ids.map((id) => responsesService.updateStatus(id, newStatus)));
+    },
+    onMutate: async ({ ids, newStatus }) => {
+      await queryClient.cancelQueries({ queryKey: listKey });
+      const previous = queryClient.getQueryData<PaginatedResponsesResult>(listKey);
+      queryClient.setQueryData<PaginatedResponsesResult>(listKey, (old) =>
+        old ? { ...old, data: old.data.map((r) => (ids.includes(r._id) ? { ...r, status: newStatus } : r)) } : old
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context) queryClient.setQueryData(listKey, context.previous);
+      toast('Failed to update responses. Please try again.', 'error');
+    },
+    onSuccess: (_data, { ids }) => {
+      setSelectedIds(new Set());
+      toast(`${ids.length} response${ids.length === 1 ? '' : 's'} updated.`, 'success');
+    },
+    onSettled: () => invalidateResponses(),
+  });
+
+  const bulkDeleteMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await Promise.all(ids.map((id) => responsesService.deleteResponse(id)));
+    },
+    onMutate: async (ids) => {
+      await queryClient.cancelQueries({ queryKey: listKey });
+      const previous = queryClient.getQueryData<PaginatedResponsesResult>(listKey);
+      queryClient.setQueryData<PaginatedResponsesResult>(listKey, (old) =>
+        old
+          ? { ...old, data: old.data.filter((r) => !ids.includes(r._id)), total: Math.max(old.total - ids.length, 0) }
+          : old
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context) queryClient.setQueryData(listKey, context.previous);
+      toast('Failed to delete responses. Please try again.', 'error');
+    },
+    onSuccess: (_data, ids) => {
+      setSelectedIds(new Set());
+      toast(`${ids.length} response${ids.length === 1 ? '' : 's'} deleted.`, 'success');
+    },
+    onSettled: () => {
+      invalidateResponses();
+      setConfirmDelete(null);
+    },
+  });
+
+  const singleDeleteMutation = useMutation({
+    mutationFn: (id: string) => responsesService.deleteResponse(id),
+    onSuccess: () => {
+      invalidateResponses();
+      toast('Response deleted.', 'success');
+    },
+    onError: () => toast('Failed to delete response. Please try again.', 'error'),
+    onSettled: () => setConfirmDelete(null),
+  });
+
+  if (isError && formId) {
+    return (
+      <EmptyState
+        icon={<FileText />}
+        heading="Form not found"
+        body="This form doesn't exist or you don't have access."
+        action={<Button onClick={() => router.push('/forms')}>Go to Forms</Button>}
+      />
+    );
+  }
+
+  const handleConfirmDelete = () => {
+    if (!confirmDelete) return;
+    if (confirmDelete.mode === 'bulk') bulkDeleteMutation.mutate(confirmDelete.ids);
+    else singleDeleteMutation.mutate(confirmDelete.ids[0]);
+  };
+
+  const isDeleting = bulkDeleteMutation.isPending || singleDeleteMutation.isPending;
+
+  return (
+    <div className="flex flex-col gap-4 max-w-6xl mx-auto animate-fade-in">
+      <DashboardHeader
+        title="Responses"
+        subtitle={formId ? `Responses · ${form?.title ?? ''}` : 'Track, view, and organize submissions across every form.'}
+      />
+
+      <ResponsesStatCards stats={stats} isLoading={statsLoading} />
+
+      <ResponsesToolbar
+        search={search}
+        status={status ?? 'all'}
+        total={data?.total ?? 0}
+        onSearchChange={(v) => {
+          setSelectedIds(new Set());
+          updateParams({ search: v || undefined }, true);
+        }}
+        onStatusChange={(s) => {
+          setSelectedIds(new Set());
+          updateParams({ status: s === 'all' ? undefined : s }, true);
+        }}
+      />
+
+      <BulkActionBar
+        count={selectedIds.size}
+        isLoading={bulkStatusMutation.isPending || bulkDeleteMutation.isPending}
+        onMarkInProgress={() => bulkStatusMutation.mutate({ ids: [...selectedIds], newStatus: 'in_progress' })}
+        onMarkCompleted={() => bulkStatusMutation.mutate({ ids: [...selectedIds], newStatus: 'completed' })}
+        onDeleteSelected={() => setConfirmDelete({ mode: 'bulk', ids: [...selectedIds] })}
+      />
+
+      <ResponsesTable
+        responses={responses}
+        isLoading={isLoading}
+        selectedIds={selectedIds}
+        formId={formId}
+        hasActiveSearch={!!search}
+        onClearSearch={() => {
+          setSelectedIds(new Set());
+          updateParams({ search: undefined }, true);
+        }}
+        onSelectAll={(checked) =>
+          setSelectedIds(checked ? new Set(responses.map((r) => r._id)) : new Set())
+        }
+        onSelectRow={(id, checked) =>
+          setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (checked) next.add(id);
+            else next.delete(id);
+            return next;
+          })
+        }
+        onViewResponse={openResponse}
+        onDeleteResponse={(id) => setConfirmDelete({ mode: 'single', ids: [id] })}
+      />
+
+      <PaginationControls
+        page={page}
+        totalPages={data?.totalPages ?? 1}
+        onPageChange={(p) => {
+          setSelectedIds(new Set());
+          updateParams({ page: String(p) });
+        }}
+      />
+
+      <Modal
+        isOpen={confirmDelete !== null}
+        onClose={() => setConfirmDelete(null)}
+        title={confirmDelete?.mode === 'bulk' ? `Delete ${confirmDelete.ids.length} responses?` : 'Delete this response?'}
+        description={
+          confirmDelete?.mode === 'bulk'
+            ? 'This cannot be undone.'
+            : 'This will permanently delete the response and all uploaded files. This action cannot be undone.'
+        }
+      >
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-neutral-100">
+          <Button variant="secondary" onClick={() => setConfirmDelete(null)} disabled={isDeleting}>
+            Cancel
+          </Button>
+          <Button variant="destructive" onClick={handleConfirmDelete} isLoading={isDeleting}>
+            Delete
+          </Button>
+        </div>
+      </Modal>
+
+      <ResponseDrawer responseId={responseId} formId={formId} onClose={closeResponse} />
+    </div>
+  );
+}

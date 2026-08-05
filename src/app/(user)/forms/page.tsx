@@ -73,7 +73,7 @@ function FormRow({
       </div>
 
       {/* Status badge */}
-      <div className="w-24 shrink-0 flex justify-center">
+      <div className="w-34 shrink-0 flex justify-center">
         <Badge variant={STATUS_VARIANT[form.status]}>
           {STATUS_LABEL[form.status]}
         </Badge>
@@ -195,7 +195,7 @@ export default function FormsPage() {
             <span className="flex-1 text-caption font-semibold text-neutral-500 uppercase tracking-wider">
               Form Title
             </span>
-            <span className="text-caption font-semibold text-neutral-500 uppercase tracking-wider w-24 shrink-0 text-center">
+            <span className="text-caption font-semibold text-neutral-500 uppercase tracking-wider w-28 shrink-0 text-center">
               Status
             </span>
             <div className="w-40 shrink-0" />
@@ -212,7 +212,7 @@ export default function FormsPage() {
                 <div className="h-3.5 bg-neutral-200 rounded w-1/3" />
                 <div className="h-3 bg-neutral-100 rounded w-1/4" />
               </div>
-              <div className="w-24 shrink-0 flex justify-center">
+              <div className="w-28 shrink-0 flex justify-center">
                 <div className="h-5 w-16 bg-neutral-200 rounded-full" />
               </div>
               <div className="flex items-center justify-end gap-1.5 w-40 shrink-0">
@@ -248,7 +248,7 @@ export default function FormsPage() {
             <span className="flex-1 text-caption font-semibold text-neutral-500 uppercase tracking-wider">
               Form Title
             </span>
-            <span className="text-caption font-semibold text-neutral-500 uppercase tracking-wider w-24 shrink-0 text-center">
+            <span className="text-caption font-semibold text-neutral-500 uppercase tracking-wider w-28 shrink-0 text-center">
               Status
             </span>
             <div className="w-40 shrink-0" />

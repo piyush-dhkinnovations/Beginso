@@ -70,4 +70,18 @@ describe('ResponseRow', () => {
     expect(props.onDelete).toHaveBeenCalledOnce();
     expect(props.onView).not.toHaveBeenCalled();
   });
+
+  it('renders an initial-circle avatar and detected label when identity is detectable', () => {
+    renderRow();
+    // "Priya Sharma" appears both as the identity label and inside the preview text —
+    // assert the label line specifically renders, alongside the untouched preview.
+    expect(screen.getByText('P')).toBeInTheDocument();
+    expect(screen.getByText('Priya Sharma · priya@example.com')).toBeInTheDocument();
+  });
+
+  it('renders no avatar/identity line when nothing is detectable', () => {
+    renderRow({ response: { ...response, answers: { Rating: 5 } } });
+    expect(screen.queryByText('P')).not.toBeInTheDocument();
+    expect(screen.getByText('5')).toBeInTheDocument(); // buildAnswerPreview still renders
+  });
 });

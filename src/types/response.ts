@@ -44,7 +44,8 @@ export interface ResponseDetail extends IResponse {
 }
 
 export interface GetResponsesParams {
-  formId: string;
+  /** Omit to list responses across every form in the workspace (the "All Responses" view). */
+  formId?: string;
   status?: ResponseStatus;
   search?: string;
   page?: number;
@@ -57,4 +58,12 @@ export interface PaginatedResponsesResult {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+/** GET /api/responses/stats — requested, not yet backend-confirmed (see api-reference.md §3). */
+export interface ResponseStats {
+  total: number;
+  new: number;
+  in_progress: number;
+  completed: number;
 }

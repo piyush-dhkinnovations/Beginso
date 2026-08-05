@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { FileText } from 'lucide-react';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/Button';
@@ -19,6 +19,8 @@ interface ResponsesTableProps {
   /** True when a search term is active — swaps the empty state to the "no match" variant. */
   hasActiveSearch?: boolean;
   onClearSearch?: () => void;
+  /** Undefined on the all-forms view — the empty-state CTA falls back to "Go to Forms". */
+  formId?: string;
 }
 
 function MasterCheckbox({ responses, selectedIds, onSelectAll }: Pick<ResponsesTableProps, 'responses' | 'selectedIds' | 'onSelectAll'>) {
@@ -52,8 +54,8 @@ export function ResponsesTable({
   onDeleteResponse,
   hasActiveSearch = false,
   onClearSearch,
+  formId,
 }: ResponsesTableProps) {
-  const { id: formId } = useParams<{ id: string }>();
   const router = useRouter();
 
   if (isLoading) {
@@ -98,9 +100,15 @@ export function ResponsesTable({
         heading="No responses yet"
         body="Share your form link to start collecting submissions."
         action={
-          <Button variant="secondary" onClick={() => router.push(`/forms/${formId}/edit?tab=share`)}>
-            Share Form
-          </Button>
+          formId ? (
+            <Button variant="secondary" onClick={() => router.push(`/forms/${formId}/edit?tab=share`)}>
+              Share Form
+            </Button>
+          ) : (
+            <Button variant="secondary" onClick={() => router.push('/forms')}>
+              Go to Forms
+            </Button>
+          )
         }
       />
     );

@@ -55,3 +55,23 @@ export function buildAnswerPreview(answers: ResponseAnswers, maxLength = 60): st
     .join(' · ');
   return preview.length > maxLength ? preview.slice(0, maxLength) : preview;
 }
+
+const EMAIL_RE = /[^\s@]+@[^\s@]+\.[^\s@]+/;
+
+export interface RespondentIdentity {
+  label?: string;
+  email?: string;
+}
+
+/**
+ * Best-effort guess at "who submitted this" from a form's arbitrary answers — there is no
+ * guaranteed name/email field, so this never throws and returns {} when nothing looks usable.
+ */
+export function detectRespondentIdentity(answers: ResponseAnswers): RespondentIdentity {
+  const values = Object.values(answers).filter(
+    (v): v is string => typeof v === 'string' && v.trim().length > 0
+  );
+  const email = values.find((v) => EMAIL_RE.test(v));
+  const label = values.find((v) => v !== email && v.trim().length <= 60);
+  return { label: label?.trim(), email: email?.match(EMAIL_RE)?.[0] };
+}
