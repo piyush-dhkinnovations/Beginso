@@ -53,6 +53,22 @@ describe('Sidebar component', () => {
     expect(dashboardLink?.className).not.toContain('bg-brand-50');
   });
 
+  it('highlights Responses when viewing a specific form\'s response table', () => {
+    // Feature: sprint-4-responses, Requirement 1.7 — /forms/[id]/responses isn't
+    // under /responses, so the generic startsWith(href) check alone misses it.
+    mockPathname.mockReturnValue('/forms/abc123/responses');
+    render(<Sidebar />);
+    const responsesLink = screen.getByText('Responses').closest('a');
+    expect(responsesLink?.className).toContain('bg-brand-50');
+  });
+
+  it('highlights Responses on the response detail route', () => {
+    mockPathname.mockReturnValue('/responses/resp-1');
+    render(<Sidebar />);
+    const responsesLink = screen.getByText('Responses').closest('a');
+    expect(responsesLink?.className).toContain('bg-brand-50');
+  });
+
   it('calls onToggleCollapse when the collapse button is clicked', () => {
     const onToggleCollapse = vi.fn();
     render(<Sidebar collapsed={false} onToggleCollapse={onToggleCollapse} />);

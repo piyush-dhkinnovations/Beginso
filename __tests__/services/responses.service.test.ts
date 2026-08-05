@@ -45,19 +45,32 @@ describe('responsesService', () => {
     expect(result).toEqual(payload);
   });
 
-  it('getResponseById calls GET /api/responses/:id and returns the response detail', async () => {
-    const payload = { _id: 'r1', responseFiles: [] };
-    mockGet.mockResolvedValueOnce({ data: payload });
+  it('getResponseById calls GET /api/responses/:id and unwraps the {success, response} envelope', async () => {
+    // Real backend wraps the detail payload and uses snake_case `response_files` — see
+    // docs/backend-contract/api-reference.md §3.
+    const rawResponse = {
+      _id: 'r1',
+      formId: 'form-1',
+      answers: { Email: 'a@b.com' },
+      status: 'new',
+      ipHash: 'a1b2c3d4e5f60718',
+      submittedAt: '2026-08-05T06:00:00.000Z',
+      createdAt: '2026-08-05T06:00:00.000Z',
+      updatedAt: '2026-08-05T06:00:00.000Z',
+      response_files: [],
+    };
+    mockGet.mockResolvedValueOnce({ data: { success: true, response: rawResponse } });
 
     const result = await responsesService.getResponseById('r1');
 
     expect(mockGet).toHaveBeenCalledWith('/api/responses/r1');
-    expect(result).toEqual(payload);
+    const { response_files, ...rest } = rawResponse;
+    expect(result).toEqual({ ...rest, responseFiles: response_files });
   });
 
-  it('updateStatus calls PATCH /api/responses/:id with the new status', async () => {
-    const payload = { _id: 'r1', status: 'completed' };
-    mockPatch.mockResolvedValueOnce({ data: payload });
+  it('updateStatus calls PATCH /api/responses/:id and unwraps the {success, message, response} envelope', async () => {
+    const payload = { _id: 'r1', status: 'completed', updatedAt: '2026-08-05T06:10:00.000Z' };
+    mockPatch.mockResolvedValueOnce({ data: { success: true, message: 'Response status updated successfully', response: payload } });
 
     const result = await responsesService.updateStatus('r1', 'completed');
 
@@ -81,5 +94,47 @@ describe('responsesService', () => {
 
     expect(mockGet).toHaveBeenCalledWith('/api/responses/r1/file/f1');
     expect(result).toEqual({ url: 'https://mock-r2.example.com/file.pdf' });
+  });
+
+  it('getStats computes counts client-side from 3 status-filtered list calls (no dedicated backend endpoint yet)', async () => {
+    mockGet
+      .mockResolvedValueOnce({ data: { data: [], total: 10, page: 1, limit: 1, totalPages: 10 } }) // new
+      .mockResolvedValueOnce({ data: { data: [], total: 5, page: 1, limit: 1, totalPages: 5 } }) // in_progress
+      .mockResolvedValueOnce({ data: { data: [], total: 27, page: 1, limit: 1, totalPages: 27 } }); // completed
+
+    const result = await responsesService.getStats('form-1');
+
+    expect(mockGet).toHaveBeenCalledWith('/api/responses', { params: { formId: 'form-1', status: 'new', limit: 1 } });
+    expect(mockGet).toHaveBeenCalledWith('/api/responses', { params: { formId: 'form-1', status: 'in_progress', limit: 1 } });
+    expect(mockGet).toHaveBeenCalledWith('/api/responses', { params: { formId: 'form-1', status: 'completed', limit: 1 } });
+    expect(result).toEqual({ total: 42, new: 10, in_progress: 5, completed: 27 });
+  });
+
+  it('getStats works without a formId (all-forms view)', async () => {
+    mockGet
+      .mockResolvedValueOnce({ data: { data: [], total: 1, page: 1, limit: 1, totalPages: 1 } })
+      .mockResolvedValueOnce({ data: { data: [], total: 1, page: 1, limit: 1, totalPages: 1 } })
+      .mockResolvedValueOnce({ data: { data: [], total: 1, page: 1, limit: 1, totalPages: 1 } });
+
+    const result = await responsesService.getStats();
+
+    expect(mockGet).toHaveBeenCalledWith('/api/responses', { params: { formId: undefined, status: 'new', limit: 1 } });
+    expect(result).toEqual({ total: 3, new: 1, in_progress: 1, completed: 1 });
+  });
+
+  it('strips ObjectId-shaped duplicate keys out of answers on both list and detail reads', async () => {
+    const dirtyAnswers = { '6a72da1c4b1429c63c6c5589': 'Jayesh', 'Full Name': 'Jayesh' };
+
+    mockGet.mockResolvedValueOnce({
+      data: { data: [{ _id: 'r1', formId: 'form-1', answers: dirtyAnswers, status: 'new' }], total: 1, page: 1, limit: 50, totalPages: 1 },
+    });
+    const listResult = await responsesService.getResponses({ formId: 'form-1' });
+    expect(listResult.data[0].answers).toEqual({ 'Full Name': 'Jayesh' });
+
+    mockGet.mockResolvedValueOnce({
+      data: { success: true, response: { _id: 'r1', formId: 'form-1', answers: dirtyAnswers, status: 'new', response_files: [] } },
+    });
+    const detailResult = await responsesService.getResponseById('r1');
+    expect(detailResult.answers).toEqual({ 'Full Name': 'Jayesh' });
   });
 });

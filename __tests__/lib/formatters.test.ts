@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { formatFileSize, formatResponseDate, parseUserAgent, shortId, buildAnswerPreview } from '@/lib/formatters';
-import type { IAnswer } from '@/types/response';
+import type { ResponseAnswers } from '@/types/response';
 
 describe('formatFileSize', () => {
   it('returns "0 B" for 0 bytes', () => {
@@ -61,34 +61,22 @@ describe('shortId', () => {
 
 describe('buildAnswerPreview', () => {
   it('joins the first two non-null answers with " · "', () => {
-    const answers: IAnswer[] = [
-      { fieldId: 'f1', fieldType: 'short_text', fieldLabel: 'Name', value: 'Priya' },
-      { fieldId: 'f2', fieldType: 'email', fieldLabel: 'Email', value: 'priya@example.com' },
-      { fieldId: 'f3', fieldType: 'number', fieldLabel: 'Age', value: 30 },
-    ];
+    const answers: ResponseAnswers = { Name: 'Priya', Email: 'priya@example.com', Age: 30 };
     expect(buildAnswerPreview(answers)).toBe('Priya · priya@example.com');
   });
   it('skips null/undefined/empty values', () => {
-    const answers: IAnswer[] = [
-      { fieldId: 'f1', fieldType: 'short_text', fieldLabel: 'Name', value: null },
-      { fieldId: 'f2', fieldType: 'short_text', fieldLabel: 'Nickname', value: '' },
-      { fieldId: 'f3', fieldType: 'email', fieldLabel: 'Email', value: 'priya@example.com' },
-    ];
+    const answers: ResponseAnswers = { Name: null, Nickname: '', Email: 'priya@example.com' };
     expect(buildAnswerPreview(answers)).toBe('priya@example.com');
   });
   it('joins array values with ", "', () => {
-    const answers: IAnswer[] = [
-      { fieldId: 'f1', fieldType: 'checkbox', fieldLabel: 'Topics', value: ['Design', 'Dev'] },
-    ];
+    const answers: ResponseAnswers = { Topics: ['Design', 'Dev'] };
     expect(buildAnswerPreview(answers)).toBe('Design, Dev');
   });
-  it('returns an empty string for an empty array', () => {
-    expect(buildAnswerPreview([])).toBe('');
+  it('returns an empty string for an empty object', () => {
+    expect(buildAnswerPreview({})).toBe('');
   });
   it('truncates the joined preview at 60 characters', () => {
-    const answers: IAnswer[] = [
-      { fieldId: 'f1', fieldType: 'long_text', fieldLabel: 'Bio', value: 'x'.repeat(80) },
-    ];
+    const answers: ResponseAnswers = { Bio: 'x'.repeat(80) };
     expect(buildAnswerPreview(answers).length).toBe(60);
   });
 });

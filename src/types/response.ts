@@ -1,51 +1,51 @@
 /**
  * Shared TypeScript interfaces for Response Management (Sprint 4).
- * Matches the backend contract in docs/backend-contract/api-reference.md §4.
+ * Matches the confirmed-live backend contract in docs/backend-contract/api-reference.md §3
+ * (frozen 2026-08-05) — NOT the originally assumed shape design.md/requirements.md were
+ * written against. Notably: `answers` is a flat label→value object (no fieldId/fieldType),
+ * there is no `userAgent`, and `ipHash` is a top-level field, not nested under `metadata`.
  */
-
-import type { FieldType } from './form';
 
 export type ResponseStatus = 'new' | 'in_progress' | 'completed';
 
-export interface IAnswer {
-  fieldId: string;
-  fieldType: FieldType;
-  fieldLabel: string;      // snapshotted at submission time — never changes historically
-  value: string | string[] | number | null;
-  fileKey?: string;        // backend-internal R2 key — file_upload answers only, never used directly
-}
+export const STATUS_LABELS: Record<ResponseStatus, string> = {
+  new: 'New',
+  in_progress: 'In Progress',
+  completed: 'Completed',
+};
+
+export type AnswerValue = string | string[] | number | null;
+
+/** Keyed by field label — the backend does not send fieldId/fieldType per answer. */
+export type ResponseAnswers = Record<string, AnswerValue>;
 
 export interface IResponseFile {
-  _id: string;
-  responseId: string;
-  fieldId: string;
-  originalName: string;
-  sanitizedName: string;
+  id: string;
+  name: string;
   size: number;             // bytes
-  mimeType: string;
-  createdAt: string;        // ISO 8601
+  type: string;             // MIME type
+  url: string;               // already-usable direct download URL
+  uploadTime: string;        // ISO 8601
 }
 
 export interface IResponse {
   _id: string;
   formId: string;
-  workspaceId: string;
-  answers: IAnswer[];
+  answers: ResponseAnswers;
   status: ResponseStatus;
-  metadata: {
-    ipHash: string;          // SHA-256(rawIP), truncated — raw IP never stored
-    userAgent: string;
-  };
-  submittedAt: string;       // ISO 8601
-  updatedAt: string;         // ISO 8601
+  ipHash: string;             // SHA-256(rawIP), never the raw IP
+  submittedAt: string;        // ISO 8601
+  createdAt: string;          // ISO 8601
+  updatedAt: string;          // ISO 8601
 }
 
 export interface ResponseDetail extends IResponse {
-  responseFiles: IResponseFile[];  // joined server-side on GET /api/responses/:id
+  responseFiles: IResponseFile[];  // mapped from the wire's snake_case `response_files`
 }
 
 export interface GetResponsesParams {
-  formId: string;
+  /** Omit to list responses across every form in the workspace (the "All Responses" view). */
+  formId?: string;
   status?: ResponseStatus;
   search?: string;
   page?: number;
@@ -58,4 +58,12 @@ export interface PaginatedResponsesResult {
   page: number;
   limit: number;
   totalPages: number;
+}
+
+/** GET /api/responses/stats — requested, not yet backend-confirmed (see api-reference.md §3). */
+export interface ResponseStats {
+  total: number;
+  new: number;
+  in_progress: number;
+  completed: number;
 }

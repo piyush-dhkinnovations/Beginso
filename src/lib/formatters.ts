@@ -1,4 +1,4 @@
-import type { IAnswer } from '@/types/response';
+import type { ResponseAnswers } from '@/types/response';
 
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -47,11 +47,31 @@ export function shortId(id: string): string {
   return (id.length <= 6 ? id : id.slice(-6)).toUpperCase();
 }
 
-export function buildAnswerPreview(answers: IAnswer[], maxLength = 60): string {
-  const preview = answers
-    .filter(a => a.value !== null && a.value !== undefined && a.value !== '')
+export function buildAnswerPreview(answers: ResponseAnswers, maxLength = 60): string {
+  const preview = Object.values(answers)
+    .filter((value) => value !== null && value !== undefined && value !== '')
     .slice(0, 2)
-    .map(a => (Array.isArray(a.value) ? a.value.join(', ') : String(a.value)))
+    .map((value) => (Array.isArray(value) ? value.join(', ') : String(value)))
     .join(' · ');
   return preview.length > maxLength ? preview.slice(0, maxLength) : preview;
+}
+
+const EMAIL_RE = /[^\s@]+@[^\s@]+\.[^\s@]+/;
+
+export interface RespondentIdentity {
+  label?: string;
+  email?: string;
+}
+
+/**
+ * Best-effort guess at "who submitted this" from a form's arbitrary answers — there is no
+ * guaranteed name/email field, so this never throws and returns {} when nothing looks usable.
+ */
+export function detectRespondentIdentity(answers: ResponseAnswers): RespondentIdentity {
+  const values = Object.values(answers).filter(
+    (v): v is string => typeof v === 'string' && v.trim().length > 0
+  );
+  const email = values.find((v) => EMAIL_RE.test(v));
+  const label = values.find((v) => v !== email && v.trim().length <= 60);
+  return { label: label?.trim(), email: email?.match(EMAIL_RE)?.[0] };
 }
