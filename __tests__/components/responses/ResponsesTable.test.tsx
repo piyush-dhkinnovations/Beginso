@@ -86,7 +86,9 @@ describe('ResponsesTable', () => {
   it('master checkbox is unchecked when nothing selected', () => {
     const responses = [makeResponse('r1'), makeResponse('r2')];
     render(<ResponsesTable {...baseProps} responses={responses} isLoading={false} selectedIds={new Set()} />);
-    expect(screen.getByLabelText('Select all responses on this page')).not.toBeChecked();
+    const checkbox = screen.getByLabelText('Select all responses on this page');
+    expect(checkbox).not.toBeChecked();
+    expect(checkbox.closest('label')).toHaveClass('min-h-11', 'min-w-11');
   });
 
   it('master checkbox is checked when all rows are selected', () => {

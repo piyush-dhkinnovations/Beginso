@@ -41,7 +41,7 @@ export function LeaveBuilderModal({
           type="button"
           onClick={onStay}
           disabled={isSaving}
-          className="text-body-sm text-neutral-500 hover:text-neutral-700 underline underline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed py-1"
+          className="min-h-11 text-body-sm text-neutral-500 hover:text-neutral-700 underline underline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed py-1"
         >
           Stay
         </button>

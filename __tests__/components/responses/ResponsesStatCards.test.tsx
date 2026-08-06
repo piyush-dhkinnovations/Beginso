@@ -4,7 +4,7 @@
  * Tests: ResponsesStatCards — loading skeletons, rendered counts, zero-value styling
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ResponsesStatCards } from '@/components/responses/ResponsesStatCards';
 
@@ -35,5 +35,15 @@ describe('ResponsesStatCards', () => {
     render(<ResponsesStatCards isLoading={false} stats={{ total: 0, new: 0, in_progress: 0, completed: 0 }} />);
     const zero = screen.getAllByText('0')[0];
     expect(zero.className).toContain('text-neutral-400');
+  });
+
+  it('shows a retryable error instead of misleading zero totals', () => {
+    const onRetry = vi.fn();
+    render(<ResponsesStatCards isLoading={false} isError stats={undefined} onRetry={onRetry} />);
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Unable to load response totals');
+    expect(screen.queryByText('0')).not.toBeInTheDocument();
+    screen.getByRole('button', { name: 'Try again' }).click();
+    expect(onRetry).toHaveBeenCalledOnce();
   });
 });

@@ -168,7 +168,7 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
             type="button"
             onClick={handleRemove}
             disabled={disabled}
-            className="ml-auto text-caption text-neutral-500 hover:text-neutral-800 underline"
+            className="ml-auto min-h-11 px-2 text-caption text-neutral-500 hover:text-neutral-800 underline"
           >
             Remove
           </button>
@@ -184,7 +184,7 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={disabled}
-            className="ml-auto text-caption text-brand-600 hover:text-brand-700 underline"
+            className="ml-auto min-h-11 px-2 text-caption text-brand-600 hover:text-brand-700 underline"
           >
             Retry
           </button>

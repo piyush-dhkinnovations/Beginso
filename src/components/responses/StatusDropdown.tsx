@@ -23,7 +23,14 @@ const STATUS_DOT: Record<ResponseStatus, string> = {
 
 export function StatusDropdown({ currentStatus, onChange, disabled }: StatusDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(() => STATUSES.indexOf(currentStatus));
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  useEffect(() => {
+    if (isOpen) optionRefs.current[activeIndex]?.focus();
+  }, [activeIndex, isOpen]);
 
   // Same outside-click pattern as UserProfileDropdown.
   useEffect(() => {
@@ -37,7 +44,13 @@ export function StatusDropdown({ currentStatus, onChange, disabled }: StatusDrop
 
   const selectStatus = (status: ResponseStatus) => {
     setIsOpen(false);
+    triggerRef.current?.focus();
     if (status !== currentStatus) onChange(status);
+  };
+
+  const openMenu = () => {
+    setActiveIndex(Math.max(STATUSES.indexOf(currentStatus), 0));
+    setIsOpen(true);
   };
 
   return (
@@ -49,46 +62,74 @@ export function StatusDropdown({ currentStatus, onChange, disabled }: StatusDrop
       ref={containerRef}
       onKeyDown={(e) => {
         if (e.key === 'Escape' && isOpen) {
+          e.preventDefault();
           e.stopPropagation();
           setIsOpen(false);
+          triggerRef.current?.focus();
+          return;
+        }
+        if (e.key === 'Tab' && isOpen) {
+          setIsOpen(false);
+          return;
+        }
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (!isOpen) {
+            openMenu();
+            return;
+          }
+          const direction = e.key === 'ArrowDown' ? 1 : -1;
+          setActiveIndex((index) => (index + direction + STATUSES.length) % STATUSES.length);
+          return;
+        }
+        if (isOpen && (e.key === 'Home' || e.key === 'End')) {
+          e.preventDefault();
+          setActiveIndex(e.key === 'Home' ? 0 : STATUSES.length - 1);
         }
       }}
     >
       <button
+        ref={triggerRef}
         type="button"
         disabled={disabled}
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => {
+          if (isOpen) setIsOpen(false);
+          else openMenu();
+        }}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label="Response status"
-        className="flex items-center gap-1.5 min-h-[30px] pl-2.5 pr-2 py-1.5 rounded-lg border border-neutral-200 bg-white shadow-sm text-heading-3 font-medium text-neutral-800 cursor-pointer outline-none transition-colors hover:border-neutral-300 focus:ring-2 focus:ring-offset-1 focus:ring-neutral-400 disabled:opacity-60 disabled:cursor-not-allowed"
+        className="flex min-h-10 min-w-10 items-center gap-1.5 rounded-md border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-body-sm font-medium text-neutral-800 outline-none transition-colors hover:border-neutral-300 hover:bg-white focus:ring-2 focus:ring-neutral-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <span className={cn('w-2.5 h-2.5 rounded-full shrink-0', STATUS_DOT[currentStatus])} />
+        <span className={cn('h-2 w-2 shrink-0 rounded-full', STATUS_DOT[currentStatus])} />
         {STATUS_LABELS[currentStatus]}
-        <ChevronDown size={16} className={cn('text-neutral-400 transition-transform shrink-0', isOpen && 'rotate-180')} />
+        <ChevronDown size={14} className={cn('shrink-0 text-neutral-400 transition-transform', isOpen && 'rotate-180')} />
       </button>
 
       {isOpen && (
         <ul
           role="listbox"
           aria-label="Response status options"
-          className="absolute right-0 z-10 mt-1.5 w-40 py-1.5 bg-white border border-neutral-100 rounded-lg shadow-lg animate-fade-in"
+          className="absolute right-0 z-10 mt-1 w-32 rounded-md border border-neutral-200 bg-white py-1 shadow-md animate-fade-in"
         >
-          {STATUSES.map((status) => (
+          {STATUSES.map((status, index) => (
             <li key={status}>
               <button
+                ref={(node) => { optionRefs.current[index] = node; }}
                 type="button"
                 role="option"
+                tabIndex={index === activeIndex ? 0 : -1}
                 aria-selected={status === currentStatus}
+                onFocus={() => setActiveIndex(index)}
                 onClick={() => selectStatus(status)}
                 className={cn(
-                  'w-full flex items-center gap-2 min-h-[32px] px-3 py-1.5 text-body-sm text-left transition-colors',
-                  status === currentStatus ? 'bg-brand-50 text-neutral-900 font-semibold' : 'text-neutral-700 font-medium hover:bg-neutral-50'
+                  'flex min-h-10 w-full items-center gap-1.5 px-2.5 py-1 text-left text-[11px] leading-[14px] transition-colors outline-none focus:bg-neutral-100',
+                  status === currentStatus ? 'bg-brand-50 font-medium text-neutral-900' : 'font-normal text-neutral-700 hover:bg-neutral-50'
                 )}
               >
-                <span className={cn('w-2 h-2 rounded-full shrink-0', STATUS_DOT[status])} />
+                <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', STATUS_DOT[status])} />
                 <span className="flex-1">{STATUS_LABELS[status]}</span>
-                {status === currentStatus && <Check size={14} className="text-brand-600 shrink-0" />}
+                {status === currentStatus && <Check size={12} className="shrink-0 text-brand-600" />}
               </button>
             </li>
           ))}

@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { GoogleSignInButton } from './GoogleSignInButton';
+import { useRouter } from 'next/navigation';
 
 export function LoginForm() {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -19,6 +20,7 @@ export function LoginForm() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { login } = useAuth();
+  const router = useRouter();
 
   const isAnyLoading = isEmailLoading || isGoogleLoading;
 
@@ -56,16 +58,21 @@ export function LoginForm() {
     }, 30000);
 
     try {
-      const data = await authService.login(values.email, values.password);
+      await authService.login(values.email, values.password);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      await login(data.token);
+      await login();
     } catch (error: unknown) {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
       setIsEmailLoading(false);
+
+      if ((error as { code?: string })?.code === 'auth/email-not-verified') {
+        router.push('/verify-email');
+        return;
+      }
 
       const err = error as { response?: { data?: { error?: { message?: string; fields?: Array<{ field: string; message: string }> | Record<string, string> } } } };
       const fields = err.response?.data?.error?.fields;
@@ -89,8 +96,8 @@ export function LoginForm() {
     setServerError(null);
     setIsGoogleLoading(true);
     try {
-      const data = await authService.loginWithGoogle();
-      await login(data.token);
+      await authService.loginWithGoogle();
+      await login();
     } catch (error: unknown) {
       setIsGoogleLoading(false);
       setServerError(getFriendlyErrorMessage(error));

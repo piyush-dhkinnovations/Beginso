@@ -10,15 +10,22 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ─── Mock Firebase auth ─────────────────────────────────────────────────────
 vi.mock('@/lib/firebase', () => ({
-  auth: {},
+  auth: { currentUser: null },
 }));
 
 vi.mock('firebase/auth', () => ({
+  browserSessionPersistence: { type: 'SESSION' },
   createUserWithEmailAndPassword: vi.fn(),
-  signInWithEmailAndPassword: vi.fn(),
-  GoogleAuthProvider: vi.fn(),
-  signInWithPopup: vi.fn(),
   getAdditionalUserInfo: vi.fn(),
+  GoogleAuthProvider: vi.fn(),
+  reload: vi.fn(),
+  sendEmailVerification: vi.fn(),
+  sendPasswordResetEmail: vi.fn(),
+  setPersistence: vi.fn(),
+  signInWithEmailAndPassword: vi.fn(),
+  signInWithPopup: vi.fn(),
+  signOut: vi.fn(),
+  updateProfile: vi.fn(),
 }));
 
 // ─── Mock Axios instance ────────────────────────────────────────────────────
@@ -36,14 +43,15 @@ vi.mock('@/lib/axios', () => {
   };
 });
 
-// ─── Mock tokenStorage ──────────────────────────────────────────────────────
-vi.mock('@/lib/tokenStorage', () => ({
-  getToken: vi.fn(() => 'stored.jwt.token'),
-  saveToken: vi.fn(),
-  clearToken: vi.fn(),
-}));
-
 import axiosInstance from '@/lib/axios';
+import {
+  reload,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  setPersistence,
+  signOut,
+  updateProfile,
+} from 'firebase/auth';
 
 
 const mockPost = axiosInstance.post as ReturnType<typeof vi.fn>;
@@ -51,31 +59,35 @@ const mockGet = axiosInstance.get as ReturnType<typeof vi.fn>;
 
 describe('Auth Service', () => {
   beforeEach(() => {
-    vi.resetModules();
+    vi.clearAllMocks();
     mockPost.mockReset();
     mockGet.mockReset();
+    vi.mocked(setPersistence).mockResolvedValue();
+    vi.mocked(updateProfile).mockResolvedValue();
+    vi.mocked(sendEmailVerification).mockResolvedValue();
+    vi.mocked(sendPasswordResetEmail).mockResolvedValue();
+    vi.mocked(reload).mockResolvedValue();
+    vi.mocked(signOut).mockResolvedValue();
   });
 
   // ─── signup() ─────────────────────────────────────────────────────────────
 
   describe('signup()', () => {
-    it('creates a Firebase user then posts the ID token to /api/auth/session', async () => {
+    it('creates a Firebase user and sends verification without creating a backend session', async () => {
       const { createUserWithEmailAndPassword } = await import('firebase/auth');
+      const user = { email: 'test@test.com' };
       (createUserWithEmailAndPassword as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        user: { getIdToken: vi.fn().mockResolvedValueOnce('real.id.token') },
+        user,
       });
-      const mockSessionData = {
-        user: { id: 'u1', name: 'Test User', email: 'test@test.com' },
-        workspace: { id: 'ws1', name: 'Test WS' },
-      };
-      mockPost.mockResolvedValueOnce({ data: mockSessionData });
 
       const { authService } = await import('@/services/auth');
       const result = await authService.signup('Test User', 'test@test.com', 'password123');
 
       expect(createUserWithEmailAndPassword).toHaveBeenCalledWith(expect.anything(), 'test@test.com', 'password123');
-      expect(mockPost).toHaveBeenCalledWith('/api/auth/session', { token: 'real.id.token', name: 'Test User' });
-      expect(result).toEqual(mockSessionData);
+      expect(updateProfile).toHaveBeenCalledWith(user, { displayName: 'Test User' });
+      expect(sendEmailVerification).toHaveBeenCalledWith(user, expect.objectContaining({ url: expect.stringContaining('/verify-email') }));
+      expect(mockPost).not.toHaveBeenCalled();
+      expect(result).toEqual({ email: 'test@test.com' });
     });
 
     it('throws when Firebase signup fails', async () => {
@@ -93,7 +105,7 @@ describe('Auth Service', () => {
     it('signs in with Firebase then posts the ID token with a 10s timeout', async () => {
       const { signInWithEmailAndPassword } = await import('firebase/auth');
       (signInWithEmailAndPassword as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        user: { getIdToken: vi.fn().mockResolvedValueOnce('real.id.token') },
+        user: { emailVerified: true, getIdToken: vi.fn().mockResolvedValueOnce('real.id.token') },
       });
       const mockSessionData = {
         user: { id: 'u1', name: 'Test User', email: 'test@test.com' },
@@ -105,7 +117,21 @@ describe('Auth Service', () => {
       const result = await authService.login('test@test.com', 'password123');
 
       expect(mockPost).toHaveBeenCalledWith('/api/auth/session', { token: 'real.id.token' }, { timeout: 10_000 });
+      expect(signOut).toHaveBeenCalled();
       expect(result).toEqual(mockSessionData);
+    });
+
+    it('does not create a backend session for an unverified password user', async () => {
+      const { signInWithEmailAndPassword } = await import('firebase/auth');
+      (signInWithEmailAndPassword as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        user: { emailVerified: false },
+      });
+
+      const { authService } = await import('@/services/auth');
+      await expect(authService.login('test@test.com', 'password123')).rejects.toMatchObject({
+        code: 'auth/email-not-verified',
+      });
+      expect(mockPost).not.toHaveBeenCalled();
     });
   });
 
@@ -129,6 +155,7 @@ describe('Auth Service', () => {
         { token: 'real.id.token', name: 'Test User', isNewUser: true },
         { timeout: 10_000 }
       );
+      expect(signOut).toHaveBeenCalled();
       expect(result).toEqual(mockSessionData);
     });
 
@@ -172,6 +199,58 @@ describe('Auth Service', () => {
 
       const { authService } = await import('@/services/auth');
       await expect(authService.logout()).resolves.toBeUndefined();
+    });
+  });
+
+  describe('verification and password recovery', () => {
+    it('sends a non-session password reset action link', async () => {
+      const { authService } = await import('@/services/auth');
+      await authService.requestPasswordReset('test@test.com');
+
+      expect(sendPasswordResetEmail).toHaveBeenCalledWith(
+        expect.anything(),
+        'test@test.com',
+        expect.objectContaining({ url: expect.stringContaining('/login') })
+      );
+      expect(mockPost).not.toHaveBeenCalled();
+    });
+
+    it('resends verification only for the pending Firebase user', async () => {
+      const { auth } = await import('@/lib/firebase');
+      const user = { email: 'test@test.com' };
+      (auth as { currentUser: unknown }).currentUser = user;
+
+      const { authService } = await import('@/services/auth');
+      await authService.resendVerificationEmail();
+
+      expect(sendEmailVerification).toHaveBeenCalledWith(
+        user,
+        expect.objectContaining({ url: expect.stringContaining('/verify-email') })
+      );
+      (auth as { currentUser: unknown }).currentUser = null;
+    });
+
+    it('creates a backend session only after verification is observed', async () => {
+      const { auth } = await import('@/lib/firebase');
+      const user = {
+        emailVerified: true,
+        displayName: 'Test User',
+        getIdToken: vi.fn().mockResolvedValue('verified.id.token'),
+      };
+      (auth as { currentUser: unknown }).currentUser = user;
+      mockPost.mockResolvedValueOnce({ data: { user: { id: 'u1' } } });
+
+      const { authService } = await import('@/services/auth');
+      await expect(authService.completeEmailVerification()).resolves.toBe(true);
+
+      expect(reload).toHaveBeenCalledWith(user);
+      expect(mockPost).toHaveBeenCalledWith(
+        '/api/auth/session',
+        { token: 'verified.id.token', name: 'Test User' },
+        { timeout: 10_000 }
+      );
+      expect(signOut).toHaveBeenCalled();
+      (auth as { currentUser: unknown }).currentUser = null;
     });
   });
 });

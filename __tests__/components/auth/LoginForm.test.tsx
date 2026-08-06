@@ -24,12 +24,6 @@ vi.mock('firebase/auth', () => ({
   signInWithPopup: vi.fn(),
 }));
 
-vi.mock('@/lib/tokenStorage', () => ({
-  getToken: vi.fn(() => null),
-  saveToken: vi.fn(),
-  clearToken: vi.fn(),
-}));
-
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ login: vi.fn(), logout: vi.fn() }),
 }));

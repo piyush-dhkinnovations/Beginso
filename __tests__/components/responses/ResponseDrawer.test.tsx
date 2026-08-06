@@ -97,6 +97,47 @@ describe('ResponseDrawer', () => {
     expect(mockGetResponseById).toHaveBeenCalledWith('resp-1');
   });
 
+  it('shows an access-denied state instead of an endless skeleton on 403', async () => {
+    mockGetResponseById.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 403, data: { message: 'Access denied' } },
+    });
+    const { container } = renderDrawer('resp-1');
+
+    expect(await screen.findByRole('heading', { name: 'Access denied' })).toBeInTheDocument();
+    expect(screen.getByText("You don't have permission to view this response.")).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+    expect(container.querySelector('[aria-busy="true"]')).toBeNull();
+  });
+
+  it('shows a not-found state instead of an endless skeleton on 404', async () => {
+    mockGetResponseById.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 404, data: { message: 'Response not found' } },
+    });
+    renderDrawer('resp-1');
+
+    expect(await screen.findByRole('heading', { name: 'Response not found' })).toBeInTheDocument();
+    expect(screen.getByText(/may have been deleted/i)).toBeInTheDocument();
+  });
+
+  it('shows a retryable error on 500 and renders the response after retry succeeds', async () => {
+    mockGetResponseById
+      .mockRejectedValueOnce({
+        isAxiosError: true,
+        response: { status: 500, data: { message: 'Internal server error' } },
+      })
+      .mockResolvedValueOnce(detail);
+    const user = userEvent.setup();
+    renderDrawer('resp-1');
+
+    expect(await screen.findByRole('heading', { name: 'Unable to load response' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Try again' }));
+
+    expect(await screen.findByText('Submitted Answers')).toBeInTheDocument();
+    expect(mockGetResponseById).toHaveBeenCalledTimes(2);
+  });
+
   it('calls onClose on Escape', async () => {
     mockGetResponseById.mockResolvedValue(detail);
     const user = userEvent.setup();

@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { GoogleSignInButton } from './GoogleSignInButton';
+import { useRouter } from 'next/navigation';
 
 export function SignupForm() {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -20,6 +21,7 @@ export function SignupForm() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { login } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   const {
     register,
@@ -39,9 +41,9 @@ export function SignupForm() {
   const onSubmit = async (values: SignupFormValues) => {
     setServerError(null);
     try {
-      const data = await authService.signup(values.name, values.email, values.password);
-      toast('Account created successfully!', 'success');
-      await login(data.token);
+      await authService.signup(values.name, values.email, values.password);
+      toast('Verification email sent. Check your inbox.', 'success');
+      router.push('/verify-email');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: { message?: string; fields?: Array<{ field: string; message: string }> | Record<string, string> } } } };
       const fields = err.response?.data?.error?.fields;
@@ -64,9 +66,9 @@ export function SignupForm() {
     setServerError(null);
     setIsGoogleLoading(true);
     try {
-      const data = await authService.loginWithGoogle();
+      await authService.loginWithGoogle();
       toast('Account created successfully!', 'success');
-      await login(data.token);
+      await login();
     } catch (error: unknown) {
       setIsGoogleLoading(false);
       setServerError(getFriendlyErrorMessage(error));

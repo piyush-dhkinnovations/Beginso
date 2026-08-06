@@ -12,6 +12,9 @@ import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
 import { CreateFormModal } from '@/components/form-builder/CreateFormModal';
 import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
+import { Input } from '@/components/ui/Input';
+import { PaginationControls } from '@/components/responses/PaginationControls';
+import { useDebounce } from '@/hooks/useDebounce';
 import type { Form, FormStatus } from '@/types/form';
 
 // ─── Status badge variant helper ─────────────────────────────────────────────
@@ -27,6 +30,8 @@ const STATUS_LABEL: Record<FormStatus, string> = {
   published: 'Published',
   closed: 'Closed',
 };
+
+const FORMS_PAGE_LIMIT = 10;
 
 // ─── Row component ────────────────────────────────────────────────────────────
 
@@ -134,12 +139,23 @@ export default function FormsPage() {
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formToDelete, setFormToDelete] = useState<Form | null>(null);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState<FormStatus | 'all'>('all');
+  const [page, setPage] = useState(1);
+  const debouncedSearch = useDebounce(search, 300);
 
   // Fetch forms list
   const { data, isLoading, error } = useQuery({
-    queryKey: ['forms'],
-    queryFn: () => formsService.getForms(),
+    queryKey: ['forms', 'list', { search: debouncedSearch, status, page, limit: FORMS_PAGE_LIMIT }],
+    queryFn: () => formsService.getForms({
+      search: debouncedSearch || undefined,
+      status: status === 'all' ? undefined : status,
+      page,
+      limit: FORMS_PAGE_LIMIT,
+    }),
   });
+
+  const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / FORMS_PAGE_LIMIT));
 
   // Duplicate mutation
   const duplicateMutation = useMutation({
@@ -161,6 +177,7 @@ export default function FormsPage() {
     onMutate: (id) => setDeletingId(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['forms'] });
+      if (data?.forms.length === 1 && page > 1) setPage((current) => current - 1);
       toast('Form deleted successfully', 'success');
     },
     onError: () => {
@@ -185,6 +202,35 @@ export default function FormsPage() {
           Create Form
         </Button>
       </DashboardHeader>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div className="w-full sm:max-w-sm">
+          <Input
+            id="forms-search"
+            aria-label="Search forms"
+            placeholder="Search forms…"
+            value={search}
+            onChange={(event) => {
+              setSearch(event.target.value);
+              setPage(1);
+            }}
+          />
+        </div>
+        <select
+          aria-label="Filter forms by status"
+          value={status}
+          onChange={(event) => {
+            setStatus(event.target.value as FormStatus | 'all');
+            setPage(1);
+          }}
+          className="min-h-11 rounded-md border-2 border-neutral-200 bg-white px-3 text-body-sm outline-none focus:border-neutral-500"
+        >
+          <option value="all">All statuses</option>
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
 
       {/* Content area */}
       {isLoading ? (
@@ -231,8 +277,8 @@ export default function FormsPage() {
       ) : !data || data.forms.length === 0 ? (
         <EmptyState
           icon={<FileText />}
-          heading="No forms yet"
-          body="Create your first form to get started collecting responses."
+          heading={search || status !== 'all' ? 'No matching forms' : 'No forms yet'}
+          body={search || status !== 'all' ? 'Try changing your search or status filter.' : 'Create your first form to get started collecting responses.'}
           action={
             <Button variant="primary" onClick={() => setIsModalOpen(true)}>
               <Plus size={16} className="mr-2" />
@@ -273,6 +319,10 @@ export default function FormsPage() {
             </span>
           </div>
         </div>
+      )}
+
+      {!isLoading && !error && data && (
+        <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
       )}
 
       {/* Create Form Modal */}

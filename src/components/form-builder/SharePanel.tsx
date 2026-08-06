@@ -75,7 +75,7 @@ export function SharePanel({ status, slug, formTitle, onPublish }: SharePanelPro
           <button
             type="button"
             onClick={() => copy(publicUrl, 'Link copied to clipboard.')}
-            className="p-2 text-neutral-400 hover:text-brand-700 hover:bg-brand-50 rounded-md shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center"
+            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md p-2 text-neutral-400 hover:bg-brand-50 hover:text-brand-700"
             aria-label="Copy link"
           >
             <Copy size={16} />
@@ -84,7 +84,7 @@ export function SharePanel({ status, slug, formTitle, onPublish }: SharePanelPro
             href={publicUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 text-neutral-400 hover:text-brand-700 hover:bg-brand-50 rounded-md shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center"
+            className="p-2 text-neutral-400 hover:text-brand-700 hover:bg-brand-50 rounded-md shrink-0 min-w-11 min-h-11 flex items-center justify-center"
             aria-label="Open in new tab"
           >
             <ExternalLink size={16} />

@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+import { SESSION_COOKIE_NAME } from '@/lib/sessionCookie';
 
 /**
  * Proxies a response's file download through this Next.js server instead of letting the
- * browser fetch it from the backend's file host directly. Confirmed 08 Aug 2026: that endpoint
+ * browser fetch it from the backend's file host directly. During Sprint 4 that endpoint
  * is reachable via a plain top-level navigation (not CORS-restricted — window.open reaches it
  * and gets a real, if unauthorized, JSON response) but silently blocks an authenticated
  * XHR/fetch with a bare CORS network error, no HTTP response at all. CORS is a browser-only
@@ -16,42 +15,82 @@ export async function GET(
   { params }: { params: Promise<{ responseId: string; fileId: string }> }
 ) {
   const { responseId, fileId } = await params;
-  const authHeader = request.headers.get('authorization');
-  if (!authHeader) {
-    return NextResponse.json({ success: false, message: 'Missing authorization' }, { status: 401 });
-  }
-  // Backend's 08 Aug 2026 fix (docs/backend-contract/known-issues/response-file-download.md)
-  // added support for the token as a `?token=` query param alongside the Authorization header
-  // — designed for <audio>/<video> tags, which can't attach custom headers at all. Sent on
-  // both legs here too: harmless when the header alone already works, and a safety net if any
-  // reverse proxy/CDN in front of the backend strips the Authorization header on this route
-  // specifically (the header survives to our own server either way; only the *next* hop is in
-  // question).
-  const token = authHeader.replace(/^Bearer\s+/i, '');
-  function withToken(url: string) {
-    const u = new URL(url);
-    u.searchParams.set('token', token);
-    return u.toString();
+  const objectIdPattern = /^[a-f\d]{24}$/i;
+  if (!objectIdPattern.test(responseId) || !objectIdPattern.test(fileId)) {
+    return NextResponse.json({ success: false, message: 'Invalid response or file ID' }, { status: 400 });
   }
 
-  const metaRes = await fetch(withToken(`${API_BASE}/api/responses/${responseId}/file/${fileId}`), {
+  const apiBase = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiBase) {
+    return NextResponse.json({ success: false, message: 'Backend API is not configured' }, { status: 500 });
+  }
+  const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  if (!sessionToken) {
+    return NextResponse.json({ success: false, message: 'Missing authorization' }, { status: 401 });
+  }
+  const authHeader = `Bearer ${sessionToken}`;
+
+  const metaRes = await fetch(`${apiBase}/api/responses/${responseId}/file/${fileId}`, {
     headers: { Authorization: authHeader },
+    cache: 'no-store',
+    redirect: 'manual',
   });
-  const metaBody: { url?: string; message?: string } = await metaRes.json().catch(() => ({}));
+  const metaText = await metaRes.text();
+  let metaBody: { url?: string; message?: string } = {};
+  try {
+    metaBody = metaText ? JSON.parse(metaText) : {};
+  } catch {
+    // non-JSON body — metaBody stays {}, raw text is logged below for diagnosis
+  }
   if (!metaRes.ok || !metaBody.url) {
+    console.error(
+      `[file-proxy] metadata fetch failed responseId=${responseId} fileId=${fileId} status=${metaRes.status} body=${metaText.slice(0, 500)}`
+    );
     return NextResponse.json(metaBody, { status: metaRes.ok ? 502 : metaRes.status });
   }
 
-  const fileRes = await fetch(withToken(metaBody.url), { headers: { Authorization: authHeader } });
+  let returnedFileUrl: URL;
+  try {
+    returnedFileUrl = new URL(metaBody.url, apiBase);
+  } catch {
+    return NextResponse.json({ success: false, message: 'Invalid file URL' }, { status: 502 });
+  }
+  if (!returnedFileUrl.pathname.startsWith('/api/upload/file/')) {
+    return NextResponse.json({ success: false, message: 'Untrusted file path' }, { status: 502 });
+  }
+
+  // The backend currently emits its internal localhost origin in this URL. Treat the entire
+  // URL as untrusted metadata: retain only the documented file-serving path and resolve that
+  // path against the configured backend. No returned hostname or query credential is fetched.
+  const fileUrl = new URL(returnedFileUrl.pathname, apiBase);
+
+  const fileRes = await fetch(fileUrl, {
+    headers: { Authorization: authHeader },
+    cache: 'no-store',
+    // Do not let an allowlisted URL redirect the server-side request to another origin.
+    redirect: 'manual',
+  });
   if (!fileRes.ok || !fileRes.body) {
     // Relay the real body when the storage host sent one (e.g. its own JSON error) instead of
     // masking it behind a generic message — whoever debugs the next failure needs to see which
     // of the two upstream calls actually rejected the request, and why.
-    const fileErrorBody = await fileRes.json().catch(() => ({ success: false, message: 'Failed to fetch file from storage' }));
+    const fileErrorText = await fileRes.text().catch(() => '');
+    let fileErrorBody: Record<string, unknown> = { success: false, message: 'Failed to fetch file from storage' };
+    try {
+      if (fileErrorText) fileErrorBody = JSON.parse(fileErrorText);
+    } catch {
+      // non-JSON body — keep the generic fallback, raw text is logged below
+    }
+    console.error(
+      `[file-proxy] file fetch failed responseId=${responseId} fileId=${fileId} url=${fileUrl.toString()} status=${fileRes.status} body=${fileErrorText.slice(0, 500)}`
+    );
     return NextResponse.json(fileErrorBody, { status: fileRes.status || 502 });
   }
 
   return new NextResponse(fileRes.body, {
-    headers: { 'Content-Type': fileRes.headers.get('content-type') ?? 'application/octet-stream' },
+    headers: {
+      'Content-Type': fileRes.headers.get('content-type') ?? 'application/octet-stream',
+      'Cache-Control': 'private, no-store',
+    },
   });
 }

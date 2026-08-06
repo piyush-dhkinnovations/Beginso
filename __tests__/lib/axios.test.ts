@@ -1,60 +1,63 @@
 /**
- * __tests__/lib/axios.test.ts
- * Feature: sprint-4-responses regression
- * Tests: axiosInstance's response interceptor — a 401/403 from the response-file download
- * proxy must NOT clear the session/redirect to login. A single attachment failing to download
- * (confirmed 08 Aug 2026: a real backend-side permission bug on that one file) is not proof the
- * caller's own session is invalid — logging the whole app out over it is the wrong behavior.
- * Ordinary endpoints keep the original global-logout behavior unchanged.
+ * Cookie-session HTTP client regression tests.
+ * Authenticated browser requests must stay same-origin and must never reconstruct an
+ * Authorization header from JavaScript-readable storage.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-const mockClearToken = vi.fn();
-vi.mock('@/lib/tokenStorage', () => ({
-  getToken: () => 'stored.jwt.token',
-  clearToken: () => mockClearToken(),
-}));
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 interface InterceptorManager {
   handlers: { rejected: (err: unknown) => Promise<unknown> }[];
 }
 
-describe('axiosInstance response interceptor', () => {
+describe('axiosInstance cookie authentication', () => {
   beforeEach(() => {
-    mockClearToken.mockReset();
     vi.resetModules();
+    vi.unstubAllGlobals();
+  });
+
+  it('uses the same-origin BFF with credentials and no bearer-token default', async () => {
+    const axiosInstance = (await import('@/lib/axios')).default;
+
+    expect(axiosInstance.defaults.baseURL).toBe('/api/backend');
+    expect(axiosInstance.defaults.withCredentials).toBe(true);
+    expect(axiosInstance.defaults.headers.common.Authorization).toBeUndefined();
   });
 
   async function triggerInterceptor(status: number, url: string) {
     const axiosInstance = (await import('@/lib/axios')).default;
     const rejected = (axiosInstance.interceptors.response as unknown as InterceptorManager).handlers[0].rejected;
     await rejected({ response: { status }, config: { url } }).catch(() => {});
-    await new Promise((r) => setTimeout(r, 0)); // let the interceptor's dynamic import().then() resolve
   }
 
-  it('clears the session on a 401 from an ordinary endpoint', async () => {
-    await triggerInterceptor(401, 'https://api.example.com/api/forms');
-    expect(mockClearToken).toHaveBeenCalledOnce();
+  it('asks the BFF to destroy the HttpOnly session after an ordinary 401', async () => {
+    const pendingFetch = vi.fn(() => new Promise<Response>(() => {}));
+    vi.stubGlobal('fetch', pendingFetch);
+
+    await triggerInterceptor(401, '/api/forms');
+
+    expect(pendingFetch).toHaveBeenCalledWith('/api/backend/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+      keepalive: true,
+    });
   });
 
-  it('clears the session on a 403 from an ordinary endpoint (suspended mid-session)', async () => {
-    await triggerInterceptor(403, 'https://api.example.com/api/forms');
-    expect(mockClearToken).toHaveBeenCalledOnce();
-  });
+  it('does not destroy the session for a response-file authorization error', async () => {
+    const mockFetch = vi.fn();
+    vi.stubGlobal('fetch', mockFetch);
 
-  it('does NOT clear the session on a 401 from the response-file download proxy', async () => {
     await triggerInterceptor(401, 'http://localhost:3000/api/responses/r1/file/f1');
-    expect(mockClearToken).not.toHaveBeenCalled();
+
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
-  it('does NOT clear the session on a 403 from the response-file download proxy', async () => {
-    await triggerInterceptor(403, 'http://localhost:3000/api/responses/r1/file/f1');
-    expect(mockClearToken).not.toHaveBeenCalled();
-  });
+  it('does not recursively destroy the session for an auth-route error', async () => {
+    const mockFetch = vi.fn();
+    vi.stubGlobal('fetch', mockFetch);
 
-  it('does NOT clear the session on a 401 from an /api/auth/ route (handled locally instead)', async () => {
-    await triggerInterceptor(401, 'https://api.example.com/api/auth/me');
-    expect(mockClearToken).not.toHaveBeenCalled();
+    await triggerInterceptor(401, '/api/auth/me');
+
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 });

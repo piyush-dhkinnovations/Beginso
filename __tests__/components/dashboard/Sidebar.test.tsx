@@ -39,6 +39,14 @@ describe('Sidebar component', () => {
     });
   });
 
+  it('renders a horizontally scrollable mobile navigation with visible labels', () => {
+    render(<Sidebar isMobile />);
+    const nav = screen.getByRole('navigation', { name: 'Mobile navigation' });
+    expect(nav).toHaveClass('overflow-x-auto');
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Settings')).toBeInTheDocument();
+  });
+
   it('highlights the active route', () => {
     mockPathname.mockReturnValue('/forms');
     render(<Sidebar />);

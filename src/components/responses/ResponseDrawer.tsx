@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { X } from 'lucide-react';
+import { AlertCircle, LockKeyhole, X } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/common/Toast';
@@ -32,6 +32,56 @@ function DrawerSkeleton() {
           <div className="h-4 w-full max-w-sm bg-neutral-100 rounded animate-pulse" />
         </div>
       ))}
+    </div>
+  );
+}
+
+function DrawerErrorState({
+  error,
+  isRetrying,
+  onRetry,
+  onClose,
+}: {
+  error: unknown;
+  isRetrying: boolean;
+  onRetry: () => void;
+  onClose: () => void;
+}) {
+  const status = isAxiosError(error) ? error.response?.status : undefined;
+  const isAccessDenied = status === 403;
+  const isNotFound = status === 404;
+  const heading = isAccessDenied
+    ? 'Access denied'
+    : isNotFound
+      ? 'Response not found'
+      : 'Unable to load response';
+  const body = isAccessDenied
+    ? "You don't have permission to view this response."
+    : isNotFound
+      ? 'This response may have been deleted or is no longer available.'
+      : 'Something went wrong while loading this response. Please try again.';
+  const canRetry = !isAccessDenied && !isNotFound;
+  const Icon = isAccessDenied ? LockKeyhole : AlertCircle;
+
+  return (
+    <div role="alert" className="flex min-h-64 flex-col items-center justify-center gap-3 p-6 text-center">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-error">
+        <Icon size={24} aria-hidden="true" />
+      </span>
+      <div className="space-y-1">
+        <h3 className="text-heading-3 font-semibold text-neutral-900">{heading}</h3>
+        <p className="max-w-sm text-body-sm text-neutral-600">{body}</p>
+      </div>
+      <div className="flex items-center gap-2 pt-1">
+        <Button variant="secondary" size="small" onClick={onClose}>
+          Close
+        </Button>
+        {canRetry && (
+          <Button size="small" onClick={onRetry} isLoading={isRetrying}>
+            Try again
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
@@ -93,7 +143,7 @@ export function ResponseDrawer({ responseId, formId, onClose }: ResponseDrawerPr
     return () => document.removeEventListener('keydown', handler);
   }, [responseId, onClose]);
 
-  const { data: response, isLoading } = useQuery({
+  const { data: response, error: responseError, isError, isFetching, isLoading, refetch } = useQuery({
     queryKey: responseKeys.detail(responseId ?? ''),
     queryFn: () => responsesService.getResponseById(responseId as string),
     enabled: !!responseId,
@@ -180,7 +230,7 @@ export function ResponseDrawer({ responseId, formId, onClose }: ResponseDrawerPr
         ref={drawerRef}
         className="relative w-full sm:max-w-lg h-full bg-white shadow-2xl border-l border-neutral-200 flex flex-col animate-slide-in-right"
       >
-        <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-200 shrink-0">
+        <div className="flex items-center justify-between px-4 py-2 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             {response && hasIdentity && (
               <span
@@ -206,15 +256,22 @@ export function ResponseDrawer({ responseId, formId, onClose }: ResponseDrawerPr
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="p-1.5 rounded-md text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 shrink-0"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 shrink-0"
           >
             <X size={18} />
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {isLoading || !response ? (
+          {isLoading ? (
             <DrawerSkeleton />
+          ) : isError || !response ? (
+            <DrawerErrorState
+              error={responseError}
+              isRetrying={isFetching}
+              onRetry={() => void refetch()}
+              onClose={onClose}
+            />
           ) : (
             <div className="flex flex-col gap-4 p-4">
               <MetadataSidebar

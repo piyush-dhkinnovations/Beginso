@@ -48,7 +48,7 @@ export function ResponsesToolbar({ search, status, total, onSearchChange, onStat
                   setInputValue('');
                   onSearchChange('');
                 }}
-                className="text-neutral-400 hover:text-neutral-600"
+                className="flex min-h-11 min-w-11 items-center justify-center text-neutral-400 hover:text-neutral-600"
               >
                 <X size={16} />
               </button>

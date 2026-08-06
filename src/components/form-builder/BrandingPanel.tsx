@@ -101,7 +101,7 @@ function ImageUploadZone({
             e.stopPropagation();
             onRemove();
           }}
-          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white border border-neutral-200 flex items-center justify-center text-neutral-500 hover:text-rose-600 shadow-card"
+          className="absolute top-1 right-1 w-11 h-11 rounded-full bg-white border border-neutral-200 flex items-center justify-center text-neutral-500 hover:text-rose-600 shadow-card"
           aria-label={`Remove ${label.toLowerCase()}`}
         >
           <X size={12} />
@@ -178,19 +178,26 @@ export function BrandingPanel({ branding, formTitle, onUpdate }: BrandingPanelPr
                   key={color}
                   type="button"
                   onClick={() => commitColor(color)}
-                  className={`w-7 h-7 rounded-full border-2 ${
-                    primaryColor === color ? 'border-neutral-800' : 'border-transparent'
-                  }`}
-                  style={{ backgroundColor: color }}
+                  className="flex h-11 w-11 items-center justify-center rounded-full"
                   aria-label={`Use ${color}`}
-                />
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`h-7 w-7 rounded-full border-2 ${
+                      primaryColor === color ? 'border-neutral-800' : 'border-transparent'
+                    }`}
+                    style={{ backgroundColor: color }}
+                  />
+                </button>
               ))}
               <div className="w-px h-5 bg-neutral-200" />
               <label
-                className="relative w-7 h-7 rounded-full border-2 border-dashed border-neutral-300 flex items-center justify-center cursor-pointer hover:border-neutral-500 transition-colors"
+                className="relative w-11 h-11 rounded-full flex items-center justify-center cursor-pointer"
                 aria-label="Custom colour picker"
               >
-                <Plus size={12} className="text-neutral-400" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-neutral-300 transition-colors hover:border-neutral-500">
+                  <Plus size={12} className="text-neutral-400" />
+                </span>
                 <input
                   type="color"
                   value={colorPickerValue}
@@ -210,7 +217,7 @@ export function BrandingPanel({ branding, formTitle, onUpdate }: BrandingPanelPr
                 onChange={(e) => setHexInput(e.target.value)}
                 onBlur={commitHexInput}
                 onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-                className="flex-1 rounded-md border-2 border-neutral-200 px-2.5 h-[38px] text-[13px] font-mono bg-white outline-none focus:border-neutral-500"
+                className="flex-1 rounded-md border-2 border-neutral-200 px-2.5 min-h-11 text-[13px] font-mono bg-white outline-none focus:border-neutral-500"
               />
             </div>
             {hexError && <p className="text-caption text-error font-semibold">{hexError}</p>}

@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { FileText } from 'lucide-react';
+import { AlertCircle, FileText, LockKeyhole } from 'lucide-react';
+import { isAxiosError } from 'axios';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/Button';
@@ -18,6 +19,7 @@ import { ResponseDrawer } from './ResponseDrawer';
 import { formsService } from '@/services/forms';
 import { responsesService } from '@/services/responses';
 import { responseKeys } from '@/lib/queryKeys';
+import { clampResponsePage, normalizeResponsePage, normalizeResponseStatus, runSequentially } from '@/lib/responseList';
 import type { PaginatedResponsesResult, ResponseStatus } from '@/types/response';
 
 interface ConfirmDeleteState {
@@ -40,13 +42,32 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
   const { toast } = useToast();
 
   const search = searchParams.get('search') ?? '';
-  const status = (searchParams.get('status') as ResponseStatus | null) ?? undefined;
-  const page = Number(searchParams.get('page') ?? '1');
+  const rawStatus = searchParams.get('status');
+  const status = normalizeResponseStatus(rawStatus);
+  const rawPage = searchParams.get('page');
+  const page = normalizeResponsePage(rawPage);
   const responseId = searchParams.get('responseId');
   const listKey = responseKeys.list(formId, { search: search || undefined, status, page, limit: PAGE_LIMIT });
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [confirmDelete, setConfirmDelete] = useState<ConfirmDeleteState | null>(null);
+
+  const replacePage = useCallback((nextPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', String(nextPage));
+    router.replace(`${pathname}?${params.toString()}`);
+  }, [pathname, router, searchParams]);
+
+  useEffect(() => {
+    if (rawPage !== null && rawPage !== String(page)) replacePage(page);
+  }, [page, rawPage, replacePage]);
+
+  useEffect(() => {
+    if (rawStatus !== null && status === undefined) updateParams({ status: undefined }, true);
+    // updateParams intentionally reads the latest searchParams; depending on it would recreate
+    // the function and rerun this normalization on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawStatus, status]);
 
   function updateParams(updates: Record<string, string | undefined>, resetPage = false) {
     const params = new URLSearchParams(searchParams.toString());
@@ -69,13 +90,23 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
     updateParams({ responseId: undefined }); // replace is fine here, closing doesn't need a new history entry
   }
 
-  const { data: form } = useQuery({
+  const {
+    data: form,
+    error: formError,
+    isError: isFormError,
+    refetch: refetchForm,
+  } = useQuery({
     queryKey: ['form', formId],
     queryFn: () => formsService.getFormById(formId as string),
     enabled: !!formId,
   });
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    isError: isStatsError,
+    refetch: refetchStats,
+  } = useQuery({
     queryKey: responseKeys.stats(formId),
     queryFn: () => responsesService.getStats(formId),
   });
@@ -83,7 +114,8 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
   const {
     data,
     isLoading,
-    isError,
+    isError: isResponsesError,
+    refetch: refetchResponses,
   } = useQuery({
     queryKey: listKey,
     queryFn: () => responsesService.getResponses({ formId, search: search || undefined, status, page, limit: PAGE_LIMIT }),
@@ -92,11 +124,17 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
 
   const responses = data?.data ?? [];
 
+  useEffect(() => {
+    if (!data) return;
+    const clampedPage = clampResponsePage(page, data.totalPages);
+    if (clampedPage !== page) replacePage(clampedPage);
+  }, [data, page, replacePage]);
+
   const invalidateResponses = () => queryClient.invalidateQueries({ queryKey: responseKeys.all(formId) });
 
   const bulkStatusMutation = useMutation({
     mutationFn: async ({ ids, newStatus }: { ids: string[]; newStatus: ResponseStatus }) => {
-      await Promise.all(ids.map((id) => responsesService.updateStatus(id, newStatus)));
+      await runSequentially(ids, (id) => responsesService.updateStatus(id, newStatus));
     },
     onMutate: async ({ ids, newStatus }) => {
       await queryClient.cancelQueries({ queryKey: listKey });
@@ -119,7 +157,7 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: string[]) => {
-      await Promise.all(ids.map((id) => responsesService.deleteResponse(id)));
+      await runSequentially(ids, (id) => responsesService.deleteResponse(id));
     },
     onMutate: async (ids) => {
       await queryClient.cancelQueries({ queryKey: listKey });
@@ -155,13 +193,39 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
     onSettled: () => setConfirmDelete(null),
   });
 
-  if (isError && formId) {
+  if (isFormError && formId) {
+    const statusCode = isAxiosError(formError) ? formError.response?.status : undefined;
+    const isAccessDenied = statusCode === 403;
+    const isNotFound = statusCode === 404;
     return (
       <EmptyState
-        icon={<FileText />}
-        heading="Form not found"
-        body="This form doesn't exist or you don't have access."
-        action={<Button onClick={() => router.push('/forms')}>Go to Forms</Button>}
+        icon={isAccessDenied ? <LockKeyhole /> : isNotFound ? <FileText /> : <AlertCircle />}
+        heading={isAccessDenied ? 'Access denied' : isNotFound ? 'Form not found' : 'Unable to load form'}
+        body={
+          isAccessDenied
+            ? "You don't have permission to view this form's responses."
+            : isNotFound
+              ? "This form doesn't exist or may have been deleted."
+              : 'Something went wrong while loading this form.'
+        }
+        action={
+          isAccessDenied || isNotFound ? (
+            <Button onClick={() => router.push('/forms')}>Go to Forms</Button>
+          ) : (
+            <Button onClick={() => void refetchForm()}>Try again</Button>
+          )
+        }
+      />
+    );
+  }
+
+  if (isResponsesError) {
+    return (
+      <EmptyState
+        icon={<AlertCircle />}
+        heading="Unable to load responses"
+        body="The response list could not be loaded. Please try again."
+        action={<Button onClick={() => void refetchResponses()}>Try again</Button>}
       />
     );
   }
@@ -181,7 +245,12 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
         subtitle={formId ? `Responses · ${form?.title ?? ''}` : 'Track, view, and organize submissions across every form.'}
       />
 
-      <ResponsesStatCards stats={stats} isLoading={statsLoading} />
+      <ResponsesStatCards
+        stats={stats}
+        isLoading={statsLoading}
+        isError={isStatsError}
+        onRetry={() => void refetchStats()}
+      />
 
       <ResponsesToolbar
         search={search}

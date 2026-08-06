@@ -98,6 +98,25 @@ describe('FileDownloadButton', () => {
     expect(mockToast).toHaveBeenCalledWith('Failed to download file. Please try again.', 'error');
   });
 
+  it('shows the JSON message returned inside a blob error response', async () => {
+    const user = userEvent.setup();
+    mockGetFileBlobUrl.mockRejectedValue({
+      isAxiosError: true,
+      message: 'Request failed with status code 502',
+      response: {
+        status: 502,
+        data: new Blob([JSON.stringify({ message: 'Untrusted file path' })], {
+          type: 'application/json',
+        }),
+      },
+    });
+    render(<FileDownloadButton {...baseProps} />);
+
+    await user.click(screen.getByRole('button', { name: 'Preview resume.pdf' }));
+
+    expect(mockToast).toHaveBeenCalledWith('Untrusted file path', 'error');
+  });
+
   it('has aria-labels matching the originalName for both actions', () => {
     render(<FileDownloadButton {...baseProps} originalName="contract.docx" />);
     expect(screen.getByRole('button', { name: 'Preview contract.docx' })).toBeInTheDocument();

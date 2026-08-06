@@ -56,7 +56,7 @@ export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onR
           disabled={!canUndo}
           variant="ghost"
           size="small"
-          className="p-2 min-h-[36px] min-w-[36px]"
+          className="min-h-11 min-w-11 p-2"
           title="Undo"
         >
           <Undo2 size={16} />
@@ -66,7 +66,7 @@ export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onR
           disabled={!canRedo}
           variant="ghost"
           size="small"
-          className="p-2 min-h-[36px] min-w-[36px]"
+          className="min-h-11 min-w-11 p-2"
           title="Redo"
         >
           <Redo2 size={16} />

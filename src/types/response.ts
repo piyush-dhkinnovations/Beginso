@@ -24,7 +24,7 @@ export interface IResponseFile {
   name: string;
   size: number;             // bytes
   type: string;             // MIME type
-  url: string;               // already-usable direct download URL
+  url: string;               // untrusted backend locator; private files use the same-origin proxy
   uploadTime: string;        // ISO 8601
 }
 

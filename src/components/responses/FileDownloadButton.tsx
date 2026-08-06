@@ -60,7 +60,20 @@ export function FileDownloadButton({
     } catch (err) {
       // Surface the backend's actual reason (a real permission error vs. a CORS/network
       // failure look identical as a generic toast otherwise, and need different fixes).
-      const serverMessage = isAxiosError(err) ? (err.response?.data as { message?: string } | undefined)?.message : undefined;
+      let serverMessage: string | undefined;
+      if (isAxiosError(err)) {
+        const responseData = err.response?.data;
+        if (responseData instanceof Blob) {
+          try {
+            const parsed = JSON.parse(await responseData.text()) as { message?: string };
+            serverMessage = parsed.message;
+          } catch {
+            // Keep the normal action-specific fallback for a non-JSON error body.
+          }
+        } else {
+          serverMessage = (responseData as { message?: string } | undefined)?.message;
+        }
+      }
       if (isAxiosError(err)) {
         console.error(
           `File ${action} failed:`,
@@ -102,7 +115,7 @@ export function FileDownloadButton({
           aria-busy={loadingAction === 'preview'}
           onClick={handlePreview}
           disabled={!isAvailable || loadingAction !== null}
-          className="w-8 h-8 p-0"
+          className="w-11 h-11 p-0"
         >
           {loadingAction === 'preview' ? <LoadingSpinner variant="inline" /> : <Eye size={16} />}
         </Button>
@@ -113,7 +126,7 @@ export function FileDownloadButton({
           aria-busy={loadingAction === 'download'}
           onClick={handleDownload}
           disabled={!isAvailable || loadingAction !== null}
-          className="w-8 h-8 p-0"
+          className="w-11 h-11 p-0"
         >
           {loadingAction === 'download' ? <LoadingSpinner variant="inline" /> : <Download size={16} />}
         </Button>

@@ -33,14 +33,16 @@ function MasterCheckbox({ responses, selectedIds, onSelectAll }: Pick<ResponsesT
   }, [someSelected]);
 
   return (
-    <input
-      ref={ref}
-      type="checkbox"
-      checked={allSelected}
-      onChange={(e) => onSelectAll(e.target.checked)}
-      aria-label="Select all responses on this page"
-      className="w-4 h-4"
-    />
+    <label className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
+      <input
+        ref={ref}
+        type="checkbox"
+        checked={allSelected}
+        onChange={(e) => onSelectAll(e.target.checked)}
+        aria-label="Select all responses on this page"
+        className="w-4 h-4"
+      />
+    </label>
   );
 }
 
@@ -60,13 +62,13 @@ export function ResponsesTable({
 
   if (isLoading) {
     return (
-      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
+      <div className="responses-table-container bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-neutral-100 last:border-0">
-            <div className="hidden md:block h-4 w-4 bg-neutral-100 rounded animate-pulse" />
+            <div className="responses-secondary-block h-4 w-4 bg-neutral-100 rounded animate-pulse" />
             <div className="h-4 w-28 bg-neutral-100 rounded animate-pulse" />
             <div className="h-4 w-20 bg-neutral-100 rounded-full animate-pulse" />
-            <div className="hidden md:block h-4 flex-1 bg-neutral-100 rounded animate-pulse" />
+            <div className="responses-secondary-block h-4 flex-1 bg-neutral-100 rounded animate-pulse" />
             <div className="h-4 w-16 bg-neutral-100 rounded animate-pulse ml-auto" />
           </div>
         ))}
@@ -84,7 +86,7 @@ export function ResponsesTable({
           <button
             type="button"
             onClick={onClearSearch}
-            className="text-brand-600 hover:underline text-body-sm font-medium"
+            className="min-h-11 px-2 text-brand-600 hover:underline text-body-sm font-medium"
           >
             Clear search
           </button>
@@ -115,16 +117,19 @@ export function ResponsesTable({
   }
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-xl overflow-x-auto shadow-sm">
+    <div className="responses-table-container bg-white border border-neutral-200 rounded-xl overflow-x-auto shadow-sm">
       <table className="w-full text-left">
         <thead>
           <tr className="bg-neutral-50 border-b border-neutral-200 text-caption font-semibold text-neutral-500 uppercase tracking-wider">
-            <th className="hidden md:table-cell w-10 px-4 py-2.5">
+            <th className="responses-secondary-column w-12 px-2 py-1.5">
               <MasterCheckbox responses={responses} selectedIds={selectedIds} onSelectAll={onSelectAll} />
             </th>
-            <th className="px-4 py-2.5">Submitted</th>
+            <th className="px-4 py-2.5">
+              <span className="responses-mobile-only">Respondent</span>
+              <span className="responses-desktop-only">Submitted</span>
+            </th>
             <th className="px-4 py-2.5">Status</th>
-            <th className="hidden md:table-cell px-4 py-2.5">Preview</th>
+            <th className="responses-secondary-column px-4 py-2.5">Preview</th>
             <th className="px-4 py-2.5" />
           </tr>
         </thead>

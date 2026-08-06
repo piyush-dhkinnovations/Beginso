@@ -174,26 +174,31 @@ export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellPr
 
     setIsSubmitting(true);
 
-    const answers = buildAnswers(schema.fields, hiddenFieldIds, values);
-    const honeypot = typeof values._hp === 'string' ? values._hp : '';
-    const result = await publicFormService.submitForm(slug, { answers }, files, honeypot);
+    try {
+      const answers = buildAnswers(schema.fields, hiddenFieldIds, values);
+      const honeypot = typeof values._hp === 'string' ? values._hp : '';
+      const result = await publicFormService.submitForm(slug, { answers }, files, honeypot);
 
-    if (result.ok) {
-      submittedRef.current = true;
-      clearDraft(slug);
-      const params = new URLSearchParams({ title: schema.title });
-      if (schema.settings.successMessage) params.set('message', schema.settings.successMessage);
-      router.push(`/f/${slug}/success?${params.toString()}`);
-      return;
-    }
+      if (result.ok) {
+        submittedRef.current = true;
+        clearDraft(slug);
+        const params = new URLSearchParams({ title: schema.title });
+        if (schema.settings.successMessage) params.set('message', schema.settings.successMessage);
+        router.push(`/f/${slug}/success?${params.toString()}`);
+        return;
+      }
 
-    setIsSubmitting(false);
-    if (result.status === 429) {
-      setSubmitError('Too many submissions from your connection. Please wait a minute and try again.');
-    } else if (result.status === 422 && result.message) {
-      setSubmitError(result.message);
-    } else {
-      setSubmitError('Something went wrong. Please try again.');
+      if (result.status === 429) {
+        setSubmitError('Too many submissions from your connection. Please wait a minute and try again.');
+      } else if (result.status === 422 && result.message) {
+        setSubmitError(result.message);
+      } else {
+        setSubmitError('Something went wrong. Please try again.');
+      }
+    } catch {
+      setSubmitError('Unable to connect. Check your internet connection and try again.');
+    } finally {
+      if (!submittedRef.current) setIsSubmitting(false);
     }
   }
 

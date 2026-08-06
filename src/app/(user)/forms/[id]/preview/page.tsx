@@ -43,7 +43,7 @@ export default function FormPreviewPage() {
         </span>
         <Link
           href={`/forms/${id}/edit`}
-          className="flex items-center gap-1.5 text-body-sm font-medium text-neutral-300 hover:text-white transition-colors"
+          className="flex min-h-11 items-center gap-1.5 px-2 text-body-sm font-medium text-neutral-300 transition-colors hover:text-white"
         >
           <ArrowLeft size={14} />
           Close preview

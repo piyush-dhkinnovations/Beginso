@@ -9,6 +9,9 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
+  // Next dev recompiles route/font modules per worker. A bounded pool keeps the
+  // suite deterministic on local Windows machines and avoids resource thrash.
+  workers: 4,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: 'list',
@@ -28,9 +31,11 @@ export default defineConfig({
       timeout: 30000,
     },
     {
-      command: 'npx next dev -p 3100',
+      // Launch Node directly so Playwright can terminate the server process tree
+      // reliably on Windows after the tests finish.
+      command: 'node node_modules/next/dist/bin/next dev -p 3100',
       url: 'http://localhost:3100',
-      env: { NEXT_PUBLIC_API_URL: 'http://localhost:3101' },
+      env: { NEXT_PUBLIC_API_URL: 'http://localhost:3101', NEXT_DIST_DIR: '.next-e2e' },
       reuseExistingServer: !process.env.CI,
       timeout: 60000,
     },

@@ -137,7 +137,7 @@ export function FieldCard({
             {...listeners}
             {...attributes}
             onClick={(e) => e.stopPropagation()}
-            className="text-neutral-400 hover:text-neutral-600 cursor-grab active:cursor-grabbing p-1 -ml-1 rounded transition-colors shrink-0 min-w-[32px] min-h-[32px] flex items-center justify-center"
+            className="text-neutral-400 hover:text-neutral-600 cursor-grab active:cursor-grabbing p-1 -ml-1 rounded transition-colors shrink-0 min-w-11 min-h-11 flex items-center justify-center"
           >
             <GripVertical size={16} />
           </div>
@@ -166,7 +166,7 @@ export function FieldCard({
                     e.stopPropagation();
                     onDuplicate();
                   }}
-                  className="p-2 text-neutral-400 hover:text-brand-700 hover:bg-brand-50 rounded-md transition-all min-w-[36px] min-h-[36px] flex items-center justify-center"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 text-neutral-400 transition-all hover:bg-brand-50 hover:text-brand-700"
                   title="Duplicate Field"
                 >
                   <Copy size={16} />
@@ -177,7 +177,7 @@ export function FieldCard({
                     e.stopPropagation();
                     onDelete();
                   }}
-                  className="p-2 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-all min-w-[36px] min-h-[36px] flex items-center justify-center"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 text-neutral-400 transition-all hover:bg-rose-50 hover:text-rose-600"
                   title="Delete Field"
                 >
                   <Trash2 size={16} />

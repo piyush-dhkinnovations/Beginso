@@ -25,7 +25,7 @@ export function BrandingLivePreview({ primaryColor, logoUrl, coverImageUrl, form
         <button
           type="button"
           disabled
-          className="w-full h-[38px] rounded-md text-white text-[13px] font-semibold"
+          className="w-full min-h-11 rounded-md text-white text-[13px] font-semibold"
           style={{ backgroundColor: primaryColor }}
         >
           Submit
