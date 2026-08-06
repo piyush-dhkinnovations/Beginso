@@ -2,10 +2,10 @@
 
 import React, { createContext, useReducer, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { getToken, saveToken, clearToken } from './tokenStorage';
 import { authService } from '@/services/auth';
 import { signOut } from 'firebase/auth';
 import { auth } from './firebase';
+import { PROTECTED_PATHS, matchesRoute } from './authRoutes';
 
 interface User {
   id: string;
@@ -26,7 +26,7 @@ type AuthAction =
   | { type: 'SET_LOADING'; payload: boolean };
 
 interface AuthContextValue extends AuthState {
-  login: (token: string) => Promise<void>;
+  login: () => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -70,25 +70,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = getToken();
-      if (!token) {
-        dispatch({ type: 'LOGOUT' });
-        return;
-      }
-
       dispatch({ type: 'SET_LOADING', payload: true });
       try {
         const data = await authService.getMe();
         dispatch({ type: 'LOGIN', payload: { user: data.user } });
       } catch (error: unknown) {
-        clearToken();
+        await authService.logout().catch(() => { });
         dispatch({ type: 'LOGOUT' });
-        // A 403 here (as opposed to 401 for a merely expired/invalid token) means the
-        // account was suspended after this session started — e.g. suspended in the
-        // Super Admin Console while this tab stayed open. Flag it on the redirect so the
-        // login page can show why, instead of silently bouncing with no explanation.
         const status = (error as { response?: { status?: number } })?.response?.status;
-        router.push(status === 403 ? '/login?reason=suspended' : '/login');
+        if (matchesRoute(window.location.pathname, PROTECTED_PATHS)) {
+          router.replace(status === 403 ? '/login?reason=suspended' : '/login');
+        }
       }
     };
 
@@ -96,8 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const login = useCallback(async (token: string) => {
-    saveToken(token);
+  const login = useCallback(async () => {
     // POST /api/auth/session's `user` can be missing fields (e.g. `name`) that GET
     // /api/auth/me returns fully — reuses the same call initAuth() already makes on every
     // reload, so the full profile shows immediately instead of only after a reload.
@@ -116,23 +107,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       data = await authService.getMe();
     } catch (error) {
-      clearToken();
+      await authService.logout().catch(() => { });
       dispatch({ type: 'LOGOUT' });
       throw error;
     }
     dispatch({ type: 'LOGIN', payload: { user: data.user } });
-    // Hard navigation, not router.push: proxy.ts middleware gates /dashboard on the
-    // has_session marker cookie saveToken() just wrote. A soft client-side transition
+    // Hard navigation, not router.push: proxy.ts gates /dashboard on the HttpOnly session
+    // cookie written by the same-origin BFF. A soft client-side transition
     // can reuse a Router Cache entry for /dashboard from before the cookie existed and
     // bounce back to /login with no error (the login button spins forever).
     // A full navigation always sends a fresh request, so middleware sees the new cookie.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- intentional hard navigation refreshes Proxy cookie state
     window.location.href = '/dashboard';
   }, []);
 
   const logout = useCallback(async () => {
-    authService.logout().catch(() => { });
-    signOut(auth).catch(() => { });
-    clearToken();
+    await Promise.allSettled([authService.logout(), signOut(auth)]);
     dispatch({ type: 'LOGOUT' });
     router.push('/login');
   }, [router]);

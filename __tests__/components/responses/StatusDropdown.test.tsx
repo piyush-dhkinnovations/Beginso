@@ -79,4 +79,36 @@ describe('StatusDropdown', () => {
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     expect(outerHandler).not.toHaveBeenCalled();
   });
+
+  it('supports Arrow, Home, and End navigation through listbox options', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<StatusDropdown currentStatus="new" onChange={onChange} />);
+
+    const trigger = screen.getByRole('button', { name: 'Response status' });
+    trigger.focus();
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('option', { name: /New/ })).toHaveFocus();
+
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('option', { name: /In Progress/ })).toHaveFocus();
+    await user.keyboard('{End}');
+    expect(screen.getByRole('option', { name: /Completed/ })).toHaveFocus();
+    await user.keyboard('{Home}');
+    expect(screen.getByRole('option', { name: /New/ })).toHaveFocus();
+    await user.keyboard('{ArrowUp}{Enter}');
+
+    expect(onChange).toHaveBeenCalledWith('completed');
+    expect(trigger).toHaveFocus();
+  });
+
+  it('uses at least 40px touch targets for the trigger and options', async () => {
+    const user = userEvent.setup();
+    render(<StatusDropdown currentStatus="new" onChange={vi.fn()} />);
+
+    const trigger = screen.getByRole('button', { name: 'Response status' });
+    expect(trigger).toHaveClass('min-h-10', 'min-w-10');
+    await user.click(trigger);
+    screen.getAllByRole('option').forEach((option) => expect(option).toHaveClass('min-h-10'));
+  });
 });

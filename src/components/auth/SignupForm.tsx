@@ -39,9 +39,9 @@ export function SignupForm() {
   const onSubmit = async (values: SignupFormValues) => {
     setServerError(null);
     try {
-      const data = await authService.signup(values.name, values.email, values.password);
+      await authService.signup(values.name, values.email, values.password);
       toast('Account created successfully!', 'success');
-      await login(data.token);
+      await login();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: { message?: string; fields?: Array<{ field: string; message: string }> | Record<string, string> } } } };
       const fields = err.response?.data?.error?.fields;
@@ -64,9 +64,9 @@ export function SignupForm() {
     setServerError(null);
     setIsGoogleLoading(true);
     try {
-      const data = await authService.loginWithGoogle();
+      await authService.loginWithGoogle();
       toast('Account created successfully!', 'success');
-      await login(data.token);
+      await login();
     } catch (error: unknown) {
       setIsGoogleLoading(false);
       setServerError(getFriendlyErrorMessage(error));

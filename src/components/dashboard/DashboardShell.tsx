@@ -13,7 +13,6 @@ import { cn } from '@/lib/utils';
 // itself after mount and caused a visible expanded-then-collapsed flash on reload.
 export function DashboardShell({ children, initialCollapsed }: { children: React.ReactNode; initialCollapsed: boolean }) {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleToggleCollapse = () => {
     const newState = !collapsed;
@@ -21,25 +20,22 @@ export function DashboardShell({ children, initialCollapsed }: { children: React
     document.cookie = `sidebar_collapsed=${newState}; path=/; max-age=31536000; SameSite=Lax`;
   };
 
-  const handleToggleMobileSidebar = () => {
-    setMobileOpen((prev) => !prev);
-  };
-
-  const handleCloseMobileSidebar = () => {
-    setMobileOpen(false);
-  };
-
   return (
-    <div className="flex flex-col min-h-screen bg-white">
+    <div className="dashboard-shell flex flex-col min-h-screen bg-white">
       {/* Top Navbar */}
-      <TopNav onToggleMobileSidebar={handleToggleMobileSidebar} />
+      <TopNav />
+
+      {/* Mobile: documented horizontal, scrollable navigation below the top bar. */}
+      <div className="dashboard-mobile-nav fixed left-0 right-0 top-[56px] z-20 h-[52px] bg-neutral-50 border-b border-neutral-200">
+        <Sidebar isMobile />
+      </div>
 
       {/* Main Container */}
-      <div className="flex pt-[56px] min-h-[calc(100vh-56px)]">
-        {/* Desktop Sidebar (hidden on mobile) */}
+      <div className="dashboard-main-frame flex min-h-[calc(100vh-56px)]">
+        {/* Desktop/tablet Sidebar */}
         <div
           className={cn(
-            "fixed left-0 top-[56px] bottom-0 z-20 hidden md:block transition-all duration-300 ease-in-out",
+            "dashboard-desktop-sidebar fixed left-0 top-[56px] bottom-0 z-20 transition-all duration-300 ease-in-out",
             collapsed ? "w-[56px]" : "w-[200px]"
           )}
         >
@@ -49,30 +45,11 @@ export function DashboardShell({ children, initialCollapsed }: { children: React
           />
         </div>
 
-        {/* Mobile Sidebar (Drawer with Backdrop) */}
-        {mobileOpen && (
-          <>
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 bg-neutral-900/40 z-40 md:hidden animate-fade-in"
-              onClick={handleCloseMobileSidebar}
-            />
-            {/* Sidebar container */}
-            <div className="fixed inset-y-0 left-0 z-50 md:hidden">
-              <Sidebar
-                isMobile
-                onCloseMobile={handleCloseMobileSidebar}
-              />
-            </div>
-          </>
-        )}
-
         {/* Content Area */}
         <main
           className={cn(
-            "flex-1 p-6 overflow-y-auto min-h-full transition-all duration-300 ease-in-out",
-            "ml-0", // mobile default
-            collapsed ? "md:ml-[56px]" : "md:ml-[200px]"
+            "dashboard-content flex-1 p-6 overflow-y-auto min-h-full transition-all duration-300 ease-in-out",
+            collapsed ? "ml-[56px]" : "ml-[200px]"
           )}
         >
           {children}

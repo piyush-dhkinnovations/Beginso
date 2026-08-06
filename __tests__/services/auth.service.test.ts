@@ -36,13 +36,6 @@ vi.mock('@/lib/axios', () => {
   };
 });
 
-// ─── Mock tokenStorage ──────────────────────────────────────────────────────
-vi.mock('@/lib/tokenStorage', () => ({
-  getToken: vi.fn(() => 'stored.jwt.token'),
-  saveToken: vi.fn(),
-  clearToken: vi.fn(),
-}));
-
 import axiosInstance from '@/lib/axios';
 
 
