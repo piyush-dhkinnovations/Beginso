@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { GoogleSignInButton } from './GoogleSignInButton';
+import { useRouter } from 'next/navigation';
 
 export function SignupForm() {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -20,6 +21,7 @@ export function SignupForm() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { login } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   const {
     register,
@@ -40,8 +42,8 @@ export function SignupForm() {
     setServerError(null);
     try {
       await authService.signup(values.name, values.email, values.password);
-      toast('Account created successfully!', 'success');
-      await login();
+      toast('Verification email sent. Check your inbox.', 'success');
+      router.push('/verify-email');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: { message?: string; fields?: Array<{ field: string; message: string }> | Record<string, string> } } } };
       const fields = err.response?.data?.error?.fields;

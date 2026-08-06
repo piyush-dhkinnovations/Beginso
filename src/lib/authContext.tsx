@@ -73,8 +73,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: 'SET_LOADING', payload: true });
       try {
         const data = await authService.getMe();
+        // Clear any legacy Firebase LOCAL persistence after the HttpOnly backend
+        // session has been confirmed. Protected pages never need Firebase tokens.
+        await signOut(auth).catch(() => { });
         dispatch({ type: 'LOGIN', payload: { user: data.user } });
       } catch (error: unknown) {
+        if (window.location.pathname !== '/verify-email') {
+          await signOut(auth).catch(() => { });
+        }
         await authService.logout().catch(() => { });
         dispatch({ type: 'LOGOUT' });
         const status = (error as { response?: { status?: number } })?.response?.status;

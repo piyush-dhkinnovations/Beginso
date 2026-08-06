@@ -74,6 +74,26 @@ describe('backend BFF proxy', () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 
+  it('rejects non-allowlisted backend paths before forwarding credentials', async () => {
+    const request = new NextRequest('http://localhost:3000/api/backend/api/internal/secrets');
+    request.cookies.set(SESSION_COOKIE_NAME, 'server-only.jwt');
+
+    const response = await GET(request, context(['api', 'internal', 'secrets']));
+
+    expect(response.status).toBe(404);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('rejects path traversal segments before contacting the backend', async () => {
+    const request = new NextRequest('http://localhost:3000/api/backend/api/forms');
+    request.cookies.set(SESSION_COOKIE_NAME, 'server-only.jwt');
+
+    const response = await GET(request, context(['api', 'forms', '..', 'auth', 'me']));
+
+    expect(response.status).toBe(404);
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
   it('rejects cross-origin state-changing requests', async () => {
     const request = new NextRequest('http://localhost:3000/api/backend/api/forms', {
       method: 'POST',

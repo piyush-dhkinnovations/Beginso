@@ -85,6 +85,12 @@ describe('Next.js Edge Proxy (auth guard)', () => {
       expect(res.status).toBe(307);
       expect(res.headers.get('location')).toContain('/dashboard');
     });
+
+    it('/verify-email with a valid session redirects to /dashboard', async () => {
+      const res = await proxy(makeRequest('/verify-email', true));
+      expect(res.status).toBe(307);
+      expect(res.headers.get('location')).toContain('/dashboard');
+    });
   });
 
   // ─── Auth pages without token → allow through ─────────────────────────────
@@ -99,6 +105,11 @@ describe('Next.js Edge Proxy (auth guard)', () => {
     it('/signup without a session cookie passes through', async () => {
       const req = makeRequest('/signup', false);
       const res = await proxy(req);
+      expect(res.headers.get('location')).toBeNull();
+    });
+
+    it.each(['/verify-email', '/forgot-password'])('%s without a session passes through', async (path) => {
+      const res = await proxy(makeRequest(path, false));
       expect(res.headers.get('location')).toBeNull();
     });
   });

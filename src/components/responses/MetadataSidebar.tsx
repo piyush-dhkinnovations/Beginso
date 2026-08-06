@@ -23,15 +23,19 @@ export function MetadataSidebar({ response, onStatusChange, isUpdatingStatus }: 
 
   return (
     <aside className="w-full shrink-0 flex flex-col gap-4">
-      <div className={CARD}>
-        <span className={SECTION_LABEL}>
-          <WorkflowIcon size={13} />
-          Workflow
-        </span>
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-heading-3 font-medium text-neutral-700">Status</span>
-          <StatusDropdown currentStatus={response.status} onChange={onStatusChange} disabled={isUpdatingStatus} />
+      <div
+        role="group"
+        aria-labelledby="workflow-status-heading"
+        className="flex items-center justify-between gap-3 rounded-lg border border-neutral-200 bg-white p-3"
+      >
+        <div className="min-w-0">
+          <span id="workflow-status-heading" className={SECTION_LABEL}>
+            <WorkflowIcon size={13} />
+            Workflow
+          </span>
+          <span className="mt-1 block text-body-sm font-medium text-neutral-700">Status</span>
         </div>
+        <StatusDropdown currentStatus={response.status} onChange={onStatusChange} disabled={isUpdatingStatus} />
       </div>
 
       <div className={CARD}>

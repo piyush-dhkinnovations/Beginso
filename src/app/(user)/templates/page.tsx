@@ -71,7 +71,7 @@ export default function TemplatesPage() {
                 type="button"
                 onClick={() => setActiveCategory(category)}
                 className={cn(
-                  'px-3 h-8 rounded-full text-body-sm font-semibold capitalize transition-colors',
+                  'px-3 min-h-11 rounded-full text-body-sm font-semibold capitalize transition-colors',
                   activeCategory === category
                     ? 'bg-brand-700 text-white'
                     : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50'

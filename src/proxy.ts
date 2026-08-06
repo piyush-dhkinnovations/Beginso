@@ -56,6 +56,8 @@ export const config = {
     '/reports/:path*',
     '/settings/:path*',
     '/login',
-    '/signup'
+    '/signup',
+    '/verify-email',
+    '/forgot-password'
   ],
 };

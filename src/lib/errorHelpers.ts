@@ -43,6 +43,18 @@ export function getFriendlyErrorMessage(error: unknown): string {
   if (message.includes('auth/network-request-failed') || message.includes('Network Error') || message.includes('ERR_CONNECTION_REFUSED')) {
     return 'Unable to connect. Please check your internet connection and try again.';
   }
+  if (message.includes('auth/popup-blocked')) {
+    return 'Google sign-in was blocked by the browser. Allow pop-ups for this site and try again.';
+  }
+  if (message.includes('auth/popup-closed-by-user') || message.includes('auth/cancelled-popup-request')) {
+    return 'Google sign-in was cancelled. Please try again when you are ready.';
+  }
+  if (message.includes('auth/unauthorized-domain')) {
+    return 'Google sign-in is not enabled for this domain. Please contact support.';
+  }
+  if (message.includes('auth/internal-error')) {
+    return 'Google sign-in could not start. Please refresh the page and try again.';
+  }
 
   // Format any raw Firebase error to be cleaner: e.g. "Firebase: Error (auth/invalid-email)." -> "auth/invalid-email"
   const cleanMatch = message.match(/Firebase: Error \((.*?)\)\.?/);

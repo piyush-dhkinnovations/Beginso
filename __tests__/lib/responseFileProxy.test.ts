@@ -3,10 +3,12 @@ import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/responses/[responseId]/file/[fileId]/route';
 import { SESSION_COOKIE_NAME } from '@/lib/sessionCookie';
 
-const context = { params: Promise.resolve({ responseId: 'r1', fileId: 'f1' }) };
+const responseId = '6a74617a6456cf02fec467ec';
+const fileId = '6a74617a6456cf02fec46802';
+const context = { params: Promise.resolve({ responseId, fileId }) };
 
 function authenticatedRequest(): NextRequest {
-  const request = new NextRequest('http://localhost:3000/api/responses/r1/file/f1');
+  const request = new NextRequest(`http://localhost:3000/api/responses/${responseId}/file/${fileId}`);
   request.cookies.set(SESSION_COOKIE_NAME, 'server-only.jwt');
   return request;
 }
@@ -18,6 +20,15 @@ describe('response-file server proxy', () => {
     mockFetch.mockReset();
     vi.stubGlobal('fetch', mockFetch);
     vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://backend.example');
+  });
+
+  it('rejects invalid IDs before contacting the backend', async () => {
+    const response = await GET(authenticatedRequest(), {
+      params: Promise.resolve({ responseId: 'not-an-id', fileId }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(mockFetch).not.toHaveBeenCalled();
   });
 
   it('removes legacy query-string credentials and authenticates server-to-server', async () => {

@@ -79,6 +79,15 @@ describe('ResponsesHubView query and pagination states', () => {
     expect(mockReplace).toHaveBeenCalledWith('/forms/form-1/responses?page=1');
   });
 
+  it('removes an invalid status URL and does not send it to the service', async () => {
+    search = 'status=administrator&page=4';
+    renderHub();
+
+    await waitFor(() => expect(mockGetResponses).toHaveBeenCalled());
+    expect(mockGetResponses.mock.calls[0][0]).toMatchObject({ status: undefined, page: 4 });
+    expect(mockReplace).toHaveBeenCalledWith('/forms/form-1/responses?page=1');
+  });
+
   it('clamps a beyond-last-page URL to the final available page', async () => {
     search = 'page=99';
     mockGetResponses.mockResolvedValue({ ...emptyPage, page: 99, totalPages: 3 });

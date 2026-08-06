@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { clampResponsePage, normalizeResponsePage, runSequentially } from '@/lib/responseList';
+import { clampResponsePage, normalizeResponsePage, normalizeResponseStatus, runSequentially } from '@/lib/responseList';
 
 describe('response-list utilities', () => {
   it.each([
@@ -19,6 +19,17 @@ describe('response-list utilities', () => {
     expect(clampResponsePage(8, 5)).toBe(5);
     expect(clampResponsePage(3, 5)).toBe(3);
     expect(clampResponsePage(3, 0)).toBe(1);
+  });
+
+  it.each([
+    ['new', 'new'],
+    ['in_progress', 'in_progress'],
+    ['completed', 'completed'],
+    ['all', undefined],
+    ['admin', undefined],
+    [null, undefined],
+  ])('normalizes status %s without trusting a TypeScript cast', (rawStatus, expected) => {
+    expect(normalizeResponseStatus(rawStatus)).toBe(expected);
   });
 
   it('waits for each bulk operation before starting the next one', async () => {

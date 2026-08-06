@@ -1,25 +1,82 @@
 'use client';
 
+import { FormEvent, useState } from 'react';
 import Link from 'next/link';
+import { Mail } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
+import { authService } from '@/services/auth';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 
 export default function ForgotPasswordPage() {
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await authService.requestPasswordReset(email.trim());
+      setSent(true);
+    } catch (requestError) {
+      const code = (requestError as { code?: string })?.code ?? '';
+      if (code === 'auth/network-request-failed') {
+        setError(getFriendlyErrorMessage(requestError));
+      } else {
+        // Never reveal whether an address is registered.
+        setSent(true);
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Card className="w-full p-8 flex flex-col items-center text-center gap-6">
-      <div className="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center text-brand-600 font-bold text-lg">
-        ?
+      <div className="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
+        <Mail aria-hidden="true" size={22} />
       </div>
       <div className="space-y-2">
-        <h1 className="text-heading-2 font-bold text-neutral-900">Forgot Password</h1>
+        <h1 className="text-heading-2 font-bold text-neutral-900">Reset your password</h1>
         <p className="text-body text-neutral-600">
-          This page is scheduled for development in Sprint 2.
+          {sent
+            ? 'If an account exists for that email, a password-reset link is on its way.'
+            : 'Enter your email and we will send you a secure password-reset link.'}
         </p>
       </div>
-      <Link href="/login" className="w-full">
-        <Button variant="secondary" className="w-full">
-          Back to Login
+
+      {!sent && (
+        <form onSubmit={submit} className="flex w-full flex-col gap-4 text-left">
+          <Input
+            id="reset-email"
+            type="email"
+            label="Email address"
+            placeholder="you@company.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
+            required
+            disabled={isSubmitting}
+          />
+          {error && <p role="alert" className="text-body-sm font-semibold text-error">{error}</p>}
+          <Button type="submit" className="w-full" isLoading={isSubmitting} disabled={isSubmitting}>
+            Send reset link
+          </Button>
+        </form>
+      )}
+
+      {sent && (
+        <Button type="button" className="w-full" onClick={() => setSent(false)}>
+          Try another email
         </Button>
+      )}
+
+      <Link href="/login" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 hover:text-brand-900">
+        Back to login
       </Link>
     </Card>
   );

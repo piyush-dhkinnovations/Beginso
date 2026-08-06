@@ -3,7 +3,7 @@ import { SESSION_COOKIE_NAME } from '@/lib/sessionCookie';
 
 /**
  * Proxies a response's file download through this Next.js server instead of letting the
- * browser fetch it from the backend's file host directly. Confirmed 08 Aug 2026: that endpoint
+ * browser fetch it from the backend's file host directly. During Sprint 4 that endpoint
  * is reachable via a plain top-level navigation (not CORS-restricted — window.open reaches it
  * and gets a real, if unauthorized, JSON response) but silently blocks an authenticated
  * XHR/fetch with a bare CORS network error, no HTTP response at all. CORS is a browser-only
@@ -15,6 +15,11 @@ export async function GET(
   { params }: { params: Promise<{ responseId: string; fileId: string }> }
 ) {
   const { responseId, fileId } = await params;
+  const objectIdPattern = /^[a-f\d]{24}$/i;
+  if (!objectIdPattern.test(responseId) || !objectIdPattern.test(fileId)) {
+    return NextResponse.json({ success: false, message: 'Invalid response or file ID' }, { status: 400 });
+  }
+
   const apiBase = process.env.NEXT_PUBLIC_API_URL;
   if (!apiBase) {
     return NextResponse.json({ success: false, message: 'Backend API is not configured' }, { status: 500 });

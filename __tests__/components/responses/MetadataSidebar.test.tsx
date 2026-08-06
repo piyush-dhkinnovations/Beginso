@@ -22,6 +22,12 @@ describe('MetadataSidebar', () => {
     expect(screen.getByText('Submission')).toBeInTheDocument();
   });
 
+  it('uses a compact single-row layout for the workflow status control', () => {
+    render(<MetadataSidebar response={mockResponseDetail()} onStatusChange={vi.fn()} isUpdatingStatus={false} />);
+
+    expect(screen.getByRole('group', { name: 'Workflow' })).toHaveClass('items-center', 'justify-between', 'p-3');
+  });
+
   it('renders the ipHash in a code element under Origin', () => {
     render(<MetadataSidebar response={mockResponseDetail()} onStatusChange={vi.fn()} isUpdatingStatus={false} />);
     const code = screen.getByText('a1b2c3d4e5f60718');

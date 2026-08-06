@@ -19,7 +19,7 @@ import { ResponseDrawer } from './ResponseDrawer';
 import { formsService } from '@/services/forms';
 import { responsesService } from '@/services/responses';
 import { responseKeys } from '@/lib/queryKeys';
-import { clampResponsePage, normalizeResponsePage, runSequentially } from '@/lib/responseList';
+import { clampResponsePage, normalizeResponsePage, normalizeResponseStatus, runSequentially } from '@/lib/responseList';
 import type { PaginatedResponsesResult, ResponseStatus } from '@/types/response';
 
 interface ConfirmDeleteState {
@@ -42,7 +42,8 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
   const { toast } = useToast();
 
   const search = searchParams.get('search') ?? '';
-  const status = (searchParams.get('status') as ResponseStatus | null) ?? undefined;
+  const rawStatus = searchParams.get('status');
+  const status = normalizeResponseStatus(rawStatus);
   const rawPage = searchParams.get('page');
   const page = normalizeResponsePage(rawPage);
   const responseId = searchParams.get('responseId');
@@ -60,6 +61,13 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
   useEffect(() => {
     if (rawPage !== null && rawPage !== String(page)) replacePage(page);
   }, [page, rawPage, replacePage]);
+
+  useEffect(() => {
+    if (rawStatus !== null && status === undefined) updateParams({ status: undefined }, true);
+    // updateParams intentionally reads the latest searchParams; depending on it would recreate
+    // the function and rerun this normalization on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawStatus, status]);
 
   function updateParams(updates: Record<string, string | undefined>, resetPage = false) {
     const params = new URLSearchParams(searchParams.toString());
@@ -93,7 +101,12 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
     enabled: !!formId,
   });
 
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    isError: isStatsError,
+    refetch: refetchStats,
+  } = useQuery({
     queryKey: responseKeys.stats(formId),
     queryFn: () => responsesService.getStats(formId),
   });
@@ -232,7 +245,12 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
         subtitle={formId ? `Responses · ${form?.title ?? ''}` : 'Track, view, and organize submissions across every form.'}
       />
 
-      <ResponsesStatCards stats={stats} isLoading={statsLoading} />
+      <ResponsesStatCards
+        stats={stats}
+        isLoading={statsLoading}
+        isError={isStatsError}
+        onRetry={() => void refetchStats()}
+      />
 
       <ResponsesToolbar
         search={search}

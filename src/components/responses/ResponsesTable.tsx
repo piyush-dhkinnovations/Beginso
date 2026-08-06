@@ -33,7 +33,7 @@ function MasterCheckbox({ responses, selectedIds, onSelectAll }: Pick<ResponsesT
   }, [someSelected]);
 
   return (
-    <label className="flex min-h-10 min-w-10 cursor-pointer items-center justify-center">
+    <label className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
       <input
         ref={ref}
         type="checkbox"
@@ -86,7 +86,7 @@ export function ResponsesTable({
           <button
             type="button"
             onClick={onClearSearch}
-            className="min-h-10 px-2 text-brand-600 hover:underline text-body-sm font-medium"
+            className="min-h-11 px-2 text-brand-600 hover:underline text-body-sm font-medium"
           >
             Clear search
           </button>

@@ -25,7 +25,7 @@ function isChoiceField(field: FormField): field is Extract<FormField, { options:
 }
 
 const selectClass =
-  'rounded-md border-2 border-neutral-200 px-2.5 h-[38px] text-[13px] bg-white outline-none focus:border-neutral-500';
+  'rounded-md border-2 border-neutral-200 px-2.5 min-h-11 text-[13px] bg-white outline-none focus:border-neutral-500';
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 // Rendered inline inside the selected FieldCard, below FieldInlineEditor.
@@ -139,7 +139,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
                     <button
                       type="button"
                       onClick={() => openEditForm(sf.fieldId, ruleIndex, rule)}
-                      className="text-neutral-400 hover:text-brand-700 min-w-[32px] min-h-[32px] flex items-center justify-center"
+                      className="text-neutral-400 hover:text-brand-700 min-w-11 min-h-11 flex items-center justify-center"
                       aria-label="Edit condition"
                     >
                       <Pencil size={14} />
@@ -147,7 +147,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
                     <button
                       type="button"
                       onClick={() => onDeleteRule(sf.fieldId, ruleIndex)}
-                      className="text-neutral-400 hover:text-rose-600 min-w-[32px] min-h-[32px] flex items-center justify-center"
+                      className="text-neutral-400 hover:text-rose-600 min-w-11 min-h-11 flex items-center justify-center"
                       aria-label="Delete condition"
                     >
                       <X size={14} />
@@ -195,7 +195,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
                     value="equals"
                     disabled
                     readOnly
-                    className="rounded-md border-2 border-neutral-200 px-2.5 h-[38px] text-[13px] bg-neutral-100 text-neutral-500 outline-none"
+                    className="rounded-md border-2 border-neutral-200 px-2.5 min-h-11 text-[13px] bg-neutral-100 text-neutral-500 outline-none"
                   />
                 </label>
 
@@ -222,7 +222,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
 
                 <label className="flex flex-col gap-1.5">
                   <span className="text-label text-neutral-500">Then</span>
-                  <div className="flex rounded-md border-2 border-neutral-200 overflow-hidden h-[38px]">
+                  <div className="flex min-h-11 rounded-md border-2 border-neutral-200 overflow-hidden">
                     {(['show', 'hide'] as const).map((a) => (
                       <button
                         key={a}
