@@ -233,7 +233,7 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
                 navigator.clipboard.writeText(publicUrl);
                 toast('Link copied to clipboard.', 'success');
               }}
-              className="p-2 text-neutral-400 hover:text-brand-700 hover:bg-brand-50 rounded-md shrink-0 min-w-[38px] min-h-[38px] flex items-center justify-center"
+              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md p-2 text-neutral-400 hover:bg-brand-50 hover:text-brand-700"
               aria-label="Copy public URL"
             >
               <Copy size={16} />

@@ -155,7 +155,7 @@ describe('responsesService', () => {
       Resume: { name: 'resume.pdf', size: 1024 },
       // Backend has also been observed sending that exact string pre-stringified.
       'Cover Letter': '[object Object]',
-      // Real full storage path observed live 08 Aug 2026 — multiple ObjectId-shaped segments,
+      // Real full storage path observed during Sprint 4 — multiple ObjectId-shaped segments,
       // a "/responses/" marker, then the original filename (non-hex chars included).
       Attachment:
         '6a6b0c5b9ee5b1318d14352d/6a7328e4d7510e56943c80d4/responses/6a742cc7fc87c8a424135312/wallpaperflare.com_wallpaper__1_.jpg',

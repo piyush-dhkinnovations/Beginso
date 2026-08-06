@@ -13,6 +13,7 @@ import type { PublicFormSchema } from '../src/types/publicForm.ts';
  *
  * Slug conventions:
  *   contains "not-found"    -> GET returns 404
+ *   contains "load-500"     -> GET returns 500
  *   contains "closed-date"  -> GET returns the mock schema with a past closeDate
  *   contains "submit-422"   -> POST .../submit returns 422
  *   contains "submit-429"   -> POST .../submit returns 429
@@ -85,6 +86,12 @@ const server = http.createServer(async (req, res) => {
   if (slug.includes('not-found')) {
     res.writeHead(404, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ message: 'Form not found' }));
+    return;
+  }
+
+  if (slug.includes('load-500')) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ message: 'Backend unavailable' }));
     return;
   }
 

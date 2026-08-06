@@ -88,7 +88,7 @@ describe('ResponsesTable', () => {
     render(<ResponsesTable {...baseProps} responses={responses} isLoading={false} selectedIds={new Set()} />);
     const checkbox = screen.getByLabelText('Select all responses on this page');
     expect(checkbox).not.toBeChecked();
-    expect(checkbox.closest('label')).toHaveClass('min-h-10', 'min-w-10');
+    expect(checkbox.closest('label')).toHaveClass('min-h-11', 'min-w-11');
   });
 
   it('master checkbox is checked when all rows are selected', () => {

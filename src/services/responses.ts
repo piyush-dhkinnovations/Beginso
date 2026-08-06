@@ -36,13 +36,13 @@ interface FileUrlEnvelope {
 
 // The backend sends each answer twice — once keyed by the field's raw internal id, once by its
 // human label, both pointing at the identical value. The internal id shows up as either a
-// MongoDB ObjectId (24 hex chars) or a UUID (confirmed 08 Aug 2026 — some fields use one, some
+// MongoDB ObjectId (24 hex chars) or a UUID (observed during Sprint 4 — some fields use one, some
 // the other) — strip both key shapes so labels never render as raw ids in the UI.
 const OBJECT_ID_KEY_RE = /^[0-9a-f]{24}$/i;
 const UUID_KEY_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // file_upload answers leak their internal storage reference as the "value" instead of the
-// actual submitted text. Confirmed live 08 Aug 2026, two distinct shapes:
+// actual submitted text. Observed during Sprint 4 in two distinct shapes:
 //   - a bare object, which React/String() render as the literal text "[object Object]" — but
 //     the backend has also been observed sending that exact string directly (already
 //     stringified server-side), so both the real object AND the literal string need catching;
@@ -99,7 +99,7 @@ export const responsesService = {
 
   // The URL above still requires the same Bearer auth as the rest of this API — it is NOT a
   // public/pre-signed link despite living on local disk. A direct authenticated fetch to it
-  // from the browser fails with a bare CORS network error (confirmed 08 Aug 2026 — no HTTP
+  // from the browser fails with a bare CORS network error (observed during Sprint 4 — no HTTP
   // response reaches axios at all, unlike a plain window.open() there, which gets a real
   // "Unauthorized access to private files" JSON body — proof the host is reachable, just not
   // via a cross-origin XHR/fetch with a custom header). Routed through this app's own

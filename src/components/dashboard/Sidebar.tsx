@@ -108,7 +108,7 @@ export function Sidebar({
             <Link
               href="/dashboard"
               prefetch={false}
-              className="sidebar-brand flex min-h-10 items-center gap-2 overflow-hidden"
+              className="sidebar-brand flex min-h-11 items-center gap-2 overflow-hidden"
               onClick={(event) => handleNavigation(event, '/dashboard')}
             >
               <div className="w-8 h-8 rounded bg-brand-600 flex items-center justify-center text-white font-bold shrink-0">
@@ -121,7 +121,7 @@ export function Sidebar({
             {onToggleCollapse && (
                 <button
                   onClick={onToggleCollapse}
-                  className="sidebar-collapse-control p-1 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors shrink-0 flex items-center justify-center min-h-[40px] min-w-[40px]"
+                  className="sidebar-collapse-control p-1 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors shrink-0 flex items-center justify-center min-h-11 min-w-11"
                   aria-label="Collapse sidebar"
                 >
                   <ChevronLeft size={20} />
@@ -132,7 +132,7 @@ export function Sidebar({
           !isMobile && onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
-              className="p-1 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors shrink-0 flex items-center justify-center min-h-[40px] min-w-[40px]"
+              className="p-1 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors shrink-0 flex items-center justify-center min-h-11 min-w-11"
               aria-label="Expand sidebar"
             >
               <ChevronRight size={20} />

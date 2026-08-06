@@ -27,7 +27,7 @@ After a response comes in, the user can track it through a workflow (New → In 
 ```
 User creates form → Publishes & shares link
      ↓
-Respondent submits → Files upload to Cloudflare R2
+Respondent submits → Files upload through the backend storage service
      ↓
 User reviews responses → Tracks status (New → In Progress → Completed) → Views auto-dashboard
      ↓
@@ -78,7 +78,7 @@ User exports CSV or PDF report
 - **Backend:** Express.js · Node.js 20 LTS · TypeScript · Mongoose · Zod · Multer · Puppeteer · Helmet · CORS · express-rate-limit · pino
 - **Database:** MongoDB Atlas (application data) · Firebase Authentication (login credentials only)
 - **Authentication:** Firebase Auth login → same-origin Next.js BFF → Express JWT session → frontend-domain HttpOnly Secure cookie (`SameSite=Lax`)
-- **Storage:** Cloudflare R2 (permanent file storage) · Local `/uploads` (temporary staging)
+- **Storage:** Current backend audit: local `/uploads`; product/deployment target: durable Cloudflare R2-compatible object storage
 - **Deployment:** Vercel (Frontend — `beginso.com`) · Render / Railway / VPS (Backend — necessary for headless Puppeteer)
 
 ---
@@ -97,7 +97,7 @@ Onboarding Platform/     # Next.js 16 client-side application (this repo)
 │   ├── lib/           # Firebase client, axios instance, schemas, auth context, helpers
 │   ├── hooks/         # Shared hooks (useAuth)
 │   └── types/         # Shared TypeScript types (form.ts, etc.)
-├── middleware.ts      # Edge routing middleware (user route guards)
+├── src/proxy.ts       # Route guards; validates the HttpOnly session with the backend
 ├── __tests__/         # Vitest unit/property-based tests
 ├── e2e/               # Playwright end-to-end tests + mock backend server
 ├── playwright.config.ts
@@ -105,7 +105,10 @@ Onboarding Platform/     # Next.js 16 client-side application (this repo)
 └── .env.local         # Environment variables configuration
 ```
 
-Authentication is verified through Firebase; the session is tracked via an `auth_token` cookie read by `middleware.ts`.
+Firebase supplies the one-time identity token used at login. The Next.js BFF exchanges it for
+the backend JWT, stores that JWT only in the HttpOnly `beginso_session` cookie, and forwards it
+server-to-server. `src/proxy.ts` validates the session with backend `/api/auth/me`; browser
+JavaScript never receives or stores the JWT.
 
 ---
 
@@ -123,12 +126,12 @@ Authentication is verified through Firebase; the session is tracked via an `auth
 
 | Wk | Sprint / Track | Focus | Status | Dates |
 |:---|:---|:---|:---|:---|
-| 1 | Sprint 1 | Auth + Landing + Dashboard foundation | ✅ **Complete** | 29 Jun – 04 Jul |
+| 1 | Sprint 1 | Auth + Landing + Dashboard foundation | ⚠️ **Frontend implemented; exit gate incomplete** — reset email and signed-link verification are implemented; backend `email_verified` enforcement and final/manual Kiro tasks remain | 29 Jun – 04 Jul |
 | 2 | Sprint 2 (Part 1) | Form Builder core: toolbox, dnd-kit canvas, basic properties, CRUD integration | ✅ **Complete** | 06 Jul – 11 Jul |
-| 3 | Sprint 2 (Part 2) | Form Builder completion: full field properties, Logic Rules, Branding, publish flow | 🔄 **In Progress** (DnD architecture fix, CSS fixes, and Delete Form modal shipped; Properties/Logic/Branding/Settings/Share tabs still pending) | 13 Jul – 18 Jul |
-| 4 | Sprint 3 | Public Form: SSR rendering, validation, Cloudflare R2 file uploads, spam prevention | Planned | 20 Jul – 25 Jul |
-| 5 | Admin (merged) | Developer console: logs, user CRUD, audit trail — now its own dedicated week, not a parallel track | Planned | 27 Jul – 01 Aug |
-| 6 | Sprint 4 | Response Management: paginated response table, filters, submission details, status updates | Planned | 03 Aug – 08 Aug |
+| 3 | Sprint 2 (Part 2) | Form Builder completion: full field properties, Logic Rules, Branding, publish flow | ✅ **Implemented** · 7 manual acceptance checks remain unchecked in the Kiro task file | 13 Jul – 18 Jul |
+| 4 | Sprint 3 | Public Form: SSR rendering, validation, file uploads, spam prevention | ✅ **Frontend implemented** · 41 Playwright scenarios are checked in | 20 Jul – 25 Jul |
+| 5 | Super Admin (merged) | Developer console: logs, user CRUD, audit trail | **Not started** | 27 Jul – 01 Aug |
+| 6 | Sprint 4 | Response Management: paginated response table, filters, submission details, status updates | ✅ **Implemented** · Saturday manual/exit gate remains unchecked | 03 Aug – 08 Aug |
 | 7 | Sprint 5+6 (merged) | Analytics & Reports: ECharts integration, CSV/PDF export, Templates Gallery polish | Planned | 10 Aug – 15 Aug |
 | 8 | Sprint 7+8 (merged) | Settings, Forms Manager, QA/Hardening & Launch | Planned | 17 Aug – 22 Aug |
 
@@ -138,7 +141,7 @@ Authentication is verified through Firebase; the session is tracked via an `auth
 
 ## Screens Reference (24 Total)
 
-- **Auth & Onboarding (4 Screens):** Login, Sign Up, Forgot Password, OTP Verification
+- **Auth & Onboarding (4 Screens):** Login, Sign Up, Forgot Password, Email Verification (signed-link MVP; numeric OTP requires backend delivery/expiry/rate limiting)
 - **Core User Platform (11 Screens):** Workspace Home, Forms Manager, Templates Gallery, Form Builder, Responses Hub (Table/Kanban/Calendar/Analytics), Submission Detail, Reports & Exports, Auto-Dashboard, Settings Panel, Modals & Dialogs, Feeds & Feedback
 - **Design System Showcase (1 Screen):** Interactive UI Elements Showcase
 - **Respondent Side (3 Screens):** Published Public Form, Form Unavailable Screen, Success Confirmation
@@ -169,7 +172,9 @@ Authentication is verified through Firebase; the session is tracked via an `auth
 - **Audit Logs:** Every Admin mutation (e.g., suspending accounts, purging data) writes a read-only record in the `audit_logs` collection.
 - **Spam Protection:** Rate limiting (10 requests/IP/min per form) and a hidden honeypot field are active on public form submissions.
 - **Anonymization:** IP addresses are processed into SHA-256 hashes before storage; raw IPs are never saved.
-- **File Upload Security:** Multer constraints validate file sizes (max 100 MB) and MIME types before sending files to Cloudflare R2 storage. Temporary uploads in `/uploads` are purged hourly.
+- **File Upload Security:** Multer constraints must validate file size (max 100 MB) and MIME type.
+  The audited backend currently stores files on local disk; durable R2-compatible storage remains
+  a deployment requirement unless the single-node storage constraint is accepted explicitly.
 
 ---
 
@@ -267,17 +272,18 @@ The project has two independent layers of automated tests. Both must pass before
 
 Covers pure logic in isolation — the conditional-logic engine, the dynamic Zod schema builder, file validation, the honeypot/draft-persistence helpers — plus individual components via `@testing-library/react`, and API services with `fetch` mocked at the network layer. A subset are **property-based tests** (via `fast-check`): instead of asserting one hand-picked example, they assert an invariant holds across 100 randomly generated inputs per run — e.g. "a field hidden by conditional logic is never present in the submitted answers, no matter what the rest of the form looks like."
 
-These tests never touch a real backend, a real browser, or the filesystem beyond `localStorage` mocks — they're fast and fully deterministic.
+These tests never touch a real backend or a real browser. The current suite contains 384 tests
+across 59 files, including auth/security and public-form draft-storage coverage.
 
 ### End-to-End Tests (Playwright)
 
 **Location:** `e2e/` · **Run:** `npm run test:e2e` (headless) or `npm run test:e2e:ui` (interactive)
 
-Drives a real Chromium browser against the actual rendered public form pipeline (`/f/[slug]` and `/f/[slug]/success`) — real inputs, real page navigation, real client-side validation, real file picker interactions. `playwright.config.ts` starts two local servers automatically before the suite runs: the Next.js dev server, and `e2e/mockServer.ts`, a small stateless mock standing in for the real backend (pointed to via `NEXT_PUBLIC_API_URL` for the duration of the test run only). This means the suite is fully deterministic and never depends on the real backend being up, rate limits, or its current known issues — see `docs/backend-contract/known-issues/public-form-submit.md` for those.
+Drives a real Chromium browser against the actual rendered public form pipeline (`/f/[slug]` and `/f/[slug]/success`) — real inputs, page navigation, validation, and file picker interactions. `playwright.config.ts` starts a dedicated Next.js dev server plus `e2e/mockServer.ts`, so the 41 checked-in scenarios do not depend on the live backend.
 
 Test scenarios are chosen by the slug itself (e.g. `/f/mock-valid`, `/f/mock-not-found`, `/f/mock-submit-422`) — see the conventions documented at the top of `e2e/mockServer.ts`.
 
-Current coverage (9 spec files, ~40 tests): SSR rendering, accessibility basics, mobile viewport (320px), field validation for all 10 field types, multi-page navigation, conditional logic (including inspecting the real submitted payload to confirm hidden fields never appear in it), file upload (valid/oversized/disallowed-type/remove), submission outcomes (200/422/429/500 + honeypot), the Form Unavailable screen, the Success screen, and draft persistence.
+Current coverage (9 spec files, 41 tests): SSR rendering, accessibility basics, mobile viewport (320px), field validation for all 10 field types, multi-page navigation, conditional logic (including inspecting the real submitted payload to confirm hidden fields never appear in it), file upload (valid/oversized/disallowed-type/remove), submission outcomes (200/422/429/500 + honeypot), outage-vs-unavailable handling, the Success screen, and draft persistence.
 
 If a spec file fails, Playwright saves a screenshot and a full trace under `test-results/` — `npx playwright show-trace <path-to-trace.zip>` opens an interactive timeline of exactly what the browser saw.
 

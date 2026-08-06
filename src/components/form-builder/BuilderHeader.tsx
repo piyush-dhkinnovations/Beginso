@@ -62,7 +62,7 @@ export function BuilderHeader({
           onClick={onBack}
           variant="ghost"
           size="small"
-          className="p-2 min-h-[36px] min-w-[36px] shrink-0"
+          className="min-h-11 min-w-11 shrink-0 p-2"
           title="Back to Forms"
         >
           <ArrowLeft size={16} />
@@ -99,7 +99,7 @@ export function BuilderHeader({
           onClick={onDelete}
           variant="ghost"
           size="small"
-          className="w-9 h-9 p-0 shrink-0 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+          className="h-11 w-11 shrink-0 p-0 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
           title="Delete form"
           aria-label="Delete form"
         >

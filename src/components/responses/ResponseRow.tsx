@@ -22,7 +22,7 @@ export function ResponseRow({ response, isSelected, onSelect, onView, onDelete }
   return (
     <tr onClick={onView} className="hover:bg-neutral-50 cursor-pointer border-b border-neutral-100 last:border-0">
       <td className="responses-secondary-column w-12 px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
-        <label className="flex min-h-10 min-w-10 cursor-pointer items-center justify-center">
+        <label className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
           <input
             type="checkbox"
             checked={isSelected}

@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { GoogleSignInButton } from './GoogleSignInButton';
+import { useRouter } from 'next/navigation';
 
 export function LoginForm() {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -19,6 +20,7 @@ export function LoginForm() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { login } = useAuth();
+  const router = useRouter();
 
   const isAnyLoading = isEmailLoading || isGoogleLoading;
 
@@ -66,6 +68,11 @@ export function LoginForm() {
         clearTimeout(timeoutRef.current);
       }
       setIsEmailLoading(false);
+
+      if ((error as { code?: string })?.code === 'auth/email-not-verified') {
+        router.push('/verify-email');
+        return;
+      }
 
       const err = error as { response?: { data?: { error?: { message?: string; fields?: Array<{ field: string; message: string }> | Record<string, string> } } } };
       const fields = err.response?.data?.error?.fields;

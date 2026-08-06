@@ -230,7 +230,7 @@ export function ResponseDrawer({ responseId, formId, onClose }: ResponseDrawerPr
         ref={drawerRef}
         className="relative w-full sm:max-w-lg h-full bg-white shadow-2xl border-l border-neutral-200 flex flex-col animate-slide-in-right"
       >
-        <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-200 shrink-0">
+        <div className="flex items-center justify-between px-4 py-2 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             {response && hasIdentity && (
               <span
@@ -256,7 +256,7 @@ export function ResponseDrawer({ responseId, formId, onClose }: ResponseDrawerPr
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="flex min-h-10 min-w-10 items-center justify-center rounded-md text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 shrink-0"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 shrink-0"
           >
             <X size={18} />
           </button>

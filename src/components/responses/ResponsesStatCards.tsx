@@ -2,14 +2,29 @@
 
 import { CheckCircle2, Clock, Inbox, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import type { ResponseStats } from '@/types/response';
 
 interface ResponsesStatCardsProps {
   stats?: ResponseStats;
   isLoading: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
 }
 
-export function ResponsesStatCards({ stats, isLoading }: ResponsesStatCardsProps) {
+export function ResponsesStatCards({ stats, isLoading, isError = false, onRetry }: ResponsesStatCardsProps) {
+  if (isError) {
+    return (
+      <Card role="alert" className="flex min-h-28 items-center justify-between gap-4 sm:col-span-2 lg:col-span-4">
+        <div>
+          <p className="text-body-sm font-semibold text-neutral-900">Unable to load response totals</p>
+          <p className="mt-1 text-caption text-neutral-500">The response list is still available.</p>
+        </div>
+        {onRetry && <Button variant="secondary" size="small" onClick={onRetry}>Try again</Button>}
+      </Card>
+    );
+  }
+
   const cards = [
     { label: 'Total', value: stats?.total ?? 0, icon: Inbox },
     { label: 'New', value: stats?.new ?? 0, icon: Sparkles },

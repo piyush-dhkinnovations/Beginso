@@ -69,7 +69,7 @@ function PageTile({
             e.stopPropagation();
             onDelete();
           }}
-          className="absolute -top-1.5 -right-1.5 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 bg-white border border-neutral-200 text-neutral-400 hover:text-rose-600 hover:border-rose-300 w-5 h-5 rounded-full flex items-center justify-center transition-all shadow-sm"
+          className="absolute -top-3 -right-3 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 bg-white border border-neutral-200 text-neutral-400 hover:text-rose-600 hover:border-rose-300 w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-sm"
           aria-label={`Delete page ${number}`}
           title="Delete page"
         >

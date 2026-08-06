@@ -3,6 +3,31 @@ import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS } from '@/lib/sessionCooki
 
 const SESSION_PATH = 'api/auth/session';
 const LOGOUT_PATH = 'api/auth/logout';
+const ALLOWED_API_ROOTS = new Set([
+  'auth',
+  'dashboard',
+  'forms',
+  'responses',
+  'templates',
+  'upload',
+  'users',
+  'workspaces',
+]);
+
+function isAllowedBackendPath(pathParts: string[]): boolean {
+  if (pathParts.length < 2 || pathParts[0] !== 'api' || !ALLOWED_API_ROOTS.has(pathParts[1])) {
+    return false;
+  }
+
+  return pathParts.every(
+    (part) =>
+      part.length > 0 &&
+      part !== '.' &&
+      part !== '..' &&
+      !part.includes('/') &&
+      !part.includes('\\')
+  );
+}
 
 function deleteSessionCookie(response: NextResponse): void {
   response.cookies.set(SESSION_COOKIE_NAME, '', {
@@ -15,6 +40,10 @@ function deleteSessionCookie(response: NextResponse): void {
 }
 
 async function forward(request: NextRequest, pathParts: string[]): Promise<NextResponse> {
+  if (!isAllowedBackendPath(pathParts)) {
+    return NextResponse.json({ message: 'Backend path is not allowed' }, { status: 404 });
+  }
+
   const apiBase = process.env.NEXT_PUBLIC_API_URL;
   if (!apiBase) {
     return NextResponse.json({ message: 'Backend API is not configured' }, { status: 500 });

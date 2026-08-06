@@ -116,7 +116,7 @@ describe('SignupForm component', () => {
     });
   });
 
-  it('shows success toast on successful signup', async () => {
+  it('shows verification-email success toast on successful signup', async () => {
     mockAuthSignup.mockResolvedValueOnce({
       token: 'tok123',
       user: { id: 'u1', name: 'Jane Cooper', email: 'jane@example.com' },
@@ -128,7 +128,7 @@ describe('SignupForm component', () => {
 
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith(
-        expect.stringMatching(/account created/i),
+        expect.stringMatching(/verification email sent/i),
         'success'
       );
     });
