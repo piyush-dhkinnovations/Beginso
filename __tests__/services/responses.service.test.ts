@@ -137,4 +137,36 @@ describe('responsesService', () => {
     const detailResult = await responsesService.getResponseById('r1');
     expect(detailResult.answers).toEqual({ 'Full Name': 'Jayesh' });
   });
+
+  it('strips UUID-shaped duplicate keys out of answers too (not just Mongo ObjectIds)', async () => {
+    const dirtyAnswers = { 'a857e996-5400-4d21-82d4-b130c7a7e735': 'Piyush', 'Short Text': 'Piyush' };
+    mockGet.mockResolvedValueOnce({
+      data: { data: [{ _id: 'r1', formId: 'form-1', answers: dirtyAnswers, status: 'new' }], total: 1, page: 1, limit: 50, totalPages: 1 },
+    });
+
+    const result = await responsesService.getResponses({ formId: 'form-1' });
+
+    expect(result.data[0].answers).toEqual({ 'Short Text': 'Piyush' });
+  });
+
+  it('drops file-reference garbage values (bare objects, the literal "[object Object]" string, storage paths) from answers', async () => {
+    const dirtyAnswers = {
+      // Real object — stringifies to "[object Object]" if ever rendered directly.
+      Resume: { name: 'resume.pdf', size: 1024 },
+      // Backend has also been observed sending that exact string pre-stringified.
+      'Cover Letter': '[object Object]',
+      // Real full storage path observed live 08 Aug 2026 — multiple ObjectId-shaped segments,
+      // a "/responses/" marker, then the original filename (non-hex chars included).
+      Attachment:
+        '6a6b0c5b9ee5b1318d14352d/6a7328e4d7510e56943c80d4/responses/6a742cc7fc87c8a424135312/wallpaperflare.com_wallpaper__1_.jpg',
+      'Full Name': 'Priya',
+    };
+    mockGet.mockResolvedValueOnce({
+      data: { success: true, response: { _id: 'r1', formId: 'form-1', answers: dirtyAnswers, status: 'new', response_files: [] } },
+    });
+
+    const result = await responsesService.getResponseById('r1');
+
+    expect(result.answers).toEqual({ 'Full Name': 'Priya' });
+  });
 });

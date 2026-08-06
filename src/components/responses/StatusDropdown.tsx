@@ -13,14 +13,8 @@ interface StatusDropdownProps {
 
 const STATUSES = Object.keys(STATUS_LABELS) as ResponseStatus[];
 
-// Same color tokens Badge.tsx uses per status — a colored pill communicates status at a
-// glance without needing a separate static Badge alongside the control that changes it.
-const STATUS_STYLES: Record<ResponseStatus, string> = {
-  new: 'bg-status-new-bg border-status-new-border text-status-new-text',
-  in_progress: 'bg-status-progress-bg border-status-progress-border text-status-progress-text',
-  completed: 'bg-status-active-bg border-status-active-border text-status-active-text',
-};
-
+// Same color tokens Badge.tsx uses per status — the dot alone carries the color-coding here
+// (reference design uses a neutral pill for the trigger, not a per-status colored badge).
 const STATUS_DOT: Record<ResponseStatus, string> = {
   new: 'bg-status-new-dot',
   in_progress: 'bg-status-progress-dot',
@@ -67,21 +61,18 @@ export function StatusDropdown({ currentStatus, onChange, disabled }: StatusDrop
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label="Response status"
-        className={cn(
-          'flex items-center gap-2 min-h-[32px] pl-3 pr-2.5 py-1 rounded-full border text-caption font-bold cursor-pointer outline-none transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-neutral-400 disabled:opacity-60 disabled:cursor-not-allowed',
-          STATUS_STYLES[currentStatus]
-        )}
+        className="flex items-center gap-1.5 min-h-[30px] pl-2.5 pr-2 py-1.5 rounded-lg border border-neutral-200 bg-white shadow-sm text-heading-3 font-medium text-neutral-800 cursor-pointer outline-none transition-colors hover:border-neutral-300 focus:ring-2 focus:ring-offset-1 focus:ring-neutral-400 disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', STATUS_DOT[currentStatus])} />
+        <span className={cn('w-2.5 h-2.5 rounded-full shrink-0', STATUS_DOT[currentStatus])} />
         {STATUS_LABELS[currentStatus]}
-        <ChevronDown size={14} className={cn('opacity-70 transition-transform', isOpen && 'rotate-180')} />
+        <ChevronDown size={16} className={cn('text-neutral-400 transition-transform shrink-0', isOpen && 'rotate-180')} />
       </button>
 
       {isOpen && (
         <ul
           role="listbox"
           aria-label="Response status options"
-          className="absolute right-0 z-10 mt-1.5 w-40 py-1 bg-white border border-neutral-200 rounded-lg shadow-lg animate-fade-in"
+          className="absolute right-0 z-10 mt-1.5 w-40 py-1.5 bg-white border border-neutral-100 rounded-lg shadow-lg animate-fade-in"
         >
           {STATUSES.map((status) => (
             <li key={status}>
@@ -90,11 +81,14 @@ export function StatusDropdown({ currentStatus, onChange, disabled }: StatusDrop
                 role="option"
                 aria-selected={status === currentStatus}
                 onClick={() => selectStatus(status)}
-                className="w-full flex items-center gap-2 px-3 py-1.5 text-body-sm text-neutral-700 hover:bg-neutral-50 transition-colors text-left"
+                className={cn(
+                  'w-full flex items-center gap-2 min-h-[32px] px-3 py-1.5 text-body-sm text-left transition-colors',
+                  status === currentStatus ? 'bg-brand-50 text-neutral-900 font-semibold' : 'text-neutral-700 font-medium hover:bg-neutral-50'
+                )}
               >
-                <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', STATUS_DOT[status])} />
+                <span className={cn('w-2 h-2 rounded-full shrink-0', STATUS_DOT[status])} />
                 <span className="flex-1">{STATUS_LABELS[status]}</span>
-                {status === currentStatus && <Check size={14} className="text-brand-600" />}
+                {status === currentStatus && <Check size={14} className="text-brand-600 shrink-0" />}
               </button>
             </li>
           ))}

@@ -14,23 +14,24 @@ vi.mock('@/components/common/Toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 
-const mockGetFileDownloadUrl = vi.fn();
+const mockGetFileBlobUrl = vi.fn();
 vi.mock('@/services/responses', () => ({
-  responsesService: { getFileDownloadUrl: (...args: unknown[]) => mockGetFileDownloadUrl(...args) },
+  responsesService: { getFileBlobUrl: (...args: unknown[]) => mockGetFileBlobUrl(...args) },
 }));
 
 describe('FileDownloadButton — property test', () => {
   beforeEach(() => {
     vi.spyOn(window, 'open').mockImplementation(() => null);
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
   });
 
-  it('calls getFileDownloadUrl exactly once per click — never a cached value', async () => {
+  it('calls getFileBlobUrl exactly once per Preview click — never a cached value', async () => {
     // Component-mount PBT: fewer iterations than the pure-logic properties above,
     // since each run mounts/clicks/unmounts a real component tree.
     await fc.assert(
       fc.asyncProperty(fc.integer({ min: 1, max: 5 }), async (clicks) => {
-        mockGetFileDownloadUrl.mockReset();
-        mockGetFileDownloadUrl.mockResolvedValue({ url: 'https://mock-r2.example.com/file.pdf' });
+        mockGetFileBlobUrl.mockReset();
+        mockGetFileBlobUrl.mockResolvedValue('blob:mock-url');
 
         const user = userEvent.setup();
         render(
@@ -43,12 +44,12 @@ describe('FileDownloadButton — property test', () => {
             isAvailable
           />
         );
-        const button = screen.getByRole('button', { name: 'Download file.pdf' });
+        const button = screen.getByRole('button', { name: 'Preview file.pdf' });
         for (let i = 0; i < clicks; i++) {
           await user.click(button);
         }
 
-        const ok = mockGetFileDownloadUrl.mock.calls.length === clicks;
+        const ok = mockGetFileBlobUrl.mock.calls.length === clicks;
         cleanup();
         return ok;
       }),

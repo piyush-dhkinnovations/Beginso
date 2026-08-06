@@ -42,6 +42,25 @@ export function ResponseDrawer({ responseId, formId, onClose }: ResponseDrawerPr
   const drawerRef = useRef<HTMLDivElement>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
+  // Locks the page behind the drawer while it's open — without this, the drawer's own content
+  // and the Responses table underneath both scroll independently (two visible scrollbars,
+  // confusing which one the wheel/trackpad is about to move). The actual scrolling element for
+  // every (user) route is DashboardShell's <main>, not <body> — this repo has no scroll-lock
+  // precedent to follow (Modal.tsx has the same gap), so both are locked: <main> for the real
+  // fix, <body> as a harmless no-op safety net if this drawer is ever mounted somewhere else.
+  useEffect(() => {
+    if (!responseId) return;
+    const scrollContainer = document.querySelector('main');
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousMainOverflow = scrollContainer?.style.overflow;
+    document.body.style.overflow = 'hidden';
+    if (scrollContainer) scrollContainer.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      if (scrollContainer) scrollContainer.style.overflow = previousMainOverflow ?? '';
+    };
+  }, [responseId]);
+
   // Close on Escape; trap Tab/Shift+Tab focus within the drawer — same pattern as Modal.tsx.
   useEffect(() => {
     if (!responseId) return;
@@ -90,11 +109,17 @@ export function ResponseDrawer({ responseId, formId, onClose }: ResponseDrawerPr
 
       // Also patch every cached responses-list query for this form, so the table behind
       // the drawer reflects the change immediately, not just after invalidation refetches.
+      // responseKeys.all(formId) is a prefix of the stats key too (['responses', formId, 'stats']),
+      // so setQueriesData's fuzzy match also hits the stats cache — whose shape has no `data`
+      // array. Guard on that shape rather than assuming every match is a paginated list, or the
+      // stats entry throws here and the whole mutation aborts before mutationFn ever runs.
       const listKey = responseKeys.all(formId);
       await queryClient.cancelQueries({ queryKey: listKey });
       const previousLists = queryClient.getQueriesData({ queryKey: listKey });
       queryClient.setQueriesData<PaginatedResponsesResult>({ queryKey: listKey }, (old) =>
-        old ? { ...old, data: old.data.map((r) => (r._id === responseId ? { ...r, status } : r)) } : old
+        old && Array.isArray(old.data)
+          ? { ...old, data: old.data.map((r) => (r._id === responseId ? { ...r, status } : r)) }
+          : old
       );
 
       return { previousDetail, previousLists };
@@ -155,12 +180,12 @@ export function ResponseDrawer({ responseId, formId, onClose }: ResponseDrawerPr
         ref={drawerRef}
         className="relative w-full sm:max-w-lg h-full bg-white shadow-2xl border-l border-neutral-200 flex flex-col animate-slide-in-right"
       >
-        <div className="flex items-start justify-between p-4 border-b border-neutral-200 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center justify-between px-4 py-2 border-b border-neutral-200 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
             {response && hasIdentity && (
               <span
                 aria-hidden="true"
-                className="w-10 h-10 shrink-0 rounded-full bg-brand-100 text-brand-700 text-body-sm font-semibold flex items-center justify-center"
+                className="w-8 h-8 shrink-0 rounded-full bg-brand-100 text-brand-700 text-body-sm font-semibold flex items-center justify-center"
               >
                 {initial}
               </span>
