@@ -29,7 +29,7 @@ export function MetadataSidebar({ response, onStatusChange, isUpdatingStatus }: 
           Workflow
         </span>
         <div className="flex items-center justify-between gap-3">
-          <span className="text-body-sm font-medium text-neutral-700">Status</span>
+          <span className="text-heading-3 font-medium text-neutral-700">Status</span>
           <StatusDropdown currentStatus={response.status} onChange={onStatusChange} disabled={isUpdatingStatus} />
         </div>
       </div>

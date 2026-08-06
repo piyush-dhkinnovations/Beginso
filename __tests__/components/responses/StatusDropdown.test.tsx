@@ -13,6 +13,8 @@ import { StatusDropdown } from '@/components/responses/StatusDropdown';
 
 describe('StatusDropdown', () => {
   it('renders the current status on the trigger and all 3 options when opened', async () => {
+    // Reverting to "new" is confirmed working backend-side (BUG-04, verified 06 Aug 2026) —
+    // all 3 statuses are freely selectable, no exclusion needed.
     const user = userEvent.setup();
     render(<StatusDropdown currentStatus="in_progress" onChange={vi.fn()} />);
 
@@ -48,15 +50,12 @@ describe('StatusDropdown', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('applies a distinct colored style per status', () => {
-    const { rerender } = render(<StatusDropdown currentStatus="new" onChange={vi.fn()} />);
-    const newClass = screen.getByRole('button', { name: 'Response status' }).className;
-    expect(newClass).toContain('status-new');
+  it('gives each status a distinctly colored dot on the trigger', () => {
+    const { container: newContainer } = render(<StatusDropdown currentStatus="new" onChange={vi.fn()} />);
+    expect(newContainer.querySelector('.bg-status-new-dot')).toBeInTheDocument();
 
-    rerender(<StatusDropdown currentStatus="completed" onChange={vi.fn()} />);
-    const completedClass = screen.getByRole('button', { name: 'Response status' }).className;
-    expect(completedClass).toContain('status-active');
-    expect(completedClass).not.toBe(newClass);
+    const { container: completedContainer } = render(<StatusDropdown currentStatus="completed" onChange={vi.fn()} />);
+    expect(completedContainer.querySelector('.bg-status-active-dot')).toBeInTheDocument();
   });
 
   it('disables the trigger when disabled is true', () => {

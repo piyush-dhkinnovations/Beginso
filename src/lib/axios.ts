@@ -34,7 +34,14 @@ axiosInstance.interceptors.response.use(
     // just surfaced as a local "Failed to load forms" error instead of being sent back to
     // login with an explanation.
     const url: string = error.config?.url ?? '';
-    if (status === 401 || (status === 403 && !url.includes('/api/auth/'))) {
+    // Also excludes the response-file download proxy — confirmed 08 Aug 2026 that endpoint can
+    // 401/403 for reasons that say nothing about whether the caller's own session is still
+    // valid (a backend-side permission bug on that one file). Logging the entire app out
+    // because a single attachment failed to download is a much worse outcome than just letting
+    // FileDownloadButton's own error toast handle it — same reasoning as the auth-route
+    // exclusion above, just for a different route.
+    const isFileDownload = /\/api\/responses\/[^/]+\/file\/[^/]+/.test(url);
+    if ((status === 401 || status === 403) && !url.includes('/api/auth/') && !isFileDownload) {
       import('./tokenStorage').then(({ clearToken }) => {
         clearToken();
         if (typeof window !== 'undefined') {

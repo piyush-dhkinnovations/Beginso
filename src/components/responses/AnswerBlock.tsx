@@ -16,7 +16,7 @@ export function AnswerBlock({ label, value }: AnswerBlockProps) {
   return (
     <div className="flex items-start justify-between gap-4 py-2.5 border-b border-neutral-100 last:border-0">
       <span className="text-body-sm text-neutral-500 shrink-0">{label}</span>
-      <span className="text-body-sm font-medium text-neutral-800 text-right break-words whitespace-pre-wrap">
+      <span className="text-body-sm font-medium text-neutral-800 text-right break-words whitespace-pre-wrap min-w-0 flex-1">
         {renderValue(value)}
       </span>
     </div>
