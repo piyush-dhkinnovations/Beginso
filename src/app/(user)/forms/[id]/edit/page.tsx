@@ -35,7 +35,7 @@ import { PublishModal } from '@/components/form-builder/PublishModal';
 import { CloseFormModal } from '@/components/form-builder/CloseFormModal';
 import { LeaveBuilderModal } from '@/components/form-builder/LeaveBuilderModal';
 import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
-import type { FieldType, FormBranding, FormField, FormPage, FormSettings } from '@/types/form';
+import type { FieldType, Form, FormBranding, FormField, FormPage, FormSettings } from '@/types/form';
 
 // Shared by handleDragOver (visual indicator) and handleDragEnd (actual insert)
 // so the two never disagree about which side of the hovered card the drag is on.
@@ -257,7 +257,7 @@ export default function BuilderPageShell() {
     onSuccess: (data) => {
       setStatus('published', data.slug);
       // Update the query cache so navigating away and back serves the correct status/slug immediately
-      queryClient.setQueryData(['form', formId], (oldData: any) => 
+      queryClient.setQueryData<Form>(['form', formId], (oldData) =>
         oldData ? { ...oldData, status: 'published', slug: data.slug } : oldData
       );
       setShowPublishModal(false);
@@ -325,7 +325,7 @@ export default function BuilderPageShell() {
     mutationFn: () => formsService.closeForm(formId!),
     onSuccess: () => {
       setStatus('closed');
-      queryClient.setQueryData(['form', formId], (oldData: any) => 
+      queryClient.setQueryData<Form>(['form', formId], (oldData) =>
         oldData ? { ...oldData, status: 'closed' } : oldData
       );
       setShowCloseModal(false);

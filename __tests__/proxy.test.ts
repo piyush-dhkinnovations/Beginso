@@ -5,21 +5,27 @@
  * Requirements: 11.1, 11.2, 11.3, 11.4, 11.6
  */
 
-import { describe, it, expect } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { proxy } from '../src/proxy';
 import { NextRequest } from 'next/server';
+import { SESSION_COOKIE_NAME } from '@/lib/sessionCookie';
 
-/** Helper: build a NextRequest with optional has_session marker cookie */
+/** Helper: build a NextRequest with the same HttpOnly session cookie the BFF writes. */
 function makeRequest(path: string, hasToken = false): NextRequest {
   const url = `http://localhost:3000${path}`;
   const req = new NextRequest(url);
   if (hasToken) {
-    req.cookies.set('has_session', '1');
+    req.cookies.set(SESSION_COOKIE_NAME, 'server-only.jwt');
   }
   return req;
 }
 
 describe('Next.js Edge Proxy (auth guard)', () => {
+  beforeEach(() => {
+    vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://backend.example');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
+  });
+
   // ─── Protected routes (no token) ───────────────────────────────────────────
 
   describe('Protected route + no cookie → redirect /login', () => {
@@ -36,10 +42,10 @@ describe('Next.js Edge Proxy (auth guard)', () => {
     ];
 
     it.each(protectedPaths)(
-      '%s without auth_token redirects to /login',
-      (path) => {
+      '%s without a session cookie redirects to /login',
+      async (path) => {
         const req = makeRequest(path, false);
-        const res = proxy(req);
+        const res = await proxy(req);
         expect(res.status).toBe(307); // NextResponse.redirect
         expect(res.headers.get('location')).toContain('/login');
       }
@@ -52,10 +58,10 @@ describe('Next.js Edge Proxy (auth guard)', () => {
     const protectedPaths = ['/dashboard', '/forms', '/templates', '/responses', '/analytics', '/reports', '/settings'];
 
     it.each(protectedPaths)(
-      '%s with valid auth_token passes through',
-      (path) => {
+      '%s with a session cookie passes through',
+      async (path) => {
         const req = makeRequest(path, true);
-        const res = proxy(req);
+        const res = await proxy(req);
         // next() has no location header and status 200
         expect(res.headers.get('location')).toBeNull();
         expect(res.status).toBe(200);
@@ -66,16 +72,16 @@ describe('Next.js Edge Proxy (auth guard)', () => {
   // ─── Auth pages (login / signup) with token → redirect /dashboard ──────────
 
   describe('Auth page + cookie present → redirect /dashboard', () => {
-    it('/login with auth_token redirects to /dashboard', () => {
+    it('/login with a valid session cookie redirects to /dashboard', async () => {
       const req = makeRequest('/login', true);
-      const res = proxy(req);
+      const res = await proxy(req);
       expect(res.status).toBe(307);
       expect(res.headers.get('location')).toContain('/dashboard');
     });
 
-    it('/signup with auth_token redirects to /dashboard', () => {
+    it('/signup with a valid session cookie redirects to /dashboard', async () => {
       const req = makeRequest('/signup', true);
-      const res = proxy(req);
+      const res = await proxy(req);
       expect(res.status).toBe(307);
       expect(res.headers.get('location')).toContain('/dashboard');
     });
@@ -84,16 +90,25 @@ describe('Next.js Edge Proxy (auth guard)', () => {
   // ─── Auth pages without token → allow through ─────────────────────────────
 
   describe('Auth page + no cookie → NextResponse.next()', () => {
-    it('/login without auth_token passes through', () => {
+    it('/login without a session cookie passes through', async () => {
       const req = makeRequest('/login', false);
-      const res = proxy(req);
+      const res = await proxy(req);
       expect(res.headers.get('location')).toBeNull();
     });
 
-    it('/signup without auth_token passes through', () => {
+    it('/signup without a session cookie passes through', async () => {
       const req = makeRequest('/signup', false);
-      const res = proxy(req);
+      const res = await proxy(req);
       expect(res.headers.get('location')).toBeNull();
     });
+  });
+
+  it('rejects a forged or expired session cookie and clears it', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
+    const res = await proxy(makeRequest('/dashboard', true));
+
+    expect(res.status).toBe(307);
+    expect(res.headers.get('location')).toContain('/login');
+    expect(res.headers.get('set-cookie')).toContain(`${SESSION_COOKIE_NAME}=`);
   });
 });

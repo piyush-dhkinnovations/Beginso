@@ -77,7 +77,7 @@ User exports CSV or PDF report
 - **Frontend:** Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Zustand · TanStack Query · React Hook Form · Zod · dnd-kit · Apache ECharts (planned, Sprint 5) · Lucide React
 - **Backend:** Express.js · Node.js 20 LTS · TypeScript · Mongoose · Zod · Multer · Puppeteer · Helmet · CORS · express-rate-limit · pino
 - **Database:** MongoDB Atlas (application data) · Firebase Authentication (login credentials only)
-- **Authentication:** Firebase Auth login → Express JWT session → HttpOnly Secure cookie (`SameSite=Strict`)
+- **Authentication:** Firebase Auth login → same-origin Next.js BFF → Express JWT session → frontend-domain HttpOnly Secure cookie (`SameSite=Lax`)
 - **Storage:** Cloudflare R2 (permanent file storage) · Local `/uploads` (temporary staging)
 - **Deployment:** Vercel (Frontend — `beginso.com`) · Render / Railway / VPS (Backend — necessary for headless Puppeteer)
 

@@ -56,11 +56,11 @@ export function LoginForm() {
     }, 30000);
 
     try {
-      const data = await authService.login(values.email, values.password);
+      await authService.login(values.email, values.password);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      await login(data.token);
+      await login();
     } catch (error: unknown) {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -89,8 +89,8 @@ export function LoginForm() {
     setServerError(null);
     setIsGoogleLoading(true);
     try {
-      const data = await authService.loginWithGoogle();
-      await login(data.token);
+      await authService.loginWithGoogle();
+      await login();
     } catch (error: unknown) {
       setIsGoogleLoading(false);
       setServerError(getFriendlyErrorMessage(error));

@@ -4,7 +4,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Consolas, monospace;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SF Mono", Consolas, monospace;
   --font-heading: var(--font-inter);
   --color-ring: var(--ring);
   --color-border: var(--border);
@@ -154,6 +154,87 @@
       opacity: 1;
       transform: scaleX(1);
     }
+  }
+}
+
+/* The authenticated shell responds to its available container width, not the viewport. */
+.dashboard-shell {
+  container-type: inline-size;
+}
+
+.dashboard-main-frame {
+  padding-top: 56px;
+}
+
+.dashboard-mobile-nav {
+  display: none;
+}
+
+@container (min-width: 521px) and (max-width: 880px) {
+  .dashboard-desktop-sidebar,
+  .dashboard-sidebar-panel {
+    width: 56px !important;
+  }
+
+  .dashboard-sidebar-panel .sidebar-brand,
+  .dashboard-sidebar-panel .sidebar-label,
+  .dashboard-sidebar-panel .sidebar-collapse-control {
+    display: none;
+  }
+
+  .dashboard-content {
+    margin-left: 56px !important;
+  }
+}
+
+@container (max-width: 520px) {
+  .dashboard-main-frame {
+    padding-top: 108px;
+  }
+
+  .dashboard-desktop-sidebar {
+    display: none;
+  }
+
+  .dashboard-mobile-nav {
+    display: block;
+  }
+
+  .dashboard-content {
+    margin-left: 0 !important;
+    padding: 16px;
+  }
+}
+
+.responses-table-container {
+  container-type: inline-size;
+}
+
+.responses-secondary-column,
+.responses-secondary-block,
+.responses-desktop-only {
+  display: none;
+}
+
+.responses-mobile-only {
+  display: flex;
+}
+
+@container (min-width: 521px) {
+  .responses-secondary-column {
+    display: table-cell;
+  }
+
+  .responses-secondary-block {
+    display: block;
+  }
+
+  .responses-desktop-only {
+    display: inline;
+  }
+
+  .responses-mobile-only {
+    display: none;
   }
 }
 

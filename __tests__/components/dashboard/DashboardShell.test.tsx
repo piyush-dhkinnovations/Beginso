@@ -3,8 +3,8 @@
  * Audit remediation: zero test coverage. Tests: respects the server-provided
  * initialCollapsed (the cookie-based fix that replaced the old
  * localStorage-plus-effect approach, which flashed expanded-then-collapsed
- * on reload), persists a toggle to the cookie, and opens/closes the mobile
- * drawer including the backdrop-click-to-close path.
+ * on reload), persists a toggle to the cookie, and always provides the
+ * documented horizontal mobile navigation without a drawer/backdrop.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -12,9 +12,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 
 vi.mock('@/components/dashboard/TopNav', () => ({
-  TopNav: ({ onToggleMobileSidebar }: { onToggleMobileSidebar: () => void }) => (
-    <button onClick={onToggleMobileSidebar}>toggle-mobile</button>
-  ),
+  TopNav: () => <div data-testid="top-nav" />,
 }));
 
 vi.mock('@/components/dashboard/Sidebar', () => ({
@@ -48,9 +46,11 @@ describe('DashboardShell component', () => {
     expect(screen.getByTestId('desktop-sidebar')).toHaveAttribute('data-collapsed', 'true');
   });
 
-  it('does not render the mobile sidebar/backdrop by default', () => {
+  it('renders the horizontal mobile navigation without a drawer backdrop', () => {
     render(<DashboardShell initialCollapsed={false}>content</DashboardShell>);
-    expect(screen.queryByTestId('mobile-sidebar')).not.toBeInTheDocument();
+    expect(screen.getByTestId('mobile-sidebar')).toBeInTheDocument();
+    expect(document.querySelector('.dashboard-mobile-nav')).toBeInTheDocument();
+    expect(document.querySelector('.bg-neutral-900\\/40')).not.toBeInTheDocument();
   });
 
   it('flips collapsed state and persists it to the sidebar_collapsed cookie on toggle', () => {
@@ -63,14 +63,8 @@ describe('DashboardShell component', () => {
     expect(document.cookie).toContain('sidebar_collapsed=true');
   });
 
-  it('opens the mobile sidebar when TopNav requests it, and closes it via the backdrop', () => {
+  it('establishes a container-query boundary for shell responsiveness', () => {
     const { container } = render(<DashboardShell initialCollapsed={false}>content</DashboardShell>);
-    fireEvent.click(screen.getByText('toggle-mobile'));
-    expect(screen.getByTestId('mobile-sidebar')).toBeInTheDocument();
-
-    const backdrop = container.querySelector('.bg-neutral-900\\/40');
-    expect(backdrop).not.toBeNull();
-    fireEvent.click(backdrop!);
-    expect(screen.queryByTestId('mobile-sidebar')).not.toBeInTheDocument();
+    expect(container.firstElementChild).toHaveClass('dashboard-shell');
   });
 });

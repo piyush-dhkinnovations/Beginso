@@ -21,22 +21,30 @@ export function ResponseRow({ response, isSelected, onSelect, onView, onDelete }
 
   return (
     <tr onClick={onView} className="hover:bg-neutral-50 cursor-pointer border-b border-neutral-100 last:border-0">
-      <td className="hidden md:table-cell w-10 px-4 py-3" onClick={(e) => e.stopPropagation()}>
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={(e) => onSelect(e.target.checked)}
-          aria-label={`Select response from ${formatResponseDate(response.submittedAt)}`}
-          className="w-4 h-4"
-        />
+      <td className="responses-secondary-column w-12 px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
+        <label className="flex min-h-10 min-w-10 cursor-pointer items-center justify-center">
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={(e) => onSelect(e.target.checked)}
+            aria-label={`Select response from ${formatResponseDate(response.submittedAt)}`}
+            className="w-4 h-4"
+          />
+        </label>
       </td>
       <td className="px-4 py-3 text-body-sm text-neutral-600 whitespace-nowrap">
-        {formatResponseDate(response.submittedAt)}
+        <span className="responses-desktop-only">{formatResponseDate(response.submittedAt)}</span>
+        <span className="responses-mobile-only min-w-0 flex-col">
+          <span className="max-w-36 truncate font-medium text-neutral-800">
+            {identity.label ?? identity.email ?? 'Anonymous'}
+          </span>
+          <span className="text-caption text-neutral-500">{formatResponseDate(response.submittedAt)}</span>
+        </span>
       </td>
       <td className="px-4 py-3">
         <Badge variant={response.status}>{STATUS_LABELS[response.status]}</Badge>
       </td>
-      <td className="hidden md:table-cell px-4 py-3 text-body-sm text-neutral-500 truncate max-w-[300px]">
+      <td className="responses-secondary-column px-4 py-3 text-body-sm text-neutral-500 truncate max-w-[300px]">
         <div className="flex items-center gap-2 min-w-0">
           {hasIdentity && (
             <span
@@ -56,7 +64,7 @@ export function ResponseRow({ response, isSelected, onSelect, onView, onDelete }
       </td>
       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-end gap-1">
-          <Button variant="ghost" size="small" aria-label="View response" onClick={onView} className="w-8 h-8 p-0">
+          <Button variant="ghost" size="small" aria-label="View response" onClick={onView} className="w-11 h-11 p-0">
             <Eye size={16} />
           </Button>
           <Button
@@ -64,7 +72,7 @@ export function ResponseRow({ response, isSelected, onSelect, onView, onDelete }
             size="small"
             aria-label="Delete response"
             onClick={onDelete}
-            className="w-8 h-8 p-0 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+            className="w-11 h-11 p-0 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
           >
             <Trash2 size={16} />
           </Button>
