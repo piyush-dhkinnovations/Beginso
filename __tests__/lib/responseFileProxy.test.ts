@@ -36,7 +36,7 @@ describe('response-file server proxy', () => {
       .mockResolvedValueOnce(
         new Response(
           JSON.stringify({
-            url: 'https://backend.example/api/upload/file/document.pdf?token=leak&access_token=leak-too&download=1',
+            url: 'https://backend.example/api/upload/file/document.pdf?token=file-scoped-token&access_token=unused&download=1',
           }),
           { status: 200, headers: { 'content-type': 'application/json' } }
         )
@@ -53,10 +53,48 @@ describe('response-file server proxy', () => {
     expect(fileUrl.searchParams.has('access_token')).toBe(false);
     expect(fileUrl.origin).toBe('https://backend.example');
     expect(fileUrl.search).toBe('');
-    expect(new Headers(init.headers).get('authorization')).toBe('Bearer server-only.jwt');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer file-scoped-token');
+    expect(new Headers(init.headers).get('x-access-token')).toBe('file-scoped-token');
     expect(init.redirect).toBe('manual');
     expect((mockFetch.mock.calls[0][1] as RequestInit).redirect).toBe('manual');
     expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
+  it('uses a legacy access_token as a header fallback without exposing it in the file URL', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            url: 'https://backend.example/api/upload/file/document.pdf?access_token=scoped-fallback',
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } }
+        )
+      )
+      .mockResolvedValueOnce(new Response('file bytes', { status: 200 }));
+
+    await GET(authenticatedRequest(), context);
+    const [fileUrl, init] = mockFetch.mock.calls[1] as [URL, RequestInit];
+
+    expect(fileUrl.search).toBe('');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer scoped-fallback');
+    expect(new Headers(init.headers).get('x-access-token')).toBe('scoped-fallback');
+  });
+
+  it('uses the session Authorization header when metadata has no scoped file token', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ url: 'https://backend.example/api/upload/file/document.pdf' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
+      .mockResolvedValueOnce(new Response('file bytes', { status: 200 }));
+
+    await GET(authenticatedRequest(), context);
+    const [, init] = mockFetch.mock.calls[1] as [URL, RequestInit];
+
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer server-only.jwt');
+    expect(new Headers(init.headers).has('x-access-token')).toBe(false);
   });
 
   it('refuses to send the session token to a different file host', async () => {

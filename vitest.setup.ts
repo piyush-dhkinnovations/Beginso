@@ -4,13 +4,16 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
 // --- IntersectionObserver mock (required for FeaturesSection / HowItWorksSection) ---
-const mockIntersectionObserver = vi.fn();
-mockIntersectionObserver.mockReturnValue({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-});
-vi.stubGlobal('IntersectionObserver', mockIntersectionObserver);
+class MockIntersectionObserver {
+  readonly root = null;
+  readonly rootMargin = '';
+  readonly thresholds: number[] = [];
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+  takeRecords = vi.fn(() => []);
+}
+vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
 
 // --- localStorage mock ---
 const localStorageMock = (() => {

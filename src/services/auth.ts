@@ -5,8 +5,6 @@ import {
   getAdditionalUserInfo,
   GoogleAuthProvider,
   reload,
-  sendEmailVerification,
-  sendPasswordResetEmail,
   setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
@@ -15,11 +13,6 @@ import {
   type User,
 } from 'firebase/auth';
 import axiosInstance from '@/lib/axios';
-
-function appUrl(path: string): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
-  return new URL(path, base).toString();
-}
 
 async function prepareFirebaseAuth(): Promise<void> {
   // A Firebase refresh token must not survive a closed browser. Beginso's durable
@@ -40,12 +33,17 @@ async function createBackendSession(user: User, name?: string, isNewUser?: boole
   return data;
 }
 
+async function requestVerificationOtp(user: User): Promise<void> {
+  const token = await user.getIdToken();
+  await axiosInstance.post('/api/auth/email-verification', { token });
+}
+
 export const authService = {
   async signup(name: string, email: string, password: string) {
     await prepareFirebaseAuth();
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(userCredential.user, { displayName: name });
-    await sendEmailVerification(userCredential.user, { url: appUrl('/verify-email') });
+    await requestVerificationOtp(userCredential.user);
     return { email: userCredential.user.email };
   },
 
@@ -79,8 +77,7 @@ export const authService = {
   },
 
   async requestPasswordReset(email: string) {
-    await prepareFirebaseAuth();
-    await sendPasswordResetEmail(auth, email, { url: appUrl('/login') });
+    await axiosInstance.post('/api/auth/forgot-password', { email: email.trim() });
   },
 
   getPendingVerificationEmail() {
@@ -90,15 +87,16 @@ export const authService = {
   async resendVerificationEmail() {
     const user = auth.currentUser;
     if (!user) throw new Error('Sign in again before requesting another verification email.');
-    await sendEmailVerification(user, { url: appUrl('/verify-email') });
+    await requestVerificationOtp(user);
   },
 
-  async completeEmailVerification() {
+  async verifyEmailOtp(code: string) {
     const user = auth.currentUser;
     if (!user) throw new Error('Sign in again to finish email verification.');
+    const token = await user.getIdToken();
+    await axiosInstance.post('/api/auth/email-verification/verify', { token, code });
     await reload(user);
-    if (!user.emailVerified) return false;
-    await createBackendSession(user, user.displayName || undefined);
-    return true;
+    await user.getIdToken(true);
+    return createBackendSession(user, user.displayName || undefined);
   },
 };

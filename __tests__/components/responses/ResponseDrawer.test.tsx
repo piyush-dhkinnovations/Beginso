@@ -148,6 +148,34 @@ describe('ResponseDrawer', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  it('restores focus to the opener when the drawer closes', async () => {
+    mockGetResponseById.mockResolvedValue(detail);
+    const opener = document.createElement('button');
+    opener.textContent = 'Open response';
+    document.body.appendChild(opener);
+    opener.focus();
+
+    const { rerender, queryClient } = renderDrawer('resp-1');
+    await screen.findByText('Submitted Answers');
+    expect(opener).not.toHaveFocus();
+
+    rerender(
+      <QueryClientProvider client={queryClient}>
+        <ResponseDrawer responseId={null} formId="form-1" onClose={vi.fn()} />
+      </QueryClientProvider>
+    );
+
+    expect(opener).toHaveFocus();
+    opener.remove();
+  });
+
+  it('shows an explicit empty state when a response has no answers', async () => {
+    mockGetResponseById.mockResolvedValue({ ...detail, answers: {} });
+    renderDrawer('resp-1');
+
+    expect(await screen.findByText('No submitted answers.')).toBeInTheDocument();
+  });
+
   it('calls onClose on backdrop click', async () => {
     mockGetResponseById.mockResolvedValue(detail);
     const user = userEvent.setup();

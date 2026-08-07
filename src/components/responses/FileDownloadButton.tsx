@@ -46,7 +46,9 @@ export function FileDownloadButton({
   isAvailable,
 }: FileDownloadButtonProps) {
   const [loadingAction, setLoadingAction] = useState<'preview' | 'download' | null>(null);
+  const [missingOnServer, setMissingOnServer] = useState(false);
   const { toast } = useToast();
+  const unavailable = !isAvailable || missingOnServer;
 
   // Revoked after a delay rather than immediately — a freshly window.open()'d tab, or the
   // browser's own download handoff, both need the blob: URL to stay alive a little past the
@@ -62,6 +64,7 @@ export function FileDownloadButton({
       // failure look identical as a generic toast otherwise, and need different fixes).
       let serverMessage: string | undefined;
       if (isAxiosError(err)) {
+        if (err.response?.status === 404) setMissingOnServer(true);
         const responseData = err.response?.data;
         if (responseData instanceof Blob) {
           try {
@@ -99,8 +102,8 @@ export function FileDownloadButton({
 
   return (
     <div
-      className={cn('flex items-center gap-2', !isAvailable && 'opacity-60 cursor-not-allowed')}
-      title={!isAvailable ? 'File no longer available' : undefined}
+      className={cn('flex items-center gap-2', unavailable && 'opacity-60 cursor-not-allowed')}
+      title={unavailable ? 'File no longer available' : undefined}
     >
       {renderFileIcon(mimeType)}
       <span className="text-body-sm font-medium text-neutral-700 break-words min-w-0 flex-1" title={originalName}>
@@ -114,7 +117,7 @@ export function FileDownloadButton({
           aria-label={loadingAction === 'preview' ? `Opening ${originalName}…` : `Preview ${originalName}`}
           aria-busy={loadingAction === 'preview'}
           onClick={handlePreview}
-          disabled={!isAvailable || loadingAction !== null}
+          disabled={unavailable || loadingAction !== null}
           className="w-11 h-11 p-0"
         >
           {loadingAction === 'preview' ? <LoadingSpinner variant="inline" /> : <Eye size={16} />}
@@ -125,7 +128,7 @@ export function FileDownloadButton({
           aria-label={loadingAction === 'download' ? `Downloading ${originalName}…` : `Download ${originalName}`}
           aria-busy={loadingAction === 'download'}
           onClick={handleDownload}
-          disabled={!isAvailable || loadingAction !== null}
+          disabled={unavailable || loadingAction !== null}
           className="w-11 h-11 p-0"
         >
           {loadingAction === 'download' ? <LoadingSpinner variant="inline" /> : <Download size={16} />}

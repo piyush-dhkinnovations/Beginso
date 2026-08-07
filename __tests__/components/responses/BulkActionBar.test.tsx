@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BulkActionBar } from '@/components/responses/BulkActionBar';
 
@@ -47,5 +47,16 @@ describe('BulkActionBar', () => {
     expect(screen.getByRole('button', { name: /Mark as In Progress/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Mark as Completed' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Delete selected' })).toBeDisabled();
+  });
+
+  it('shows the spinner only on the active bulk action', () => {
+    render(<BulkActionBar {...baseProps} count={2} isLoading loadingAction="delete" />);
+
+    const progress = screen.getByRole('button', { name: 'Mark as In Progress' });
+    const completed = screen.getByRole('button', { name: 'Mark as Completed' });
+    const remove = screen.getByRole('button', { name: /Delete selected/ });
+    expect(within(progress).queryByRole('status')).not.toBeInTheDocument();
+    expect(within(completed).queryByRole('status')).not.toBeInTheDocument();
+    expect(within(remove).getByRole('status')).toBeInTheDocument();
   });
 });

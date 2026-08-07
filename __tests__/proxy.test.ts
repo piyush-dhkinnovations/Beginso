@@ -108,7 +108,7 @@ describe('Next.js Edge Proxy (auth guard)', () => {
       expect(res.headers.get('location')).toBeNull();
     });
 
-    it.each(['/verify-email', '/forgot-password'])('%s without a session passes through', async (path) => {
+    it.each(['/verify-email', '/forgot-password', '/reset-password'])('%s without a session passes through', async (path) => {
       const res = await proxy(makeRequest(path, false));
       expect(res.headers.get('location')).toBeNull();
     });
