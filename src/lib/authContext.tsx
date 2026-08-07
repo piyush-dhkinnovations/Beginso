@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await signOut(auth).catch(() => { });
         dispatch({ type: 'LOGIN', payload: { user: data.user } });
       } catch (error: unknown) {
-        if (window.location.pathname !== '/verify-email') {
+        if (!['/verify-email', '/verification-code'].includes(window.location.pathname)) {
           await signOut(auth).catch(() => { });
         }
         await authService.logout().catch(() => { });

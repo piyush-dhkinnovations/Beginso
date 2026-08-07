@@ -58,6 +58,8 @@ export const config = {
     '/login',
     '/signup',
     '/verify-email',
-    '/forgot-password'
+    '/verification-code',
+    '/forgot-password',
+    '/reset-password'
   ],
 };

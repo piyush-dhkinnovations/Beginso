@@ -24,10 +24,10 @@ describe('axiosInstance cookie authentication', () => {
     expect(axiosInstance.defaults.headers.common.Authorization).toBeUndefined();
   });
 
-  async function triggerInterceptor(status: number, url: string) {
+  async function triggerInterceptor(status: number, url: string, data?: unknown) {
     const axiosInstance = (await import('@/lib/axios')).default;
     const rejected = (axiosInstance.interceptors.response as unknown as InterceptorManager).handlers[0].rejected;
-    await rejected({ response: { status }, config: { url } }).catch(() => {});
+    await rejected({ response: { status, data }, config: { url } }).catch(() => {});
   }
 
   it('asks the BFF to destroy the HttpOnly session after an ordinary 401', async () => {
@@ -50,6 +50,28 @@ describe('axiosInstance cookie authentication', () => {
     await triggerInterceptor(401, 'http://localhost:3000/api/responses/r1/file/f1');
 
     expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('preserves the session for an ordinary resource-scoped 403', async () => {
+    const mockFetch = vi.fn();
+    vi.stubGlobal('fetch', mockFetch);
+
+    await triggerInterceptor(403, '/api/responses/r1', { message: 'Forbidden' });
+
+    expect(mockFetch).not.toHaveBeenCalled();
+  });
+
+  it('destroys the session for an explicit ACCOUNT_SUSPENDED 403', async () => {
+    const pendingFetch = vi.fn(() => new Promise<Response>(() => {}));
+    vi.stubGlobal('fetch', pendingFetch);
+
+    await triggerInterceptor(403, '/api/forms', { error: { code: 'ACCOUNT_SUSPENDED' } });
+
+    expect(pendingFetch).toHaveBeenCalledWith('/api/backend/api/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+      keepalive: true,
+    });
   });
 
   it('does not recursively destroy the session for an auth-route error', async () => {

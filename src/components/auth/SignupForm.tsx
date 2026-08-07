@@ -42,7 +42,7 @@ export function SignupForm() {
     setServerError(null);
     try {
       await authService.signup(values.name, values.email, values.password);
-      toast('Verification email sent. Check your inbox.', 'success');
+      toast('Verification code sent. Check your inbox.', 'success');
       router.push('/verify-email');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: { message?: string; fields?: Array<{ field: string; message: string }> | Record<string, string> } } } };

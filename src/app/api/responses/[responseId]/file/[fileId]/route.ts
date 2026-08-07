@@ -59,13 +59,23 @@ export async function GET(
     return NextResponse.json({ success: false, message: 'Untrusted file path' }, { status: 502 });
   }
 
+  // Some deployed backend versions return a file-scoped credential in the legacy URL. Never
+  // retain it in the URL (query credentials leak through logs/history/referrers), but preserve
+  // its authorization semantics by moving it to the backend's supported X-Access-Token header.
+  // The value is only forwarded to the fixed, allowlisted backend file path below.
+  const fileAccessToken =
+    returnedFileUrl.searchParams.get('token') ?? returnedFileUrl.searchParams.get('access_token');
+
   // The backend currently emits its internal localhost origin in this URL. Treat the entire
   // URL as untrusted metadata: retain only the documented file-serving path and resolve that
   // path against the configured backend. No returned hostname or query credential is fetched.
   const fileUrl = new URL(returnedFileUrl.pathname, apiBase);
 
   const fileRes = await fetch(fileUrl, {
-    headers: { Authorization: authHeader },
+    headers: {
+      Authorization: `Bearer ${fileAccessToken ?? sessionToken}`,
+      ...(fileAccessToken ? { 'X-Access-Token': fileAccessToken } : {}),
+    },
     cache: 'no-store',
     // Do not let an allowlisted URL redirect the server-side request to another origin.
     redirect: 'manual',

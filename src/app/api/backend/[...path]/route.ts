@@ -3,6 +3,14 @@ import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS } from '@/lib/sessionCooki
 
 const SESSION_PATH = 'api/auth/session';
 const LOGOUT_PATH = 'api/auth/logout';
+const PUBLIC_AUTH_PATHS = new Set([
+  SESSION_PATH,
+  LOGOUT_PATH,
+  'api/auth/email-verification',
+  'api/auth/email-verification/reveal',
+  'api/auth/email-verification/verify',
+  'api/auth/forgot-password',
+]);
 const ALLOWED_API_ROOTS = new Set([
   'auth',
   'dashboard',
@@ -52,9 +60,10 @@ async function forward(request: NextRequest, pathParts: string[]): Promise<NextR
   const path = pathParts.join('/');
   const isSessionRequest = path === SESSION_PATH;
   const isLogoutRequest = path === LOGOUT_PATH;
+  const isPublicAuthRequest = PUBLIC_AUTH_PATHS.has(path);
   const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
-  if (!isSessionRequest && !isLogoutRequest && !sessionToken) {
+  if (!isPublicAuthRequest && !sessionToken) {
     return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
   }
 

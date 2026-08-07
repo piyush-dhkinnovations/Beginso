@@ -233,6 +233,7 @@ PRs require a description of what it does, how to test it, and screenshots for a
    ```env
    # Backend API Configuration
    NEXT_PUBLIC_API_URL=http://localhost:4000
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
 
    # Firebase Client SDK Configuration
    NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
@@ -247,6 +248,9 @@ PRs require a description of what it does, how to test it, and screenshots for a
    - Create a project on the [Firebase Console](https://console.firebase.google.com/).
    - Enable **Email/Password** and **Google** sign-in providers in the Authentication section.
    - Copy the web app configuration values and add them to `.env.local` as shown above.
+   - In **Authentication → Templates**, customize the email action URL to
+     `https://your-frontend-domain/reset-password` so reset links open Beginso's new-password form.
+     Firebase appends `mode` and `oobCode`; never copy a real code into configuration.
 
 ### Available NPM Scripts
 

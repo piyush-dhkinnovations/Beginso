@@ -102,15 +102,15 @@ describe('StatusDropdown', () => {
     expect(trigger).toHaveFocus();
   });
 
-  it('uses the compact 40px design-system touch target for the trigger and options', async () => {
+  it('uses 44px touch targets while keeping the compact type scale', async () => {
     const user = userEvent.setup();
     render(<StatusDropdown currentStatus="new" onChange={vi.fn()} />);
 
     const trigger = screen.getByRole('button', { name: 'Response status' });
-    expect(trigger).toHaveClass('min-h-10', 'min-w-10');
+    expect(trigger).toHaveClass('min-h-11', 'min-w-11');
     await user.click(trigger);
     screen.getAllByRole('option').forEach((option) => {
-      expect(option).toHaveClass('min-h-10', 'text-[11px]', 'leading-[14px]');
+      expect(option).toHaveClass('min-h-11', 'text-[11px]', 'leading-[14px]');
     });
   });
 });
