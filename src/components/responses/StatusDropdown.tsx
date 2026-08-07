@@ -99,7 +99,7 @@ export function StatusDropdown({ currentStatus, onChange, disabled }: StatusDrop
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label="Response status"
-        className="flex min-h-10 min-w-10 items-center gap-1.5 rounded-md border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-body-sm font-medium text-neutral-800 outline-none transition-colors hover:border-neutral-300 hover:bg-white focus:ring-2 focus:ring-neutral-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex min-h-11 min-w-11 items-center gap-1.5 rounded-md border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-body-sm font-medium text-neutral-800 outline-none transition-colors hover:border-neutral-300 hover:bg-white focus:ring-2 focus:ring-neutral-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60"
       >
         <span className={cn('h-2 w-2 shrink-0 rounded-full', STATUS_DOT[currentStatus])} />
         {STATUS_LABELS[currentStatus]}
@@ -123,7 +123,7 @@ export function StatusDropdown({ currentStatus, onChange, disabled }: StatusDrop
                 onFocus={() => setActiveIndex(index)}
                 onClick={() => selectStatus(status)}
                 className={cn(
-                  'flex min-h-10 w-full items-center gap-1.5 px-2.5 py-1 text-left text-[11px] leading-[14px] transition-colors outline-none focus:bg-neutral-100',
+                  'flex min-h-11 w-full items-center gap-1.5 px-2.5 py-1 text-left text-[11px] leading-[14px] transition-colors outline-none focus:bg-neutral-100',
                   status === currentStatus ? 'bg-brand-50 font-medium text-neutral-900' : 'font-normal text-neutral-700 hover:bg-neutral-50'
                 )}
               >

@@ -9,6 +9,7 @@ interface BulkActionBarProps {
   onMarkCompleted: () => void;
   onDeleteSelected: () => void;
   isLoading: boolean;
+  loadingAction?: 'in_progress' | 'completed' | 'delete' | null;
 }
 
 export function BulkActionBar({
@@ -17,6 +18,7 @@ export function BulkActionBar({
   onMarkCompleted,
   onDeleteSelected,
   isLoading,
+  loadingAction = null,
 }: BulkActionBarProps) {
   if (count === 0) return null;
 
@@ -25,13 +27,15 @@ export function BulkActionBar({
       <span className="text-body-sm font-medium text-brand-700">{count} selected</span>
       <div className="flex items-center gap-2 ml-auto">
         <Button variant="secondary" size="small" disabled={isLoading} onClick={onMarkInProgress}>
-          {isLoading ? <LoadingSpinner variant="inline" className="mr-2" /> : null}
+          {loadingAction === 'in_progress' ? <LoadingSpinner variant="inline" className="mr-2" /> : null}
           Mark as In Progress
         </Button>
         <Button variant="secondary" size="small" disabled={isLoading} onClick={onMarkCompleted}>
+          {loadingAction === 'completed' ? <LoadingSpinner variant="inline" className="mr-2" /> : null}
           Mark as Completed
         </Button>
         <Button variant="destructive" size="small" disabled={isLoading} onClick={onDeleteSelected}>
+          {loadingAction === 'delete' ? <LoadingSpinner variant="inline" className="mr-2" /> : null}
           Delete selected
         </Button>
       </div>

@@ -133,7 +133,7 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
   const invalidateResponses = () => queryClient.invalidateQueries({ queryKey: responseKeys.all(formId) });
 
   const bulkStatusMutation = useMutation({
-    mutationFn: async ({ ids, newStatus }: { ids: string[]; newStatus: ResponseStatus }) => {
+    mutationFn: async ({ ids, newStatus }: { ids: string[]; newStatus: Exclude<ResponseStatus, 'new'> }) => {
       await runSequentially(ids, (id) => responsesService.updateStatus(id, newStatus));
     },
     onMutate: async ({ ids, newStatus }) => {
@@ -269,6 +269,13 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
       <BulkActionBar
         count={selectedIds.size}
         isLoading={bulkStatusMutation.isPending || bulkDeleteMutation.isPending}
+        loadingAction={
+          bulkDeleteMutation.isPending
+            ? 'delete'
+            : bulkStatusMutation.isPending
+              ? bulkStatusMutation.variables?.newStatus ?? null
+              : null
+        }
         onMarkInProgress={() => bulkStatusMutation.mutate({ ids: [...selectedIds], newStatus: 'in_progress' })}
         onMarkCompleted={() => bulkStatusMutation.mutate({ ids: [...selectedIds], newStatus: 'completed' })}
         onDeleteSelected={() => setConfirmDelete({ mode: 'bulk', ids: [...selectedIds] })}

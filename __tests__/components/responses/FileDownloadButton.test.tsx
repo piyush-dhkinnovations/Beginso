@@ -117,6 +117,27 @@ describe('FileDownloadButton', () => {
     expect(mockToast).toHaveBeenCalledWith('Untrusted file path', 'error');
   });
 
+  it('disables both actions after the backend reports that the file is missing', async () => {
+    const user = userEvent.setup();
+    mockGetFileBlobUrl.mockRejectedValue({
+      isAxiosError: true,
+      message: 'Request failed with status code 404',
+      response: {
+        status: 404,
+        data: new Blob([JSON.stringify({ message: 'File no longer available.' })], {
+          type: 'application/json',
+        }),
+      },
+    });
+    render(<FileDownloadButton {...baseProps} />);
+
+    await user.click(screen.getByRole('button', { name: 'Preview resume.pdf' }));
+
+    expect(screen.getByRole('button', { name: 'Preview resume.pdf' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Download resume.pdf' })).toBeDisabled();
+    expect(screen.getByText('resume.pdf').closest('[title="File no longer available"]')).toBeInTheDocument();
+  });
+
   it('has aria-labels matching the originalName for both actions', () => {
     render(<FileDownloadButton {...baseProps} originalName="contract.docx" />);
     expect(screen.getByRole('button', { name: 'Preview contract.docx' })).toBeInTheDocument();

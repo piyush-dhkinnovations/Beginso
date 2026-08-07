@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { authService } from '@/services/auth';
-import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -22,14 +21,11 @@ export default function ForgotPasswordPage() {
     try {
       await authService.requestPasswordReset(email.trim());
       setSent(true);
-    } catch (requestError) {
-      const code = (requestError as { code?: string })?.code ?? '';
-      if (code === 'auth/network-request-failed') {
-        setError(getFriendlyErrorMessage(requestError));
-      } else {
-        // Never reveal whether an address is registered.
-        setSent(true);
-      }
+    } catch {
+      // Keep the message independent of account existence while remaining honest about an
+      // unavailable mail service. The backend itself always returns the same 202 for known and
+      // unknown addresses.
+      setError('We could not send the reset email right now. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

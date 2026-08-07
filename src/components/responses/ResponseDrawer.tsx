@@ -114,6 +114,7 @@ export function ResponseDrawer({ responseId, formId, onClose }: ResponseDrawerPr
   // Close on Escape; trap Tab/Shift+Tab focus within the drawer — same pattern as Modal.tsx.
   useEffect(() => {
     if (!responseId) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const focusableSelector =
       'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
     const getFocusable = () =>
@@ -140,7 +141,10 @@ export function ResponseDrawer({ responseId, formId, onClose }: ResponseDrawerPr
       }
     };
     document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
+    return () => {
+      document.removeEventListener('keydown', handler);
+      previouslyFocused?.focus();
+    };
   }, [responseId, onClose]);
 
   const { data: response, error: responseError, isError, isFetching, isLoading, refetch } = useQuery({
@@ -302,9 +306,13 @@ export function ResponseDrawer({ responseId, formId, onClose }: ResponseDrawerPr
               <div className="flex flex-col gap-2">
                 <h3 className="text-heading-3 font-semibold text-neutral-800">Submitted Answers</h3>
                 <div className="flex flex-col p-4 bg-white border border-neutral-200 rounded-lg">
-                  {Object.entries(response.answers).map(([label, value]) => (
-                    <AnswerBlock key={label} label={label} value={value} />
-                  ))}
+                  {Object.keys(response.answers).length === 0 ? (
+                    <p className="py-2 text-body-sm text-neutral-500">No submitted answers.</p>
+                  ) : (
+                    Object.entries(response.answers).map(([label, value]) => (
+                      <AnswerBlock key={label} label={label} value={value} />
+                    ))
+                  )}
                 </div>
               </div>
             </div>
