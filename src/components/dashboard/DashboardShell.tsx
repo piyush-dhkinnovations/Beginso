@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { TopNav } from '@/components/dashboard/TopNav';
 import { Sidebar } from '@/components/dashboard/Sidebar';
+import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
 // DashboardShell is a client component that manages the interactive sidebar/topnav shell.
@@ -13,12 +15,19 @@ import { cn } from '@/lib/utils';
 // itself after mount and caused a visible expanded-then-collapsed flash on reload.
 export function DashboardShell({ children, initialCollapsed }: { children: React.ReactNode; initialCollapsed: boolean }) {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
+  const { isLoading: authLoading, isAuthenticated } = useAuth();
 
   const handleToggleCollapse = () => {
     const newState = !collapsed;
     setCollapsed(newState);
     document.cookie = `sidebar_collapsed=${newState}; path=/; max-age=31536000; SameSite=Lax`;
   };
+
+  // Proxy is the server-side boundary; this client guard prevents a cached shell
+  // from remaining visible during logout or while a failed session redirects.
+  if (authLoading || !isAuthenticated) {
+    return <LoadingSpinner variant="overlay" />;
+  }
 
   return (
     <div className="dashboard-shell flex flex-col min-h-screen bg-white">

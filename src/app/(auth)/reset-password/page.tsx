@@ -25,10 +25,12 @@ export default function ResetPasswordPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isValid },
   } = useForm<ResetPasswordFormValues>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: { password: '', confirmPassword: '' },
+    mode: 'onChange',
+    reValidateMode: 'onChange',
   });
 
   useEffect(() => {
@@ -106,7 +108,7 @@ export default function ResetPasswordPage() {
         </div>
         <Link
           href="/login"
-          className="inline-flex min-h-11 w-full items-center justify-center rounded-md bg-slate-700 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-slate-900"
+          className="inline-flex min-h-11 w-full items-center justify-center text-sm rounded-md bg-slate-700 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-slate-900"
         >
           Back to login
         </Link>
@@ -160,7 +162,7 @@ export default function ResetPasswordPage() {
           </p>
         )}
 
-        <Button type="submit" className="mt-1 w-full" isLoading={isSubmitting} disabled={isSubmitting}>
+        <Button type="submit" className="mt-1 w-full" isLoading={isSubmitting} disabled={isSubmitting || !isValid}>
           Update password
         </Button>
       </form>

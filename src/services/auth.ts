@@ -19,14 +19,27 @@ export interface VerificationCodeReveal {
   expiresAt: string;
 }
 
+let authPreparation: Promise<void> | null = null;
+
 async function prepareFirebaseAuth(): Promise<void> {
   // A Firebase refresh token must not survive a closed browser. Beginso's durable
   // authentication is the same-origin HttpOnly backend cookie, not Firebase storage.
-  await setPersistence(auth, browserSessionPersistence);
+  if (!authPreparation) {
+    authPreparation = setPersistence(auth, browserSessionPersistence).catch((error) => {
+      authPreparation = null;
+      throw error;
+    });
+  }
+  await authPreparation;
 }
 
-async function createBackendSession(user: User, name?: string, isNewUser?: boolean) {
-  const idToken = await user.getIdToken();
+async function createBackendSession(
+  user: User,
+  name?: string,
+  isNewUser?: boolean,
+  verifiedIdToken?: string
+) {
+  const idToken = verifiedIdToken ?? await user.getIdToken();
   const { data } = await axiosInstance.post(
     '/api/auth/session',
     { token: idToken, ...(name ? { name } : {}), ...(isNewUser === undefined ? {} : { isNewUser }) },
@@ -44,6 +57,10 @@ async function requestVerificationOtp(user: User): Promise<void> {
 }
 
 export const authService = {
+  async prepareFirebase() {
+    await prepareFirebaseAuth();
+  },
+
   async signup(name: string, email: string, password: string) {
     await prepareFirebaseAuth();
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -116,7 +133,7 @@ export const authService = {
     const token = await user.getIdToken();
     await axiosInstance.post('/api/auth/email-verification/verify', { token, code });
     await reload(user);
-    await user.getIdToken(true);
-    return createBackendSession(user, user.displayName || undefined);
+    const verifiedToken = await user.getIdToken(true);
+    return createBackendSession(user, user.displayName || undefined, undefined, verifiedToken);
   },
 };

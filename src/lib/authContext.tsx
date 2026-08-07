@@ -69,6 +69,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
+    // Start Firebase's local persistence setup while the user is reading/typing on
+    // an auth page. Login/signup still await the same cached promise, but the work
+    // is normally complete before the user selects the submit button.
+    void authService.prepareFirebase().catch(() => { });
+
     const initAuth = async () => {
       dispatch({ type: 'SET_LOADING', payload: true });
       try {
@@ -130,8 +135,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(async () => {
     await Promise.allSettled([authService.logout(), signOut(auth)]);
     dispatch({ type: 'LOGOUT' });
-    router.push('/login');
-  }, [router]);
+    // A soft Router transition can retain the protected dashboard shell from the
+    // client cache even after the HttpOnly cookie is deleted. Replace the document
+    // so Proxy performs a fresh session check, and remove this dashboard entry from
+    // browser history so Back cannot reveal its stale UI after logout.
+    window.location.replace('/login');
+  }, []);
 
   return (
     <AuthContext.Provider value={{ ...state, login, logout }}>
