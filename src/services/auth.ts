@@ -14,6 +14,11 @@ import {
 } from 'firebase/auth';
 import axiosInstance from '@/lib/axios';
 
+export interface VerificationCodeReveal {
+  code: string;
+  expiresAt: string;
+}
+
 async function prepareFirebaseAuth(): Promise<void> {
   // A Firebase refresh token must not survive a closed browser. Beginso's durable
   // authentication is the same-origin HttpOnly backend cookie, not Firebase storage.
@@ -51,6 +56,10 @@ export const authService = {
     await prepareFirebaseAuth();
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     if (!userCredential.user.emailVerified) {
+      // Logging in is a valid entry point to the verification flow. Request a fresh
+      // Beginso email before redirecting so the user does not land on the code page
+      // with Resend as the only way to receive mail.
+      await requestVerificationOtp(userCredential.user);
       const error = new Error('Verify your email before signing in.') as Error & { code: string };
       error.code = 'auth/email-not-verified';
       throw error;
@@ -88,6 +97,17 @@ export const authService = {
     const user = auth.currentUser;
     if (!user) throw new Error('Sign in again before requesting another verification email.');
     await requestVerificationOtp(user);
+  },
+
+  async revealVerificationCode(ticket: string): Promise<VerificationCodeReveal> {
+    const { data } = await axiosInstance.post<VerificationCodeReveal>(
+      '/api/auth/email-verification/reveal',
+      { ticket }
+    );
+    if (!/^\d{6}$/.test(data.code) || Number.isNaN(Date.parse(data.expiresAt))) {
+      throw new Error('The verification service returned an invalid response.');
+    }
+    return data;
   },
 
   async verifyEmailOtp(code: string) {

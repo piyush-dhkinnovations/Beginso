@@ -7,6 +7,7 @@ const PUBLIC_AUTH_PATHS = new Set([
   SESSION_PATH,
   LOGOUT_PATH,
   'api/auth/email-verification',
+  'api/auth/email-verification/reveal',
   'api/auth/email-verification/verify',
   'api/auth/forgot-password',
 ]);

@@ -93,7 +93,7 @@ export default function VerifyEmailPage() {
         </p>
         {email && (
           <p className="text-body-sm text-neutral-500">
-            The email shows your code and includes a button back to this page. For security, the code is never placed in the link.
+            Open your verification email, select <strong>View verification code</strong>, then enter the six-digit code shown on the Beginso page.
           </p>
         )}
       </div>
@@ -145,7 +145,7 @@ export default function VerifyEmailPage() {
         </div>
       )}
 
-      <Link href="/login" className="inline-flex min-h-11 items-center font-semibold text-brand-700 hover:text-brand-900">
+      <Link href="/login" className="inline-flex min-h-11 items-center font-semibold text-sm text-brand-700 hover:text-brand-900">
         Back to login
       </Link>
     </Card>

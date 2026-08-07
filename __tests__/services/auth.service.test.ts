@@ -116,17 +116,28 @@ describe('Auth Service', () => {
       expect(result).toEqual(mockSessionData);
     });
 
-    it('does not create a backend session for an unverified password user', async () => {
+    it('requests a verification email and does not create a session for an unverified password user', async () => {
       const { signInWithEmailAndPassword } = await import('firebase/auth');
+      const getIdToken = vi.fn().mockResolvedValueOnce('pending.id.token');
       (signInWithEmailAndPassword as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
-        user: { emailVerified: false },
+        user: { emailVerified: false, getIdToken },
       });
+      mockPost.mockResolvedValueOnce({ status: 202 });
 
       const { authService } = await import('@/services/auth');
       await expect(authService.login('test@test.com', 'password123')).rejects.toMatchObject({
         code: 'auth/email-not-verified',
       });
-      expect(mockPost).not.toHaveBeenCalled();
+      expect(getIdToken).toHaveBeenCalledOnce();
+      expect(mockPost).toHaveBeenCalledOnce();
+      expect(mockPost).toHaveBeenCalledWith('/api/auth/email-verification', {
+        token: 'pending.id.token',
+      });
+      expect(mockPost).not.toHaveBeenCalledWith(
+        '/api/auth/session',
+        expect.anything(),
+        expect.anything()
+      );
     });
   });
 
@@ -217,6 +228,30 @@ describe('Auth Service', () => {
 
       expect(mockPost).toHaveBeenCalledWith('/api/auth/email-verification', { token: 'firebase.id.token' });
       (auth as { currentUser: unknown }).currentUser = null;
+    });
+
+    it('reveals and validates a six-digit verification code through the backend', async () => {
+      mockPost.mockResolvedValueOnce({
+        data: { code: '482175', expiresAt: '2026-08-07T15:40:00.000Z' },
+      });
+
+      const { authService } = await import('@/services/auth');
+      await expect(authService.revealVerificationCode('opaque-ticket')).resolves.toEqual({
+        code: '482175',
+        expiresAt: '2026-08-07T15:40:00.000Z',
+      });
+      expect(mockPost).toHaveBeenCalledWith('/api/auth/email-verification/reveal', {
+        ticket: 'opaque-ticket',
+      });
+    });
+
+    it('rejects a malformed verification-code response', async () => {
+      mockPost.mockResolvedValueOnce({ data: { code: '123', expiresAt: 'not-a-date' } });
+
+      const { authService } = await import('@/services/auth');
+      await expect(authService.revealVerificationCode('opaque-ticket')).rejects.toThrow(
+        'invalid response'
+      );
     });
 
     it('verifies the OTP, refreshes the Firebase token, and then creates the session', async () => {
