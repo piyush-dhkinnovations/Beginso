@@ -11,6 +11,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 
+const mockUseAuth = vi.fn();
+
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => mockUseAuth(),
+}));
+
 vi.mock('@/components/dashboard/TopNav', () => ({
   TopNav: () => <div data-testid="top-nav" />,
 }));
@@ -34,11 +40,18 @@ vi.mock('@/components/dashboard/Sidebar', () => ({
 describe('DashboardShell component', () => {
   beforeEach(() => {
     document.cookie = 'sidebar_collapsed=; path=/; max-age=0';
+    mockUseAuth.mockReturnValue({ isLoading: false, isAuthenticated: true });
   });
 
-  it('renders children in the main content area', () => {
-    render(<DashboardShell initialCollapsed={false}>{'page content'}</DashboardShell>);
+  it('renders children only while the user is authenticated', () => {
+    const { unmount } = render(<DashboardShell initialCollapsed={false}>{'page content'}</DashboardShell>);
     expect(screen.getByText('page content')).toBeInTheDocument();
+
+    unmount();
+    mockUseAuth.mockReturnValue({ isLoading: false, isAuthenticated: false });
+    render(<DashboardShell initialCollapsed={false}>{'protected content'}</DashboardShell>);
+    expect(screen.queryByText('protected content')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('Loading...');
   });
 
   it('respects the server-provided initialCollapsed state', () => {

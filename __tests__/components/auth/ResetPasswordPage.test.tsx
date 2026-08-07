@@ -42,10 +42,16 @@ describe('ResetPasswordPage', () => {
 
     fireEvent.change(screen.getByLabelText('New password'), { target: { value: 'StrongPass1!' } });
     fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'DifferentPass1!' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Update password' }));
 
     expect(await screen.findByText('Passwords do not match')).toBeInTheDocument();
+    expect(screen.getByLabelText('Confirm new password')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('button', { name: 'Update password' })).toBeDisabled();
     expect(mockConfirmReset).not.toHaveBeenCalled();
+
+    fireEvent.change(screen.getByLabelText('Confirm new password'), { target: { value: 'StrongPass1!' } });
+    await waitFor(() => expect(screen.queryByText('Passwords do not match')).not.toBeInTheDocument());
+    expect(screen.getByLabelText('Confirm new password')).toHaveAttribute('aria-invalid', 'false');
+    expect(screen.getByRole('button', { name: 'Update password' })).toBeEnabled();
   });
 
   it('rejects a missing or invalid action code', async () => {

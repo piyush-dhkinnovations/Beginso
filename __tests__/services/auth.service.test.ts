@@ -76,8 +76,11 @@ describe('Auth Service', () => {
       mockPost.mockResolvedValueOnce({ status: 202 });
 
       const { authService } = await import('@/services/auth');
+      await authService.prepareFirebase();
+      await authService.prepareFirebase();
       const result = await authService.signup('Test User', 'test@test.com', 'password123');
 
+      expect(setPersistence).toHaveBeenCalledOnce();
       expect(createUserWithEmailAndPassword).toHaveBeenCalledWith(expect.anything(), 'test@test.com', 'password123');
       expect(updateProfile).toHaveBeenCalledWith(user, { displayName: 'Test User' });
       expect(mockPost).toHaveBeenCalledOnce();
@@ -277,6 +280,7 @@ describe('Auth Service', () => {
       });
       expect(reload).toHaveBeenCalledWith(user);
       expect(user.getIdToken).toHaveBeenCalledWith(true);
+      expect(user.getIdToken).toHaveBeenCalledTimes(2);
       expect(mockPost).toHaveBeenNthCalledWith(
         2,
         '/api/auth/session',

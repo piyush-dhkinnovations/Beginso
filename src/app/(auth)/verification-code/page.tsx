@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { AlertCircle, CheckCircle2, Copy, KeyRound } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Copy } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { authService, type VerificationCodeReveal } from '@/services/auth';
 import { Button } from '@/components/ui/Button';
@@ -155,13 +155,6 @@ export default function VerificationCodePage() {
           <Copy size={16} aria-hidden="true" />
           Copy code
         </Button>
-        <Link
-          href="/verify-email"
-          className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-md border border-neutral-300 bg-white px-4 text-[13px] font-semibold text-neutral-900 hover:bg-neutral-50"
-        >
-          <KeyRound size={16} aria-hidden="true" />
-          Enter code
-        </Link>
       </div>
 
       <p aria-live="polite" className="min-h-5 text-body-sm font-medium text-neutral-600">{copyMessage}</p>

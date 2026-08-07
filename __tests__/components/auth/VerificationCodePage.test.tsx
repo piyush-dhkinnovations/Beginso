@@ -27,7 +27,7 @@ describe('VerificationCodePage', () => {
     render(<VerificationCodePage />);
 
     expect(await screen.findByRole('status', { name: 'Verification code 4 8 2 1 7 5' })).toHaveTextContent('482 175');
-    expect(screen.getByRole('link', { name: 'Enter code' })).toHaveAttribute('href', '/verify-email');
+    expect(screen.queryByRole('link', { name: 'Enter code' })).not.toBeInTheDocument();
     expect(mockRevealVerificationCode).toHaveBeenCalledOnce();
     expect(localStorage.setItem).not.toHaveBeenCalled();
   });
