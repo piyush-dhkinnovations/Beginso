@@ -53,7 +53,7 @@ describe('response-file server proxy', () => {
     expect(fileUrl.searchParams.has('access_token')).toBe(false);
     expect(fileUrl.origin).toBe('https://backend.example');
     expect(fileUrl.search).toBe('');
-    expect(new Headers(init.headers).get('authorization')).toBe('Bearer file-scoped-token');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer server-only.jwt');
     expect(new Headers(init.headers).get('x-access-token')).toBe('file-scoped-token');
     expect(init.redirect).toBe('manual');
     expect((mockFetch.mock.calls[0][1] as RequestInit).redirect).toBe('manual');
@@ -76,7 +76,7 @@ describe('response-file server proxy', () => {
     const [fileUrl, init] = mockFetch.mock.calls[1] as [URL, RequestInit];
 
     expect(fileUrl.search).toBe('');
-    expect(new Headers(init.headers).get('authorization')).toBe('Bearer scoped-fallback');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer server-only.jwt');
     expect(new Headers(init.headers).get('x-access-token')).toBe('scoped-fallback');
   });
 
@@ -146,5 +146,43 @@ describe('response-file server proxy', () => {
 
     expect((mockFetch.mock.calls[1][1] as RequestInit).redirect).toBe('manual');
     expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
+  it('identifies a metadata authorization failure without caching it', async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response(JSON.stringify({ success: false, message: 'Metadata forbidden' }), {
+        status: 403,
+        headers: { 'content-type': 'application/json' },
+      })
+    );
+
+    const response = await GET(authenticatedRequest(), context);
+
+    expect(response.status).toBe(403);
+    expect(response.headers.get('x-file-proxy-stage')).toBe('metadata');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(mockFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('identifies a private-storage authorization failure without caching it', async () => {
+    mockFetch
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ url: 'https://backend.example/api/upload/file/document.pdf' }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        })
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ success: false, message: 'Storage forbidden' }), {
+          status: 403,
+          headers: { 'content-type': 'application/json' },
+        })
+      );
+
+    const response = await GET(authenticatedRequest(), context);
+
+    expect(response.status).toBe(403);
+    expect(response.headers.get('x-file-proxy-stage')).toBe('storage');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
   });
 });
