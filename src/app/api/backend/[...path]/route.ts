@@ -90,6 +90,15 @@ async function forward(request: NextRequest, pathParts: string[]): Promise<NextR
   if (accept) headers.set('accept', accept);
   if (sessionToken) headers.set('authorization', `Bearer ${sessionToken}`);
 
+  // This route runs server-side (Node fetch on Vercel), so without these the backend sees
+  // Vercel's outbound AWS IP and User-Agent "node" instead of the real visitor's — see backend's
+  // 8fc966a fix notes. x-forwarded-for's first hop is the original client, set by Vercel's edge
+  // before this function runs.
+  const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip');
+  const clientUserAgent = request.headers.get('user-agent');
+  if (clientIp) headers.set('x-client-ip', clientIp);
+  if (clientUserAgent) headers.set('x-client-user-agent', clientUserAgent);
+
   const hasBody = !['GET', 'HEAD'].includes(request.method);
   const body = hasBody ? await request.arrayBuffer() : undefined;
 
