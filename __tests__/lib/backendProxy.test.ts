@@ -65,6 +65,25 @@ describe('backend BFF proxy', () => {
     expect(new Headers(init.headers).get('authorization')).toBe('Bearer server-only.jwt');
   });
 
+  it('forwards the real client IP and User-Agent, not this server\'s own', async () => {
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ forms: [] }), { status: 200 }));
+    const request = new NextRequest('http://localhost:3000/api/backend/api/forms', {
+      headers: {
+        'x-forwarded-for': '203.0.113.5, 44.212.71.198',
+        'user-agent': 'Mozilla/5.0 (real browser)',
+      },
+    });
+    request.cookies.set(SESSION_COOKIE_NAME, 'server-only.jwt');
+
+    await GET(request, context(['api', 'forms']));
+    const [, init] = mockFetch.mock.calls[0] as [URL, RequestInit];
+    const forwardedHeaders = new Headers(init.headers);
+
+    // First hop of x-forwarded-for is the original client; later hops are intermediate proxies.
+    expect(forwardedHeaders.get('x-client-ip')).toBe('203.0.113.5');
+    expect(forwardedHeaders.get('x-client-user-agent')).toBe('Mozilla/5.0 (real browser)');
+  });
+
   it('rejects protected calls without a session before contacting the backend', async () => {
     const request = new NextRequest('http://localhost:3000/api/backend/api/forms');
 
