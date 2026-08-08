@@ -46,7 +46,13 @@ export async function GET(
     console.error(
       `[file-proxy] metadata fetch failed responseId=${responseId} fileId=${fileId} status=${metaRes.status} body=${metaText.slice(0, 500)}`
     );
-    return NextResponse.json(metaBody, { status: metaRes.ok ? 502 : metaRes.status });
+    return NextResponse.json(metaBody, {
+      status: metaRes.ok ? 502 : metaRes.status,
+      headers: {
+        'Cache-Control': 'private, no-store',
+        'X-File-Proxy-Stage': 'metadata',
+      },
+    });
   }
 
   let returnedFileUrl: URL;
@@ -60,9 +66,10 @@ export async function GET(
   }
 
   // Some deployed backend versions return a file-scoped credential in the legacy URL. Never
-  // retain it in the URL (query credentials leak through logs/history/referrers), but preserve
-  // its authorization semantics by moving it to the backend's supported X-Access-Token header.
-  // The value is only forwarded to the fixed, allowlisted backend file path below.
+  // retain it in the URL (query credentials leak through logs/history/referrers). The current
+  // backend contract authorizes private files with the standard Beginso session token, so keep
+  // that token in Authorization. Forward a legacy scoped credential only through the optional
+  // X-Access-Token compatibility header; it must never replace the user's session identity.
   const fileAccessToken =
     returnedFileUrl.searchParams.get('token') ?? returnedFileUrl.searchParams.get('access_token');
 
@@ -73,7 +80,7 @@ export async function GET(
 
   const fileRes = await fetch(fileUrl, {
     headers: {
-      Authorization: `Bearer ${fileAccessToken ?? sessionToken}`,
+      Authorization: `Bearer ${sessionToken}`,
       ...(fileAccessToken ? { 'X-Access-Token': fileAccessToken } : {}),
     },
     cache: 'no-store',
@@ -94,7 +101,13 @@ export async function GET(
     console.error(
       `[file-proxy] file fetch failed responseId=${responseId} fileId=${fileId} url=${fileUrl.toString()} status=${fileRes.status} body=${fileErrorText.slice(0, 500)}`
     );
-    return NextResponse.json(fileErrorBody, { status: fileRes.status || 502 });
+    return NextResponse.json(fileErrorBody, {
+      status: fileRes.status || 502,
+      headers: {
+        'Cache-Control': 'private, no-store',
+        'X-File-Proxy-Stage': 'storage',
+      },
+    });
   }
 
   return new NextResponse(fileRes.body, {

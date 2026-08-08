@@ -9,3 +9,8 @@ export const responseKeys = {
   detail: (id: string) => ['response', id] as const,
   stats: (formId?: string) => ['responses', formId ?? 'all', 'stats'] as const,
 };
+
+export const dashboardKeys = {
+  all: ['dashboard'] as const,
+  analytics: () => [...dashboardKeys.all, 'analytics'] as const,
+};
