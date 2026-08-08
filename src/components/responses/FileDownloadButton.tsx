@@ -78,9 +78,12 @@ export function FileDownloadButton({
         }
       }
       if (isAxiosError(err)) {
-        console.error(
+        const proxyStage = err.response?.headers?.['x-file-proxy-stage'] ?? 'request';
+        console.warn(
           `File ${action} failed:`,
-          err.response ? `${err.response.status} ${JSON.stringify(err.response.data)}` : `network/CORS error — ${err.message}`
+          err.response
+            ? `${err.response.status} at ${proxyStage}: ${serverMessage ?? err.message}`
+            : `network/CORS error — ${err.message}`
         );
       }
       const fallback = action === 'preview' ? 'Failed to open file. Please try again.' : 'Failed to download file. Please try again.';

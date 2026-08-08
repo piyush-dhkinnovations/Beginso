@@ -10,7 +10,7 @@ interface StatisticsCardsProps {
     totalForms: number;
     totalResponses: number;
     publishedForms: number;
-    responsesThisMonth: number | null;
+    responsesThisMonth: number;
   };
 }
 
@@ -20,7 +20,7 @@ export function StatisticsCards({
     totalForms: 0,
     totalResponses: 0,
     publishedForms: 0,
-    responsesThisMonth: null
+    responsesThisMonth: 0
   }
 }: StatisticsCardsProps) {
   const cards = [
@@ -71,10 +71,9 @@ export function StatisticsCards({
             ) : (
               <div>
                 <span
-                  className={`text-display font-bold leading-none ${card.value === null || card.value === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}
-                  title={card.value === null ? 'Requires the planned date-scoped analytics endpoint' : undefined}
+                  className={`text-display font-bold leading-none ${card.value === 0 ? 'text-neutral-400' : 'text-neutral-900'}`}
                 >
-                  {card.value ?? '—'}
+                  {card.value}
                 </span>
               </div>
             )}
