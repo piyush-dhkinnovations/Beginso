@@ -15,6 +15,14 @@ class MockIntersectionObserver {
 }
 vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
 
+// --- ResizeObserver mock (required for EChartContainer) ---
+class MockResizeObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+vi.stubGlobal('ResizeObserver', MockResizeObserver);
+
 // --- localStorage mock ---
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
