@@ -104,6 +104,7 @@ export function SignupForm() {
     <button
       type="button"
       onClick={toggleConfirmPasswordVisibility}
+      
       className="text-neutral-400 hover:text-neutral-600 focus:outline-none flex items-center justify-center min-w-[44px] min-h-[44px]"
       aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
     >
