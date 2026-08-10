@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, CheckCircle2, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
+import { authService } from '@/services/auth';
 import { resetPasswordSchema, type ResetPasswordFormValues } from '@/lib/schemas/resetPasswordSchema';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -19,6 +20,7 @@ export default function ResetPasswordPage() {
   const [oobCode, setOobCode] = useState('');
   const [email, setEmail] = useState('');
   const [serverError, setServerError] = useState<string | null>(null);
+  const [notificationWarning, setNotificationWarning] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -51,12 +53,24 @@ export default function ResetPasswordPage() {
 
   const submit = async ({ password }: ResetPasswordFormValues) => {
     setServerError(null);
+    setNotificationWarning(null);
     try {
       await confirmPasswordReset(auth, oobCode, password);
-      setResetState('success');
     } catch {
       setServerError('This password-reset link is invalid or has expired. Request a new link and try again.');
+      return;
     }
+
+    try {
+      await authService.notifyPasswordResetCompleted(email);
+    } catch {
+      // The Firebase password update cannot be rolled back. Keep its successful state
+      // accurate and report only the secondary security-email delivery failure.
+      setNotificationWarning(
+        'Your password was updated, but we could not send the confirmation email. You can still log in with your new password.'
+      );
+    }
+    setResetState('success');
   };
 
   const visibilityButton = (visible: boolean, toggle: () => void, label: string) => (
@@ -106,6 +120,11 @@ export default function ResetPasswordPage() {
           <h1 className="text-heading-2 font-bold text-neutral-900">Password updated</h1>
           <p className="text-body text-neutral-600">Your password was changed successfully. You can now log in.</p>
         </div>
+        {notificationWarning && (
+          <p role="alert" className="rounded-md border border-amber-200 bg-amber-50 p-3 text-body-sm text-amber-900">
+            {notificationWarning}
+          </p>
+        )}
         <Link
           href="/login"
           className="inline-flex min-h-11 w-full items-center justify-center text-sm rounded-md bg-slate-700 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-slate-900"

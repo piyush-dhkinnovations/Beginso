@@ -10,6 +10,7 @@ const PUBLIC_AUTH_PATHS = new Set([
   'api/auth/email-verification/reveal',
   'api/auth/email-verification/verify',
   'api/auth/forgot-password',
+  'api/auth/confirm-password-reset',
 ]);
 const ALLOWED_API_ROOTS = new Set([
   'auth',
