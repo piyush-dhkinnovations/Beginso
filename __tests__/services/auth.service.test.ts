@@ -220,6 +220,16 @@ describe('Auth Service', () => {
       expect(mockPost).toHaveBeenCalledWith('/api/auth/forgot-password', { email: 'test@test.com' });
     });
 
+    it('notifies the Beginso backend after Firebase completes a password reset', async () => {
+      mockPost.mockResolvedValueOnce({ status: 200 });
+      const { authService } = await import('@/services/auth');
+      await authService.notifyPasswordResetCompleted('  test@test.com  ');
+
+      expect(mockPost).toHaveBeenCalledWith('/api/auth/confirm-password-reset', {
+        email: 'test@test.com',
+      });
+    });
+
     it('asks the Beginso backend to resend an OTP for the pending Firebase user', async () => {
       const { auth } = await import('@/lib/firebase');
       const user = { email: 'test@test.com', getIdToken: vi.fn().mockResolvedValue('firebase.id.token') };

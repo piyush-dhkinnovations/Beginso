@@ -96,7 +96,12 @@ describe('backend BFF proxy', () => {
   it('allows the exact pre-session verification routes without a Beginso session', async () => {
     mockFetch.mockResolvedValue(new Response(JSON.stringify({ message: 'accepted' }), { status: 202 }));
 
-    for (const path of ['email-verification', 'email-verification/reveal', 'email-verification/verify']) {
+    for (const path of [
+      'email-verification',
+      'email-verification/reveal',
+      'email-verification/verify',
+      'confirm-password-reset',
+    ]) {
       const request = new NextRequest(`http://localhost:3000/api/backend/api/auth/${path}`, {
         method: 'POST',
         headers: { origin: 'http://localhost:3000', 'content-type': 'application/json' },
@@ -106,7 +111,7 @@ describe('backend BFF proxy', () => {
       expect(response.status).toBe(202);
     }
 
-    expect(mockFetch).toHaveBeenCalledTimes(3);
+    expect(mockFetch).toHaveBeenCalledTimes(4);
   });
 
   it('rejects non-allowlisted backend paths before forwarding credentials', async () => {

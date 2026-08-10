@@ -106,6 +106,10 @@ export const authService = {
     await axiosInstance.post('/api/auth/forgot-password', { email: email.trim() });
   },
 
+  async notifyPasswordResetCompleted(email: string) {
+    await axiosInstance.post('/api/auth/confirm-password-reset', { email: email.trim() });
+  },
+
   getPendingVerificationEmail() {
     return auth.currentUser?.email ?? null;
   },
