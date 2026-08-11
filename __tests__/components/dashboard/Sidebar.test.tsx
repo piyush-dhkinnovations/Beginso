@@ -77,6 +77,22 @@ describe('Sidebar component', () => {
     expect(responsesLink?.className).toContain('bg-brand-50');
   });
 
+  it('highlights Analytics when viewing a specific form\'s Auto-Dashboard', () => {
+    // Feature: sprint-5-analytics-reports, Requirement 1.5 — /forms/[id]/analytics isn't under
+    // /analytics, so the generic startsWith(href) check alone misses it.
+    mockPathname.mockReturnValue('/forms/abc123/analytics');
+    render(<Sidebar />);
+    const analyticsLink = screen.getByText('Analytics').closest('a');
+    expect(analyticsLink?.className).toContain('bg-brand-50');
+  });
+
+  it('does not highlight Analytics for an unrelated /forms/[id]/... route', () => {
+    mockPathname.mockReturnValue('/forms/abc123/responses');
+    render(<Sidebar />);
+    const analyticsLink = screen.getByText('Analytics').closest('a');
+    expect(analyticsLink?.className).not.toContain('bg-brand-50');
+  });
+
   it('calls onToggleCollapse when the collapse button is clicked', () => {
     const onToggleCollapse = vi.fn();
     render(<Sidebar collapsed={false} onToggleCollapse={onToggleCollapse} />);

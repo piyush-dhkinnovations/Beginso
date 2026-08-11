@@ -27,9 +27,9 @@ export function AnalyticsStatCards({ overview, isLoading, isError = false, onRet
 
   const cards = [
     { label: 'Total Responses', value: overview?.totalResponses ?? 0, icon: Inbox },
-    { label: 'Completed', value: overview?.statusCounts.completed ?? 0, icon: CheckCircle2 },
-    { label: 'In Progress', value: overview?.statusCounts.in_progress ?? 0, icon: Clock },
-    { label: 'New', value: overview?.statusCounts.new ?? 0, icon: Sparkles },
+    { label: 'Completed', value: overview?.statusCounts?.completed ?? 0, icon: CheckCircle2 },
+    { label: 'In Progress', value: overview?.statusCounts?.in_progress ?? 0, icon: Clock },
+    { label: 'New', value: overview?.statusCounts?.new ?? 0, icon: Sparkles },
   ];
 
   return (

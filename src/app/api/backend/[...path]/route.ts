@@ -14,8 +14,10 @@ const PUBLIC_AUTH_PATHS = new Set([
 ]);
 const ALLOWED_API_ROOTS = new Set([
   'auth',
+  'analytics',
   'dashboard',
   'forms',
+  'reports',
   'responses',
   'templates',
   'upload',

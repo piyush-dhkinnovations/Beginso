@@ -19,7 +19,7 @@ const META_ROW = 'flex items-center justify-between gap-3 py-2 border-b border-n
 const META_LABEL = 'flex items-center gap-1.5 shrink-0 text-caption text-neutral-500';
 
 export function MetadataSidebar({ response, onStatusChange, isUpdatingStatus }: MetadataSidebarProps) {
-  const ipHash = response.ipHash.slice(0, 16);
+  const ipHash = response.ipHash ? response.ipHash.slice(0, 16) : null;
 
   return (
     <aside className="w-full shrink-0 flex flex-col gap-4">
@@ -56,7 +56,7 @@ export function MetadataSidebar({ response, onStatusChange, isUpdatingStatus }: 
               Origin
             </span>
             <code title={ORIGIN_TOOLTIP} className="font-mono text-caption text-neutral-600 break-all text-right">
-              {ipHash}
+              {ipHash ?? '—'}
             </code>
           </div>
 

@@ -57,18 +57,31 @@ describe('StatusDistributionChart', () => {
     expect(segments.map((s: { value: number }) => s.value)).toEqual([42, 36, 50]);
 
     expect(screen.getByText('128')).toBeInTheDocument();
+    expect(screen.getByText('Total')).toBeInTheDocument();
   });
 
-  it('renders a Badge-based legend and a matching sr-only table, both carrying the status name as text', () => {
+  it('comma-formats a large center total (e.g. "1,284")', () => {
+    const overview = mockAnalyticsOverview({ totalResponses: 1284, statusCounts: { new: 184, in_progress: 326, completed: 774 } });
+    render(<StatusDistributionChart overview={overview} isLoading={false} />);
+
+    expect(screen.getByText('1,284')).toBeInTheDocument();
+  });
+
+  it('renders a legend with status name, count, and percentage, plus a matching sr-only table', () => {
     const overview = mockAnalyticsOverview({ totalResponses: 10, statusCounts: { new: 5, in_progress: 3, completed: 2 } });
     render(<StatusDistributionChart overview={overview} isLoading={false} />);
 
     expect(screen.getAllByText('New').length).toBeGreaterThan(0);
     expect(screen.getAllByText('In Progress').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Completed').length).toBeGreaterThan(0);
+    // Each percentage appears twice: once in the visible legend, once in the sr-only table.
+    expect(screen.getAllByText('50.0%').length).toBeGreaterThan(0); // New: 5/10
+    expect(screen.getAllByText('30.0%').length).toBeGreaterThan(0); // In Progress: 3/10
+    expect(screen.getAllByText('20.0%').length).toBeGreaterThan(0); // Completed: 2/10
 
     const table = document.querySelector('table.sr-only') as HTMLTableElement;
     expect(table.textContent).toContain('New');
     expect(table.textContent).toContain('5');
+    expect(table.textContent).toContain('50.0%');
   });
 });

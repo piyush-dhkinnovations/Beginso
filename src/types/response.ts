@@ -33,7 +33,8 @@ export interface IResponse {
   formId: string;
   answers: ResponseAnswers;
   status: ResponseStatus;
-  ipHash: string;             // SHA-256(rawIP), never the raw IP
+  ipHash?: string;            // SHA-256(rawIP), never the raw IP — absent when the backend
+                               // couldn't resolve a client IP for this submission
   submittedAt: string;        // ISO 8601
   createdAt: string;          // ISO 8601
   updatedAt: string;          // ISO 8601

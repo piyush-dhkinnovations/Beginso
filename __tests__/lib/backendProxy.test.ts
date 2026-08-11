@@ -114,6 +114,20 @@ describe('backend BFF proxy', () => {
     expect(mockFetch).toHaveBeenCalledTimes(4);
   });
 
+  it('allows the Sprint 5 analytics and reports roots (previously 404s before they were added)', async () => {
+    mockFetch.mockResolvedValue(new Response(JSON.stringify({}), { status: 200 }));
+
+    for (const pathParts of [['api', 'analytics', 'forms'], ['api', 'reports']]) {
+      const request = new NextRequest(`http://localhost:3000/api/backend/${pathParts.join('/')}`);
+      request.cookies.set(SESSION_COOKIE_NAME, 'server-only.jwt');
+
+      const response = await GET(request, context(pathParts));
+
+      expect(response.status).toBe(200);
+    }
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+  });
+
   it('rejects non-allowlisted backend paths before forwarding credentials', async () => {
     const request = new NextRequest('http://localhost:3000/api/backend/api/internal/secrets');
     request.cookies.set(SESSION_COOKIE_NAME, 'server-only.jwt');
