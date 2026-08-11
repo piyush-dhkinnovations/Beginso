@@ -20,7 +20,7 @@ import { formsService } from '@/services/forms';
 import { responsesService } from '@/services/responses';
 import { responseKeys } from '@/lib/queryKeys';
 import { clampResponsePage, normalizeResponsePage, normalizeResponseStatus, runSequentially } from '@/lib/responseList';
-import type { PaginatedResponsesResult, ResponseStatus } from '@/types/response';
+import type { IResponse, PaginatedResponsesResult, ResponseStatus } from '@/types/response';
 
 interface ConfirmDeleteState {
   mode: 'single' | 'bulk';
@@ -123,6 +123,34 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
   });
 
   const responses = data?.data ?? [];
+  const activeResponseIndex = responseId ? responses.findIndex((response) => response._id === responseId) : -1;
+  const activeResponsePosition = activeResponseIndex >= 0 ? (page - 1) * PAGE_LIMIT + activeResponseIndex + 1 : undefined;
+  const fileFieldLabels = (form?.fields ?? [])
+    .filter((field) => field.type === 'file_upload' && !field.deleted)
+    .sort((a, b) => a.order - b.order)
+    .map((field) => field.label);
+
+  async function navigateResponse(direction: 'previous' | 'next') {
+    if (activeResponseIndex < 0 || !data) return;
+
+    let targetPage = page;
+    let target: IResponse | undefined = responses[activeResponseIndex + (direction === 'previous' ? -1 : 1)];
+
+    if (!target) {
+      targetPage = page + (direction === 'previous' ? -1 : 1);
+      if (targetPage < 1 || targetPage > data.totalPages) return;
+      const adjacentPage = await responsesService.getResponses({
+        formId,
+        search: search || undefined,
+        status,
+        page: targetPage,
+        limit: PAGE_LIMIT,
+      });
+      target = direction === 'previous' ? adjacentPage.data.at(-1) : adjacentPage.data[0];
+    }
+
+    if (target) updateParams({ page: String(targetPage), responseId: target._id });
+  }
 
   useEffect(() => {
     if (!data) return;
@@ -239,7 +267,9 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
   const isDeleting = bulkDeleteMutation.isPending || singleDeleteMutation.isPending;
 
   return (
-    <div className="flex flex-col gap-4 max-w-6xl mx-auto animate-fade-in">
+    // Keeping this container out of an animated opacity stacking context is important:
+    // ResponseDrawer is position:fixed, and must be able to layer above the fixed TopNav.
+    <div className="flex flex-col gap-4 max-w-6xl mx-auto">
       <DashboardHeader
         title="Responses"
         subtitle={formId ? `Responses · ${form?.title ?? ''}` : 'Track, view, and organize submissions across every form.'}
@@ -335,7 +365,27 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
         </div>
       </Modal>
 
-      <ResponseDrawer responseId={responseId} formId={formId} onClose={closeResponse} />
+      <ResponseDrawer
+        responseId={responseId}
+        formId={formId}
+        formTitle={form?.title}
+        fileFieldLabels={fileFieldLabels}
+        position={activeResponsePosition}
+        totalResponses={data?.total}
+        hasPrevious={activeResponsePosition !== undefined && activeResponsePosition > 1}
+        hasNext={activeResponsePosition !== undefined && activeResponsePosition < (data?.total ?? 0)}
+        onPrevious={() => void navigateResponse('previous')}
+        onNext={() => void navigateResponse('next')}
+        onExpand={(response) => {
+          const returnTo = `${pathname}?${searchParams.toString()}`;
+          const fullPageParams = new URLSearchParams({
+            formId: response.formId,
+            returnTo,
+          });
+          router.push(`/responses/${response._id}?${fullPageParams.toString()}`);
+        }}
+        onClose={closeResponse}
+      />
     </div>
   );
 }

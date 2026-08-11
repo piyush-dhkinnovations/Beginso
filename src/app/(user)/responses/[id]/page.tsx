@@ -1,38 +1,49 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { responsesService } from '@/services/responses';
-import { responseKeys } from '@/lib/queryKeys';
+import { ResponseDrawer } from '@/components/responses/ResponseDrawer';
+import { formsService } from '@/services/forms';
 
-/**
- * Legacy standalone detail route — superseded by the ResponseDrawer on the Hub page
- * (`/forms/[id]/responses?responseId=`). Kept only to redirect old bookmarked/shared links
- * instead of 404ing them.
- */
-export default function LegacyResponseDetailRedirect() {
+/** Full-page response view opened from the expand action in ResponseDrawer. */
+export default function ResponseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const formIdFromQuery = searchParams.get('formId');
+  const formId = searchParams.get('formId') ?? undefined;
+  const returnTo = searchParams.get('returnTo');
 
-  const { data: response, isError } = useQuery({
-    queryKey: responseKeys.detail(id),
-    queryFn: () => responsesService.getResponseById(id),
-    enabled: !!id && !formIdFromQuery,
+  const { data: form } = useQuery({
+    queryKey: ['form', formId],
+    queryFn: () => formsService.getFormById(formId as string),
+    enabled: !!formId,
   });
 
-  const formId = formIdFromQuery ?? response?.formId;
+  const fileFieldLabels = (form?.fields ?? [])
+    .filter((field) => field.type === 'file_upload' && !field.deleted)
+    .sort((a, b) => a.order - b.order)
+    .map((field) => field.label);
 
-  useEffect(() => {
-    if (formId) router.replace(`/forms/${formId}/responses?responseId=${id}`);
-  }, [formId, id, router]);
+  const fallbackDrawerUrl = formId
+    ? `/forms/${formId}/responses?responseId=${id}`
+    : `/responses?responseId=${id}`;
+  const returnToParams = returnTo?.includes('?')
+    ? new URLSearchParams(returnTo.slice(returnTo.indexOf('?') + 1))
+    : null;
+  const isSafeDrawerUrl = !!returnTo
+    && (returnTo.startsWith('/responses?') || /^\/forms\/[^/]+\/responses\?/.test(returnTo))
+    && returnToParams?.get('responseId') === id;
+  const drawerUrl = isSafeDrawerUrl ? returnTo : fallbackDrawerUrl;
 
-  useEffect(() => {
-    if (isError) router.push('/forms');
-  }, [isError, router]);
-
-  return <LoadingSpinner variant="overlay" />;
+  return (
+    <ResponseDrawer
+      responseId={id}
+      formId={formId}
+      formTitle={form?.title}
+      fileFieldLabels={fileFieldLabels}
+      displayMode="page"
+      collapseHref={drawerUrl}
+      onClose={() => router.replace(drawerUrl)}
+    />
+  );
 }
