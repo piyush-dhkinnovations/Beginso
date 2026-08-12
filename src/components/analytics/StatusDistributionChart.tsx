@@ -3,7 +3,6 @@
 import { PieChart as PieChartIcon } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
 import { EChartContainer } from '@/components/charts/EChartContainer';
 import { getBaseChartOption, CHART_COLORS, type EChartsOption } from '@/lib/chartTheme';
@@ -92,24 +91,31 @@ export function StatusDistributionChart({ overview, isLoading, isError = false, 
   }
 
   const statusCounts = overview?.statusCounts ?? { new: 0, in_progress: 0, completed: 0 };
+  const percentOf = (count: number) => (total > 0 ? ((count / total) * 100).toFixed(1) : '0.0');
 
   return (
     <Card>
       <h3 className="text-heading-2 text-neutral-900 font-bold mb-4">Status Distribution</h3>
-      <div className="flex flex-col sm:flex-row items-center gap-6">
+      <div className="flex flex-col items-center gap-6">
         <div className="relative shrink-0" style={{ height: CHART_HEIGHT, width: CHART_HEIGHT }}>
           <EChartContainer option={buildDonutOption(statusCounts)} height={CHART_HEIGHT} ariaLabel="Response status distribution" />
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-display font-bold text-neutral-900">{total}</span>
-            <span className="text-caption text-neutral-500">Responses</span>
+            <span className="text-display font-bold text-neutral-900">{total.toLocaleString()}</span>
+            <span className="text-caption text-neutral-500">Total</span>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2.5 w-full">
           {SEGMENT_ORDER.map((status) => (
-            <div key={status} className="flex items-center gap-3">
-              <Badge variant={status}>{STATUS_LABELS[status]}</Badge>
-              <span className="text-body-sm text-neutral-600">{statusCounts[status]}</span>
+            <div key={status} className="flex items-center justify-between gap-6">
+              <span className="flex items-center gap-2">
+                <span aria-hidden="true" className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: SEGMENT_COLORS[status] }} />
+                <span className="text-body-sm font-medium text-neutral-700">{STATUS_LABELS[status]}</span>
+              </span>
+              <span className="flex items-center gap-3">
+                <span className="text-body-sm font-semibold text-neutral-900">{statusCounts[status].toLocaleString()}</span>
+                <span className="text-caption text-neutral-500 w-12 text-right">{percentOf(statusCounts[status])}%</span>
+              </span>
             </div>
           ))}
         </div>
@@ -121,6 +127,7 @@ export function StatusDistributionChart({ overview, isLoading, isError = false, 
           <tr>
             <th>Status</th>
             <th>Count</th>
+            <th>Percentage</th>
           </tr>
         </thead>
         <tbody>
@@ -128,6 +135,7 @@ export function StatusDistributionChart({ overview, isLoading, isError = false, 
             <tr key={status}>
               <td>{STATUS_LABELS[status]}</td>
               <td>{statusCounts[status]}</td>
+              <td>{percentOf(statusCounts[status])}%</td>
             </tr>
           ))}
         </tbody>

@@ -49,7 +49,7 @@ export interface AnalyticsFormSummary {
   title: string;
   status: 'draft' | 'published' | 'closed';
   totalResponses: number;
-  trend: number[]; // short recent-bucket series for the sparkline cell
+  completionRate: number; // 0-100
 }
 
 export interface AnalyticsFormsSummaryResult {

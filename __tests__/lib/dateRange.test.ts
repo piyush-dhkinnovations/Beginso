@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { resolveDateRangePreset, normalizeDateRange, resolveTrendBucket } from '@/lib/dateRange';
+import { resolveDateRangePreset, normalizeDateRange, resolveTrendBucket, resolvePreviousDateRange } from '@/lib/dateRange';
 
 describe('resolveDateRangePreset', () => {
   afterEach(() => {
@@ -78,5 +78,25 @@ describe('resolveTrendBucket', () => {
 
   it('returns "week" when the range is open-ended (All time preset)', () => {
     expect(resolveTrendBucket(undefined, undefined)).toBe('week');
+  });
+});
+
+describe('resolvePreviousDateRange', () => {
+  it('returns the immediately preceding, equal-length window', () => {
+    const result = resolvePreviousDateRange('2026-08-01T00:00:00.000Z', '2026-08-10T00:00:00.000Z');
+    expect(result.to).toBe('2026-07-31T23:59:59.999Z');
+    expect(result.from).toBe('2026-07-22T23:59:59.999Z');
+
+    const currentSpanMs = new Date('2026-08-10T00:00:00.000Z').getTime() - new Date('2026-08-01T00:00:00.000Z').getTime();
+    const previousSpanMs = new Date(result.to as string).getTime() - new Date(result.from as string).getTime();
+    expect(previousSpanMs).toBe(currentSpanMs);
+  });
+
+  it('returns undefined/undefined for an open-ended range (no previous period for "All time")', () => {
+    expect(resolvePreviousDateRange(undefined, undefined)).toEqual({ from: undefined, to: undefined });
+  });
+
+  it('returns undefined/undefined for unparseable input rather than throwing', () => {
+    expect(resolvePreviousDateRange('not-a-date', '2026-08-10T00:00:00.000Z')).toEqual({ from: undefined, to: undefined });
   });
 });

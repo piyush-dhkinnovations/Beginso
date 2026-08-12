@@ -34,6 +34,17 @@ describe('MetadataSidebar', () => {
     expect(code.tagName).toBe('CODE');
   });
 
+  it('renders a "—" fallback instead of crashing when ipHash is absent', () => {
+    // Real crash: the backend doesn't always resolve a client IP for a submission, so ipHash can
+    // be missing entirely rather than an empty string.
+    const response = mockResponseDetail();
+    delete response.ipHash;
+
+    render(<MetadataSidebar response={response} onStatusChange={vi.fn()} isUpdatingStatus={false} />);
+
+    expect(screen.getByText('—').tagName).toBe('CODE');
+  });
+
   it('renders the formatted submission date under Date', () => {
     render(<MetadataSidebar response={mockResponseDetail()} onStatusChange={vi.fn()} isUpdatingStatus={false} />);
     expect(screen.getByText(/03 Aug 2026/)).toBeInTheDocument();
