@@ -52,7 +52,8 @@ export function Sidebar({
   const isItemActive = (href: string) =>
     pathname === href ||
     pathname.startsWith(href + '/') ||
-    (href === '/responses' && /^\/forms\/[^/]+\/responses(\/|$)/.test(pathname));
+    (href === '/responses' && /^\/forms\/[^/]+\/responses(\/|$)/.test(pathname)) ||
+    (href === '/analytics' && /^\/forms\/[^/]+\/analytics(\/|$)/.test(pathname));
 
   const handleNavigation = (event: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     if (isInBuilder && dirty) {
@@ -144,12 +145,9 @@ export function Sidebar({
       {/* Navigation Links */}
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
-          // The Responses nav item also covers /forms/[id]/responses — a form's
-          // response table is reached from the Forms Manager, not from /responses.
-          const isActive =
-            pathname === item.href ||
-            pathname.startsWith(item.href + '/') ||
-            (item.href === '/responses' && /^\/forms\/[^/]+\/responses(\/|$)/.test(pathname));
+          // The Responses/Analytics nav items also cover /forms/[id]/responses and
+          // /forms/[id]/analytics — reached from the Forms Manager, not the sidebar link itself.
+          const isActive = isItemActive(item.href);
           const Icon = item.icon;
 
           return (

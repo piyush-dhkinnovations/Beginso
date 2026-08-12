@@ -314,6 +314,30 @@
   line-height: 1.4;
 }
 
+/* Thin scrollbar app-wide — the OS-default scrollbar in Chromium/Windows renders ~17px wide,
+   heavy next to this UI's compact spacing (drawers, tables, dropdowns, etc). `*` is required
+   because unlike `scrollbar-width`, `::-webkit-scrollbar` doesn't inherit from `html`/`body`. */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-neutral-200) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-neutral-200);
+    border-radius: 9999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-neutral-400);
+  }
+}
+
 /* Hero Background Pattern */
 .hero-bg {
   background-image: radial-gradient(circle, #E2E8F0 1px, transparent 1px);

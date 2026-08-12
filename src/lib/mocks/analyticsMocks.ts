@@ -61,11 +61,11 @@ export function mockQuestionBreakdown(overrides: Partial<QuestionBreakdown>[] = 
 
 export function mockFormsSummary(overrides: Partial<AnalyticsFormsSummaryResult> = {}): AnalyticsFormsSummaryResult {
   const forms: AnalyticsFormSummary[] = [
-    { _id: 'form-1', title: 'Customer Feedback Survey', status: 'published', totalResponses: 128, trend: [4, 9, 6, 14, 21] },
-    { _id: 'form-2', title: 'Event Registration', status: 'published', totalResponses: 76, trend: [2, 3, 5, 4, 8] },
-    { _id: 'form-3', title: 'Job Application Form', status: 'closed', totalResponses: 41, trend: [6, 6, 5, 3, 1] },
-    { _id: 'form-4', title: 'Product Waitlist', status: 'draft', totalResponses: 0, trend: [0, 0, 0, 0, 0] },
-    { _id: 'form-5', title: 'NPS Check-in', status: 'published', totalResponses: 19, trend: [1, 0, 4, 2, 3] },
+    { _id: 'form-1', title: 'Customer Feedback Survey', status: 'published', totalResponses: 128, completionRate: 82 },
+    { _id: 'form-2', title: 'Event Registration', status: 'published', totalResponses: 76, completionRate: 91 },
+    { _id: 'form-3', title: 'Job Application Form', status: 'closed', totalResponses: 41, completionRate: 76 },
+    { _id: 'form-4', title: 'Product Waitlist', status: 'draft', totalResponses: 0, completionRate: 0 },
+    { _id: 'form-5', title: 'NPS Check-in', status: 'published', totalResponses: 19, completionRate: 68 },
   ];
   return { forms, total: forms.length, page: 1, limit: 50, ...overrides };
 }

@@ -89,3 +89,25 @@ export function resolveEffectiveDateRange(from: string | null, to: string | null
   const resolvedTo = to ?? undefined;
   return { from: resolvedFrom, to: resolvedTo, preset: detectDateRangePreset(resolvedFrom, resolvedTo) };
 }
+
+/**
+ * The immediately preceding period of equal length, ending 1ms before the given range starts —
+ * what "vs previous period" comparisons (Workspace Analytics' Change column/summary card) diff
+ * against. An open-ended range (`from`/`to` both undefined, i.e. "All time") has no meaningful
+ * predecessor — comparing "all time" against "the period before all time" is nonsensical — so it
+ * returns `{ from: undefined, to: undefined }` too, which callers should treat as "not
+ * comparable" rather than as another "All time" range to query.
+ */
+export function resolvePreviousDateRange(from?: string, to?: string): { from?: string; to?: string } {
+  if (!from || !to) return { from: undefined, to: undefined };
+
+  const fromDate = new Date(from);
+  const toDate = new Date(to);
+  if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime())) return { from: undefined, to: undefined };
+
+  const spanMs = toDate.getTime() - fromDate.getTime();
+  const previousTo = new Date(fromDate.getTime() - 1);
+  const previousFrom = new Date(previousTo.getTime() - spanMs);
+
+  return { from: previousFrom.toISOString(), to: previousTo.toISOString() };
+}

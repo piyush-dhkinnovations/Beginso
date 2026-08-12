@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { ComponentProps } from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -43,11 +44,15 @@ const detail: ResponseDetail = {
   responseFiles: [],
 };
 
-function renderDrawer(responseId: string | null, onClose = vi.fn()) {
+function renderDrawer(
+  responseId: string | null,
+  onClose = vi.fn(),
+  drawerProps: Partial<ComponentProps<typeof ResponseDrawer>> = {}
+) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const utils = render(
     <QueryClientProvider client={queryClient}>
-      <ResponseDrawer responseId={responseId} formId="form-1" onClose={onClose} />
+      <ResponseDrawer responseId={responseId} formId="form-1" onClose={onClose} {...drawerProps} />
     </QueryClientProvider>
   );
   return { ...utils, queryClient, onClose };
@@ -253,6 +258,66 @@ describe('ResponseDrawer', () => {
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it('shows uploaded files under their form field labels in Submitted Answers', async () => {
+    mockGetResponseById.mockResolvedValue({
+      ...detail,
+      responseFiles: [
+        {
+          id: 'file-1',
+          name: 'portfolio.pdf',
+          size: 1024,
+          type: 'application/pdf',
+          url: '/private/portfolio.pdf',
+          uploadTime: detail.submittedAt,
+        },
+      ],
+    });
+    renderDrawer('resp-1', vi.fn(), { fileFieldLabels: ['Portfolio'] });
+
+    expect(await screen.findByText('Portfolio')).toBeInTheDocument();
+    expect(screen.getAllByText('portfolio.pdf').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('supports previous, next, and full-page expand actions from the header', async () => {
+    mockGetResponseById.mockResolvedValue(detail);
+    const onPrevious = vi.fn();
+    const onNext = vi.fn();
+    const onExpand = vi.fn();
+    const user = userEvent.setup();
+    renderDrawer('resp-1', vi.fn(), {
+      position: 2,
+      totalResponses: 5,
+      hasPrevious: true,
+      hasNext: true,
+      onPrevious,
+      onNext,
+      onExpand,
+    });
+    await screen.findByText('Submitted Answers');
+
+    await user.click(screen.getByRole('button', { name: 'Previous response' }));
+    await user.click(screen.getByRole('button', { name: 'Next response' }));
+    await user.click(screen.getByRole('button', { name: 'Open response in full page' }));
+
+    expect(onPrevious).toHaveBeenCalledOnce();
+    expect(onNext).toHaveBeenCalledOnce();
+    expect(onExpand).toHaveBeenCalledWith(detail);
+    expect(screen.getByText('2 of 5')).toBeInTheDocument();
+  });
+
+  it('uses a direct drawer URL for the full-page collapse action', async () => {
+    mockGetResponseById.mockResolvedValue(detail);
+    renderDrawer('resp-1', vi.fn(), {
+      displayMode: 'page',
+      collapseHref: '/forms/form-1/responses?page=2&responseId=resp-1',
+    });
+
+    expect(await screen.findByRole('link', { name: 'Return to response drawer' })).toHaveAttribute(
+      'href',
+      '/forms/form-1/responses?page=2&responseId=resp-1'
+    );
   });
 
   it('delete success calls onClose instead of navigating', async () => {

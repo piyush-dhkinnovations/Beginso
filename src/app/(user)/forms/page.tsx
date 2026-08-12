@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Copy, FileText, Table2, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { useToast } from '@/components/common/Toast';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
@@ -56,6 +56,27 @@ function FormRow({
 
   const formId = form._id;
 
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsMenuOpen(false);
+    };
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMenuOpen]);
 
   return (
     <div className="flex items-center gap-4 px-4 py-3 border-b border-neutral-100 last:border-0 hover:bg-neutral-50 transition-colors group">
@@ -65,7 +86,7 @@ function FormRow({
       </div>
 
       {/* Title + meta */}
-      <div className="flex flex-col flex-1 min-w-0">
+      <div className="flex flex-col w-64 shrink-0 min-w-0">
         <Link
           href={`/forms/${formId}/edit`}
           className="text-body font-semibold text-neutral-800 hover:text-brand-600 transition-colors truncate"
@@ -78,53 +99,90 @@ function FormRow({
       </div>
 
       {/* Status badge */}
-      <div className="w-34 shrink-0 flex justify-center">
+      <div className="flex-1 flex justify-center">
         <Badge variant={STATUS_VARIANT[form.status]}>
           {STATUS_LABEL[form.status]}
         </Badge>
       </div>
 
       {/* Actions */}
-      <div className="flex items-center justify-end gap-1.5 w-40 shrink-0">
-        <Link href={`/forms/${formId}/responses`} className="shrink-0">
-          <Button variant="ghost" size="small" title="View responses" aria-label={`View responses for ${form.title}`} className="w-8 h-8 p-0 shrink-0">
-            <Table2 size={16} />
-            <span className="sr-only">Responses</span>
-          </Button>
-        </Link>
-
-        <Button
-          variant="ghost"
-          size="small"
-          isLoading={isDuplicating}
-          onClick={() => onDuplicate(formId)}
-          title="Duplicate form"
-          aria-label={`Duplicate ${form.title}`}
-          className="w-8 h-8 p-0 shrink-0"
-        >
-          <Copy size={16} />
-          <span className="sr-only">Duplicate</span>
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="small"
-          isLoading={isDeleting}
-          onClick={() => onDelete(formId)}
-          title="Delete form"
-          aria-label={`Delete ${form.title}`}
-          className="w-8 h-8 p-0 shrink-0 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-        >
-          <Trash2 size={16} />
-          <span className="sr-only">Delete</span>
-        </Button>
-
+      <div className="flex items-center justify-end gap-1.5 w-20 shrink-0">
         <Link href={`/forms/${formId}/edit`} className="shrink-0">
           <Button variant="secondary" size="small" aria-label={`Edit ${form.title}`} className="w-8 h-8 p-0 shrink-0">
             <Edit2 size={16} />
             <span className="sr-only">Edit</span>
           </Button>
         </Link>
+
+        <div className="relative shrink-0" ref={menuRef}>
+          <Button
+            variant="ghost"
+            size="small"
+            onClick={() => setIsMenuOpen((open) => !open)}
+            aria-label={`More actions for ${form.title}`}
+            aria-haspopup="menu"
+            aria-expanded={isMenuOpen}
+            className="w-8 h-8 p-0 shrink-0"
+          >
+            <MoreVertical size={16} />
+          </Button>
+
+          {isMenuOpen && (
+            <div
+              role="menu"
+              aria-label={`Actions for ${form.title}`}
+              className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 py-1 z-20 animate-fade-in"
+            >
+              <Link
+                href={`/forms/${formId}/responses`}
+                role="menuitem"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex min-h-11 items-center gap-2 px-3 py-2 text-body-sm text-neutral-700 hover:bg-neutral-100 transition-colors"
+              >
+                <Table2 size={16} className="text-neutral-500" />
+                <span>View Responses</span>
+              </Link>
+
+              <Link
+                href={`/forms/${formId}/analytics`}
+                role="menuitem"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex min-h-11 items-center gap-2 px-3 py-2 text-body-sm text-neutral-700 hover:bg-neutral-100 transition-colors"
+              >
+                <BarChart2 size={16} className="text-neutral-500" />
+                <span>View Analytics</span>
+              </Link>
+
+              <button
+                type="button"
+                role="menuitem"
+                disabled={isDuplicating}
+                onClick={() => {
+                  onDuplicate(formId);
+                  setIsMenuOpen(false);
+                }}
+                className="w-full min-h-11 flex items-center gap-2 px-3 py-2 text-body-sm text-neutral-700 hover:bg-neutral-100 transition-colors text-left disabled:opacity-60"
+              >
+                <Copy size={16} className="text-neutral-500" />
+                <span>{isDuplicating ? 'Duplicating…' : 'Duplicate'}</span>
+              </button>
+
+              <button
+                type="button"
+                role="menuitem"
+                disabled={isDeleting}
+                onClick={() => {
+                  onDelete(formId);
+                  setIsMenuOpen(false);
+                }}
+                className="w-full min-h-11 flex items-center gap-2 px-3 py-2 text-body-sm text-rose-600 hover:bg-rose-50 transition-colors text-left disabled:opacity-60"
+              >
+                <Trash2 size={16} className="text-rose-500" />
+                <span>{isDeleting ? 'Deleting…' : 'Delete'}</span>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -238,13 +296,13 @@ export default function FormsPage() {
           {/* Table header */}
           <div className="flex items-center gap-4 px-4 py-2.5 bg-neutral-50 border-b border-neutral-200">
             <div className="w-9 shrink-0" />
-            <span className="flex-1 text-caption font-semibold text-neutral-500 uppercase tracking-wider">
+            <span className="w-64 shrink-0 text-caption font-semibold text-neutral-500 uppercase tracking-wider">
               Form Title
             </span>
-            <span className="text-caption font-semibold text-neutral-500 uppercase tracking-wider w-28 shrink-0 text-center">
+            <span className="flex-1 text-caption font-semibold text-neutral-500 uppercase tracking-wider text-center">
               Status
             </span>
-            <div className="w-40 shrink-0" />
+            <div className="w-20 shrink-0" />
           </div>
 
           {/* Row placeholders */}
@@ -254,16 +312,14 @@ export default function FormsPage() {
               className="flex items-center gap-4 px-4 py-3 border-b border-neutral-100 last:border-0 animate-pulse"
             >
               <div className="w-9 h-9 rounded-lg bg-neutral-200 shrink-0" />
-              <div className="flex flex-col flex-1 gap-1.5 min-w-0">
-                <div className="h-3.5 bg-neutral-200 rounded w-1/3" />
-                <div className="h-3 bg-neutral-100 rounded w-1/4" />
+              <div className="flex flex-col w-64 shrink-0 gap-1.5 min-w-0">
+                <div className="h-3.5 bg-neutral-200 rounded w-1/2" />
+                <div className="h-3 bg-neutral-100 rounded w-1/3" />
               </div>
-              <div className="w-28 shrink-0 flex justify-center">
+              <div className="flex-1 flex justify-center">
                 <div className="h-5 w-16 bg-neutral-200 rounded-full" />
               </div>
-              <div className="flex items-center justify-end gap-1.5 w-40 shrink-0">
-                <div className="w-8 h-8 rounded-md bg-neutral-100" />
-                <div className="w-8 h-8 rounded-md bg-neutral-100" />
+              <div className="flex items-center justify-end gap-1.5 w-20 shrink-0">
                 <div className="w-8 h-8 rounded-md bg-neutral-100" />
                 <div className="w-8 h-8 rounded-md bg-neutral-100" />
               </div>
@@ -291,13 +347,13 @@ export default function FormsPage() {
           {/* Table header */}
           <div className="flex items-center gap-4 px-4 py-2.5 bg-neutral-50 border-b border-neutral-200">
             <div className="w-9 shrink-0" />
-            <span className="flex-1 text-caption font-semibold text-neutral-500 uppercase tracking-wider">
+            <span className="w-64 shrink-0 text-caption font-semibold text-neutral-500 uppercase tracking-wider">
               Form Title
             </span>
-            <span className="text-caption font-semibold text-neutral-500 uppercase tracking-wider w-28 shrink-0 text-center">
+            <span className="flex-1 text-caption font-semibold text-neutral-500 uppercase tracking-wider text-center">
               Status
             </span>
-            <div className="w-40 shrink-0" />
+            <div className="w-20 shrink-0" />
           </div>
 
           {/* Rows */}
