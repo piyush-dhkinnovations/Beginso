@@ -15,6 +15,27 @@ export function formatResponseDate(isoString: string): string {
   return `${day} ${month} ${date.getFullYear()}, ${time}`;
 }
 
+/** "just now" / "5 minutes ago" / "3 hours ago" / "2 days ago" — for Report Job rows'
+ * "Requested {time} ago" timestamp. Falls back to the absolute date once it's been over a week,
+ * since "9 days ago" is less useful than the actual date at that point. */
+export function formatRelativeTime(isoString: string): string {
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return '—';
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMin = Math.round(diffMs / 60_000);
+  if (diffMin < 1) return 'just now';
+  if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? '' : 's'} ago`;
+
+  const diffHr = Math.round(diffMin / 60);
+  if (diffHr < 24) return `${diffHr} hour${diffHr === 1 ? '' : 's'} ago`;
+
+  const diffDay = Math.round(diffHr / 24);
+  if (diffDay < 7) return `${diffDay} day${diffDay === 1 ? '' : 's'} ago`;
+
+  return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function detectBrowser(ua: string): string | null {
   const match =
     ua.match(/Edg\/(\d+)/) ??

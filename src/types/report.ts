@@ -30,6 +30,14 @@ export interface ReportJob {
   status: ReportStatus;
   formId?: string;
   formTitle?: string;      // denormalized for display; falls back to "All Forms" when absent with no formId
+  // Echoed-back scope of the original request — assumed, not yet confirmed against a live
+  // response (same category of gap Monday's analytics types had before Wednesday's real
+  // payloads corrected them). Named `responseStatus` rather than `status` to avoid colliding
+  // with this job's own lifecycle `status` above. Used to render Requirement 11.1's "scoping
+  // filters used" row and to reconstruct the exact original filters for Requirement 11.5's Retry.
+  responseStatus?: 'new' | 'in_progress' | 'completed';
+  from?: string;            // ISO 8601
+  to?: string;              // ISO 8601
   createdAt: string;       // ISO 8601
   completedAt?: string;    // ISO 8601
   expiresAt?: string;      // ISO 8601
