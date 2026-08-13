@@ -45,8 +45,9 @@ describe('ReportJobRow', () => {
     });
     render(<ReportJobRow job={job} onRetry={vi.fn()} />);
 
-    expect(screen.getByText(/Event Registration · Completed · Jul 1, 2026 – Jul 31, 2026/)).toBeInTheDocument();
-    expect(screen.getByText('Requested 5 minutes ago')).toBeInTheDocument();
+    expect(screen.getByText('Event Registration')).toBeInTheDocument();
+    expect(screen.getByText(/Completed · Jul 1, 2026 – Jul 31, 2026/)).toBeInTheDocument();
+    expect(screen.getByText('5 minutes ago')).toBeInTheDocument();
 
     vi.useRealTimers();
   });
@@ -108,11 +109,11 @@ describe('ReportJobRow', () => {
     expect(onRetry).toHaveBeenCalledWith(job);
   });
 
-  it('an expired job shows Download disabled with an explanatory tooltip', () => {
+  it('an expired job shows a disabled Unavailable action with an explanatory tooltip', () => {
     const job = mockReportJob({ status: 'expired' });
     render(<ReportJobRow job={job} onRetry={vi.fn()} />);
 
-    const button = screen.getByRole('button', { name: 'Download' });
+    const button = screen.getByRole('button', { name: 'Unavailable' });
     expect(button).toBeDisabled();
     expect(button).toHaveAttribute('title', 'This report has expired. Generate a new one.');
   });

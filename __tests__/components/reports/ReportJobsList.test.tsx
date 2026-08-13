@@ -74,8 +74,8 @@ describe('ReportJobsList', () => {
     mockGetReports.mockResolvedValue({ data: [job1, job2], total: 2, page: 1, limit: 20, totalPages: 1 });
     renderList();
 
-    expect(await screen.findByText(/Form A/)).toBeInTheDocument();
-    expect(screen.getByText(/Form B/)).toBeInTheDocument();
+    expect(await screen.findAllByText(/Form A/)).not.toHaveLength(0);
+    expect(screen.getAllByText(/Form B/)).not.toHaveLength(0);
   });
 
   it('de-duplicates jobs by _id rather than rendering a repeated row (and key) for it', async () => {
@@ -83,7 +83,11 @@ describe('ReportJobsList', () => {
     mockGetReports.mockResolvedValue({ data: [job, { ...job }], total: 2, page: 1, limit: 20, totalPages: 1 });
     renderList();
 
-    expect(await screen.findAllByText(/Duplicated Form/)).toHaveLength(1);
+    // The list renders both a desktop table row and a mobile card for every job (responsive
+    // layout, both present in jsdom regardless of viewport), so a correctly-deduped single job
+    // legitimately produces 2 matches — one per variant. A dedupe failure would instead double
+    // that to 4 (2 jobs × 2 variants), which is what this assertion actually guards against.
+    expect(await screen.findAllByText(/Duplicated Form/)).toHaveLength(2);
   });
 
   it('polls every 5s while any loaded job is queued/processing', async () => {
@@ -117,14 +121,14 @@ describe('ReportJobsList', () => {
       </QueryClientProvider>
     );
 
-    expect(await screen.findByText(/Job Application/)).toBeInTheDocument();
+    expect(await screen.findAllByText(/Job Application/)).not.toHaveLength(0);
 
     await vi.advanceTimersByTimeAsync(5_000);
     await vi.waitFor(() => expect(mockGetReports).toHaveBeenCalledTimes(2));
 
     // Second poll's raw response has no formId at all — the row must still show the form name
     // (backfilled), not regress to "All Forms".
-    expect(screen.getByText(/Job Application/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Job Application/)).not.toHaveLength(0);
     expect(screen.queryByText(/All Forms/)).not.toBeInTheDocument();
   });
 
@@ -175,7 +179,9 @@ describe('ReportJobsList', () => {
     mockCreateReport.mockResolvedValue(mockReportJob({ _id: 'r-new', status: 'queued' }));
     renderList();
 
-    fireEvent.click(await screen.findByRole('button', { name: /Retry/ }));
+    // Both the desktop row and mobile card render their own Retry button for the same job —
+    // either triggers the identical `handleRetry`, so clicking the first is sufficient.
+    fireEvent.click((await screen.findAllByRole('button', { name: /Retry/ }))[0]);
 
     await waitFor(() =>
       expect(mockCreateReport).toHaveBeenCalledWith({

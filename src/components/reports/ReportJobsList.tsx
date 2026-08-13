@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FileText } from 'lucide-react';
+import { FileText, RefreshCw } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/Button';
@@ -128,52 +128,112 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
     });
   }
 
+  const header = (
+    <div className="flex items-start justify-between gap-4">
+      <div>
+        <h2 className="text-body font-semibold text-neutral-900">Generated Reports</h2>
+        <p className="text-caption text-neutral-500">Your recent report generation history.</p>
+      </div>
+      <Button
+        variant="ghost"
+        size="small"
+        onClick={() => void jobsQuery.refetch()}
+        disabled={jobsQuery.isFetching}
+        aria-label="Refresh report list"
+      >
+        <RefreshCw size={14} className={jobsQuery.isFetching ? 'animate-spin' : undefined} />
+      </Button>
+    </div>
+  );
+
   if (jobsQuery.isLoading) {
     return (
-      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-neutral-100 last:border-0 animate-pulse">
-            <div className="h-9 w-9 rounded-lg bg-neutral-100 shrink-0" />
-            <div className="flex flex-col flex-1 gap-1.5">
-              <div className="h-3.5 bg-neutral-200 rounded w-1/3" />
-              <div className="h-3 bg-neutral-100 rounded w-1/4" />
+      <div className="flex flex-col gap-4">
+        {header}
+        <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-neutral-100 last:border-0 animate-pulse">
+              <div className="h-9 w-9 rounded-lg bg-neutral-100 shrink-0" />
+              <div className="flex flex-col flex-1 gap-1.5">
+                <div className="h-3.5 bg-neutral-200 rounded w-1/3" />
+                <div className="h-3 bg-neutral-100 rounded w-1/4" />
+              </div>
+              <div className="h-5 w-16 bg-neutral-200 rounded-full shrink-0" />
             </div>
-            <div className="h-5 w-16 bg-neutral-200 rounded-full shrink-0" />
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   }
 
   if (jobsQuery.isError) {
     return (
-      <div role="alert" className="flex min-h-28 items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-6">
-        <div>
-          <p className="text-body-sm font-semibold text-neutral-900">Unable to load report jobs</p>
-          <p className="mt-1 text-caption text-neutral-500">Please try again.</p>
+      <div className="flex flex-col gap-4">
+        {header}
+        <div role="alert" className="flex min-h-28 items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-6">
+          <div>
+            <p className="text-body-sm font-semibold text-neutral-900">Unable to load report jobs</p>
+            <p className="mt-1 text-caption text-neutral-500">Please try again.</p>
+          </div>
+          <Button variant="secondary" size="small" onClick={() => void jobsQuery.refetch()}>Try again</Button>
         </div>
-        <Button variant="secondary" size="small" onClick={() => void jobsQuery.refetch()}>Try again</Button>
       </div>
     );
   }
 
   if (jobs.length === 0) {
-    return <EmptyState icon={<FileText />} heading="No reports yet" body="Generate your first CSV or PDF export above." />;
+    return (
+      <div className="flex flex-col gap-4">
+        {header}
+        <EmptyState icon={<FileText />} heading="No reports yet" body="Generate your first CSV or PDF export above." />
+      </div>
+    );
   }
 
-  const totalPages = jobsQuery.data ? Math.max(1, Math.ceil(jobsQuery.data.total / jobsQuery.data.limit)) : 1;
+  const total = jobsQuery.data?.total ?? jobs.length;
+  const limit = jobsQuery.data?.limit ?? REPORTS_PAGE_LIMIT;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const rangeStart = (page - 1) * limit + 1;
+  const rangeEnd = Math.min(page * limit, total);
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
+      {header}
+
+      <div className="hidden sm:block bg-white border border-neutral-200 rounded-xl overflow-x-auto shadow-sm">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-neutral-50 border-b border-neutral-200 text-caption font-semibold text-neutral-500 uppercase tracking-wider">
+              <th className="px-4 py-2.5">Format</th>
+              <th className="px-4 py-2.5">Report</th>
+              <th className="px-4 py-2.5">Created</th>
+              <th className="px-4 py-2.5">Status</th>
+              <th className="px-4 py-2.5 text-right">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {jobs.map((job, index) => (
+              // job._id ?? index is a safety net, not the primary key source — reportsService now
+              // adapts the real backend `id` field (see docs/status/fix-log.md S5-03), so _id is
+              // populated in the normal case; this only protects against an unexpected future gap.
+              <ReportJobRow key={job._id ?? index} job={job} onRetry={handleRetry} isRetrying={retryingJobId === job._id} formTitleById={formTitleById} />
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="sm:hidden flex flex-col gap-3">
         {jobs.map((job, index) => (
-          // job._id ?? index is a safety net, not the primary key source — reportsService now
-          // adapts the real backend `id` field (see docs/status/fix-log.md S5-03), so _id is
-          // populated in the normal case; this only protects against an unexpected future gap.
-          <ReportJobRow key={job._id ?? index} job={job} onRetry={handleRetry} isRetrying={retryingJobId === job._id} formTitleById={formTitleById} />
+          <ReportJobRow key={job._id ?? index} job={job} onRetry={handleRetry} isRetrying={retryingJobId === job._id} formTitleById={formTitleById} variant="card" />
         ))}
       </div>
-      <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} />
+
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <p className="text-caption text-neutral-500">
+          Showing {rangeStart} to {rangeEnd} of {total} report{total === 1 ? '' : 's'}
+        </p>
+        <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} />
+      </div>
     </div>
   );
 }
