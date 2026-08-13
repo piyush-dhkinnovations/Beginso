@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
 import { ReportFormatCard } from './ReportFormatCard';
+import { ReportJobsList } from './ReportJobsList';
 import { useToast } from '@/components/common/Toast';
 import { formsService } from '@/services/forms';
 import { reportsService } from '@/services/reports';
 import { reportKeys } from '@/lib/queryKeys';
-import type { CreateReportPayload, PaginatedReportsResult, ReportFormat } from '@/types/report';
+import type { CreateReportPayload, PaginatedReportsResult, ReportFormat, ReportJob } from '@/types/report';
 import type { ResponseStatus } from '@/types/response';
 
 const STATUS_OPTIONS: { value: ResponseStatus | 'all'; label: string }[] = [
@@ -23,9 +24,20 @@ const STATUS_OPTIONS: { value: ResponseStatus | 'all'; label: string }[] = [
 const SELECT_CLASS = 'min-h-11 rounded-md border-2 border-neutral-200 bg-white px-3 text-body-sm outline-none focus:border-neutral-500';
 
 export function ReportsView() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+
+  const rawPage = Number(searchParams.get('page'));
+  const jobsPage = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
+
+  function goToJobsPage(nextPage: number) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', String(nextPage));
+    router.replace(`${pathname}?${params.toString()}`);
+  }
 
   // Staged, local, non-URL filters (Requirement 9.3) — a report is a one-shot export, not a live
   // view, so none of these fire a request until "Generate" is clicked. `?formId=` only seeds the
@@ -38,13 +50,28 @@ export function ReportsView() {
     queryKey: ['forms', 'list-for-reports'],
     queryFn: () => formsService.getForms({ limit: 100 }),
   });
-  const forms = formsData?.forms ?? [];
+  const forms = useMemo(() => formsData?.forms ?? [], [formsData]);
+  // The backend's job objects only carry `formId` (a raw ObjectId), never a denormalized
+  // `formTitle` — resolved here from the same forms list already loaded for the dropdown above,
+  // rather than trusting a field the backend doesn't actually send (see docs/status/fix-log.md).
+  const formTitleById = useMemo(() => new Map(forms.map((f) => [f._id, f.title])), [forms]);
 
   const createReportMutation = useMutation({
     mutationFn: (payload: CreateReportPayload) => reportsService.createReport(payload),
-    onSuccess: (job) => {
+    onSuccess: (job, payload) => {
+      // The scope shown in the optimistic row comes from the request we just sent, not from
+      // trusting the POST response to echo every field back — we already know for certain what
+      // was submitted, and the response's own coverage of these fields has proven inconsistent
+      // (see docs/status/fix-log.md S5-04).
+      const optimisticJob: ReportJob = {
+        ...job,
+        formId: job.formId ?? payload.formId,
+        responseStatus: job.responseStatus ?? payload.status,
+        from: job.from ?? payload.from,
+        to: job.to ?? payload.to,
+      };
       queryClient.setQueriesData<PaginatedReportsResult>({ queryKey: reportKeys.all }, (old) =>
-        old ? { ...old, data: [job, ...old.data] } : old
+        old ? { ...old, data: [optimisticJob, ...old.data] } : old
       );
       toast('Report generation started.', 'success');
     },
@@ -108,6 +135,8 @@ export function ReportsView() {
           disabled={isSubmitting}
         />
       </div>
+
+      <ReportJobsList page={jobsPage} onPageChange={goToJobsPage} formTitleById={formTitleById} />
     </div>
   );
 }

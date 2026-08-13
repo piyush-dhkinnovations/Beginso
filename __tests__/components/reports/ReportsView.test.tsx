@@ -26,8 +26,12 @@ vi.mock('@/services/forms', () => ({
 }));
 
 const mockCreateReport = vi.fn();
+const mockGetReports = vi.fn();
 vi.mock('@/services/reports', () => ({
-  reportsService: { createReport: (...args: unknown[]) => mockCreateReport(...args) },
+  reportsService: {
+    createReport: (...args: unknown[]) => mockCreateReport(...args),
+    getReports: (...args: unknown[]) => mockGetReports(...args),
+  },
 }));
 
 const mockToast = vi.fn();
@@ -60,6 +64,7 @@ describe('ReportsView', () => {
     mockPush.mockReset();
     mockGetForms.mockReset().mockResolvedValue({ forms, total: 2, page: 1, limit: 100 });
     mockCreateReport.mockReset();
+    mockGetReports.mockReset().mockResolvedValue({ data: [], total: 0, page: 1, limit: 20, totalPages: 0 });
     mockToast.mockReset();
   });
 
@@ -100,22 +105,45 @@ describe('ReportsView', () => {
   it('optimistically prepends the new job into the cache and toasts success', async () => {
     const job = { _id: 'report-new', format: 'csv' as const, status: 'queued' as const, createdAt: '2026-08-14T00:00:00.000Z' };
     mockCreateReport.mockResolvedValue(job);
-    const { queryClient } = renderView();
-    await waitFor(() => expect(mockGetForms).toHaveBeenCalled());
-
     const existing = {
       data: [{ _id: 'report-old', format: 'pdf' as const, status: 'completed' as const, createdAt: '2026-08-13T00:00:00.000Z' }],
       total: 1,
       page: 1,
-      limit: 50,
+      limit: 20,
       totalPages: 1,
     };
-    queryClient.setQueryData(reportKeys.list(1), existing);
+    mockGetReports.mockResolvedValue(existing);
+    const { queryClient } = renderView();
+    await waitFor(() => expect(mockGetForms).toHaveBeenCalled());
+    await waitFor(() => expect(mockGetReports).toHaveBeenCalled());
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Generate' })[0]);
 
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Report generation started.', 'success'));
-    expect(queryClient.getQueryData(reportKeys.list(1))).toEqual({ ...existing, data: [job, existing.data[0]] });
+    await waitFor(() =>
+      expect(queryClient.getQueryData(reportKeys.list(1))).toEqual({ ...existing, data: [job, existing.data[0]] })
+    );
+  });
+
+  it('enriches the optimistic job with the submitted formId/status/dates when the POST response omits them (S5-04)', async () => {
+    // Real backend gap: the create response has been observed not to echo back every scope
+    // field — the optimistic row must still show the correct form immediately, from what was
+    // actually submitted, not wait for the next poll to self-correct.
+    mockCreateReport.mockResolvedValue({ _id: 'report-new', format: 'csv', status: 'queued', createdAt: '2026-08-14T00:00:00.000Z' });
+    mockGetReports.mockResolvedValue({ data: [], total: 0, page: 1, limit: 20, totalPages: 0 });
+    const { queryClient } = renderView();
+    await waitFor(() => expect(mockGetForms).toHaveBeenCalled());
+    await waitFor(() => expect(mockGetReports).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByLabelText('Form'), { target: { value: 'form-1' } });
+    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'completed' } });
+    fireEvent.click(screen.getAllByRole('button', { name: 'Generate' })[0]);
+
+    await waitFor(() => {
+      const cached = queryClient.getQueryData(reportKeys.list(1)) as { data: { formId?: string; responseStatus?: string }[] };
+      expect(cached.data[0].formId).toBe('form-1');
+      expect(cached.data[0].responseStatus).toBe('completed');
+    });
   });
 
   it('shows an error toast when the mutation fails', async () => {

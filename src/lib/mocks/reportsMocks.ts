@@ -20,7 +20,15 @@ export function mockReportJob(overrides: Partial<ReportJob> & { status?: ReportS
 
 export function mockReportsList(overrides: Partial<PaginatedReportsResult> = {}): PaginatedReportsResult {
   const data: ReportJob[] = [
-    mockReportJob({ _id: 'report-1', format: 'csv', status: 'queued', createdAt: '2026-08-10T09:05:00.000Z' }),
+    mockReportJob({
+      _id: 'report-1',
+      format: 'csv',
+      status: 'queued',
+      createdAt: '2026-08-10T09:05:00.000Z',
+      responseStatus: 'completed',
+      from: '2026-07-11T00:00:00.000Z',
+      to: '2026-08-10T23:59:59.999Z',
+    }),
     mockReportJob({ _id: 'report-2', format: 'pdf', status: 'processing', createdAt: '2026-08-10T09:00:00.000Z' }),
     mockReportJob({
       _id: 'report-3',
