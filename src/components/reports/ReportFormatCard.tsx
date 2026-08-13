@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import type { ReportFormat } from '@/types/report';
 
-const FORMAT_ICON: Record<ReportFormat, typeof FileSpreadsheet> = {
+export const FORMAT_ICON: Record<ReportFormat, typeof FileSpreadsheet> = {
   csv: FileSpreadsheet,
   pdf: FileText,
 };

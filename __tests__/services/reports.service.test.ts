@@ -31,46 +31,91 @@ describe('reportsService', () => {
     mockPost.mockReset();
   });
 
-  it('createReport calls POST /api/reports with the payload and returns the created job', async () => {
+  it('createReport calls POST /api/reports with the payload and unwraps the live {success, message, report} envelope', async () => {
+    // Real backend shape, confirmed live 13 Aug 2026 — wrapped in {success, message, report},
+    // the job keyed `id` (not the originally-assumed bare `_id`-keyed job).
     const payload = { format: 'csv' as const, formId: 'form-1' };
-    const job = { _id: 'report-1', format: 'csv', status: 'queued', formId: 'form-1', createdAt: '2026-08-10T09:00:00.000Z' };
-    mockPost.mockResolvedValueOnce({ data: job });
+    const raw = {
+      success: true,
+      message: 'Report job queued successfully',
+      report: {
+        id: '6a7d80670888f6136902d8d9',
+        workspaceId: '6a5de6fe9b64998c9c56b47c',
+        format: 'csv',
+        status: 'queued',
+        formId: 'form-1',
+        createdAt: '2026-08-13T09:00:00.000Z',
+      },
+    };
+    mockPost.mockResolvedValueOnce({ data: raw });
 
     const result = await reportsService.createReport(payload);
 
     expect(mockPost).toHaveBeenCalledWith('/api/reports', payload);
-    expect(result).toEqual(job);
+    expect(result).toEqual({
+      _id: '6a7d80670888f6136902d8d9',
+      format: 'csv',
+      status: 'queued',
+      formId: 'form-1',
+      formTitle: undefined,
+      responseStatus: undefined,
+      from: undefined,
+      to: undefined,
+      createdAt: '2026-08-13T09:00:00.000Z',
+      completedAt: undefined,
+      expiresAt: undefined,
+      errorMessage: undefined,
+    });
   });
 
-  it('getReports calls GET /api/reports with params and returns paginated data', async () => {
-    const payload = { data: [], total: 0, page: 1, limit: 50, totalPages: 0 };
-    mockGet.mockResolvedValueOnce({ data: payload });
+  it('getReports calls GET /api/reports with params and maps each job\'s id to _id', async () => {
+    const raw = {
+      data: [
+        { id: 'r1', format: 'pdf', status: 'failed', createdAt: '2026-08-13T09:00:00.000Z', errorMessage: 'Failed to generate report due to an internal processing error. Please try again.' },
+      ],
+      total: 1,
+      page: 1,
+      limit: 20,
+      totalPages: 1,
+    };
+    mockGet.mockResolvedValueOnce({ data: raw });
 
-    const result = await reportsService.getReports({ page: 1, limit: 50 });
+    const result = await reportsService.getReports({ page: 1, limit: 20 });
 
-    expect(mockGet).toHaveBeenCalledWith('/api/reports', { params: { page: 1, limit: 50 } });
-    expect(result).toEqual(payload);
+    expect(mockGet).toHaveBeenCalledWith('/api/reports', { params: { page: 1, limit: 20 } });
+    expect(result.data[0]._id).toBe('r1');
+    expect(result.data[0].errorMessage).toBe('Failed to generate report due to an internal processing error. Please try again.');
+    expect(result.total).toBe(1);
   });
 
-  it('getReportById calls GET /api/reports/:id and returns the job', async () => {
-    const job = { _id: 'report-1', format: 'pdf', status: 'completed', createdAt: '2026-08-10T09:00:00.000Z' };
-    mockGet.mockResolvedValueOnce({ data: job });
+  it('getReportById calls GET /api/reports/:id and maps id to _id', async () => {
+    const raw = { id: 'report-1', format: 'pdf', status: 'completed', createdAt: '2026-08-10T09:00:00.000Z' };
+    mockGet.mockResolvedValueOnce({ data: raw });
 
     const result = await reportsService.getReportById('report-1');
 
     expect(mockGet).toHaveBeenCalledWith('/api/reports/report-1');
-    expect(result).toEqual(job);
+    expect(result._id).toBe('report-1');
+    expect(result.format).toBe('pdf');
   });
 
-  it('getReportFileBlobUrl fetches the file through the same-origin proxy and returns a blob: URL', async () => {
+  it('getReportFileBlobUrl fetches the file through the same-origin proxy, reports progress, and returns a blob: URL', async () => {
     const blob = new Blob(['csv,data'], { type: 'text/csv' });
-    mockGet.mockResolvedValueOnce({ data: blob });
+    mockGet.mockImplementationOnce((_url: string, config: { onDownloadProgress?: (e: { loaded: number; total: number }) => void }) => {
+      config.onDownloadProgress?.({ loaded: 50, total: 100 });
+      return Promise.resolve({ data: blob });
+    });
     const createObjectURL = vi.fn().mockReturnValue('blob:mock-url');
     Object.defineProperty(URL, 'createObjectURL', { writable: true, configurable: true, value: createObjectURL });
+    const onProgress = vi.fn();
 
-    const result = await reportsService.getReportFileBlobUrl('report-1');
+    const result = await reportsService.getReportFileBlobUrl('report-1', onProgress);
 
-    expect(mockGet).toHaveBeenCalledWith(`${window.location.origin}/api/reports/report-1/file`, { responseType: 'blob' });
+    expect(mockGet).toHaveBeenCalledWith(
+      `${window.location.origin}/api/reports/report-1/file`,
+      expect.objectContaining({ responseType: 'blob' })
+    );
+    expect(onProgress).toHaveBeenCalledWith(50);
     expect(createObjectURL).toHaveBeenCalledWith(blob);
     expect(result).toBe('blob:mock-url');
   });
