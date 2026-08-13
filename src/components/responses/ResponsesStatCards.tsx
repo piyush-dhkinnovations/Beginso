@@ -15,11 +15,7 @@ interface ResponsesStatCardsProps {
 export function ResponsesStatCards({ stats, isLoading, isError = false, onRetry }: ResponsesStatCardsProps) {
   if (isError) {
     return (
-<<<<<<< HEAD
-      <Card role="alert" className="flex min-h-28 items-center justify-between gap-4 sm:col-span-2 lg:col-span-4">
-=======
       <Card role="alert" className="flex min-h-28 items-center justify-between gap-4 col-span-2 lg:col-span-4">
->>>>>>> 32857ab (WIP: mobile nav drawer, 2x2 stat grids, forms-row grid, typography scale)
         <div>
           <p className="text-body-sm font-semibold text-neutral-900">Unable to load response totals</p>
           <p className="mt-1 text-caption text-neutral-500">The response list is still available.</p>

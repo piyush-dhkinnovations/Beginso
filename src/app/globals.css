@@ -348,8 +348,6 @@
   line-height: 1.4;
 }
 
-<<<<<<< HEAD
-=======
 /* Mobile: the heading/display tier reads oversized on a narrow card (page titles, stat-card
    numbers) — scaled down here so every component using these utilities shrinks consistently,
    instead of hunting down each "big font" individually across the app. Deliberately @media, not
@@ -375,7 +373,6 @@
   }
 }
 
->>>>>>> 32857ab (WIP: mobile nav drawer, 2x2 stat grids, forms-row grid, typography scale)
 /* Thin scrollbar app-wide — the OS-default scrollbar in Chromium/Windows renders ~17px wide,
    heavy next to this UI's compact spacing (drawers, tables, dropdowns, etc). `*` is required
    because unlike `scrollbar-width`, `::-webkit-scrollbar` doesn't inherit from `html`/`body`. */

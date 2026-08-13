@@ -16,11 +16,8 @@ import { cn } from '@/lib/utils';
 // itself after mount and caused a visible expanded-then-collapsed flash on reload.
 export function DashboardShell({ children, initialCollapsed }: { children: React.ReactNode; initialCollapsed: boolean }) {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
-<<<<<<< HEAD
-=======
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
->>>>>>> 32857ab (WIP: mobile nav drawer, 2x2 stat grids, forms-row grid, typography scale)
   const { isLoading: authLoading, isAuthenticated } = useAuth();
 
   const handleToggleCollapse = () => {
@@ -29,8 +26,6 @@ export function DashboardShell({ children, initialCollapsed }: { children: React
     document.cookie = `sidebar_collapsed=${newState}; path=/; max-age=31536000; SameSite=Lax`;
   };
 
-<<<<<<< HEAD
-=======
   // Close on Escape; trap Tab/Shift+Tab focus within the drawer — same pattern as Modal.tsx.
   useEffect(() => {
     if (!mobileMenuOpen) return;
@@ -70,7 +65,6 @@ export function DashboardShell({ children, initialCollapsed }: { children: React
     };
   }, [mobileMenuOpen]);
 
->>>>>>> 32857ab (WIP: mobile nav drawer, 2x2 stat grids, forms-row grid, typography scale)
   // Proxy is the server-side boundary; this client guard prevents a cached shell
   // from remaining visible during logout or while a failed session redirects.
   if (authLoading || !isAuthenticated) {
