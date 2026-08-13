@@ -39,12 +39,11 @@ describe('Sidebar component', () => {
     });
   });
 
-  it('renders a horizontally scrollable mobile navigation with visible labels', () => {
-    render(<Sidebar isMobile />);
-    const nav = screen.getByRole('navigation', { name: 'Mobile navigation' });
-    expect(nav).toHaveClass('overflow-x-auto');
-    expect(screen.getByText('Dashboard')).toBeInTheDocument();
-    expect(screen.getByText('Settings')).toBeInTheDocument();
+  it('calls onCloseMobile after a nav link is clicked (mobile drawer usage)', () => {
+    const onCloseMobile = vi.fn();
+    render(<Sidebar onCloseMobile={onCloseMobile} />);
+    fireEvent.click(screen.getByText('Forms'));
+    expect(onCloseMobile).toHaveBeenCalledTimes(1);
   });
 
   it('highlights the active route', () => {

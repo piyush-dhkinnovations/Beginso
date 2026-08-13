@@ -19,14 +19,14 @@ import { useBuilderStore } from '@/store/builderStore';
 interface SidebarProps {
   collapsed?: boolean;
   onToggleCollapse?: () => void;
-  isMobile?: boolean;
+  /** Closes the mobile nav drawer after a link is clicked — irrelevant/omitted for the
+   * always-visible desktop sidebar. */
   onCloseMobile?: () => void;
 }
 
 export function Sidebar({
   collapsed = false,
   onToggleCollapse,
-  isMobile = false,
   onCloseMobile
 }: SidebarProps) {
   const pathname = usePathname();
@@ -64,34 +64,6 @@ export function Sidebar({
     onCloseMobile?.();
   };
 
-  if (isMobile) {
-    return (
-      <nav aria-label="Mobile navigation" className="h-full overflow-x-auto px-2">
-        <div className="flex h-full min-w-max items-center gap-1">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = isItemActive(item.href);
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                prefetch={false}
-                onClick={(event) => handleNavigation(event, item.href)}
-                className={cn(
-                  'flex min-h-11 items-center gap-2 rounded-md px-3 text-body-sm whitespace-nowrap',
-                  isActive ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-neutral-600 hover:bg-neutral-100'
-                )}
-              >
-                <Icon size={16} aria-hidden="true" />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
-    );
-  }
-
   return (
     <aside
       className={cn(
@@ -102,9 +74,9 @@ export function Sidebar({
       {/* Sidebar Header/Logo slot */}
       <div className={cn(
         "h-[56px] border-b border-neutral-200 flex items-center px-3 shrink-0",
-        collapsed && !isMobile ? "justify-center" : "justify-between"
+        collapsed ? "justify-center" : "justify-between"
       )}>
-        {(!collapsed || isMobile) ? (
+        {!collapsed ? (
           <>
             <Link
               href="/dashboard"
@@ -130,7 +102,7 @@ export function Sidebar({
             )}
           </>
         ) : (
-          !isMobile && onToggleCollapse && (
+          onToggleCollapse && (
             <button
               onClick={onToggleCollapse}
               className="p-1 rounded-md text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors shrink-0 flex items-center justify-center min-h-11 min-w-11"
@@ -162,10 +134,10 @@ export function Sidebar({
                   ? "bg-brand-50 text-brand-700 font-semibold"
                   : "text-neutral-600 hover:bg-neutral-100"
               )}
-              title={collapsed && !isMobile ? item.name : undefined}
+              title={collapsed ? item.name : undefined}
             >
               <Icon size={16} className={cn("shrink-0", isActive ? "text-brand-700" : "text-neutral-500")} />
-              {(!collapsed || isMobile) && (
+              {!collapsed && (
                 <span className="sidebar-label text-body-sm whitespace-nowrap overflow-hidden text-ellipsis">
                   {item.name}
                 </span>

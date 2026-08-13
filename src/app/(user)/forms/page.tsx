@@ -79,14 +79,18 @@ function FormRow({
   }, [isMenuOpen]);
 
   return (
-    <div className="flex items-center gap-4 px-4 py-3 border-b border-neutral-100 last:border-0 hover:bg-neutral-50 transition-colors group">
+    <div className="forms-row px-4 py-3 border-b border-neutral-100 last:border-0 hover:bg-neutral-50 transition-colors group">
       {/* Icon */}
-      <div className="w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 group-hover:bg-brand-50 transition-colors">
+      <div className="[grid-area:icon] w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 group-hover:bg-brand-50 transition-colors">
         <FileText size={16} className="text-neutral-500 group-hover:text-brand-600 transition-colors" />
       </div>
 
       {/* Title + meta */}
+<<<<<<< HEAD
       <div className="flex flex-col w-64 shrink-0 min-w-0">
+=======
+      <div className="[grid-area:title] flex flex-col min-w-0">
+>>>>>>> 32857ab (WIP: mobile nav drawer, 2x2 stat grids, forms-row grid, typography scale)
         <Link
           href={`/forms/${formId}/edit`}
           className="text-body font-semibold text-neutral-800 hover:text-brand-600 transition-colors truncate"
@@ -99,14 +103,22 @@ function FormRow({
       </div>
 
       {/* Status badge */}
+<<<<<<< HEAD
       <div className="flex-1 flex justify-center">
+=======
+      <div className="[grid-area:badge] flex justify-start sm:justify-center">
+>>>>>>> 32857ab (WIP: mobile nav drawer, 2x2 stat grids, forms-row grid, typography scale)
         <Badge variant={STATUS_VARIANT[form.status]}>
           {STATUS_LABEL[form.status]}
         </Badge>
       </div>
 
       {/* Actions */}
+<<<<<<< HEAD
       <div className="flex items-center justify-end gap-1.5 w-20 shrink-0">
+=======
+      <div className="[grid-area:actions] flex items-center justify-end gap-1.5">
+>>>>>>> 32857ab (WIP: mobile nav drawer, 2x2 stat grids, forms-row grid, typography scale)
         <Link href={`/forms/${formId}/edit`} className="shrink-0">
           <Button variant="secondary" size="small" aria-label={`Edit ${form.title}`} className="w-8 h-8 p-0 shrink-0">
             <Edit2 size={16} />
@@ -293,6 +305,7 @@ export default function FormsPage() {
       {/* Content area */}
       {isLoading ? (
         <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
+<<<<<<< HEAD
           {/* Table header */}
           <div className="flex items-center gap-4 px-4 py-2.5 bg-neutral-50 border-b border-neutral-200">
             <div className="w-9 shrink-0" />
@@ -303,14 +316,27 @@ export default function FormsPage() {
               Status
             </span>
             <div className="w-20 shrink-0" />
+=======
+          {/* Table header — hidden on the stacked mobile layout, see .forms-row-header */}
+          <div className="forms-row forms-row-header px-4 py-2.5 bg-neutral-50 border-b border-neutral-200">
+            <div className="[grid-area:icon]" />
+            <span className="[grid-area:title] text-caption font-semibold text-neutral-500 uppercase tracking-wider">
+              Form Title
+            </span>
+            <span className="[grid-area:badge] text-caption font-semibold text-neutral-500 uppercase tracking-wider text-center">
+              Status
+            </span>
+            <div className="[grid-area:actions]" />
+>>>>>>> 32857ab (WIP: mobile nav drawer, 2x2 stat grids, forms-row grid, typography scale)
           </div>
 
           {/* Row placeholders */}
           {Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
-              className="flex items-center gap-4 px-4 py-3 border-b border-neutral-100 last:border-0 animate-pulse"
+              className="forms-row px-4 py-3 border-b border-neutral-100 last:border-0 animate-pulse"
             >
+<<<<<<< HEAD
               <div className="w-9 h-9 rounded-lg bg-neutral-200 shrink-0" />
               <div className="flex flex-col w-64 shrink-0 gap-1.5 min-w-0">
                 <div className="h-3.5 bg-neutral-200 rounded w-1/2" />
@@ -320,6 +346,17 @@ export default function FormsPage() {
                 <div className="h-5 w-16 bg-neutral-200 rounded-full" />
               </div>
               <div className="flex items-center justify-end gap-1.5 w-20 shrink-0">
+=======
+              <div className="[grid-area:icon] w-9 h-9 rounded-lg bg-neutral-200 shrink-0" />
+              <div className="[grid-area:title] flex flex-col gap-1.5 min-w-0">
+                <div className="h-3.5 bg-neutral-200 rounded w-1/2" />
+                <div className="h-3 bg-neutral-100 rounded w-1/3" />
+              </div>
+              <div className="[grid-area:badge] flex justify-start sm:justify-center">
+                <div className="h-5 w-16 bg-neutral-200 rounded-full" />
+              </div>
+              <div className="[grid-area:actions] flex items-center justify-end gap-1.5">
+>>>>>>> 32857ab (WIP: mobile nav drawer, 2x2 stat grids, forms-row grid, typography scale)
                 <div className="w-8 h-8 rounded-md bg-neutral-100" />
                 <div className="w-8 h-8 rounded-md bg-neutral-100" />
               </div>
@@ -344,6 +381,7 @@ export default function FormsPage() {
         />
       ) : (
         <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
+<<<<<<< HEAD
           {/* Table header */}
           <div className="flex items-center gap-4 px-4 py-2.5 bg-neutral-50 border-b border-neutral-200">
             <div className="w-9 shrink-0" />
@@ -354,6 +392,18 @@ export default function FormsPage() {
               Status
             </span>
             <div className="w-20 shrink-0" />
+=======
+          {/* Table header — hidden on the stacked mobile layout, see .forms-row-header */}
+          <div className="forms-row forms-row-header px-4 py-2.5 bg-neutral-50 border-b border-neutral-200">
+            <div className="[grid-area:icon]" />
+            <span className="[grid-area:title] text-caption font-semibold text-neutral-500 uppercase tracking-wider">
+              Form Title
+            </span>
+            <span className="[grid-area:badge] text-caption font-semibold text-neutral-500 uppercase tracking-wider text-center">
+              Status
+            </span>
+            <div className="[grid-area:actions]" />
+>>>>>>> 32857ab (WIP: mobile nav drawer, 2x2 stat grids, forms-row grid, typography scale)
           </div>
 
           {/* Rows */}
