@@ -63,6 +63,11 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
+  // Default bottom-left position sits directly on top of the mobile nav drawer, which also
+  // opens from the left — dev-only, has no effect on production builds.
+  devIndicators: {
+    position: "bottom-right",
+  },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },

@@ -27,15 +27,16 @@ export function WorkspaceSummaryCards({
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {cards.map((card) => {
         const Icon = card.icon;
         const isMuted = card.value === '0' || card.value === '0.0' || card.value === '—';
         return (
-          <Card key={card.label} className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <span className="text-body-sm text-neutral-500 font-medium">{card.label}</span>
-              <Icon size={24} className="text-brand-700" />
+          <Card key={card.label} className="flex flex-col gap-2 p-4 sm:gap-4 sm:p-6">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-caption sm:text-body-sm text-neutral-500 font-medium">{card.label}</span>
+              <Icon size={20} className="sm:hidden shrink-0 text-brand-700" />
+              <Icon size={24} className="hidden sm:block shrink-0 text-brand-700" />
             </div>
             {isLoading ? (
               <div className="animate-pulse">

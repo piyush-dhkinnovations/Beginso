@@ -166,7 +166,7 @@
   padding-top: 56px;
 }
 
-.dashboard-mobile-nav {
+.dashboard-mobile-menu-btn {
   display: none;
 }
 
@@ -188,16 +188,12 @@
 }
 
 @container (max-width: 520px) {
-  .dashboard-main-frame {
-    padding-top: 108px;
-  }
-
   .dashboard-desktop-sidebar {
     display: none;
   }
 
-  .dashboard-mobile-nav {
-    display: block;
+  .dashboard-mobile-menu-btn {
+    display: flex;
   }
 
   .dashboard-content {
@@ -208,6 +204,44 @@
 
 .responses-table-container {
   container-type: inline-size;
+}
+
+/* Forms Manager row: same icon/title/badge/actions elements, rearranged per breakpoint via named
+   grid areas instead of duplicated markup — avoids fixed w-64/w-20 columns overflowing narrow
+   screens. Title stacks over its own meta text (nested inside the "title" cell, not a separate
+   grid item) so it doesn't need its own area at either breakpoint. */
+.forms-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "icon title actions"
+    ".    badge   .";
+  column-gap: 1rem;
+  row-gap: 0.375rem;
+  align-items: center;
+}
+
+/* Container query (not @media) — matches the rest of the shell, which responds to its actual
+   rendered width, not the viewport (relevant since the desktop sidebar itself eats into that
+   width independent of viewport size). */
+@container (min-width: 640px) {
+  .forms-row {
+    grid-template-columns: auto 16rem 1fr auto;
+    grid-template-areas: "icon title badge actions";
+    row-gap: 0;
+  }
+}
+
+/* Column labels only make sense once .forms-row is an actual single-line row, not the stacked
+   mobile layout — hidden below the same 640px threshold .forms-row itself reflows at. */
+.forms-row-header {
+  display: none;
+}
+
+@container (min-width: 640px) {
+  .forms-row-header {
+    display: grid;
+  }
 }
 
 .responses-secondary-column,
@@ -312,6 +346,31 @@
   font-size: 11px;
   font-weight: 400;
   line-height: 1.4;
+}
+
+/* Mobile: the heading/display tier reads oversized on a narrow card (page titles, stat-card
+   numbers) — scaled down here so every component using these utilities shrinks consistently,
+   instead of hunting down each "big font" individually across the app. Deliberately @media, not
+   @container like the shell's layout rules — legibility should track the physical viewport, and
+   this needs to apply on public/auth pages too, which sit outside .dashboard-shell's containment
+   context and would never see a @container rule. Body-tier and smaller (13px and below) are left
+   alone — already compact by design; shrinking further risks illegibility. */
+@media (max-width: 520px) {
+  .text-display {
+    font-size: 19px;
+  }
+  .text-heading-1 {
+    font-size: 17px;
+  }
+  .text-heading-2 {
+    font-size: 15px;
+  }
+  .text-heading-3 {
+    font-size: 13px;
+  }
+  .text-body-lg {
+    font-size: 13px;
+  }
 }
 
 /* Thin scrollbar app-wide — the OS-default scrollbar in Chromium/Windows renders ~17px wide,
