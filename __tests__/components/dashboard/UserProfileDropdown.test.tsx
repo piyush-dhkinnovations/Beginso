@@ -6,7 +6,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown';
 
 vi.mock('next/link', () => ({
@@ -21,9 +22,21 @@ vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => mockUseAuth(),
 }));
 
+const mockGetProfile = vi.fn();
+vi.mock('@/services/settings', () => ({
+  settingsService: { getProfile: (...args: unknown[]) => mockGetProfile(...args) },
+}));
+
+function renderDropdown(ui: React.ReactElement = <UserProfileDropdown />) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
 describe('UserProfileDropdown component', () => {
   beforeEach(() => {
     mockLogout.mockReset();
+    mockGetProfile.mockReset();
+    mockGetProfile.mockResolvedValue({ avatarUrl: null });
     mockUseAuth.mockReturnValue({
       user: { name: 'Jane Doe', email: 'jane@example.com' },
       logout: mockLogout,
@@ -32,30 +45,38 @@ describe('UserProfileDropdown component', () => {
   });
 
   it('shows the user initials from their name', () => {
-    render(<UserProfileDropdown />);
+    renderDropdown();
     expect(screen.getByText('JD')).toBeInTheDocument();
   });
 
   it('falls back to "U" when there is no user name', () => {
     mockUseAuth.mockReturnValue({ user: undefined, logout: mockLogout, isLoading: false });
-    render(<UserProfileDropdown />);
+    renderDropdown();
     expect(screen.getByText('U')).toBeInTheDocument();
   });
 
+  it('shows the real avatar photo instead of initials once one is loaded', async () => {
+    mockGetProfile.mockResolvedValue({ avatarUrl: 'https://example.com/avatar.jpg' });
+    const { container } = renderDropdown();
+    await waitFor(() => expect(container.querySelector('img')).toBeInTheDocument());
+    expect(container.querySelector('img')).toHaveAttribute('src', 'https://example.com/avatar.jpg');
+    expect(screen.queryByText('JD')).not.toBeInTheDocument();
+  });
+
   it('is closed by default', () => {
-    render(<UserProfileDropdown />);
+    renderDropdown();
     expect(screen.queryByText('Log out')).not.toBeInTheDocument();
   });
 
   it('opens the menu on click, showing the name/email and Log out action', () => {
-    render(<UserProfileDropdown />);
+    renderDropdown();
     fireEvent.click(screen.getByRole('button'));
     expect(screen.getByText('Log out')).toBeInTheDocument();
     expect(screen.getAllByText('Jane Doe').length).toBeGreaterThan(0);
   });
 
   it('closes on outside click', () => {
-    render(
+    renderDropdown(
       <div>
         <div data-testid="outside">outside</div>
         <UserProfileDropdown />
@@ -69,7 +90,7 @@ describe('UserProfileDropdown component', () => {
   });
 
   it('closes on Escape', () => {
-    render(<UserProfileDropdown />);
+    renderDropdown();
     fireEvent.click(screen.getByRole('button'));
     expect(screen.getByText('Log out')).toBeInTheDocument();
 
@@ -79,7 +100,7 @@ describe('UserProfileDropdown component', () => {
 
   it('calls logout when "Log out" is clicked', async () => {
     mockLogout.mockResolvedValue(undefined);
-    render(<UserProfileDropdown />);
+    renderDropdown();
     fireEvent.click(screen.getByRole('button'));
     fireEvent.click(screen.getByText('Log out'));
     expect(mockLogout).toHaveBeenCalledTimes(1);

@@ -37,3 +37,13 @@ export const reportKeys = {
   list: (page: number) => [...reportKeys.all, 'list', page] as const,
   detail: (id: string) => [...reportKeys.all, 'detail', id] as const,
 };
+
+export const settingsKeys = {
+  all: ['settings'] as const,
+  profile: () => [...settingsKeys.all, 'profile'] as const,
+  // notificationPreferences lives on the workspace document (confirmed live 18 Aug 2026) — no
+  // dedicated query key; NotificationsTab reads/writes via this same key WorkspaceTab/BrandingTab
+  // already share.
+  workspace: () => [...settingsKeys.all, 'workspace'] as const,
+  sessions: () => [...settingsKeys.all, 'sessions'] as const,
+};

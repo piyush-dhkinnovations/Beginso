@@ -101,7 +101,7 @@ function ImageUploadZone({
             e.stopPropagation();
             onRemove();
           }}
-          className="absolute top-1 right-1 w-11 h-11 rounded-full bg-white border border-neutral-200 flex items-center justify-center text-neutral-500 hover:text-rose-600 shadow-card"
+          className="absolute top-1 right-1 h-6 w-6 rounded-full bg-white border border-neutral-200 flex items-center justify-center text-neutral-500 hover:text-rose-600 shadow-card"
           aria-label={`Remove ${label.toLowerCase()}`}
         >
           <X size={12} />

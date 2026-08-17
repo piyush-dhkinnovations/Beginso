@@ -2,7 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
+import { settingsService } from '@/services/settings';
+import { settingsKeys } from '@/lib/queryKeys';
 
 import { ChevronDown, LogOut, Settings, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -12,6 +15,14 @@ export function UserProfileDropdown() {
   const { user, logout, isLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Shares the cache Settings' ProfileTab/AvatarUploader populate and invalidate — AuthContext's
+  // User type deliberately doesn't carry avatarUrl (design.md §2), so this reads it separately.
+  const { data: profile } = useQuery({
+    queryKey: settingsKeys.profile(),
+    queryFn: settingsService.getProfile,
+    enabled: !!user,
+  });
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -63,10 +74,13 @@ export function UserProfileDropdown() {
         aria-haspopup="menu"
 
       >
-        {/* Avatar — real initials from user, or skeleton ring while loading */}
-        <div className="w-8 h-8 rounded-full bg-brand-600 text-white flex items-center justify-center text-body-sm font-bold shadow-sm shrink-0">
+        {/* Avatar — real photo if uploaded, initials fallback, or skeleton ring while loading */}
+        <div className="w-8 h-8 rounded-full bg-brand-600 text-white flex items-center justify-center text-body-sm font-bold shadow-sm shrink-0 overflow-hidden">
           {isLoading ? (
             <span className="w-3 h-3 rounded-full border-2 border-white/60 border-t-white animate-spin" />
+          ) : profile?.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
           ) : (
             getInitials(user?.name)
           )}
