@@ -45,3 +45,6 @@ next-env.d.ts
 .vscode
 .kiro
 /docs
+
+# generated redesign-audit screenshots (scripts/screenshot-mvp.mjs output)
+/mvp-screenshots

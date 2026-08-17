@@ -24,7 +24,11 @@ const TABS: { id: SettingsTab; label: string }[] = [
 // while building this component, see tasks.md Day 1 Notes), so this isn't copied from it.
 export function SettingsTabs({ activeTab, onChange, dirtyTabs }: SettingsTabsProps) {
   return (
-    <div role="tablist" aria-label="Settings" className="flex items-center border-b border-neutral-200 overflow-x-auto">
+    <div
+      role="tablist"
+      aria-label="Settings"
+      className="settings-tabs-scroll flex items-center gap-1 border-b border-neutral-200 overflow-x-auto scroll-smooth pr-6"
+    >
       {TABS.map((tab) => {
         const isActive = activeTab === tab.id;
         const isDirty = dirtyTabs?.has(tab.id);
@@ -36,7 +40,7 @@ export function SettingsTabs({ activeTab, onChange, dirtyTabs }: SettingsTabsPro
             aria-selected={isActive}
             onClick={() => onChange(tab.id)}
             className={cn(
-              'flex items-center gap-1.5 px-4 py-3 text-body-sm font-semibold whitespace-nowrap transition-all border-b-2 focus:outline-none min-h-11',
+              'flex shrink-0 items-center gap-1.5 px-3 sm:px-4 py-3 text-body-sm font-semibold whitespace-nowrap transition-all border-b-2 focus:outline-none min-h-11',
               isActive
                 ? 'border-brand-700 text-brand-700'
                 : 'border-transparent text-neutral-500 hover:text-neutral-800 hover:border-neutral-200'
