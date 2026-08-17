@@ -24,17 +24,11 @@ vi.mock('@/components/common/Toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
 // ProfileTab now renders ChangePasswordModal (closed by default) alongside the name form —
 // @/lib/firebase's real getAuth() throws in this test env without a valid API key, so it needs
 // the same mock ChangePasswordModal's own test file uses, even though these tests never open it.
 vi.mock('@/lib/firebase', () => ({ auth: {} }));
 
-=======
->>>>>>> d53f241896fa8475918039766386dcf82cd41a28
->>>>>>> Stashed changes
 // AvatarUploader has its own dedicated test file — mocked here so ProfileTab's test stays
 // focused on the name field/save flow.
 vi.mock('@/components/settings/AvatarUploader', () => ({

@@ -2,13 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
 import { Trash2 } from 'lucide-react';
-=======
->>>>>>> d53f241896fa8475918039766386dcf82cd41a28
->>>>>>> Stashed changes
 import { useToast } from '@/components/common/Toast';
 import { uploadService } from '@/services/upload';
 import { settingsService } from '@/services/settings';
@@ -114,23 +108,11 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
               type="button"
               onClick={handleRemove}
               disabled={isBusy}
-<<<<<<< Updated upstream
-              className="min-h-11 text-body-sm text-rose-600 hover:text-rose-700 disabled:opacity-60"
-            >
-              Remove photo
-=======
-<<<<<<< HEAD
               aria-label="Remove photo"
               title="Remove photo"
               className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-rose-600 transition-colors hover:bg-rose-50 hover:text-rose-700 disabled:opacity-60"
             >
               <Trash2 size={16} />
-=======
-              className="min-h-11 text-body-sm text-rose-600 hover:text-rose-700 disabled:opacity-60"
-            >
-              Remove photo
->>>>>>> d53f241896fa8475918039766386dcf82cd41a28
->>>>>>> Stashed changes
             </button>
           )}
         </div>

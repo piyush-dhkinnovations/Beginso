@@ -1,14 +1,6 @@
 'use client';
 
-<<<<<<< Updated upstream
-import { useEffect, useRef } from 'react';
-=======
-<<<<<<< HEAD
 import { useEffect, useRef, useState } from 'react';
-=======
-import { useEffect, useRef } from 'react';
->>>>>>> d53f241896fa8475918039766386dcf82cd41a28
->>>>>>> Stashed changes
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -19,13 +11,7 @@ import { useToast } from '@/components/common/Toast';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { AvatarUploader } from './AvatarUploader';
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
 import { ChangePasswordModal } from './ChangePasswordModal';
-=======
->>>>>>> d53f241896fa8475918039766386dcf82cd41a28
->>>>>>> Stashed changes
 
 interface ProfileTabProps {
   onDirtyChange?: (isDirty: boolean) => void;
@@ -34,13 +20,7 @@ interface ProfileTabProps {
 export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
-=======
->>>>>>> d53f241896fa8475918039766386dcf82cd41a28
->>>>>>> Stashed changes
 
   const { data: profile, isLoading, isError, refetch } = useQuery({
     queryKey: settingsKeys.profile(),
@@ -125,9 +105,6 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
           Save changes
         </Button>
       </form>
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
 
       <div className="border-t border-neutral-100 pt-4">
         <Button variant="secondary" size="small" onClick={() => setIsChangePasswordOpen(true)}>
@@ -140,9 +117,6 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
         onClose={() => setIsChangePasswordOpen(false)}
         email={profile.email}
       />
-=======
->>>>>>> d53f241896fa8475918039766386dcf82cd41a28
->>>>>>> Stashed changes
     </div>
   );
 }

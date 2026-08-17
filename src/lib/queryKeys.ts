@@ -37,36 +37,13 @@ export const reportKeys = {
   list: (page: number) => [...reportKeys.all, 'list', page] as const,
   detail: (id: string) => [...reportKeys.all, 'detail', id] as const,
 };
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> d53f241896fa8475918039766386dcf82cd41a28
->>>>>>> Stashed changes
 
 export const settingsKeys = {
   all: ['settings'] as const,
   profile: () => [...settingsKeys.all, 'profile'] as const,
-<<<<<<< Updated upstream
-=======
-<<<<<<< HEAD
   // notificationPreferences lives on the workspace document (confirmed live 18 Aug 2026) — no
   // dedicated query key; NotificationsTab reads/writes via this same key WorkspaceTab/BrandingTab
   // already share.
   workspace: () => [...settingsKeys.all, 'workspace'] as const,
   sessions: () => [...settingsKeys.all, 'sessions'] as const,
 };
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-  workspace: () => [...settingsKeys.all, 'workspace'] as const,
-  notifications: () => [...settingsKeys.all, 'notifications'] as const,
-  sessions: () => [...settingsKeys.all, 'sessions'] as const,
-  exportJob: (jobId: string) => [...settingsKeys.all, 'export', jobId] as const,
-};
-<<<<<<< Updated upstream
-=======
->>>>>>> d53f241896fa8475918039766386dcf82cd41a28
->>>>>>> Stashed changes
