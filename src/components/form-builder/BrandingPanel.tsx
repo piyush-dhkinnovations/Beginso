@@ -161,7 +161,13 @@ export function BrandingPanel({ branding, formTitle, onUpdate }: BrandingPanelPr
   };
 
   return (
-    <div className="max-w-4xl mx-auto flex flex-col gap-6">
+    // `w-full` is required, not decorative — this div is a flex item inside BrandingTab's
+    // `flex flex-col` wrapper, and `mx-auto`'s auto margins override flexbox's default cross-axis
+    // stretch, so without an explicit width the browser falls back to sizing this box from its own
+    // content. `container-type: inline-size` below forbids exactly that (containment explicitly
+    // decouples a container's size from its children), so the two together created a circular
+    // dependency that collapsed the whole panel to near-zero width — a real regression caught live.
+    <div className="branding-panel-shell w-full max-w-4xl mx-auto flex flex-col gap-6">
       <div>
         <h2 className="text-heading-1 font-bold text-neutral-900">Branding</h2>
         <p className="text-body text-neutral-500 mt-1">
@@ -169,8 +175,15 @@ export function BrandingPanel({ branding, formTitle, onUpdate }: BrandingPanelPr
         </p>
       </div>
 
-      <div className="flex gap-6 items-start">
-        <div className="flex-1 flex flex-col gap-4 min-w-0">
+      {/* Side-by-side above ~620px of *available container width* (not viewport) — a container
+          query, not a media query, since this component is reused at very different widths: the
+          Builder's wide properties panel vs. Settings' 440px-capped content column. A viewport
+          media query would incorrectly try to go side-by-side on a wide desktop browser even
+          though Settings' actual column is still only 440px, causing the exact overflow this was
+          built to fix (real bug found via live mobile testing — the fixed two-column layout with
+          no breakpoint at all forced the whole page to scroll horizontally). */}
+      <div className="branding-panel-columns flex flex-col gap-6">
+        <div className="branding-panel-main flex-1 flex flex-col gap-4 min-w-0">
           <PanelCard label="Primary colour" description="Used for buttons, links, and highlights across your workspace.">
             <div className="flex items-center gap-2">
               {PRESET_COLORS.map((color) => (
@@ -244,7 +257,7 @@ export function BrandingPanel({ branding, formTitle, onUpdate }: BrandingPanelPr
           </PanelCard>
         </div>
 
-        <div className="w-[280px] shrink-0 flex flex-col gap-2">
+        <div className="branding-panel-preview w-full flex flex-col gap-2">
           <span className="text-label text-neutral-500">Preview</span>
           <BrandingLivePreview
             primaryColor={primaryColor}

@@ -200,6 +200,36 @@
     margin-left: 0 !important;
     padding: 16px;
   }
+
+  /* SettingsTabs: 5 tabs never fit ≤520px, so the strip always horizontally scrolls there — an
+     edge-to-edge cutoff (e.g. "Notifica...") reads as broken rather than scrollable. A right-edge
+     fade signals "more this way" without JS scroll-position tracking; scoped to this breakpoint
+     only, since at wider widths all tabs fit and nothing should ever be masked out. */
+  .settings-tabs-scroll {
+    mask-image: linear-gradient(to right, black 88%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 88%, transparent 100%);
+  }
+}
+
+/* BrandingPanel: shared by the Builder's (desktop-only, wide) properties panel and Settings'
+   440px-capped Branding tab — a fixed two-column layout with no breakpoint overflowed the whole
+   page on mobile (found via live testing). Container query, not a media query: the two consumers
+   give it very different available widths regardless of viewport, so it must respond to its own
+   box, not the screen. Stacks by default; goes side-by-side only once ~620px is actually available. */
+.branding-panel-shell {
+  container-type: inline-size;
+}
+
+@container (min-width: 620px) {
+  .branding-panel-columns {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .branding-panel-preview {
+    width: 280px;
+    flex-shrink: 0;
+  }
 }
 
 .responses-table-container {

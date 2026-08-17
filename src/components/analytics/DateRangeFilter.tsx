@@ -90,7 +90,7 @@ export function DateRangeFilter({ value, onChange }: DateRangeFilterProps) {
             aria-pressed={preset === p.value}
             onClick={() => selectPreset(p.value)}
             className={cn(
-              'px-3 min-h-11 rounded-full text-xs font-semibold transition-colors',
+              'px-3 min-h-11 rounded-full text-xs font-semibold whitespace-nowrap transition-colors',
               preset === p.value
                 ? 'bg-brand-700 text-white'
                 : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50'
