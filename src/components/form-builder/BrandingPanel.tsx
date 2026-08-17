@@ -115,9 +115,14 @@ export interface BrandingPanelProps {
   branding: FormBranding;
   formTitle: string;
   onUpdate: (updates: Partial<FormBranding>) => void;
+  // Builder tabs have no other label for this section, so it needs its own heading there.
+  // Settings' BrandingTab sits under a tab bar that already says "Branding" — a second
+  // heading there was redundant and, unlike every other Settings tab, broke the shared
+  // flush-left layout those tabs otherwise all match.
+  showHeading?: boolean;
 }
 
-export function BrandingPanel({ branding, formTitle, onUpdate }: BrandingPanelProps) {
+export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = true }: BrandingPanelProps) {
   const uid = useId();
   const { toast } = useToast();
   const primaryColor = branding.primaryColor ?? DEFAULT_COLOR;
@@ -168,12 +173,14 @@ export function BrandingPanel({ branding, formTitle, onUpdate }: BrandingPanelPr
     // decouples a container's size from its children), so the two together created a circular
     // dependency that collapsed the whole panel to near-zero width — a real regression caught live.
     <div className="branding-panel-shell w-full max-w-4xl mx-auto flex flex-col gap-6">
-      <div>
-        <h2 className="text-heading-1 font-bold text-neutral-900">Branding</h2>
-        <p className="text-body text-neutral-500 mt-1">
-          Set your brand colour, logo, and cover image. This shapes how your workspace looks everywhere.
-        </p>
-      </div>
+      {showHeading && (
+        <div>
+          <h2 className="text-heading-1 font-bold text-neutral-900">Branding</h2>
+          <p className="text-body text-neutral-500 mt-1">
+            Set your brand colour, logo, and cover image. This shapes how your workspace looks everywhere.
+          </p>
+        </div>
+      )}
 
       {/* Side-by-side above ~620px of *available container width* (not viewport) — a container
           query, not a media query, since this component is reused at very different widths: the
