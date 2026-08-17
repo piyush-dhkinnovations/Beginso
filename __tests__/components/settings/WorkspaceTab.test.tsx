@@ -1,0 +1,87 @@
+/**
+ * __tests__/components/settings/WorkspaceTab.test.tsx
+ * Feature: sprint-6-settings
+ * Tests: WorkspaceTab — renders name, save success/error, no-op guard, loading/error states
+ * Requirements: 5.1-5.3
+ */
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const mockGetWorkspace = vi.fn();
+const mockUpdateWorkspace = vi.fn();
+vi.mock('@/services/settings', () => ({
+  settingsService: {
+    getWorkspace: (...args: unknown[]) => mockGetWorkspace(...args),
+    updateWorkspace: (...args: unknown[]) => mockUpdateWorkspace(...args),
+  },
+}));
+
+const mockToast = vi.fn();
+vi.mock('@/components/common/Toast', () => ({
+  useToast: () => ({ toast: mockToast }),
+}));
+
+import { WorkspaceTab } from '@/components/settings/WorkspaceTab';
+
+function renderTab() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <WorkspaceTab />
+    </QueryClientProvider>
+  );
+}
+
+describe('WorkspaceTab', () => {
+  beforeEach(() => {
+    mockGetWorkspace.mockReset();
+    mockUpdateWorkspace.mockReset();
+    mockToast.mockReset();
+  });
+
+  it('renders the loaded workspace name', async () => {
+    mockGetWorkspace.mockResolvedValue({ id: 'w1', name: 'Acme Workspace', logoUrl: null, branding: {}, createdAt: '' });
+    renderTab();
+    expect(await screen.findByDisplayValue('Acme Workspace')).toBeInTheDocument();
+  });
+
+  it('shows an inline error with retry when the workspace fails to load', async () => {
+    mockGetWorkspace.mockRejectedValue(new Error('fail'));
+    renderTab();
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+  });
+
+  it('disables Save while the name is unchanged', async () => {
+    mockGetWorkspace.mockResolvedValue({ id: 'w1', name: 'Acme Workspace', logoUrl: null, branding: {}, createdAt: '' });
+    renderTab();
+    await screen.findByDisplayValue('Acme Workspace');
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+  });
+
+  it('saves a changed name and shows a success toast', async () => {
+    mockGetWorkspace.mockResolvedValue({ id: 'w1', name: 'Acme Workspace', logoUrl: null, branding: {}, createdAt: '' });
+    mockUpdateWorkspace.mockResolvedValue({ id: 'w1', name: 'New Name', logoUrl: null, branding: {}, createdAt: '' });
+    renderTab();
+
+    const nameInput = await screen.findByDisplayValue('Acme Workspace');
+    fireEvent.change(nameInput, { target: { value: 'New Name' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(mockUpdateWorkspace).toHaveBeenCalledWith({ name: 'New Name' }));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Workspace updated.', 'success'));
+  });
+
+  it('shows a failure toast when the save fails', async () => {
+    mockGetWorkspace.mockResolvedValue({ id: 'w1', name: 'Acme Workspace', logoUrl: null, branding: {}, createdAt: '' });
+    mockUpdateWorkspace.mockRejectedValue(new Error('network error'));
+    renderTab();
+
+    const nameInput = await screen.findByDisplayValue('Acme Workspace');
+    fireEvent.change(nameInput, { target: { value: 'New Name' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Failed to update workspace. Please try again.', 'error'));
+  });
+});

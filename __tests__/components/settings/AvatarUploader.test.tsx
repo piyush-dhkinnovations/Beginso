@@ -51,12 +51,28 @@ describe('AvatarUploader', () => {
 
   it('renders the avatar image when avatarUrl is set, with no Remove-photo action when it is not', () => {
     renderUploader({ avatarUrl: null });
+<<<<<<< Updated upstream
     expect(screen.queryByText('Remove photo')).not.toBeInTheDocument();
+=======
+<<<<<<< HEAD
+    expect(screen.queryByRole('button', { name: 'Remove photo' })).not.toBeInTheDocument();
+=======
+    expect(screen.queryByText('Remove photo')).not.toBeInTheDocument();
+>>>>>>> d53f241896fa8475918039766386dcf82cd41a28
+>>>>>>> Stashed changes
   });
 
   it('shows the Remove-photo action once an avatar exists', () => {
     renderUploader({ avatarUrl: 'https://example.com/avatar.jpg' });
+<<<<<<< Updated upstream
     expect(screen.getByText('Remove photo')).toBeInTheDocument();
+=======
+<<<<<<< HEAD
+    expect(screen.getByRole('button', { name: 'Remove photo' })).toBeInTheDocument();
+=======
+    expect(screen.getByText('Remove photo')).toBeInTheDocument();
+>>>>>>> d53f241896fa8475918039766386dcf82cd41a28
+>>>>>>> Stashed changes
   });
 
   it('uploads a valid image and saves the returned URL', async () => {
@@ -110,7 +126,15 @@ describe('AvatarUploader', () => {
     mockUpdateProfile.mockResolvedValue({});
     renderUploader({ avatarUrl: 'https://example.com/avatar.jpg' });
 
+<<<<<<< Updated upstream
     fireEvent.click(screen.getByText('Remove photo'));
+=======
+<<<<<<< HEAD
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+=======
+    fireEvent.click(screen.getByText('Remove photo'));
+>>>>>>> d53f241896fa8475918039766386dcf82cd41a28
+>>>>>>> Stashed changes
 
     await waitFor(() => expect(mockUpdateProfile).toHaveBeenCalledWith({ avatarUrl: null }));
   });
@@ -119,7 +143,15 @@ describe('AvatarUploader', () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false);
     renderUploader({ avatarUrl: 'https://example.com/avatar.jpg' });
 
+<<<<<<< Updated upstream
     fireEvent.click(screen.getByText('Remove photo'));
+=======
+<<<<<<< HEAD
+    fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+=======
+    fireEvent.click(screen.getByText('Remove photo'));
+>>>>>>> d53f241896fa8475918039766386dcf82cd41a28
+>>>>>>> Stashed changes
 
     expect(mockUpdateProfile).not.toHaveBeenCalled();
   });

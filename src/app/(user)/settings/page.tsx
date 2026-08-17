@@ -3,10 +3,27 @@
 import { useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+<<<<<<< Updated upstream
+import { Card } from '@/components/ui/Card';
+=======
+=======
+>>>>>>> d53f241896fa8475918039766386dcf82cd41a28
+>>>>>>> Stashed changes
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { SettingsTabs, type SettingsTab } from '@/components/settings/SettingsTabs';
 import { ProfileTab } from '@/components/settings/ProfileTab';
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+import { WorkspaceTab } from '@/components/settings/WorkspaceTab';
+import { BrandingTab } from '@/components/settings/BrandingTab';
+=======
+>>>>>>> d53f241896fa8475918039766386dcf82cd41a28
+>>>>>>> Stashed changes
 
 const VALID_TABS: SettingsTab[] = ['profile', 'workspace', 'branding', 'notifications', 'security'];
 
@@ -22,6 +39,13 @@ const TAB_LABEL: Record<SettingsTab, string> = {
 function StubTab({ label }: { label: string }) {
   return <p className="text-body-sm text-neutral-500">{label} tab — coming later this sprint.</p>;
 }
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+>>>>>>> Stashed changes
+=======
+>>>>>>> d53f241896fa8475918039766386dcf82cd41a28
+>>>>>>> Stashed changes
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -60,6 +84,24 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto animate-fade-in">
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+<<<<<<< Updated upstream
+      <DashboardHeader 
+        title="Settings" 
+        subtitle="Manage profiles, workspaces, and system preferences."
+      />
+      <Card className="flex flex-col items-center justify-center p-12 text-center bg-neutral-50/50">
+        <h2 className="text-heading-2 font-bold text-neutral-800">Settings Panel</h2>
+        <p className="text-body text-neutral-500 max-w-md mt-2">
+          This area is scheduled for development in Sprint 2. You will be able to customize profile, branding, and workspace policies.
+        </p>
+      </Card>
+=======
+=======
+>>>>>>> d53f241896fa8475918039766386dcf82cd41a28
+>>>>>>> Stashed changes
       <DashboardHeader title="Settings" subtitle="Manage your profile, workspace, and account preferences." />
 
       <SettingsTabs activeTab={activeTab} onChange={handleTabChange} dirtyTabs={dirtyTabs} />
@@ -68,8 +110,20 @@ export default function SettingsPage() {
         {activeTab === 'profile' && (
           <ProfileTab onDirtyChange={(isDirty) => setTabDirty('profile', isDirty)} />
         )}
+<<<<<<< Updated upstream
         {activeTab === 'workspace' && <StubTab label="Workspace" />}
         {activeTab === 'branding' && <StubTab label="Branding" />}
+=======
+<<<<<<< HEAD
+        {activeTab === 'workspace' && (
+          <WorkspaceTab onDirtyChange={(isDirty) => setTabDirty('workspace', isDirty)} />
+        )}
+        {activeTab === 'branding' && <BrandingTab />}
+=======
+        {activeTab === 'workspace' && <StubTab label="Workspace" />}
+        {activeTab === 'branding' && <StubTab label="Branding" />}
+>>>>>>> d53f241896fa8475918039766386dcf82cd41a28
+>>>>>>> Stashed changes
         {activeTab === 'notifications' && <StubTab label="Notifications" />}
         {activeTab === 'security' && <StubTab label="Security" />}
       </div>
@@ -103,6 +157,13 @@ export default function SettingsPage() {
           </button>
         </div>
       </Modal>
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+>>>>>>> Stashed changes
+=======
+>>>>>>> d53f241896fa8475918039766386dcf82cd41a28
+>>>>>>> Stashed changes
     </div>
   );
 }
