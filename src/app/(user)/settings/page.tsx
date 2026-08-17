@@ -9,6 +9,8 @@ import { SettingsTabs, type SettingsTab } from '@/components/settings/SettingsTa
 import { ProfileTab } from '@/components/settings/ProfileTab';
 import { WorkspaceTab } from '@/components/settings/WorkspaceTab';
 import { BrandingTab } from '@/components/settings/BrandingTab';
+import { NotificationsTab } from '@/components/settings/NotificationsTab';
+import { SecurityTab } from '@/components/settings/SecurityTab';
 
 const VALID_TABS: SettingsTab[] = ['profile', 'workspace', 'branding', 'notifications', 'security'];
 
@@ -19,11 +21,6 @@ const TAB_LABEL: Record<SettingsTab, string> = {
   notifications: 'Notifications',
   security: 'Security',
 };
-
-// Stub bodies for tabs landing Tuesday–Thursday — Day 1 only builds Profile (task 1.8).
-function StubTab({ label }: { label: string }) {
-  return <p className="text-body-sm text-neutral-500">{label} tab — coming later this sprint.</p>;
-}
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -74,8 +71,8 @@ export default function SettingsPage() {
           <WorkspaceTab onDirtyChange={(isDirty) => setTabDirty('workspace', isDirty)} />
         )}
         {activeTab === 'branding' && <BrandingTab />}
-        {activeTab === 'notifications' && <StubTab label="Notifications" />}
-        {activeTab === 'security' && <StubTab label="Security" />}
+        {activeTab === 'notifications' && <NotificationsTab />}
+        {activeTab === 'security' && <SecurityTab />}
       </div>
 
       <Modal

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -11,7 +11,6 @@ import { useToast } from '@/components/common/Toast';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { AvatarUploader } from './AvatarUploader';
-import { ChangePasswordModal } from './ChangePasswordModal';
 
 interface ProfileTabProps {
   onDirtyChange?: (isDirty: boolean) => void;
@@ -20,7 +19,6 @@ interface ProfileTabProps {
 export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
 
   const { data: profile, isLoading, isError, refetch } = useQuery({
     queryKey: settingsKeys.profile(),
@@ -105,18 +103,6 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
           Save changes
         </Button>
       </form>
-
-      <div className="border-t border-neutral-100 pt-4">
-        <Button variant="secondary" size="small" onClick={() => setIsChangePasswordOpen(true)}>
-          Change Password
-        </Button>
-      </div>
-
-      <ChangePasswordModal
-        isOpen={isChangePasswordOpen}
-        onClose={() => setIsChangePasswordOpen(false)}
-        email={profile.email}
-      />
     </div>
   );
 }
