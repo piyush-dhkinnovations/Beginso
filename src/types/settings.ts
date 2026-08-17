@@ -51,10 +51,23 @@ export interface NotificationPreferences {
   productUpdatesEmail: boolean;
 }
 
+// Confirmed live 18 Aug 2026: the backend sends a structured object (city/region/country from
+// IP geolocation), not a string — `{}` specifically for an unresolved IP (e.g. private/local
+// ranges), not null. The api-reference.md `string | null` shape was wrong; see SessionRow's
+// formatApproxLocation for the fallback that only shows "Unknown location" once every field is
+// actually missing, rather than discarding real resolved locations along with unresolved ones.
+export interface ApproxLocation {
+  city?: string;
+  region?: string;
+  country?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
 export interface SessionSummary {
   id: string;
   deviceLabel: string; // e.g. "Chrome on Windows" — backend-computed
-  approxLocation: string | null;
+  approxLocation: ApproxLocation | null;
   lastActiveAt: string; // ISO 8601
   isCurrent: boolean;
 }

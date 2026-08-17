@@ -27,8 +27,8 @@ vi.mock('@/components/common/Toast', () => ({
 import { SessionsList } from '@/components/settings/SessionsList';
 
 const SESSIONS = [
-  { id: 's1', deviceLabel: 'Chrome on Windows', approxLocation: 'Mumbai, India', lastActiveAt: '2026-08-17T08:30:00.000Z', isCurrent: true },
-  { id: 's2', deviceLabel: 'Safari on iPhone', approxLocation: 'Mumbai, India', lastActiveAt: '2026-08-16T19:12:00.000Z', isCurrent: false },
+  { id: 's1', deviceLabel: 'Chrome on Windows', approxLocation: { city: 'Mumbai', country: 'India' }, lastActiveAt: '2026-08-17T08:30:00.000Z', isCurrent: true },
+  { id: 's2', deviceLabel: 'Safari on iPhone', approxLocation: { city: 'Mumbai', country: 'India' }, lastActiveAt: '2026-08-16T19:12:00.000Z', isCurrent: false },
 ];
 
 function renderList() {

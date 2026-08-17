@@ -96,7 +96,7 @@ describe('SecurityTab', () => {
   it('still shows the sessions list when the profile fails to load', async () => {
     mockGetProfile.mockRejectedValue(new Error('fail'));
     mockGetSessions.mockResolvedValue({
-      sessions: [{ id: 's1', deviceLabel: 'Chrome on Windows', approxLocation: 'Mumbai, India', lastActiveAt: '2026-08-17T08:30:00.000Z', isCurrent: true }],
+      sessions: [{ id: 's1', deviceLabel: 'Chrome on Windows', approxLocation: { city: 'Mumbai', country: 'India' }, lastActiveAt: '2026-08-17T08:30:00.000Z', isCurrent: true }],
     });
     renderTab();
 

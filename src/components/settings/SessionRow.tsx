@@ -1,5 +1,5 @@
 import type { SessionSummary } from '@/types/settings';
-import { formatResponseDate } from '@/lib/formatters';
+import { formatApproxLocation, formatResponseDate } from '@/lib/formatters';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 
@@ -20,23 +20,26 @@ export function SessionRow({ session, onRevoke, isRevoking }: SessionRowProps) {
           {session.isCurrent && <Badge variant="neutral">This device</Badge>}
         </div>
         <p className="text-caption text-neutral-500">
-          {/* Defensive: only trust a real string — a live crash showed the backend can send `{}`
-              for an unresolved location instead of null, which `?? fallback` doesn't catch since
-              `{}` is truthy, and React can't render a bare object as a child. */}
-          {typeof session.approxLocation === 'string' ? session.approxLocation : 'Unknown location'} · Last active {formatResponseDate(session.lastActiveAt)}
+          {formatApproxLocation(session.approxLocation)} · Last active {formatResponseDate(session.lastActiveAt)}
         </p>
       </div>
-      {!session.isCurrent && (
-        <Button
-          variant="secondary"
-          size="small"
-          onClick={() => onRevoke(session.id)}
-          isLoading={isRevoking}
-          aria-label={`Revoke session on ${session.deviceLabel}`}
-        >
-          Revoke
-        </Button>
-      )}
+      {/* Always rendered (never conditionally omitted) so every row reserves the same height —
+          Button's 44px touch-target floor is taller than this row's two lines of text, so an
+          absent button let the current-device row shrink shorter than every other row. Hidden via
+          `invisible` (not omitted) for the current session: visibility:hidden keeps the layout
+          space but drops it from the accessibility tree and tab order, so it stays true that the
+          current session never exposes a working Revoke control (Correctness Property 5). */}
+      <Button
+        variant="secondary"
+        size="small"
+        onClick={() => onRevoke(session.id)}
+        isLoading={isRevoking}
+        aria-label={`Revoke session on ${session.deviceLabel}`}
+        className={session.isCurrent ? 'invisible' : undefined}
+        tabIndex={session.isCurrent ? -1 : undefined}
+      >
+        Revoke
+      </Button>
     </div>
   );
 }

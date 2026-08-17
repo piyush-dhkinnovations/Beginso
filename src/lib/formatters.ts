@@ -1,4 +1,14 @@
 import type { ResponseAnswers } from '@/types/response';
+import type { ApproxLocation } from '@/types/settings';
+
+// `{}` for an unresolved IP (private/local ranges, lookup failure) is indistinguishable from a
+// resolved-but-sparse location without checking every field — join whatever city/region/country
+// the backend did resolve, falling back to "Unknown location" only once none of them are present.
+export function formatApproxLocation(location: ApproxLocation | null | undefined): string {
+  if (!location || typeof location !== 'object') return 'Unknown location';
+  const parts = [location.city, location.region, location.country].filter(Boolean);
+  return parts.length > 0 ? parts.join(', ') : 'Unknown location';
+}
 
 export function formatFileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;

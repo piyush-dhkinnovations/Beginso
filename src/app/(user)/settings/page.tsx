@@ -63,7 +63,13 @@ export default function SettingsPage() {
 
       <SettingsTabs activeTab={activeTab} onChange={handleTabChange} dirtyTabs={dirtyTabs} />
 
-      <div className="max-w-[440px]">
+      {/* Branding gets its own wider column (BrandingPanel needs >=620px of container width to
+          place Preview beside the colour card — see its container-query comment) — every other
+          tab is a narrow single-column form and stays capped at 440px for readability. Capped at
+          the same max-w-4xl BrandingPanel already applies to itself internally, not left
+          unbounded — otherwise its own `mx-auto` has extra room to center it away from the left
+          edge that every other tab's content starts flush against. */}
+      <div className={activeTab === 'branding' ? 'max-w-4xl' : 'max-w-[440px]'}>
         {activeTab === 'profile' && (
           <ProfileTab onDirtyChange={(isDirty) => setTabDirty('profile', isDirty)} />
         )}

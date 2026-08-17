@@ -46,9 +46,9 @@ export function mockWorkspaceSettings(overrides: Partial<WorkspaceSettings> = {}
 
 export function mockSessionsList(overrides: Partial<SessionSummary>[] = []): SessionSummary[] {
   const base: SessionSummary[] = [
-    { id: 'session-1', deviceLabel: 'Chrome on Windows', approxLocation: 'Mumbai, India', lastActiveAt: '2026-08-17T08:30:00.000Z', isCurrent: true },
-    { id: 'session-2', deviceLabel: 'Safari on iPhone', approxLocation: 'Mumbai, India', lastActiveAt: '2026-08-16T19:12:00.000Z', isCurrent: false },
-    { id: 'session-3', deviceLabel: 'Firefox on macOS', approxLocation: 'Pune, India', lastActiveAt: '2026-08-14T11:05:00.000Z', isCurrent: false },
+    { id: 'session-1', deviceLabel: 'Chrome on Windows', approxLocation: { city: 'Mumbai', country: 'India' }, lastActiveAt: '2026-08-17T08:30:00.000Z', isCurrent: true },
+    { id: 'session-2', deviceLabel: 'Safari on iPhone', approxLocation: { city: 'Mumbai', country: 'India' }, lastActiveAt: '2026-08-16T19:12:00.000Z', isCurrent: false },
+    { id: 'session-3', deviceLabel: 'Firefox on macOS', approxLocation: { city: 'Pune', country: 'India' }, lastActiveAt: '2026-08-14T11:05:00.000Z', isCurrent: false },
   ];
   if (overrides.length === 0) return base;
   return base.map((session, i) => ({ ...session, ...overrides[i] }));

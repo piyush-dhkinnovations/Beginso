@@ -79,7 +79,7 @@ export function BrandingTab() {
 
   return (
     <div className="flex flex-col gap-3">
-      <BrandingPanel branding={branding} formTitle="New Form" onUpdate={handleUpdate} />
+      <BrandingPanel branding={branding} formTitle="New Form" onUpdate={handleUpdate} showHeading={false} />
       <p className="text-caption text-neutral-500">
         These defaults apply to new forms only — existing forms keep their own branding.
       </p>
