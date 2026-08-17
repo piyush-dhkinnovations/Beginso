@@ -37,3 +37,12 @@ export const reportKeys = {
   list: (page: number) => [...reportKeys.all, 'list', page] as const,
   detail: (id: string) => [...reportKeys.all, 'detail', id] as const,
 };
+
+export const settingsKeys = {
+  all: ['settings'] as const,
+  profile: () => [...settingsKeys.all, 'profile'] as const,
+  workspace: () => [...settingsKeys.all, 'workspace'] as const,
+  notifications: () => [...settingsKeys.all, 'notifications'] as const,
+  sessions: () => [...settingsKeys.all, 'sessions'] as const,
+  exportJob: (jobId: string) => [...settingsKeys.all, 'export', jobId] as const,
+};
