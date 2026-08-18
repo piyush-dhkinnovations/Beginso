@@ -1,8 +1,6 @@
 /**
- * Shared TypeScript interfaces for Analytics (Sprint 5).
- * Shapes match the proposed backend contract in docs/backend-contract/api-reference.md §4 —
- * not yet confirmed live, see requirements.md §15. `GET /api/analytics/questions` in particular
- * is an Open Question pending backend sign-off.
+ * Shared TypeScript interfaces for Analytics.
+ * Shapes match the backend contract in docs/backend-contract/api-reference.md §4.
  */
 
 export interface GetAnalyticsParams {

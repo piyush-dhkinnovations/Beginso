@@ -86,7 +86,6 @@ export function UserProfileDropdown() {
           )}
         </div>
         
-        {/* User info — only rendered once auth has resolved */}
         {!isLoading && user && (
           <div className="hidden sm:flex flex-col text-left">
             <span className="text-body-sm font-semibold text-neutral-800 leading-none">
@@ -99,7 +98,6 @@ export function UserProfileDropdown() {
             )}
           </div>
         )}
-        {/* Skeleton name lines while loading */}
         {isLoading && (
           <div className="hidden sm:flex flex-col gap-1">
             <div className="w-20 h-2.5 rounded bg-neutral-200 animate-pulse" />
@@ -110,10 +108,8 @@ export function UserProfileDropdown() {
         <ChevronDown size={16} className={cn("text-neutral-500 transition-transform duration-200", isOpen && "rotate-180")} />
       </button>
 
-      {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-neutral-100 focus:outline-none z-50 animate-fade-in">
-          {/* User Details Header (mobile only) — real data only */}
           {user && (
             <div className="px-4 py-3 sm:hidden">
               <p className="text-body-sm font-semibold text-neutral-800 truncate">{user.name}</p>

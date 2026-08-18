@@ -61,7 +61,7 @@ export interface PaginatedResponsesResult {
   totalPages: number;
 }
 
-/** GET /api/responses/stats — requested, not yet backend-confirmed (see api-reference.md §3). */
+/** GET /api/responses/stats */
 export interface ResponseStats {
   total: number;
   new: number;

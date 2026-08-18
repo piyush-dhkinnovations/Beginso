@@ -25,7 +25,6 @@ export default function DashboardPage() {
     enabled: !authLoading && isAuthenticated,
   });
 
-  // If AuthContext is verifying the session, render full page overlay loader
   if (authLoading) {
     return <LoadingSpinner variant="overlay" />;
   }
@@ -34,16 +33,13 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto">
-      {/* Header */}
       <DashboardHeader
         title="Dashboard"
         subtitle="Manage and analyze Beginso pipeline interactions."
       />
 
-      {/* Welcome Widget */}
       <WelcomeSection />
 
-      {/* Statistics Cards — driven by real API data */}
       {isError ? (
         <Card role="alert" className="flex items-center justify-between gap-4">
           <div>
@@ -56,10 +52,8 @@ export default function DashboardPage() {
         <StatisticsCards isLoading={isLoading} counts={analytics} />
       )}
 
-      {/* Quick Actions */}
       <QuickActionsSection />
 
-      {/* Recent Activity */}
       <RecentActivitySection
         hasForms={hasForms}
         activities={analytics?.recentActivity}
