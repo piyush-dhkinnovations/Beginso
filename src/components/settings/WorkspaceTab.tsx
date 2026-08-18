@@ -10,6 +10,7 @@ import { settingsKeys } from '@/lib/queryKeys';
 import { useToast } from '@/components/common/Toast';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { DangerZoneSection } from './DangerZoneSection';
 
 interface WorkspaceTabProps {
   onDirtyChange?: (isDirty: boolean) => void;
@@ -89,11 +90,7 @@ export function WorkspaceTab({ onDirtyChange }: WorkspaceTabProps) {
         </Button>
       </form>
 
-      {/* DangerZoneSection lands Thursday (task 4.1) — stub placeholder for now. */}
-      <div className="rounded-lg border border-rose-200 bg-rose-50 p-4">
-        <p className="text-body-sm font-semibold text-rose-900">Danger Zone</p>
-        <p className="text-caption text-rose-700 mt-1">Export or delete this workspace — coming later this sprint.</p>
-      </div>
+      <DangerZoneSection workspaceName={workspace.name} />
     </div>
   );
 }

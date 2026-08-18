@@ -23,6 +23,15 @@ vi.mock('@/components/common/Toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
+// WorkspaceTab now renders DangerZoneSection -> DeleteWorkspaceModal, which imports
+// @/lib/firebase's real getAuth() — throws in this test env without a valid API key, even though
+// these tests never open that modal. Same mock ChangePasswordModal.test.tsx/ProfileTab.test.tsx
+// already use for the identical reason.
+vi.mock('@/lib/firebase', () => ({ auth: {} }));
+// DeleteWorkspaceModal also calls useAuth(), which needs a real AuthProvider context this test
+// doesn't render — mocked the same way DeleteWorkspaceModal.test.tsx itself does.
+vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ logout: vi.fn() }) }));
+
 import { WorkspaceTab } from '@/components/settings/WorkspaceTab';
 
 function renderTab() {

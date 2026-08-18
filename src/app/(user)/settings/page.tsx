@@ -30,10 +30,22 @@ export default function SettingsPage() {
   const tabFromUrl = searchParams.get('tab') as SettingsTab | null;
   const activeTab: SettingsTab = tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'profile';
 
-  // Per-tab dirty state (Requirement 12.1/12.2) — only Profile reports today; other tabs' RHF
-  // instances will call the same setter once they land Tue–Thu.
+  // Per-tab dirty state (Requirement 12.1/12.2).
   const [dirtyTabs, setDirtyTabs] = useState<Set<SettingsTab>>(new Set());
   const [pendingTab, setPendingTab] = useState<SettingsTab | null>(null);
+
+  // Requirement 12.1: an unsaved edit on a tab must survive switching away and back. Rendering
+  // tabs as `{activeTab === 'x' && <XTab/>}` unmounts the previous tab entirely on switch,
+  // destroying its local RHF state — real bug, found while writing Property 1's test (a switched-
+  // away-from tab's typed-but-unsaved value was lost on return, not preserved as required). Fixed
+  // by keeping every tab mounted once first visited (CSS `hidden`, not JSX-omitted) rather than
+  // never unmounting at all — still true that a tab never visited this session never fires its
+  // query (design.md §20's "no over-fetching on mount" principle), since it never mounts until
+  // its tab is actually clicked at least once.
+  const [visitedTabs, setVisitedTabs] = useState<Set<SettingsTab>>(new Set([activeTab]));
+  if (!visitedTabs.has(activeTab)) {
+    setVisitedTabs(new Set(visitedTabs).add(activeTab));
+  }
 
   function setTabDirty(tab: SettingsTab, isDirty: boolean) {
     setDirtyTabs((prev) => {
@@ -70,15 +82,31 @@ export default function SettingsPage() {
           unbounded — otherwise its own `mx-auto` has extra room to center it away from the left
           edge that every other tab's content starts flush against. */}
       <div className={activeTab === 'branding' ? 'max-w-4xl' : 'max-w-[440px]'}>
-        {activeTab === 'profile' && (
-          <ProfileTab onDirtyChange={(isDirty) => setTabDirty('profile', isDirty)} />
+        {visitedTabs.has('profile') && (
+          <div className={activeTab === 'profile' ? '' : 'hidden'}>
+            <ProfileTab onDirtyChange={(isDirty) => setTabDirty('profile', isDirty)} />
+          </div>
         )}
-        {activeTab === 'workspace' && (
-          <WorkspaceTab onDirtyChange={(isDirty) => setTabDirty('workspace', isDirty)} />
+        {visitedTabs.has('workspace') && (
+          <div className={activeTab === 'workspace' ? '' : 'hidden'}>
+            <WorkspaceTab onDirtyChange={(isDirty) => setTabDirty('workspace', isDirty)} />
+          </div>
         )}
-        {activeTab === 'branding' && <BrandingTab />}
-        {activeTab === 'notifications' && <NotificationsTab />}
-        {activeTab === 'security' && <SecurityTab />}
+        {visitedTabs.has('branding') && (
+          <div className={activeTab === 'branding' ? '' : 'hidden'}>
+            <BrandingTab />
+          </div>
+        )}
+        {visitedTabs.has('notifications') && (
+          <div className={activeTab === 'notifications' ? '' : 'hidden'}>
+            <NotificationsTab />
+          </div>
+        )}
+        {visitedTabs.has('security') && (
+          <div className={activeTab === 'security' ? '' : 'hidden'}>
+            <SecurityTab />
+          </div>
+        )}
       </div>
 
       <Modal
