@@ -56,7 +56,6 @@ export function BuilderHeader({
 
   return (
     <header className="flex items-center justify-between px-4 h-14 border-b bg-white shrink-0 shadow-sm">
-      {/* Left Section: Back + Editable Title */}
       <div className="flex items-center gap-2 flex-1 max-w-[30%]">
         <Button
           onClick={onBack}
@@ -79,9 +78,7 @@ export function BuilderHeader({
         />
       </div>
 
-      {/* Right Section: Save State Indicator & Preview/Publish/Delete */}
       <div className="flex items-center gap-4 flex-1 justify-end">
-        {/* Save State Label */}
         <div className="text-body-sm select-none">
           {isSaving || saveState === 'saving' ? (
             <span className="text-neutral-500 font-medium animate-pulse">Saving…</span>
@@ -94,7 +91,6 @@ export function BuilderHeader({
           ) : null}
         </div>
 
-        {/* Delete */}
         <Button
           onClick={onDelete}
           variant="ghost"
@@ -107,7 +103,6 @@ export function BuilderHeader({
           <span className="sr-only">Delete</span>
         </Button>
 
-        {/* Preview */}
         <Button
           onClick={onPreview}
           variant="ghost"
@@ -118,7 +113,6 @@ export function BuilderHeader({
           <span>Preview</span>
         </Button>
 
-        {/* Publish / Status control */}
         {status === 'published' ? (
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1.5 text-emerald-600 font-semibold text-body-sm px-2">

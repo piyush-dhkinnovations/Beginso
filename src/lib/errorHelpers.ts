@@ -4,7 +4,6 @@
 export function getFriendlyErrorMessage(error: unknown): string {
   if (!error) return 'An unexpected error occurred. Please try again.';
 
-  // Cast error to safely read message properties
   const err = error as { message?: string; code?: string; response?: { data?: { error?: { message?: string } } } };
 
   // Prioritize backend-provided API errors if they exist

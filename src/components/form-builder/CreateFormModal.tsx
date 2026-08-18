@@ -49,7 +49,6 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
     resolver: zodResolver(createFormSchema),
   });
 
-  // Auto-focus title on open; reset on close
   useEffect(() => {
     if (isOpen) {
       reset();
@@ -131,7 +130,6 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
           {...register('description')}
         />
 
-        {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
           <Button
             type="button"

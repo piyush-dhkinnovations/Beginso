@@ -1,7 +1,7 @@
 /**
- * Mock fixtures for Reports export (Sprint 5) — unblocks frontend work while
- * `POST/GET /api/reports*` is not yet confirmed live (see requirements.md §15).
- * Same factory-with-overrides shape as `responsesMocks.ts`.
+ * Mock fixtures for Reports export — `__tests__/` fixtures only; runtime code builds directly
+ * against the confirmed-live backend (see docs/backend-contract/api-reference.md §4). Same
+ * factory-with-overrides shape as `responsesMocks.ts`.
  */
 
 import type { ReportJob, PaginatedReportsResult, ReportStatus } from '@/types/report';

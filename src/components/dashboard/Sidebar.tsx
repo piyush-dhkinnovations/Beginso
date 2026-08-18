@@ -71,7 +71,6 @@ export function Sidebar({
         collapsed ? "w-[56px]" : "w-[200px]"
       )}
     >
-      {/* Sidebar Header/Logo slot */}
       <div className={cn(
         "h-[56px] border-b border-neutral-200 flex items-center px-3 shrink-0",
         collapsed ? "justify-center" : "justify-between"
@@ -114,7 +113,6 @@ export function Sidebar({
         )}
       </div>
 
-      {/* Navigation Links */}
       <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           // The Responses/Analytics nav items also cover /forms/[id]/responses and

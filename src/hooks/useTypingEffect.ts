@@ -5,7 +5,6 @@ export function useTypingEffect(text: string, startDelay: number, charDelay: num
   const [isTyping, setIsTyping] = useState(false);
 
   useEffect(() => {
-    // Check for reduced motion
     const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (mediaQuery.matches) {
       setTimeout(() => {

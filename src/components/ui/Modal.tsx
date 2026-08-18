@@ -64,7 +64,6 @@ export function Modal({ isOpen, onClose, title, description, children }: ModalPr
   if (!isOpen) return null;
 
   return (
-    // Backdrop
     <div
       role="presentation"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fade-in"
@@ -73,7 +72,6 @@ export function Modal({ isOpen, onClose, title, description, children }: ModalPr
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      {/* Dialog */}
       <div
         role="dialog"
         aria-modal="true"
@@ -81,7 +79,6 @@ export function Modal({ isOpen, onClose, title, description, children }: ModalPr
         ref={modalRef}
         className="relative w-full max-w-md bg-white rounded-xl shadow-2xl border border-neutral-200 p-6 mx-4 animate-slide-up"
       >
-        {/* Close button */}
         <button
           type="button"
           onClick={onClose}
@@ -91,7 +88,6 @@ export function Modal({ isOpen, onClose, title, description, children }: ModalPr
           <X size={18} />
         </button>
 
-        {/* Header */}
         <div className="mb-5">
           <h2 id="modal-title" className="text-heading-2 font-bold text-neutral-900">
             {title}
@@ -103,7 +99,6 @@ export function Modal({ isOpen, onClose, title, description, children }: ModalPr
           )}
         </div>
 
-        {/* Body */}
         {children}
       </div>
     </div>

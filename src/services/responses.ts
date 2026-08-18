@@ -116,10 +116,9 @@ export const responsesService = {
     return URL.createObjectURL(res.data);
   },
 
-  // GET /api/responses/stats is requested but not yet implemented backend-side (see
-  // docs/backend-contract/api-reference.md §3), so counts are computed client-side from the
-  // existing list endpoint's `total` — one cheap limit:1 request per status. Swap this for the
-  // dedicated endpoint (a single call) once it ships.
+  // GET /api/responses/stats is confirmed live (docs/backend-contract/api-reference.md §3), but
+  // this still computes counts client-side via three limit:1 list requests — swapping to the
+  // dedicated one-call endpoint is a known, not-yet-done frontend-only performance cleanup.
   getStats: (formId?: string): Promise<ResponseStats> =>
     Promise.all(
       (['new', 'in_progress', 'completed'] as const).map((status) =>

@@ -80,12 +80,10 @@ function FormRow({
 
   return (
     <div className="forms-row px-4 py-3 border-b border-neutral-100 last:border-0 hover:bg-neutral-50 transition-colors group">
-      {/* Icon */}
       <div className="[grid-area:icon] w-9 h-9 rounded-lg bg-neutral-100 flex items-center justify-center shrink-0 group-hover:bg-brand-50 transition-colors">
         <FileText size={16} className="text-neutral-500 group-hover:text-brand-600 transition-colors" />
       </div>
 
-      {/* Title + meta */}
       <div className="[grid-area:title] flex flex-col min-w-0">
         <Link
           href={`/forms/${formId}/edit`}
@@ -98,14 +96,12 @@ function FormRow({
         </span>
       </div>
 
-      {/* Status badge */}
       <div className="[grid-area:badge] flex justify-start sm:justify-center">
         <Badge variant={STATUS_VARIANT[form.status]}>
           {STATUS_LABEL[form.status]}
         </Badge>
       </div>
 
-      {/* Actions */}
       <div className="[grid-area:actions] flex items-center justify-end gap-1.5">
         <Link href={`/forms/${formId}/edit`} className="shrink-0">
           <Button variant="secondary" size="small" aria-label={`Edit ${form.title}`} className="w-8 h-8 p-0 shrink-0">
@@ -202,7 +198,6 @@ export default function FormsPage() {
   const [page, setPage] = useState(1);
   const debouncedSearch = useDebounce(search, 300);
 
-  // Fetch forms list
   const { data, isLoading, error } = useQuery({
     queryKey: ['forms', 'list', { search: debouncedSearch, status, page, limit: FORMS_PAGE_LIMIT }],
     queryFn: () => formsService.getForms({
@@ -215,7 +210,6 @@ export default function FormsPage() {
 
   const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / FORMS_PAGE_LIMIT));
 
-  // Duplicate mutation
   const duplicateMutation = useMutation({
     mutationFn: (id: string) => formsService.duplicateForm(id),
     onMutate: (id) => setDuplicatingId(id),
@@ -229,7 +223,6 @@ export default function FormsPage() {
     onSettled: () => setDuplicatingId(null),
   });
 
-  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: (id: string) => formsService.deleteForm(id),
     onMutate: (id) => setDeletingId(id),
@@ -246,7 +239,6 @@ export default function FormsPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-6xl mx-auto animate-fade-in">
-      {/* Page header */}
       <DashboardHeader
         title="Forms"
         subtitle="Build, manage, and publish your forms."
@@ -290,7 +282,6 @@ export default function FormsPage() {
         </select>
       </div>
 
-      {/* Content area */}
       {isLoading ? (
         <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
           {/* Table header — hidden on the stacked mobile layout, see .forms-row-header */}
@@ -305,7 +296,6 @@ export default function FormsPage() {
             <div className="[grid-area:actions]" />
           </div>
 
-          {/* Row placeholders */}
           {Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
@@ -356,7 +346,6 @@ export default function FormsPage() {
             <div className="[grid-area:actions]" />
           </div>
 
-          {/* Rows */}
           {data.forms.map((form) => (
             <FormRow
               key={form._id}
@@ -368,7 +357,6 @@ export default function FormsPage() {
             />
           ))}
 
-          {/* Footer */}
           <div className="px-4 py-2.5 border-t border-neutral-100 bg-neutral-50">
             <span className="text-caption text-neutral-500">
               {data.total} form{data.total !== 1 ? 's' : ''} total
@@ -381,13 +369,11 @@ export default function FormsPage() {
         <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
       )}
 
-      {/* Create Form Modal */}
       <CreateFormModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
 
-      {/* Delete Form Modal */}
       <DeleteFormModal
         isOpen={formToDelete !== null}
         formTitle={formToDelete?.title ?? ''}

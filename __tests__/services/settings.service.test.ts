@@ -123,6 +123,13 @@ describe('settingsService', () => {
     expect(result).toEqual({ id: 'job-1', status: 'queued', expiresAt: '2026-08-15T18:50:00.000Z' });
   });
 
+  it('getExportStatus calls GET /api/workspaces/current/export/status with jobId and unwraps the job', async () => {
+    mockGet.mockResolvedValueOnce({ data: { success: true, exportJob: { id: 'job-1', status: 'completed', expiresAt: '' } } });
+    const result = await settingsService.getExportStatus('job-1');
+    expect(mockGet).toHaveBeenCalledWith('/api/workspaces/current/export/status', { params: { jobId: 'job-1' } });
+    expect(result).toEqual({ id: 'job-1', status: 'completed', expiresAt: '' });
+  });
+
   it('deleteWorkspace calls DELETE /api/workspaces/current with the reauth payload', async () => {
     mockDelete.mockResolvedValueOnce({ data: {} });
     await settingsService.deleteWorkspace({ reauthToken: 'fresh-token' });

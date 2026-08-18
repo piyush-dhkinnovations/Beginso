@@ -19,7 +19,6 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close mobile menu on escape
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -30,7 +29,6 @@ export default function Navbar() {
     return () => window.removeEventListener("keydown", handleEscape);
   }, []);
 
-  // Close mobile menu on click outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -59,7 +57,6 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-[72px]">
-          {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center gap-2">
               <span className="text-heading-2 text-neutral-900 font-bold">
@@ -68,7 +65,6 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <a
@@ -81,7 +77,6 @@ export default function Navbar() {
             ))}
           </nav>
 
-          {/* Desktop Auth/CTAs */}
           <div className="hidden md:flex items-center gap-4">
             {isAuthenticated ? (
               <Link href="/dashboard">
@@ -102,7 +97,6 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile menu button */}
           <div className="md:hidden flex items-center">
             <button
               className="hamburger-btn min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 rounded-md text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 focus:outline-none"
@@ -122,7 +116,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Menu Dropdown */}
       {isMobileMenuOpen && (
             <div id="mobile-menu" className="md:hidden mobile-menu-container bg-white border-b border-neutral-200 shadow-md absolute w-full">
           <div className="px-4 pt-2 pb-4 space-y-1 sm:px-3">

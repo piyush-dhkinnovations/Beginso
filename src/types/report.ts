@@ -1,7 +1,6 @@
 /**
- * Shared TypeScript interfaces for Reports export (Sprint 5).
- * Shapes match the proposed backend contract in docs/backend-contract/api-reference.md §4 —
- * not yet confirmed live, see requirements.md §15.
+ * Shared TypeScript interfaces for Reports export.
+ * Shapes match the backend contract in docs/backend-contract/api-reference.md §4.
  */
 
 export type ReportFormat = 'csv' | 'pdf';
@@ -30,11 +29,9 @@ export interface ReportJob {
   status: ReportStatus;
   formId?: string;
   formTitle?: string;      // denormalized for display; falls back to "All Forms" when absent with no formId
-  // Echoed-back scope of the original request — assumed, not yet confirmed against a live
-  // response (same category of gap Monday's analytics types had before Wednesday's real
-  // payloads corrected them). Named `responseStatus` rather than `status` to avoid colliding
-  // with this job's own lifecycle `status` above. Used to render Requirement 11.1's "scoping
-  // filters used" row and to reconstruct the exact original filters for Requirement 11.5's Retry.
+  // Echoed-back scope of the original request. Named `responseStatus` rather than `status` to
+  // avoid colliding with this job's own lifecycle `status` above — used to render the "scoping
+  // filters used" row and to reconstruct the exact original filters for Retry.
   responseStatus?: 'new' | 'in_progress' | 'completed';
   from?: string;            // ISO 8601
   to?: string;              // ISO 8601
