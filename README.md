@@ -56,7 +56,8 @@ User exports CSV or PDF report
 
 ### Reports & Exports
 - CSV export streaming response data directly.
-- Headless Chromium (Puppeteer) PDF summary reports.
+- PDF summary reports via a pure-JS PDFKit engine (backend replaced Puppeteer/headless Chromium
+  with PDFKit on 13 Aug 2026 — no browser binary dependency).
 
 ### Public Form Experience
 - Responsive public forms optimized for every screen size from 320px up.
@@ -74,8 +75,8 @@ User exports CSV or PDF report
 
 ## Tech Stack
 
-- **Frontend:** Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Zustand · TanStack Query · React Hook Form · Zod · dnd-kit · Apache ECharts (planned, Sprint 5) · Lucide React
-- **Backend:** Express.js · Node.js 20 LTS · TypeScript · Mongoose · Zod · Multer · Puppeteer · Helmet · CORS · express-rate-limit · pino
+- **Frontend:** Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Zustand · TanStack Query · React Hook Form · Zod · dnd-kit · Apache ECharts · Lucide React
+- **Backend:** Express.js · Node.js 20 LTS · TypeScript · Mongoose · Zod · Multer · PDFKit (PDF report generation) · Helmet · CORS · express-rate-limit · pino
 - **Database:** MongoDB Atlas (application data) · Firebase Authentication (login credentials only)
 - **Authentication:** Firebase Auth login → same-origin Next.js BFF → Express JWT session → frontend-domain HttpOnly Secure cookie (`SameSite=Lax`)
 - **Storage:** Current backend audit: local `/uploads`; product/deployment target: durable Cloudflare R2-compatible object storage
@@ -90,13 +91,15 @@ This repository holds the **frontend only** — the Express/MongoDB backend live
 ```
 Onboarding Platform/     # Next.js 16 client-side application (this repo)
 ├── src/
-│   ├── app/           # App router pages & layouts: (auth), (user), api/
-│   ├── components/    # UI components (ui/, common/, dashboard/, form-builder/, landing/, auth/, providers/)
-│   ├── services/      # API integration services (auth.ts, forms.ts)
+│   ├── app/           # App router pages & layouts: (auth), (user), onboarding/, api/
+│   ├── components/    # UI components (ui/, common/, dashboard/, form-builder/, public-form/,
+│   │                  #   responses/, reports/, analytics/, settings/, templates/, landing/, auth/, providers/)
+│   ├── services/      # API integration services — one per domain (auth, forms, responses,
+│   │                  #   analytics, reports, settings, templates, notifications, publicForm, upload, dashboard)
 │   ├── store/         # Zustand state stores (builderStore.ts)
 │   ├── lib/           # Firebase client, axios instance, schemas, auth context, helpers
-│   ├── hooks/         # Shared hooks (useAuth)
-│   └── types/         # Shared TypeScript types (form.ts, etc.)
+│   ├── hooks/         # Shared hooks (useAuth, useDebounce, useIntersectionObserver, useTypingEffect)
+│   └── types/         # Shared TypeScript types (form, response, analytics, report, settings, notification, publicForm, dashboard)
 ├── src/proxy.ts       # Route guards; validates the HttpOnly session with the backend
 ├── __tests__/         # Vitest unit/property-based tests
 ├── e2e/               # Playwright end-to-end tests + mock backend server
@@ -126,16 +129,16 @@ JavaScript never receives or stores the JWT.
 
 | Wk | Sprint / Track | Focus | Status | Dates |
 |:---|:---|:---|:---|:---|
-| 1 | Sprint 1 | Auth + Landing + Dashboard foundation | ⚠️ **Frontend implemented; exit gate incomplete** — reset email and signed-link verification are implemented; backend `email_verified` enforcement and final/manual Kiro tasks remain | 29 Jun – 04 Jul |
+| 1 | Sprint 1 | Auth + Landing + Dashboard foundation | ✅ **Complete** | 29 Jun – 04 Jul |
 | 2 | Sprint 2 (Part 1) | Form Builder core: toolbox, dnd-kit canvas, basic properties, CRUD integration | ✅ **Complete** | 06 Jul – 11 Jul |
-| 3 | Sprint 2 (Part 2) | Form Builder completion: full field properties, Logic Rules, Branding, publish flow | ✅ **Implemented** · 7 manual acceptance checks remain unchecked in the Kiro task file | 13 Jul – 18 Jul |
-| 4 | Sprint 3 | Public Form: SSR rendering, validation, file uploads, spam prevention | ✅ **Frontend implemented** · 41 Playwright scenarios are checked in | 20 Jul – 25 Jul |
-| 5 | Super Admin (merged) | Developer console: logs, user CRUD, audit trail | **Not started** | 27 Jul – 01 Aug |
-| 6 | Sprint 4 | Response Management: paginated response table, filters, submission details, status updates | ✅ **Implemented** · Saturday manual/exit gate remains unchecked | 03 Aug – 08 Aug |
-| 7 | Sprint 5+6 (merged) | Analytics & Reports: ECharts integration, CSV/PDF export, Templates Gallery polish | Planned | 10 Aug – 15 Aug |
-| 8 | Sprint 7+8 (merged) | Settings, Forms Manager, QA/Hardening & Launch | Planned | 17 Aug – 22 Aug |
+| 3 | Sprint 2 (Part 2) | Form Builder completion: full field properties, Logic Rules, Branding, publish flow | ✅ **Complete** | 13 Jul – 18 Jul |
+| 4 | Sprint 3 | Public Form: SSR rendering, validation, file uploads, spam prevention | ✅ **Complete** | 20 Jul – 25 Jul |
+| 5 | Super Admin (separate repo, `Beginso-Admin`) | Developer console: logs, user CRUD, audit trail | ✅ **Complete** — auth, all 4 screens (Overview, Logs, Users, Audit), plus Mail Logs UI and last-login-location map added since | 27 Jul – 01 Aug |
+| 6 | Sprint 4 | Response Management: paginated response table, filters, submission details, status updates | ✅ **Complete** | 03 Aug – 08 Aug |
+| 7 | Sprint 5 | Analytics & Reports: ECharts integration, CSV/PDF export | ✅ **Complete**, merged to `main` | 10 Aug – 15 Aug |
+| 8 | Sprint 6 | Settings (Profile, Workspace, Branding, Notifications, Security, Danger Zone), plus Onboarding + in-app notification bell (added outside the original spec) | ✅ **Complete** — on `feature/profile-settings`, pushed to origin, **not yet merged to `main`** | 17 Aug – 22 Aug |
 
-*Note: Weeks 1–3 dates are confirmed; Weeks 4–8 are computed forward as consecutive Mon–Sat working weeks and shift together if any slips occur. MVP target: 22 Aug 2026 (down from the original 12 Sep 2026 target).*
+*Note: Weeks 1–3 dates are confirmed; Weeks 4–8 are computed forward as consecutive Mon–Sat working weeks and shift together if any slips occur. MVP target: 22 Aug 2026 (down from the original 12 Sep 2026 target). Remaining before `v1.0.0`: merge `feature/profile-settings` to `main`, deploy, and run a final whole-app smoke pass — see `docs/status/implementation-status.md` and the shared `Beginso-Report` repo's `PROJECT_STATUS.md` for day-to-day detail.*
 
 ---
 
@@ -276,8 +279,9 @@ The project has two independent layers of automated tests. Both must pass before
 
 Covers pure logic in isolation — the conditional-logic engine, the dynamic Zod schema builder, file validation, the honeypot/draft-persistence helpers — plus individual components via `@testing-library/react`, and API services with `fetch` mocked at the network layer. A subset are **property-based tests** (via `fast-check`): instead of asserting one hand-picked example, they assert an invariant holds across 100 randomly generated inputs per run — e.g. "a field hidden by conditional logic is never present in the submitted answers, no matter what the rest of the form looks like."
 
-These tests never touch a real backend or a real browser. The current suite contains 384 tests
-across 59 files, including auth/security and public-form draft-storage coverage.
+These tests never touch a real backend or a real browser. The current suite contains 686 tests
+across 111 files (verified 18 Aug 2026), including auth/security, public-form draft-storage,
+Analytics/Reports, and Settings/Onboarding/Notifications coverage.
 
 ### End-to-End Tests (Playwright)
 
@@ -293,4 +297,4 @@ If a spec file fails, Playwright saves a screenshot and a full trace under `test
 
 ---
 
-*MVP v1.0 · June 2026 · Confidential — Internal Use*
+*MVP v1.0 (target 22 Aug 2026) · Updated 18 Aug 2026 · Confidential — Internal Use*
