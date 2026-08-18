@@ -1,7 +1,8 @@
 'use client';
 
-import { Bell, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { UserProfileDropdown } from './UserProfileDropdown';
+import { NotificationBell } from './NotificationBell';
 
 interface TopNavProps {
   onMenuClick?: () => void;
@@ -30,17 +31,7 @@ export function TopNav({ onMenuClick }: TopNavProps) {
 
       {/* Right side: Notifications & User Profile */}
       <div className="flex items-center gap-2">
-        {/* Notification Bell */}
-        <button
-          className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors relative focus:outline-none"
-          aria-label="View notifications"
-        >
-          <Bell size={20} />
-          {/* notification dot removed — add back when real notifications exist */}
-
-        </button>
-
-        {/* User Dropdown */}
+        <NotificationBell />
         <UserProfileDropdown />
       </div>
     </header>

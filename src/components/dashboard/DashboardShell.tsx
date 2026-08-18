@@ -73,7 +73,6 @@ export function DashboardShell({ children, initialCollapsed }: { children: React
 
   return (
     <div className="dashboard-shell flex flex-col min-h-screen bg-white">
-      {/* Top Navbar */}
       <TopNav onMenuClick={() => setMobileMenuOpen(true)} />
 
       {/* Mobile nav drawer — trigger lives in TopNav, only visible below the shell's 520px
@@ -109,9 +108,7 @@ export function DashboardShell({ children, initialCollapsed }: { children: React
         </div>
       )}
 
-      {/* Main Container */}
       <div className="dashboard-main-frame flex min-h-[calc(100vh-56px)]">
-        {/* Desktop/tablet Sidebar */}
         <div
           className={cn(
             "dashboard-desktop-sidebar fixed left-0 top-[56px] bottom-0 z-20 transition-all duration-300 ease-in-out",
@@ -124,7 +121,6 @@ export function DashboardShell({ children, initialCollapsed }: { children: React
           />
         </div>
 
-        {/* Content Area */}
         <main
           className={cn(
             "dashboard-content flex-1 p-6 overflow-y-auto min-h-full transition-all duration-300 ease-in-out",

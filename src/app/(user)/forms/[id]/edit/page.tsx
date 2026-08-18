@@ -86,14 +86,12 @@ export default function BuilderPageShell() {
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Modal visibility state
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [pendingNavUrl, setPendingNavUrl] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Read state and actions from builderStore
   const formId = useBuilderStore((state) => state.formId);
   const formTitle = useBuilderStore((state) => state.formTitle);
   const fields = useBuilderStore((state) => state.fields);
@@ -135,7 +133,6 @@ export default function BuilderPageShell() {
   const canUndo = undoStack.length > 0;
   const canRedo = redoStack.length > 0;
 
-  // Query to fetch the form details
   const { data: form, isLoading, error } = useQuery({
     queryKey: ['form', id],
     queryFn: () => formsService.getFormById(id),
@@ -159,7 +156,6 @@ export default function BuilderPageShell() {
 
   const hasRedirected = useRef(false);
 
-  // Handle data fetch error
   useEffect(() => {
     if (error && !hasRedirected.current) {
       hasRedirected.current = true;
@@ -170,7 +166,6 @@ export default function BuilderPageShell() {
 
   // ─── Autosave ────────────────────────────────────────────────────────────────
 
-  // Debounced Autosave effect
   useEffect(() => {
     if (!dirty || !formId || formId === 'undefined') return;
 
@@ -243,7 +238,6 @@ export default function BuilderPageShell() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
       
       const current = saveStateRef.current;
-      // Flush save on unmount if still dirty
       if (current.dirty && current.formId && current.formId !== 'undefined') {
         saveFormSnapshot(current.formId, current).catch(() => {});
       }
@@ -538,7 +532,6 @@ export default function BuilderPageShell() {
 
   return (
     <>
-      {/* Mobile Gate (visible at viewport width <= 520px) */}
       {/* -m-6 cancels the (user) layout's <main className="p-6">; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar */}
       <div className="flex max-[520px]:flex items-center justify-center h-[calc(100vh-56px)] -m-6 min-[521px]:hidden bg-neutral-50 px-6">
         <div className="text-center bg-white p-8 rounded-xl shadow-card border border-neutral-200 max-w-sm">
@@ -548,7 +541,6 @@ export default function BuilderPageShell() {
         </div>
       </div>
 
-      {/* Desktop Wrapper (visible at viewport width >= 521px) */}
       {/* -m-6 cancels the (user) layout's <main className="p-6">; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar. Canvas keeps its own internal overflow-y-auto below. */}
       <div className="hidden min-[521px]:flex flex-col h-[calc(100vh-56px)] -m-6 overflow-hidden bg-neutral-50">
         {isLoading ? (

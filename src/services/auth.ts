@@ -89,6 +89,16 @@ export const authService = {
     return data;
   },
 
+  // Confirmed live 17 Aug 2026 per a direct backend report (commit a7a5185) — idempotent, also
+  // triggers a "welcome" notification server-side. Called after the onboarding page's
+  // workspace-name save succeeds; note PATCH /api/workspaces/current also sets this flag as a
+  // side effect per the same report, so this call is a deliberate belt-and-suspenders confirm,
+  // not the only way it gets set. Caught by the caller rather than blocking navigation to
+  // /dashboard even so — never something the user should be stuck behind.
+  async completeOnboarding() {
+    await axiosInstance.post('/api/users/me/onboarding-complete');
+  },
+
   async logout() {
     await axiosInstance.post('/api/auth/logout').catch(() => { });
   },

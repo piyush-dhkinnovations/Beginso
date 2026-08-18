@@ -7,7 +7,6 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 export function Badge({ variant, children, className, ...props }: BadgeProps) {
-  // Safe string conversion and truncation
   const text = typeof children === "string" ? children : "";
   const truncatedText = text.length > 30 ? text.slice(0, 30) + "..." : text;
 

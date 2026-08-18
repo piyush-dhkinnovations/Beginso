@@ -69,7 +69,6 @@ export function FieldCard({
     data: { from: 'canvas' },
   });
 
-  // Look up icon from toolbox configuration
   const config = FIELD_TYPE_CONFIG.find((cfg) => cfg.type === field.type);
   const Icon = config ? config.icon : null;
 
@@ -103,7 +102,6 @@ export function FieldCard({
     // Outer wrapper keeps layout space and holds the drop-zone indicators.
     // It must NOT be the node that gets the dnd transform — only the inner card does.
     <div className="flex flex-col gap-1.5">
-      {/* Drop zone ABOVE this card */}
       {insertIndicator === 'above' && <DropZoneCard />}
 
       <div
@@ -132,7 +130,6 @@ export function FieldCard({
             showInlinePanel ? 'rounded-t-lg' : 'rounded-lg'
           }`}
         >
-          {/* Grip Handle — drag listeners only, no click propagation */}
           <div
             {...listeners}
             {...attributes}
@@ -142,7 +139,6 @@ export function FieldCard({
             <GripVertical size={16} />
           </div>
 
-          {/* Icon */}
           {Icon && (
             <Icon size={16} className="text-neutral-500 shrink-0 mt-2" />
           )}
@@ -158,7 +154,6 @@ export function FieldCard({
                 )}
               </span>
 
-              {/* Action Buttons */}
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all shrink-0">
                 <button
                   type="button"
@@ -206,7 +201,6 @@ export function FieldCard({
         )}
       </div>
 
-      {/* Drop zone BELOW this card */}
       {insertIndicator === 'below' && <DropZoneCard />}
     </div>
   );

@@ -53,15 +53,19 @@ describe('SessionsList', () => {
     expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
-  it('renders every session and never shows Revoke on the current one', async () => {
+  it('renders every session and never shows a working Revoke on the current one', async () => {
     mockGetSessions.mockResolvedValue({ sessions: SESSIONS });
     renderList();
 
     expect(await screen.findByText('Chrome on Windows')).toBeInTheDocument();
     expect(screen.getByText('Safari on iPhone')).toBeInTheDocument();
     expect(screen.getByText('This device')).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: /Revoke session on/ })).toHaveLength(1);
-    expect(screen.queryByRole('button', { name: 'Revoke session on Chrome on Windows' })).not.toBeInTheDocument();
+    // SessionRow always renders the button (so every row reserves the same height), hiding it for
+    // the current session via `invisible` + `tabIndex={-1}` rather than omitting it from the DOM —
+    // both exist, but only the non-current one is a real, focusable/interactive control.
+    expect(screen.getAllByRole('button', { name: /Revoke session on/ })).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Revoke session on Chrome on Windows' })).toHaveAttribute('tabIndex', '-1');
+    expect(screen.getByRole('button', { name: 'Revoke session on Safari on iPhone' })).not.toHaveAttribute('tabIndex');
   });
 
   it('shows "No other active sessions." when only the current session exists', async () => {

@@ -47,3 +47,10 @@ export const settingsKeys = {
   workspace: () => [...settingsKeys.all, 'workspace'] as const,
   sessions: () => [...settingsKeys.all, 'sessions'] as const,
 };
+
+// Not to be confused with settingsKeys' *email preference* notifications (Requirement 7 of
+// Sprint 6) — this is the in-app notification bell/dropdown feed, a separate feature.
+export const notificationKeys = {
+  all: ['notifications'] as const,
+  list: () => [...notificationKeys.all, 'list'] as const,
+};
