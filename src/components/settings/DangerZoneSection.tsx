@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { isAxiosError } from 'axios';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Download, Loader2 } from 'lucide-react';
 import { settingsService } from '@/services/settings';
 import { useToast } from '@/components/common/Toast';
@@ -10,6 +9,10 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { DeleteWorkspaceModal } from './DeleteWorkspaceModal';
 import type { WorkspaceExportJob } from '@/types/settings';
+
+function shouldPollExportJob(status: WorkspaceExportJob['status']): boolean {
+  return status === 'queued' || status === 'processing';
+}
 
 interface DangerZoneSectionProps {
   workspaceName: string;
@@ -22,50 +25,51 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
   const { toast } = useToast();
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [job, setJob] = useState<WorkspaceExportJob | null>(null);
-  const [isChecking, setIsChecking] = useState(false);
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const requestExportMutation = useMutation({
     mutationFn: () => settingsService.requestWorkspaceExport(),
     onSuccess: (createdJob) => {
-      setJob(createdJob);
-      setBlobUrl(null);
+      setJobId(createdJob.id);
       setIsExportModalOpen(false);
     },
     onError: () => toast('Failed to start export. Please try again.', 'error'),
   });
 
-  // No dedicated status-check endpoint is documented (requirements.md §15 item 12, still open) —
-  // this probes readiness by attempting the actual download, since that's the only confirmed
-  // endpoint. A 404 reads as "not ready yet" (stays queued); any other failure is treated as a
-  // real error. See settingsService.getExportFileBlobUrl's comment for the full rationale.
-  async function checkExportReady() {
-    if (!job) return;
-    setIsChecking(true);
-    try {
-      const url = await settingsService.getExportFileBlobUrl(job.id);
-      setBlobUrl(url);
-      setJob({ ...job, status: 'completed' });
-    } catch (error) {
-      if (isAxiosError(error) && error.response?.status === 404) {
-        // Not ready yet — job stays queued/processing, user can check again shortly.
-      } else {
-        setJob({ ...job, status: 'failed' });
-      }
-    } finally {
-      setIsChecking(false);
-    }
-  }
+  // Confirmed live 17 Aug 2026 (settingsService.getExportStatus) — same queued/processing-until-
+  // terminal auto-poll pattern Sprint 5's shouldPollReportJob already established for Reports,
+  // now that a real status endpoint exists (this was a manual "Check if ready" button until then;
+  // see tasks.md's Notes for why that interim design existed).
+  const statusQuery = useQuery({
+    queryKey: ['workspace-export-status', jobId],
+    queryFn: () => settingsService.getExportStatus(jobId as string),
+    enabled: jobId !== null,
+    refetchInterval: (query) => (query.state.data && shouldPollExportJob(query.state.data.status) ? 5000 : false),
+  });
 
-  function handleDownload() {
-    if (!blobUrl || !job) return;
-    const link = document.createElement('a');
-    link.href = blobUrl;
-    link.download = `workspace-export-${job.id}.zip`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+  const status = statusQuery.data?.status;
+
+  // Never cached across clicks (matches ReportJobRow's identical download handler) — fetched
+  // fresh on click rather than pre-fetched during polling, so a completed-but-never-downloaded
+  // export doesn't hold an unused blob URL in memory.
+  async function handleDownload() {
+    if (!jobId) return;
+    setIsDownloading(true);
+    try {
+      const url = await settingsService.getExportFileBlobUrl(jobId);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `workspace-export-${jobId}.zip`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast('Failed to download export. Please try again.', 'error');
+    } finally {
+      setIsDownloading(false);
+    }
   }
 
   return (
@@ -81,7 +85,7 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
       <div className="flex flex-col gap-3">
         <div>
           <p className="text-body-sm font-semibold text-neutral-800">Export workspace data</p>
-          {!job ? (
+          {!jobId ? (
             <Button
               variant="secondary"
               size="small"
@@ -91,28 +95,29 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
             >
               Export Workspace Data
             </Button>
-          ) : job.status === 'completed' ? (
-            <Button variant="secondary" size="small" className="mt-2" onClick={handleDownload}>
+          ) : status === 'completed' ? (
+            <Button
+              variant="secondary"
+              size="small"
+              className="mt-2"
+              isLoading={isDownloading}
+              onClick={() => void handleDownload()}
+            >
               <Download size={14} className="mr-1.5" />
               Download export
             </Button>
-          ) : job.status === 'failed' ? (
+          ) : status === 'failed' ? (
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <p className="text-caption text-rose-600">Something went wrong preparing your export.</p>
-              <Button variant="secondary" size="small" onClick={() => setJob(null)}>
+              <Button variant="secondary" size="small" onClick={() => setJobId(null)}>
                 Try again
               </Button>
             </div>
           ) : (
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <span className="inline-flex items-center gap-1.5 text-caption text-neutral-500">
-                <Loader2 size={14} className="animate-spin" aria-hidden="true" />
-                Preparing your export…
-              </span>
-              <Button variant="secondary" size="small" isLoading={isChecking} onClick={() => void checkExportReady()}>
-                Check if ready
-              </Button>
-            </div>
+            <span className="mt-2 inline-flex items-center gap-1.5 text-caption text-neutral-500">
+              <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+              Preparing your export…
+            </span>
           )}
         </div>
 

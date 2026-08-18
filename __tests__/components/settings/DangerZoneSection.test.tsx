@@ -1,8 +1,9 @@
 /**
  * __tests__/components/settings/DangerZoneSection.test.tsx
  * Feature: sprint-6-settings
- * Tests: DangerZoneSection — export request flow, status transitions (queued → completed shows
- * Download, queued → failed shows an error), Delete Workspace opens DeleteWorkspaceModal
+ * Tests: DangerZoneSection — export request flow, status-driven rendering (queued/processing
+ * shows "preparing", completed shows Download, failed shows the safe error message + retry),
+ * Delete Workspace opens DeleteWorkspaceModal
  * Requirements: 10.1-10.3
  */
 
@@ -11,10 +12,12 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const mockRequestWorkspaceExport = vi.fn();
+const mockGetExportStatus = vi.fn();
 const mockGetExportFileBlobUrl = vi.fn();
 vi.mock('@/services/settings', () => ({
   settingsService: {
     requestWorkspaceExport: (...args: unknown[]) => mockRequestWorkspaceExport(...args),
+    getExportStatus: (...args: unknown[]) => mockGetExportStatus(...args),
     getExportFileBlobUrl: (...args: unknown[]) => mockGetExportFileBlobUrl(...args),
   },
 }));
@@ -33,13 +36,6 @@ vi.mock('@/components/settings/DeleteWorkspaceModal', () => ({
 
 import { DangerZoneSection } from '@/components/settings/DangerZoneSection';
 
-function makeAxiosError(status: number) {
-  const error = new Error('request failed') as Error & { isAxiosError: boolean; response: { status: number } };
-  error.isAxiosError = true;
-  error.response = { status };
-  return error;
-}
-
 function renderSection(props: Partial<React.ComponentProps<typeof DangerZoneSection>> = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
@@ -49,67 +45,72 @@ function renderSection(props: Partial<React.ComponentProps<typeof DangerZoneSect
   );
 }
 
+async function startExport() {
+  fireEvent.click(screen.getByRole('button', { name: 'Export Workspace Data' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Start export' }));
+  await waitFor(() => expect(mockRequestWorkspaceExport).toHaveBeenCalled());
+}
+
 describe('DangerZoneSection', () => {
   beforeEach(() => {
     mockRequestWorkspaceExport.mockReset();
+    mockGetExportStatus.mockReset();
     mockGetExportFileBlobUrl.mockReset();
     mockToast.mockReset();
   });
 
-  it('requests an export on confirm and shows the "preparing" status', async () => {
+  it('requests an export on confirm and shows the "preparing" status while queued', async () => {
     mockRequestWorkspaceExport.mockResolvedValue({ id: 'job-1', status: 'queued', expiresAt: '' });
+    mockGetExportStatus.mockResolvedValue({ id: 'job-1', status: 'queued', expiresAt: '' });
     renderSection();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Export Workspace Data' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Start export' }));
-
-    await waitFor(() => expect(mockRequestWorkspaceExport).toHaveBeenCalled());
+    await startExport();
     expect(await screen.findByText('Preparing your export…')).toBeInTheDocument();
   });
 
-  it('queued → completed: a successful readiness check shows the Download action', async () => {
+  it('shows the Download action once the polled status reports completed', async () => {
     mockRequestWorkspaceExport.mockResolvedValue({ id: 'job-1', status: 'queued', expiresAt: '' });
-    mockGetExportFileBlobUrl.mockResolvedValue('blob:mock-url');
+    mockGetExportStatus.mockResolvedValue({ id: 'job-1', status: 'completed', expiresAt: '' });
     renderSection();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Export Workspace Data' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Start export' }));
-    await screen.findByText('Preparing your export…');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Check if ready' }));
+    await startExport();
 
     expect(await screen.findByRole('button', { name: /Download export/ })).toBeInTheDocument();
     expect(screen.queryByText('Preparing your export…')).not.toBeInTheDocument();
   });
 
-  it('queued → queued: a 404 readiness check keeps it in the preparing state, not an error', async () => {
+  it('downloads the file when Download is clicked', async () => {
     mockRequestWorkspaceExport.mockResolvedValue({ id: 'job-1', status: 'queued', expiresAt: '' });
-    mockGetExportFileBlobUrl.mockRejectedValue(makeAxiosError(404));
+    mockGetExportStatus.mockResolvedValue({ id: 'job-1', status: 'completed', expiresAt: '' });
+    mockGetExportFileBlobUrl.mockResolvedValue('blob:mock-url');
     renderSection();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Export Workspace Data' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Start export' }));
-    await screen.findByText('Preparing your export…');
+    await startExport();
+    fireEvent.click(await screen.findByRole('button', { name: /Download export/ }));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Check if ready' }));
-
-    await waitFor(() => expect(mockGetExportFileBlobUrl).toHaveBeenCalled());
-    expect(screen.getByText('Preparing your export…')).toBeInTheDocument();
+    await waitFor(() => expect(mockGetExportFileBlobUrl).toHaveBeenCalledWith('job-1'));
   });
 
-  it('queued → failed: a non-404 readiness-check error shows the safe error message', async () => {
+  it('shows the safe error message and a Try again action when the polled status reports failed', async () => {
     mockRequestWorkspaceExport.mockResolvedValue({ id: 'job-1', status: 'queued', expiresAt: '' });
-    mockGetExportFileBlobUrl.mockRejectedValue(makeAxiosError(500));
+    mockGetExportStatus.mockResolvedValue({ id: 'job-1', status: 'failed', expiresAt: '' });
     renderSection();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Export Workspace Data' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Start export' }));
-    await screen.findByText('Preparing your export…');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Check if ready' }));
+    await startExport();
 
     expect(await screen.findByText('Something went wrong preparing your export.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
+  });
+
+  it('"Try again" resets back to the Export Workspace Data entry point', async () => {
+    mockRequestWorkspaceExport.mockResolvedValue({ id: 'job-1', status: 'queued', expiresAt: '' });
+    mockGetExportStatus.mockResolvedValue({ id: 'job-1', status: 'failed', expiresAt: '' });
+    renderSection();
+
+    await startExport();
+    fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+
+    expect(await screen.findByRole('button', { name: 'Export Workspace Data' })).toBeInTheDocument();
   });
 
   it('opens DeleteWorkspaceModal when Delete Workspace is clicked', () => {

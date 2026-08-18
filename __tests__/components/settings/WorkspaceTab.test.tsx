@@ -29,8 +29,10 @@ vi.mock('@/components/common/Toast', () => ({
 // already use for the identical reason.
 vi.mock('@/lib/firebase', () => ({ auth: {} }));
 // DeleteWorkspaceModal also calls useAuth(), which needs a real AuthProvider context this test
-// doesn't render — mocked the same way DeleteWorkspaceModal.test.tsx itself does.
-vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ logout: vi.fn() }) }));
+// doesn't render — mocked the same way DeleteWorkspaceModal.test.tsx itself does. WorkspaceTab
+// itself now also calls useAuth() for the orphaned-account "Log out" action.
+const mockLogout = vi.fn();
+vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ logout: mockLogout }) }));
 
 import { WorkspaceTab } from '@/components/settings/WorkspaceTab';
 
@@ -48,6 +50,7 @@ describe('WorkspaceTab', () => {
     mockGetWorkspace.mockReset();
     mockUpdateWorkspace.mockReset();
     mockToast.mockReset();
+    mockLogout.mockReset();
   });
 
   it('renders the loaded workspace name', async () => {
@@ -92,5 +95,28 @@ describe('WorkspaceTab', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Failed to update workspace. Please try again.', 'error'));
+  });
+
+  it('shows an orphaned-account message with a Log out action on a 404 (workspace deleted, account still valid)', async () => {
+    const notFound = Object.assign(new Error('not found'), {
+      isAxiosError: true,
+      response: { status: 404 },
+    });
+    mockGetWorkspace.mockRejectedValue(notFound);
+    renderTab();
+
+    expect(await screen.findByText(/no longer has an active workspace/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Log out' }));
+    expect(mockLogout).toHaveBeenCalled();
+  });
+
+  it('shows the generic retry error (not the orphaned-account message) for a non-404 failure', async () => {
+    mockGetWorkspace.mockRejectedValue(new Error('network error'));
+    renderTab();
+
+    expect(await screen.findByText('Unable to load your workspace.')).toBeInTheDocument();
+    expect(screen.queryByText(/no longer has an active workspace/)).not.toBeInTheDocument();
   });
 });

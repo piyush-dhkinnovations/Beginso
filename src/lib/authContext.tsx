@@ -12,6 +12,13 @@ interface User {
   name: string;
   email: string;
   workspaceId?: string;
+  // Confirmed live 18 Aug 2026, but can be briefly absent right after account creation — see
+  // getMeSettlingOnboarding() below. An explicit `=== false` check everywhere this is read treats
+  // a missing/undefined field as "already onboarded," which is also the correct fallback for any
+  // account that predates this field entirely. Deliberately on this thin AuthContext User (not
+  // settings' UserProfile) since it gates app-wide routing, not a page-local concern — see the
+  // reasoning design.md §2 already applied to avatarUrl.
+  onboardingCompleted?: boolean;
 }
 
 interface AuthState {
@@ -62,6 +69,24 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
   }
 }
 
+// A brand-new signup's user record can still be mid-write when login() checks it — live testing
+// 18 Aug 2026 confirmed via server-side request logs that TWO GET /api/auth/me calls ~800ms apart
+// (session POST, then the two getMe calls this function itself made) both came back missing
+// onboardingCompleted, avatarUrl, emailVerified, createdAt, and lastLoginAt — a single retry
+// wasn't enough. Polls a few times instead; an existing account pays nothing extra past the first
+// call, since its response already has the field one way or the other.
+// ponytail: bounded poll (5 attempts, 1s apart, ~4s worst case), not indefinite — if the backend's
+// write regularly takes longer than that, that's a real backend fix needed, not a longer wait here.
+export async function getMeSettlingOnboarding() {
+  const maxAttempts = 5;
+  let result = await authService.getMe();
+  for (let attempt = 1; attempt < maxAttempts && result.user.onboardingCompleted === undefined; attempt++) {
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    result = await authService.getMe();
+  }
+  return result;
+}
+
 export const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -82,6 +107,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // session has been confirmed. Protected pages never need Firebase tokens.
         await signOut(auth).catch(() => { });
         dispatch({ type: 'LOGIN', payload: { user: data.user } });
+        // Catches a user who bailed out mid-onboarding and reloaded straight into a protected
+        // page (e.g. a bookmarked /dashboard) — login() below only covers the fresh-login path.
+        if (data.user.onboardingCompleted === false && window.location.pathname !== '/onboarding') {
+          router.replace('/onboarding');
+        }
       } catch (error: unknown) {
         if (!['/verify-email', '/verification-code'].includes(window.location.pathname)) {
           await signOut(auth).catch(() => { });
@@ -116,20 +146,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // way any other login failure already displays.
     let data;
     try {
-      data = await authService.getMe();
+      data = await getMeSettlingOnboarding();
     } catch (error) {
       await authService.logout().catch(() => { });
       dispatch({ type: 'LOGOUT' });
       throw error;
     }
     dispatch({ type: 'LOGIN', payload: { user: data.user } });
-    // Hard navigation, not router.push: proxy.ts gates /dashboard on the HttpOnly session
+    // A brand-new account (onboardingCompleted explicitly false, not just missing — see the User
+    // type comment) lands on /onboarding to name their workspace instead of /dashboard directly.
+    const destination = data.user.onboardingCompleted === false ? '/onboarding' : '/dashboard';
+    // Hard navigation, not router.push: proxy.ts gates protected routes on the HttpOnly session
     // cookie written by the same-origin BFF. A soft client-side transition
-    // can reuse a Router Cache entry for /dashboard from before the cookie existed and
+    // can reuse a Router Cache entry for the destination from before the cookie existed and
     // bounce back to /login with no error (the login button spins forever).
     // A full navigation always sends a fresh request, so middleware sees the new cookie.
-    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- intentional hard navigation refreshes Proxy cookie state
-    window.location.href = '/dashboard';
+    window.location.href = destination;
   }, []);
 
   const logout = useCallback(async () => {

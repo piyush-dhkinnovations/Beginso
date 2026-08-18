@@ -1,0 +1,134 @@
+'use client';
+
+import { useEffect, useRef, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Bell, FileText, KeyRound, PartyPopper } from 'lucide-react';
+import { notificationsService } from '@/services/notifications';
+import { notificationKeys } from '@/lib/queryKeys';
+import { formatRelativeTime } from '@/lib/formatters';
+import { cn } from '@/lib/utils';
+import type { AppNotification, NotificationType } from '@/types/notification';
+
+const TYPE_ICON: Record<NotificationType, typeof Bell> = {
+  welcome: PartyPopper,
+  password_reset: KeyRound,
+  form_activity: FileText,
+};
+
+// Mirrors UserProfileDropdown's exact self-contained open/close + outside-click/Escape pattern,
+// right next to it in TopNav. Backend confirmed live 18 Aug 2026 — see
+// docs/backend-contract/api-reference.md §6.
+export function NotificationBell() {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+
+  const { data: notifications = [] } = useQuery({
+    queryKey: notificationKeys.list(),
+    queryFn: notificationsService.getNotifications,
+  });
+
+  const markAsReadMutation = useMutation({
+    mutationFn: (id: string) => notificationsService.markAsRead(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: notificationKeys.list() }),
+  });
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsOpen(false);
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleOutsideClick);
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen]);
+
+  function handleItemClick(notification: AppNotification) {
+    if (!notification.read) markAsReadMutation.mutate(notification.id);
+  }
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        type="button"
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="relative flex min-h-11 min-w-11 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+        aria-label="View notifications"
+        aria-expanded={isOpen}
+        aria-haspopup="menu"
+      >
+        <Bell size={20} />
+        {unreadCount > 0 && (
+          <span
+            className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-brand-600"
+            aria-hidden="true"
+          />
+        )}
+      </button>
+
+      {isOpen && (
+        <div
+          role="menu"
+          aria-label="Notifications"
+          className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 animate-fade-in"
+        >
+          <div className="px-4 py-3 border-b border-neutral-100">
+            <p className="text-body-sm font-semibold text-neutral-800">Notifications</p>
+          </div>
+
+          {notifications.length === 0 ? (
+            <p className="px-4 py-6 text-center text-body-sm text-neutral-500">
+              No notifications yet.
+            </p>
+          ) : (
+            <ul className="max-h-96 overflow-y-auto divide-y divide-neutral-100">
+              {notifications.map((notification) => {
+                const Icon = TYPE_ICON[notification.type];
+                return (
+                  <li key={notification.id}>
+                    <button
+                      type="button"
+                      onClick={() => handleItemClick(notification)}
+                      className={cn(
+                        'flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-neutral-50',
+                        !notification.read && 'bg-brand-50/50'
+                      )}
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+                        <Icon size={16} aria-hidden="true" />
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="flex items-center gap-1.5">
+                          <span className="text-body-sm font-semibold text-neutral-800">{notification.title}</span>
+                          {!notification.read && (
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600" aria-label="Unread" />
+                          )}
+                        </span>
+                        <span className="block text-caption text-neutral-500 mt-0.5">{notification.message}</span>
+                        <span className="block text-caption text-neutral-400 mt-1">
+                          {formatRelativeTime(notification.createdAt)}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

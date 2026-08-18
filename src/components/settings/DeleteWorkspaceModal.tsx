@@ -100,7 +100,7 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
       isOpen={isOpen}
       onClose={onClose}
       title="Delete workspace?"
-      description="This permanently deletes your workspace, all forms, responses, and files. This cannot be undone."
+      description="This permanently deletes your account, workspace, and all forms, responses, and files. You will not be able to sign back in with this account. This cannot be undone."
     >
       <div className="flex flex-col gap-4 pt-2">
         <Input

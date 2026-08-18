@@ -17,6 +17,7 @@ const ALLOWED_API_ROOTS = new Set([
   'analytics',
   'dashboard',
   'forms',
+  'notifications',
   'reports',
   'responses',
   'templates',
