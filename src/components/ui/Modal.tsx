@@ -11,10 +11,22 @@ export interface ModalProps {
 
 export function Modal({ isOpen, onClose, title, description, children }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   // Close on Escape; trap Tab/Shift+Tab focus within the dialog
   useEffect(() => {
     if (!isOpen) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const scrollContainer = document.querySelector<HTMLElement>('main');
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousMainOverflow = scrollContainer?.style.overflow;
+    document.body.style.overflow = 'hidden';
+    if (scrollContainer) scrollContainer.style.overflow = 'hidden';
+
     const focusableSelector =
       'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
     const getFocusable = () =>
@@ -24,7 +36,7 @@ export function Modal({ isOpen, onClose, title, description, children }: ModalPr
 
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab') return;
@@ -41,13 +53,17 @@ export function Modal({ isOpen, onClose, title, description, children }: ModalPr
       }
     };
     document.addEventListener('keydown', handler);
-    return () => document.removeEventListener('keydown', handler);
-  }, [isOpen, onClose]);
+    return () => {
+      document.removeEventListener('keydown', handler);
+      document.body.style.overflow = previousBodyOverflow;
+      if (scrollContainer) scrollContainer.style.overflow = previousMainOverflow ?? '';
+      opener?.focus();
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   return (
-    // Backdrop
     <div
       role="presentation"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fade-in"
@@ -56,7 +72,6 @@ export function Modal({ isOpen, onClose, title, description, children }: ModalPr
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      {/* Dialog */}
       <div
         role="dialog"
         aria-modal="true"
@@ -64,17 +79,15 @@ export function Modal({ isOpen, onClose, title, description, children }: ModalPr
         ref={modalRef}
         className="relative w-full max-w-md bg-white rounded-xl shadow-2xl border border-neutral-200 p-6 mx-4 animate-slide-up"
       >
-        {/* Close button */}
         <button
           type="button"
           onClick={onClose}
           aria-label="Close modal"
-          className="absolute top-4 right-4 p-1.5 rounded-md text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+          className="absolute top-2.5 right-2.5 flex min-h-11 min-w-11 items-center justify-center rounded-md text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
         >
           <X size={18} />
         </button>
 
-        {/* Header */}
         <div className="mb-5">
           <h2 id="modal-title" className="text-heading-2 font-bold text-neutral-900">
             {title}
@@ -86,7 +99,6 @@ export function Modal({ isOpen, onClose, title, description, children }: ModalPr
           )}
         </div>
 
-        {/* Body */}
         {children}
       </div>
     </div>

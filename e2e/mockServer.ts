@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { mockPublicFormSchema } from '../src/lib/mocks/publicFormMocks.ts';
+import { mockPublicFormSchema } from './mocks/publicFormMocks.ts';
 import type { PublicFormSchema } from '../src/types/publicForm.ts';
 
 /**
@@ -13,6 +13,7 @@ import type { PublicFormSchema } from '../src/types/publicForm.ts';
  *
  * Slug conventions:
  *   contains "not-found"    -> GET returns 404
+ *   contains "load-500"     -> GET returns 500
  *   contains "closed-date"  -> GET returns the mock schema with a past closeDate
  *   contains "submit-422"   -> POST .../submit returns 422
  *   contains "submit-429"   -> POST .../submit returns 429
@@ -88,11 +89,16 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (slug.includes('load-500')) {
+    res.writeHead(500, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ message: 'Backend unavailable' }));
+    return;
+  }
+
   res.writeHead(200, { 'Content-Type': 'application/json' });
   res.end(JSON.stringify(schemaFor(slug)));
 });
 
 server.listen(PORT, () => {
-  // eslint-disable-next-line no-console -- standalone script, not app code
   console.log(`[e2e mock backend] listening on http://localhost:${PORT}`);
 });

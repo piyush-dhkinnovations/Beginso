@@ -20,7 +20,7 @@ interface BuilderSnapshot {
 
 export interface BuilderState {
   formId: string | null;
-  formTitle: string;          // admin-facing name — top bar / Forms Manager
+  formTitle: string;          // user-facing name — top bar / Forms Manager
   fields: FormField[];
   pages: FormPage[];          // always at least one page; each carries its own title/description
   activePageId: string | null; // which page's fields the canvas currently shows
@@ -32,6 +32,9 @@ export interface BuilderState {
   settings: FormSettings;
   status: FormStatus;
   slug: string | undefined;
+  // Set by Sidebar when it intercepts a nav-link click while dirty; the builder page
+  // watches this to open the same Leave-Builder modal used for its own Back button.
+  pendingLeaveUrl: string | null;
 
   initForm: (form: Form) => void;
   setFormTitle: (title: string) => void;
@@ -56,6 +59,7 @@ export interface BuilderState {
   setPageTitle: (pageId: string, title: string) => void;
   setPageDescription: (pageId: string, description: string) => void;
   deletePage: (pageId: string) => void;
+  setPendingLeaveUrl: (url: string | null) => void;
 }
 
 // Helper to push a full-state snapshot to the undoStack (capped at 50) and clear the redoStack
@@ -115,6 +119,9 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   settings: { honeypotEnabled: true },
   status: 'draft',
   slug: undefined,
+  pendingLeaveUrl: null,
+
+  setPendingLeaveUrl: (url) => set({ pendingLeaveUrl: url }),
 
   initForm: (form) =>
     set((state) => {
@@ -125,9 +132,9 @@ export const useBuilderStore = create<BuilderState>((set) => ({
           ? form.pages
           : [{ id: crypto.randomUUID(), order: 0 }];
 
-      // Page 1 defaults its title to the admin's form name so a freshly created form
+      // Page 1 defaults its title to the user's form name so a freshly created form
       // isn't blank on first open — every page after that starts genuinely blank
-      // (shows the "Untitled form" placeholder) until the admin sets its own title.
+      // (shows the "Untitled form" placeholder) until the user sets its own title.
       if (!pages[0].title) {
         pages[0] = { ...pages[0], title: form.title };
       }
@@ -238,7 +245,20 @@ export const useBuilderStore = create<BuilderState>((set) => ({
         f.order = idx;
       });
 
-      const finalFields = [...newPageFields, ...otherFields(state.fields, original.pageId)];
+      const rest = otherFields(state.fields, original.pageId);
+
+      // Incoming rules (other fields' rules whose targetFieldId is the original) live on
+      // the SOURCE field, not the original — duplicating only copied the original's own
+      // fields, so they never followed. Without this, the duplicate silently loses whatever
+      // show/hide condition governed the original (the source field can be on either page).
+      const withIncomingRulesCopied = (f: FormField): FormField => {
+        const incoming = (f.logicRules ?? []).filter((r) => r.targetFieldId === fieldId);
+        if (incoming.length === 0) return f;
+        const cloned = structuredClone(incoming).map((r) => ({ ...r, targetFieldId: duplicate.fieldId }));
+        return { ...f, logicRules: [...(f.logicRules ?? []), ...cloned] } as FormField;
+      };
+
+      const finalFields = [...newPageFields.map(withIncomingRulesCopied), ...rest.map(withIncomingRulesCopied)];
 
       return {
         ...snapshot,
@@ -407,9 +427,30 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       const fieldIndex = state.fields.findIndex((f) => f.fieldId === fieldId);
       if (fieldIndex === -1) return {};
 
-      const updatedFields = state.fields.map((f) =>
-        f.fieldId === fieldId ? ({ ...f, options } as FormField) : f
-      );
+      const oldOptions = (state.fields[fieldIndex] as Extract<FormField, { options: string[] }>).options ?? [];
+
+      // A logic rule's condition.value is a plain string snapshot of the option text at the
+      // time the rule was authored — renaming an option in place doesn't touch it, so the
+      // rule silently stops matching anything (same failure mode as a deleted source field,
+      // but with no warning shown for it). Detected as an exact 1-for-1 swap in the option
+      // set (add/delete/reorder don't produce that shape); rewrite affected rules to follow it.
+      const removed = oldOptions.filter((o) => !options.includes(o));
+      const added = options.filter((o) => !oldOptions.includes(o));
+      const renamedFrom = removed.length === 1 && added.length === 1 ? removed[0] : null;
+      const renamedTo = added[0];
+
+      const updatedFields = state.fields.map((f) => {
+        const base = f.fieldId === fieldId ? ({ ...f, options } as FormField) : f;
+        if (renamedFrom && base.logicRules?.some((r) => r.condition.fieldId === fieldId && r.condition.value === renamedFrom)) {
+          const rules = base.logicRules.map((r) =>
+            r.condition.fieldId === fieldId && r.condition.value === renamedFrom
+              ? { ...r, condition: { ...r.condition, value: renamedTo } }
+              : r
+          );
+          return { ...base, logicRules: rules } as FormField;
+        }
+        return base;
+      });
 
       return {
         ...pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack),
@@ -550,6 +591,11 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       if (pageIndex === -1) return {};
 
       const remainingPages = state.pages.filter((p) => p.id !== pageId);
+      // Re-assign order sequentially — otherwise a later addPage() (which sets
+      // order: pages.length) can collide with a surviving page's now-stale order value.
+      remainingPages.forEach((p, idx) => {
+        p.order = idx;
+      });
       // Merge the deleted page's fields onto the nearest remaining page (the one before it,
       // or the new first page if it was page 1) so nothing is silently lost.
       const targetPage = remainingPages[Math.max(0, pageIndex - 1)] ?? remainingPages[0];

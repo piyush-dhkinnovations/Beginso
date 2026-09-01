@@ -27,15 +27,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             id={id}
             type={type}
             disabled={disabled}
+            aria-invalid={!!error}
+            aria-describedby={error ? `${id}-error` : undefined}
             className={cn(
               "w-full rounded-md px-3 text-[13px] h-[38px] min-h-[44px] bg-white transition-colors duration-200 outline-none",
-              // Default border: 2px solid #E2E8F0
               "border-2 border-neutral-200",
-              // Focus: 2px solid #64748B
               "focus:border-neutral-500",
-              // Error: 2px solid #EF4444
               error && "border-error focus:border-error",
-              // Disabled state: opacity-60, bg-neutral-100, pointer-events-none
               disabled && "bg-neutral-100 opacity-60 cursor-not-allowed pointer-events-none",
               rightSlot && "pr-12",
               className
@@ -50,6 +48,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         </div>
         {error && (
           <p
+            id={`${id}-error`}
             role="alert"
             className="text-caption text-error font-semibold flex items-center gap-1 mt-0.5"
           >

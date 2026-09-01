@@ -135,7 +135,6 @@ export function Canvas({
 
   return (
     <div className="flex flex-1 w-full min-w-0" style={{ overflow: 'visible' }}>
-      {/* Center Droppable Canvas */}
       <DroppableCanvas
         isEmpty={visibleFields.length === 0}
         isOver={isToolboxOver}

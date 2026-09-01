@@ -25,12 +25,6 @@ vi.mock('firebase/auth', () => ({
   getAdditionalUserInfo: vi.fn(),
 }));
 
-vi.mock('@/lib/tokenStorage', () => ({
-  getToken: vi.fn(() => null),
-  saveToken: vi.fn(),
-  clearToken: vi.fn(),
-}));
-
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ login: vi.fn(), logout: vi.fn() }),
 }));
@@ -50,10 +44,12 @@ vi.mock('@/components/auth/GoogleSignInButton', () => ({
 
 const mockAuthSignup = vi.fn();
 vi.mock('@/services/auth', () => ({
-  signup: (...args: unknown[]) => mockAuthSignup(...args),
-  loginWithGoogle: vi.fn(),
-  logout: vi.fn(),
-  getMe: vi.fn(),
+  authService: {
+    signup: (...args: unknown[]) => mockAuthSignup(...args),
+    loginWithGoogle: vi.fn(),
+    logout: vi.fn(),
+    getMe: vi.fn(),
+  },
 }));
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -120,7 +116,7 @@ describe('SignupForm component', () => {
     });
   });
 
-  it('shows success toast on successful signup', async () => {
+  it('shows verification-code success toast on successful signup', async () => {
     mockAuthSignup.mockResolvedValueOnce({
       token: 'tok123',
       user: { id: 'u1', name: 'Jane Cooper', email: 'jane@example.com' },
@@ -132,7 +128,7 @@ describe('SignupForm component', () => {
 
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith(
-        expect.stringMatching(/account created/i),
+        expect.stringMatching(/verification code sent/i),
         'success'
       );
     });

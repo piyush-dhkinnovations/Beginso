@@ -9,9 +9,7 @@ export default function HeroSection() {
     <section className="relative pt-[120px] pb-20 md:pt-[160px] md:pb-[120px] hero-bg overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          {/* Content Left */}
           <div className="flex flex-col items-center md:items-start text-center md:text-left">
-            {/* Eyebrow */}
             <div
               className="text-[11px] font-[700] uppercase text-[#1D4ED8] tracking-widest mb-6 animate-fade-up"
               style={{ animationDelay: "0ms", animationFillMode: "both" }}
@@ -19,7 +17,6 @@ export default function HeroSection() {
               Form Building Reimagined
             </div>
 
-            {/* Headline */}
             <h1
               className="text-[36px] md:text-[48px] font-[800] text-[#0F172A] leading-[1.1] mb-6 max-w-4xl animate-fade-up"
               style={{ animationDelay: "80ms", animationFillMode: "both" }}
@@ -27,7 +24,6 @@ export default function HeroSection() {
               The simplest way to create forms and collect data.
             </h1>
 
-            {/* Subheadline */}
             <p
               className="text-[16px] md:text-[18px] font-[400] text-[#475569] mb-10 max-w-2xl animate-fade-up"
               style={{ animationDelay: "160ms", animationFillMode: "both" }}
@@ -35,7 +31,6 @@ export default function HeroSection() {
               Drag-and-drop builder, auto-generated dashboards, and seamless exports. No coding required. Built for teams that move fast.
             </p>
 
-            {/* CTAs */}
             <div
               className="flex flex-col sm:flex-row items-center gap-4 animate-fade-up"
               style={{ animationDelay: "240ms", animationFillMode: "both" }}
@@ -53,7 +48,6 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* Mockup Right */}
           <div className="w-full">
             <ProductMockup />
           </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowLeft, CheckCircle2, Eye } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Eye, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { FormStatus } from '@/types/form';
 
@@ -16,6 +16,7 @@ export interface BuilderHeaderProps {
   onBack: () => void;
   onPublish: () => void;
   onClose: () => void;
+  onDelete: () => void;
 }
 
 export function BuilderHeader({
@@ -29,6 +30,7 @@ export function BuilderHeader({
   onBack,
   onPublish,
   onClose,
+  onDelete,
 }: BuilderHeaderProps) {
   const [title, setTitle] = useState(formTitle || '');
   const [prevFormTitle, setPrevFormTitle] = useState<string | undefined>(formTitle);
@@ -54,13 +56,12 @@ export function BuilderHeader({
 
   return (
     <header className="flex items-center justify-between px-4 h-14 border-b bg-white shrink-0 shadow-sm">
-      {/* Left Section: Back + Editable Title */}
       <div className="flex items-center gap-2 flex-1 max-w-[30%]">
         <Button
           onClick={onBack}
           variant="ghost"
           size="small"
-          className="p-2 min-h-[36px] min-w-[36px] shrink-0"
+          className="min-h-11 min-w-11 shrink-0 p-2"
           title="Back to Forms"
         >
           <ArrowLeft size={16} />
@@ -73,13 +74,11 @@ export function BuilderHeader({
           onKeyDown={handleKeyDown}
           className="w-full text-heading-2 font-bold text-neutral-900 bg-transparent border-b-2 border-transparent focus:border-neutral-500 focus:outline-none px-1 py-0.5 rounded transition-colors"
           placeholder="Untitled Form"
-          aria-label="Form name (admin-facing)"
+          aria-label="Form name"
         />
       </div>
 
-      {/* Right Section: Save State Indicator & Preview/Publish/Delete */}
       <div className="flex items-center gap-4 flex-1 justify-end">
-        {/* Save State Label */}
         <div className="text-body-sm select-none">
           {isSaving || saveState === 'saving' ? (
             <span className="text-neutral-500 font-medium animate-pulse">Saving…</span>
@@ -92,7 +91,18 @@ export function BuilderHeader({
           ) : null}
         </div>
 
-        {/* Preview */}
+        <Button
+          onClick={onDelete}
+          variant="ghost"
+          size="small"
+          className="h-11 w-11 shrink-0 p-0 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+          title="Delete form"
+          aria-label="Delete form"
+        >
+          <Trash2 size={16} />
+          <span className="sr-only">Delete</span>
+        </Button>
+
         <Button
           onClick={onPreview}
           variant="ghost"
@@ -103,7 +113,6 @@ export function BuilderHeader({
           <span>Preview</span>
         </Button>
 
-        {/* Publish / Status control */}
         {status === 'published' ? (
           <div className="flex items-center gap-2">
             <span className="flex items-center gap-1.5 text-emerald-600 font-semibold text-body-sm px-2">

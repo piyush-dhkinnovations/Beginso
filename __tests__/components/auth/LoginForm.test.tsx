@@ -24,12 +24,6 @@ vi.mock('firebase/auth', () => ({
   signInWithPopup: vi.fn(),
 }));
 
-vi.mock('@/lib/tokenStorage', () => ({
-  getToken: vi.fn(() => null),
-  saveToken: vi.fn(),
-  clearToken: vi.fn(),
-}));
-
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ login: vi.fn(), logout: vi.fn() }),
 }));
@@ -48,10 +42,12 @@ vi.mock('@/components/auth/GoogleSignInButton', () => ({
 
 const mockAuthLogin = vi.fn();
 vi.mock('@/services/auth', () => ({
-  login: (...args: unknown[]) => mockAuthLogin(...args),
-  loginWithGoogle: vi.fn(),
-  logout: vi.fn(),
-  getMe: vi.fn(),
+  authService: {
+    login: (...args: unknown[]) => mockAuthLogin(...args),
+    loginWithGoogle: vi.fn(),
+    logout: vi.fn(),
+    getMe: vi.fn(),
+  },
 }));
 
 // ─── Tests ──────────────────────────────────────────────────────────────────

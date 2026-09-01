@@ -1,16 +1,17 @@
-'use client';
+﻿'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
 import { loginSchema, LoginFormValues } from '@/lib/schemas/loginSchema';
-import * as AuthService from '@/services/auth';
+import { authService } from '@/services/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { GoogleSignInButton } from './GoogleSignInButton';
+import { useRouter } from 'next/navigation';
 
 export function LoginForm() {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -19,8 +20,19 @@ export function LoginForm() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { login } = useAuth();
+  const router = useRouter();
 
   const isAnyLoading = isEmailLoading || isGoogleLoading;
+
+  // Set by axios.ts's response interceptor / authContext's initAuth() when a 403 mid-session
+  // (blockSuspended()) bounces the user back here — otherwise they'd land on a blank login
+  // form with no explanation for why they were signed out.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('reason') === 'suspended') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setServerError('Your account has been suspended. Please contact support for assistance.');
+    }
+  }, []);
 
   const {
     register,
@@ -46,16 +58,21 @@ export function LoginForm() {
     }, 30000);
 
     try {
-      const data = await AuthService.login(values.email, values.password);
+      await authService.login(values.email, values.password);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      login(data.token, data.user);
+      await login();
     } catch (error: unknown) {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
       setIsEmailLoading(false);
+
+      if ((error as { code?: string })?.code === 'auth/email-not-verified') {
+        router.push('/verify-email');
+        return;
+      }
 
       const err = error as { response?: { data?: { error?: { message?: string; fields?: Array<{ field: string; message: string }> | Record<string, string> } } } };
       const fields = err.response?.data?.error?.fields;
@@ -79,8 +96,8 @@ export function LoginForm() {
     setServerError(null);
     setIsGoogleLoading(true);
     try {
-      const data = await AuthService.loginWithGoogle();
-      login(data.token, data.user);
+      await authService.loginWithGoogle();
+      await login();
     } catch (error: unknown) {
       setIsGoogleLoading(false);
       setServerError(getFriendlyErrorMessage(error));

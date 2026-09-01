@@ -1,25 +1,28 @@
 'use client';
 
-import { Menu, Bell } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { UserProfileDropdown } from './UserProfileDropdown';
+import { NotificationBell } from './NotificationBell';
 
 interface TopNavProps {
-  onToggleMobileSidebar: () => void;
+  onMenuClick?: () => void;
 }
 
-export function TopNav({ onToggleMobileSidebar }: TopNavProps) {
+export function TopNav({ onMenuClick }: TopNavProps) {
   return (
     <header className="fixed top-0 left-0 right-0 h-[56px] bg-white border-b border-neutral-200 z-30 flex items-center justify-between px-4">
-      {/* Left side: Hamburger (mobile) and Brand Logo/Title */}
-      <div className="flex items-center gap-3">
+      {/* Left side: mobile menu trigger + Brand Logo/Title */}
+      <div className="flex items-center gap-2">
+        {/* Only visible below the shell's 520px container breakpoint — see .dashboard-mobile-menu-btn in globals.css */}
         <button
-          onClick={onToggleMobileSidebar}
-          className="p-1 rounded-md text-neutral-500 hover:bg-neutral-100 transition-colors md:hidden focus:outline-none focus:ring-2 focus:ring-brand-500/20"
-          aria-label="Toggle navigation menu"
+          type="button"
+          onClick={onMenuClick}
+          aria-label="Open navigation menu"
+          className="dashboard-mobile-menu-btn min-h-11 min-w-11 items-center justify-center rounded-lg text-neutral-600 hover:bg-neutral-100 transition-colors focus:outline-none"
         >
           <Menu size={20} />
         </button>
-        
+
         {/* Brand/App Title */}
         <span className="text-body font-bold text-neutral-900 tracking-tight">
           Beginso
@@ -28,17 +31,7 @@ export function TopNav({ onToggleMobileSidebar }: TopNavProps) {
 
       {/* Right side: Notifications & User Profile */}
       <div className="flex items-center gap-2">
-        {/* Notification Bell */}
-        <button
-          className="p-2 rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors relative focus:outline-none"
-          aria-label="View notifications"
-        >
-          <Bell size={20} />
-          {/* notification dot removed — add back when real notifications exist */}
-
-        </button>
-
-        {/* User Dropdown */}
+        <NotificationBell />
         <UserProfileDropdown />
       </div>
     </header>

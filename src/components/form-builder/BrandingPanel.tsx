@@ -101,7 +101,7 @@ function ImageUploadZone({
             e.stopPropagation();
             onRemove();
           }}
-          className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-white border border-neutral-200 flex items-center justify-center text-neutral-500 hover:text-rose-600 shadow-card"
+          className="absolute top-1 right-1 h-6 w-6 rounded-full bg-white border border-neutral-200 flex items-center justify-center text-neutral-500 hover:text-rose-600 shadow-card"
           aria-label={`Remove ${label.toLowerCase()}`}
         >
           <X size={12} />
@@ -115,9 +115,14 @@ export interface BrandingPanelProps {
   branding: FormBranding;
   formTitle: string;
   onUpdate: (updates: Partial<FormBranding>) => void;
+  // Builder tabs have no other label for this section, so it needs its own heading there.
+  // Settings' BrandingTab sits under a tab bar that already says "Branding" — a second
+  // heading there was redundant and, unlike every other Settings tab, broke the shared
+  // flush-left layout those tabs otherwise all match.
+  showHeading?: boolean;
 }
 
-export function BrandingPanel({ branding, formTitle, onUpdate }: BrandingPanelProps) {
+export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = true }: BrandingPanelProps) {
   const uid = useId();
   const { toast } = useToast();
   const primaryColor = branding.primaryColor ?? DEFAULT_COLOR;
@@ -161,16 +166,31 @@ export function BrandingPanel({ branding, formTitle, onUpdate }: BrandingPanelPr
   };
 
   return (
-    <div className="max-w-4xl mx-auto flex flex-col gap-6">
-      <div>
-        <h2 className="text-heading-1 font-bold text-neutral-900">Branding</h2>
-        <p className="text-body text-neutral-500 mt-1">
-          Set your brand colour, logo, and cover image. This shapes how your workspace looks everywhere.
-        </p>
-      </div>
+    // `w-full` is required, not decorative — this div is a flex item inside BrandingTab's
+    // `flex flex-col` wrapper, and `mx-auto`'s auto margins override flexbox's default cross-axis
+    // stretch, so without an explicit width the browser falls back to sizing this box from its own
+    // content. `container-type: inline-size` below forbids exactly that (containment explicitly
+    // decouples a container's size from its children), so the two together created a circular
+    // dependency that collapsed the whole panel to near-zero width — a real regression caught live.
+    <div className="branding-panel-shell w-full max-w-4xl mx-auto flex flex-col gap-6">
+      {showHeading && (
+        <div>
+          <h2 className="text-heading-1 font-bold text-neutral-900">Branding</h2>
+          <p className="text-body text-neutral-500 mt-1">
+            Set your brand colour, logo, and cover image. This shapes how your workspace looks everywhere.
+          </p>
+        </div>
+      )}
 
-      <div className="flex gap-6 items-start">
-        <div className="flex-1 flex flex-col gap-4 min-w-0">
+      {/* Side-by-side above ~620px of *available container width* (not viewport) — a container
+          query, not a media query, since this component is reused at very different widths: the
+          Builder's wide properties panel vs. Settings' 440px-capped content column. A viewport
+          media query would incorrectly try to go side-by-side on a wide desktop browser even
+          though Settings' actual column is still only 440px, causing the exact overflow this was
+          built to fix (real bug found via live mobile testing — the fixed two-column layout with
+          no breakpoint at all forced the whole page to scroll horizontally). */}
+      <div className="branding-panel-columns flex flex-col gap-6">
+        <div className="branding-panel-main flex-1 flex flex-col gap-4 min-w-0">
           <PanelCard label="Primary colour" description="Used for buttons, links, and highlights across your workspace.">
             <div className="flex items-center gap-2">
               {PRESET_COLORS.map((color) => (
@@ -178,19 +198,26 @@ export function BrandingPanel({ branding, formTitle, onUpdate }: BrandingPanelPr
                   key={color}
                   type="button"
                   onClick={() => commitColor(color)}
-                  className={`w-7 h-7 rounded-full border-2 ${
-                    primaryColor === color ? 'border-neutral-800' : 'border-transparent'
-                  }`}
-                  style={{ backgroundColor: color }}
+                  className="flex h-11 w-11 items-center justify-center rounded-full"
                   aria-label={`Use ${color}`}
-                />
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`h-7 w-7 rounded-full border-2 ${
+                      primaryColor === color ? 'border-neutral-800' : 'border-transparent'
+                    }`}
+                    style={{ backgroundColor: color }}
+                  />
+                </button>
               ))}
               <div className="w-px h-5 bg-neutral-200" />
               <label
-                className="relative w-7 h-7 rounded-full border-2 border-dashed border-neutral-300 flex items-center justify-center cursor-pointer hover:border-neutral-500 transition-colors"
+                className="relative w-11 h-11 rounded-full flex items-center justify-center cursor-pointer"
                 aria-label="Custom colour picker"
               >
-                <Plus size={12} className="text-neutral-400" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-neutral-300 transition-colors hover:border-neutral-500">
+                  <Plus size={12} className="text-neutral-400" />
+                </span>
                 <input
                   type="color"
                   value={colorPickerValue}
@@ -210,7 +237,7 @@ export function BrandingPanel({ branding, formTitle, onUpdate }: BrandingPanelPr
                 onChange={(e) => setHexInput(e.target.value)}
                 onBlur={commitHexInput}
                 onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-                className="flex-1 rounded-md border-2 border-neutral-200 px-2.5 h-[38px] text-[13px] font-mono bg-white outline-none focus:border-neutral-500"
+                className="flex-1 rounded-md border-2 border-neutral-200 px-2.5 min-h-11 text-[13px] font-mono bg-white outline-none focus:border-neutral-500"
               />
             </div>
             {hexError && <p className="text-caption text-error font-semibold">{hexError}</p>}
@@ -237,7 +264,7 @@ export function BrandingPanel({ branding, formTitle, onUpdate }: BrandingPanelPr
           </PanelCard>
         </div>
 
-        <div className="w-[280px] shrink-0 flex flex-col gap-2">
+        <div className="branding-panel-preview w-full flex flex-col gap-2">
           <span className="text-label text-neutral-500">Preview</span>
           <BrandingLivePreview
             primaryColor={primaryColor}

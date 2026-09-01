@@ -15,17 +15,37 @@ interface FieldShellProps {
   required?: boolean;
   helpText?: string;
   error?: FieldError;
+  /** Compact layout's label-left row style — label beside the input instead of above it. */
+  inline?: boolean;
+  /**
+   * Radio/checkbox groups don't have one focusable input `fieldId` can target — the
+   * child is a `role="group"` container, not a labelable element. When true, the
+   * label renders as a plain `<span id={`${fieldId}-label`}>` instead of a
+   * `<label htmlFor>`; the group container should reference it via aria-labelledby.
+   */
+  asGroup?: boolean;
   children: ReactNode;
 }
 
 /** Shared label/helpText/error chrome around every field renderer's input (Requirement 4, shared rules 1–4). */
-export function FieldShell({ fieldId, label, required, helpText, error, children }: FieldShellProps) {
-  return (
-    <div className="flex flex-col gap-1.5 w-full">
-      <label htmlFor={fieldId} className="text-heading-3 text-neutral-800">
-        {label}
-        {required && <span className="text-error"> *</span>}
-      </label>
+export function FieldShell({ fieldId, label, required, helpText, error, inline, asGroup, children }: FieldShellProps) {
+  const labelClassName = inline
+    ? 'text-body-sm font-semibold text-neutral-800 pt-2.5 shrink-0 w-28'
+    : 'text-heading-3 text-neutral-800';
+  const labelEl = asGroup ? (
+    <span id={`${fieldId}-label`} className={labelClassName}>
+      {label}
+      {required && <span className="text-error"> *</span>}
+    </span>
+  ) : (
+    <label htmlFor={fieldId} className={labelClassName}>
+      {label}
+      {required && <span className="text-error"> *</span>}
+    </label>
+  );
+
+  const rest = (
+    <>
       {children}
       {helpText && <p className="text-body-sm text-neutral-400">{helpText}</p>}
       {error && (
@@ -34,6 +54,22 @@ export function FieldShell({ fieldId, label, required, helpText, error, children
           {error.message}
         </p>
       )}
+    </>
+  );
+
+  if (inline) {
+    return (
+      <div className="flex items-start gap-3 w-full">
+        {labelEl}
+        <div className="flex flex-col gap-1 flex-1 min-w-0">{rest}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1.5 w-full">
+      {labelEl}
+      {rest}
     </div>
   );
 }

@@ -74,7 +74,7 @@ export interface FormPage {
   order: number; // position among the form's pages
   title?: string;       // shown to respondents at the top of THIS page; independent per page.
                          // Undefined shows a generic "Untitled form" placeholder — never falls
-                         // back to another page's title or the admin-facing Form.title.
+                         // back to another page's title or the user-facing Form.title.
   description?: string; // shown to respondents at the top of THIS page; independent per page
 }
 
@@ -110,8 +110,8 @@ export interface FormSettings {
 export interface Form {
   _id: string;
   workspaceId: string;
-  title: string;              // admin-facing name — Forms Manager, browser tab, BuilderHeader top bar
-  description?: string;       // admin-facing note — set once at creation, not builder-editable
+  title: string;              // user-facing name — Forms Manager, browser tab, BuilderHeader top bar
+  description?: string;       // user-facing note — set once at creation, not builder-editable
   status: FormStatus;
   slug?: string;             // nanoid(10) — generated on publish only
   fields: FormField[];
@@ -170,8 +170,21 @@ export interface Template {
 // ─── File Upload ──────────────────────────────────────────────────────────────
 // Files are stored on the backend server's local filesystem (not a cloud storage
 // service); `url` is a backend-served route, not a pre-signed cloud storage URL.
+// Matches the backend's actual response shape (confirmed against its Sprint 2
+// checklist reply — there is no top-level `key`, only `url` + `metadata`).
 
 export interface UploadResponse {
-  url: string;            // Backend-served URL to access the uploaded file
-  key: string;             // Backend file identifier / storage path (never displayed to user)
+  success: boolean;
+  message: string;
+  url: string;             // Backend-served URL to access the uploaded file
+  metadata: {
+    id: string;
+    name: string;           // original filename
+    size: number;           // bytes
+    type: string;           // MIME type
+    path: string;           // backend storage filename
+    owner: string;          // uploader's user id
+    uploadTime: string;     // ISO-8601
+    isBranding: boolean;
+  };
 }

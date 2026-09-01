@@ -1,6 +1,6 @@
 /**
  * Types for the respondent-facing public form (Sprint 3).
- * Augments — does not replace — the admin-side types in src/types/form.ts.
+ * Augments — does not replace — the user-side types in src/types/form.ts.
  */
 
 import type { Control, FieldError, UseFormRegister, UseFormSetValue, UseFormTrigger } from 'react-hook-form';
@@ -14,13 +14,13 @@ export interface PublicFormBranding {
   coverImageUrl?: string;
 }
 
-/** Shape returned by GET /api/public/:slug — admin-only fields omitted. */
+/** Shape returned by GET /api/public/:slug — user-only fields omitted. */
 export interface PublicFormSchema {
   title: string;
   pages: FormPage[];
   fields: FormField[]; // all non-deleted fields across all pages, order preserved
   branding: PublicFormBranding;
-  settings: Pick<FormSettings, 'honeypotEnabled' | 'successMessage' | 'responseLimit' | 'closeDate'>;
+  settings: Pick<FormSettings, 'honeypotEnabled' | 'successMessage' | 'responseLimit' | 'closeDate' | 'layout'>;
 }
 
 // ─── Field Value Types ──────────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ export type FieldValue = string | string[] | number | undefined;
 // ─── Submission Payload ─────────────────────────────────────────────────────────
 
 /**
- * Matches the backend's documented Answer schema (.beginso_document/03_TDD.md §3.6) —
+ * Matches the backend's documented Answer schema (docs/product/03-technical-design.md §3.6) —
  * fieldType/fieldLabel are snapshotted at submission time so a later rename/type-change
  * never rewrites historical responses. No pageId: the backend already knows each
  * field's page from the form snapshot it validates against.
@@ -79,6 +79,8 @@ export interface FieldRendererProps {
   setValue: UseFormSetValue<Record<string, FieldValue>>;
   error?: FieldError;
   disabled?: boolean; // true while form is submitting
+  /** Compact layout's label-left row style — passed through to FieldShell, ignored by renderers that don't use it. */
+  inline?: boolean;
 }
 
 export interface FileUploadRendererProps extends FieldRendererProps {

@@ -30,7 +30,7 @@ describe('evaluateLogicRules', () => {
     expect(hidden.has('target')).toBe(true);
   });
 
-  it('a show rule leaves the default-visible target visible (no-op)', () => {
+  it('shows the target field when its show rule condition is met', () => {
     const fields: FormField[] = [
       field({
         fieldId: 'source', pageId: 'p1', type: 'dropdown', options: ['a', 'b'],
@@ -40,6 +40,18 @@ describe('evaluateLogicRules', () => {
     ];
     const hidden = evaluateLogicRules(fields, { source: 'a' });
     expect(hidden.has('target')).toBe(false);
+  });
+
+  it('a field targeted only by show rules defaults to hidden when none match', () => {
+    const fields: FormField[] = [
+      field({
+        fieldId: 'source', pageId: 'p1', type: 'dropdown', options: ['a', 'b'],
+        logicRules: [{ condition: { fieldId: 'source', operator: 'equals', value: 'a' }, action: 'show', targetFieldId: 'target' }],
+      }),
+      field({ fieldId: 'target', pageId: 'p1', type: 'short_text' }),
+    ];
+    const hidden = evaluateLogicRules(fields, { source: 'b' });
+    expect(hidden.has('target')).toBe(true);
   });
 
   it('last matching rule wins when multiple rules target the same field', () => {

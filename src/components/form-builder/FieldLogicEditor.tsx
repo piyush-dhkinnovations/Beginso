@@ -25,7 +25,7 @@ function isChoiceField(field: FormField): field is Extract<FormField, { options:
 }
 
 const selectClass =
-  'rounded-md border-2 border-neutral-200 px-2.5 h-[38px] text-[13px] bg-white outline-none focus:border-neutral-500';
+  'rounded-md border-2 border-neutral-200 px-2.5 min-h-11 text-[13px] bg-white outline-none focus:border-neutral-500';
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 // Rendered inline inside the selected FieldCard, below FieldInlineEditor.
@@ -108,7 +108,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+        <span className="text-label text-neutral-500">
           Conditional Logic
         </span>
         <Switch id={`${field.fieldId}-logic-toggle`} checked={expanded} onChange={setExpanded} />
@@ -139,7 +139,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
                     <button
                       type="button"
                       onClick={() => openEditForm(sf.fieldId, ruleIndex, rule)}
-                      className="text-neutral-400 hover:text-brand-700 min-w-[32px] min-h-[32px] flex items-center justify-center"
+                      className="text-neutral-400 hover:text-brand-700 min-w-11 min-h-11 flex items-center justify-center"
                       aria-label="Edit condition"
                     >
                       <Pencil size={14} />
@@ -147,7 +147,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
                     <button
                       type="button"
                       onClick={() => onDeleteRule(sf.fieldId, ruleIndex)}
-                      className="text-neutral-400 hover:text-rose-600 min-w-[32px] min-h-[32px] flex items-center justify-center"
+                      className="text-neutral-400 hover:text-rose-600 min-w-11 min-h-11 flex items-center justify-center"
                       aria-label="Delete condition"
                     >
                       <X size={14} />
@@ -175,7 +175,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
             <div className="flex flex-col gap-3 p-3 bg-white border border-neutral-200 rounded-lg">
               <div className="grid grid-cols-1 min-[881px]:grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">If field</span>
+                  <span className="text-label text-neutral-500">If field</span>
                   <select
                     value={sourceFieldId}
                     onChange={(e) => handleSourceChange(e.target.value)}
@@ -190,17 +190,17 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
                 </label>
 
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Operator</span>
+                  <span className="text-label text-neutral-500">Operator</span>
                   <input
                     value="equals"
                     disabled
                     readOnly
-                    className="rounded-md border-2 border-neutral-200 px-2.5 h-[38px] text-[13px] bg-neutral-100 text-neutral-500 outline-none"
+                    className="rounded-md border-2 border-neutral-200 px-2.5 min-h-11 text-[13px] bg-neutral-100 text-neutral-500 outline-none"
                   />
                 </label>
 
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Value</span>
+                  <span className="text-label text-neutral-500">Value</span>
                   {sourceField && isChoiceField(sourceField) ? (
                     <select value={value} onChange={(e) => setValue(e.target.value)} className={selectClass}>
                       <option value="">Select a value</option>
@@ -221,8 +221,8 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
                 </label>
 
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Then</span>
-                  <div className="flex rounded-md border-2 border-neutral-200 overflow-hidden h-[38px]">
+                  <span className="text-label text-neutral-500">Then</span>
+                  <div className="flex min-h-11 rounded-md border-2 border-neutral-200 overflow-hidden">
                     {(['show', 'hide'] as const).map((a) => (
                       <button
                         key={a}

@@ -69,7 +69,6 @@ export function FieldCard({
     data: { from: 'canvas' },
   });
 
-  // Look up icon from toolbox configuration
   const config = FIELD_TYPE_CONFIG.find((cfg) => cfg.type === field.type);
   const Icon = config ? config.icon : null;
 
@@ -103,7 +102,6 @@ export function FieldCard({
     // Outer wrapper keeps layout space and holds the drop-zone indicators.
     // It must NOT be the node that gets the dnd transform — only the inner card does.
     <div className="flex flex-col gap-1.5">
-      {/* Drop zone ABOVE this card */}
       {insertIndicator === 'above' && <DropZoneCard />}
 
       <div
@@ -132,17 +130,15 @@ export function FieldCard({
             showInlinePanel ? 'rounded-t-lg' : 'rounded-lg'
           }`}
         >
-          {/* Grip Handle — drag listeners only, no click propagation */}
           <div
             {...listeners}
             {...attributes}
             onClick={(e) => e.stopPropagation()}
-            className="text-neutral-400 hover:text-neutral-600 cursor-grab active:cursor-grabbing p-1 -ml-1 rounded transition-colors shrink-0 min-w-[32px] min-h-[32px] flex items-center justify-center"
+            className="text-neutral-400 hover:text-neutral-600 cursor-grab active:cursor-grabbing p-1 -ml-1 rounded transition-colors shrink-0 min-w-11 min-h-11 flex items-center justify-center"
           >
             <GripVertical size={16} />
           </div>
 
-          {/* Icon */}
           {Icon && (
             <Icon size={16} className="text-neutral-500 shrink-0 mt-2" />
           )}
@@ -158,7 +154,6 @@ export function FieldCard({
                 )}
               </span>
 
-              {/* Action Buttons */}
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all shrink-0">
                 <button
                   type="button"
@@ -166,7 +161,7 @@ export function FieldCard({
                     e.stopPropagation();
                     onDuplicate();
                   }}
-                  className="p-2 text-neutral-400 hover:text-brand-700 hover:bg-brand-50 rounded-md transition-all min-w-[36px] min-h-[36px] flex items-center justify-center"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 text-neutral-400 transition-all hover:bg-brand-50 hover:text-brand-700"
                   title="Duplicate Field"
                 >
                   <Copy size={16} />
@@ -177,7 +172,7 @@ export function FieldCard({
                     e.stopPropagation();
                     onDelete();
                   }}
-                  className="p-2 text-neutral-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-all min-w-[36px] min-h-[36px] flex items-center justify-center"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 text-neutral-400 transition-all hover:bg-rose-50 hover:text-rose-600"
                   title="Delete Field"
                 >
                   <Trash2 size={16} />
@@ -206,7 +201,6 @@ export function FieldCard({
         )}
       </div>
 
-      {/* Drop zone BELOW this card */}
       {insertIndicator === 'below' && <DropZoneCard />}
     </div>
   );

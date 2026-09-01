@@ -4,8 +4,10 @@ import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { formsService } from '@/services/forms';
+import { settingsService } from '@/services/settings';
+import { settingsKeys } from '@/lib/queryKeys';
 import { createFormSchema, CreateFormValues } from '@/lib/schemas/formSchema';
 import { useBuilderStore } from '@/store/builderStore';
 import { useToast } from '@/components/common/Toast';
@@ -28,6 +30,16 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
   const initForm = useBuilderStore((s) => s.initForm);
   const titleInputRef = useRef<HTMLInputElement>(null);
 
+  // Shares the same cache Settings' BrandingTab reads/writes — new forms should start with the
+  // workspace's default branding (Requirement 6's Branding_Defaults concept), and `POST
+  // /api/forms` only ever accepted `{title, description}`, never branding. Applied here via a
+  // follow-up `PATCH` (already confirmed to accept `branding`) rather than waiting on a backend
+  // change to the create endpoint.
+  const { data: workspace } = useQuery({
+    queryKey: settingsKeys.workspace(),
+    queryFn: settingsService.getWorkspace,
+  });
+
   const {
     register,
     handleSubmit,
@@ -37,7 +49,6 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
     resolver: zodResolver(createFormSchema),
   });
 
-  // Auto-focus title on open; reset on close
   useEffect(() => {
     if (isOpen) {
       reset();
@@ -49,10 +60,18 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
 
 
   const mutation = useMutation({
-    mutationFn: (data: CreateFormValues) => formsService.createForm(data),
+    mutationFn: async (data: CreateFormValues) => {
+      const created = await formsService.createForm(data);
+      const defaultBranding = workspace?.branding;
+      if (defaultBranding && Object.keys(defaultBranding).length > 0) {
+        // Non-fatal: the form still exists even if this follow-up save fails.
+        await formsService.updateForm(created._id, { branding: defaultBranding }).catch(() => {});
+      }
+      return { ...created, branding: defaultBranding ?? {} };
+    },
     onSuccess: (response) => {
       const formId = response._id;
-      // ponytail: Brittle hardcoded schema defaults. 
+      // ponytail: Brittle hardcoded schema defaults.
       // Upgrade path: extract this to a shared factory function in src/types/form.ts
       // Seed the store with a fresh empty form so the builder page hydrates instantly
       initForm({
@@ -63,7 +82,7 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
         status: 'draft',
         fields: [],
         pages: [],
-        branding: {},
+        branding: response.branding,
         settings: { honeypotEnabled: true },
         schemaVersion: 1,
         responseCount: 0,
@@ -111,7 +130,6 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
           {...register('description')}
         />
 
-        {/* Actions */}
         <div className="flex items-center justify-end gap-3 pt-2">
           <Button
             type="button"

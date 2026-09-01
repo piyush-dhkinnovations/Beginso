@@ -1,6 +1,6 @@
 /**
  * Feature: sprint-3-public-form
- * Tests for FormUnavailable — lock icon, heading, sub-message, optional adminNote.
+ * Tests for FormUnavailable — lock icon, heading, sub-message, optional userNote.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -18,12 +18,12 @@ describe('FormUnavailable', () => {
     ).toBeInTheDocument();
   });
 
-  it('renders adminNote when provided', () => {
-    render(<FormUnavailable adminNote="Thanks for stopping by." />);
+  it('renders userNote when provided', () => {
+    render(<FormUnavailable userNote="Thanks for stopping by." />);
     expect(screen.getByText('Thanks for stopping by.')).toBeInTheDocument();
   });
 
-  it('does not render an adminNote paragraph when omitted', () => {
+  it('does not render a userNote paragraph when omitted', () => {
     render(<FormUnavailable />);
     expect(screen.queryByText('Thanks for stopping by.')).not.toBeInTheDocument();
   });

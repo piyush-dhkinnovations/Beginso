@@ -1,17 +1,18 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff } from 'lucide-react';
 import { signupSchema, SignupFormValues } from '@/lib/schemas/signupSchema';
-import * as AuthService from '@/services/auth';
+import { authService } from '@/services/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/common/Toast';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { GoogleSignInButton } from './GoogleSignInButton';
+import { useRouter } from 'next/navigation';
 
 export function SignupForm() {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -20,6 +21,7 @@ export function SignupForm() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const { login } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   const {
     register,
@@ -39,9 +41,9 @@ export function SignupForm() {
   const onSubmit = async (values: SignupFormValues) => {
     setServerError(null);
     try {
-      const data = await AuthService.signup(values.name, values.email, values.password);
-      toast('Account created successfully!', 'success');
-      login(data.token, data.user);
+      await authService.signup(values.name, values.email, values.password);
+      toast('Verification code sent. Check your inbox.', 'success');
+      router.push('/verify-email');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: { message?: string; fields?: Array<{ field: string; message: string }> | Record<string, string> } } } };
       const fields = err.response?.data?.error?.fields;
@@ -64,9 +66,9 @@ export function SignupForm() {
     setServerError(null);
     setIsGoogleLoading(true);
     try {
-      const data = await AuthService.loginWithGoogle();
+      await authService.loginWithGoogle();
       toast('Account created successfully!', 'success');
-      login(data.token, data.user);
+      await login();
     } catch (error: unknown) {
       setIsGoogleLoading(false);
       setServerError(getFriendlyErrorMessage(error));
@@ -102,6 +104,7 @@ export function SignupForm() {
     <button
       type="button"
       onClick={toggleConfirmPasswordVisibility}
+      
       className="text-neutral-400 hover:text-neutral-600 focus:outline-none flex items-center justify-center min-w-[44px] min-h-[44px]"
       aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
     >

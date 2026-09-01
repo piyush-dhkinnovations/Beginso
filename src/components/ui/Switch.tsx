@@ -16,15 +16,17 @@ export function Switch({ id, checked, onChange }: SwitchProps) {
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${
-        checked ? 'bg-brand-600' : 'bg-neutral-300'
-      }`}
+      className="inline-flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
     >
       <span
-        className={`pointer-events-none block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-          checked ? 'translate-x-4' : 'translate-x-0'
-        }`}
-      />
+        className={`pointer-events-none relative block h-5 w-9 rounded-full transition-colors duration-200 ${checked ? 'bg-brand-600' : 'bg-neutral-300'}`}
+      >
+        <span
+          className={`absolute left-0.5 top-0.5 block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+            checked ? 'translate-x-4' : 'translate-x-0'
+          }`}
+        />
+      </span>
     </button>
   );
 }

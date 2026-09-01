@@ -23,7 +23,7 @@ export function useIntersectionObserver(options: IntersectionObserverInit = { th
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [options.threshold, options.root, options.rootMargin]); // Destructure options for dependencies
+  }, [options.threshold, options.root, options.rootMargin]);
 
   return { ref, isVisible };
 }

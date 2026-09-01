@@ -7,14 +7,14 @@ export function CheckboxRenderer({ field, control, error, disabled }: FieldRende
   const options = field.type === 'checkbox' ? field.options : [];
 
   return (
-    <FieldShell fieldId={field.fieldId} label={field.label} required={field.required} helpText={field.helpText} error={error}>
+    <FieldShell fieldId={field.fieldId} label={field.label} required={field.required} helpText={field.helpText} error={error} asGroup>
       <Controller
         name={field.fieldId}
         control={control}
         render={({ field: controllerField }) => {
           const selected = Array.isArray(controllerField.value) ? controllerField.value : [];
           return (
-            <div id={field.fieldId} className="flex flex-col gap-2">
+            <div role="group" aria-labelledby={`${field.fieldId}-label`} className="flex flex-col gap-2">
               {options.map((opt) => (
                 <label
                   key={opt}

@@ -4,7 +4,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Consolas, monospace;
+  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SF Mono", Consolas, monospace;
   --font-heading: var(--font-inter);
   --color-ring: var(--ring);
   --color-border: var(--border);
@@ -40,11 +40,35 @@
   --color-error: #EF4444;
   --color-warning: #EAB308;
 
+  /* Status Badge Scale — 04-design-system.md §4.7. "Completed" intentionally
+     reuses the "active" tokens (the doc gives them the identical treatment). */
+  --color-status-active-bg: #F0FDF4;
+  --color-status-active-border: #86EFAC;
+  --color-status-active-text: #065F46;
+  --color-status-active-dot: #22C55E;
+  --color-status-new-bg: #EFF6FF;
+  --color-status-new-border: #93C5FD;
+  --color-status-new-text: #1E40AF;
+  --color-status-new-dot: #3B82F6;
+  --color-status-progress-bg: #FEFCE8;
+  --color-status-progress-border: #FDE047;
+  --color-status-progress-text: #92400E;
+  --color-status-progress-dot: #EAB308;
+  --color-status-draft-bg: #F8FAFC;
+  --color-status-draft-border: #CBD5E1;
+  --color-status-draft-text: #475569;
+  --color-status-draft-dot: #94A3B8;
+  --color-status-closed-bg: #FFF1F2;
+  --color-status-closed-border: #FECDD3;
+  --color-status-closed-text: #9F1239;
+  --color-status-closed-dot: #F43F5E;
+
   /* Custom animations */
   --animate-fade-up: fadeUp 0.4s ease-out both;
   --animate-fade-in: fadeIn 0.35s ease-out both;
   --animate-blink: blink 1s step-end infinite;
   --animate-slide-in-left: slideInLeft 0.25s ease-out both;
+  --animate-slide-in-right: slideInRight 0.25s ease-out both;
   --animate-slide-up: slideUp 0.25s ease-out both;
   --animate-drop-indicator: dropIndicatorIn 0.15s ease-out both;
   --animate-sort-line: sortLineIn 0.1s ease-out both;
@@ -90,6 +114,15 @@
     }
   }
 
+  @keyframes slideInRight {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
   @keyframes slideUp {
     from {
       opacity: 0;
@@ -121,6 +154,151 @@
       opacity: 1;
       transform: scaleX(1);
     }
+  }
+}
+
+/* The authenticated shell responds to its available container width, not the viewport. */
+.dashboard-shell {
+  container-type: inline-size;
+}
+
+.dashboard-main-frame {
+  padding-top: 56px;
+}
+
+.dashboard-mobile-menu-btn {
+  display: none;
+}
+
+@container (min-width: 521px) and (max-width: 880px) {
+  .dashboard-desktop-sidebar,
+  .dashboard-sidebar-panel {
+    width: 56px !important;
+  }
+
+  .dashboard-sidebar-panel .sidebar-brand,
+  .dashboard-sidebar-panel .sidebar-label,
+  .dashboard-sidebar-panel .sidebar-collapse-control {
+    display: none;
+  }
+
+  .dashboard-content {
+    margin-left: 56px !important;
+  }
+}
+
+@container (max-width: 520px) {
+  .dashboard-desktop-sidebar {
+    display: none;
+  }
+
+  .dashboard-mobile-menu-btn {
+    display: flex;
+  }
+
+  .dashboard-content {
+    margin-left: 0 !important;
+    padding: 16px;
+  }
+
+  /* SettingsTabs: 5 tabs never fit ≤520px, so the strip always horizontally scrolls there — an
+     edge-to-edge cutoff (e.g. "Notifica...") reads as broken rather than scrollable. A right-edge
+     fade signals "more this way" without JS scroll-position tracking; scoped to this breakpoint
+     only, since at wider widths all tabs fit and nothing should ever be masked out. */
+  .settings-tabs-scroll {
+    mask-image: linear-gradient(to right, black 88%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 88%, transparent 100%);
+  }
+}
+
+/* BrandingPanel: shared by the Builder's (desktop-only, wide) properties panel and Settings'
+   440px-capped Branding tab — a fixed two-column layout with no breakpoint overflowed the whole
+   page on mobile (found via live testing). Container query, not a media query: the two consumers
+   give it very different available widths regardless of viewport, so it must respond to its own
+   box, not the screen. Stacks by default; goes side-by-side only once ~620px is actually available. */
+.branding-panel-shell {
+  container-type: inline-size;
+}
+
+@container (min-width: 620px) {
+  .branding-panel-columns {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .branding-panel-preview {
+    width: 280px;
+    flex-shrink: 0;
+  }
+}
+
+.responses-table-container {
+  container-type: inline-size;
+}
+
+/* Forms Manager row: same icon/title/badge/actions elements, rearranged per breakpoint via named
+   grid areas instead of duplicated markup — avoids fixed w-64/w-20 columns overflowing narrow
+   screens. Title stacks over its own meta text (nested inside the "title" cell, not a separate
+   grid item) so it doesn't need its own area at either breakpoint. */
+.forms-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    "icon title actions"
+    ".    badge   .";
+  column-gap: 1rem;
+  row-gap: 0.375rem;
+  align-items: center;
+}
+
+/* Container query (not @media) — matches the rest of the shell, which responds to its actual
+   rendered width, not the viewport (relevant since the desktop sidebar itself eats into that
+   width independent of viewport size). */
+@container (min-width: 640px) {
+  .forms-row {
+    grid-template-columns: auto 16rem 1fr auto;
+    grid-template-areas: "icon title badge actions";
+    row-gap: 0;
+  }
+}
+
+/* Column labels only make sense once .forms-row is an actual single-line row, not the stacked
+   mobile layout — hidden below the same 640px threshold .forms-row itself reflows at. */
+.forms-row-header {
+  display: none;
+}
+
+@container (min-width: 640px) {
+  .forms-row-header {
+    display: grid;
+  }
+}
+
+.responses-secondary-column,
+.responses-secondary-block,
+.responses-desktop-only {
+  display: none;
+}
+
+.responses-mobile-only {
+  display: flex;
+}
+
+@container (min-width: 521px) {
+  .responses-secondary-column {
+    display: table-cell;
+  }
+
+  .responses-secondary-block {
+    display: block;
+  }
+
+  .responses-desktop-only {
+    display: inline;
+  }
+
+  .responses-mobile-only {
+    display: none;
   }
 }
 
@@ -198,6 +376,55 @@
   font-size: 11px;
   font-weight: 400;
   line-height: 1.4;
+}
+
+/* Mobile: the heading/display tier reads oversized on a narrow card (page titles, stat-card
+   numbers) — scaled down here so every component using these utilities shrinks consistently,
+   instead of hunting down each "big font" individually across the app. Deliberately @media, not
+   @container like the shell's layout rules — legibility should track the physical viewport, and
+   this needs to apply on public/auth pages too, which sit outside .dashboard-shell's containment
+   context and would never see a @container rule. Body-tier and smaller (13px and below) are left
+   alone — already compact by design; shrinking further risks illegibility. */
+@media (max-width: 520px) {
+  .text-display {
+    font-size: 19px;
+  }
+  .text-heading-1 {
+    font-size: 17px;
+  }
+  .text-heading-2 {
+    font-size: 15px;
+  }
+  .text-heading-3 {
+    font-size: 13px;
+  }
+  .text-body-lg {
+    font-size: 13px;
+  }
+}
+
+/* Thin scrollbar app-wide — the OS-default scrollbar in Chromium/Windows renders ~17px wide,
+   heavy next to this UI's compact spacing (drawers, tables, dropdowns, etc). `*` is required
+   because unlike `scrollbar-width`, `::-webkit-scrollbar` doesn't inherit from `html`/`body`. */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-neutral-200) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-neutral-200);
+    border-radius: 9999px;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-neutral-400);
+  }
 }
 
 /* Hero Background Pattern */

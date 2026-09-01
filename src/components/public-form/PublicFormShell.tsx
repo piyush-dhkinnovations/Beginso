@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
-import { useForm, type FieldError, type Resolver } from 'react-hook-form';
+import { useForm, type FieldError, type FieldErrors, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import type { FormField } from '@/types/form';
@@ -27,7 +27,13 @@ import { FileUploadRenderer } from './fields/FileUploadRenderer';
 interface PublicFormShellProps {
   schema: PublicFormSchema;
   slug: string;
+  /** User-only "see it as a respondent would" mode — disables the real submit network call. */
+  previewMode?: boolean;
 }
+
+// long_text/choice/file fields need room to wrap or list options — always full-width,
+// even in the two-column layout. The rest pair up two-per-row.
+const FULL_WIDTH_TYPES = new Set<FormField['type']>(['long_text', 'multiple_choice', 'checkbox', 'file_upload']);
 
 // file_upload is dispatched separately below — it needs onFileChange/onUploadStateChange,
 // which the other 9 renderers don't take, so it doesn't fit this shared prop shape.
@@ -43,13 +49,15 @@ const RENDERER_MAP: Record<Exclude<FormField['type'], 'file_upload'>, ComponentT
   checkbox: CheckboxRenderer,
 };
 
-export function PublicFormShell({ schema, slug }: PublicFormShellProps) {
+export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellProps) {
   const router = useRouter();
   const sortedPages = useMemo(() => [...schema.pages].sort((a, b) => a.order - b.order), [schema.pages]);
+  const layout = schema.settings.layout ?? 'single_column';
 
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewSubmitted, setPreviewSubmitted] = useState(false);
   const [uploadStates, setUploadStates] = useState<Record<string, UploadState>>({});
   const [files, setFiles] = useState<Record<string, File>>({});
 
@@ -158,28 +166,59 @@ export function PublicFormShell({ schema, slug }: PublicFormShellProps) {
 
   async function onSubmit(values: Record<string, FieldValue>) {
     setSubmitError(null);
-    setIsSubmitting(true);
 
-    const answers = buildAnswers(schema.fields, hiddenFieldIds, values);
-    const honeypot = typeof values._hp === 'string' ? values._hp : '';
-    const result = await publicFormService.submitForm(slug, { answers }, files, honeypot);
-
-    if (result.ok) {
-      submittedRef.current = true;
-      clearDraft(slug);
-      const params = new URLSearchParams({ title: schema.title });
-      if (schema.settings.successMessage) params.set('message', schema.settings.successMessage);
-      router.push(`/f/${slug}/success?${params.toString()}`);
+    if (previewMode) {
+      setPreviewSubmitted(true);
       return;
     }
 
-    setIsSubmitting(false);
-    if (result.status === 429) {
-      setSubmitError('Too many submissions from your connection. Please wait a minute and try again.');
-    } else if (result.status === 422 && result.message) {
-      setSubmitError(result.message);
-    } else {
-      setSubmitError('Something went wrong. Please try again.');
+    setIsSubmitting(true);
+
+    try {
+      const answers = buildAnswers(schema.fields, hiddenFieldIds, values);
+      const honeypot = typeof values._hp === 'string' ? values._hp : '';
+      const result = await publicFormService.submitForm(slug, { answers }, files, honeypot);
+
+      if (result.ok) {
+        submittedRef.current = true;
+        clearDraft(slug);
+        const params = new URLSearchParams({ title: schema.title });
+        if (schema.settings.successMessage) params.set('message', schema.settings.successMessage);
+        router.push(`/f/${slug}/success?${params.toString()}`);
+        return;
+      }
+
+      if (result.status === 429) {
+        setSubmitError('Too many submissions from your connection. Please wait a minute and try again.');
+      } else if (result.status === 422 && result.message) {
+        setSubmitError(result.message);
+      } else {
+        setSubmitError('Something went wrong. Please try again.');
+      }
+    } catch {
+      setSubmitError('Unable to connect. Check your internet connection and try again.');
+    } finally {
+      if (!submittedRef.current) setIsSubmitting(false);
+    }
+  }
+
+  // Final-submit validation covers every page's fields (see resolver above), but only the
+  // current page's fields are rendered — a stale draft can leave an earlier page's required
+  // field (e.g. a file upload, which can't survive a reload) failing invisibly, making Submit
+  // look like it does nothing. Jump back to the earliest page with an error instead.
+  function onInvalid(errors: FieldErrors<Record<string, FieldValue>>) {
+    const erroredFieldIds = new Set(Object.keys(errors));
+    const erroredPageIndices = schema.fields
+      .filter((f) => erroredFieldIds.has(f.fieldId))
+      .map((f) => sortedPages.findIndex((p) => p.id === f.pageId))
+      .filter((i) => i >= 0);
+    if (erroredPageIndices.length === 0) return;
+
+    const earliestPageIndex = Math.min(...erroredPageIndices);
+    if (earliestPageIndex < currentPageIndex) {
+      setCurrentPageIndex(earliestPageIndex);
+      setSubmitError('Please complete all required fields before submitting.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
@@ -188,15 +227,24 @@ export function PublicFormShell({ schema, slug }: PublicFormShellProps) {
       e.preventDefault();
       return;
     }
-    methods.handleSubmit(onSubmit)(e);
+    methods.handleSubmit(onSubmit, onInvalid)(e);
   }
 
   const anyUploading = Object.values(uploadStates).some((s) => s.status === 'uploading');
   const submitDisabled = isSubmitting || anyUploading;
 
+  const fieldsContainerClass =
+    layout === 'two_column'
+      ? 'mt-6 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5'
+      : layout === 'compact'
+      ? 'mt-6 flex flex-col gap-3'
+      : 'mt-6 flex flex-col gap-5';
+
+  const cardMaxWidth = layout === 'two_column' ? 'max-w-[680px]' : layout === 'compact' ? 'max-w-[560px]' : 'max-w-[520px]';
+
   return (
-    <div className="min-h-screen bg-neutral-50 flex justify-center p-4">
-      <div className="bg-white rounded-xl border border-neutral-200 shadow-card max-w-[520px] w-full overflow-hidden">
+    <div className={`bg-neutral-50 flex justify-center p-4 ${previewMode ? '' : 'min-h-screen'}`}>
+      <div className={`bg-white rounded-xl border border-neutral-200 shadow-card w-full overflow-hidden ${cardMaxWidth}`}>
         <FormBanner branding={schema.branding} />
         <form onSubmit={handleFormSubmit} noValidate className={schema.branding.logoUrl ? 'p-6 pt-8' : 'p-6'}>
           <FormProgress currentPage={currentPageIndex + 1} totalPages={totalPages} />
@@ -215,14 +263,42 @@ export function PublicFormShell({ schema, slug }: PublicFormShellProps) {
             {...methods.register('_hp')}
           />
 
-          <div className="mt-6 flex flex-col gap-5">
+          <div className={fieldsContainerClass}>
             {currentPageFields.map((field) => {
               const fieldError = methods.formState.errors[field.fieldId] as FieldError | undefined;
+              const spanClass = layout === 'two_column' && FULL_WIDTH_TYPES.has(field.type) ? 'sm:col-span-2' : '';
 
               if (field.type === 'file_upload') {
                 return (
-                  <FileUploadRenderer
-                    key={field.fieldId}
+                  <div key={field.fieldId} className={spanClass}>
+                    <FileUploadRenderer
+                      field={field}
+                      control={methods.control}
+                      register={methods.register}
+                      trigger={methods.trigger}
+                      setValue={methods.setValue}
+                      error={fieldError}
+                      disabled={isSubmitting}
+                      onFileChange={(file) =>
+                        setFiles((prev) => {
+                          const next = { ...prev };
+                          if (file) next[field.fieldId] = file;
+                          else delete next[field.fieldId];
+                          return next;
+                        })
+                      }
+                      onUploadStateChange={(state) =>
+                        setUploadStates((prev) => ({ ...prev, [field.fieldId]: state }))
+                      }
+                    />
+                  </div>
+                );
+              }
+
+              const Renderer = RENDERER_MAP[field.type];
+              return (
+                <div key={field.fieldId} className={spanClass}>
+                  <Renderer
                     field={field}
                     control={methods.control}
                     register={methods.register}
@@ -230,33 +306,9 @@ export function PublicFormShell({ schema, slug }: PublicFormShellProps) {
                     setValue={methods.setValue}
                     error={fieldError}
                     disabled={isSubmitting}
-                    onFileChange={(file) =>
-                      setFiles((prev) => {
-                        const next = { ...prev };
-                        if (file) next[field.fieldId] = file;
-                        else delete next[field.fieldId];
-                        return next;
-                      })
-                    }
-                    onUploadStateChange={(state) =>
-                      setUploadStates((prev) => ({ ...prev, [field.fieldId]: state }))
-                    }
+                    inline={layout === 'compact' && !FULL_WIDTH_TYPES.has(field.type)}
                   />
-                );
-              }
-
-              const Renderer = RENDERER_MAP[field.type];
-              return (
-                <Renderer
-                  key={field.fieldId}
-                  field={field}
-                  control={methods.control}
-                  register={methods.register}
-                  trigger={methods.trigger}
-                  setValue={methods.setValue}
-                  error={fieldError}
-                  disabled={isSubmitting}
-                />
+                </div>
               );
             })}
           </div>
@@ -267,30 +319,36 @@ export function PublicFormShell({ schema, slug }: PublicFormShellProps) {
             </p>
           )}
 
-          <div className="mt-6 flex gap-3">
-            {currentPageIndex > 0 && (
-              <Button key="back" type="button" variant="secondary" className="flex-1" onClick={handleBack} disabled={isSubmitting}>
-                Back
-              </Button>
-            )}
-            {isLastPage ? (
-              <Button
-                key="submit"
-                type="submit"
-                className="flex-1"
-                style={{ backgroundColor: primaryColor }}
-                isLoading={isSubmitting}
-                disabled={submitDisabled}
-                aria-label={isSubmitting ? 'Submitting your response...' : undefined}
-              >
-                Submit
-              </Button>
-            ) : (
-              <Button key="next" type="button" className="flex-1" style={{ backgroundColor: primaryColor }} onClick={handleNext}>
-                Next
-              </Button>
-            )}
-          </div>
+          {previewMode && previewSubmitted ? (
+            <p className="mt-6 text-body-sm text-center text-neutral-500 font-medium">
+              This is a preview — nothing was submitted.
+            </p>
+          ) : (
+            <div className="mt-6 flex gap-3">
+              {currentPageIndex > 0 && (
+                <Button key="back" type="button" variant="secondary" className="flex-1" onClick={handleBack} disabled={isSubmitting}>
+                  Back
+                </Button>
+              )}
+              {isLastPage ? (
+                <Button
+                  key="submit"
+                  type="submit"
+                  className="flex-1"
+                  style={{ backgroundColor: primaryColor }}
+                  isLoading={isSubmitting}
+                  disabled={submitDisabled}
+                  aria-label={isSubmitting ? 'Submitting your response...' : undefined}
+                >
+                  Submit
+                </Button>
+              ) : (
+                <Button key="next" type="button" className="flex-1" style={{ backgroundColor: primaryColor }} onClick={handleNext}>
+                  Next
+                </Button>
+              )}
+            </div>
+          )}
         </form>
       </div>
     </div>
