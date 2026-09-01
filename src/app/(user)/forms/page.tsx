@@ -8,7 +8,7 @@ import { formsService } from '@/services/forms';
 import { useToast } from '@/components/common/Toast';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { EmptyState } from '@/components/common/EmptyState';
 import { CreateFormModal } from '@/components/form-builder/CreateFormModal';
 import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
@@ -97,9 +97,9 @@ function FormRow({
       </div>
 
       <div className="[grid-area:badge] flex justify-start sm:justify-center">
-        <Badge variant={STATUS_VARIANT[form.status]}>
+        <StatusBadge variant={STATUS_VARIANT[form.status]}>
           {STATUS_LABEL[form.status]}
-        </Badge>
+        </StatusBadge>
       </div>
 
       <div className="[grid-area:actions] flex items-center justify-end gap-1.5">

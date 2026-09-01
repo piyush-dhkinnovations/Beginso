@@ -1,5 +1,5 @@
 import React from "react";
-import { cn } from "@/lib/utils";
+import { bx } from "@/lib/utils";
 import { AlertCircle } from "lucide-react";
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -9,19 +9,22 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   id: string;
 }
 
+// beginso-ui.css classes — see src/styles/beginso-ui.css §6 FORM FIELDS.
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, disabled, type = "text", id, rightSlot, ...props }, ref) => {
+  ({ className, label, error, disabled, type = "text", id, rightSlot, style, ...props }, ref) => {
     return (
-      <div className="flex flex-col gap-1.5 w-full">
+      <div className="bg-field">
         {label && (
-          <label
-            htmlFor={id}
-            className="text-heading-3 text-neutral-800"
-          >
+          <label htmlFor={id} className="bg-label">
             {label}
           </label>
         )}
-        <div className="relative flex items-center w-full">
+        {/* Always the same wrapper, whether or not rightSlot is present — rightSlot is often
+            conditional on the input's own value (e.g. a clear button that only shows once
+            there's text), and swapping the input's DOM ancestry between renders (bare
+            <input> vs <div><input/></div>) remounts it mid-typing. Reproduced as a real bug:
+            ResponsesToolbar's debounced search only ever saw the first typed character. */}
+        <div className={bx("bg-input-wrap", rightSlot && "has-trail")}>
           <input
             ref={ref}
             id={id}
@@ -29,30 +32,25 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             disabled={disabled}
             aria-invalid={!!error}
             aria-describedby={error ? `${id}-error` : undefined}
-            className={cn(
-              "w-full rounded-md px-3 text-[13px] h-[38px] min-h-[44px] bg-white transition-colors duration-200 outline-none",
-              "border-2 border-neutral-200",
-              "focus:border-neutral-500",
-              error && "border-error focus:border-error",
-              disabled && "bg-neutral-100 opacity-60 cursor-not-allowed pointer-events-none",
-              rightSlot && "pr-12",
-              className
-            )}
+            className={bx("bg-input", error && "is-error", className)}
+            // beginso-ui.css's ".bg-input-wrap .bg-input" rule always reserves 40px of left
+            // padding for a *leading* icon (.bg-input-lead) this component doesn't have —
+            // reset back to .bg-input's own default. An inline style is the only thing
+            // guaranteed to win over that rule's specificity.
+            style={{ paddingLeft: "var(--space-3)", ...style }}
             {...props}
           />
           {rightSlot && (
-            <div className="absolute right-0 top-0 bottom-0 flex items-center justify-center min-w-[44px] min-h-[44px]">
-              {rightSlot}
-            </div>
+            // "is-action" restores pointer-events on the trailing slot — the base
+            // .bg-input-trail rule sets pointer-events: none, since most trailing
+            // content is a decorative icon, not the interactive controls (e.g. a
+            // password-visibility toggle) every current call site actually passes.
+            <span className="bg-input-trail is-action">{rightSlot}</span>
           )}
         </div>
         {error && (
-          <p
-            id={`${id}-error`}
-            role="alert"
-            className="text-caption text-error font-semibold flex items-center gap-1 mt-0.5"
-          >
-            <AlertCircle size={10} className="shrink-0" />
+          <p id={`${id}-error`} role="alert" className="bg-error-text bg-body-sm flex items-center gap-1">
+            <AlertCircle size={14} className="bg-icon" />
             {error}
           </p>
         )}

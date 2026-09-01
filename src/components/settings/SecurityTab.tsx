@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { settingsService } from '@/services/settings';
 import { settingsKeys } from '@/lib/queryKeys';
 import { formatResponseDate } from '@/lib/formatters';
-import { Badge } from '@/components/ui/Badge';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
 import { ChangePasswordModal } from './ChangePasswordModal';
 import { SessionsList } from './SessionsList';
@@ -40,9 +40,9 @@ export function SecurityTab() {
           </div>
         ) : (
           <div className="flex flex-col gap-3 rounded-lg border border-neutral-200 bg-white p-4">
-            <Badge variant={profile.emailVerified ? 'active' : 'draft'} className="self-start">
+            <StatusBadge variant={profile.emailVerified ? 'active' : 'draft'} className="self-start">
               {profile.emailVerified ? 'Email verified' : 'Email not verified'}
-            </Badge>
+            </StatusBadge>
             <div className="text-body-sm text-neutral-600 flex flex-col gap-1">
               <p>Account created {formatResponseDate(profile.createdAt)}</p>
               <p>Last login {formatResponseDate(profile.lastLoginAt)}</p>

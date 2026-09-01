@@ -1,6 +1,6 @@
 import type { SessionSummary } from '@/types/settings';
 import { formatApproxLocation, formatResponseDate } from '@/lib/formatters';
-import { Badge } from '@/components/ui/Badge';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
 
 interface SessionRowProps {
@@ -17,7 +17,7 @@ export function SessionRow({ session, onRevoke, isRevoking }: SessionRowProps) {
       <div className="flex flex-col gap-0.5 min-w-0">
         <div className="flex items-center gap-2">
           <p className="text-body-sm font-semibold text-neutral-800 truncate">{session.deviceLabel}</p>
-          {session.isCurrent && <Badge variant="neutral">This device</Badge>}
+          {session.isCurrent && <StatusBadge variant="neutral">This device</StatusBadge>}
         </div>
         <p className="text-caption text-neutral-500">
           {formatApproxLocation(session.approxLocation)} · Last active {formatResponseDate(session.lastActiveAt)}

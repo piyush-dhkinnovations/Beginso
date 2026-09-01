@@ -59,4 +59,19 @@ describe('Input component', () => {
     const input = document.querySelector('input[type="password"]');
     expect(input).toBeInTheDocument();
   });
+
+  it('does not reserve leading-icon space when there is no rightSlot', () => {
+    render(<Input id="email" label="Email" />);
+    const input = screen.getByRole('textbox');
+    // beginso-ui.css's .bg-input-wrap always adds 40px of left padding for a leading
+    // icon this component doesn't have — regression test for that bug.
+    expect(input).not.toHaveClass('bg-input-wrap');
+    expect(input.style.paddingLeft).toBe('var(--space-3)');
+  });
+
+  it('still resets the leading padding when rightSlot is present', () => {
+    render(<Input id="pw" type="password" rightSlot={<button type="button">Show</button>} />);
+    const el = document.getElementById('pw') as HTMLInputElement;
+    expect(el.style.paddingLeft).toBe('var(--space-3)');
+  });
 });
