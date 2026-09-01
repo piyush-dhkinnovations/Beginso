@@ -1,14 +1,28 @@
 "use client";
 
 import React from "react";
-import { cn } from "@/lib/utils";
-import { LoadingSpinner } from "../common/LoadingSpinner";
+import { bx } from "@/lib/utils";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: "primary" | "secondary" | "destructive" | "ghost";
   size?: "default" | "small";
   isLoading?: boolean;
 }
+
+// beginso-ui.css variant/size classes — see src/styles/beginso-ui.css §5 BUTTONS.
+// "destructive" maps to the design system's "danger" variant (same role, different name
+// on our side so existing call sites don't need to change).
+const variantClass: Record<NonNullable<ButtonProps["variant"]>, string> = {
+  primary: "bg-btn-primary",
+  secondary: "bg-btn-secondary",
+  destructive: "bg-btn-danger",
+  ghost: "bg-btn-ghost",
+};
+
+const sizeClass: Record<NonNullable<ButtonProps["size"]>, string> = {
+  default: "",
+  small: "bg-btn-sm",
+};
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
@@ -25,32 +39,12 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const baseStyles =
-      "inline-flex shrink-0 items-center justify-center font-semibold whitespace-nowrap transition-all outline-none select-none disabled:opacity-60 disabled:cursor-not-allowed min-h-[44px] min-w-[44px]";
-
-    const variants = {
-      primary: "bg-slate-700 text-white hover:bg-slate-900",
-      secondary:
-        "bg-white border border-[#CBD5E1] text-[#0F172A] hover:bg-neutral-100",
-      destructive:
-        "bg-[#FEE2E2] border border-[#EF4444] text-[#B91C1C] hover:bg-[#EF4444] hover:text-white",
-      ghost:
-        "bg-transparent text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 border-none",
-    };
-
-    const sizes = {
-      default: "h-[38px] px-4 text-[13px] rounded-[6px]",
-      small: "h-[30px] px-3 text-[13px] rounded-[6px]",
-    };
-
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       if (disabled || isLoading) {
         e.preventDefault();
         return;
       }
-      if (onClick) {
-        onClick(e);
-      }
+      onClick?.(e);
     };
 
     return (
@@ -58,18 +52,18 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         type={type}
         disabled={disabled || isLoading}
+        aria-busy={isLoading || undefined}
         onClick={handleClick}
-        className={cn(baseStyles, variants[variant], sizes[size], className)}
+        className={bx(
+          "bg-btn",
+          variantClass[variant],
+          sizeClass[size],
+          isLoading && "bg-btn-loading",
+          className
+        )}
         {...props}
       >
-        {isLoading ? (
-          <span className="flex items-center justify-center gap-2">
-            <LoadingSpinner variant="inline" className="text-current" />
-            {children}
-          </span>
-        ) : (
-          children
-        )}
+        {children}
       </button>
     );
   }

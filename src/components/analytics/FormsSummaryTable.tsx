@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FileText, Plus } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import { PaginationControls } from '@/components/responses/PaginationControls';
@@ -118,7 +118,7 @@ export function FormsSummaryTable({
               >
                 <td className="px-4 py-3 text-body-sm font-semibold text-neutral-800 truncate max-w-[280px]">{form.title}</td>
                 <td className="px-4 py-3">
-                  <Badge variant={form.status}>{STATUS_LABEL[form.status]}</Badge>
+                  <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge>
                 </td>
                 <td className="px-4 py-3 text-body-sm text-neutral-600 text-right">{form.totalResponses}</td>
                 <td className="hidden md:table-cell px-4 py-3 text-body-sm text-neutral-600 text-right">{changeFor(form)}</td>
@@ -141,7 +141,7 @@ export function FormsSummaryTable({
           >
             <div className="flex items-center justify-between gap-2">
               <span className="text-body-sm font-semibold text-neutral-800 truncate">{form.title}</span>
-              <Badge variant={form.status}>{STATUS_LABEL[form.status]}</Badge>
+              <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge>
             </div>
             <span className="text-caption text-neutral-500">
               {form.totalResponses} response{form.totalResponses === 1 ? '' : 's'} · {Math.round(form.completionRate)}% completion · {changeFor(form)}

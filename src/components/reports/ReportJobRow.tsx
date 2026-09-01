@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Download, FileText, Info, Loader2, RotateCcw } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/common/Toast';
 import { formatRelativeTime } from '@/lib/formatters';
@@ -152,7 +152,7 @@ export function ReportJobRow({ job, onRetry, isRetrying = false, formTitleById =
             <p className="text-body-sm font-semibold text-neutral-800 truncate">{title}</p>
             <p className="text-caption text-neutral-500">{subtitle}</p>
           </div>
-          <Badge variant={STATUS_BADGE_VARIANT[job.status]}>{REPORT_STATUS_LABELS[job.status]}</Badge>
+          <StatusBadge variant={STATUS_BADGE_VARIANT[job.status]}>{REPORT_STATUS_LABELS[job.status]}</StatusBadge>
         </div>
         {job.status === 'failed' && job.errorMessage && <p className="text-caption text-rose-600">{job.errorMessage}</p>}
         <div className="flex items-center justify-between gap-2 pt-1">
@@ -183,7 +183,7 @@ export function ReportJobRow({ job, onRetry, isRetrying = false, formTitleById =
       </td>
       <td className="px-4 py-3 text-body-sm text-neutral-500 whitespace-nowrap">{created}</td>
       <td className="px-4 py-3">
-        <Badge variant={STATUS_BADGE_VARIANT[job.status]}>{REPORT_STATUS_LABELS[job.status]}</Badge>
+        <StatusBadge variant={STATUS_BADGE_VARIANT[job.status]}>{REPORT_STATUS_LABELS[job.status]}</StatusBadge>
       </td>
       <td className="px-4 py-3 text-right">{action}</td>
     </tr>

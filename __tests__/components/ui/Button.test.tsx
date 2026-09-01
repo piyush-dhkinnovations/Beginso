@@ -1,19 +1,14 @@
 /**
  * __tests__/Button.test.tsx
- * Feature: sprint-1-frontend-auth
- * Tests: Button component — disabled prevents onClick, renders loading state
- * Requirements: 3.1, 3.8, 15.5
+ * Feature: sprint-1-frontend-auth (behavior) / sprint-7-foundation (beginso-ui.css migration)
+ * Tests: Button component — disabled/loading prevent onClick, applies design-system classes
+ * Requirements: 3.1, 3.8, 15.5 (sprint-1) · 2.1 (sprint-7)
  */
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Button } from '@/components/ui/Button';
-
-// Mock LoadingSpinner to avoid SVG animation complexity in tests
-vi.mock('@/components/common/LoadingSpinner', () => ({
-  LoadingSpinner: () => <span data-testid="spinner" />,
-}));
 
 describe('Button component', () => {
   it('renders children text', () => {
@@ -56,22 +51,29 @@ describe('Button component', () => {
     expect(handleClick).not.toHaveBeenCalled();
   });
 
-  it('shows LoadingSpinner when isLoading is true', () => {
+  it('marks itself busy and applies the design system loading class when isLoading is true', () => {
     render(<Button isLoading>Submit</Button>);
-    expect(screen.getByTestId('spinner')).toBeInTheDocument();
+    const btn = screen.getByRole('button');
+    expect(btn).toHaveAttribute('aria-busy', 'true');
+    expect(btn).toBeDisabled();
+    expect(btn.className).toMatch(/bg-btn-loading/);
   });
 
-  it('applies opacity-60 and cursor-not-allowed classes when disabled', () => {
+  it('applies the beginso-ui.css base and disabled state when disabled', () => {
     render(<Button disabled>Click</Button>);
     const btn = screen.getByRole('button');
-    expect(btn.className).toMatch(/opacity-60/);
-    expect(btn.className).toMatch(/cursor-not-allowed/);
+    expect(btn).toBeDisabled();
+    expect(btn.className).toMatch(/\bbg-btn\b/);
   });
 
-  it('has min-h-[44px] min-w-[44px] touch target classes', () => {
-    render(<Button>Touch</Button>);
+  it('applies the matching variant and size classes', () => {
+    render(
+      <Button variant="destructive" size="small">
+        Delete
+      </Button>
+    );
     const btn = screen.getByRole('button');
-    expect(btn.className).toMatch(/min-h-\[44px\]/);
-    expect(btn.className).toMatch(/min-w-\[44px\]/);
+    expect(btn.className).toMatch(/bg-btn-danger/);
+    expect(btn.className).toMatch(/bg-btn-sm/);
   });
 });
