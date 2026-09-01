@@ -41,10 +41,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-.next-e2e
+.next-e2e.d.ts
 .vscode
 .kiro
-/docs
-
-# generated redesign-audit screenshots (scripts/screenshot-mvp.mjs output)
-/mvp-screenshots
+.claude
