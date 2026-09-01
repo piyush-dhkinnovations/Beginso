@@ -1,10 +1,18 @@
-@import "tailwindcss";
+/* V2 design system (Beginso/.kiro/specs/sprint-7-foundation) — beginso-ui.css's own
+   component/token layer, scoped by `.bg-*` classes so it coexists with the V1 rules
+   below. See src/styles/beginso-ui.css for why its BASE section is deferred.
 
-/* V2 design system (Beginso/.kiro/specs/sprint-7-foundation) — beginso-ui.css's
-   own component/token layer, scoped by `.bg-*` classes so it coexists with
-   the V1 rules below. See src/styles/beginso-ui.css for why its BASE section
-   is deferred. */
-@import "../styles/beginso-ui.css";
+   Imported into an explicit layer, declared BEFORE Tailwind (which creates its own
+   internal properties/theme/base/components/utilities layers) — CSS layer priority is
+   fixed by first mention, so "beginso" being mentioned first gives it the LOWEST
+   priority of any layer in the app. Without this, beginso-ui.css's classes were
+   unlayered CSS, which always beats ANY layered rule (including every Tailwind
+   utility) regardless of source order or specificity — so a consumer's own
+   `className="p-8"` could never override a `.bg-card-pad`-style default, and any
+   plain Tailwind utility touching the same property as a `.bg-*` class would silently
+   lose. See design.md §6. */
+@import "../styles/beginso-ui.css" layer(beginso);
+@import "tailwindcss";
 
 @theme inline {
   --color-background: var(--background);

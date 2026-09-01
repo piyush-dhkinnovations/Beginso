@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { bx } from "@/lib/utils";
 
 export interface ToastMessage {
   id: string;
@@ -32,11 +32,10 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      <div
-        role="status"
-        aria-live="polite"
-        className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full"
-      >
+      {/* beginso-ui.css classes — see src/styles/beginso-ui.css §13 FEEDBACK ("Toast").
+          Migrated in place (sprint-7-foundation) rather than duplicated under
+          components/ui/ — see that folder's Toast.ts for the re-export. */}
+      <div role="status" aria-live="polite" className="bg-toast-region pointer-events-none">
         {toasts.map((t) => (
           <ToastItem key={t.id} toast={t} onClose={() => removeToast(t.id)} />
         ))}
@@ -53,6 +52,16 @@ export function useToast() {
   return context;
 }
 
+// .bg-toast-{success,error} only exist for those two types (src/styles/beginso-ui.css §13) —
+// warning/info aren't covered by the stylesheet, so their icon color is set inline, matching
+// exactly what those two modifier classes do for the icon (nothing else differs between types).
+const ICON_COLOR: Record<ToastMessage["type"], string | undefined> = {
+  success: undefined,
+  error: undefined,
+  warning: "var(--warning)",
+  info: "var(--info)",
+};
+
 function ToastItem({ toast, onClose }: { toast: ToastMessage; onClose: () => void }) {
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -61,29 +70,26 @@ function ToastItem({ toast, onClose }: { toast: ToastMessage; onClose: () => voi
     return () => clearTimeout(timer);
   }, [toast, onClose]);
 
+  const Icon = { success: CheckCircle2, error: XCircle, warning: AlertTriangle, info: Info }[toast.type];
+
   return (
     <div
-      className={cn(
-        "pointer-events-auto w-full flex items-center justify-between p-4 rounded-md shadow-lg border bg-white animate-fade-in transition-all duration-300",
-        toast.type === "success" && "border-l-4 border-success border-neutral-200 text-neutral-900",
-        toast.type === "error" && "border-l-4 border-error border-neutral-200 text-neutral-900",
-        toast.type === "warning" && "border-l-4 border-warning border-neutral-200 text-neutral-900",
-        toast.type === "info" && "border-l-4 border-brand-500 border-neutral-200 text-neutral-900"
+      className={bx(
+        "bg-toast pointer-events-auto",
+        toast.type === "success" && "bg-toast-success",
+        toast.type === "error" && "bg-toast-error"
       )}
     >
-      <div className="flex items-center gap-2">
-        {toast.type === "success" && <CheckCircle2 className="w-5 h-5 text-success shrink-0" />}
-        {toast.type === "error" && <XCircle className="w-5 h-5 text-error shrink-0" />}
-        {toast.type === "warning" && <AlertTriangle className="w-5 h-5 text-warning shrink-0" />}
-        {toast.type === "info" && <Info className="w-5 h-5 text-brand-500 shrink-0" />}
-        <span className="text-body font-medium">{toast.message}</span>
+      <Icon className="bg-icon" style={{ color: ICON_COLOR[toast.type] }} />
+      <div className="bg-toast-body">
+        {/* .bg-toast-body's <strong> is the prominent/primary-color slot; this system has one
+            combined message with no separate title, so the whole message goes there rather
+            than in <span> (muted/secondary — wrong weight for a toast's only content). */}
+        <strong>{toast.message}</strong>
       </div>
-      <button
-        onClick={onClose}
-        className="text-neutral-400 hover:text-neutral-600 transition-colors ml-4 p-1 min-h-[44px] min-w-[44px] flex items-center justify-center shrink-0"
-      >
-        <span className="sr-only">Close</span>
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <button type="button" onClick={onClose} className="bg-btn bg-btn-ghost bg-btn-icon bg-btn-sm">
+        <span className="bg-sr-only">Close</span>
+        <svg className="bg-icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
