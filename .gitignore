@@ -43,11 +43,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.next-e2e.d.ts
 .vscode
-.Beginso_document
 .kiro
-.document
-/markdown
-.agents
-.gemini
-CLAUDE.md
+.claude

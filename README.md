@@ -1,286 +1,332 @@
 # Beginso
 
-A web-based form management platform that goes beyond just collecting responses. Beginso lets admins create forms, share them publicly, manage incoming submissions with status tracking, and view auto-generated dashboards — all in one place, without a spreadsheet in sight.
+A form management platform that goes beyond collecting responses. Create forms, share them publicly, manage incoming submissions with workflow tracking, and view auto-generated dashboards — all in one place, without a spreadsheet in sight.
+
+**Status:** MVP v1.0 complete · V2 in development
 
 ---
 
-## What Is This?
+## Contents
+
+- [What this is](#what-this-is) · [User roles](#user-roles) · [Core flow](#core-user-flow)
+- [Features](#key-features) · [What's next in V2](#whats-next-in-v2) · [Scope](#scope)
+- [Tech stack](#tech-stack) · [Project structure](#project-structure) · [Design system](#design-system)
+- [Security](#security--reliability) · [Timeline](#development-timeline) · [Screens](#screens-reference)
+- [Getting started](#getting-started) · [Testing](#testing) · [Contributing](#contributing)
+
+---
+
+## What this is
 
 Most form tools stop at collection. Beginso picks up where they leave off.
 
-After a response comes in, the admin can track it through a workflow (New → In Progress → Completed), view a dashboard that builds itself automatically, and export reports as CSV or PDF — all inside the same product. The goal is to make post-submission work as smooth as the collection itself, for users with zero technical background.
+Once a response arrives, you track it through a workflow, view a dashboard that builds itself, and export reports as CSV or PDF — all inside the same product. The goal is to make post-submission work as smooth as the collection itself, for people with no technical background.
 
 ---
 
-## User Roles
+## User roles
 
-| Role | Target Users | Authentication | Core Functions |
-|:---|:---|:---|:---|
-| **Admin** | Small businesses, freelancers, educators, recruiters, event organisers, NGOs | Firebase Authentication (Email/Password or Google) | Creates forms, configures branding/logic, tracks response statuses, views dashboard, exports reports |
-| **Respondent** | Anyone with the shared form link | No login required | Fills public forms, uploads files, submits responses |
-| **Super Admin** | Platform developers & operators | Firebase Auth + manual DB role flag | Internal operations: monitors logs, manages admin accounts, tracks usage, audit trail |
+| Role | Who | Authentication | What they do |
+|---|---|---|---|
+| **User** | Small businesses, freelancers, educators, recruiters, event organisers, NGOs | Firebase Auth — email/password or Google | Creates forms, configures branding and logic, tracks response status, views dashboards, exports reports |
+| **Respondent** | Anyone with the link | None required | Fills public forms, uploads files, submits |
+| **Admin** | Platform developers and operators | Firebase Auth + manual DB role flag | Monitors logs, manages accounts, tracks usage, reviews the audit trail |
 
 ---
 
-## Core User Flow
+## Core user flow
 
 ```
-Admin creates form → Publishes & shares link
-     ↓
-Respondent submits → Files upload to Cloudflare R2
-     ↓
-Admin reviews responses → Tracks status (New → In Progress → Completed) → Views auto-dashboard
-     ↓
-Admin exports CSV or PDF report
+User creates form  →  publishes and shares the link
+        ↓
+Respondent submits  →  files upload through backend storage
+        ↓
+User reviews responses  →  tracks status  →  views the auto-dashboard
+        ↓
+User exports CSV or PDF
 ```
 
 ---
 
-## Key Features
+## Key features
 
-### Form Builder
-- Drag-and-drop builder canvas with 10 field types: Short Text, Long Text, Email, Phone, Number, Date, Dropdown, Multiple Choice, Checkbox, and File Upload.
-- Single-level conditional logic rules (IF field A is value → SHOW/HIDE field B).
-- Custom form styling and branding: logo uploads, cover images, primary color selectors.
-- Seamless publish flow generating unique shareable links, embed HTML codes, and QR codes.
+### Form builder
 
-### Response Management
-- Response table with paginated data grid, search, status filter tabs, and bulk actions.
-- Read-only submission detail cards displaying all answers, file upload states, and metadata sidebars.
-- Simple workflow tracking using badges: New → In Progress → Completed.
+Drag-and-drop canvas with **10 field types** — short text, long text, email, phone, number, date, dropdown, multiple choice, checkbox, file upload. Single-level conditional logic (`IF field A is value → SHOW/HIDE field B`). Custom branding with logo uploads, cover images and a primary colour selector. Publishing generates a shareable link, an embed snippet and a QR code.
 
-### Auto-Dashboard
-- Generates automatically after the first submission — zero configuration needed.
-- Stat cards, response trend charts, status distributions, and per-question visualizations using Apache ECharts.
-- Date range filtering.
+### Response management
 
-### Reports & Exports
-- CSV export streaming response data directly.
-- Headless Chromium (Puppeteer) PDF summary reports.
+Paginated data grid with search, status filter tabs and bulk actions. Read-only submission detail showing all answers, file upload states and a metadata sidebar. Workflow tracking through **New → In Progress → Completed**.
 
-### Public Form Experience
-- Responsive public forms optimized for every screen size from 320px up.
-- Step-by-step progress indicators, client-side validation, drag-and-drop file uploads.
-- Form Unavailable indicators for draft or closed forms.
-- Success confirmation screen with optional redirect countdowns.
+### Auto-dashboard
 
-### Super Admin Console (Internal)
-- Platform Overview: Global stats (admins, workspaces, forms, responses, storage) and error/abuse monitors.
-- System Logs: Paginated, filterable structured log viewer (info/warn/error) with expandable stack traces.
-- Admin CRUD: Manage workspace details, suspend accounts, and hard-delete admins with cascading cleanups.
-- Audit Trail: Immutable record of all Super Admin operations.
+Generates itself after the first submission — no configuration. Stat cards, response trend charts, status distribution and per-question visualisations via Apache ECharts, with date-range filtering.
+
+### Reports and exports
+
+CSV export streams response data directly. PDF summary reports are generated with **PDFKit** — a pure-JS engine with no browser binary dependency, which replaced Puppeteer on 13 August 2026.
+
+### Public form experience
+
+Responsive from 320px up. Step-by-step progress indicators, client-side validation, drag-and-drop file uploads. Dedicated screens for draft or closed forms, and a success confirmation with an optional redirect countdown.
+
+### Admin console — internal
+
+Platform overview with global stats and error/abuse monitors. Paginated, filterable structured log viewer with expandable stack traces. User CRUD including workspace management, account suspension and hard deletion with cascading cleanup. Immutable audit trail of every admin operation.
 
 ---
 
-## Tech Stack
+## What's next in V2
 
-- **Frontend:** Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Zustand · TanStack Query · React Hook Form · Zod · dnd-kit · Apache ECharts (planned, Sprint 5) · Lucide React
-- **Backend:** Express.js · Node.js 20 LTS · TypeScript · Mongoose · Zod · Multer · Puppeteer · Helmet · CORS · express-rate-limit · pino
-- **Database:** MongoDB Atlas (application data) · Firebase Authentication (login credentials only)
-- **Authentication:** Firebase Auth login → Express JWT session → HttpOnly Secure cookie (`SameSite=Strict`)
-- **Storage:** Cloudflare R2 (permanent file storage) · Local `/uploads` (temporary staging)
-- **Deployment:** Vercel (Frontend) · Render / Railway / VPS (Backend — necessary for headless Puppeteer)
+V2 turns a single-admin tool into a multi-user product. The three changes that matter most:
+
+1. **More than one person can work on a form** — members, roles, invitations, assignment, internal notes.
+2. **A form does not have to belong to a team** — a personal space sits alongside workspaces, and forms move between them.
+3. **A response is something you work on, not just read** — custom pipeline stages, scoring, tags, saved views, duplicate detection.
+
+Full scope, decisions and the sprint plan live in the shared documentation repository, `Beginso-Report/Beginso-V2/`. That is the source of truth for what V2 contains; this README does not duplicate it.
 
 ---
 
-## Project Structure
+## Scope
 
-This repository holds the **frontend only** — the Express/MongoDB backend lives in a separate repository and is consumed over HTTPS REST via `NEXT_PUBLIC_API_URL` (see `markdown/backend_api_updates.md` for the current contract).
+### In the MVP
+
+Workspace and forms management · drag-and-drop builder with 10 field types, conditional logic and branding · public form with progress bar, validation and file uploads · response hub with data table, workflow status and ECharts dashboards · CSV and PDF export · internal admin console.
+
+### Coming in V2
+
+Multi-user workspaces and roles · personal space alongside workspaces · custom pipeline stages · response scoring · tags, assignment and internal notes · board and calendar response views · global search · notifications · archive and trash.
+
+### Not planned
+
+Custom dashboard builders · Stripe payment fields · webhooks and third-party integrations · native mobile apps.
+
+---
+
+## Tech stack
+
+**Frontend** — Next.js 16 (App Router) · TypeScript · Tailwind CSS 4 · Zustand · TanStack Query · React Hook Form · Zod · dnd-kit · Apache ECharts · Lucide React
+
+**Backend** — Express.js · Node.js 20 LTS · TypeScript · Mongoose · Zod · Multer · PDFKit · Helmet · CORS · express-rate-limit · pino
+
+**Data** — MongoDB Atlas for application data · Firebase Authentication for login credentials only
+
+**Auth** — Firebase login → same-origin Next.js BFF → Express JWT session → HttpOnly Secure cookie on the frontend domain (`SameSite=Lax`)
+
+**Storage** — the audited backend currently writes to local `/uploads`. Durable R2-compatible object storage remains a deployment requirement unless the single-node constraint is accepted explicitly.
+
+**Deployment** — Vercel for the frontend (`beginso.com`) · Render, Railway or a VPS for the backend
+
+---
+
+## Project structure
+
+This repository holds the **frontend only**. The Express/MongoDB backend is a separate repository, consumed over HTTPS REST via `NEXT_PUBLIC_API_URL` — see `docs/backend-contract/api-reference.md` for the current contract.
 
 ```
-Onboarding Platform/     # Next.js 16 client-side application (this repo)
+Beginso/                    # Next.js 16 application (this repo)
 ├── src/
-│   ├── app/           # App router pages & layouts: (auth), (admin), api/
-│   ├── components/    # UI components (ui/, common/, dashboard/, form-builder/, landing/, auth/, providers/)
-│   ├── services/      # API integration services (auth.ts, forms.ts)
-│   ├── store/         # Zustand state stores (builderStore.ts)
-│   ├── lib/           # Firebase client, axios instance, schemas, auth context, helpers
-│   ├── hooks/         # Shared hooks (useAuth)
-│   └── types/         # Shared TypeScript types (form.ts, etc.)
-├── middleware.ts      # Edge routing middleware (admin route guards)
-├── __tests__/         # Vitest unit/property-based tests
-├── e2e/               # Playwright end-to-end tests + mock backend server
-├── playwright.config.ts
-├── vitest.config.ts
-└── .env.local         # Environment variables configuration
+│   ├── app/                # App Router: (auth), (user), onboarding/, api/
+│   ├── components/         # ui/, common/, dashboard/, form-builder/, public-form/,
+│   │                       #   responses/, reports/, analytics/, settings/, templates/,
+│   │                       #   landing/, auth/, providers/
+│   ├── services/           # One per domain: auth, forms, responses, analytics, reports,
+│   │                       #   settings, templates, notifications, publicForm, upload, dashboard
+│   ├── store/              # Zustand stores (builderStore.ts)
+│   ├── lib/                # Firebase client, axios instance, schemas, auth context, helpers
+│   ├── hooks/              # useAuth, useDebounce, useIntersectionObserver, useTypingEffect
+│   ├── types/              # Shared TypeScript types
+│   └── proxy.ts            # Route guards; validates the HttpOnly session with the backend
+├── __tests__/              # Vitest unit and property-based tests
+├── e2e/                    # Playwright end-to-end tests + mock backend server
+├── docs/                   # Project documentation — see docs/README.md for the map
+├── .kiro/specs/            # Day-by-day sprint task specifications
+└── .env.local              # Environment configuration
 ```
 
-Authentication is verified through Firebase; the session is tracked via an `auth_token` cookie read by `middleware.ts`.
+### How authentication actually works
+
+Firebase supplies a one-time identity token at login. The Next.js BFF exchanges it for the backend JWT, stores that JWT **only** in the HttpOnly `beginso_session` cookie, and forwards it server-to-server. `src/proxy.ts` validates the session against the backend's `/api/auth/me`.
+
+**Browser JavaScript never receives or stores the JWT.**
 
 ---
 
-## Sprint Plan & Timeline (MVP v1.0)
+## Design system
 
-### Working Rhythm
-- **Working Days:** Monday to Saturday (Sunday off).
-- **Monday – Friday:** Development only — building core features.
-- **Saturday:** Testing only — no new feature code. Manual smoke testing, API checks, cross-device testing, and bug logging.
-- **Sprint Boundaries:** A sprint milestone is only marked as "done" when the Saturday test pass is green and all exit criteria are met.
+### Principles
 
-### Week Overview Table (v2 — revised 8-week timeline, compressed from the original 11-week plan)
+**Simple first.** Forms, dashboards and settings should be understandable within five seconds by a non-technical user.
 
-> Full week-by-week detail (day-by-day tasks, exit criteria) lives in `.beginso_document/05_Sprint_Plan.md` — treat that file as authoritative; this table is a summary.
+**Human, not AI-generated.** Warm, clean, highly usable. No glassmorphism, no heavy gradients, no neon.
 
-| Wk | Sprint / Track | Focus | Status | Dates |
-|:---|:---|:---|:---|:---|
-| 1 | Sprint 1 | Auth + Landing + Dashboard foundation | ✅ **Complete** | 29 Jun – 04 Jul |
-| 2 | Sprint 2 (Part 1) | Form Builder core: toolbox, dnd-kit canvas, basic properties, CRUD integration | ✅ **Complete** | 06 Jul – 11 Jul |
-| 3 | Sprint 2 (Part 2) | Form Builder completion: full field properties, Logic Rules, Branding, publish flow | 🔄 **In Progress** (DnD architecture fix, CSS fixes, and Delete Form modal shipped; Properties/Logic/Branding/Settings/Share tabs still pending) | 13 Jul – 18 Jul |
-| 4 | Sprint 3 | Public Form: SSR rendering, validation, Cloudflare R2 file uploads, spam prevention | Planned | 20 Jul – 25 Jul |
-| 5 | Super Admin (merged) | Developer console: logs, admin CRUD, audit trail — now its own dedicated week, not a parallel track | Planned | 27 Jul – 01 Aug |
-| 6 | Sprint 4 | Response Management: paginated response table, filters, submission details, status updates | Planned | 03 Aug – 08 Aug |
-| 7 | Sprint 5+6 (merged) | Analytics & Reports: ECharts integration, CSV/PDF export, Templates Gallery polish | Planned | 10 Aug – 15 Aug |
-| 8 | Sprint 7+8 (merged) | Settings, Forms Manager, QA/Hardening & Launch | Planned | 17 Aug – 22 Aug |
+**Status is unambiguous.** Badges carry distinct background, border and text colours — Active, Draft, Closed, New, In Progress, Completed.
 
-*Note: Weeks 1–3 dates are confirmed; Weeks 4–8 are computed forward as consecutive Mon–Sat working weeks and shift together if any slips occur. MVP target: 22 Aug 2026 (down from the original 12 Sep 2026 target).*
+**Mobile-first for respondents.** Every submission screen is optimised for mobile. The form builder is desktop-only in V1; V2 adds mobile editing with an explicit reorder mode.
+
+### Tokens
+
+| | MVP v1.0 | V2 |
+|---|---|---|
+| Brand font | Inter | DM Sans |
+| Monospace | JetBrains Mono | JetBrains Mono |
+| Primary | `#1D4ED8` | `#4274D9` |
+| Dark mode | — | Slate palette |
+
+V2 introduces a full component library. Its written rules and the CSS live in `Beginso-Report/Beginso-Design-System/Beginso V2/`.
 
 ---
 
-## Screens Reference (24 Total)
+## Security & reliability
 
-- **Auth & Onboarding (4 Screens):** Login, Sign Up, Forgot Password, OTP Verification
-- **Core Admin Platform (11 Screens):** Workspace Home, Forms Manager, Templates Gallery, Form Builder, Responses Hub (Table/Kanban/Calendar/Analytics), Submission Detail, Reports & Exports, Auto-Dashboard, Settings Panel, Modals & Dialogs, Feeds & Feedback
-- **Design System Showcase (1 Screen):** Interactive UI Elements Showcase
-- **Respondent Side (3 Screens):** Published Public Form, Form Unavailable Screen, Success Confirmation
-- **Super Admin Console (4 Screens, Desktop-only):** Overview Dashboard, System Logs Viewer, Admin User Management, Audit Log Viewer
-- **Resource Guide (1 Screen):** Responsive Breakpoint Guide
+**Role protection.** Backend `/api/superadmin/*` and frontend `/superadmin/*` routes are guarded by `requireSuperAdmin`, checking JWT claims.
 
----
+**Access control.** Every user database query is scoped by `workspaceId` extracted from a verified JWT.
 
-## Design System & UI Guidelines
+**Suspension.** `blockSuspended` middleware rejects suspended accounts immediately with `403 ACCOUNT_SUSPENDED`.
 
-### Core Principles
-- **Simple First:** Form structures, dashboards, and settings are designed to be easily understood within 5 seconds by non-technical users.
-- **Human, Not AI-Generated:** High usability and warm, clean aesthetic. No glassmorphism, heavy gradients, or neon colors.
-- **Status Is Unambiguous:** Badges use distinct background, border, and text colors (Active, Draft, Closed, New, In Progress, Completed).
-- **Mobile-First Respondents:** All client-side submission screens are fully optimized for mobile devices. The complex Form Builder is restricted to desktop-only views.
+**Audit logs.** Every admin mutation writes a read-only record to `audit_logs`.
 
-### Typography & Colors
-- **Brand Font:** Inter · **Monospace Font:** JetBrains Mono (used for IDs, logs, and audit trails).
-- **Brand Color:** Slate Blue (`#1D4ED8` primary) over Slate Gray neutrals.
+**Spam protection.** Rate limiting at 10 requests per IP per minute per form, plus a hidden honeypot field on public submissions.
+
+**Anonymisation.** IP addresses are SHA-256 hashed before storage. Raw IPs are never saved.
+
+**File uploads.** Multer validates size (100 MB maximum) and MIME type.
 
 ---
 
-## Security & Reliability Highlights
+## Development timeline
 
-- **Role Protection:** Backend API endpoints `/api/superadmin/*` and frontend `/superadmin/*` routes are protected by a `requireSuperAdmin` middleware checking JWT claims.
-- **Access Control:** User database queries are strictly scoped using `workspaceId` extracted from verified JWT tokens.
-- **Admin Suspension:** `blockSuspended` middleware immediately rejects suspended admin accounts (returning 403 `ACCOUNT_SUSPENDED`).
-- **Audit Logs:** Every Super Admin mutation (e.g., suspending accounts, purging data) writes a read-only record in the `audit_logs` collection.
-- **Spam Protection:** Rate limiting (10 requests/IP/min per form) and a hidden honeypot field are active on public form submissions.
-- **Anonymization:** IP addresses are processed into SHA-256 hashes before storage; raw IPs are never saved.
-- **File Upload Security:** Multer constraints validate file sizes (max 100 MB) and MIME types before sending files to Cloudflare R2 storage. Temporary uploads in `/uploads` are purged hourly.
+### Working rhythm
 
----
+Monday to Saturday, Sunday off. **Monday–Friday** is development only. **Saturday** is testing — no new feature code. A sprint is done when the Saturday pass is green and every exit criterion is met.
 
-## MVP Scope
+### MVP v1.0 — 8 weeks, all complete
 
-### Included
-- Complete Workspace & Forms management (forms CRUD, template creation).
-- Drag-and-drop Form Builder (10 field types, single-level conditional logic, branding options).
-- Public form page with progress bar, validation, and drag-and-drop file uploads.
-- Response Hub with data table, workflow status tracking, and ECharts dashboards.
-- CSV and PDF reports export.
-- Internal **Super Admin Console** for developer log viewing, admin account suspension/CRUD, platform stats, and audit trails.
+| Wk | Sprint | Focus | Dates |
+|---|---|---|---|
+| 1 | Sprint 1 | Auth, landing, dashboard foundation | 29 Jun – 04 Jul |
+| 2 | Sprint 2 · Part 1 | Builder core: toolbox, dnd-kit canvas, CRUD | 06 Jul – 11 Jul |
+| 3 | Sprint 2 · Part 2 | Builder completion: properties, logic, branding, publish | 13 Jul – 18 Jul |
+| 4 | Sprint 3 | Public form: SSR, validation, uploads, spam prevention | 20 Jul – 25 Jul |
+| 5 | Super Admin | Developer console — logs, user CRUD, audit trail *(separate repo)* | 27 Jul – 01 Aug |
+| 6 | Sprint 4 | Response management: table, filters, detail, status updates | 03 Aug – 08 Aug |
+| 7 | Sprint 5 | Analytics and reports: ECharts, CSV and PDF export | 10 Aug – 15 Aug |
+| 8 | Sprint 6 | Settings, onboarding, in-app notifications | 17 Aug – 22 Aug |
 
-### Deferred (Post-MVP)
-- Multi-admin workspaces and custom user roles.
-- Kanban, Calendar, and Gallery as primary response views.
-- Custom dashboard builders.
-- Stripe payment inputs.
-- Webhook endpoints and integrations.
-- Native mobile apps.
+The Super Admin console gained a Mail Logs UI and a last-login-location map after its sprint closed. Sprint 6 added onboarding and the notification bell outside its original spec.
+
+Sprint numbers continue across the product — **V2 runs sprints 7 to 14**. Its week-by-week plan lives in `Beginso-Report/Beginso-V2/SPRINT-PLAN.md`.
 
 ---
 
-## Monetisation Plan
+## Screens reference
 
-| Plan | Details |
-|------|---------|
-| Free | 3 forms · 100 responses/month · 100 MB storage |
-| Pro | Higher limits · branding removal · priority support |
-| Business | Custom domain · advanced reports · team roles (post-MVP) |
-| Enterprise | SSO · compliance · SLA · dedicated support |
+24 screens in the MVP.
 
----
-
-## Contributing
-
-Branch naming in this repo: `feature/feature-name` or `bugfix/fix-name`, merged into `main` via pull request — no direct commits to `main`.
-PRs require a description of what it does, how to test it, and screenshots for any frontend work.
+| Group | Count | Screens |
+|---|---|---|
+| Auth & onboarding | 4 | Login · Sign up · Forgot password · Email verification |
+| Core platform | 11 | Workspace home · Forms manager · Templates gallery · Form builder · Responses hub · Submission detail · Reports & exports · Auto-dashboard · Settings · Modals & dialogs · Feeds & feedback |
+| Respondent side | 3 | Published public form · Form unavailable · Success confirmation |
+| Admin console | 4 | Overview · System logs · User management · Audit log *(desktop only)* |
+| Reference | 2 | UI elements showcase · Responsive breakpoint guide |
 
 ---
 
-## Getting Started
+## Getting started
 
 ### Prerequisites
-- **Node.js**: `20.x` LTS version or higher
 
-### Installation & Setup
+Node.js **20.x LTS** or higher.
 
-1. **Install dependencies**:
-   ```bash
-   npm install
-   ```
+### Setup
 
-2. **Configure Environment Variables**:
-   Create a `.env.local` file in the root of the project and populate it with the required Firebase and API environment variables:
-   ```env
-   # Backend API Configuration
-   NEXT_PUBLIC_API_URL=http://localhost:4000
+**1 · Install**
 
-   # Firebase Client SDK Configuration
-   NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
-   NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-auth-domain
-   NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-   NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-storage-bucket
-   NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
-   NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
-   ```
+```bash
+npm install
+```
 
-3. **Firebase Setup**:
-   - Create a project on the [Firebase Console](https://console.firebase.google.com/).
-   - Enable **Email/Password** and **Google** sign-in providers in the Authentication section.
-   - Copy the web app configuration values and add them to `.env.local` as shown above.
+**2 · Configure environment**
 
-### Available NPM Scripts
+Create `.env.local` in the project root:
 
-- `npm run dev`: Runs the Next.js development server locally.
-- `npm run build`: Generates the optimized production build of the Next.js application.
-- `npm run start`: Starts the Next.js production server locally after building.
-- `npm run lint`: Runs ESLint to check code quality and static typing.
-- `npm run type-check`: Runs `tsc --noEmit` — no build output, just verifies the whole project type-checks cleanly.
-- `npm test`: Runs the Vitest unit/property-based test suite once (used in CI).
-- `npm run test:watch`: Runs Vitest in watch mode — reruns affected tests as files change.
-- `npm run test:e2e`: Runs the Playwright end-to-end suite headlessly against a mocked backend.
-- `npm run test:e2e:ui`: Runs the same E2E suite in Playwright's interactive UI mode (step through each test, inspect the DOM/network at every point).
+```env
+# Backend API
+NEXT_PUBLIC_API_URL=http://localhost:4000
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+# Firebase Client SDK
+NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-auth-domain
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-storage-bucket
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
+NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+```
+
+**3 · Firebase**
+
+Create a project in the [Firebase Console](https://console.firebase.google.com/). Enable **Email/Password** and **Google** sign-in. Copy the web app config into `.env.local`.
+
+In **Authentication → Templates**, set the email action URL to `https://your-frontend-domain/reset-password` so reset links open Beginso's own form. Firebase appends `mode` and `oobCode` automatically — never copy a real code into configuration.
+
+### Scripts
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Development server on `localhost:3000` |
+| `npm run build` | Production build — also type-checks |
+| `npm run start` | Production server, after building |
+| `npm run lint` | ESLint across the repo |
+| `npm run type-check` | `tsc --noEmit` — verifies types, no output |
+| `npm test` | Vitest suite, once |
+| `npm run test:watch` | Vitest in watch mode |
+| `npm run test:e2e` | Playwright, headless, against a mocked backend |
+| `npm run test:e2e:ui` | Playwright interactive mode |
 
 ---
 
 ## Testing
 
-The project has two independent layers of automated tests. Both must pass before a PR is considered done; `npm run type-check` and `npm run lint` should be clean too.
+Two independent layers. **Both must pass before a PR is done**, along with clean `type-check` and `lint`.
 
-### Unit & Property Tests (Vitest)
+### Unit & property tests — Vitest
 
-**Location:** `__tests__/` · **Run:** `npm test` (once) or `npm run test:watch` (watch mode)
+**`__tests__/`** · `npm test` or `npm run test:watch`
 
-Covers pure logic in isolation — the conditional-logic engine, the dynamic Zod schema builder, file validation, the honeypot/draft-persistence helpers — plus individual components via `@testing-library/react`, and API services with `fetch` mocked at the network layer. A subset are **property-based tests** (via `fast-check`): instead of asserting one hand-picked example, they assert an invariant holds across 100 randomly generated inputs per run — e.g. "a field hidden by conditional logic is never present in the submitted answers, no matter what the rest of the form looks like."
+Covers pure logic in isolation: the conditional-logic engine, the dynamic Zod schema builder, file validation, honeypot and draft-persistence helpers. Components are tested via `@testing-library/react`, and services with `fetch` mocked at the network layer.
 
-These tests never touch a real backend, a real browser, or the filesystem beyond `localStorage` mocks — they're fast and fully deterministic.
+A subset are **property-based** tests using `fast-check`. Instead of one hand-picked example, they assert an invariant across 100 randomly generated inputs per run — for instance, *"a field hidden by conditional logic never appears in the submitted answers, whatever the rest of the form looks like."*
 
-### End-to-End Tests (Playwright)
+These never touch a real backend or browser. **686 tests across 111 files**, verified 18 August 2026.
 
-**Location:** `e2e/` · **Run:** `npm run test:e2e` (headless) or `npm run test:e2e:ui` (interactive)
+### End-to-end tests — Playwright
 
-Drives a real Chromium browser against the actual rendered public form pipeline (`/f/[slug]` and `/f/[slug]/success`) — real inputs, real page navigation, real client-side validation, real file picker interactions. `playwright.config.ts` starts two local servers automatically before the suite runs: the Next.js dev server, and `e2e/mockServer.ts`, a small stateless mock standing in for the real backend (pointed to via `NEXT_PUBLIC_API_URL` for the duration of the test run only). This means the suite is fully deterministic and never depends on the real backend being up, rate limits, or its current known issues — see `markdown/backend_bugs_public_form_submit.md` for those.
+**`e2e/`** · `npm run test:e2e` or `npm run test:e2e:ui`
 
-Test scenarios are chosen by the slug itself (e.g. `/f/mock-valid`, `/f/mock-not-found`, `/f/mock-submit-422`) — see the conventions documented at the top of `e2e/mockServer.ts`.
+Drives a real Chromium browser against the rendered public form pipeline (`/f/[slug]` and `/f/[slug]/success`) — real inputs, navigation, validation, file picker. `playwright.config.ts` starts a dedicated Next.js server plus `e2e/mockServer.ts`, so the checked-in scenarios never depend on the live backend.
 
-Current coverage (9 spec files, ~40 tests): SSR rendering, accessibility basics, mobile viewport (320px), field validation for all 10 field types, multi-page navigation, conditional logic (including inspecting the real submitted payload to confirm hidden fields never appear in it), file upload (valid/oversized/disallowed-type/remove), submission outcomes (200/422/429/500 + honeypot), the Form Unavailable screen, the Success screen, and draft persistence.
+Scenarios are selected by slug — `/f/mock-valid`, `/f/mock-not-found`, `/f/mock-submit-422`. Conventions are documented at the top of `e2e/mockServer.ts`.
 
-If a spec file fails, Playwright saves a screenshot and a full trace under `test-results/` — `npx playwright show-trace <path-to-trace.zip>` opens an interactive timeline of exactly what the browser saw.
+**9 spec files, 41 tests** covering SSR rendering, accessibility basics, 320px mobile, validation for all 10 field types, multi-page navigation, conditional logic (including inspecting the real submitted payload to confirm hidden fields never appear), file upload across four cases, submission outcomes (200/422/429/500 plus honeypot), outage versus unavailable handling, the success screen, and draft persistence.
+
+When a spec fails, Playwright saves a screenshot and full trace under `test-results/`. Open it with:
+
+```bash
+npx playwright show-trace <path-to-trace.zip>
+```
 
 ---
 
-*MVP v1.0 · June 2026 · Confidential — Internal Use*
+## Contributing
+
+Branches are `feature/feature-name` or `bugfix/fix-name`, merged to `main` by pull request. **No direct commits to `main`.**
+
+A PR needs a description of what it does, how to test it, and screenshots for any frontend work.
+
+---
+
+*MVP v1.0 complete · V2 in development · Confidential — internal use*
