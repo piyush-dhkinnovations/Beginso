@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* V2 design system (Beginso/.kiro/specs/sprint-7-foundation) — beginso-ui.css's
+   own component/token layer, scoped by `.bg-*` classes so it coexists with
+   the V1 rules below. See src/styles/beginso-ui.css for why its BASE section
+   is deferred. */
+@import "../styles/beginso-ui.css";
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
