@@ -1,46 +1,57 @@
 /**
  * __tests__/components/landing/ProductMockup.test.tsx
- * Audit remediation: ProductMockup had zero test coverage. Tests: renders both
- * mocked fields (name/email) without crashing, whether or not the typing
- * animation is mid-run.
+ * Tests: ProductMockup — renders the dashboard scene (nav, stats, inbox, chart)
+ * without crashing, and applies the scroll-driven tilt transform.
+ *
+ * Note: the reduced (<768px) composition and the full desktop composition are
+ * both present in the JSDOM tree simultaneously (Tailwind's `hidden`/`md:*`
+ * classes aren't evaluated as real media queries here), so any content that
+ * appears in both — e.g. the first respondent's name — is asserted with
+ * getAllByText rather than getByText.
  */
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import ProductMockup from '@/components/landing/ProductMockup';
 
-const mockUseTypingEffect = vi.fn();
-vi.mock('@/hooks/useTypingEffect', () => ({
-  useTypingEffect: (text: string) => mockUseTypingEffect(text),
+vi.mock('@/hooks/useScrollProgress', () => ({
+  useScrollProgress: () => ({
+    ref: { current: null },
+    progress: 0,
+  }),
 }));
 
 describe('ProductMockup component', () => {
-  it('renders the Full Name and Email Address field labels', () => {
-    mockUseTypingEffect.mockReturnValue({ displayedText: '', isTyping: false });
-    render(<ProductMockup />);
-    expect(screen.getByText('Full Name')).toBeInTheDocument();
-    expect(screen.getByText('Email Address')).toBeInTheDocument();
-  });
-
-  it('shows the fully-typed text and no cursor once typing has finished', () => {
-    mockUseTypingEffect.mockImplementation((text: string) => ({ displayedText: text, isTyping: false }));
-    render(<ProductMockup />);
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByText('john@example.com')).toBeInTheDocument();
-    expect(document.querySelector('.animate-blink')).toBeNull();
-  });
-
-  it('shows a blinking cursor while a field is mid-typing', () => {
-    mockUseTypingEffect.mockImplementation((text: string) => ({
-      displayedText: text.slice(0, 3),
-      isTyping: true,
-    }));
-    render(<ProductMockup />);
-    expect(document.querySelectorAll('.animate-blink').length).toBeGreaterThan(0);
-  });
-
-  it('does not crash when a field is empty (typing not started yet)', () => {
-    mockUseTypingEffect.mockReturnValue({ displayedText: '', isTyping: false });
+  it('renders without crashing', () => {
     expect(() => render(<ProductMockup />)).not.toThrow();
+  });
+
+  it('renders the stat strip', () => {
+    render(<ProductMockup />);
+    expect(screen.getByText('8,412')).toBeInTheDocument();
+    expect(screen.getByText('64.2%')).toBeInTheDocument();
+    expect(screen.getByText('17')).toBeInTheDocument();
+    expect(screen.getByText('2m 14s')).toBeInTheDocument();
+  });
+
+  it('renders the left rail nav items', () => {
+    render(<ProductMockup />);
+    ['Home', 'Forms', 'Inbox', 'Insights', 'Team', 'Trash', 'Settings'].forEach((label) => {
+      expect(screen.getAllByText(label).length).toBeGreaterThan(0);
+    });
+  });
+
+  it('renders the inbox rows with status badges', () => {
+    render(<ProductMockup />);
+    expect(screen.getAllByText('Amelia Ross').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('New').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('In progress').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Completed').length).toBeGreaterThan(0);
+  });
+
+  it('applies the tilt-stage/tilt-card wrapper classes', () => {
+    const { container } = render(<ProductMockup />);
+    expect(container.querySelector('.tilt-stage')).not.toBeNull();
+    expect(container.querySelector('.tilt-card')).not.toBeNull();
   });
 });

@@ -2,6 +2,8 @@ export { Alert } from './Alert';
 export type { AlertProps } from './Alert';
 export { Avatar } from './Avatar';
 export type { AvatarProps } from './Avatar';
+export { AvatarStack } from './AvatarStack';
+export type { AvatarStackProps, AvatarStackPerson } from './AvatarStack';
 export { Badge } from './Badge';
 export type { BadgeProps } from './Badge';
 export { Button } from './Button';
