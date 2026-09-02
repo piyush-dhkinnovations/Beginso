@@ -27,6 +27,9 @@ const dmSans = DM_Sans({
 export const metadata: Metadata = {
   title: "Beginso",
   description: "Automated Beginso",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

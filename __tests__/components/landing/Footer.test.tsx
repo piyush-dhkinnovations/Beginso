@@ -1,7 +1,7 @@
 /**
  * __tests__/Footer.test.tsx
  * Feature: sprint-1-frontend-auth
- * Tests: Footer — copyright year is current year, links present
+ * Tests: Footer — copyright year is current year, three link columns present
  * Requirements: 0.25, 0.26
  */
 
@@ -28,18 +28,20 @@ describe('Footer component', () => {
     expect(screen.getByText(new RegExp(currentYear))).toBeInTheDocument();
   });
 
-  it('renders Privacy Policy link', () => {
+  it('renders the Product, Resources and Company columns', () => {
     render(<Footer />);
-    expect(screen.getByRole('link', { name: /privacy policy/i })).toBeInTheDocument();
+    expect(screen.getByText('Product')).toBeInTheDocument();
+    expect(screen.getByText('Resources')).toBeInTheDocument();
+    expect(screen.getByText('Company')).toBeInTheDocument();
   });
 
-  it('renders Terms of Service link', () => {
+  it('renders a working Privacy link', () => {
     render(<Footer />);
-    expect(screen.getByRole('link', { name: /terms of service/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /privacy/i })).toHaveAttribute('href', '/privacy');
   });
 
-  it('renders Contact link', () => {
+  it('renders a working Contact link', () => {
     render(<Footer />);
-    expect(screen.getByRole('link', { name: /contact/i })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /contact/i })).toHaveAttribute('href', '/contact');
   });
 });

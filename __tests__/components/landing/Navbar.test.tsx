@@ -28,20 +28,21 @@ describe('Navbar component', () => {
 
   it('renders the Beginso logo', () => {
     render(<Navbar />);
-    expect(screen.getByText('Beginso')).toBeInTheDocument();
+    expect(screen.getAllByAltText('Beginso').length).toBeGreaterThan(0);
   });
 
-  it('renders exactly the two shipped nav links — Features and How it works — with no Pricing link', () => {
+  it('renders the three shipped nav links — Features, How it works, Blog — with no Pricing link', () => {
     render(<Navbar />);
     expect(screen.getByText('Features')).toBeInTheDocument();
     expect(screen.getByText('How it works')).toBeInTheDocument();
+    expect(screen.getByText('Blog')).toBeInTheDocument();
     expect(screen.queryByText(/pricing/i)).not.toBeInTheDocument();
   });
 
-  it('shows Log in / Get started when logged out', () => {
+  it('shows Log in / Start free when logged out', () => {
     render(<Navbar />);
     expect(screen.getByText('Log in')).toBeInTheDocument();
-    expect(screen.getByText('Get started free')).toBeInTheDocument();
+    expect(screen.getAllByText('Start free').length).toBeGreaterThan(0);
     expect(screen.queryByText('Go to dashboard')).not.toBeInTheDocument();
   });
 
@@ -52,16 +53,16 @@ describe('Navbar component', () => {
     expect(screen.queryByText('Log in')).not.toBeInTheDocument();
   });
 
-  it('swaps to the scrolled (opaque + shadow) class past the 60px threshold', () => {
+  it('swaps to the scrolled (opaque + blur) class past the 40px threshold', () => {
     render(<Navbar />);
     const header = document.querySelector('header')!;
-    expect(header.className).toContain('bg-white/80');
+    expect(header.className).toContain('bg-transparent');
 
     Object.defineProperty(window, 'scrollY', { writable: true, value: 120 });
     fireEvent.scroll(window);
 
-    expect(header.className).toContain('bg-white');
-    expect(header.className).not.toContain('bg-white/80');
+    expect(header.className).toContain('backdrop-blur-md');
+    expect(header.className).not.toContain('bg-transparent');
   });
 
   it('toggles the mobile menu open and closed on hamburger click', () => {

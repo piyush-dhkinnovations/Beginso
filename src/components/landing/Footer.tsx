@@ -1,54 +1,61 @@
-"use client";
+import { Wordmark } from "./Wordmark";
+
+const COLUMNS = [
+  {
+    title: "Product",
+    links: [
+      { label: "Features", href: "#features" },
+      { label: "How it works", href: "#how-it-works" },
+      { label: "Templates", href: "/templates" },
+      { label: "Changelog", href: "/blog?category=Changelog" },
+    ],
+  },
+  {
+    title: "Resources",
+    links: [
+      { label: "Blog", href: "/blog" },
+      { label: "Documentation", href: "/docs" },
+      { label: "API reference", href: "/docs/api" },
+      { label: "Help centre", href: "/help" },
+    ],
+  },
+  {
+    title: "Company",
+    links: [
+      { label: "About", href: "/about" },
+      { label: "Contact", href: "/contact" },
+      { label: "Privacy", href: "/privacy" },
+      { label: "Terms", href: "/terms" },
+    ],
+  },
+];
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
-  const handlePlaceholderLink = (e: React.MouseEvent) => {
-    e.preventDefault();
-  };
 
   return (
-    <footer className="bg-neutral-900 py-12 border-t border-neutral-800">
+    <footer className="bg-[var(--ink-900)] py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <span className="text-[16px] font-bold text-white tracking-tight">
-              Beginso
-            </span>
-          </div>
-          
-          <div className="text-neutral-400 text-[13px]">
-            &copy; {currentYear} Beginso. All rights reserved.
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
+          <div>
+            <Wordmark height={32} force="dark" />
+            <p className="text-[13px] text-white/60 mt-3">&copy; {currentYear} Beginso. All rights reserved.</p>
           </div>
 
-          <div className="flex items-center gap-6 text-[13px] text-neutral-400">
-            <a
-              href="#"
-              onClick={handlePlaceholderLink}
-              aria-disabled="true"
-              className="hover:text-white transition-colors cursor-not-allowed opacity-70"
-              title="Coming soon"
-            >
-              Privacy Policy
-            </a>
-            <a
-              href="#"
-              onClick={handlePlaceholderLink}
-              aria-disabled="true"
-              className="hover:text-white transition-colors cursor-not-allowed opacity-70"
-              title="Coming soon"
-            >
-              Terms of Service
-            </a>
-            <a
-              href="#"
-              onClick={handlePlaceholderLink}
-              aria-disabled="true"
-              className="hover:text-white transition-colors cursor-not-allowed opacity-70"
-              title="Coming soon"
-            >
-              Contact
-            </a>
-          </div>
+          {COLUMNS.map((column) => (
+            <div key={column.title}>
+              <div className="text-[12px] font-semibold uppercase tracking-wide text-white/50 mb-4">{column.title}</div>
+              <ul className="space-y-3">
+                {column.links.map((link) => (
+                  <li key={link.label}>
+                    <a href={link.href} className="text-[14px] text-white/80 hover:text-white transition-colors">
+                      {link.label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
     </footer>
