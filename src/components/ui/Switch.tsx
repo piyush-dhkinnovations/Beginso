@@ -1,32 +1,33 @@
-'use client';
+import React from "react";
+import { bx } from "@/lib/utils";
 
-// ─── Toggle Switch (no shadcn dep) ────────────────────────────────────────────
-
-export interface SwitchProps {
+export interface SwitchProps
+  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "type" | "checked" | "onChange"> {
   id: string;
   checked: boolean;
-  onChange: (v: boolean) => void;
+  onChange: (checked: boolean) => void;
 }
 
-export function Switch({ id, checked, onChange }: SwitchProps) {
-  return (
-    <button
-      id={id}
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="inline-flex min-h-11 min-w-11 shrink-0 cursor-pointer items-center justify-center rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
-    >
-      <span
-        className={`pointer-events-none relative block h-5 w-9 rounded-full transition-colors duration-200 ${checked ? 'bg-brand-600' : 'bg-neutral-300'}`}
-      >
-        <span
-          className={`absolute left-0.5 top-0.5 block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-            checked ? 'translate-x-4' : 'translate-x-0'
-          }`}
-        />
-      </span>
-    </button>
-  );
-}
+// beginso-ui.css's `.bg-switch` styles a native `<input type="checkbox">` directly — kept in the
+// DOM (not a custom <button>/<span> toggle) so keyboard, screen readers and form submission work
+// with no extra JS (src/styles/beginso-ui.css §7 CHOICE CONTROLS). `checked`/`onChange(boolean)`
+// preserved exactly as every existing call site already uses it.
+export const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
+  ({ id, checked, onChange, className, ...props }, ref) => {
+    return (
+      <input
+        ref={ref}
+        type="checkbox"
+        role="switch"
+        id={id}
+        checked={checked}
+        aria-checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className={bx("bg-switch", className)}
+        {...props}
+      />
+    );
+  }
+);
+
+Switch.displayName = "Switch";

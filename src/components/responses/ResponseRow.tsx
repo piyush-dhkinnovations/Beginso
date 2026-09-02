@@ -1,7 +1,7 @@
 'use client';
 
 import { Eye, Trash2 } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
 import { formatResponseDate, buildAnswerPreview, detectRespondentIdentity } from '@/lib/formatters';
 import { STATUS_LABELS, type IResponse } from '@/types/response';
@@ -42,7 +42,7 @@ export function ResponseRow({ response, isSelected, onSelect, onView, onDelete }
         </span>
       </td>
       <td className="px-4 py-3">
-        <Badge variant={response.status}>{STATUS_LABELS[response.status]}</Badge>
+        <StatusBadge variant={response.status}>{STATUS_LABELS[response.status]}</StatusBadge>
       </td>
       <td className="responses-secondary-column px-4 py-3 text-body-sm text-neutral-500 truncate max-w-[300px]">
         <div className="flex items-center gap-2 min-w-0">

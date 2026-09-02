@@ -1,19 +1,18 @@
 import React from "react";
-import { cn } from "@/lib/utils";
+import { bx } from "@/lib/utils";
 
 export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
+  padded?: boolean;
 }
 
-export function Card({ className, children, ...props }: CardProps) {
+// beginso-ui.css classes — see src/styles/beginso-ui.css §10 CARDS. Every existing call site
+// already supplies its own padding/gap/layout via className (p-8, flex flex-col gap-6, ...) — now
+// that beginso-ui.css is layered below Tailwind's utilities (design.md §6), those overrides keep
+// winning normally, so applying .bg-card-pad's sensible default here doesn't change any of them.
+export function Card({ className, children, padded = true, ...props }: CardProps) {
   return (
-    <div
-      className={cn(
-        "bg-white border border-neutral-200 rounded-lg shadow-card p-6",
-        className
-      )}
-      {...props}
-    >
+    <div className={bx("bg-card", padded && "bg-card-pad", className)} {...props}>
       {children}
     </div>
   );

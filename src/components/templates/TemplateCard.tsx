@@ -3,7 +3,7 @@
 import type { Template } from '@/types/form';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 
 export interface TemplateCardProps {
   template: Template;
@@ -16,9 +16,9 @@ export function TemplateCard({ template, onUse, isLoading }: TemplateCardProps) 
     <Card className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
         <h3 className="text-heading-2 text-neutral-800">{template.name}</h3>
-        <Badge variant="neutral" className="capitalize shrink-0">
+        <StatusBadge variant="neutral" className="capitalize shrink-0">
           {template.category}
-        </Badge>
+        </StatusBadge>
       </div>
       <p className="text-body text-neutral-500 flex-1">{template.description}</p>
       <span className="text-caption text-neutral-500">

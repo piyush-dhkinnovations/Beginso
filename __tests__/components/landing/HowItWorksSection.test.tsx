@@ -1,7 +1,7 @@
 /**
  * __tests__/HowItWorksSection.test.tsx
  * Feature: sprint-1-frontend-auth
- * Tests: HowItWorksSection — exactly 4 steps, section id present, step numbers 01-04
+ * Tests: HowItWorksSection — exactly 3 steps (build/share/track), section id present
  * Requirements: 0.18, 0.19, 0.20
  */
 
@@ -9,11 +9,11 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import HowItWorksSection from '@/components/landing/HowItWorksSection';
 
-// Mock useIntersectionObserver to immediately report visible
-vi.mock('@/hooks/useIntersectionObserver', () => ({
-  useIntersectionObserver: () => ({
+// Mock useReveal to immediately report visible
+vi.mock('@/hooks/useReveal', () => ({
+  useReveal: () => ({
     ref: { current: null },
-    isVisible: true,
+    visible: true,
   }),
 }));
 
@@ -24,29 +24,28 @@ describe('HowItWorksSection component', () => {
     expect(section).not.toBeNull();
   });
 
-  it('renders exactly 4 steps with correct titles', () => {
+  it('renders exactly 3 steps with correct titles', () => {
     render(<HowItWorksSection />);
     const stepTitles = [
-      /create your form/i,
-      /share the link/i,
-      /collect responses/i,
-      /view your dashboard/i,
+      /drag the fields you need/i,
+      /one link, anywhere/i,
+      /watch it fill up/i,
     ];
     stepTitles.forEach((pattern) => {
       expect(screen.getByText(pattern)).toBeInTheDocument();
     });
   });
 
-  it('renders step numbers 01 through 04', () => {
+  it('renders the Build, Share and Track eyebrows', () => {
     render(<HowItWorksSection />);
-    ['01', '02', '03', '04'].forEach((num) => {
-      expect(screen.getByText(num)).toBeInTheDocument();
+    ['Build', 'Share', 'Track'].forEach((label) => {
+      expect(screen.getByText(label)).toBeInTheDocument();
     });
   });
 
-  it('renders exactly 4 step card h3 elements', () => {
+  it('renders exactly 3 step card h3 elements', () => {
     render(<HowItWorksSection />);
     const h3s = document.querySelectorAll('h3');
-    expect(h3s).toHaveLength(4);
+    expect(h3s).toHaveLength(3);
   });
 });

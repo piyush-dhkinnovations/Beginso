@@ -1,3 +1,22 @@
+/* V2 design system (Beginso/.kiro/specs/sprint-7-foundation) — beginso-ui.css's own
+   component/token layer, scoped by `.bg-*` classes so it coexists with the V1 rules
+   below. See src/styles/beginso-ui.css for why its BASE section is deferred.
+
+   Explicit layer order, declared before either import. CSS layer priority is fixed by
+   first mention, so this pre-registers "beginso" between Tailwind's "base" and
+   "components" layers before Tailwind's own @import implicitly declares
+   theme/base/components/utilities — that import just populates the already-fixed slots.
+
+   Placing beginso below "base" (instead of first/lowest, as an earlier version of this
+   comment argued for) was itself the bug: Tailwind's Preflight resets `button {
+   background-color: #0000 }` in "base", and layer priority beats selector specificity
+   outright, so that plain-element rule was silently beating `.bg-btn-primary` on every
+   button in the app. Above "base" fixes that. Still below "components"/"utilities", so
+   a consumer's own `className="p-8"` still overrides a `.bg-card-pad`-style default,
+   and any Tailwind utility touching the same property as a `.bg-*` class still wins.
+   See design.md §6. */
+@layer theme, base, beginso, components, utilities;
+@import "../styles/beginso-ui.css" layer(beginso);
 @import "tailwindcss";
 
 @theme inline {
@@ -446,3 +465,81 @@
     transition-delay: -1ms !important;
   }
 }
+
+/* ---- Landing page animation ------------------------------------------ */
+
+/* Blur-to-sharp reveal. The signature effect: every section heading and
+   card enters blurred and faded, then resolves. */
+.reveal {
+  opacity: 0;
+  filter: blur(10px);
+  transform: translateY(20px);
+  transition:
+    opacity 700ms cubic-bezier(0.2, 0, 0, 1),
+    filter 700ms cubic-bezier(0.2, 0, 0, 1),
+    transform 700ms cubic-bezier(0.2, 0, 0, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+  will-change: opacity, filter, transform;
+}
+.reveal.is-visible {
+  opacity: 1;
+  filter: blur(0);
+  transform: none;
+}
+
+/* Cards rise without the blur — blur on a card with a screenshot inside
+   reads as a rendering fault rather than an effect. */
+.reveal-up {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 600ms cubic-bezier(0.2, 0, 0, 1),
+    transform 600ms cubic-bezier(0.2, 0, 0, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.reveal-up.is-visible { opacity: 1; transform: none; }
+
+/* Hero tilt. The wrapper owns the perspective; the card owns the rotation. */
+.tilt-stage { perspective: 2000px; perspective-origin: 50% 0%; }
+.tilt-card { transform-style: preserve-3d; will-change: transform; }
+
+/* Marquee. The track holds two identical copies and moves by exactly -50%,
+   so the reset lands on an identical frame and is invisible. */
+@keyframes marquee { to { transform: translateX(-50%); } }
+.marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 12%, #000 88%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+.marquee:hover .marquee-track { animation-play-state: paused; }
+
+/* Hover lift — pointer devices only. A stuck hover state on touch is worse
+   than no hover at all. */
+@media (hover: hover) and (pointer: fine) {
+  .lift { transition: transform 250ms cubic-bezier(0.2, 0, 0, 1), box-shadow 250ms; }
+  .lift:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+}
+
+/* One switch disables the entire system. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal, .reveal-up {
+    opacity: 1 !important;
+    filter: none !important;
+    transform: none !important;
+    transition: none !important;
+  }
+  .marquee-track { animation: none; }
+  .tilt-card { transform: none !important; }
+}
+
+/* Wordmark theme swap. name-light.svg (navy/blue) reads on a light surface;
+   name-dark.svg (white knockout) reads on a dark one — pick by data-theme,
+   not by page background, since the footer is always dark regardless of theme. */
+.wordmark-dark { display: none; }
+[data-theme="dark"] .wordmark-light { display: none; }
+[data-theme="dark"] .wordmark-dark { display: inline-block; }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/authContext";
 import { ToastProvider } from "@/components/common/Toast";
@@ -17,9 +17,19 @@ const jetBrainsMono = JetBrains_Mono({
   subsets: ["latin"],
 });
 
+// beginso-ui.css's own required dependency (its header comment names it explicitly) — its
+// --bg-font-sans token resolves to this. See src/styles/beginso-ui.css §1 TOKENS.
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "Beginso",
   description: "Automated Beginso",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -30,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jetBrainsMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${jetBrainsMono.variable} ${dmSans.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
     >
       <body className="min-h-full flex flex-col">

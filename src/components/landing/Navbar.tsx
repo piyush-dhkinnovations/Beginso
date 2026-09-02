@@ -6,6 +6,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Wordmark } from "./Wordmark";
+
+const NAV_LINKS = [
+  { name: "Features", href: "#features" },
+  { name: "How it works", href: "#how-it-works" },
+  { name: "Blog", href: "/blog" },
+];
 
 export default function Navbar() {
   const { isAuthenticated } = useAuth();
@@ -13,7 +20,7 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setIsScrolled(window.scrollY > 60);
+    const handleScroll = () => setIsScrolled(window.scrollY > 40);
     handleScroll();
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
@@ -21,9 +28,7 @@ export default function Navbar() {
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setIsMobileMenuOpen(false);
-      }
+      if (e.key === "Escape") setIsMobileMenuOpen(false);
     };
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
@@ -40,37 +45,30 @@ export default function Navbar() {
     return () => window.removeEventListener("mousedown", handleClickOutside);
   }, [isMobileMenuOpen]);
 
-  const navLinks = [
-    { name: "Features", href: "#features" },
-    { name: "How it works", href: "#how-it-works" },
-    // Pricing section not yet built — link removed until #pricing section exists
-  ];
-
   return (
-    <header
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-200",
-        isScrolled
-          ? "bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] border-b border-neutral-200"
-          : "bg-white/80 backdrop-blur-sm border-b border-neutral-200"
-      )}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-[72px]">
-          <div className="flex-shrink-0">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="text-heading-2 text-neutral-900 font-bold">
-                Beginso
-              </span>
-            </Link>
-          </div>
+    <>
+      <header
+        className={cn(
+          "fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-[1100px]",
+          "rounded-full transition-all duration-[250ms]",
+          isScrolled
+            ? "bg-[var(--surface-card)]/90 backdrop-blur-md border border-[var(--border-default)] shadow-[var(--shadow-sm)]"
+            : "bg-transparent border border-transparent"
+        )}
+      >
+        <div className="flex items-center justify-between h-14 px-4 md:px-6">
+          <Link href="/" className="flex items-center gap-2 shrink-0">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/favicon.svg" alt="" height={24} width={24} style={{ height: 24, width: 24 }} aria-hidden="true" />
+            <Wordmark height={24} />
+          </Link>
 
           <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map((link) => (
+            {NAV_LINKS.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
-                className="text-body text-neutral-600 hover:text-neutral-900 transition-colors font-medium"
+                className="bg-body-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium"
               >
                 {link.name}
               </a>
@@ -86,12 +84,12 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="text-body text-neutral-600 hover:text-neutral-900 transition-colors font-medium"
+                  className="bg-body-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium"
                 >
                   Log in
                 </Link>
                 <Link href="/signup">
-                  <Button variant="primary">Get started free</Button>
+                  <Button variant="primary">Start free</Button>
                 </Link>
               </>
             )}
@@ -99,63 +97,59 @@ export default function Navbar() {
 
           <div className="md:hidden flex items-center">
             <button
-              className="hamburger-btn min-h-[44px] min-w-[44px] inline-flex items-center justify-center p-2 rounded-md text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 focus:outline-none"
+              className="hamburger-btn min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus:outline-none"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-expanded={isMobileMenuOpen}
-              aria-label={isMobileMenuOpen ? 'Close main menu' : 'Open main menu'}
+              aria-label={isMobileMenuOpen ? "Close main menu" : "Open main menu"}
               aria-controls="mobile-menu"
             >
-              <span className="sr-only">Open main menu</span>
-              {isMobileMenuOpen ? (
-                <X className="block h-6 w-6" aria-hidden="true" />
-              ) : (
-                <Menu className="block h-6 w-6" aria-hidden="true" />
-              )}
+              {isMobileMenuOpen ? <X className="h-6 w-6" aria-hidden="true" /> : <Menu className="h-6 w-6" aria-hidden="true" />}
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
       {isMobileMenuOpen && (
-            <div id="mobile-menu" className="md:hidden mobile-menu-container bg-white border-b border-neutral-200 shadow-md absolute w-full">
-          <div className="px-4 pt-2 pb-4 space-y-1 sm:px-3">
-            {navLinks.map((link) => (
+        <div
+          id="mobile-menu"
+          className="mobile-menu-container md:hidden fixed inset-0 z-40 bg-[var(--surface-card)] pt-24 px-6"
+        >
+          <nav className="flex flex-col gap-1">
+            {NAV_LINKS.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
-                className="block px-3 py-2 rounded-md text-base font-medium text-neutral-900 hover:bg-neutral-50"
+                className="min-h-[44px] flex items-center bg-body text-[var(--text-primary)] font-medium"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {link.name}
               </a>
             ))}
-            <div className="mt-4 border-t border-neutral-200 pt-4 pb-2">
-              {isAuthenticated ? (
-                <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button variant="primary" className="w-full justify-center">
-                    Go to dashboard
+          </nav>
+          <div className="mt-6 border-t border-[var(--border-default)] pt-6">
+            {isAuthenticated ? (
+              <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
+                <Button variant="primary" className="w-full justify-center">
+                  Go to dashboard
+                </Button>
+              </Link>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="secondary" className="w-full justify-center">
+                    Log in
                   </Button>
                 </Link>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  <Link
-                    href="/login"
-                    className="block px-3 py-2 text-center rounded-md text-base font-medium text-neutral-900 bg-neutral-100 hover:bg-neutral-200"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                  >
-                    Log in
-                  </Link>
-                  <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="primary" className="w-full justify-center">
-                      Get started free
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </div>
+                <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Button variant="primary" className="w-full justify-center">
+                    Start free
+                  </Button>
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }

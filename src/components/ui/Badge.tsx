@@ -1,52 +1,48 @@
 import React from "react";
-import { cn } from "@/lib/utils";
+import { bx } from "@/lib/utils";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant: "draft" | "closed" | "published" | "active" | "new" | "in_progress" | "completed" | "neutral";
-  children: string;
+  variant?: "neutral" | "primary" | "success" | "warning" | "error" | "info" | "outline";
+  pill?: boolean;
+  size?: "default" | "lg";
+  dot?: boolean;
 }
 
-export function Badge({ variant, children, className, ...props }: BadgeProps) {
-  const text = typeof children === "string" ? children : "";
-  const truncatedText = text.length > 30 ? text.slice(0, 30) + "..." : text;
+// Generic beginso-ui.css badge primitive — see src/styles/beginso-ui.css §8 BADGES, PILLS, TAGS.
+// Distinct from StatusBadge (src/components/ui/StatusBadge.tsx), which is V1's form/response
+// status chip and uses an unrelated variant set.
+const variantClass: Record<NonNullable<BadgeProps["variant"]>, string> = {
+  neutral: "",
+  primary: "bg-badge-primary",
+  success: "bg-badge-success",
+  warning: "bg-badge-warning",
+  error: "bg-badge-error",
+  info: "bg-badge-info",
+  outline: "bg-badge-outline",
+};
 
-  // Tokens from 04-design-system.md §4.7 — "published" and "completed" intentionally
-  // share the "active" (green) treatment; the doc gives them the identical color.
-  const badgeStyles = {
-    draft: "bg-status-draft-bg border-status-draft-border text-status-draft-text",
-    closed: "bg-status-closed-bg border-status-closed-border text-status-closed-text",
-    published: "bg-status-active-bg border-status-active-border text-status-active-text",
-    active: "bg-status-active-bg border-status-active-border text-status-active-text",
-    new: "bg-status-new-bg border-status-new-border text-status-new-text",
-    in_progress: "bg-status-progress-bg border-status-progress-border text-status-progress-text",
-    completed: "bg-status-active-bg border-status-active-border text-status-active-text",
-    // Not a status — for non-status chips (e.g. a template's category) that just need
-    // the same pill/border shape without implying draft/active/etc.
-    neutral: "bg-neutral-100 border-neutral-300 text-neutral-600",
-  };
-
-  const dotStyles = {
-    draft: "bg-status-draft-dot",
-    closed: "bg-status-closed-dot",
-    published: "bg-status-active-dot",
-    active: "bg-status-active-dot",
-    new: "bg-status-new-dot",
-    in_progress: "bg-status-progress-dot",
-    completed: "bg-status-active-dot",
-    neutral: "bg-neutral-400",
-  };
-
+export function Badge({
+  variant = "neutral",
+  pill,
+  size = "default",
+  dot,
+  className,
+  children,
+  ...props
+}: BadgeProps) {
   return (
     <span
-      className={cn(
-        "wf-badge inline-flex items-center gap-1.5 px-2 py-[3px] border rounded-full text-[11px] font-bold h-auto whitespace-nowrap",
-        badgeStyles[variant],
+      className={bx(
+        "bg-badge",
+        variantClass[variant],
+        pill && "bg-badge-pill",
+        size === "lg" && "bg-badge-lg",
         className
       )}
       {...props}
     >
-      <span className={cn("wf-badge-dot w-1.5 h-1.5 rounded-full shrink-0", dotStyles[variant])} />
-      {truncatedText}
+      {dot && <span className="bg-badge-dot" />}
+      {children}
     </span>
   );
 }
