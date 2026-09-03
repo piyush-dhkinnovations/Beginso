@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Inter, JetBrains_Mono, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/authContext";
@@ -56,7 +57,12 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
     >
       <body className="min-h-full flex flex-col">
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* next/script's beforeInteractive strategy, not a raw <script> tag: it injects before
+            hydration and is exempt from React's hydration reconciliation entirely, avoiding
+            both the flash this script prevents and React's "script tag" dev warning that a
+            plain <script dangerouslySetInnerHTML> child triggers whenever an unrelated
+            hydration mismatch elsewhere on the page forces React to regenerate this subtree. */}
+        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <QueryProvider>
           <AuthProvider>
             <ToastProvider>{children}</ToastProvider>
