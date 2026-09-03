@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { Inter, JetBrains_Mono, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/authContext";
@@ -57,12 +56,19 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
     >
       <body className="min-h-full flex flex-col">
-        {/* next/script's beforeInteractive strategy, not a raw <script> tag: it injects before
-            hydration and is exempt from React's hydration reconciliation entirely, avoiding
-            both the flash this script prevents and React's "script tag" dev warning that a
-            plain <script dangerouslySetInnerHTML> child triggers whenever an unrelated
-            hydration mismatch elsewhere on the page forces React to regenerate this subtree. */}
-        <Script id="theme-init" strategy="beforeInteractive" dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Deliberately a raw <script>, not next/script's beforeInteractive strategy — verified
+            (Saturday QA, sprint-7-foundation) that beforeInteractive defers actual execution
+            until Next's runtime bundle processes its script queue, well after
+            domcontentloaded: `data-theme` was still unset at that point in a real production
+            build, meaning the page paints light first and flips afterward — exactly the flash
+            this script exists to prevent, and requirements.md 1.3's actual acceptance
+            criterion. A plain synchronous script (no async/defer) blocks HTML parsing and runs
+            immediately at this position, before anything below it paints, which is what a true
+            zero-flash guarantee requires. (An earlier version briefly used next/script here to
+            silence a dev-only "script tag" console warning — traced separately to an unrelated
+            hydration mismatch, not this script — but that trade sacrificed correctness for a
+            cosmetic dev warning, so it's reverted.) */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <QueryProvider>
           <AuthProvider>
             <ToastProvider>{children}</ToastProvider>
