@@ -32,6 +32,18 @@ export const metadata: Metadata = {
   },
 };
 
+// Placeholder/local theme source until BE 0.5 (User.theme on GET /api/auth/me) ships
+// (requirements.md 1.3, 8.3). Deliberately *not* a server cookies() read: this layout wraps
+// every route including the public marketing pages and the whole auth flow (/, /blog, /login,
+// /signup, ...), all of which prerender statically today — calling cookies() here would force
+// every one of them into per-request dynamic rendering just to place one attribute. Instead
+// this blocking script (no async/defer, first thing in <body>) resolves the theme from the
+// client-writable `theme_preference` cookie (same non-HttpOnly, path=/ pattern as
+// `sidebar_collapsed` — see DashboardShell.tsx) with a prefers-color-scheme fallback for
+// 'system'/unset, before anything paints. Still zero flash on a cold /login load, without the
+// static-generation cost a server-side read would add app-wide.
+const THEME_INIT_SCRIPT = `(function(){try{var m=document.cookie.match(/(?:^|; )theme_preference=([^;]*)/);var p=m?decodeURIComponent(m[1]):'system';var dark=p==='dark'||(p!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(dark){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -44,6 +56,7 @@ export default function RootLayout({
       data-scroll-behavior="smooth"
     >
       <body className="min-h-full flex flex-col">
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         <QueryProvider>
           <AuthProvider>
             <ToastProvider>{children}</ToastProvider>
