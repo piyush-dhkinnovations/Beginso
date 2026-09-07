@@ -10,13 +10,14 @@ export type ResolveWorkspaceResult =
 // was no established pattern to reuse for a Server Component's own fetch; this is the smallest
 // extension of the one that does exist rather than a new one.
 //
-// GET /api/workspaces/:id is a Sprint 8 contract-to-confirm endpoint (requirements.md §13) — not
-// yet live (confirmed against Beginso-Report/API_CONTRACT.md, which lists only
-// POST /api/workspaces and the singular /workspaces/current as live). Whether the backend
-// resolves this segment by id or by slug is an open item there (design.md §11.2); this helper
-// passes the slug straight through and treats any non-2xx as 403/404 per the documented contract
-// error codes, so it needs no change once the real endpoint ships — only real integration
-// testing, which cannot happen from this repo.
+// GET /api/workspaces/:id is confirmed 🟢 LIVE as of 07 Sep 2026 (Beginso-Report/API_CONTRACT.md,
+// "Sprint 8 — Workspaces & Context Contracts") — it explicitly accepts either an ObjectId or a
+// lowercase slug in the :id segment, so passing the slug straight through (as this always did) is
+// correct, not a guess. Confirmed error shape: 403 FORBIDDEN_WORKSPACE_ACCESS on a foreign
+// workspace, 404 on a nonexistent one — matches this function's existing 403/404 handling.
+// Still not independently re-verified against live backend code from this repo (backend is a
+// separate repo); resting on API_CONTRACT.md's evidence, same as every other Phase 0 status note
+// in this sprint's tasks.md.
 export async function resolveWorkspaceBySlug(
   slug: string,
   token: string | undefined
