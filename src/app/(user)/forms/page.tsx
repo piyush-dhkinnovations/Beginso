@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical } from 'lucide-react';
 import { formsService } from '@/services/forms';
+import { workspaceKeys } from '@/lib/queryKeys';
 import { useToast } from '@/components/common/Toast';
 import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Button } from '@/components/ui/Button';
@@ -199,7 +200,10 @@ export default function FormsPage() {
   const debouncedSearch = useDebounce(search, 300);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['forms', 'list', { search: debouncedSearch, status, page, limit: FORMS_PAGE_LIMIT }],
+    queryKey: workspaceKeys.forms(
+      { type: 'personal' },
+      { search: debouncedSearch, status, page, limit: FORMS_PAGE_LIMIT }
+    ),
     queryFn: () => formsService.getForms({
       search: debouncedSearch || undefined,
       status: status === 'all' ? undefined : status,

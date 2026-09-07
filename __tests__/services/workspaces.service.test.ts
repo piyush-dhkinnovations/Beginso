@@ -20,9 +20,9 @@ describe('workspacesService', () => {
     mockPost.mockReset();
   });
 
-  it('list() calls GET /api/workspaces and returns the array as-is', async () => {
-    const workspaces = [{ id: 'w1', name: 'Acme', slug: 'acme', role: 'owner' }];
-    mockGet.mockResolvedValueOnce({ data: workspaces });
+  it('list() unwraps the real { success, workspaces, total } envelope (confirmed live 07 Sep 2026)', async () => {
+    const workspaces = [{ id: 'w1', name: 'Acme', slug: 'acme', role: 'owner', isOwner: true, memberCount: 1 }];
+    mockGet.mockResolvedValueOnce({ data: { success: true, workspaces, total: 1 } });
 
     const result = await workspacesService.list();
 
@@ -30,13 +30,31 @@ describe('workspacesService', () => {
     expect(result).toEqual(workspaces);
   });
 
-  it('get(id) calls GET /api/workspaces/:id', async () => {
+  it('list() falls back to a bare array if the response is ever shaped that way', async () => {
+    const workspaces = [{ id: 'w1', name: 'Acme', slug: 'acme', role: 'owner' }];
+    mockGet.mockResolvedValueOnce({ data: workspaces });
+
+    const result = await workspacesService.list();
+
+    expect(result).toEqual(workspaces);
+  });
+
+  it('get(id) calls GET /api/workspaces/:id and unwraps a { workspace } envelope', async () => {
+    const workspace = { id: 'w1', name: 'Acme', slug: 'acme', timezone: 'UTC', createdAt: '', updatedAt: '' };
+    mockGet.mockResolvedValueOnce({ data: { workspace } });
+
+    const result = await workspacesService.get('w1');
+
+    expect(mockGet).toHaveBeenCalledWith('/api/workspaces/w1');
+    expect(result).toEqual(workspace);
+  });
+
+  it('get(id) falls back to a bare object if the response is ever shaped that way', async () => {
     const workspace = { id: 'w1', name: 'Acme', slug: 'acme', timezone: 'UTC', createdAt: '', updatedAt: '' };
     mockGet.mockResolvedValueOnce({ data: workspace });
 
     const result = await workspacesService.get('w1');
 
-    expect(mockGet).toHaveBeenCalledWith('/api/workspaces/w1');
     expect(result).toEqual(workspace);
   });
 
