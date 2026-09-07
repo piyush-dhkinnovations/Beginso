@@ -3,7 +3,15 @@ import type { WorkspaceId } from './Workspace';
 export type MembershipId = string;
 export type UserId = string;
 
-export type Role = 'Owner' | 'Admin' | 'Editor' | 'Reviewer';
+// Corrected Sprint 8 Day 1 against the live backend (Beginso-Report/CHANGELOG.md 2026-09-07,
+// Beginso-Report/API_CONTRACT.md `Membership.role`): lowercase, and 'member'/'viewer' — not the
+// capitalized 'Editor'/'Reviewer' this scaffold originally guessed at in Sprint 7. The V2 master
+// feature list's C2.1 names Owner/Admin/Editor/Reviewer as the product-facing role concept; the
+// backend has implemented that concept under different wire values. Sprint 9 (C2.9, roles UI) is
+// where a product decision is needed on whether the backend enum gets renamed to match, or the
+// frontend maps wire values to display labels — flagging here since Sprint 8 is the first consumer
+// that reads `role` at all (context switcher, All Workspaces). Not resolved silently either way.
+export type Role = 'owner' | 'admin' | 'member' | 'viewer';
 
 /**
  * P1: per-member notification preference. Defaults to "none" for every

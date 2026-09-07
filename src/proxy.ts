@@ -56,6 +56,7 @@ export const config = {
     '/reports/:path*',
     '/settings/:path*',
     '/onboarding/:path*',
+    '/w/:path*',
     '/login',
     '/signup',
     '/verify-email',

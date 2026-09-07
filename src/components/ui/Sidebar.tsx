@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { bx } from "@/lib/utils";
 
 export interface SidebarNavItem {
@@ -23,6 +24,8 @@ export interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
 // (V1, hand-built, stays untouched this sprint; see design.md §6/§23). Unused by any live
 // screen until Sprint 8 rebuilds DashboardShell around ContextSwitcher.
 // beginso-ui.css §12 NAVIGATION (.bg-sidenav / .bg-nav-item / .bg-sidenav-rail).
+// Uses next/link (not a raw <a>, fixed sprint-8 day 1) so real consumers navigate client-side —
+// the legacy src/components/dashboard/Sidebar.tsx already does the same.
 export function Sidebar({ groups, collapsed = false, className, ...props }: SidebarProps) {
   return (
     <nav
@@ -36,7 +39,7 @@ export function Sidebar({ groups, collapsed = false, className, ...props }: Side
           {group.items.map((item) => {
             const Icon = item.icon;
             return (
-              <a
+              <Link
                 key={item.href}
                 href={item.href}
                 className="bg-nav-item"
@@ -45,7 +48,7 @@ export function Sidebar({ groups, collapsed = false, className, ...props }: Side
                 {Icon && <Icon className="bg-icon" />}
                 <span className="bg-nav-label">{item.label}</span>
                 {typeof item.count === "number" && <span className="bg-count">{item.count}</span>}
-              </a>
+              </Link>
             );
           })}
         </React.Fragment>
