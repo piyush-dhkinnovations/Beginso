@@ -10,8 +10,18 @@ export type { Workspace, Role };
 // (requirements.md §13). Not to be confused with src/types/settings.ts's WorkspaceSettings,
 // which describes the older singular /workspaces/current settings resource (branding, logo,
 // notification prefs) — a different API surface that happens to share a noun (design.md §13).
+//
+// Confirmed live 07 Sep 2026 (Beginso-Report/API_CONTRACT.md, "Sprint 8 — Workspaces & Context
+// Contracts") — the real response also carries description/logo/branding/isOwner/memberCount.
+// Marked optional here since Sprint 8's own consumers (context switcher, forms context) only
+// need id/name/slug/role; a page that genuinely needs the rest (All Workspaces, task 4.3) can
+// rely on these being present rather than re-deriving the shape.
 export interface WorkspaceListItem extends Workspace {
   role: Role;
+  isOwner?: boolean;
+  memberCount?: number;
+  description?: string;
+  logo?: string | null;
 }
 
 // Where a form is being created into, moved to, or listed from (requirements.md §7.7, §7.9,
