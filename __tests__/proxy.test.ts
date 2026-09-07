@@ -39,6 +39,7 @@ describe('Next.js Edge Proxy (auth guard)', () => {
       '/analytics',
       '/reports',
       '/settings',
+      '/w/acme',
     ];
 
     it.each(protectedPaths)(
@@ -55,7 +56,7 @@ describe('Next.js Edge Proxy (auth guard)', () => {
   // ─── Protected routes (with token) → allow through ─────────────────────────
 
   describe('Protected route + cookie present → NextResponse.next()', () => {
-    const protectedPaths = ['/dashboard', '/forms', '/templates', '/responses', '/analytics', '/reports', '/settings'];
+    const protectedPaths = ['/dashboard', '/forms', '/templates', '/responses', '/analytics', '/reports', '/settings', '/w/acme'];
 
     it.each(protectedPaths)(
       '%s with a session cookie passes through',
