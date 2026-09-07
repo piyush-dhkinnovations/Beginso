@@ -5,11 +5,17 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const notFound = vi.fn(() => {
   throw new Error('NEXT_NOT_FOUND');
 });
-vi.mock('next/navigation', () => ({ notFound, usePathname: () => '/w/acme' }));
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  notFound,
+  usePathname: () => '/w/acme',
+  useRouter: () => ({ push: mockPush }),
+}));
 
 const mockCookieGet = vi.fn();
 vi.mock('next/headers', () => ({
@@ -18,6 +24,16 @@ vi.mock('next/headers', () => ({
 
 const resolveWorkspaceBySlug = vi.fn();
 vi.mock('@/lib/workspaceServer', () => ({ resolveWorkspaceBySlug: (...args: unknown[]) => resolveWorkspaceBySlug(...args) }));
+
+// WorkspaceContextSwitcher (rendered inside the layout's TopBar) fetches the workspace list via
+// TanStack Query — mock the service so this stays a unit test of the layout's own 403/404/shell
+// boundary, not an integration test of the switcher (that's WorkspaceContextSwitcher.test.tsx).
+vi.mock('@/services/workspaces', () => ({ workspacesService: { list: () => Promise.resolve([]) } }));
+
+function withQueryClient(node: React.ReactNode) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return <QueryClientProvider client={queryClient}>{node}</QueryClientProvider>;
+}
 
 describe('/w/[slug]/layout — route-level membership boundary', () => {
   beforeEach(() => {
@@ -39,7 +55,7 @@ describe('/w/[slug]/layout — route-level membership boundary', () => {
       children: <div>child content</div>,
       params: Promise.resolve({ slug: 'acme' }),
     });
-    render(jsx);
+    render(withQueryClient(jsx));
     expect(screen.getByText('Acme')).toBeInTheDocument();
     expect(screen.getByText('child content')).toBeInTheDocument();
   });
@@ -51,7 +67,7 @@ describe('/w/[slug]/layout — route-level membership boundary', () => {
       children: <div>child content</div>,
       params: Promise.resolve({ slug: 'acme' }),
     });
-    render(jsx);
+    render(withQueryClient(jsx));
     expect(screen.getByText("You don't have access to this workspace")).toBeInTheDocument();
     expect(screen.queryByText('child content')).not.toBeInTheDocument();
   });

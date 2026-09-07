@@ -238,7 +238,7 @@ export function UiGalleryContent() {
         <div style={{ height: 260, overflow: "hidden", border: "1px solid var(--border-default)", borderRadius: "var(--bg-radius-lg)" }}>
           <AppShell
             topBar={(toggle) => (
-              <TopBar brand="Beginso" onMenuClick={toggle} actions={<ContextSwitcher currentLabel="Acme Inc" workspaces={[{ id: "1", name: "Acme Inc" }]} />} />
+              <TopBar brand="Beginso" onMenuClick={toggle} actions={<ContextSwitcher currentLabel="Acme Inc" workspaces={[{ id: "1", name: "Acme Inc", slug: "acme" }]} />} />
             )}
             sidebar={(sidebarCollapsed) => (
               <Sidebar
