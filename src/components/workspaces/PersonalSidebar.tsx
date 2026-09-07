@@ -8,7 +8,7 @@ export interface PersonalSidebarProps {
   collapsed?: boolean;
 }
 
-// Personal-context nav set — corrected Day 3 against the master feature list's actual A1.1
+// Personal-context nav set — corrected against the master feature list's actual A1.1
 // ("Personal sidebar (4 items + Create workspace): Home, My Forms, Shared with me, Templates,
 // My Submissions") and A1.3 ("Create workspace — bottom placement, own divider... a once-ever
 // action doesn't need to be paid for on every visit"). An earlier draft of this component invented

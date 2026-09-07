@@ -5,9 +5,9 @@ export interface CreateWorkspacePayload {
   name: string;
 }
 
-// Corrected Day 3 against the real live contract (Beginso-Report/API_CONTRACT.md, confirmed live
-// 07 Sep 2026) — design.md §12's "flat object, no unwrapEnvelope" guess was wrong for list():
-// GET /api/workspaces actually nests under `{ success, workspaces: [...], total }`, matching
+// Corrected against the real live contract (Beginso-Report/API_CONTRACT.md, confirmed live
+// 07 Sep 2026) — a "flat object, no unwrapEnvelope" guess was wrong for list(): GET
+// /api/workspaces actually nests under `{ success, workspaces: [...], total }`, matching
 // settingsService's envelope pattern, not formsService's bare-array one. POST /api/workspaces
 // (create) is confirmed to return the bare Workspace object (API_CONTRACT.md line 390, unchanged
 // since Sprint 7), so create() stays flat. GET /api/workspaces/:id's exact envelope isn't spelled
