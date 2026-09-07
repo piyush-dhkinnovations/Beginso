@@ -19,13 +19,17 @@ export interface MenuProps {
   items: MenuItem[];
   align?: "start" | "end";
   className?: string;
+  /** Overrides the trigger button's classes — defaults to the icon-button look every existing
+   * row-action menu uses. Added for ContextSwitcher (sprint-8), which needs a labelled
+   * secondary-button trigger instead; every other caller is unaffected by the default. */
+  triggerClassName?: string;
 }
 
 // beginso-ui.css classes — see src/styles/beginso-ui.css §14 OVERLAYS ("Dropdown menu").
 // Outside-click + keyboard nav follows the existing pattern in
 // src/components/responses/StatusDropdown.tsx rather than introducing a positioning library —
 // no such dependency exists in the project and none is justified for a simple below-trigger menu.
-export function Menu({ trigger, triggerLabel, items, align = "start", className }: MenuProps) {
+export function Menu({ trigger, triggerLabel, items, align = "start", className, triggerClassName }: MenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,7 +104,7 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className 
         aria-expanded={isOpen}
         aria-label={triggerLabel}
         onClick={() => (isOpen ? close() : openMenu())}
-        className="bg-btn bg-btn-ghost bg-btn-icon"
+        className={triggerClassName ?? "bg-btn bg-btn-ghost bg-btn-icon"}
       >
         {trigger}
       </button>

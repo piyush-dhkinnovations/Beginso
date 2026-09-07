@@ -1,7 +1,8 @@
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { AppShell, TopBar, ContextSwitcher } from '@/components/ui';
+import { AppShell, TopBar } from '@/components/ui';
 import { WorkspaceSidebar } from '@/components/workspaces/WorkspaceSidebar';
+import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { WorkspaceAccessDenied } from '@/components/workspaces/WorkspaceAccessDenied';
 import { resolveWorkspaceBySlug } from '@/lib/workspaceServer';
 import { SESSION_COOKIE_NAME } from '@/lib/sessionCookie';
@@ -17,9 +18,8 @@ interface Props {
 // the real authorization boundary is the backend endpoint itself (requirements.md §14) — this
 // layout does not, and cannot, substitute for that.
 //
-// Real switching logic for ContextSwitcher (the workspace list, onSelect) is Sprint 8 Tuesday's
-// scope (requirements.md §7.2) — today it renders with just this workspace's name, same
-// no-props-safe default Sprint 7 already built it for.
+// ContextSwitcher's real dropdown + workspace list (requirements.md §7.2) landed Day 2 —
+// WorkspaceContextSwitcher below owns fetching the list and navigating on selection.
 export default async function WorkspaceLayout({ children, params }: Props) {
   const { slug } = await params;
   const cookieStore = await cookies();
@@ -39,7 +39,7 @@ export default async function WorkspaceLayout({ children, params }: Props) {
         <TopBar
           brand={<span>Beginso</span>}
           onMenuClick={toggleCollapsed}
-          actions={<ContextSwitcher currentLabel={workspace.name} />}
+          actions={<WorkspaceContextSwitcher currentLabel={workspace.name} />}
         />
       )}
       sidebar={(collapsed) => <WorkspaceSidebar slug={slug} collapsed={collapsed} />}

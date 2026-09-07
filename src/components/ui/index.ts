@@ -17,7 +17,7 @@ export type { CardProps } from './Card';
 export { Checkbox } from './Checkbox';
 export type { CheckboxProps } from './Checkbox';
 export { ContextSwitcher } from './ContextSwitcher';
-export type { ContextSwitcherProps, ContextSwitcherWorkspace } from './ContextSwitcher';
+export type { ContextSwitcherProps, ContextSwitcherWorkspace, ContextSwitcherTarget } from './ContextSwitcher';
 export { Drawer } from './Drawer';
 export type { DrawerProps } from './Drawer';
 export { EmptyState } from './EmptyState';
