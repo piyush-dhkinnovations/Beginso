@@ -3,9 +3,11 @@
 import { usePathname } from 'next/navigation';
 import { Home, FileText, LayoutTemplate, Table2, PieChart, Download, Settings } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
+import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 
 export interface WorkspaceSidebarProps {
   slug: string;
+  currentLabel: string;
   collapsed?: boolean;
 }
 
@@ -13,7 +15,14 @@ export interface WorkspaceSidebarProps {
 // src/components/dashboard/Sidebar.tsx (V1, untouched this sprint — design.md §2), scoped under
 // /w/[slug] instead of the flat (user)/ tree. Reads the active route via usePathname() itself,
 // same reasoning as PersonalSidebar.
-export function WorkspaceSidebar({ slug, collapsed = false }: WorkspaceSidebarProps) {
+//
+// Corrected against the actual wireframe (Beginso-Design-System/.../wireframes/index.html,
+// appSidebar()/contextSwitcher()) — the context switcher belongs at the top of the sidebar itself
+// ("the sidebar context block is now the real control"), not in the top bar where it was first
+// built. Rendered via ui/Sidebar's `header` slot rather than a separate wrapper element, so it
+// sits inside the same .bg-sidenav box as the nav items (matching the wireframe's single
+// continuous sidebar column) instead of a second bordered block stacked above it.
+export function WorkspaceSidebar({ slug, currentLabel, collapsed = false }: WorkspaceSidebarProps) {
   const pathname = usePathname();
   const base = `/w/${slug}`;
   const items = [
@@ -29,6 +38,7 @@ export function WorkspaceSidebar({ slug, collapsed = false }: WorkspaceSidebarPr
   return (
     <Sidebar
       collapsed={collapsed}
+      header={<WorkspaceContextSwitcher currentLabel={currentLabel} />}
       groups={[
         {
           items: items.map((item) => ({

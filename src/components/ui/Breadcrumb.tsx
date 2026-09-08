@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { bx } from "@/lib/utils";
 
@@ -11,7 +12,7 @@ export interface BreadcrumbProps extends React.HTMLAttributes<HTMLElement> {
   items: BreadcrumbItem[];
 }
 
-// beginso-ui.css §12 NAVIGATION ("Breadcrumb").
+// beginso-ui.css §12 NAVIGATION ("Breadcrumb"). Uses next/link for client-side navigation.
 export function Breadcrumb({ items, className, ...props }: BreadcrumbProps) {
   return (
     <nav aria-label="Breadcrumb" className={bx("bg-breadcrumb", className)} {...props}>
@@ -23,7 +24,7 @@ export function Breadcrumb({ items, className, ...props }: BreadcrumbProps) {
             {isLast || !item.href ? (
               <span aria-current={isLast ? "page" : undefined}>{item.label}</span>
             ) : (
-              <a href={item.href}>{item.label}</a>
+              <Link href={item.href}>{item.label}</Link>
             )}
           </React.Fragment>
         );

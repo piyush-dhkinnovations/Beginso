@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical } from 'lucide-react';
+import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { workspaceKeys } from '@/lib/queryKeys';
 import { useToast } from '@/components/common/Toast';
@@ -13,10 +13,13 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { EmptyState } from '@/components/common/EmptyState';
 import { CreateFormModal } from '@/components/form-builder/CreateFormModal';
 import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
+import { MoveFormModal } from '@/components/workspaces/MoveFormModal';
 import { Input } from '@/components/ui/Input';
 import { PaginationControls } from '@/components/responses/PaginationControls';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { Form, FormStatus } from '@/types/form';
+import type { FormsContext } from '@/types/workspace';
+
 
 // ─── Status badge variant helper ─────────────────────────────────────────────
 
@@ -42,12 +45,14 @@ function FormRow({
   isDuplicating,
   onDelete,
   isDeleting,
+  onMove,
 }: {
   form: Form;
   onDuplicate: (id: string) => void;
   isDuplicating: boolean;
   onDelete: (id: string) => void;
   isDeleting: boolean;
+  onMove?: (form: Form) => void;
 }) {
   const updatedAt = new Date(form.updatedAt).toLocaleDateString('en-US', {
     day: 'numeric',
@@ -104,31 +109,32 @@ function FormRow({
       </div>
 
       <div className="[grid-area:actions] flex items-center justify-end gap-1.5">
-        <Link href={`/forms/${formId}/edit`} className="shrink-0">
-          <Button variant="secondary" size="small" aria-label={`Edit ${form.title}`} className="w-8 h-8 p-0 shrink-0">
-            <Edit2 size={16} />
-            <span className="sr-only">Edit</span>
-          </Button>
+        <Link
+          href={`/forms/${formId}/edit`}
+          className="p-2 text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 rounded-md transition-colors"
+          title="Edit Form"
+          aria-label="Edit Form"
+        >
+          <Edit2 size={16} />
         </Link>
 
-        <div className="relative shrink-0" ref={menuRef}>
-          <Button
-            variant="ghost"
-            size="small"
-            onClick={() => setIsMenuOpen((open) => !open)}
-            aria-label={`More actions for ${form.title}`}
-            aria-haspopup="menu"
+        {/* Row menu */}
+        <div className="relative" ref={menuRef}>
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen((prev) => !prev)}
+            className="p-2 text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 rounded-md transition-colors"
+            title="More Options"
+            aria-label="More Options"
             aria-expanded={isMenuOpen}
-            className="w-8 h-8 p-0 shrink-0"
           >
             <MoreVertical size={16} />
-          </Button>
+          </button>
 
           {isMenuOpen && (
             <div
               role="menu"
-              aria-label={`Actions for ${form.title}`}
-              className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 py-1 z-20 animate-fade-in"
+              className="absolute right-0 top-full mt-1 w-44 bg-white border border-neutral-200 rounded-lg shadow-lg py-1 z-30 animate-fade-in"
             >
               <Link
                 href={`/forms/${formId}/responses`}
@@ -149,6 +155,21 @@ function FormRow({
                 <BarChart2 size={16} className="text-neutral-500" />
                 <span>View Analytics</span>
               </Link>
+
+              {onMove && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    onMove(form);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full min-h-11 flex items-center gap-2 px-3 py-2 text-body-sm text-neutral-700 hover:bg-neutral-100 transition-colors text-left"
+                >
+                  <FolderSymlink size={16} className="text-neutral-500" />
+                  <span>Move</span>
+                </button>
+              )}
 
               <button
                 type="button"
@@ -187,10 +208,15 @@ function FormRow({
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function FormsPage() {
+export interface FormsPageProps {
+  context?: FormsContext;
+}
+
+export default function FormsPage({ context = { type: 'personal' } }: FormsPageProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formToMove, setFormToMove] = useState<Form | null>(null);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formToDelete, setFormToDelete] = useState<Form | null>(null);
@@ -201,7 +227,7 @@ export default function FormsPage() {
 
   const { data, isLoading, error } = useQuery({
     queryKey: workspaceKeys.forms(
-      { type: 'personal' },
+      context,
       { search: debouncedSearch, status, page, limit: FORMS_PAGE_LIMIT }
     ),
     queryFn: () => formsService.getForms({
@@ -358,6 +384,7 @@ export default function FormsPage() {
               isDuplicating={duplicatingId === form._id}
               onDelete={(id) => setFormToDelete(data.forms.find((f) => f._id === id) ?? null)}
               isDeleting={deletingId === form._id}
+              onMove={(f) => setFormToMove(f)}
             />
           ))}
 
@@ -376,6 +403,15 @@ export default function FormsPage() {
       <CreateFormModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        defaultDestination={context}
+      />
+
+      <MoveFormModal
+        isOpen={formToMove !== null}
+        formId={formToMove?._id ?? ''}
+        formTitle={formToMove?.title ?? ''}
+        currentContext={context}
+        onClose={() => setFormToMove(null)}
       />
 
       <DeleteFormModal
@@ -393,3 +429,4 @@ export default function FormsPage() {
     </div>
   );
 }
+

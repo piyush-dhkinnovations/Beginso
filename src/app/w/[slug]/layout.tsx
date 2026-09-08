@@ -1,8 +1,6 @@
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { AppShell, TopBar } from '@/components/ui';
-import { WorkspaceSidebar } from '@/components/workspaces/WorkspaceSidebar';
-import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
+import { WorkspaceShell } from '@/components/workspaces/WorkspaceShell';
 import { WorkspaceAccessDenied } from '@/components/workspaces/WorkspaceAccessDenied';
 import { resolveWorkspaceBySlug } from '@/lib/workspaceServer';
 import { SESSION_COOKIE_NAME } from '@/lib/sessionCookie';
@@ -18,8 +16,11 @@ interface Props {
 // the real authorization boundary is the backend endpoint itself (requirements.md §14) — this
 // layout does not, and cannot, substitute for that.
 //
-// ContextSwitcher's real dropdown + workspace list (requirements.md §7.2) landed Day 2 —
-// WorkspaceContextSwitcher below owns fetching the list and navigating on selection.
+// WHY WorkspaceShell (not AppShell directly):
+// AppShell's topBar/sidebar props are render-prop *functions* — React cannot serialise
+// functions across the RSC boundary (Server → Client Component), which caused a 500 error.
+// WorkspaceShell is a 'use client' wrapper that owns those closures client-side; this layout
+// passes only plain serialisable values (slug, workspaceName, initialCollapsed).
 export default async function WorkspaceLayout({ children, params }: Props) {
   const { slug } = await params;
   const cookieStore = await cookies();
@@ -33,18 +34,13 @@ export default async function WorkspaceLayout({ children, params }: Props) {
   const { workspace } = result;
 
   return (
-    <AppShell
+    <WorkspaceShell
+      slug={slug}
+      workspaceName={workspace.name}
       initialCollapsed={initialCollapsed}
-      topBar={(toggleCollapsed) => (
-        <TopBar
-          brand={<span>Beginso</span>}
-          onMenuClick={toggleCollapsed}
-          actions={<WorkspaceContextSwitcher currentLabel={workspace.name} />}
-        />
-      )}
-      sidebar={(collapsed) => <WorkspaceSidebar slug={slug} collapsed={collapsed} />}
     >
       {children}
-    </AppShell>
+    </WorkspaceShell>
   );
 }
+

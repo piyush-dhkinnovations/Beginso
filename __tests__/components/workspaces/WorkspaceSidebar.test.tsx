@@ -5,12 +5,27 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WorkspaceSidebar } from '@/components/workspaces/WorkspaceSidebar';
 
 const mockPathname = vi.fn();
 vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname(),
+  useRouter: () => ({ push: vi.fn() }),
 }));
+
+vi.mock('@/services/workspaces', () => ({
+  workspacesService: { list: () => Promise.resolve([]) },
+}));
+
+function renderSidebar(props: { slug: string; currentLabel: string; collapsed?: boolean }) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <WorkspaceSidebar {...props} />
+    </QueryClientProvider>
+  );
+}
 
 describe('WorkspaceSidebar', () => {
   beforeEach(() => {
@@ -18,30 +33,38 @@ describe('WorkspaceSidebar', () => {
   });
 
   it('renders every workspace nav item, scoped under the workspace slug', () => {
-    render(<WorkspaceSidebar slug="acme" />);
+    renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc' });
     ['Home', 'Forms', 'Templates', 'Responses', 'Analytics', 'Reports', 'Settings'].forEach((label) => {
       const link = screen.getByRole('link', { name: label });
       expect(link).toHaveAttribute('href', expect.stringContaining('/w/acme'));
     });
   });
 
+  it('renders the context switcher as the sidebar\'s own header, showing the workspace name', () => {
+    // Corrected against the real wireframe (design.md §23): the switcher lives in the sidebar
+    // itself, not the top bar — this is the regression test for that placement.
+    renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc' });
+    expect(screen.getByText('Acme Inc')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Switch context/ })).toBeInTheDocument();
+  });
+
   it('marks Home active on the workspace root only', () => {
     mockPathname.mockReturnValue('/w/acme');
-    render(<WorkspaceSidebar slug="acme" />);
+    renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc' });
     expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Forms' })).not.toHaveAttribute('aria-current');
   });
 
   it('marks Forms active on /w/[slug]/forms and its subroutes', () => {
     mockPathname.mockReturnValue('/w/acme/forms/f1');
-    render(<WorkspaceSidebar slug="acme" />);
+    renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc' });
     expect(screen.getByRole('link', { name: 'Forms' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
   });
 
   it('does not leak another workspace\'s active state', () => {
     mockPathname.mockReturnValue('/w/other-workspace/forms');
-    render(<WorkspaceSidebar slug="acme" />);
+    renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc' });
     expect(screen.getByRole('link', { name: 'Forms' })).not.toHaveAttribute('aria-current');
   });
 });

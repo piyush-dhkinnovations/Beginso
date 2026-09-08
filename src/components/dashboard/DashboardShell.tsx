@@ -4,8 +4,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { TopNav } from '@/components/dashboard/TopNav';
 import { Sidebar } from '@/components/dashboard/Sidebar';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
 
 // DashboardShell is a client component that manages the interactive sidebar/topnav shell.
@@ -14,17 +12,29 @@ import { cn } from '@/lib/utils';
 // initialCollapsed, so the very first render — server and client — is already correct.
 // This replaces the previous localStorage + effect approach, which could only correct
 // itself after mount and caused a visible expanded-then-collapsed flash on reload.
+//
+// NOTE: there is no authLoading guard here. proxy.ts (src/proxy.ts) rejects every
+// unauthenticated request to a protected path before it reaches Next.js — if this shell
+// renders at all, the session is valid. A client-side authLoading check caused a hydration
+// mismatch: AuthProvider's initialState has isLoading:true, so the guard fired immediately
+// on the client (switching from full-shell to spinner), but the server had already emitted
+// the full shell HTML — guaranteed mismatch on every load.
 export function DashboardShell({ children, initialCollapsed }: { children: React.ReactNode; initialCollapsed: boolean }) {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
-  const { isLoading: authLoading, isAuthenticated } = useAuth();
 
-  const handleToggleCollapse = () => {
-    const newState = !collapsed;
-    setCollapsed(newState);
-    document.cookie = `sidebar_collapsed=${newState}; path=/; max-age=31536000; SameSite=Lax`;
-  };
+  // Written as an effect, not inline in the toggle handler — the React Compiler's immutability
+  // check flags document.cookie mutation inside a closure defined during render as a render-time
+  // side effect. When it fires, the compiler bails out of compiling DashboardShell and emits a
+  // placeholder wrapper with className={null} + style={{all:"initial"}} during SSR — which the
+  // client then replaces with the real JSX — causing a guaranteed hydration mismatch on every
+  // single page load. AppShell.tsx (lines 42-47) documents and applies the same pattern.
+  useEffect(() => {
+    document.cookie = `sidebar_collapsed=${collapsed}; path=/; max-age=31536000; SameSite=Lax`;
+  }, [collapsed]);
+
+  const handleToggleCollapse = () => setCollapsed((prev) => !prev);
 
   // Close on Escape; trap Tab/Shift+Tab focus within the drawer — same pattern as Modal.tsx.
   useEffect(() => {
@@ -64,12 +74,6 @@ export function DashboardShell({ children, initialCollapsed }: { children: React
       opener?.focus();
     };
   }, [mobileMenuOpen]);
-
-  // Proxy is the server-side boundary; this client guard prevents a cached shell
-  // from remaining visible during logout or while a failed session redirects.
-  if (authLoading || !isAuthenticated) {
-    return <LoadingSpinner variant="overlay" />;
-  }
 
   return (
     <div className="dashboard-shell flex flex-col min-h-screen bg-white">
