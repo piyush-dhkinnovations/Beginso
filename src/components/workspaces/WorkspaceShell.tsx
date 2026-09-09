@@ -16,8 +16,11 @@
 // The layout now passes only serialisable props (slug, workspaceName, initialCollapsed)
 // and WorkspaceShell owns the function values internally.
 
+import Link from 'next/link';
 import { AppShell, TopBar } from '@/components/ui';
 import { WorkspaceSidebar } from '@/components/workspaces/WorkspaceSidebar';
+import { NotificationBell } from '@/components/dashboard/NotificationBell';
+import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown';
 
 export interface WorkspaceShellProps {
   slug: string;
@@ -32,8 +35,24 @@ export function WorkspaceShell({ slug, workspaceName, initialCollapsed, children
       initialCollapsed={initialCollapsed}
       topBar={(toggleCollapsed, toggleMobile) => (
         <TopBar
-          brand={<span>Beginso</span>}
-          onMenuClick={toggleMobile ?? toggleCollapsed}
+          brand={
+            <Link href="/dashboard" className="hover:opacity-90 transition-opacity">
+              <span>Beginso</span>
+            </Link>
+          }
+          onMenuClick={() => {
+            if (typeof window !== 'undefined' && window.innerWidth < 768) {
+              toggleMobile?.();
+            } else {
+              toggleCollapsed();
+            }
+          }}
+          actions={
+            <div className="flex items-center gap-2">
+              <NotificationBell />
+              <UserProfileDropdown />
+            </div>
+          }
         />
       )}
       sidebar={(collapsed) => (

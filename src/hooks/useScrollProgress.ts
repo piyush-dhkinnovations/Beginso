@@ -6,12 +6,19 @@ import { useEffect, useRef, useState } from 'react';
 // firing once.
 export function useScrollProgress<T extends HTMLElement>() {
   const ref = useRef<T>(null);
-  const prefersReducedMotion =
-    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const [progress, setProgress] = useState(prefersReducedMotion ? 1 : 0);
+  // Starts at 0 on both server and client — see useReveal.ts for why matchMedia can't seed
+  // this at render time without disagreeing with the server-rendered HTML.
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    if (prefersReducedMotion) return;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReducedMotion) {
+      // Reading matchMedia once on mount to seed state — same accepted pattern as
+      // LoginForm.tsx's reason= check.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setProgress(1);
+      return;
+    }
     const el = ref.current;
     if (!el) return;
 
@@ -37,7 +44,7 @@ export function useScrollProgress<T extends HTMLElement>() {
       window.removeEventListener('resize', onScroll);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [prefersReducedMotion]);
+  }, []);
 
   return { ref, progress };
 }

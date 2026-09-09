@@ -54,6 +54,12 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${jetBrainsMono.variable} ${dmSans.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
+      // THEME_INIT_SCRIPT below legitimately sets data-theme on this element before React
+      // hydrates, to avoid a flash of the wrong theme. React doesn't track data-theme here
+      // (it's never a prop in this JSX), so it isn't diffed on hydration today regardless —
+      // this is the documented belt-and-suspenders for that pattern, not a fix for an
+      // observed warning.
+      suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">
         {/* Deliberately a raw <script>, not next/script's beforeInteractive strategy — verified

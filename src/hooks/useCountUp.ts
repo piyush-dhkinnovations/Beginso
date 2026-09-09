@@ -4,12 +4,20 @@ import { useReveal } from './useReveal';
 
 export function useCountUp(target: number, duration = 1200) {
   const { ref, visible } = useReveal<HTMLSpanElement>(0.4);
-  const prefersReducedMotion =
-    typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const [value, setValue] = useState(prefersReducedMotion ? target : 0);
+  // Starts at 0 on both server and client — see useReveal.ts for why matchMedia can't seed
+  // this at render time without disagreeing with the server-rendered HTML.
+  const [value, setValue] = useState(0);
 
   useEffect(() => {
-    if (!visible || prefersReducedMotion) return;
+    if (!visible) return;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      // Reading matchMedia once on mount to seed state — same accepted pattern as
+      // LoginForm.tsx's reason= check.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setValue(target);
+      return;
+    }
 
     let frame = 0;
     const started = performance.now();
@@ -23,7 +31,7 @@ export function useCountUp(target: number, duration = 1200) {
 
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
-  }, [visible, target, duration, prefersReducedMotion]);
+  }, [visible, target, duration]);
 
   return { ref, value };
 }

@@ -34,7 +34,7 @@ export default function WorkspacesPage() {
   }, [workspaces, search, sort]);
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col gap-4 w-full">
       <PageHeader
         eyebrow="Account"
         title="All workspaces"

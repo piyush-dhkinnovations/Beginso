@@ -38,7 +38,7 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false }: Work
   return (
     <Sidebar
       collapsed={collapsed}
-      header={<WorkspaceContextSwitcher currentLabel={currentLabel} />}
+      header={<WorkspaceContextSwitcher currentLabel={currentLabel} collapsed={collapsed} />}
       groups={[
         {
           items: items.map((item) => ({

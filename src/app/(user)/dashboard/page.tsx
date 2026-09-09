@@ -10,7 +10,7 @@ import { dashboardKeys, workspaceKeys } from '@/lib/queryKeys';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { StatisticsCards } from '@/components/dashboard/StatisticsCards';
 import { RecentActivitySection } from '@/components/dashboard/RecentActivitySection';
-import { Card, EmptyState, Skeleton, StatusBadge } from '@/components/ui';
+import { Card, EmptyState, PageHeader, Skeleton, StatusBadge } from '@/components/ui';
 import type { FormStatus } from '@/types/form';
 
 const STATUS_VARIANT: Record<FormStatus, 'draft' | 'published' | 'closed'> = {
@@ -57,18 +57,18 @@ export default function DashboardPage() {
   const hasForms = (analytics?.totalForms ?? 0) > 0;
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl mx-auto">
-      <div className="bg-row bg-gap-4 flex-wrap" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div className="bg-stack bg-gap-1">
-          <span className="bg-caption" style={{ textTransform: 'uppercase' }}>Personal space</span>
-          <h1 className="bg-h2">{user?.name ? `Welcome back, ${user.name}` : 'Welcome back'}</h1>
-          <p className="bg-body" style={{ color: 'var(--text-muted)' }}>Your forms and activity, outside a workspace.</p>
-        </div>
-        <Link href="/forms" className="bg-btn bg-btn-primary shrink-0">
-          <Plus size={16} className="mr-2" />
-          Create a form
-        </Link>
-      </div>
+    <div className="flex flex-col gap-4">
+      <PageHeader
+        eyebrow="Personal space"
+        title={user?.name ? `Welcome back, ${user.name}` : 'Welcome back'}
+        description="Your forms and activity, outside a workspace."
+        actions={
+          <Link href="/forms" className="bg-btn bg-btn-primary shrink-0">
+            <Plus size={16} className="mr-2" />
+            Create a form
+          </Link>
+        }
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Link href="/forms" className="block">

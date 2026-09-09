@@ -36,7 +36,7 @@ export default function WorkspaceHomePage() {
   // ── Loading state ──────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-6 max-w-6xl w-full mx-auto">
+      <div className="flex flex-col gap-4 w-full">
         <div className="flex flex-col gap-1">
           <Skeleton variant="title" width="40%" />
           <Skeleton variant="text" width="60%" />
@@ -68,7 +68,7 @@ export default function WorkspaceHomePage() {
   // ── Error state ────────────────────────────────────────────────────────────
   if (error) {
     return (
-      <div className="flex flex-col gap-6 max-w-6xl w-full mx-auto">
+      <div className="flex flex-col gap-4 w-full">
         <PageHeader
           title="Workspace Home"
           description="Create forms, track submissions, and check workspace activity."
@@ -87,7 +87,7 @@ export default function WorkspaceHomePage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl w-full mx-auto">
+    <div className="flex flex-col gap-4 w-full">
       <PageHeader
         title="Workspace Home"
         description="Create forms, track submissions, and check workspace activity."

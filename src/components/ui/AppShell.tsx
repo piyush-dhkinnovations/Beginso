@@ -17,8 +17,12 @@ export interface AppShellProps {
 }
 
 // Composes Sidebar + TopBar + a content region. Geometry derived from the V2 wireframe:
-// TopBar full-bleed (height 56px), Sidebar left-docked (width 220-240px / 64px rail),
-// Content pane filling remaining space with 24px padding and 20px gap.
+// TopBar full-bleed (height 56px), Sidebar left-docked (width 220-240px / 64px rail).
+// Content pane owns the app's page width in this one place: 16/32/48px horizontal padding
+// at <768/768-1279/>=1280px, 24/32px top padding below/above 768px, 64px bottom padding so
+// the last element never sits flush against the viewport, capped at 1600px and centred so a
+// dashboard uses the width it has without a table row running edge-to-edge on an ultrawide.
+// Pages render straight into this — no per-page max-w/mx-auto wrapper.
 // Collapse state follows the existing sidebar_collapsed cookie pattern.
 // Supports mobile off-canvas drawer with focus trap and backdrop (task 3.3).
 export function AppShell({
@@ -69,7 +73,7 @@ export function AppShell({
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
-            className="absolute left-0 top-0 bottom-0 w-[240px] max-w-[80vw] bg-white dark:bg-neutral-900 shadow-2xl z-50 flex flex-col"
+            className="absolute left-0 top-0 bottom-0 w-[220px] max-w-[80vw] bg-white dark:bg-neutral-900 shadow-2xl z-50 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-end p-2 border-b border-neutral-100 dark:border-neutral-800">
@@ -90,8 +94,16 @@ export function AppShell({
       )}
 
       <div className="flex flex-1">
-        {sidebar(collapsed)}
-        <main className={bx("flex-1 overflow-y-auto p-6 flex flex-col gap-5", contentClassName)}>
+        <aside className="hidden md:flex flex-shrink-0">
+          {sidebar(collapsed)}
+        </aside>
+        <main
+          className={bx(
+            "flex-1 overflow-y-auto flex flex-col gap-4 w-full max-w-[1600px] mx-auto",
+            "px-4 pt-6 pb-16 md:px-8 md:pt-8 xl:px-12",
+            contentClassName
+          )}
+        >
           {children}
         </main>
       </div>

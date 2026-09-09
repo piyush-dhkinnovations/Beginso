@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, FileText, LockKeyhole } from 'lucide-react';
 import { isAxiosError } from 'axios';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { DateRangeFilter } from './DateRangeFilter';
@@ -134,10 +134,10 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4 max-w-6xl mx-auto animate-fade-in">
-      <DashboardHeader
+    <div className="flex flex-col gap-4 animate-fade-in">
+      <PageHeader
         title="Analytics"
-        subtitle={formId ? `Analytics · ${form?.title ?? ''}` : 'See how every form in your workspace is performing.'}
+        description={formId ? `Analytics · ${form?.title ?? ''}` : 'See how every form in your workspace is performing.'}
       />
 
       {!formId && (

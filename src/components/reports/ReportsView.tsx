@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
 import { ReportFormatCard } from './ReportFormatCard';
 import { ReportJobsList } from './ReportJobsList';
@@ -95,8 +95,8 @@ export function ReportsView() {
   const submittingFormat = createReportMutation.variables?.format;
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl mx-auto animate-fade-in">
-      <DashboardHeader title="Reports" subtitle="Export your form responses as a CSV or PDF file." />
+    <div className="flex flex-col gap-4 animate-fade-in">
+      <PageHeader title="Reports" description="Export your form responses as a CSV or PDF file." />
 
       <div className="flex flex-col gap-4 rounded-lg border border-neutral-200 bg-white p-4">
         <div className="flex flex-col sm:flex-row gap-3">
