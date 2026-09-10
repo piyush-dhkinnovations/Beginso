@@ -69,3 +69,24 @@ export const workspaceKeys = {
       ? (['forms', 'personal', 'list', params] as const)
       : (['forms', 'workspace', context.workspaceId, 'list', params] as const),
 };
+
+// Sprint 9 (team-permissions) — workspace-namespaced from the start, matching workspaceKeys.forms()'s
+// own precedent: switching workspaces must never serve another workspace's cached member list.
+export const teamKeys = {
+  all: (workspaceId: string) => ['team', workspaceId] as const,
+  members: (workspaceId: string) => [...teamKeys.all(workspaceId), 'members'] as const,
+  invitations: (workspaceId: string) => [...teamKeys.all(workspaceId), 'invitations'] as const,
+};
+
+export const invitationKeys = {
+  detail: (token: string) => ['invitation', token] as const,
+};
+
+export const formAccessKeys = {
+  grants: (formId: string) => ['form-access', formId, 'grants'] as const,
+};
+
+export const sharedKeys = {
+  all: ['shared-with-me'] as const,
+  list: () => [...sharedKeys.all, 'list'] as const,
+};

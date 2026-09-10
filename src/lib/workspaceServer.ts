@@ -1,7 +1,13 @@
-import type { Workspace } from '@/types/workspace';
+import type { Role, Workspace } from '@/types/workspace';
 
+// role/isOwner are optional because GET /api/workspaces/:id does not return them yet —
+// requirements.md §4/§8.7 (sprint-9-team-permissions, BE 0.1) names this as a required backend
+// change, not yet shipped. Until it lands, these are always undefined at runtime; every consumer
+// (WorkspaceSidebar's role-gated nav, task 3.1) must treat "role unknown" as "hide the gated
+// item" — fail closed, not fail open, since the real authorization boundary is server-side
+// anyway and an unknown role here proves nothing about what the caller can actually do.
 export type ResolveWorkspaceResult =
-  | { ok: true; workspace: Workspace }
+  | { ok: true; workspace: Workspace; role?: Role; isOwner?: boolean }
   | { ok: false; status: 403 | 404 | 'error' };
 
 // Server-only. Mirrors proxy.ts's own hasValidSession() — the only existing precedent in this
@@ -44,11 +50,15 @@ export async function resolveWorkspaceBySlug(
     if (!response.ok) return { ok: false, status: 'error' };
 
     const raw: unknown = await response.json();
-    const workspace =
+    const body =
       raw && typeof raw === 'object' && 'workspace' in raw
-        ? (raw as { workspace: Workspace }).workspace
-        : (raw as Workspace);
-    return { ok: true, workspace };
+        ? (raw as { workspace: Workspace & { role?: Role; isOwner?: boolean } }).workspace
+        : (raw as Workspace & { role?: Role; isOwner?: boolean });
+    // role/isOwner read defensively off the same object per design.md §11.2's contract (added
+    // directly onto the workspace detail response, matching WorkspaceListItem's own shape) —
+    // will be undefined until BE 0.1 ships; see the ResolveWorkspaceResult comment above.
+    const { role, isOwner, ...workspace } = body;
+    return { ok: true, workspace, role, isOwner };
   } catch {
     // Network failure / bad JSON — same reasoning: not a confirmed 404.
     return { ok: false, status: 'error' };

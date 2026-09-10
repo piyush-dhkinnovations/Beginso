@@ -39,13 +39,17 @@ export default async function WorkspaceLayout({ children, params }: Props) {
   if (!result.ok && result.status === 403) return <WorkspaceAccessDenied />;
   if (!result.ok) return <WorkspaceLoadError />;
 
-  const { workspace } = result;
+  const { workspace, role } = result;
 
+  // role is undefined until BE 0.1 ships (sprint-9-team-permissions, requirements.md §8.7) —
+  // WorkspaceSidebar/WorkspaceShell treat an unknown role as "hide the role-gated nav item,"
+  // never "show it," since the real permission boundary is server-side regardless.
   return (
     <WorkspaceShell
       slug={slug}
       workspaceName={workspace.name}
       initialCollapsed={initialCollapsed}
+      role={role}
     >
       {children}
     </WorkspaceShell>

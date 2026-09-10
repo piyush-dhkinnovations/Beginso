@@ -21,15 +21,19 @@ import { AppShell, TopBar } from '@/components/ui';
 import { WorkspaceSidebar } from '@/components/workspaces/WorkspaceSidebar';
 import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown';
+import type { Role } from '@/types/workspace';
 
 export interface WorkspaceShellProps {
   slug: string;
   workspaceName: string;
   initialCollapsed: boolean;
   children: React.ReactNode;
+  // Sprint 9 (team-permissions) — undefined until BE 0.1 ships; WorkspaceSidebar fails closed
+  // (hides role-gated items) when this is undefined, per workspaceServer.ts's own comment.
+  role?: Role;
 }
 
-export function WorkspaceShell({ slug, workspaceName, initialCollapsed, children }: WorkspaceShellProps) {
+export function WorkspaceShell({ slug, workspaceName, initialCollapsed, children, role }: WorkspaceShellProps) {
   return (
     <AppShell
       initialCollapsed={initialCollapsed}
@@ -56,7 +60,7 @@ export function WorkspaceShell({ slug, workspaceName, initialCollapsed, children
         />
       )}
       sidebar={(collapsed) => (
-        <WorkspaceSidebar slug={slug} currentLabel={workspaceName} collapsed={collapsed} />
+        <WorkspaceSidebar slug={slug} currentLabel={workspaceName} collapsed={collapsed} role={role} />
       )}
     >
       {children}

@@ -68,6 +68,39 @@ describe('/w/[slug]/layout — route-level membership boundary', () => {
     expect(screen.getByText('child content')).toBeInTheDocument();
   });
 
+  // Sprint 9 (team-permissions), requirements.md §7.7/§8.7 — role threaded from
+  // resolveWorkspaceBySlug() down to WorkspaceSidebar's role-gated "Team" item.
+  it('threads the caller\'s role through to the sidebar\'s role-gated Team item', async () => {
+    resolveWorkspaceBySlug.mockResolvedValue({
+      ok: true,
+      workspace: { id: 'w1', name: 'Acme', slug: 'acme', timezone: 'UTC', createdAt: '', updatedAt: '' },
+      role: 'owner',
+      isOwner: true,
+    });
+    const { default: WorkspaceLayout } = await import('@/app/w/[slug]/layout');
+    const jsx = await WorkspaceLayout({
+      children: <div>child content</div>,
+      params: Promise.resolve({ slug: 'acme' }),
+    });
+    render(withQueryClient(jsx));
+    expect(screen.getByRole('link', { name: 'Team' })).toHaveAttribute('href', '/w/acme/team');
+  });
+
+  it('hides the Team item when role is not yet returned by the backend (BE 0.1 gap)', async () => {
+    resolveWorkspaceBySlug.mockResolvedValue({
+      ok: true,
+      workspace: { id: 'w1', name: 'Acme', slug: 'acme', timezone: 'UTC', createdAt: '', updatedAt: '' },
+      // role omitted, matching today's live response shape
+    });
+    const { default: WorkspaceLayout } = await import('@/app/w/[slug]/layout');
+    const jsx = await WorkspaceLayout({
+      children: <div>child content</div>,
+      params: Promise.resolve({ slug: 'acme' }),
+    });
+    render(withQueryClient(jsx));
+    expect(screen.queryByRole('link', { name: 'Team' })).not.toBeInTheDocument();
+  });
+
   it('renders the access-denied state, not the shell, on a 403', async () => {
     resolveWorkspaceBySlug.mockResolvedValue({ ok: false, status: 403 });
     const { default: WorkspaceLayout } = await import('@/app/w/[slug]/layout');
