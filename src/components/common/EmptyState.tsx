@@ -13,7 +13,7 @@ export function EmptyState({ icon, heading, body, action, className }: EmptyStat
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center text-center p-12 max-w-md mx-auto",
+        "flex flex-col items-center justify-center text-center p-12",
         className
       )}
     >
@@ -25,7 +25,7 @@ export function EmptyState({ icon, heading, body, action, className }: EmptyStat
       <h3 className="text-heading-2 text-neutral-800 mb-2">
         {heading}
       </h3>
-      <p className="text-body text-neutral-500 mb-6 leading-relaxed">
+      <p className="text-body text-neutral-500 mb-6 leading-relaxed max-w-[42ch] mx-auto">
         {body}
       </p>
       {action && (

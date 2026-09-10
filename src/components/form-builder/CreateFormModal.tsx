@@ -1,34 +1,54 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Info } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { settingsService } from '@/services/settings';
-import { settingsKeys } from '@/lib/queryKeys';
+import { workspacesService } from '@/services/workspaces';
+import { settingsKeys, workspaceKeys } from '@/lib/queryKeys';
 import { createFormSchema, CreateFormValues } from '@/lib/schemas/formSchema';
 import { useBuilderStore } from '@/store/builderStore';
 import { useToast } from '@/components/common/Toast';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
+import type { FormDestination } from '@/types/workspace';
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface CreateFormModalProps {
   isOpen: boolean;
   onClose: () => void;
+  defaultDestination?: FormDestination;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
+// Wireframe Screen 40: Create Form (destination) (requirements.md §7.7, B1.4, design.md §15.7).
+// Adds the destination picker: hidden when user has 0 workspaces; defaults to current context;
+// passes destination to formsService.createForm.
+export function CreateFormModal({ isOpen, onClose, defaultDestination }: CreateFormModalProps) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { toast } = useToast();
   const initForm = useBuilderStore((s) => s.initForm);
-  const titleInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLInputElement | null>(null);
+  const defaultDestId =
+    defaultDestination?.type === 'workspace' ? defaultDestination.workspaceId : 'personal';
+  const [userSelectedDestination, setUserSelectedDestination] = useState<string | null>(null);
+  const destination = userSelectedDestination ?? defaultDestId;
+
+  // Fetch workspaces to populate the destination selector
+  const { data: workspaces = [] } = useQuery({
+    queryKey: workspaceKeys.list(),
+    queryFn: workspacesService.list,
+    enabled: isOpen,
+  });
 
   // Shares the same cache Settings' BrandingTab reads/writes — new forms should start with the
   // workspace's default branding (Requirement 6's Branding_Defaults concept), and `POST
@@ -57,28 +77,45 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
     }
   }, [isOpen, reset]);
 
+  const handleClose = () => {
+    setUserSelectedDestination(null);
+    onClose();
+  };
+
 
 
   const mutation = useMutation({
     mutationFn: async (data: CreateFormValues) => {
-      const created = await formsService.createForm(data);
+      const destPayload: FormDestination =
+        destination === 'personal'
+          ? { type: 'personal' }
+          : { type: 'workspace', workspaceId: destination };
+
+      const created = await formsService.createForm({
+        ...data,
+        destination: destPayload,
+        destinationWorkspaceId: destination === 'personal' ? null : destination,
+      });
+
       const defaultBranding = workspace?.branding;
       if (defaultBranding && Object.keys(defaultBranding).length > 0) {
         // Non-fatal: the form still exists even if this follow-up save fails.
         await formsService.updateForm(created._id, { branding: defaultBranding }).catch(() => {});
       }
-      return { ...created, branding: defaultBranding ?? {} };
+      return { ...created, branding: defaultBranding ?? {}, destination: destPayload };
     },
     onSuccess: (response) => {
       const formId = response._id;
-      // ponytail: Brittle hardcoded schema defaults.
-      // Upgrade path: extract this to a shared factory function in src/types/form.ts
+      // Invalidate destination query cache
+      queryClient.invalidateQueries({ queryKey: workspaceKeys.forms(response.destination) });
+      queryClient.invalidateQueries({ queryKey: ['forms'] });
+
       // Seed the store with a fresh empty form so the builder page hydrates instantly
       initForm({
         _id: formId,
         title: response.title,
         description: undefined,
-        workspaceId: '',
+        workspaceId: response.destination.type === 'workspace' ? response.destination.workspaceId : '',
         status: 'draft',
         fields: [],
         pages: [],
@@ -101,7 +138,7 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title="Create New Form"
       description="Give your form a name to get started."
     >
@@ -130,11 +167,36 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
           {...register('description')}
         />
 
+        {/* Wireframe Screen 40: Destination picker (hidden if user has 0 workspaces) */}
+        {workspaces.length > 0 && (
+          <div className="flex flex-col gap-2">
+            <Select
+              id="create-form-destination-select"
+              label="Where should it live?"
+              value={destination}
+              onChange={(e) => setUserSelectedDestination(e.target.value)}
+            >
+              <option value="personal">Personal space</option>
+              {workspaces.map((ws) => (
+                <option key={ws.id} value={ws.id}>
+                  {ws.name}
+                </option>
+              ))}
+            </Select>
+            <p className="text-caption text-neutral-500 flex items-start gap-1.5">
+              <Info size={14} className="shrink-0 text-neutral-400 mt-0.5" />
+              <span>
+                Forms in <strong>Personal space</strong> are visible only to you. Forms in a workspace are visible to everyone in that workspace. You can move a form later.
+              </span>
+            </p>
+          </div>
+        )}
+
         <div className="flex items-center justify-end gap-3 pt-2">
           <Button
             type="button"
             variant="secondary"
-            onClick={onClose}
+            onClick={handleClose}
             disabled={mutation.isPending}
           >
             Cancel
@@ -151,3 +213,4 @@ export function CreateFormModal({ isOpen, onClose }: CreateFormModalProps) {
     </Modal>
   );
 }
+

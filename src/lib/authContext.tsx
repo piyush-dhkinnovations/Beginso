@@ -107,11 +107,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // session has been confirmed. Protected pages never need Firebase tokens.
         await signOut(auth).catch(() => { });
         dispatch({ type: 'LOGIN', payload: { user: data.user } });
-        // Catches a user who bailed out mid-onboarding and reloaded straight into a protected
-        // page (e.g. a bookmarked /dashboard) — login() below only covers the fresh-login path.
-        if (data.user.onboardingCompleted === false && window.location.pathname !== '/onboarding') {
-          router.replace('/onboarding');
-        }
       } catch (error: unknown) {
         if (!['/verify-email', '/verification-code'].includes(window.location.pathname)) {
           await signOut(auth).catch(() => { });
@@ -153,14 +148,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error;
     }
     dispatch({ type: 'LOGIN', payload: { user: data.user } });
-    // A brand-new account (onboardingCompleted explicitly false, not just missing — see the User
-    // type comment) lands on /onboarding to name their workspace instead of /dashboard directly.
-    const destination = data.user.onboardingCompleted === false ? '/onboarding' : '/dashboard';
+    const destination = '/dashboard';
     // Hard navigation, not router.push: proxy.ts gates protected routes on the HttpOnly session
     // cookie written by the same-origin BFF. A soft client-side transition
     // can reuse a Router Cache entry for the destination from before the cookie existed and
     // bounce back to /login with no error (the login button spins forever).
     // A full navigation always sends a fresh request, so middleware sees the new cookie.
+    // The hard navigation above is the fix, not the bug — see the comment above.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = destination;
   }, []);
 

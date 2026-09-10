@@ -23,13 +23,14 @@ export interface MenuProps {
    * row-action menu uses. Added for ContextSwitcher (sprint-8), which needs a labelled
    * secondary-button trigger instead; every other caller is unaffected by the default. */
   triggerClassName?: string;
+  containerClassName?: string;
 }
 
 // beginso-ui.css classes — see src/styles/beginso-ui.css §14 OVERLAYS ("Dropdown menu").
 // Outside-click + keyboard nav follows the existing pattern in
 // src/components/responses/StatusDropdown.tsx rather than introducing a positioning library —
 // no such dependency exists in the project and none is justified for a simple below-trigger menu.
-export function Menu({ trigger, triggerLabel, items, align = "start", className, triggerClassName }: MenuProps) {
+export function Menu({ trigger, triggerLabel, items, align = "start", className, triggerClassName, containerClassName }: MenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -79,7 +80,7 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
 
   return (
     <div
-      className="relative inline-block"
+      className={bx("relative", containerClassName ?? "inline-block")}
       ref={containerRef}
       onKeyDown={(e) => {
         if (e.key === "Escape" && isOpen) {
@@ -111,7 +112,12 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
       {isOpen && (
         <div
           role="menu"
-          className={bx("bg-menu absolute mt-1 z-10", align === "end" ? "right-0" : "left-0", className)}
+          className={bx(
+            "bg-menu absolute mt-1.5 z-50",
+            align === "end" ? "right-0" : "left-0",
+            containerClassName?.includes("w-full") ? "w-full min-w-[200px]" : "min-w-[160px]",
+            className
+          )}
         >
           {items.map((item, i) => (
             <button

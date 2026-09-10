@@ -127,10 +127,15 @@ export interface Form {
 
 // ─── API Payload Types ────────────────────────────────────────────────────────
 
+import type { FormDestination } from './workspace';
+
 export interface CreateFormPayload {
   title: string;
   description?: string;
+  destination?: FormDestination;
+  destinationWorkspaceId?: string | null;
 }
+
 
 export interface UpdateFormPayload {
   title?: string;

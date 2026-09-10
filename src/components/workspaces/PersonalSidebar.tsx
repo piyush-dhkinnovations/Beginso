@@ -1,52 +1,62 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Home, FileText, LayoutTemplate, Plus } from 'lucide-react';
+import { Home, FileText, LayoutTemplate, Table2, PieChart, Download, Settings, Plus } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
+import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
+import { useBuilderStore } from '@/store/builderStore';
 
 export interface PersonalSidebarProps {
   collapsed?: boolean;
 }
 
-// Personal-context nav set — corrected against the master feature list's actual A1.1
-// ("Personal sidebar (4 items + Create workspace): Home, My Forms, Shared with me, Templates,
-// My Submissions") and A1.3 ("Create workspace — bottom placement, own divider... a once-ever
-// action doesn't need to be paid for on every visit"). An earlier draft of this component invented
-// an "All Workspaces" main-nav item and omitted Templates entirely — see requirements.md §7.3's
-// Day 3 correction.
+// Personal-context nav set. Originally scoped to A1.1's 4-item list (Home, My Forms, Templates,
+// Create workspace) — corrected here to also carry the header context switcher (this file was
+// built before any layout actually mounted it, so nothing wired a switcher into personal space
+// at all; see the account-facing bug this fixes: a signed-in user had no discoverable path from
+// Personal space into a workspace anywhere in the rendered UI) and the four top-level pages that
+// still genuinely exist and work today — Responses, Analytics, Reports, Settings. A1.1's smaller
+// item list is the eventual V2 design once those pages move to per-form drill-in / the account
+// menu (CLAUDE.md V2 conventions), but that migration hasn't happened yet; dropping the links now
+// would silently remove real, currently-reachable functionality. Kept until that migration lands.
 //
-// Two real, tracked gaps against A1.1's full item list, both deliberate (requirements.md §3
-// non-goals), not silently dropped:
-// - "Shared with me" (A3, decided permanent item) surfaces per-form grants (A3.3 -> C2.7), which
-//   don't exist until Sprint 9 — nothing to link to yet.
-// - "My Submissions" (A5.1) has no route until the respondent portal, Sprint 13.
-//
-// "Create workspace" is a second, unlabeled nav group rather than a true bottom-pinned item with
-// a divider line — beginso-ui.css's sidenav section (§12) has no divider primitive yet
-// (checked directly), and building one is a visual-polish item smaller than this sprint's actual
-// scope, not a functional gap.
-//
-// Reads the active route from usePathname() itself (matching the legacy
-// src/components/dashboard/Sidebar.tsx's own pattern) rather than taking it as a prop — the
-// consuming server layout has no easy access to the current pathname without duplicating that
-// plumbing.
+// "Shared with me" (A3, -> C2.7) and "My Submissions" (A5.1) remain deliberately omitted — same
+// reasoning as before: no data source / no route exists yet (Sprint 9 / Sprint 13 respectively).
 export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
   const pathname = usePathname();
+  const dirty = useBuilderStore((state) => state.dirty);
+  const setPendingLeaveUrl = useBuilderStore((state) => state.setPendingLeaveUrl);
+  // Same guard src/components/dashboard/Sidebar.tsx already enforces — must be preserved by
+  // whichever sidebar is actually mounted, since the confirm-leave modal
+  // ((user)/forms/[id]/edit/page.tsx) only fires when something actually calls
+  // setPendingLeaveUrl() instead of navigating straight away.
+  const isInBuilder = pathname.startsWith('/forms/') && pathname.endsWith('/edit');
+  const guard = (href: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isInBuilder && dirty) {
+      event.preventDefault();
+      setPendingLeaveUrl(href);
+    }
+  };
+
+  const isResponsesActive =
+    pathname.startsWith('/responses') || /^\/forms\/[^/]+\/responses(\/|$)/.test(pathname);
+  const isAnalyticsActive =
+    pathname.startsWith('/analytics') || /^\/forms\/[^/]+\/analytics(\/|$)/.test(pathname);
 
   return (
     <Sidebar
       collapsed={collapsed}
+      header={<WorkspaceContextSwitcher currentLabel="Personal" collapsed={collapsed} />}
       groups={[
         {
           items: [
-            { label: 'Home', href: '/dashboard', icon: Home, active: pathname === '/dashboard' },
-            { label: 'My Forms', href: '/forms', icon: FileText, active: pathname.startsWith('/forms') },
-            {
-              label: 'Templates',
-              href: '/templates',
-              icon: LayoutTemplate,
-              active: pathname.startsWith('/templates'),
-            },
+            { label: 'Home', href: '/dashboard', icon: Home, active: pathname === '/dashboard', onClick: guard('/dashboard') },
+            { label: 'My Forms', href: '/forms', icon: FileText, active: pathname.startsWith('/forms') && !isInBuilder, onClick: guard('/forms') },
+            { label: 'Templates', href: '/templates', icon: LayoutTemplate, active: pathname.startsWith('/templates'), onClick: guard('/templates') },
+            { label: 'Responses', href: '/responses', icon: Table2, active: isResponsesActive, onClick: guard('/responses') },
+            { label: 'Analytics', href: '/analytics', icon: PieChart, active: isAnalyticsActive, onClick: guard('/analytics') },
+            { label: 'Reports', href: '/reports', icon: Download, active: pathname.startsWith('/reports'), onClick: guard('/reports') },
+            { label: 'Settings', href: '/settings', icon: Settings, active: pathname.startsWith('/settings'), onClick: guard('/settings') },
           ],
         },
         {
@@ -56,6 +66,7 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
               href: '/workspaces',
               icon: Plus,
               active: pathname.startsWith('/workspaces'),
+              onClick: guard('/workspaces'),
             },
           ],
         },

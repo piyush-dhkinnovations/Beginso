@@ -58,13 +58,26 @@ describe('workspacesService', () => {
     expect(result).toEqual(workspace);
   });
 
-  it('create(payload) posts to /api/workspaces with the name', async () => {
+  // Corrected 10 Sep 2026 — real bug found live: create() previously assumed a bare response and
+  // read workspace.slug straight off it, which sent the user to /w/undefined because the real
+  // response is enveloped like every other workspace endpoint, not bare.
+  it('create(payload) posts to /api/workspaces and unwraps a { workspace } envelope', async () => {
+    const workspace = { id: 'w1', name: 'Acme', slug: 'acme', timezone: 'UTC', createdAt: '', updatedAt: '' };
+    mockPost.mockResolvedValueOnce({ data: { workspace } });
+
+    const result = await workspacesService.create({ name: 'Acme' });
+
+    expect(mockPost).toHaveBeenCalledWith('/api/workspaces', { name: 'Acme' });
+    expect(result).toEqual(workspace);
+    expect(result.slug).toBe('acme');
+  });
+
+  it('create(payload) falls back to a bare object if the response is ever shaped that way', async () => {
     const workspace = { id: 'w1', name: 'Acme', slug: 'acme', timezone: 'UTC', createdAt: '', updatedAt: '' };
     mockPost.mockResolvedValueOnce({ data: workspace });
 
     const result = await workspacesService.create({ name: 'Acme' });
 
-    expect(mockPost).toHaveBeenCalledWith('/api/workspaces', { name: 'Acme' });
     expect(result).toEqual(workspace);
   });
 });

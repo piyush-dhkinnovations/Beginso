@@ -1,26 +1,47 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { X } from "lucide-react";
 import { bx } from "@/lib/utils";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 
 export interface AppShellProps {
   initialCollapsed?: boolean;
   sidebar: (collapsed: boolean) => React.ReactNode;
-  topBar: (toggleCollapsed: () => void) => React.ReactNode;
+  topBar: (toggleCollapsed: () => void, toggleMobile?: () => void) => React.ReactNode;
   children: React.ReactNode;
   className?: string;
+  contentClassName?: string;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-// Composes Sidebar + TopBar + a content region. Collapse state follows the existing
-// sidebar_collapsed cookie pattern (src/app/(user)/layout.tsx + DashboardShell) — the
-// server reads the cookie and passes initialCollapsed in, so first render is already
-// correct; this component owns the toggle and writes the cookie back on change, rather
-// than inventing a second collapse-persistence mechanism.
-// Unused by any live screen this sprint — DashboardShell migrates onto it in Sprint 8
-// once the sidebar is rebuilt around ContextSwitcher (design.md §23), avoiding rebuilding
-// the same shell twice in consecutive sprints.
-export function AppShell({ initialCollapsed = false, sidebar, topBar, children, className }: AppShellProps) {
+// Composes Sidebar + TopBar + a content region. Geometry derived from the V2 wireframe:
+// TopBar full-bleed (height 56px), Sidebar left-docked (width 220-240px / 64px rail).
+// Content pane owns the app's page width in this one place: 16/32/48px horizontal padding
+// at <768/768-1279/>=1280px, 24/32px top padding below/above 768px, 64px bottom padding so
+// the last element never sits flush against the viewport, capped at 1600px and centred so a
+// dashboard uses the width it has without a table row running edge-to-edge on an ultrawide.
+// Pages render straight into this — no per-page max-w/mx-auto wrapper.
+// Collapse state follows the existing sidebar_collapsed cookie pattern.
+// Supports mobile off-canvas drawer with focus trap and backdrop (task 3.3).
+export function AppShell({
+  initialCollapsed = false,
+  sidebar,
+  topBar,
+  children,
+  className,
+  contentClassName,
+  mobileOpen: controlledMobileOpen,
+  onMobileClose,
+}: AppShellProps) {
   const [collapsed, setCollapsed] = useState(initialCollapsed);
+  const [internalMobileOpen, setInternalMobileOpen] = useState(false);
+  const mobileOpen = controlledMobileOpen ?? internalMobileOpen;
+  const handleMobileClose = onMobileClose ?? (() => setInternalMobileOpen(false));
+
+  const drawerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(mobileOpen, handleMobileClose, drawerRef);
 
   // Written as an effect, not inline in the toggle handler, so the mutation isn't reachable
   // from the render-prop calls below (topBar/sidebar run during render) — the compiler's
@@ -30,14 +51,64 @@ export function AppShell({ initialCollapsed = false, sidebar, topBar, children, 
   }, [collapsed]);
 
   const toggleCollapsed = () => setCollapsed((prev) => !prev);
+  const toggleMobile = () => {
+    if (controlledMobileOpen === undefined) {
+      setInternalMobileOpen((prev) => !prev);
+    }
+  };
 
   return (
     <div className={bx("flex flex-col min-h-screen", className)}>
-      {topBar(toggleCollapsed)}
+      {topBar(toggleCollapsed, toggleMobile)}
+
+      {/* Off-canvas mobile drawer */}
+      {mobileOpen && (
+        <div
+          role="presentation"
+          className="fixed inset-0 z-40 bg-neutral-900/40 animate-fade-in md:hidden"
+          onClick={handleMobileClose}
+        >
+          <div
+            ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
+            className="absolute left-0 top-0 bottom-0 w-[220px] max-w-[80vw] bg-white dark:bg-neutral-900 shadow-2xl z-50 flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-end p-2 border-b border-neutral-100 dark:border-neutral-800">
+              <button
+                type="button"
+                onClick={handleMobileClose}
+                aria-label="Close navigation menu"
+                className="bg-btn bg-btn-ghost bg-btn-icon"
+              >
+                <X size={18} className="bg-icon" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {sidebar(false)}
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-1">
-        {sidebar(collapsed)}
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <aside className="hidden md:flex flex-shrink-0">
+          {sidebar(collapsed)}
+        </aside>
+        <main
+          className={bx(
+            "flex-1 overflow-y-auto flex flex-col gap-4 w-full max-w-[1600px] mx-auto",
+            "px-4 pt-6 pb-16 md:px-8 md:pt-8 xl:px-12",
+            contentClassName
+          )}
+        >
+          {children}
+        </main>
       </div>
     </div>
   );
 }
+
+

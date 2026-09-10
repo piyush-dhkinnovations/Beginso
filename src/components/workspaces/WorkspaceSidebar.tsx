@@ -1,19 +1,35 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Home, FileText, LayoutTemplate, Table2, PieChart, Download, Settings } from 'lucide-react';
+import { Home, FileText, LayoutTemplate, Table2, PieChart, Download, Settings, Users } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
+import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
+import { canManageMembers } from '@/lib/roles';
+import type { Role } from '@/types/workspace';
 
 export interface WorkspaceSidebarProps {
   slug: string;
+  currentLabel: string;
   collapsed?: boolean;
+  // Sprint 9 (team-permissions, requirements.md §7.2/§8.7) — the caller's role in this
+  // workspace, used to gate the "Team" nav item to owner/admin. Undefined until BE 0.1 ships
+  // (GET /api/workspaces/:id doesn't return it yet); canManageMembers() fails closed on
+  // undefined, so the item stays hidden rather than shown-by-default until the backend lands.
+  role?: Role;
 }
 
 // Workspace-context nav set (requirements.md §7.3). Same item vocabulary/icons as the legacy
 // src/components/dashboard/Sidebar.tsx (V1, untouched this sprint — design.md §2), scoped under
 // /w/[slug] instead of the flat (user)/ tree. Reads the active route via usePathname() itself,
 // same reasoning as PersonalSidebar.
-export function WorkspaceSidebar({ slug, collapsed = false }: WorkspaceSidebarProps) {
+//
+// Corrected against the actual wireframe (Beginso-Design-System/.../wireframes/index.html,
+// appSidebar()/contextSwitcher()) — the context switcher belongs at the top of the sidebar itself
+// ("the sidebar context block is now the real control"), not in the top bar where it was first
+// built. Rendered via ui/Sidebar's `header` slot rather than a separate wrapper element, so it
+// sits inside the same .bg-sidenav box as the nav items (matching the wireframe's single
+// continuous sidebar column) instead of a second bordered block stacked above it.
+export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }: WorkspaceSidebarProps) {
   const pathname = usePathname();
   const base = `/w/${slug}`;
   const items = [
@@ -23,12 +39,16 @@ export function WorkspaceSidebar({ slug, collapsed = false }: WorkspaceSidebarPr
     { label: 'Responses', href: `${base}/responses`, icon: Table2 },
     { label: 'Analytics', href: `${base}/analytics`, icon: PieChart },
     { label: 'Reports', href: `${base}/reports`, icon: Download },
+    // Team is a client-side convenience gate only (requirements.md §7.7/§14) — the real
+    // boundary is the /w/[slug]/team/* routes themselves rejecting the role server-side.
+    ...(canManageMembers(role) ? [{ label: 'Team', href: `${base}/team`, icon: Users }] : []),
     { label: 'Settings', href: `${base}/settings`, icon: Settings },
   ];
 
   return (
     <Sidebar
       collapsed={collapsed}
+      header={<WorkspaceContextSwitcher currentLabel={currentLabel} collapsed={collapsed} />}
       groups={[
         {
           items: items.map((item) => ({

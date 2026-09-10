@@ -287,6 +287,17 @@
   display: none;
 }
 
+/* Data-row hover, plain CSS rather than a JS onMouseEnter/onMouseLeave style mutation — the
+   latter is a DOM mutation inside a closure defined during render, the exact pattern that
+   already caused a React Compiler bail-out + SSR/CSR hydration mismatch twice in this codebase
+   (DashboardShell.tsx, AppShell.tsx — both fixed by moving the mutation out of a render-time
+   closure). A CSS :hover rule has no closure to trip the compiler at all. Scoped to
+   .forms-row-hoverable, not the bare .forms-row class, so the header row (which also carries
+   .forms-row for its grid layout) never gets a hover highlight. */
+.forms-row-hoverable:hover {
+  background-color: var(--surface-hover);
+}
+
 @container (min-width: 640px) {
   .forms-row-header {
     display: grid;

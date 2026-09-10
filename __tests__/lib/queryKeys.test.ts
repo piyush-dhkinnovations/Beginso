@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { workspaceKeys } from '@/lib/queryKeys';
+import { workspaceKeys, teamKeys, invitationKeys, formAccessKeys, sharedKeys } from '@/lib/queryKeys';
 
 describe('workspaceKeys', () => {
   it('list() and detail() are stable, namespaced keys', () => {
@@ -37,5 +37,41 @@ describe('workspaceKeys', () => {
         undefined,
       ]);
     });
+  });
+});
+
+// Sprint 9 (team-permissions), design.md §10/§21 — proves teamKeys is workspace-namespaced from
+// creation, matching workspaceKeys.forms()'s own regression test above: switching workspaces
+// must never serve another workspace's cached member/invitation list.
+describe('teamKeys', () => {
+  it('members() differs across workspaces', () => {
+    expect(teamKeys.members('a')).not.toEqual(teamKeys.members('b'));
+  });
+
+  it('invitations() differs across workspaces', () => {
+    expect(teamKeys.invitations('a')).not.toEqual(teamKeys.invitations('b'));
+  });
+
+  it('members() and invitations() differ from each other within the same workspace', () => {
+    expect(teamKeys.members('a')).not.toEqual(teamKeys.invitations('a'));
+  });
+
+  it('produces stable keys', () => {
+    expect(teamKeys.members('w1')).toEqual(['team', 'w1', 'members']);
+    expect(teamKeys.invitations('w1')).toEqual(['team', 'w1', 'invitations']);
+  });
+});
+
+describe('invitationKeys / formAccessKeys / sharedKeys', () => {
+  it('invitationKeys.detail() is namespaced per token', () => {
+    expect(invitationKeys.detail('tok-a')).not.toEqual(invitationKeys.detail('tok-b'));
+  });
+
+  it('formAccessKeys.grants() is namespaced per form', () => {
+    expect(formAccessKeys.grants('form-a')).not.toEqual(formAccessKeys.grants('form-b'));
+  });
+
+  it('sharedKeys.list() is stable and caller-scoped implicitly (no id param — one caller per session)', () => {
+    expect(sharedKeys.list()).toEqual(['shared-with-me', 'list']);
   });
 });

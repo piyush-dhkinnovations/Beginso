@@ -5,7 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, FileText, LockKeyhole } from 'lucide-react';
 import { isAxiosError } from 'axios';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -269,10 +269,10 @@ export function ResponsesHubView({ formId }: ResponsesHubViewProps) {
   return (
     // Keeping this container out of an animated opacity stacking context is important:
     // ResponseDrawer is position:fixed, and must be able to layer above the fixed TopNav.
-    <div className="flex flex-col gap-4 max-w-6xl mx-auto">
-      <DashboardHeader
+    <div className="flex flex-col gap-4">
+      <PageHeader
         title="Responses"
-        subtitle={formId ? `Responses · ${form?.title ?? ''}` : 'Track, view, and organize submissions across every form.'}
+        description={formId ? `Responses · ${form?.title ?? ''}` : 'Track, view, and organize submissions across every form.'}
       />
 
       <ResponsesStatCards

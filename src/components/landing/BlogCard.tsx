@@ -3,8 +3,13 @@ import { Badge } from "@/components/ui/Badge";
 import { AuthorAvatar } from "./AuthorAvatar";
 import type { BlogCategory, BlogPost } from "@/lib/blogPosts";
 
+// timeZone pinned to UTC: this renders real post data with no loading gate (BLOG_POSTS is a
+// static import, not a query), so it runs identically during SSR and the client's first
+// render — the same date near a day boundary can read as a different calendar day depending
+// on which machine's local timezone resolves it, which is a hydration mismatch a locale alone
+// doesn't fix.
 function formatDate(date: string) {
-  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+  return new Date(date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 }
 
 // One generated cover per category (gradient + pattern + label baked in),

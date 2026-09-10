@@ -6,7 +6,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 import { LayoutTemplate } from 'lucide-react';
 import { templatesService } from '@/services/templates';
 import { useToast } from '@/components/common/Toast';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/common/EmptyState';
 import { TemplateCard } from '@/components/templates/TemplateCard';
 import { cn } from '@/lib/utils';
@@ -36,8 +36,8 @@ export default function TemplatesPage() {
   const filtered = activeCategory === 'All' ? templates : templates?.filter((t) => t.category === activeCategory);
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl mx-auto animate-fade-in">
-      <DashboardHeader title="Templates" subtitle="Start from a pre-built template instead of a blank form." />
+    <div className="flex flex-col gap-4 animate-fade-in">
+      <PageHeader title="Templates" description="Start from a pre-built template instead of a blank form." />
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

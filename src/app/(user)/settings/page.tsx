@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { SettingsTabs, type SettingsTab } from '@/components/settings/SettingsTabs';
@@ -70,8 +70,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6 max-w-6xl mx-auto animate-fade-in">
-      <DashboardHeader title="Settings" subtitle="Manage your profile, workspace, and account preferences." />
+    <div className="flex flex-col gap-4 animate-fade-in">
+      <PageHeader title="Settings" description="Manage your profile, workspace, and account preferences." />
 
       <SettingsTabs activeTab={activeTab} onChange={handleTabChange} dirtyTabs={dirtyTabs} />
 
