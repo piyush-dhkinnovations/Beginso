@@ -16,6 +16,7 @@ import { AppShell, TopBar } from '@/components/ui';
 import { PersonalSidebar } from '@/components/workspaces/PersonalSidebar';
 import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown';
+import { Wordmark } from '@/components/landing/Wordmark';
 
 export interface PersonalShellProps {
   initialCollapsed: boolean;
@@ -30,7 +31,7 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
         <TopBar
           brand={
             <Link href="/dashboard" className="hover:opacity-90 transition-opacity">
-              <span>Beginso</span>
+              <Wordmark height={32} />
             </Link>
           }
           onMenuClick={() => {

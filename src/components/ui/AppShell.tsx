@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { bx } from "@/lib/utils";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import { Wordmark } from "@/components/landing/Wordmark";
 
 export interface AppShellProps {
   initialCollapsed?: boolean;
@@ -59,7 +60,7 @@ export function AppShell({
 
   return (
     <div className={bx("flex flex-col min-h-screen", className)}>
-      {topBar(toggleCollapsed, toggleMobile)}
+      <div className="sticky top-0 z-20">{topBar(toggleCollapsed, toggleMobile)}</div>
 
       {/* Off-canvas mobile drawer */}
       {mobileOpen && (
@@ -76,7 +77,8 @@ export function AppShell({
             className="absolute left-0 top-0 bottom-0 w-[220px] max-w-[80vw] bg-white dark:bg-neutral-900 shadow-2xl z-50 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex justify-end p-2 border-b border-neutral-100 dark:border-neutral-800">
+            <div className="flex items-center justify-between p-2 border-b border-neutral-100 dark:border-neutral-800">
+              <Wordmark height={32} />
               <button
                 type="button"
                 onClick={handleMobileClose}
@@ -94,12 +96,16 @@ export function AppShell({
       )}
 
       <div className="flex flex-1">
-        <aside className="hidden md:flex flex-shrink-0">
+        {/* Sticky + self-start, not a second scroll container — the page itself scrolls (native,
+            edge-flush scrollbar), the sidebar just stays pinned in the viewport as it does.
+            overflow-y-auto is a safety net for a viewport too short for every nav item, not the
+            primary scroll mechanism. bg-topbar is 52px (beginso-ui.css §12). */}
+        <aside className="hidden md:flex flex-shrink-0 self-start sticky top-[52px] h-[calc(100vh-52px)] overflow-y-auto">
           {sidebar(collapsed)}
         </aside>
         <main
           className={bx(
-            "flex-1 overflow-y-auto flex flex-col gap-4 w-full max-w-[1600px] mx-auto",
+            "flex-1 flex flex-col gap-4 w-full max-w-[1600px] mx-auto",
             "px-4 pt-6 pb-16 md:px-8 md:pt-8 xl:px-12",
             contentClassName
           )}

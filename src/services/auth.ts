@@ -13,6 +13,7 @@ import {
   type User,
 } from 'firebase/auth';
 import axiosInstance from '@/lib/axios';
+import { settingsService } from '@/services/settings';
 
 export interface VerificationCodeReveal {
   code: string;
@@ -109,7 +110,24 @@ export const authService = {
     const userCredential = await signInWithPopup(auth, provider);
     const additionalInfo = getAdditionalUserInfo(userCredential);
     const isNewUser = additionalInfo?.isNewUser || false;
-    return createBackendSession(userCredential.user, userCredential.user.displayName || undefined, isNewUser);
+    const data = await createBackendSession(
+      userCredential.user,
+      userCredential.user.displayName || undefined,
+      isNewUser
+    );
+    // Pull Google's profile photo as the starting avatar — new accounts only, via the same
+    // PATCH /api/users/me the Settings > Profile AvatarUploader already uses (no new backend
+    // endpoint needed; avatarUrl has accepted an arbitrary URL there since that feature shipped).
+    // Deliberately never runs on a returning login: doing so on every sign-in would silently
+    // re-impose Google's photo over one the user later uploaded or removed via Settings, taking
+    // away the "user can change it" control that feature exists to give them. Best-effort — a
+    // failure here should never block sign-in, so it's caught and swallowed, not surfaced.
+    if (isNewUser && userCredential.user.photoURL) {
+      await settingsService
+        .updateProfile({ avatarUrl: userCredential.user.photoURL })
+        .catch(() => {});
+    }
+    return data;
   },
 
   async requestPasswordReset(email: string) {
