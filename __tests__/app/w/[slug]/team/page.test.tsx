@@ -1,7 +1,7 @@
 /**
  * __tests__/app/w/[slug]/team/page.test.tsx
- * Feature: sprint-9-team-permissions, requirements.md §7.2, design.md §15.1/§17.
- * Today's slice (Day 1): Members card only — Pending Invites lands with task 4.4.
+ * Feature: sprint-9-team-permissions, requirements.md §7.2/§7.3, design.md §15.1/§17.
+ * Day 2 adds Pending Invites card + Invite Members modal on top of Day 1's Members card.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -9,7 +9,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import TeamPage from '@/app/w/[slug]/team/page';
-import type { MemberListItem } from '@/types/team';
+import type { MemberListItem, PendingInvitation } from '@/types/team';
 
 vi.mock('next/navigation', () => ({
   useParams: () => ({ slug: 'acme' }),
@@ -40,6 +40,19 @@ vi.mock('@/services/team', () => ({
   },
 }));
 
+const mockListPending = vi.fn();
+const mockSend = vi.fn();
+const mockResend = vi.fn();
+const mockRevoke = vi.fn();
+vi.mock('@/services/invitations', () => ({
+  invitationsService: {
+    listPending: (...args: unknown[]) => mockListPending(...args),
+    send: (...args: unknown[]) => mockSend(...args),
+    resend: (...args: unknown[]) => mockResend(...args),
+    revoke: (...args: unknown[]) => mockRevoke(...args),
+  },
+}));
+
 const ADMIN: MemberListItem = {
   membershipId: 'm-admin',
   userId: 'u-admin',
@@ -64,6 +77,15 @@ const OTHER_MEMBER: MemberListItem = {
   lastActiveAt: null,
 };
 
+const INVITE: PendingInvitation = {
+  id: 'inv-1',
+  email: 'new@example.com',
+  role: 'member',
+  status: 'pending',
+  expiresAt: '2026-09-18T12:00:00.000Z',
+  createdAt: '2026-09-11T12:00:00.000Z',
+};
+
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
@@ -79,7 +101,12 @@ describe('TeamPage (/w/[slug]/team)', () => {
     mockListMembers.mockReset();
     mockUpdateMemberRole.mockReset();
     mockRemoveMember.mockReset();
+    mockListPending.mockReset();
+    mockSend.mockReset();
+    mockResend.mockReset();
+    mockRevoke.mockReset();
     mockList.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role: 'admin' }]);
+    mockListPending.mockResolvedValue([]);
   });
 
   it('renders the page heading', async () => {
@@ -126,5 +153,60 @@ describe('TeamPage (/w/[slug]/team)', () => {
     await userEvent.click(await screen.findByLabelText('Remove Chidi Okafor'));
     await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
     await waitFor(() => expect(mockRemoveMember).toHaveBeenCalledWith('acme', 'm-other'));
+  });
+
+  it('a manager sees the Pending Invites card and the Invite Members action', async () => {
+    mockListMembers.mockResolvedValue([ADMIN]);
+    mockListPending.mockResolvedValue([INVITE]);
+    renderPage();
+    expect(await screen.findByText('new@example.com')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Invite Members' })).toBeInTheDocument();
+  });
+
+  it('a non-manager sees neither the Pending Invites card nor the Invite Members action', async () => {
+    mockList.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role: 'viewer' }]);
+    mockListMembers.mockResolvedValue([ADMIN]);
+    mockListPending.mockResolvedValue([INVITE]);
+    renderPage();
+    await screen.findByText('Priya Sharma');
+    expect(screen.queryByText('new@example.com')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Invite Members' })).not.toBeInTheDocument();
+  });
+
+  it('shows an error alert with retry when the invitations query fails', async () => {
+    mockListMembers.mockResolvedValue([ADMIN]);
+    mockListPending.mockRejectedValue(new Error('network'));
+    renderPage();
+    expect(await screen.findByText('We could not load pending invites.')).toBeInTheDocument();
+  });
+
+  it('clicking Invite Members opens the modal and submitting calls invitationsService.send', async () => {
+    mockListMembers.mockResolvedValue([ADMIN]);
+    mockListPending.mockResolvedValue([]);
+    mockSend.mockResolvedValue(undefined);
+    renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Invite Members' }));
+    await userEvent.type(screen.getByLabelText('Email Addresses'), 'sam@example.com');
+    await userEvent.click(screen.getByRole('button', { name: 'Send Invites' }));
+    await waitFor(() => expect(mockSend).toHaveBeenCalledWith('acme', ['sam@example.com'], 'member'));
+  });
+
+  it('clicking Resend on a pending invite calls invitationsService.resend', async () => {
+    mockListMembers.mockResolvedValue([ADMIN]);
+    mockListPending.mockResolvedValue([INVITE]);
+    mockResend.mockResolvedValue(undefined);
+    renderPage();
+    await userEvent.click(await screen.findByLabelText('Resend invite to new@example.com'));
+    await waitFor(() => expect(mockResend).toHaveBeenCalledWith('acme', 'inv-1'));
+  });
+
+  it('revoking a pending invite calls invitationsService.revoke after confirmation', async () => {
+    mockListMembers.mockResolvedValue([ADMIN]);
+    mockListPending.mockResolvedValue([INVITE]);
+    mockRevoke.mockResolvedValue(undefined);
+    renderPage();
+    await userEvent.click(await screen.findByLabelText('Revoke invite to new@example.com'));
+    await userEvent.click(screen.getByRole('button', { name: 'Revoke' }));
+    await waitFor(() => expect(mockRevoke).toHaveBeenCalledWith('acme', 'inv-1'));
   });
 });

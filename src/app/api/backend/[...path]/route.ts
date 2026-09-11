@@ -17,6 +17,11 @@ const ALLOWED_API_ROOTS = new Set([
   'analytics',
   'dashboard',
   'forms',
+  // Sprint 9 (team-permissions, task 2.2) — the public/token-based invitation routes
+  // (GET/POST /api/invitations/:token/...) live under their own root, not /workspaces, so
+  // they need their own allowlist entry (CLAUDE.md's named trap: without this every call
+  // 404s through the BFF regardless of whether the backend route exists).
+  'invitations',
   'notifications',
   'reports',
   'responses',

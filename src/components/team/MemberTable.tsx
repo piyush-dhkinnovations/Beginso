@@ -68,7 +68,11 @@ export function MemberTable({ members, currentUserId, canManage, isLoading, onRo
     {
       key: 'lastActive',
       header: 'Last active',
-      render: (m) => <span className="text-body-sm text-text-muted">{m.lastActiveAt ?? '—'}</span>,
+      render: (m) => (
+        <span className="text-body-sm text-text-muted">
+          {m.lastActiveAt ? new Date(m.lastActiveAt).toLocaleString() : '—'}
+        </span>
+      ),
     },
     {
       key: 'remove',

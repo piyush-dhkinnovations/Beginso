@@ -21,6 +21,7 @@ import { AppShell, TopBar } from '@/components/ui';
 import { WorkspaceSidebar } from '@/components/workspaces/WorkspaceSidebar';
 import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown';
+import { Wordmark } from '@/components/landing/Wordmark';
 import type { Role } from '@/types/workspace';
 
 export interface WorkspaceShellProps {
@@ -41,7 +42,7 @@ export function WorkspaceShell({ slug, workspaceName, initialCollapsed, children
         <TopBar
           brand={
             <Link href="/dashboard" className="hover:opacity-90 transition-opacity">
-              <span>Beginso</span>
+              <Wordmark height={32} />
             </Link>
           }
           onMenuClick={() => {

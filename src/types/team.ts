@@ -16,12 +16,20 @@ export interface MemberListItem {
   lastActiveAt: string | null;
 }
 
+// Corrected Day 2 against the real live response (Beginso-Report/backend_updates_for_frontend.md
+// §9.A, confirmed against production 11 Sep 2026) — the list endpoint returns `id`/`expiresAt`/
+// `createdAt`, not the `token`/`invitedAt` design.md §13 originally sketched before the backend
+// contract existed. No `token` is exposed here at all (reasonable: an admin browsing pending
+// invites shouldn't be able to read out anyone's accept link) — resend/revoke use this `id`
+// against the workspace-scoped routes, not the public token-based ones (those are for the
+// invitee's own Accept page, Wednesday's task 5.1).
 export interface PendingInvitation {
-  token: string;
+  id: string;
   email: string;
   role: Exclude<Role, 'owner'>;
   status: 'pending' | 'expired';
-  invitedAt: string;
+  expiresAt: string;
+  createdAt: string;
 }
 
 export interface InvitationPreview {

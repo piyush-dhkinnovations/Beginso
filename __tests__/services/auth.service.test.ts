@@ -30,10 +30,12 @@ vi.mock('firebase/auth', () => ({
 vi.mock('@/lib/axios', () => {
   const mockPost = vi.fn();
   const mockGet = vi.fn();
+  const mockPatch = vi.fn();
   return {
     default: {
       post: mockPost,
       get: mockGet,
+      patch: mockPatch,
       interceptors: {
         response: { use: vi.fn() },
       },
@@ -52,12 +54,14 @@ import {
 
 const mockPost = axiosInstance.post as ReturnType<typeof vi.fn>;
 const mockGet = axiosInstance.get as ReturnType<typeof vi.fn>;
+const mockPatch = axiosInstance.patch as ReturnType<typeof vi.fn>;
 
 describe('Auth Service', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockPost.mockReset();
     mockGet.mockReset();
+    mockPatch.mockReset();
     vi.mocked(setPersistence).mockResolvedValue();
     vi.mocked(updateProfile).mockResolvedValue();
     vi.mocked(reload).mockResolvedValue();
@@ -174,6 +178,63 @@ describe('Auth Service', () => {
 
       const { authService } = await import('@/services/auth');
       await expect(authService.loginWithGoogle()).rejects.toThrow('popup-closed-by-user');
+    });
+
+    it('pulls the Google profile photo as the starting avatar for a brand-new account', async () => {
+      const { signInWithPopup, getAdditionalUserInfo } = await import('firebase/auth');
+      (signInWithPopup as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        user: {
+          displayName: 'Test User',
+          photoURL: 'https://lh3.googleusercontent.com/a/photo.jpg',
+          getIdToken: vi.fn().mockResolvedValueOnce('real.id.token'),
+        },
+      });
+      (getAdditionalUserInfo as ReturnType<typeof vi.fn>).mockReturnValueOnce({ isNewUser: true });
+      mockPost.mockResolvedValueOnce({ data: { token: 'session.jwt', user: { id: 'u1' } } });
+      mockPatch.mockResolvedValueOnce({ data: {} });
+
+      const { authService } = await import('@/services/auth');
+      await authService.loginWithGoogle();
+
+      expect(mockPatch).toHaveBeenCalledWith('/api/users/me', {
+        avatarUrl: 'https://lh3.googleusercontent.com/a/photo.jpg',
+      });
+    });
+
+    it('never re-pulls the Google photo on a returning login, so a user-set avatar is never overwritten', async () => {
+      const { signInWithPopup, getAdditionalUserInfo } = await import('firebase/auth');
+      (signInWithPopup as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        user: {
+          displayName: 'Test User',
+          photoURL: 'https://lh3.googleusercontent.com/a/photo.jpg',
+          getIdToken: vi.fn().mockResolvedValueOnce('real.id.token'),
+        },
+      });
+      (getAdditionalUserInfo as ReturnType<typeof vi.fn>).mockReturnValueOnce({ isNewUser: false });
+      mockPost.mockResolvedValueOnce({ data: { token: 'session.jwt', user: { id: 'u1' } } });
+
+      const { authService } = await import('@/services/auth');
+      await authService.loginWithGoogle();
+
+      expect(mockPatch).not.toHaveBeenCalled();
+    });
+
+    it('does not fail sign-in if the avatar pull itself fails', async () => {
+      const { signInWithPopup, getAdditionalUserInfo } = await import('firebase/auth');
+      (signInWithPopup as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        user: {
+          displayName: 'Test User',
+          photoURL: 'https://lh3.googleusercontent.com/a/photo.jpg',
+          getIdToken: vi.fn().mockResolvedValueOnce('real.id.token'),
+        },
+      });
+      (getAdditionalUserInfo as ReturnType<typeof vi.fn>).mockReturnValueOnce({ isNewUser: true });
+      const sessionData = { token: 'session.jwt', user: { id: 'u1' } };
+      mockPost.mockResolvedValueOnce({ data: sessionData });
+      mockPatch.mockRejectedValueOnce(new Error('network error'));
+
+      const { authService } = await import('@/services/auth');
+      await expect(authService.loginWithGoogle()).resolves.toEqual(sessionData);
     });
   });
 

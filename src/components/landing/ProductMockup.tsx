@@ -317,7 +317,7 @@ export default function ProductMockup() {
           <span className="flex items-center gap-2 shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/favicon.svg" alt="" height={20} width={20} style={{ height: 20, width: 20 }} aria-hidden="true" />
-            <Wordmark height={18} />
+            <Wordmark height={32} />
           </span>
           <div className="flex-1 max-w-sm flex items-center gap-2 rounded-[var(--bg-radius-sm)] border border-[var(--border-default)] bg-[var(--surface-hover)] px-3 py-1.5">
             <Search size={13} className="text-[var(--text-muted)] shrink-0" />
