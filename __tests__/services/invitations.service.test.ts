@@ -108,14 +108,14 @@ describe('invitationsService', () => {
     expect(result).toEqual(preview);
   });
 
-  it('accept() posts to the token-based accept endpoint', async () => {
-    const body = { workspace: { id: 'w1', slug: 'acme', name: 'Acme' } };
-    mockPost.mockResolvedValueOnce({ data: body });
+  it('accept() posts to the token-based accept endpoint and unwraps the workspace envelope', async () => {
+    const workspace = { id: 'w1', slug: 'acme', name: 'Acme' };
+    mockPost.mockResolvedValueOnce({ data: { success: true, workspace } });
 
     const result = await invitationsService.accept('tok-123');
 
     expect(mockPost).toHaveBeenCalledWith('/api/invitations/tok-123/accept');
-    expect(result).toEqual(body);
+    expect(result).toEqual(workspace);
   });
 
   it('decline() posts to the token-based decline endpoint', async () => {

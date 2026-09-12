@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { bx } from "@/lib/utils";
 
 export interface MenuItem {
@@ -30,12 +31,24 @@ export interface MenuProps {
 // Outside-click + keyboard nav follows the existing pattern in
 // src/components/responses/StatusDropdown.tsx rather than introducing a positioning library —
 // no such dependency exists in the project and none is justified for a simple below-trigger menu.
+// Position type for the portaled dropdown — computed from the trigger's real screen position
+// (see openMenu) rather than CSS absolute-positioned against a local `relative` ancestor.
+interface MenuPosition {
+  top: number;
+  left?: number;
+  right?: number;
+  width?: number;
+}
+
 export function Menu({ trigger, triggerLabel, items, align = "start", className, triggerClassName, containerClassName }: MenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [position, setPosition] = useState<MenuPosition | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const isFullWidth = containerClassName?.includes("w-full") ?? false;
 
   const enabledIndexes = items.reduce<number[]>((acc, item, i) => {
     if (!item.disabled) acc.push(i);
@@ -45,7 +58,13 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
   useEffect(() => {
     if (!isOpen) return;
     const handleOutsideClick = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setIsOpen(false);
+      const target = e.target as Node;
+      if (
+        containerRef.current && !containerRef.current.contains(target) &&
+        menuRef.current && !menuRef.current.contains(target)
+      ) {
+        setIsOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
@@ -54,6 +73,24 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
   useEffect(() => {
     if (isOpen) itemRefs.current[activeIndex]?.focus();
   }, [isOpen, activeIndex]);
+
+  // The dropdown is portaled to document.body and positioned with `fixed` coordinates (see
+  // render below) rather than `absolute` inside its own local container — a trigger sitting
+  // inside any scrollable/overflow-clipped ancestor (e.g. the collapsed sidebar rail, only 64px
+  // wide) otherwise clips the dropdown instead of letting it extend past that ancestor's edge.
+  // Closing on scroll (rather than re-measuring) matches this component's existing preference
+  // for the simplest approach that actually works over a live-repositioning implementation
+  // nothing here currently needs.
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleScroll = () => setIsOpen(false);
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, [isOpen]);
 
   const close = () => {
     setIsOpen(false);
@@ -68,6 +105,16 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
 
   const openMenu = () => {
     setActiveIndex(enabledIndexes[0] ?? 0);
+    const rect = triggerRef.current?.getBoundingClientRect();
+    if (rect) {
+      setPosition(
+        isFullWidth
+          ? { top: rect.bottom + 6, left: rect.left, width: rect.width }
+          : align === "end"
+          ? { top: rect.bottom + 6, right: window.innerWidth - rect.right }
+          : { top: rect.bottom + 6, left: rect.left }
+      );
+    }
     setIsOpen(true);
   };
 
@@ -109,13 +156,20 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
       >
         {trigger}
       </button>
-      {isOpen && (
+      {isOpen && position && createPortal(
         <div
+          ref={menuRef}
           role="menu"
+          style={{
+            position: "fixed",
+            top: position.top,
+            left: position.left,
+            right: position.right,
+            width: position.width,
+          }}
           className={bx(
-            "bg-menu absolute mt-1.5 z-50",
-            align === "end" ? "right-0" : "left-0",
-            containerClassName?.includes("w-full") ? "w-full min-w-[200px]" : "min-w-[160px]",
+            "bg-menu z-50",
+            isFullWidth ? "min-w-[200px]" : "min-w-[160px]",
             className
           )}
         >
@@ -137,7 +191,8 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
               {item.shortcut && <kbd>{item.shortcut}</kbd>}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

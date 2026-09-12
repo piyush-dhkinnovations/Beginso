@@ -69,7 +69,7 @@ export function UserProfileDropdown() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={toggleDropdown}
-        className="flex min-h-11 items-center gap-2 p-1.5 rounded-lg hover:bg-neutral-100 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+        className="flex min-h-11 items-center gap-2 p-1.5 rounded-lg hover:bg-[var(--surface-hover)] transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20"
         aria-expanded={isOpen}
         aria-haspopup="menu"
 
@@ -88,11 +88,11 @@ export function UserProfileDropdown() {
         
         {!isLoading && user && (
           <div className="hidden sm:flex flex-col text-left">
-            <span className="text-body-sm font-semibold text-neutral-800 leading-none">
+            <span className="text-body-sm font-semibold text-[var(--text-primary)] leading-none">
               {user.name}
             </span>
             {user.email && (
-              <span className="text-[10px] text-neutral-500 leading-none mt-0.5">
+              <span className="text-[10px] text-[var(--text-muted)] leading-none mt-0.5">
                 {user.email}
               </span>
             )}
@@ -100,21 +100,21 @@ export function UserProfileDropdown() {
         )}
         {isLoading && (
           <div className="hidden sm:flex flex-col gap-1">
-            <div className="w-20 h-2.5 rounded bg-neutral-200 animate-pulse" />
-            <div className="w-28 h-2 rounded bg-neutral-100 animate-pulse" />
+            <div className="w-20 h-2.5 rounded bg-[var(--surface-hover)] animate-pulse" />
+            <div className="w-28 h-2 rounded bg-[var(--surface-hover)] animate-pulse" />
           </div>
         )}
 
-        <ChevronDown size={16} className={cn("text-neutral-500 transition-transform duration-200", isOpen && "rotate-180")} />
+        <ChevronDown size={16} className={cn("text-[var(--text-muted)] transition-transform duration-200", isOpen && "rotate-180")} />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-neutral-100 focus:outline-none z-50 animate-fade-in">
+        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-[var(--surface-card)] ring-1 ring-black ring-opacity-5 divide-y divide-[var(--border-default)] focus:outline-none z-50 animate-fade-in">
           {user && (
             <div className="px-4 py-3 sm:hidden">
-              <p className="text-body-sm font-semibold text-neutral-800 truncate">{user.name}</p>
+              <p className="text-body-sm font-semibold text-[var(--text-primary)] truncate">{user.name}</p>
               {user.email && (
-                <p className="text-[11px] text-neutral-500 truncate">{user.email}</p>
+                <p className="text-[11px] text-[var(--text-muted)] truncate">{user.email}</p>
               )}
             </div>
           )}
@@ -123,16 +123,16 @@ export function UserProfileDropdown() {
             <Link
               href="/settings"
               onClick={() => setIsOpen(false)}
-              className="flex min-h-11 items-center gap-2 px-4 py-2 text-body-sm text-neutral-700 hover:bg-neutral-100 transition-colors"
+              className="flex min-h-11 items-center gap-2 px-4 py-2 text-body-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] transition-colors"
             >
-              <Settings size={16} className="text-neutral-500" />
+              <Settings size={16} className="text-[var(--text-muted)]" />
               <span>Account Settings</span>
             </Link>
             <button
               onClick={() => setIsOpen(false)}
-              className="w-full min-h-11 flex items-center gap-2 px-4 py-2 text-body-sm text-neutral-700 hover:bg-neutral-100 transition-colors text-left"
+              className="w-full min-h-11 flex items-center gap-2 px-4 py-2 text-body-sm text-[var(--text-primary)] hover:bg-[var(--surface-hover)] transition-colors text-left"
             >
-              <HelpCircle size={16} className="text-neutral-500" />
+              <HelpCircle size={16} className="text-[var(--text-muted)]" />
               <span>Help & Support</span>
             </button>
           </div>

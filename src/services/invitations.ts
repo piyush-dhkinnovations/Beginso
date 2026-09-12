@@ -49,8 +49,15 @@ export const invitationsService = {
       .get(`/api/invitations/${token}`)
       .then((r) => unwrapEnvelope<InvitationPreview>(r.data, 'invitation')),
 
-  accept: (token: string): Promise<{ workspace: { id: string; slug: string; name: string } }> =>
-    axiosInstance.post(`/api/invitations/${token}/accept`).then((r) => r.data),
+  // unwrapEnvelope() defensively pulls `workspace` out of whatever envelope the real response
+  // uses (matches every sibling method) — `accept()` previously returned `r.data` bare, assuming
+  // the pre-backend design sketch's `{workspace: {...}}` shape was the literal wire response.
+  // A live backend error surfaced that assumption doesn't always hold: the caller then reads
+  // `.slug` off `undefined` and crashes instead of failing gracefully.
+  accept: (token: string): Promise<{ id: string; slug: string; name: string }> =>
+    axiosInstance
+      .post(`/api/invitations/${token}/accept`)
+      .then((r) => unwrapEnvelope<{ id: string; slug: string; name: string }>(r.data, 'workspace')),
 
   decline: (token: string): Promise<void> =>
     axiosInstance.post(`/api/invitations/${token}/decline`).then(() => undefined),
