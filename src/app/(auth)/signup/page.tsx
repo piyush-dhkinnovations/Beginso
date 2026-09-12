@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { SignupForm } from '@/components/auth/SignupForm';
@@ -12,7 +13,10 @@ export default function SignupPage() {
         </p>
       </div>
 
-      <SignupForm />
+      {/* useSearchParams() (?next=, task 3.5) requires a Suspense boundary during prerender. */}
+      <Suspense>
+        <SignupForm />
+      </Suspense>
 
       <div className="text-center text-body-sm text-neutral-500">
         Already have an account?{' '}

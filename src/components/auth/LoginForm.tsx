@@ -11,7 +11,8 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { GoogleSignInButton } from './GoogleSignInButton';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { sanitizeNextParam } from '@/lib/authRoutes';
 
 export function LoginForm() {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -21,6 +22,9 @@ export function LoginForm() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { login } = useAuth();
   const router = useRouter();
+  // Requirements §7.5.1: the Invite Accept page's sign-in link carries ?next=/invite/:token so
+  // login() lands the user back there instead of the default destination.
+  const nextParam = sanitizeNextParam(useSearchParams().get('next'));
 
   const isAnyLoading = isEmailLoading || isGoogleLoading;
 
@@ -62,7 +66,7 @@ export function LoginForm() {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      await login();
+      await login(nextParam);
     } catch (error: unknown) {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -97,7 +101,7 @@ export function LoginForm() {
     setIsGoogleLoading(true);
     try {
       await authService.loginWithGoogle();
-      await login();
+      await login(nextParam);
     } catch (error: unknown) {
       setIsGoogleLoading(false);
       setServerError(getFriendlyErrorMessage(error));

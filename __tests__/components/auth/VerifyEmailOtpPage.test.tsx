@@ -7,6 +7,9 @@ const mockVerifyOtp = vi.fn();
 const mockLogin = vi.fn();
 const mockToast = vi.fn();
 
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(),
+}));
 vi.mock('@/lib/firebase', () => ({ auth: {} }));
 vi.mock('firebase/auth', () => ({
   onAuthStateChanged: (_auth: unknown, callback: (user: { email: string }) => void) => {

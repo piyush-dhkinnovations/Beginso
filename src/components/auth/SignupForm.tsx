@@ -12,7 +12,8 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { GoogleSignInButton } from './GoogleSignInButton';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { sanitizeNextParam } from '@/lib/authRoutes';
 
 export function SignupForm() {
   const [serverError, setServerError] = useState<string | null>(null);
@@ -22,6 +23,9 @@ export function SignupForm() {
   const { login } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  // Requirements §7.5.1. Email signup still needs email verification first, so `next` is
+  // forwarded to /verify-email rather than used here directly (see onSubmit below).
+  const nextParam = sanitizeNextParam(useSearchParams().get('next'));
 
   const {
     register,
@@ -43,7 +47,7 @@ export function SignupForm() {
     try {
       await authService.signup(values.name, values.email, values.password);
       toast('Verification code sent. Check your inbox.', 'success');
-      router.push('/verify-email');
+      router.push(nextParam ? `/verify-email?next=${encodeURIComponent(nextParam)}` : '/verify-email');
     } catch (error: unknown) {
       const err = error as { response?: { data?: { error?: { message?: string; fields?: Array<{ field: string; message: string }> | Record<string, string> } } } };
       const fields = err.response?.data?.error?.fields;
@@ -68,7 +72,7 @@ export function SignupForm() {
     try {
       await authService.loginWithGoogle();
       toast('Account created successfully!', 'success');
-      await login();
+      await login(nextParam);
     } catch (error: unknown) {
       setIsGoogleLoading(false);
       setServerError(getFriendlyErrorMessage(error));
