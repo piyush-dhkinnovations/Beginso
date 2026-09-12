@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef } from "react";
 
 // Shared by Modal and Drawer (src/components/ui/) — extracted from Modal's original

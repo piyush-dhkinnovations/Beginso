@@ -61,6 +61,23 @@ const securityHeaders = [
     : []),
 ];
 
+// The /dev/ui gallery (sprint-7-foundation, requirements.md 3.1) previews primitives inside
+// an <iframe> so beginso-ui.css's real @media breakpoints respond to the selected 375/768/1280
+// width — a wrapper div's width alone doesn't trigger them. The blanket `frame-ancestors 'none'`
+// above (a real clickjacking defense) blocks that same-origin iframe too: CSP headers from
+// multiple matching rules combine by intersection, so a second, laxer rule on top of the
+// blanket one would not have loosened it — the general rule's source pattern below excludes
+// this one path instead. Scope is deliberately narrow: only `/dev/ui/frame` (never the app's
+// own routes), and that route already 404s outside development (see src/app/dev/ui/frame/page.tsx),
+// so this header is only ever served by something that also refuses to render in production.
+const framePreviewHeaders = securityHeaders.map((h) =>
+  h.key === "Content-Security-Policy"
+    ? { ...h, value: h.value.replace("frame-ancestors 'none'", "frame-ancestors 'self'") }
+    : h.key === "X-Frame-Options"
+      ? { ...h, value: "SAMEORIGIN" }
+      : h
+);
+
 const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   // Default bottom-left position sits directly on top of the mobile nav drawer, which also
@@ -69,7 +86,10 @@ const nextConfig: NextConfig = {
     position: "bottom-right",
   },
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    return [
+      { source: "/dev/ui/frame", headers: framePreviewHeaders },
+      { source: "/((?!dev/ui/frame$).*)", headers: securityHeaders },
+    ];
   },
 };
 

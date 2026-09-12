@@ -85,6 +85,18 @@ Test files live under `__tests__/`, mirroring `src/`'s structure; the glob is `*
 
 **Permission checks belong on the server.** Hiding UI is not authorization. A frontend gate is a convenience; the corresponding backend requirement must be recorded in the spec.
 
+**Pages never set their own width.** `AppShell` owns the content container —
+48px horizontal padding at ≥1280, 32px at tablet, 16px on mobile, 64px
+bottom, max-width 1600px. A page component returns its content directly and
+sets no `max-w-`, `mx-auto` or `container` class.
+
+The only narrow columns permitted: a settings-style **form** at 640px, an
+empty-state **paragraph** at 42ch, and long-form **prose** at 65ch. Constrain
+content that is hard to read wide — never the page.
+
+**Every page uses `PageHeader`** from `components/ui/`. No hand-rolled page
+titles.
+
 ---
 
 ## Key facts worth remembering

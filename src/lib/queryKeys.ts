@@ -1,4 +1,5 @@
 import type { GetResponsesParams } from '@/types/response';
+import type { FormsContext } from '@/types/workspace';
 
 // formId is optional throughout — omitted formId means the "All Responses" view spanning
 // every form in the workspace, keyed under the literal 'all' segment.
@@ -53,4 +54,39 @@ export const settingsKeys = {
 export const notificationKeys = {
   all: ['notifications'] as const,
   list: () => [...notificationKeys.all, 'list'] as const,
+};
+
+// Not to be confused with settingsKeys.workspace() — that's the V1 singular /workspaces/current
+// settings resource (branding, logo). This is the V2 multi-workspace list/detail (sprint-8).
+export const workspaceKeys = {
+  all: ['workspaces'] as const,
+  list: () => [...workspaceKeys.all, 'list'] as const,
+  detail: (id: string) => [...workspaceKeys.all, 'detail', id] as const,
+  // The context discriminator is a key segment, not a filter param, so switching context can
+  // never serve another context's cached rows even transiently (requirements.md §7.10).
+  forms: (context: FormsContext, params?: { search?: string; status?: string; page?: number; limit?: number }) =>
+    context.type === 'personal'
+      ? (['forms', 'personal', 'list', params] as const)
+      : (['forms', 'workspace', context.workspaceId, 'list', params] as const),
+};
+
+// Sprint 9 (team-permissions) — workspace-namespaced from the start, matching workspaceKeys.forms()'s
+// own precedent: switching workspaces must never serve another workspace's cached member list.
+export const teamKeys = {
+  all: (workspaceId: string) => ['team', workspaceId] as const,
+  members: (workspaceId: string) => [...teamKeys.all(workspaceId), 'members'] as const,
+  invitations: (workspaceId: string) => [...teamKeys.all(workspaceId), 'invitations'] as const,
+};
+
+export const invitationKeys = {
+  detail: (token: string) => ['invitation', token] as const,
+};
+
+export const formAccessKeys = {
+  grants: (formId: string) => ['form-access', formId, 'grants'] as const,
+};
+
+export const sharedKeys = {
+  all: ['shared-with-me'] as const,
+  list: () => [...sharedKeys.all, 'list'] as const,
 };

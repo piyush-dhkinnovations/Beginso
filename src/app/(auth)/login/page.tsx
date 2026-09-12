@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import { LoginForm } from '@/components/auth/LoginForm';
@@ -12,7 +13,10 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <LoginForm />
+      {/* useSearchParams() (?next=, task 3.5) requires a Suspense boundary during prerender. */}
+      <Suspense>
+        <LoginForm />
+      </Suspense>
 
       <div className="flex flex-col gap-2 text-center text-body-sm text-neutral-500">
         <div>

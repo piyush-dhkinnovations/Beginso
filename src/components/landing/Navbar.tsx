@@ -60,7 +60,7 @@ export default function Navbar() {
           <Link href="/" className="flex items-center gap-2 shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/favicon.svg" alt="" height={24} width={24} style={{ height: 24, width: 24 }} aria-hidden="true" />
-            <Wordmark height={24} />
+            <Wordmark height={32} />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">

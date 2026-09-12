@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import { BlogCard } from "@/components/landing/BlogCard";
@@ -10,14 +10,22 @@ import { bx } from "@/lib/utils";
 
 const CATEGORIES: ("All" | BlogCategory)[] = ["All", "Product", "Guide", "Changelog", "Engineering"];
 
-function initialCategory(): "All" | BlogCategory {
-  if (typeof window === "undefined") return "All";
-  const value = new URLSearchParams(window.location.search).get("category");
-  return (CATEGORIES as string[]).includes(value ?? "") ? (value as BlogCategory) : "All";
-}
-
 export default function BlogListPage() {
-  const [category, setCategory] = useState<"All" | BlogCategory>(initialCategory);
+  // Starts at "All" on both server and client — reading ?category= from window.location
+  // straight into the initial state disagreed with the server-rendered "All" the moment
+  // anyone landed here via a categorized link (Footer links to /blog?category=Changelog),
+  // producing a hydration mismatch on the active tab, the filtered list, and the featured
+  // card visibility. Synced from the URL in an effect instead, after hydration settles.
+  const [category, setCategory] = useState<"All" | BlogCategory>("All");
+  useEffect(() => {
+    const value = new URLSearchParams(window.location.search).get("category");
+    if ((CATEGORIES as string[]).includes(value ?? "")) {
+      // Reading the URL once on mount to seed state — same accepted pattern as
+      // LoginForm.tsx's reason= check.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCategory(value as BlogCategory);
+    }
+  }, []);
   const { ref: headerRef, visible: headerVisible } = useReveal<HTMLDivElement>();
 
   const [featured, ...rest] = BLOG_POSTS;

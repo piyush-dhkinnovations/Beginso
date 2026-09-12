@@ -532,8 +532,8 @@ export default function BuilderPageShell() {
 
   return (
     <>
-      {/* -m-6 cancels the (user) layout's <main className="p-6">; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar */}
-      <div className="flex max-[520px]:flex items-center justify-center h-[calc(100vh-56px)] -m-6 min-[521px]:hidden bg-neutral-50 px-6">
+      {/* -mx-4 md:-mx-8 xl:-mx-12 -mt-6 md:-mt-8 -mb-16 cancels AppShell's responsive content padding; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar */}
+      <div className="flex max-[520px]:flex items-center justify-center h-[calc(100vh-56px)] -mx-4 md:-mx-8 xl:-mx-12 -mt-6 md:-mt-8 -mb-16 min-[521px]:hidden bg-neutral-50 px-6">
         <div className="text-center bg-white p-8 rounded-xl shadow-card border border-neutral-200 max-w-sm">
           <p className="text-neutral-600 font-semibold text-body-lg">
             For the best experience, use a desktop or laptop to build forms.
@@ -541,8 +541,8 @@ export default function BuilderPageShell() {
         </div>
       </div>
 
-      {/* -m-6 cancels the (user) layout's <main className="p-6">; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar. Canvas keeps its own internal overflow-y-auto below. */}
-      <div className="hidden min-[521px]:flex flex-col h-[calc(100vh-56px)] -m-6 overflow-hidden bg-neutral-50">
+      {/* -mx-4 md:-mx-8 xl:-mx-12 -mt-6 md:-mt-8 -mb-16 cancels AppShell's responsive content padding; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar. Canvas keeps its own internal overflow-y-auto below. */}
+      <div className="hidden min-[521px]:flex flex-col h-[calc(100vh-56px)] -mx-4 md:-mx-8 xl:-mx-12 -mt-6 md:-mt-8 -mb-16 overflow-hidden bg-neutral-50">
         {isLoading ? (
           /* Loading Skeleton */
           <div className="flex flex-col h-full w-full">

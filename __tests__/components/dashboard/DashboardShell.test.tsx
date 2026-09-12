@@ -11,11 +11,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DashboardShell } from '@/components/dashboard/DashboardShell';
 
-const mockUseAuth = vi.fn();
-
-vi.mock('@/hooks/useAuth', () => ({
-  useAuth: () => mockUseAuth(),
-}));
+// Note: useAuth is intentionally NOT mocked here — DashboardShell no longer reads auth state.
+// proxy.ts enforces authentication before the shell ever renders; the component simply
+// renders the shell + children unconditionally (see DashboardShell.tsx comment block).
 
 vi.mock('@/components/dashboard/TopNav', () => ({
   TopNav: ({ onMenuClick }: { onMenuClick?: () => void }) => (
@@ -45,18 +43,15 @@ vi.mock('@/components/dashboard/Sidebar', () => ({
 describe('DashboardShell component', () => {
   beforeEach(() => {
     document.cookie = 'sidebar_collapsed=; path=/; max-age=0';
-    mockUseAuth.mockReturnValue({ isLoading: false, isAuthenticated: true });
   });
 
-  it('renders children only while the user is authenticated', () => {
-    const { unmount } = render(<DashboardShell initialCollapsed={false}>{'page content'}</DashboardShell>);
-    expect(screen.getByText('page content')).toBeInTheDocument();
-
-    unmount();
-    mockUseAuth.mockReturnValue({ isLoading: false, isAuthenticated: false });
+  it('always renders children — auth is enforced by proxy.ts before this shell mounts', () => {
+    // DashboardShell removed the client-side authLoading guard because it caused a hydration
+    // mismatch: AuthProvider.initialState has isLoading:true, so the guard showed a spinner
+    // immediately on the client while the server had already emitted the full shell HTML.
+    // proxy.ts rejects unauthenticated requests before Next.js ever renders this component.
     render(<DashboardShell initialCollapsed={false}>{'protected content'}</DashboardShell>);
-    expect(screen.queryByText('protected content')).not.toBeInTheDocument();
-    expect(screen.getByRole('status')).toHaveTextContent('Loading...');
+    expect(screen.getByText('protected content')).toBeInTheDocument();
   });
 
   it('respects the server-provided initialCollapsed state', () => {

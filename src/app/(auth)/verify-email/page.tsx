@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { MailCheck } from 'lucide-react';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -11,8 +11,19 @@ import { useToast } from '@/components/common/Toast';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
+import { useSearchParams } from 'next/navigation';
+import { sanitizeNextParam } from '@/lib/authRoutes';
 
+// useSearchParams() (?next=, task 3.5) requires a Suspense boundary during prerender.
 export default function VerifyEmailPage() {
+  return (
+    <Suspense>
+      <VerifyEmailPageInner />
+    </Suspense>
+  );
+}
+
+function VerifyEmailPageInner() {
   const [email, setEmail] = useState<string | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -22,6 +33,9 @@ export default function VerifyEmailPage() {
   const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
   const { login } = useAuth();
   const { toast } = useToast();
+  // Requirements §7.5.1 — carried here by SignupForm's ?next= forward when signup started from
+  // the Invite Accept page.
+  const nextParam = sanitizeNextParam(useSearchParams().get('next'));
 
   useEffect(() => onAuthStateChanged(auth, (user) => setEmail(user?.email ?? null)), []);
 
@@ -57,7 +71,7 @@ export default function VerifyEmailPage() {
     try {
       await authService.verifyEmailOtp(code);
       toast('Email verified successfully.', 'success');
-      await login();
+      await login(nextParam);
     } catch (verificationError) {
       setError(getFriendlyErrorMessage(verificationError));
     } finally {

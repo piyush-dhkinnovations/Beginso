@@ -13,19 +13,19 @@ export function EmptyState({ icon, heading, body, action, className }: EmptyStat
   return (
     <div
       className={cn(
-        "flex flex-col items-center justify-center text-center p-12 max-w-md mx-auto",
+        "flex flex-col items-center justify-center text-center p-12",
         className
       )}
     >
       {icon && (
-        <div className="text-neutral-400 mb-4 shrink-0 [&>svg]:w-6 [&>svg]:h-6">
+        <div className="text-text-muted mb-4 shrink-0 [&>svg]:w-6 [&>svg]:h-6">
           {icon}
         </div>
       )}
-      <h3 className="text-heading-2 text-neutral-800 mb-2">
+      <h3 className="text-heading-2 text-text-primary mb-2">
         {heading}
       </h3>
-      <p className="text-body text-neutral-500 mb-6 leading-relaxed">
+      <p className="text-body text-text-muted mb-6 leading-relaxed max-w-[42ch] mx-auto">
         {body}
       </p>
       {action && (

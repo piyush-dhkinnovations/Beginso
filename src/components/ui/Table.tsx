@@ -22,6 +22,12 @@ export interface TableProps<T> {
 // beginso-ui.css classes — see src/styles/beginso-ui.css §11 TABLE. `emptyState`/loading rows
 // accept plain ReactNode rather than importing EmptyState/Skeleton directly (neither exists yet
 // this sprint) — a consumer supplies its own, or the real primitives once they land.
+//
+// `bg-table-stack` + `data-label` (beginso-ui.css §11): below 640px this collapses each row into
+// a stacked card instead of horizontally scrolling — the design system's own docs call a
+// horizontally-scrolling table on a phone "where mobile UX goes to die". `data-label` is derived
+// from `header` only when it's a string (the empty-string action-column header renders no label,
+// which is correct — there's nothing to label).
 export function Table<T>({
   columns,
   rows,
@@ -34,7 +40,7 @@ export function Table<T>({
 }: TableProps<T>) {
   return (
     <div className="bg-table-wrap">
-      <table className={bx("bg-table", stickyFirstColumn && "bg-table-sticky", className)}>
+      <table className={bx("bg-table", "bg-table-stack", stickyFirstColumn && "bg-table-sticky", className)}>
         <thead>
           <tr>
             {columns.map((col) => (
@@ -63,7 +69,11 @@ export function Table<T>({
             rows.map((row) => (
               <tr key={rowKey(row)}>
                 {columns.map((col) => (
-                  <td key={col.key} className={bx(col.align === "right" && "bg-num")}>
+                  <td
+                    key={col.key}
+                    data-label={typeof col.header === "string" ? col.header : undefined}
+                    className={bx(col.align === "right" && "bg-num")}
+                  >
                     {col.render(row)}
                   </td>
                 ))}

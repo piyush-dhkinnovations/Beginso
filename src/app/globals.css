@@ -287,6 +287,17 @@
   display: none;
 }
 
+/* Data-row hover, plain CSS rather than a JS onMouseEnter/onMouseLeave style mutation — the
+   latter is a DOM mutation inside a closure defined during render, the exact pattern that
+   already caused a React Compiler bail-out + SSR/CSR hydration mismatch twice in this codebase
+   (DashboardShell.tsx, AppShell.tsx — both fixed by moving the mutation out of a render-time
+   closure). A CSS :hover rule has no closure to trip the compiler at all. Scoped to
+   .forms-row-hoverable, not the bare .forms-row class, so the header row (which also carries
+   .forms-row for its grid layout) never gets a hover highlight. */
+.forms-row-hoverable:hover {
+  background-color: var(--surface-hover);
+}
+
 @container (min-width: 640px) {
   .forms-row-header {
     display: grid;
@@ -322,11 +333,15 @@
 }
 
 
+/* Tailwind's own theme vars, bridged onto beginso-ui.css's theme-aware tokens rather than a
+   second, static light-only palette — these two were never connected, so any element relying on
+   inherited `body` color (e.g. StatCard's .bg-stat-value, which sets no color of its own) stayed
+   near-black under `[data-theme="dark"]` regardless of how dark its card background got. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --border: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --background: var(--bg-page);
+  --foreground: var(--text-primary);
+  --border: var(--border-default);
+  --ring: var(--border-focus);
   --radius: 0.625rem;
 }
 

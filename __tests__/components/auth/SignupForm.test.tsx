@@ -11,8 +11,14 @@ import { SignupForm } from '@/components/auth/SignupForm';
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────
 
+const { mockSearchParams, mockPush } = vi.hoisted(() => ({
+  mockSearchParams: { current: new URLSearchParams() },
+  mockPush: vi.fn(),
+}));
+
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: mockPush }),
+  useSearchParams: () => mockSearchParams.current,
 }));
 
 vi.mock('@/lib/firebase', () => ({ auth: {} }));
@@ -85,6 +91,8 @@ describe('SignupForm component', () => {
   beforeEach(() => {
     mockAuthSignup.mockReset();
     mockToast.mockReset();
+    mockPush.mockReset();
+    mockSearchParams.current = new URLSearchParams();
   });
 
   it('renders all 4 required fields', () => {
@@ -183,5 +191,37 @@ describe('SignupForm component', () => {
       expect(screen.getByText(/at least 8 characters/i)).toBeInTheDocument();
     });
     expect(mockAuthSignup).not.toHaveBeenCalled();
+  });
+
+  // ─── Sprint 9 task 3.5 / requirements §7.5.1: ?next= forwarded to /verify-email ─
+
+  it('forwards a valid internal ?next= to /verify-email on successful signup', async () => {
+    mockSearchParams.current = new URLSearchParams('next=/invite/abc123');
+    mockAuthSignup.mockResolvedValueOnce({
+      token: 'tok123',
+      user: { id: 'u1', name: 'Jane Cooper', email: 'jane@example.com' },
+      workspace: { id: 'ws1', name: 'Jane WS' },
+    });
+
+    render(<SignupForm />);
+    await fillAndSubmitForm();
+
+    await waitFor(() =>
+      expect(mockPush).toHaveBeenCalledWith('/verify-email?next=%2Finvite%2Fabc123')
+    );
+  });
+
+  it('drops a crafted external ?next= (open-redirect guard) on signup', async () => {
+    mockSearchParams.current = new URLSearchParams('next=' + encodeURIComponent('//evil.example.com'));
+    mockAuthSignup.mockResolvedValueOnce({
+      token: 'tok123',
+      user: { id: 'u1', name: 'Jane Cooper', email: 'jane@example.com' },
+      workspace: { id: 'ws1', name: 'Jane WS' },
+    });
+
+    render(<SignupForm />);
+    await fillAndSubmitForm();
+
+    await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/verify-email'));
   });
 });
