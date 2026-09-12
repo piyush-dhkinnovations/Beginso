@@ -37,12 +37,19 @@ export const metadata: Metadata = {
 // every route including the public marketing pages and the whole auth flow (/, /blog, /login,
 // /signup, ...), all of which prerender statically today — calling cookies() here would force
 // every one of them into per-request dynamic rendering just to place one attribute. Instead
-// this blocking script (no async/defer, first thing in <body>) resolves the theme from the
-// client-writable `theme_preference` cookie (same non-HttpOnly, path=/ pattern as
-// `sidebar_collapsed` — see DashboardShell.tsx) with a prefers-color-scheme fallback for
-// 'system'/unset, before anything paints. Still zero flash on a cold /login load, without the
-// static-generation cost a server-side read would add app-wide.
-const THEME_INIT_SCRIPT = `(function(){try{var m=document.cookie.match(/(?:^|; )theme_preference=([^;]*)/);var p=m?decodeURIComponent(m[1]):'system';var dark=p==='dark'||(p!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(dark){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();`;
+// this blocking script (no async/defer, first thing in <body>) resolves the theme before
+// anything paints, still zero-flash on a cold /login load, without the static-generation cost
+// a server-side read would add app-wide.
+//
+// Real bug found and fixed here: this used to read a `theme_preference` cookie first and only
+// fall back to `prefers-color-scheme` when it was unset — but no Settings toggle (or anything
+// else in the app) has ever written that cookie, so it was pure dead-code precedence that could
+// only ever fire from a stray/manually-set browser cookie, permanently pinning the app to that
+// value on every reload regardless of the OS theme (reported: system set to dark, page kept
+// reloading into light). Until a real theme toggle exists to write it, system preference is the
+// only signal that can be trusted — reinstate the cookie priority alongside that toggle's write
+// side, not before.
+const THEME_INIT_SCRIPT = `(function(){try{if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();`;
 
 export default function RootLayout({
   children,

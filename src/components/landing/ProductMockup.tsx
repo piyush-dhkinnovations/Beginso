@@ -305,7 +305,9 @@ export default function ProductMockup() {
           <div className="flex-1 flex justify-center">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-card)] border border-[var(--border-default)] px-3 py-1 text-[11px] text-[var(--text-muted)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/favicon.svg" alt="" height={12} width={12} style={{ height: 12, width: 12 }} aria-hidden="true" />
+              <img src="/favicon-light.svg" alt="" height={12} width={12} style={{ height: 12, width: 12 }} aria-hidden="true" className="brand-icon-light" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/favicon-dark.svg" alt="" height={12} width={12} style={{ height: 12, width: 12 }} aria-hidden="true" className="brand-icon-dark" />
               beginso.com/w/acme/inbox
             </span>
           </div>
@@ -316,7 +318,9 @@ export default function ProductMockup() {
         <div className="hidden md:flex h-14 items-center gap-4 px-4 border-b border-[var(--border-default)]">
           <span className="flex items-center gap-2 shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/favicon.svg" alt="" height={20} width={20} style={{ height: 20, width: 20 }} aria-hidden="true" />
+            <img src="/favicon-light.svg" alt="" height={20} width={20} style={{ height: 20, width: 20 }} aria-hidden="true" className="brand-icon-light" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/favicon-dark.svg" alt="" height={20} width={20} style={{ height: 20, width: 20 }} aria-hidden="true" className="brand-icon-dark" />
             <Wordmark height={32} />
           </span>
           <div className="flex-1 max-w-sm flex items-center gap-2 rounded-[var(--bg-radius-sm)] border border-[var(--border-default)] bg-[var(--surface-hover)] px-3 py-1.5">

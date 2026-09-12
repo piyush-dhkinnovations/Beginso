@@ -83,7 +83,7 @@ describe('InviteAcceptPage (/invite/[token])', () => {
   it('signed in, matching email: Accept calls accept() and navigates into the workspace', async () => {
     mockAuthState.current = { user: { email: 'sam@example.com' }, isAuthenticated: true, isLoading: false };
     mockPreview.mockResolvedValue({ ...BASE, callerEmailMatches: true });
-    mockAccept.mockResolvedValue({ workspace: { id: 'w1', slug: 'acme-marketing', name: 'Acme Marketing' } });
+    mockAccept.mockResolvedValue({ id: 'w1', slug: 'acme-marketing', name: 'Acme Marketing' });
     renderPage();
 
     await userEvent.click(await screen.findByRole('button', { name: 'Accept' }));
@@ -106,13 +106,41 @@ describe('InviteAcceptPage (/invite/[token])', () => {
   it('already a member: routes straight in via a single action, no accept/decline choice', async () => {
     mockAuthState.current = { user: { email: 'sam@example.com' }, isAuthenticated: true, isLoading: false };
     mockPreview.mockResolvedValue({ ...BASE, status: 'accepted', callerEmailMatches: true });
-    mockAccept.mockResolvedValue({ workspace: { id: 'w1', slug: 'acme-marketing', name: 'Acme Marketing' } });
+    mockAccept.mockResolvedValue({ id: 'w1', slug: 'acme-marketing', name: 'Acme Marketing' });
     renderPage();
 
     expect(await screen.findByText(/You're already a member/)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Decline' })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Go to workspace' }));
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/w/acme-marketing'));
+  });
+
+  it('accept() succeeding without a usable slug fails gracefully instead of crashing', async () => {
+    mockAuthState.current = { user: { email: 'sam@example.com' }, isAuthenticated: true, isLoading: false };
+    mockPreview.mockResolvedValue({ ...BASE, callerEmailMatches: true });
+    // Reproduces a real live-backend response shape gap found via manual testing: accept()
+    // resolves (no thrown/rejected error) but the workspace object it returns has no slug.
+    mockAccept.mockResolvedValue({ id: 'w1', name: 'Acme Marketing' } as unknown as { id: string; slug: string; name: string });
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Accept' }));
+    expect(await screen.findByText(/couldn't open the workspace automatically/)).toBeInTheDocument();
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('a raw backend crash message is never shown verbatim to the user', async () => {
+    mockAuthState.current = { user: { email: 'sam@example.com' }, isAuthenticated: true, isLoading: false };
+    mockPreview.mockResolvedValue({ ...BASE, callerEmailMatches: true });
+    mockAccept.mockRejectedValue(
+      Object.assign(new Error("Cannot read properties of undefined (reading 'slug')"), {
+        response: { data: { error: { message: "Cannot read properties of undefined (reading 'slug')" } } },
+      })
+    );
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Accept' }));
+    expect(await screen.findByText('Something went wrong on our end. Please try again in a moment.')).toBeInTheDocument();
+    expect(screen.queryByText(/Cannot read properties/)).not.toBeInTheDocument();
   });
 
   it('expired: states the expiry, no accept action', async () => {

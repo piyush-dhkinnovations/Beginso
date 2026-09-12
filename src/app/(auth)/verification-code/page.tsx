@@ -6,7 +6,7 @@ import { AlertCircle, CheckCircle2, Copy } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { authService, type VerificationCodeReveal } from '@/services/auth';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import { AuthCard } from '@/components/auth/AuthCard';
 
 type RevealState =
   | { status: 'loading' }
@@ -76,25 +76,25 @@ export default function VerificationCodePage() {
 
   if (revealState.status === 'loading') {
     return (
-      <Card className="flex w-full flex-col items-center gap-4 p-8 text-center" aria-busy="true">
+      <AuthCard className="flex w-full flex-col items-center gap-4 p-8 text-center" aria-busy="true">
         <span className="h-10 w-10 animate-spin rounded-full border-2 border-brand-100 border-t-brand-600" />
         <div className="space-y-1">
-          <h1 className="text-heading-2 font-bold text-neutral-900">Opening your secure code</h1>
-          <p className="text-body text-neutral-600">This should only take a moment.</p>
+          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Opening your secure code</h1>
+          <p className="text-body text-[var(--text-muted)]">This should only take a moment.</p>
         </div>
-      </Card>
+      </AuthCard>
     );
   }
 
   if (revealState.status === 'invalid') {
     return (
-      <Card className="flex w-full flex-col items-center gap-5 p-8 text-center">
+      <AuthCard className="flex w-full flex-col items-center gap-5 p-8 text-center">
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-error">
           <AlertCircle size={22} aria-hidden="true" />
         </span>
         <div className="space-y-2">
-          <h1 className="text-heading-2 font-bold text-neutral-900">Verification link unavailable</h1>
-          <p className="text-body text-neutral-600">This link is invalid, expired, or has already been used.</p>
+          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Verification link unavailable</h1>
+          <p className="text-body text-[var(--text-muted)]">This link is invalid, expired, or has already been used.</p>
         </div>
         <Link
           href="/verify-email"
@@ -102,19 +102,19 @@ export default function VerificationCodePage() {
         >
           Request another email
         </Link>
-      </Card>
+      </AuthCard>
     );
   }
 
   if (revealState.status === 'error') {
     return (
-      <Card className="flex w-full flex-col items-center gap-5 p-8 text-center">
+      <AuthCard className="flex w-full flex-col items-center gap-5 p-8 text-center">
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-warning">
           <AlertCircle size={22} aria-hidden="true" />
         </span>
         <div className="space-y-2">
-          <h1 className="text-heading-2 font-bold text-neutral-900">Unable to load your code</h1>
-          <p className="text-body text-neutral-600">Check your connection and try again.</p>
+          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Unable to load your code</h1>
+          <p className="text-body text-[var(--text-muted)]">Check your connection and try again.</p>
         </div>
         <Button className="w-full" onClick={retry}>Try again</Button>
         <Link
@@ -123,20 +123,20 @@ export default function VerificationCodePage() {
         >
           Request another email
         </Link>
-      </Card>
+      </AuthCard>
     );
   }
 
   const formattedCode = `${revealState.result.code.slice(0, 3)} ${revealState.result.code.slice(3)}`;
 
   return (
-    <Card className="flex w-full flex-col items-center gap-6 p-8 text-center">
+    <AuthCard className="flex w-full flex-col items-center gap-6 p-8 text-center">
       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-600">
         <CheckCircle2 size={22} aria-hidden="true" />
       </span>
       <div className="space-y-2">
-        <h1 className="text-heading-2 font-bold text-neutral-900">Your verification code</h1>
-        <p className="text-body text-neutral-600">Copy this code, then enter it on the email verification page.</p>
+        <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Your verification code</h1>
+        <p className="text-body text-[var(--text-muted)]">Copy this code, then enter it on the email verification page.</p>
       </div>
 
       <output
@@ -146,7 +146,7 @@ export default function VerificationCodePage() {
         {formattedCode}
       </output>
 
-      <p className="text-body-sm text-neutral-500">
+      <p className="text-body-sm text-[var(--text-muted)]">
         Expires at <time dateTime={revealState.result.expiresAt}>{new Date(revealState.result.expiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</time>.
       </p>
 
@@ -157,8 +157,8 @@ export default function VerificationCodePage() {
         </Button>
       </div>
 
-      <p aria-live="polite" className="min-h-5 text-body-sm font-medium text-neutral-600">{copyMessage}</p>
-      <p className="text-body-sm text-neutral-500">For security, this code is displayed only once. Do not share it.</p>
-    </Card>
+      <p aria-live="polite" className="min-h-5 text-body-sm font-medium text-[var(--text-muted)]">{copyMessage}</p>
+      <p className="text-body-sm text-[var(--text-muted)]">For security, this code is displayed only once. Do not share it.</p>
+    </AuthCard>
   );
 }

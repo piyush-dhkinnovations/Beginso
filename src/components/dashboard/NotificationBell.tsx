@@ -64,7 +64,7 @@ export function NotificationBell() {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative flex min-h-11 min-w-11 items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+        className="relative flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[var(--text-muted)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] transition-colors focus:outline-none focus:ring-2 focus:ring-brand-500/20"
         aria-label="View notifications"
         aria-expanded={isOpen}
         aria-haspopup="menu"
@@ -82,18 +82,18 @@ export function NotificationBell() {
         <div
           role="menu"
           aria-label="Notifications"
-          className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-50 animate-fade-in"
+          className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-md shadow-lg bg-[var(--surface-card)] ring-1 ring-black ring-opacity-5 focus:outline-none z-50 animate-fade-in"
         >
-          <div className="px-4 py-3 border-b border-neutral-100">
-            <p className="text-body-sm font-semibold text-neutral-800">Notifications</p>
+          <div className="px-4 py-3 border-b border-[var(--border-default)]">
+            <p className="text-body-sm font-semibold text-[var(--text-primary)]">Notifications</p>
           </div>
 
           {notifications.length === 0 ? (
-            <p className="px-4 py-6 text-center text-body-sm text-neutral-500">
+            <p className="px-4 py-6 text-center text-body-sm text-[var(--text-muted)]">
               No notifications yet.
             </p>
           ) : (
-            <ul className="max-h-96 overflow-y-auto divide-y divide-neutral-100">
+            <ul className="max-h-96 overflow-y-auto divide-y divide-[var(--border-default)]">
               {notifications.map((notification) => {
                 const Icon = TYPE_ICON[notification.type];
                 return (
@@ -102,7 +102,7 @@ export function NotificationBell() {
                       type="button"
                       onClick={() => handleItemClick(notification)}
                       className={cn(
-                        'flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-neutral-50',
+                        'flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-[var(--surface-hover)]',
                         !notification.read && 'bg-brand-50/50'
                       )}
                     >
@@ -111,13 +111,13 @@ export function NotificationBell() {
                       </span>
                       <span className="flex-1 min-w-0">
                         <span className="flex items-center gap-1.5">
-                          <span className="text-body-sm font-semibold text-neutral-800">{notification.title}</span>
+                          <span className="text-body-sm font-semibold text-[var(--text-primary)]">{notification.title}</span>
                           {!notification.read && (
                             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-brand-600" aria-label="Unread" />
                           )}
                         </span>
-                        <span className="block text-caption text-neutral-500 mt-0.5">{notification.message}</span>
-                        <span className="block text-caption text-neutral-400 mt-1">
+                        <span className="block text-caption text-[var(--text-muted)] mt-0.5">{notification.message}</span>
+                        <span className="block text-caption text-[var(--text-muted)] mt-1">
                           {formatRelativeTime(notification.createdAt)}
                         </span>
                       </span>

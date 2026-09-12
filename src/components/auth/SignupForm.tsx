@@ -97,7 +97,7 @@ export function SignupForm() {
     <button
       type="button"
       onClick={togglePasswordVisibility}
-      className="text-neutral-400 hover:text-neutral-600 focus:outline-none flex items-center justify-center min-w-[44px] min-h-[44px]"
+      className="text-[var(--text-muted)] hover:text-[var(--text-primary)] focus:outline-none flex items-center justify-center min-w-[44px] min-h-[44px]"
       aria-label={showPassword ? 'Hide password' : 'Show password'}
     >
       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -109,7 +109,7 @@ export function SignupForm() {
       type="button"
       onClick={toggleConfirmPasswordVisibility}
       
-      className="text-neutral-400 hover:text-neutral-600 focus:outline-none flex items-center justify-center min-w-[44px] min-h-[44px]"
+      className="text-[var(--text-muted)] hover:text-[var(--text-primary)] focus:outline-none flex items-center justify-center min-w-[44px] min-h-[44px]"
       aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
     >
       {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -181,9 +181,9 @@ export function SignupForm() {
 
       <div className="relative my-2 flex items-center justify-center">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-neutral-200"></div>
+          <div className="w-full border-t border-[var(--border-default)]"></div>
         </div>
-        <span className="relative bg-white px-3 text-[12px] text-neutral-500 font-medium uppercase">
+        <span className="relative bg-[var(--surface-card)] px-3 text-[12px] text-[var(--text-muted)] font-medium uppercase">
           Or continue with
         </span>
       </div>

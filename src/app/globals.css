@@ -461,11 +461,15 @@
   }
 }
 
-/* Hero Background Pattern */
+/* Hero Background Pattern — hardcoded to a fixed white/light-gray dot grid regardless of theme,
+   so the landing page's hero section stayed light even with [data-theme="dark"] applied
+   everywhere else on the page (Navbar/paragraph text already used theme-aware tokens, so they
+   read as low-contrast "washed out" against this fixed-light background rather than actually
+   being broken themselves). Bridged onto the same tokens the rest of the page uses. */
 .hero-bg {
-  background-image: radial-gradient(circle, #E2E8F0 1px, transparent 1px);
+  background-image: radial-gradient(circle, var(--border-default) 1px, transparent 1px);
   background-size: 24px 24px;
-  background-color: #FFFFFF;
+  background-color: var(--bg-page);
 }
 
 /* Reduced Motion Override */
@@ -558,3 +562,10 @@
 .wordmark-dark { display: none; }
 [data-theme="dark"] .wordmark-light { display: none; }
 [data-theme="dark"] .wordmark-dark { display: inline-block; }
+
+/* Same swap for the small brand icon mark next to the wordmark (Navbar) — favicon.svg itself
+   stays the fixed browser-tab icon (layout.tsx metadata, outside data-theme's reach); this pair
+   is only for the in-page mark. */
+.brand-icon-dark { display: none; }
+[data-theme="dark"] .brand-icon-light { display: none; }
+[data-theme="dark"] .brand-icon-dark { display: inline-block; }
