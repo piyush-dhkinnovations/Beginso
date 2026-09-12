@@ -4,7 +4,7 @@ import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { Mail } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import { AuthCard } from '@/components/auth/AuthCard';
 import { Input } from '@/components/ui/Input';
 import { authService } from '@/services/auth';
 
@@ -32,13 +32,13 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <Card className="w-full p-8 flex flex-col items-center text-center gap-6">
+    <AuthCard className="w-full p-8 flex flex-col items-center text-center gap-6">
       <div className="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
         <Mail aria-hidden="true" size={22} />
       </div>
       <div className="space-y-2">
-        <h1 className="text-heading-2 font-bold text-neutral-900">Reset your password</h1>
-        <p className="text-body text-neutral-600">
+        <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Reset your password</h1>
+        <p className="text-body text-[var(--text-muted)]">
           {sent
             ? 'If an account exists for that email, a password-reset link is on its way.'
             : 'Enter your email and we will send you a secure password-reset link.'}
@@ -74,6 +74,6 @@ export default function ForgotPasswordPage() {
       <Link href="/login" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 hover:text-brand-900">
         Back to login
       </Link>
-    </Card>
+    </AuthCard>
   );
 }

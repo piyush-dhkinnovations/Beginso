@@ -74,7 +74,7 @@ export function PendingInvitesTable({ invitations, canManage, isLoading, onResen
         title="Revoke invitation?"
         description={pendingRevoke ? `The invite sent to ${pendingRevoke.email} will no longer be usable.` : undefined}
       >
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-neutral-100">
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-[var(--border-default)]">
           <Button type="button" variant="secondary" onClick={() => setPendingRevoke(null)}>
             Cancel
           </Button>

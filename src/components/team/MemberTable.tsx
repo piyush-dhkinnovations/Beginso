@@ -116,7 +116,7 @@ export function MemberTable({ members, currentUserId, canManage, isLoading, onRo
         title="Remove member?"
         description={pendingRemoval ? `${pendingRemoval.name} will lose access to this workspace immediately.` : undefined}
       >
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-neutral-100">
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-[var(--border-default)]">
           <Button type="button" variant="secondary" onClick={() => setPendingRemoval(null)}>
             Cancel
           </Button>

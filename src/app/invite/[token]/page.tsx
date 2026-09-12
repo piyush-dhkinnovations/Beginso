@@ -12,10 +12,9 @@ import { invitationsService } from '@/services/invitations';
 import { invitationKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/hooks/useAuth';
 import { ROLE_LABELS } from '@/lib/roles';
-import { Card } from '@/components/ui/Card';
+import { AuthCard } from '@/components/auth/AuthCard';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { Wordmark } from '@/components/landing/Wordmark';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 
 // Requirements §7.5 / design.md §5, §15.4: six states derived purely from (invitation preview,
@@ -29,6 +28,21 @@ type ViewState =
   | 'expired'
   | 'revoked'
   | 'declined';
+
+// A live backend crash was found to leak its raw JS exception text (e.g. "Cannot read
+// properties of undefined (reading 'slug')") straight into the error envelope's `message` field
+// — this repo's own PROJECT_STATUS.md already tracks the general case ("500 responses can leak
+// internal error.message detail", Known Issues, backend-owned). Rather than showing a stack-trace
+// -shaped string to an end user on this specific page, fall back to a generic message when the
+// text doesn't read like something meant for a person.
+const RAW_RUNTIME_ERROR_PATTERN = /cannot read propert|is not a function|is not defined|undefined is not|null is not|typeerror|referenceerror/i;
+
+function describeActionError(err: unknown): string {
+  const message = getFriendlyErrorMessage(err);
+  return RAW_RUNTIME_ERROR_PATTERN.test(message)
+    ? 'Something went wrong on our end. Please try again in a moment.'
+    : message;
+}
 
 function deriveState(
   status: 'pending' | 'expired' | 'revoked' | 'accepted' | 'declined',
@@ -47,11 +61,10 @@ function deriveState(
 
 function InviteShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-neutral-50 px-4 py-12">
-      <Wordmark force="light" height={32} />
-      <Card className="w-full max-w-[400px] flex flex-col items-center gap-4 p-8 text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[var(--bg-page)] px-4 py-12">
+      <AuthCard className="w-full max-w-[400px] flex flex-col items-center gap-4 p-8 text-center">
         {children}
-      </Card>
+      </AuthCard>
     </div>
   );
 }
@@ -79,7 +92,7 @@ export default function InviteAcceptPage() {
 
   const acceptMutation = useMutation({
     mutationFn: () => invitationsService.accept(token),
-    onError: (err) => setActionError(getFriendlyErrorMessage(err)),
+    onError: (err) => setActionError(describeActionError(err)),
   });
 
   const declineMutation = useMutation({
@@ -88,7 +101,7 @@ export default function InviteAcceptPage() {
       setDeclinedLocally(true);
       queryClient.invalidateQueries({ queryKey: invitationKeys.detail(token) });
     },
-    onError: (err) => setActionError(getFriendlyErrorMessage(err)),
+    onError: (err) => setActionError(describeActionError(err)),
   });
 
   const handleAccept = () => {
@@ -98,7 +111,16 @@ export default function InviteAcceptPage() {
         // Soft navigation is fine here (unlike authContext.login()'s hard navigation): the
         // caller is already authenticated with a valid session cookie before this call, so
         // there's no stale-cache-vs-new-cookie race to worry about.
-        router.push(`/w/${result.workspace.slug}`);
+        if (!result?.slug) {
+          // A confirmed-live backend response shape gap (found via manual testing, not
+          // hypothesized): the accept endpoint can return success without a usable `slug` —
+          // known backend issue "500 responses can leak internal error.message detail" is the
+          // sibling symptom of the same underlying handler bug. Fail visibly but gracefully
+          // instead of crashing on `undefined.slug`.
+          setActionError("Your invitation was accepted, but we couldn't open the workspace automatically. Go to All Workspaces to find it.");
+          return;
+        }
+        router.push(`/w/${result.slug}`);
       },
     });
   };
@@ -128,8 +150,8 @@ export default function InviteAcceptPage() {
     if (status === 404) {
       return (
         <InviteShell>
-          <h1 className="text-heading-2 font-bold text-neutral-900">This invitation doesn&apos;t exist</h1>
-          <p className="text-body text-neutral-600">
+          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">This invitation doesn&apos;t exist</h1>
+          <p className="text-body text-[var(--text-muted)]">
             Check the link you were sent, or ask the workspace owner to invite you again.
           </p>
         </InviteShell>
@@ -138,8 +160,8 @@ export default function InviteAcceptPage() {
     return (
       <InviteShell>
         <AlertCircle className="text-error" size={40} aria-hidden="true" />
-        <h1 className="text-heading-2 font-bold text-neutral-900">This link isn&apos;t working</h1>
-        <p className="text-body text-neutral-600">
+        <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">This link isn&apos;t working</h1>
+        <p className="text-body text-[var(--text-muted)]">
           The invite link may be broken or the page failed to load. Try again.
         </p>
         <Button onClick={() => refetch()}>Retry</Button>
@@ -155,10 +177,10 @@ export default function InviteAcceptPage() {
   if (state === 'expired') {
     return (
       <InviteShell>
-        <div role="status" className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-neutral-300 p-6">
-          <Clock className="text-neutral-400" size={40} aria-hidden="true" />
-          <h1 className="text-heading-2 font-bold text-neutral-900">This invite has expired</h1>
-          <p className="text-body text-neutral-600">Ask {preview.inviterName} to send a new invite link.</p>
+        <div role="status" className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-[var(--border-default)] p-6">
+          <Clock className="text-[var(--text-muted)]" size={40} aria-hidden="true" />
+          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">This invite has expired</h1>
+          <p className="text-body text-[var(--text-muted)]">Ask {preview.inviterName} to send a new invite link.</p>
         </div>
       </InviteShell>
     );
@@ -167,10 +189,10 @@ export default function InviteAcceptPage() {
   if (state === 'revoked') {
     return (
       <InviteShell>
-        <div role="status" className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-neutral-300 p-6">
-          <XCircle className="text-neutral-400" size={40} aria-hidden="true" />
-          <h1 className="text-heading-2 font-bold text-neutral-900">This invite was revoked</h1>
-          <p className="text-body text-neutral-600">
+        <div role="status" className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-[var(--border-default)] p-6">
+          <XCircle className="text-[var(--text-muted)]" size={40} aria-hidden="true" />
+          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">This invite was revoked</h1>
+          <p className="text-body text-[var(--text-muted)]">
             Ask {preview.inviterName} for a new invite if you still need access.
           </p>
         </div>
@@ -182,8 +204,8 @@ export default function InviteAcceptPage() {
     return (
       <InviteShell>
         <div role="status" className="flex flex-col items-center gap-2">
-          <h1 className="text-heading-2 font-bold text-neutral-900">Invitation declined</h1>
-          <p className="text-body text-neutral-600">
+          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Invitation declined</h1>
+          <p className="text-body text-[var(--text-muted)]">
             You can ask the workspace owner to resend it if you change your mind.
           </p>
         </div>
@@ -196,8 +218,8 @@ export default function InviteAcceptPage() {
       <InviteShell>
         <div role="status" className="flex flex-col items-center gap-4">
           <CheckCircle2 className="text-success" size={40} aria-hidden="true" />
-          <h1 className="text-heading-2 font-bold text-neutral-900">You&apos;re already a member</h1>
-          <p className="text-body text-neutral-600">Go to {preview.workspaceName}.</p>
+          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">You&apos;re already a member</h1>
+          <p className="text-body text-[var(--text-muted)]">Go to {preview.workspaceName}.</p>
           {actionError && <p role="alert" className="text-body-sm text-error">{actionError}</p>}
           <Button className="w-full" isLoading={acceptMutation.isPending} onClick={handleAccept}>
             Go to workspace
@@ -211,8 +233,8 @@ export default function InviteAcceptPage() {
     return (
       <InviteShell>
         <div role="status" className="flex flex-col items-center gap-4">
-          <h1 className="text-heading-2 font-bold text-neutral-900">Signed in as a different account</h1>
-          <p className="text-body text-neutral-600">
+          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Signed in as a different account</h1>
+          <p className="text-body text-[var(--text-muted)]">
             You&apos;re signed in as {user?.email}, but this invite is for {preview.invitedEmail}.
           </p>
           <Button className="w-full" onClick={handleSwitchAccount}>
@@ -228,10 +250,10 @@ export default function InviteAcceptPage() {
   return (
     <InviteShell>
       <div role="status" className="flex flex-col items-center gap-2">
-        <h1 className="text-heading-2 font-bold text-neutral-900">
+        <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">
           You are invited to join {preview.workspaceName}
         </h1>
-        <p className="text-body text-neutral-600">
+        <p className="text-body text-[var(--text-muted)]">
           {preview.inviterName} invited you as a {roleLabel}.
         </p>
       </div>

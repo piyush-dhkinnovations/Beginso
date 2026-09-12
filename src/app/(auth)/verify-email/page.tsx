@@ -9,7 +9,7 @@ import { authService } from '@/services/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/components/common/Toast';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import { AuthCard } from '@/components/auth/AuthCard';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useSearchParams } from 'next/navigation';
 import { sanitizeNextParam } from '@/lib/authRoutes';
@@ -94,19 +94,19 @@ function VerifyEmailPageInner() {
   };
 
   return (
-    <Card className="w-full p-8 flex flex-col items-center text-center gap-6">
+    <AuthCard className="w-full p-8 flex flex-col items-center text-center gap-6">
       <div className="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
         <MailCheck aria-hidden="true" size={22} />
       </div>
       <div className="space-y-2">
-        <h1 className="text-heading-2 font-bold text-neutral-900">Verify your email</h1>
-        <p className="text-body text-neutral-600">
+        <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Verify your email</h1>
+        <p className="text-body text-[var(--text-muted)]">
           {email
             ? <>Enter the six-digit code sent to <strong>{email}</strong>.</>
             : 'Sign in again to request or complete email verification.'}
         </p>
         {email && (
-          <p className="text-body-sm text-neutral-500">
+          <p className="text-body-sm text-[var(--text-muted)]">
             Open your verification email, select <strong>View verification code</strong>, then enter the six-digit code shown on the Beginso page.
           </p>
         )}
@@ -137,7 +137,7 @@ function VerifyEmailPageInner() {
                 autoComplete={index === 0 ? 'one-time-code' : 'off'}
                 maxLength={1}
                 aria-label={`Verification code digit ${index + 1}`}
-                className="h-11 w-11 rounded-md border border-neutral-300 bg-white text-center text-heading-2 font-semibold text-neutral-900 outline-none transition-colors focus:border-brand-500 focus:ring-2 focus:ring-brand-100 disabled:bg-neutral-100"
+                className="h-11 w-11 rounded-md border border-[var(--border-default)] bg-[var(--surface-card)] text-center text-heading-2 font-semibold text-[var(--text-primary)] outline-none transition-colors focus:border-brand-500 focus:ring-2 focus:ring-brand-100 disabled:bg-[var(--surface-hover)]"
               />
             ))}
           </fieldset>
@@ -162,6 +162,6 @@ function VerifyEmailPageInner() {
       <Link href="/login" className="inline-flex min-h-11 items-center font-semibold text-sm text-brand-700 hover:text-brand-900">
         Back to login
       </Link>
-    </Card>
+    </AuthCard>
   );
 }

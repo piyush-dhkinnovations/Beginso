@@ -74,10 +74,10 @@ export function AppShell({
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
-            className="absolute left-0 top-0 bottom-0 w-[220px] max-w-[80vw] bg-white dark:bg-neutral-900 shadow-2xl z-50 flex flex-col"
+            className="absolute left-0 top-0 bottom-0 w-[220px] max-w-[80vw] bg-[var(--surface-card)] shadow-2xl z-50 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-2 border-b border-neutral-100 dark:border-neutral-800">
+            <div className="flex items-center justify-between p-2 border-b border-[var(--border-default)]">
               <Wordmark height={32} />
               <button
                 type="button"

@@ -10,7 +10,7 @@ import { auth } from '@/lib/firebase';
 import { authService } from '@/services/auth';
 import { resetPasswordSchema, type ResetPasswordFormValues } from '@/lib/schemas/resetPasswordSchema';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
+import { AuthCard } from '@/components/auth/AuthCard';
 import { Input } from '@/components/ui/Input';
 
 type ResetState = 'checking' | 'ready' | 'invalid' | 'success';
@@ -78,7 +78,7 @@ export default function ResetPasswordPage() {
       type="button"
       onClick={toggle}
       aria-label={`${visible ? 'Hide' : 'Show'} ${label}`}
-      className="flex min-h-11 min-w-11 items-center justify-center text-neutral-400 hover:text-neutral-600 focus:outline-none"
+      className="flex min-h-11 min-w-11 items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] focus:outline-none"
     >
       {visible ? <EyeOff size={16} /> : <Eye size={16} />}
     </button>
@@ -86,39 +86,39 @@ export default function ResetPasswordPage() {
 
   if (resetState === 'checking') {
     return (
-      <Card className="flex w-full flex-col items-center gap-4 p-8 text-center" aria-busy="true">
+      <AuthCard className="flex w-full flex-col items-center gap-4 p-8 text-center" aria-busy="true">
         <span className="h-10 w-10 animate-spin rounded-full border-2 border-brand-100 border-t-brand-600" />
-        <p className="text-body text-neutral-600">Checking your password-reset link…</p>
-      </Card>
+        <p className="text-body text-[var(--text-muted)]">Checking your password-reset link…</p>
+      </AuthCard>
     );
   }
 
   if (resetState === 'invalid') {
     return (
-      <Card className="flex w-full flex-col items-center gap-5 p-8 text-center">
+      <AuthCard className="flex w-full flex-col items-center gap-5 p-8 text-center">
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-error">
           <AlertCircle size={22} aria-hidden="true" />
         </span>
         <div className="space-y-2">
-          <h1 className="text-heading-2 font-bold text-neutral-900">Reset link unavailable</h1>
-          <p className="text-body text-neutral-600">This link is invalid, expired, or has already been used.</p>
+          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Reset link unavailable</h1>
+          <p className="text-body text-[var(--text-muted)]">This link is invalid, expired, or has already been used.</p>
         </div>
         <Link href="/forgot-password" className="inline-flex min-h-11 items-center font-semibold text-brand-700 hover:text-brand-900">
           Request a new reset link
         </Link>
-      </Card>
+      </AuthCard>
     );
   }
 
   if (resetState === 'success') {
     return (
-      <Card className="flex w-full flex-col items-center gap-5 p-8 text-center">
+      <AuthCard className="flex w-full flex-col items-center gap-5 p-8 text-center">
         <span className="flex h-12 w-12 items-center justify-center rounded-full bg-green-50 text-success">
           <CheckCircle2 size={22} aria-hidden="true" />
         </span>
         <div className="space-y-2">
-          <h1 className="text-heading-2 font-bold text-neutral-900">Password updated</h1>
-          <p className="text-body text-neutral-600">Your password was changed successfully. You can now log in.</p>
+          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Password updated</h1>
+          <p className="text-body text-[var(--text-muted)]">Your password was changed successfully. You can now log in.</p>
         </div>
         {notificationWarning && (
           <p role="alert" className="rounded-md border border-amber-200 bg-amber-50 p-3 text-body-sm text-amber-900">
@@ -131,18 +131,18 @@ export default function ResetPasswordPage() {
         >
           Back to login
         </Link>
-      </Card>
+      </AuthCard>
     );
   }
 
   return (
-    <Card className="flex w-full flex-col items-center gap-6 p-8 text-center">
+    <AuthCard className="flex w-full flex-col items-center gap-6 p-8 text-center">
       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-600">
         <KeyRound size={22} aria-hidden="true" />
       </span>
       <div className="space-y-2">
-        <h1 className="text-heading-2 font-bold text-neutral-900">Create a new password</h1>
-        <p className="text-body text-neutral-600">
+        <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Create a new password</h1>
+        <p className="text-body text-[var(--text-muted)]">
           Enter a new password for <strong>{email}</strong>.
         </p>
       </div>
@@ -185,6 +185,6 @@ export default function ResetPasswordPage() {
           Update password
         </Button>
       </form>
-    </Card>
+    </AuthCard>
   );
 }
