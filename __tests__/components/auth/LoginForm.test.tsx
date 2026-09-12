@@ -13,8 +13,14 @@ import { LoginForm } from '@/components/auth/LoginForm';
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────
 
+const { mockSearchParams, mockLogin } = vi.hoisted(() => ({
+  mockSearchParams: { current: new URLSearchParams() },
+  mockLogin: vi.fn(),
+}));
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
+  useSearchParams: () => mockSearchParams.current,
 }));
 
 vi.mock('@/lib/firebase', () => ({ auth: {} }));
@@ -25,7 +31,7 @@ vi.mock('firebase/auth', () => ({
 }));
 
 vi.mock('@/hooks/useAuth', () => ({
-  useAuth: () => ({ login: vi.fn(), logout: vi.fn() }),
+  useAuth: () => ({ login: mockLogin, logout: vi.fn() }),
 }));
 
 vi.mock('@/components/common/Toast', () => ({
@@ -55,6 +61,8 @@ vi.mock('@/services/auth', () => ({
 describe('LoginForm component', () => {
   beforeEach(() => {
     mockAuthLogin.mockReset();
+    mockLogin.mockReset();
+    mockSearchParams.current = new URLSearchParams();
   });
 
   it('renders email and password fields', () => {
@@ -160,6 +168,38 @@ describe('LoginForm component', () => {
     expect(submitBtn).not.toBeDisabled();
 
     vi.useRealTimers();
+  });
+
+  // ─── Sprint 9 task 3.5 / requirements §7.5.1: ?next= forwarded to login() ─
+
+  it('passes a valid internal ?next= through to login() on success', async () => {
+    mockSearchParams.current = new URLSearchParams('next=/invite/abc123');
+    mockAuthLogin.mockResolvedValueOnce(undefined);
+    mockLogin.mockResolvedValueOnce(undefined);
+
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'user@example.com' } });
+    fireEvent.change(document.getElementById('password')!, { target: { value: 'password123' } });
+    await user.click(screen.getByRole('button', { name: /log in/i }));
+
+    await waitFor(() => expect(mockLogin).toHaveBeenCalledWith('/invite/abc123'));
+  });
+
+  it('drops a crafted external ?next= (open-redirect guard) — login() gets undefined', async () => {
+    mockSearchParams.current = new URLSearchParams('next=' + encodeURIComponent('//evil.example.com'));
+    mockAuthLogin.mockResolvedValueOnce(undefined);
+    mockLogin.mockResolvedValueOnce(undefined);
+
+    const user = userEvent.setup();
+    render(<LoginForm />);
+
+    fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'user@example.com' } });
+    fireEvent.change(document.getElementById('password')!, { target: { value: 'password123' } });
+    await user.click(screen.getByRole('button', { name: /log in/i }));
+
+    await waitFor(() => expect(mockLogin).toHaveBeenCalledWith(undefined));
   });
 
   // ─── Property 8: Password Visibility Toggle Round-Trip ───────────────────
