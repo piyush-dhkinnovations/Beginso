@@ -73,16 +73,16 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Link href="/forms" className="block">
           <Card className="flex flex-col gap-2 h-full transition-shadow hover:shadow-md">
-            <PlusCircle size={24} className="text-neutral-400" aria-hidden="true" />
-            <strong className="text-body font-semibold">Create a form</strong>
-            <span className="text-caption text-neutral-500">Start from scratch</span>
+            <PlusCircle size={24} className="text-text-muted" aria-hidden="true" />
+            <strong className="text-body font-semibold text-text-primary">Create a form</strong>
+            <span className="text-caption text-text-muted">Start from scratch</span>
           </Card>
         </Link>
         <Link href="/templates" className="block">
           <Card className="flex flex-col gap-2 h-full transition-shadow hover:shadow-md">
-            <LayoutTemplate size={24} className="text-neutral-400" aria-hidden="true" />
-            <strong className="text-body font-semibold">Browse templates</strong>
-            <span className="text-caption text-neutral-500">Start with a proven structure</span>
+            <LayoutTemplate size={24} className="text-text-muted" aria-hidden="true" />
+            <strong className="text-body font-semibold text-text-primary">Browse templates</strong>
+            <span className="text-caption text-text-muted">Start with a proven structure</span>
           </Card>
         </Link>
       </div>
@@ -122,8 +122,8 @@ export default function DashboardPage() {
               style={i !== (formsData?.forms?.length ?? 0) - 1 ? { borderBottom: '1px solid var(--border-default)' } : undefined}
             >
               <Link href={`/forms/${form._id}/edit`} className="min-w-0 flex-1">
-                <p className="text-body-sm font-semibold text-neutral-800 truncate">{form.title}</p>
-                <p className="text-caption text-neutral-500">
+                <p className="text-body-sm font-semibold text-text-primary truncate">{form.title}</p>
+                <p className="text-caption text-text-muted">
                   {STATUS_LABEL[form.status]} · {form.responseCount} response{form.responseCount !== 1 ? 's' : ''}
                 </p>
               </Link>
