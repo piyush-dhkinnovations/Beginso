@@ -57,6 +57,7 @@ export const config = {
     '/settings/:path*',
     '/onboarding/:path*',
     '/w/:path*',
+    '/shared/:path*',
     '/login',
     '/signup',
     '/verify-email',

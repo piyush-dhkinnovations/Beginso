@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Plus, Building2, Search } from 'lucide-react';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
+import { ROLE_LABELS } from '@/lib/roles';
 import { PageHeader, Button, Card, Badge, EmptyState, Skeleton } from '@/components/ui';
 import { CreateWorkspaceModal } from '@/components/workspaces/CreateWorkspaceModal';
 
@@ -129,7 +130,7 @@ export default function WorkspacesPage() {
                     <div className="flex flex-col gap-2">
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="text-body font-semibold text-[var(--text-primary)]">{workspace.name}</h3>
-                        <Badge>{workspace.role}</Badge>
+                        <Badge>{ROLE_LABELS[workspace.role]}</Badge>
                       </div>
                       {typeof workspace.memberCount === 'number' && (
                         <p className="text-caption text-[var(--text-muted)]">

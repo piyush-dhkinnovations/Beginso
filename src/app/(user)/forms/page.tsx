@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink } from 'lucide-react';
+import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink, Share2 } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { workspaceKeys } from '@/lib/queryKeys';
 import { useToast } from '@/components/common/Toast';
@@ -15,6 +15,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { CreateFormModal } from '@/components/form-builder/CreateFormModal';
 import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
 import { MoveFormModal } from '@/components/workspaces/MoveFormModal';
+import { FormAccessPanel } from '@/components/team/FormAccessPanel';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
@@ -50,6 +51,7 @@ function FormRow({
   onDelete,
   isDeleting,
   onMove,
+  onShare,
 }: {
   form: Form;
   onDuplicate: (id: string) => void;
@@ -57,6 +59,7 @@ function FormRow({
   onDelete: (id: string) => void;
   isDeleting: boolean;
   onMove?: (form: Form) => void;
+  onShare: (form: Form) => void;
 }) {
   const router = useRouter();
   const updatedAt = new Date(form.updatedAt).toLocaleDateString('en-US', {
@@ -90,6 +93,12 @@ function FormRow({
           } satisfies MenuItem,
         ]
       : []),
+    {
+      id: 'share',
+      label: 'Share access',
+      icon: <Share2 className="bg-icon" />,
+      onSelect: () => onShare(form),
+    },
     {
       id: 'duplicate',
       label: isDuplicating ? 'Duplicating…' : 'Duplicate',
@@ -161,6 +170,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
   const { toast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formToMove, setFormToMove] = useState<Form | null>(null);
+  const [formToShare, setFormToShare] = useState<Form | null>(null);
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formToDelete, setFormToDelete] = useState<Form | null>(null);
@@ -339,6 +349,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
               onDelete={(id) => setFormToDelete(data.forms.find((f) => f._id === id) ?? null)}
               isDeleting={deletingId === form._id}
               onMove={(f) => setFormToMove(f)}
+              onShare={(f) => setFormToShare(f)}
             />
           ))}
 
@@ -366,6 +377,16 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
         formTitle={formToMove?.title ?? ''}
         currentContext={context}
         onClose={() => setFormToMove(null)}
+      />
+
+      {/* requirements.md §7.8 — works identically on a personal or workspace form; this same
+          FormsPage/FormRow is already shared between (user)/forms and /w/[slug]/forms (Sprint 8),
+          so no per-context branching is needed here (design.md §4). */}
+      <FormAccessPanel
+        isOpen={formToShare !== null}
+        formId={formToShare?._id ?? ''}
+        formTitle={formToShare?.title ?? ''}
+        onClose={() => setFormToShare(null)}
       />
 
       <DeleteFormModal

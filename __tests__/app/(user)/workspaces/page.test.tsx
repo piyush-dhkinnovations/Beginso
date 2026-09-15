@@ -48,7 +48,7 @@ describe('WorkspacesPage', () => {
     expect(await screen.findByText('Create your first workspace')).toBeInTheDocument();
   });
 
-  it('lists every workspace with its role', async () => {
+  it('lists every workspace with its role, rendered through ROLE_LABELS not the raw wire value', async () => {
     mockList.mockResolvedValue([
       { id: 'w1', name: 'Acme Inc', slug: 'acme', role: 'owner', memberCount: 3 },
       { id: 'w2', name: 'Beta Co', slug: 'beta', role: 'member', memberCount: 1 },
@@ -56,9 +56,10 @@ describe('WorkspacesPage', () => {
     renderPage();
 
     expect(await screen.findByText('Acme Inc')).toBeInTheDocument();
-    expect(screen.getByText('owner')).toBeInTheDocument();
+    expect(screen.getByText('Owner')).toBeInTheDocument();
     expect(screen.getByText('Beta Co')).toBeInTheDocument();
-    expect(screen.getByText('member')).toBeInTheDocument();
+    expect(screen.getByText('Editor')).toBeInTheDocument();
+    expect(screen.queryByText('member')).not.toBeInTheDocument();
   });
 
   it('each card navigates to /w/:slug', async () => {

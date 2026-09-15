@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Home, FileText, LayoutTemplate, Table2, PieChart, Download, Settings, Plus } from 'lucide-react';
+import { Home, FileText, LayoutTemplate, Table2, PieChart, Download, Settings, Plus, Share2 } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { useBuilderStore } from '@/store/builderStore';
@@ -20,8 +20,11 @@ export interface PersonalSidebarProps {
 // menu (CLAUDE.md V2 conventions), but that migration hasn't happened yet; dropping the links now
 // would silently remove real, currently-reachable functionality. Kept until that migration lands.
 //
-// "Shared with me" (A3, -> C2.7) and "My Submissions" (A5.1) remain deliberately omitted — same
-// reasoning as before: no data source / no route exists yet (Sprint 9 / Sprint 13 respectively).
+// "Shared with me" (A3, -> C2.7) closed this sprint (requirements.md §7.9) — the /shared route
+// and its data source (GET /api/shared-with-me) now exist, so it's a permanent item below,
+// positioned right after "My Forms" per the wireframe's PERSONAL_NAV order. "My Submissions"
+// (A5.1) remains deliberately omitted — same reasoning as before: no data source / route exists
+// yet (Sprint 13).
 export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
   const pathname = usePathname();
   const dirty = useBuilderStore((state) => state.dirty);
@@ -52,6 +55,7 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
           items: [
             { label: 'Home', href: '/dashboard', icon: Home, active: pathname === '/dashboard', onClick: guard('/dashboard') },
             { label: 'My Forms', href: '/forms', icon: FileText, active: pathname.startsWith('/forms') && !isInBuilder, onClick: guard('/forms') },
+            { label: 'Shared with me', href: '/shared', icon: Share2, active: pathname.startsWith('/shared'), onClick: guard('/shared') },
             { label: 'Templates', href: '/templates', icon: LayoutTemplate, active: pathname.startsWith('/templates'), onClick: guard('/templates') },
             { label: 'Responses', href: '/responses', icon: Table2, active: isResponsesActive, onClick: guard('/responses') },
             { label: 'Analytics', href: '/analytics', icon: PieChart, active: isAnalyticsActive, onClick: guard('/analytics') },

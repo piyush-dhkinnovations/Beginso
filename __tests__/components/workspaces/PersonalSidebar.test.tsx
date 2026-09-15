@@ -4,6 +4,8 @@
  * Extended: PersonalSidebar now also carries the context switcher header (closing the gap where
  * Personal space had no discoverable path into a workspace) and the four still-live top-level
  * pages (Responses/Analytics/Reports/Settings) — see the component's own comment.
+ * Sprint 9 Day 5 (requirements.md §7.9): "Shared with me" is now a permanent item, closing the
+ * gap this file's own comment previously named this sprint as fixing.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -37,7 +39,7 @@ describe('PersonalSidebar', () => {
 
   it('renders the real A1.1 personal nav set plus the still-live top-level pages', () => {
     renderSidebar();
-    ['Home', 'My Forms', 'Templates', 'Responses', 'Analytics', 'Reports', 'Settings', 'Create workspace'].forEach(
+    ['Home', 'My Forms', 'Shared with me', 'Templates', 'Responses', 'Analytics', 'Reports', 'Settings', 'Create workspace'].forEach(
       (label) => {
         expect(screen.getByText(label)).toBeInTheDocument();
       }
@@ -49,10 +51,16 @@ describe('PersonalSidebar', () => {
     expect(screen.getByRole('button', { name: /Switch context, currently Personal/ })).toBeInTheDocument();
   });
 
-  it('does not render Shared with me or My Submissions — both deferred, tracked gaps', () => {
+  it('renders Shared with me as a permanent item, scoped to /shared; My Submissions remains a deferred, tracked gap', () => {
     renderSidebar();
-    expect(screen.queryByText('Shared with me')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Shared with me' })).toHaveAttribute('href', '/shared');
     expect(screen.queryByText('My Submissions')).not.toBeInTheDocument();
+  });
+
+  it('marks Shared with me active on /shared', () => {
+    mockPathname.mockReturnValue('/shared');
+    renderSidebar();
+    expect(screen.getByRole('link', { name: 'Shared with me' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('marks Home active on /dashboard', () => {
@@ -94,7 +102,7 @@ describe('PersonalSidebar', () => {
   it('marks nothing active on an unrelated route', () => {
     mockPathname.mockReturnValue('/onboarding');
     renderSidebar();
-    ['Home', 'My Forms', 'Templates', 'Responses', 'Analytics', 'Reports', 'Settings', 'Create workspace'].forEach(
+    ['Home', 'My Forms', 'Shared with me', 'Templates', 'Responses', 'Analytics', 'Reports', 'Settings', 'Create workspace'].forEach(
       (label) => {
         expect(screen.getByRole('link', { name: new RegExp(label) })).not.toHaveAttribute('aria-current');
       }
