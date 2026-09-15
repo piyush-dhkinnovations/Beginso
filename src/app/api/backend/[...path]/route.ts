@@ -25,6 +25,12 @@ const ALLOWED_API_ROOTS = new Set([
   'notifications',
   'reports',
   'responses',
+  // Sprint 9 (team-permissions, task 5.4) — GET /api/shared-with-me lives under its own root
+  // segment (not /workspaces or /forms), same allowlist trap named above for 'invitations':
+  // design.md §2 only flagged 'invitations' as the one addition needed this sprint, but missed
+  // this one — found by inspection while wiring sharedService, fixed here rather than left to
+  // 404 silently once the backend route ships.
+  'shared-with-me',
   'templates',
   'upload',
   'users',
