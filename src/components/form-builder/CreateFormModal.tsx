@@ -58,6 +58,13 @@ export function CreateFormModal({ isOpen, onClose, defaultDestination }: CreateF
   const { data: workspace } = useQuery({
     queryKey: settingsKeys.workspace(),
     queryFn: settingsService.getWorkspace,
+    // Real bug found and fixed: this query was missing the `enabled: isOpen` guard the sibling
+    // query above already has, so it fired unconditionally the moment this always-mounted modal
+    // rendered — on every Forms page load, for every account. For a brand-new account with zero
+    // workspaces (Sprint 7's C1.3 lazy-provisioning model), GET /api/workspaces/current legitimately
+    // 404s since there's no "current" workspace to resolve, producing a silent failed request on
+    // every page load.
+    enabled: isOpen,
   });
 
   const {

@@ -11,9 +11,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import TeamPage from '@/app/w/[slug]/team/page';
 import type { MemberListItem, PendingInvitation } from '@/types/team';
 
+const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
   useParams: () => ({ slug: 'acme' }),
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: mockPush }),
 }));
 
 vi.mock('@/hooks/useAuth', () => ({
@@ -97,6 +98,7 @@ function renderPage() {
 
 describe('TeamPage (/w/[slug]/team)', () => {
   beforeEach(() => {
+    mockPush.mockReset();
     mockList.mockReset();
     mockListMembers.mockReset();
     mockUpdateMemberRole.mockReset();
@@ -208,5 +210,21 @@ describe('TeamPage (/w/[slug]/team)', () => {
     await userEvent.click(await screen.findByLabelText('Revoke invite to new@example.com'));
     await userEvent.click(screen.getByRole('button', { name: 'Revoke' }));
     await waitFor(() => expect(mockRevoke).toHaveBeenCalledWith('acme', 'inv-1'));
+  });
+
+  // Sprint 9 Day 4 — requirements.md §7.6: reachable from the Team page, by anyone (not gated
+  // behind canManage, unlike Invite Members), since it's a read-only reference.
+  it('clicking Roles & Permissions navigates to /w/[slug]/roles', async () => {
+    mockListMembers.mockResolvedValue([ADMIN]);
+    renderPage();
+    await userEvent.click(await screen.findByRole('button', { name: 'Roles & Permissions' }));
+    expect(mockPush).toHaveBeenCalledWith('/w/acme/roles');
+  });
+
+  it('a non-manager still sees the Roles & Permissions action', async () => {
+    mockList.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role: 'viewer' }]);
+    mockListMembers.mockResolvedValue([ADMIN]);
+    renderPage();
+    expect(await screen.findByRole('button', { name: 'Roles & Permissions' })).toBeInTheDocument();
   });
 });
