@@ -4,17 +4,19 @@ import { usePathname } from 'next/navigation';
 import { Home, FileText, LayoutTemplate, Table2, PieChart, Download, Settings, Users } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
-import { canManageMembers } from '@/lib/roles';
+import { canManageMembers, canViewTemplates } from '@/lib/roles';
 import type { Role } from '@/types/workspace';
 
 export interface WorkspaceSidebarProps {
   slug: string;
   currentLabel: string;
   collapsed?: boolean;
-  // Sprint 9 (team-permissions, requirements.md §7.2/§8.7) — the caller's role in this
-  // workspace, used to gate the "Team" nav item to owner/admin. Undefined until BE 0.1 ships
-  // (GET /api/workspaces/:id doesn't return it yet); canManageMembers() fails closed on
-  // undefined, so the item stays hidden rather than shown-by-default until the backend lands.
+  // Sprint 9 (team-permissions, requirements.md §7.2/§7.7/§8.7) — the caller's role in this
+  // workspace, used to gate "Team" (owner/admin only) and "Templates" (hidden for viewer).
+  // Undefined until BE 0.1 ships (GET /api/workspaces/:id doesn't return it yet).
+  // canManageMembers() fails closed on undefined (Team stays hidden until the backend lands);
+  // canViewTemplates() does not — see its own comment in src/lib/roles.ts for why the two use
+  // different undefined-defaults.
   role?: Role;
 }
 
@@ -35,12 +37,12 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }
   const items = [
     { label: 'Home', href: base, icon: Home },
     { label: 'Forms', href: `${base}/forms`, icon: FileText },
-    { label: 'Templates', href: `${base}/templates`, icon: LayoutTemplate },
+    // Both Team and Templates are client-side convenience gates only (requirements.md §7.7/§14)
+    // — the real boundary is the route itself rejecting the role server-side.
+    ...(canViewTemplates(role) ? [{ label: 'Templates', href: `${base}/templates`, icon: LayoutTemplate }] : []),
     { label: 'Responses', href: `${base}/responses`, icon: Table2 },
     { label: 'Analytics', href: `${base}/analytics`, icon: PieChart },
     { label: 'Reports', href: `${base}/reports`, icon: Download },
-    // Team is a client-side convenience gate only (requirements.md §7.7/§14) — the real
-    // boundary is the /w/[slug]/team/* routes themselves rejecting the role server-side.
     ...(canManageMembers(role) ? [{ label: 'Team', href: `${base}/team`, icon: Users }] : []),
     { label: 'Settings', href: `${base}/settings`, icon: Settings },
   ];

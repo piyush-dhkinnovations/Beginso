@@ -86,4 +86,23 @@ describe('WorkspaceSidebar', () => {
       expect(screen.getByRole('link', { name: 'Team' })).toHaveAttribute('href', '/w/acme/team');
     });
   });
+
+  // Sprint 9 (team-permissions), requirements.md §7.7 — role-gated "Templates" nav item.
+  // Exact rule from the wireframe's appSidebar(): hidden for Reviewer only, unlike Team.
+  describe('Templates nav item (role-gated)', () => {
+    it('is visible when role is undefined — does not fail closed, unlike Team', () => {
+      renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc' });
+      expect(screen.getByRole('link', { name: 'Templates' })).toHaveAttribute('href', '/w/acme/templates');
+    });
+
+    it('is hidden for role=viewer', () => {
+      renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc', role: 'viewer' });
+      expect(screen.queryByRole('link', { name: 'Templates' })).not.toBeInTheDocument();
+    });
+
+    it.each(['owner', 'admin', 'member'] as const)('is visible for role=%s', (role) => {
+      renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc', role });
+      expect(screen.getByRole('link', { name: 'Templates' })).toHaveAttribute('href', '/w/acme/templates');
+    });
+  });
 });

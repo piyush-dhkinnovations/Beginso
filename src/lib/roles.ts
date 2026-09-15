@@ -72,3 +72,18 @@ export function canManageMembers(role: Role | undefined): boolean {
 export function canDeleteForm(role: Role | undefined): boolean {
   return role !== undefined && hasCapability(role, 'forms:delete');
 }
+
+// Role-filtered navigation (requirements.md §7.7) — exact rule from the wireframe's own
+// appSidebar()/setRole() (index.html lines 596-700): in a workspace, Reviewer never sees
+// Templates; every other role does. Not part of CAPABILITIES above — that matrix is the
+// Forms/Responses/Workspace reference table (§7.6), and Templates visibility isn't a capability
+// row in it (the wireframe treats it as a separate nav-filter rule, not a rolesContent() entry).
+//
+// Deliberately does NOT fail closed on `undefined` (unlike canManageMembers/canDeleteForm):
+// Templates is an already-shipped feature visible to every current user, not a new one gated
+// behind BE 0.1 landing — hiding it for everyone during the backend gap would be a real, avoidable
+// regression for a purely cosmetic nav-filter rule (the CAPABILITIES matrix above has no
+// `templates:*` entry at all, so nothing server-side actually gates this route by role either).
+export function canViewTemplates(role: Role | undefined): boolean {
+  return role !== 'viewer';
+}

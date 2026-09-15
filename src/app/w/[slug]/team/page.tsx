@@ -1,11 +1,11 @@
 'use client';
 
 // Team & Members — requirements.md §7.2/§7.3/§7.4, design.md §15.1. Day 2 (Tuesday, per
-// SPRINT-PLAN.md) adds the Pending Invites card and the "Invite Members" header action on top of
-// Monday's Members card. The header's "Roles & Permissions" action stays deferred — it still has
-// nowhere to navigate to until /w/[slug]/roles (task 4.2) lands Thursday.
+// SPRINT-PLAN.md) added the Pending Invites card and the "Invite Members" header action on top of
+// Monday's Members card. Day 4 (Thursday) wires the "Roles & Permissions" header action now that
+// /w/[slug]/roles (task 4.2) exists.
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { teamService } from '@/services/team';
@@ -24,6 +24,7 @@ import type { Role } from '@/types/workspace';
 export default function TeamPage() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
+  const router = useRouter();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -102,11 +103,18 @@ export default function TeamPage() {
         title="Team & Members"
         description="Manage who has access to this workspace."
         actions={
-          canManage ? (
-            <Button variant="primary" onClick={() => setIsInviteModalOpen(true)}>
-              Invite Members
+          <>
+            {/* Reachable by any member (requirements.md §7.6) — the matrix is a read-only
+                reference, not a manage action, so it isn't gated behind canManage. */}
+            <Button variant="secondary" onClick={() => router.push(`/w/${slug}/roles`)}>
+              Roles & Permissions
             </Button>
-          ) : undefined
+            {canManage && (
+              <Button variant="primary" onClick={() => setIsInviteModalOpen(true)}>
+                Invite Members
+              </Button>
+            )}
+          </>
         }
       />
 

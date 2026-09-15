@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { ROLE_LABELS, CAPABILITIES, hasCapability, canManageMembers, canDeleteForm } from '@/lib/roles';
+import { ROLE_LABELS, CAPABILITIES, hasCapability, canManageMembers, canDeleteForm, canViewTemplates } from '@/lib/roles';
 import type { Role } from '@/types/workspace';
 
 const ALL_ROLES: Role[] = ['owner', 'admin', 'member', 'viewer'];
@@ -64,6 +64,19 @@ describe('canDeleteForm', () => {
 
   it('fails closed when the role is not yet known', () => {
     expect(canDeleteForm(undefined)).toBe(false);
+  });
+});
+
+describe('canViewTemplates', () => {
+  it('is false only for viewer', () => {
+    expect(canViewTemplates('owner')).toBe(true);
+    expect(canViewTemplates('admin')).toBe(true);
+    expect(canViewTemplates('member')).toBe(true);
+    expect(canViewTemplates('viewer')).toBe(false);
+  });
+
+  it('does not fail closed when the role is not yet known — unlike canManageMembers/canDeleteForm', () => {
+    expect(canViewTemplates(undefined)).toBe(true);
   });
 });
 
