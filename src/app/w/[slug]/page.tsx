@@ -9,6 +9,7 @@
 // Real data wiring (actual form list per workspace) is done via the existing workspaceKeys.forms
 // query key factory, scoped to this workspace context.
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -16,6 +17,8 @@ import { Plus, LayoutTemplate, FilePlus, Table, Settings, Download, Pin, BarChar
 import { formsService } from '@/services/forms';
 import { workspaceKeys } from '@/lib/queryKeys';
 import { PageHeader, Button, EmptyState, StatCard, Card, Badge, Skeleton } from '@/components/ui';
+import { FormAccessPanel } from '@/components/team/FormAccessPanel';
+import type { Form } from '@/types/form';
 
 // Workspace Home page — client component so loading/error/empty/populated states are all
 // rendered from a real query rather than hardcoded on the server.
@@ -24,10 +27,16 @@ export default function WorkspaceHomePage() {
   const slug = params.slug;
 
   const context = { type: 'workspace' as const, workspaceId: slug };
+  const [formToShare, setFormToShare] = useState<Form | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: workspaceKeys.forms(context, { limit: 20 }),
-    queryFn: () => formsService.getForms({ limit: 20 }),
+    // Real bug found and fixed: context was computed above but never actually passed to
+    // getForms(), so this page's "your forms" list silently showed every form the caller can
+    // see across every context, not just this workspace's (src/services/forms.ts's own comment
+    // has the full root-cause — requirePermission()'s workspace resolution falls back to the
+    // caller's default workspace when nothing in the request says otherwise).
+    queryFn: () => formsService.getForms({ limit: 20 }, context),
   });
 
   const forms = data?.forms ?? [];
@@ -185,9 +194,18 @@ export default function WorkspaceHomePage() {
                       <Link href={`/forms/${f._id}/edit`} className="hover:text-[var(--text-primary)] flex items-center gap-1">
                         <Edit3 size={12} /> Edit
                       </Link>
-                      <Link href={`/w/${slug}/share`} className="hover:text-[var(--text-primary)] flex items-center gap-1">
+                      {/* Real bug found and fixed: this linked to /w/[slug]/share, a route that
+                          doesn't exist (and dropped the form's own id, unlike every sibling link
+                          here) — a dead link, always 404. Sprint 9 already built the real
+                          destination for "share this form" (FormAccessPanel); reused instead of
+                          building a new route. */}
+                      <button
+                        type="button"
+                        onClick={() => setFormToShare(f)}
+                        className="hover:text-[var(--text-primary)] flex items-center gap-1"
+                      >
                         <Share2 size={12} /> Share
-                      </Link>
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -203,6 +221,13 @@ export default function WorkspaceHomePage() {
           </div>
         </div>
       )}
+
+      <FormAccessPanel
+        isOpen={formToShare !== null}
+        formId={formToShare?._id ?? ''}
+        formTitle={formToShare?.title ?? ''}
+        onClose={() => setFormToShare(null)}
+      />
     </div>
   );
 }

@@ -48,7 +48,12 @@ export function ReportsView() {
 
   const { data: formsData } = useQuery({
     queryKey: ['forms', 'list-for-reports'],
-    queryFn: () => formsService.getForms({ limit: 100 }),
+    // Real bug found and fixed: unscoped, so this dropdown could silently include a caller's
+    // workspace forms depending on their default-workspace resolution (src/services/forms.ts's
+    // own comment has the full root-cause). This component only renders under (user)/reports
+    // today (no /w/[slug]/reports route exists yet), so 'personal' is unconditionally correct —
+    // revisit if/when Reports gets a workspace-scoped route.
+    queryFn: () => formsService.getForms({ limit: 100 }, { type: 'personal' }),
   });
   const forms = useMemo(() => formsData?.forms ?? [], [formsData]);
   // The backend's job objects only carry `formId` (a raw ObjectId), never a denormalized

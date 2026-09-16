@@ -46,7 +46,10 @@ export default function DashboardPage() {
 
   const { data: formsData, isLoading: formsLoading } = useQuery({
     queryKey: workspaceKeys.forms({ type: 'personal' }, { page: 1, limit: YOUR_FORMS_LIMIT }),
-    queryFn: () => formsService.getForms({ page: 1, limit: YOUR_FORMS_LIMIT }),
+    // Real bug found and fixed: never told the backend this was a personal-space request, so it
+    // fell back to the caller's default workspace and showed workspace forms here too
+    // (src/services/forms.ts's own comment has the full root-cause).
+    queryFn: () => formsService.getForms({ page: 1, limit: YOUR_FORMS_LIMIT }, { type: 'personal' }),
     enabled: !authLoading && isAuthenticated,
   });
 
