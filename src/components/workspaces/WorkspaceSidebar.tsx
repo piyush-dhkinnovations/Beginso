@@ -1,22 +1,20 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Home, FileText, LayoutTemplate, Table2, PieChart, Download, Settings, Users } from 'lucide-react';
+import { Home, FileText, Users } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
-import { canManageMembers, canViewTemplates } from '@/lib/roles';
+import { canManageMembers } from '@/lib/roles';
 import type { Role } from '@/types/workspace';
 
 export interface WorkspaceSidebarProps {
   slug: string;
   currentLabel: string;
   collapsed?: boolean;
-  // Sprint 9 (team-permissions, requirements.md §7.2/§7.7/§8.7) — the caller's role in this
-  // workspace, used to gate "Team" (owner/admin only) and "Templates" (hidden for viewer).
-  // Undefined until BE 0.1 ships (GET /api/workspaces/:id doesn't return it yet).
-  // canManageMembers() fails closed on undefined (Team stays hidden until the backend lands);
-  // canViewTemplates() does not — see its own comment in src/lib/roles.ts for why the two use
-  // different undefined-defaults.
+  // Sprint 9 (team-permissions, requirements.md §7.2/§8.7) — the caller's role in this
+  // workspace, used to gate "Team" (owner/admin only). Undefined until BE 0.1 ships
+  // (GET /api/workspaces/:id doesn't return it yet). canManageMembers() fails closed on
+  // undefined (Team stays hidden until the backend lands).
   role?: Role;
 }
 
@@ -34,17 +32,16 @@ export interface WorkspaceSidebarProps {
 export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }: WorkspaceSidebarProps) {
   const pathname = usePathname();
   const base = `/w/${slug}`;
+  // Real bug found and fixed: this linked to /templates, /responses, /analytics, /reports, and
+  // /settings under /w/[slug] — none of which exist (only forms/, team/, roles/ do; confirmed
+  // by listing src/app/w/[slug]/). Every one of those was a dead link, 404-ing on click and
+  // spamming the console with Next.js's own Link-prefetch failures the moment this sidebar
+  // rendered. Hidden until each page actually ships — re-add the item as each one lands, rather
+  // than linking ahead of the page that would make it real.
   const items = [
     { label: 'Home', href: base, icon: Home },
     { label: 'Forms', href: `${base}/forms`, icon: FileText },
-    // Both Team and Templates are client-side convenience gates only (requirements.md §7.7/§14)
-    // — the real boundary is the route itself rejecting the role server-side.
-    ...(canViewTemplates(role) ? [{ label: 'Templates', href: `${base}/templates`, icon: LayoutTemplate }] : []),
-    { label: 'Responses', href: `${base}/responses`, icon: Table2 },
-    { label: 'Analytics', href: `${base}/analytics`, icon: PieChart },
-    { label: 'Reports', href: `${base}/reports`, icon: Download },
     ...(canManageMembers(role) ? [{ label: 'Team', href: `${base}/team`, icon: Users }] : []),
-    { label: 'Settings', href: `${base}/settings`, icon: Settings },
   ];
 
   return (

@@ -184,12 +184,16 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
       context,
       { search: debouncedSearch, status, page, limit: FORMS_PAGE_LIMIT }
     ),
-    queryFn: () => formsService.getForms({
-      search: debouncedSearch || undefined,
-      status: status === 'all' ? undefined : status,
-      page,
-      limit: FORMS_PAGE_LIMIT,
-    }),
+    queryFn: () =>
+      formsService.getForms(
+        {
+          search: debouncedSearch || undefined,
+          status: status === 'all' ? undefined : status,
+          page,
+          limit: FORMS_PAGE_LIMIT,
+        },
+        context
+      ),
   });
 
   const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / FORMS_PAGE_LIMIT));

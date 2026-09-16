@@ -58,11 +58,7 @@ export default function Navbar() {
       >
         <div className="flex items-center justify-between h-14 px-4 md:px-6">
           <Link href="/" className="flex items-center gap-2 shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/favicon-light.svg" alt="" height={24} width={24} style={{ height: 24, width: 24 }} aria-hidden="true" className="brand-icon-light" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/favicon-dark.svg" alt="" height={24} width={24} style={{ height: 24, width: 24 }} aria-hidden="true" className="brand-icon-dark" />
-            <Wordmark height={32} />
+            <Wordmark height={44} />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">

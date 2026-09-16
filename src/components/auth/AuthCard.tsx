@@ -9,7 +9,7 @@ export function AuthCard({ children, ...props }: CardProps) {
   return (
     <Card {...props}>
       <div className="flex justify-center">
-        <Wordmark height={28} />
+        <Wordmark height={40} />
       </div>
       {children}
     </Card>
