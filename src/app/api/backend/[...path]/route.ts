@@ -105,6 +105,20 @@ async function forward(request: NextRequest, pathParts: string[]): Promise<NextR
   if (accept) headers.set('accept', accept);
   if (sessionToken) headers.set('authorization', `Bearer ${sessionToken}`);
 
+  // Real bug found and fixed: this proxy builds a fresh Headers object for the upstream request
+  // and, until now, only ever copied the fixed list below it — silently dropping every other
+  // header the browser sent, including x-workspace-slug/x-workspace-id. formsService.getForms()
+  // (src/services/forms.ts) started sending x-workspace-slug to fix forms leaking across
+  // personal/workspace contexts, but that fix was a no-op end-to-end: the header never survived
+  // this hop, so the real backend never received it regardless of what axios sent. Forwarded here
+  // — these are the exact two headers API_CONTRACT.md's "Workspace Resolution" order names as its
+  // first, highest-priority mechanism, so any current or future caller relying on them needs this
+  // proxy to actually pass them through, not just the one caller that happened to need it first.
+  const workspaceSlug = request.headers.get('x-workspace-slug');
+  const workspaceId = request.headers.get('x-workspace-id');
+  if (workspaceSlug) headers.set('x-workspace-slug', workspaceSlug);
+  if (workspaceId) headers.set('x-workspace-id', workspaceId);
+
   // This route runs server-side (Node fetch on Vercel), so without these the backend sees
   // Vercel's outbound AWS IP and User-Agent "node" instead of the real visitor's — see backend's
   // 8fc966a fix notes. x-forwarded-for's first hop is the original client, set by Vercel's edge

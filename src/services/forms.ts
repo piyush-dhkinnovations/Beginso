@@ -22,6 +22,11 @@ export const formsService = {
   // context (the only resolution mechanism the contract confirms accepts a slug, not an ObjectId
   // — `context.workspaceId` here is literally the URL slug, not a Mongo `_id`).
   //
+  // Second layer of this same bug, found a day later: the header approach above was correct but
+  // a no-op — our own BFF (`src/app/api/backend/[...path]/route.ts`) rebuilt the upstream request
+  // headers from a fixed whitelist and silently dropped `x-workspace-slug` before it ever reached
+  // the real backend. Fixed there; this file needed no further change once that was forwarded.
+  //
   // Personal context is the less-confirmed half: nothing in the documented resolution order
   // describes an explicit "ignore my default workspace" override for a GET. `workspaceId=personal`
   // is sent as a best-effort query param, matching the `null`/`'personal'` convention this same
