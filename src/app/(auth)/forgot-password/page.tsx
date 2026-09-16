@@ -71,7 +71,7 @@ export default function ForgotPasswordPage() {
         </Button>
       )}
 
-      <Link href="/login" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-700 hover:text-brand-900">
+      <Link href="/login" className="inline-flex min-h-11 items-start text-sm font-semibold text-brand-700 hover:text-brand-900">
         Back to login
       </Link>
     </AuthCard>

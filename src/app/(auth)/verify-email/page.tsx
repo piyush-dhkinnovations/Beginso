@@ -159,7 +159,7 @@ function VerifyEmailPageInner() {
         </div>
       )}
 
-      <Link href="/login" className="inline-flex min-h-11 items-center font-semibold text-sm text-brand-700 hover:text-brand-900">
+      <Link href="/login" className="inline-flex min-h-11 items-start font-semibold text-sm text-brand-700 hover:text-brand-900">
         Back to login
       </Link>
     </AuthCard>

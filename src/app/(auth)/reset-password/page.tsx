@@ -103,7 +103,7 @@ export default function ResetPasswordPage() {
           <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Reset link unavailable</h1>
           <p className="text-body text-[var(--text-muted)]">This link is invalid, expired, or has already been used.</p>
         </div>
-        <Link href="/forgot-password" className="inline-flex min-h-11 items-center font-semibold text-brand-700 hover:text-brand-900">
+        <Link href="/forgot-password" className="inline-flex min-h-11 items-start font-semibold text-brand-700 hover:text-brand-900">
           Request a new reset link
         </Link>
       </AuthCard>

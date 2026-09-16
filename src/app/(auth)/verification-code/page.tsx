@@ -98,7 +98,7 @@ export default function VerificationCodePage() {
         </div>
         <Link
           href="/verify-email"
-          className="inline-flex min-h-11 items-center font-semibold text-brand-700 hover:text-brand-900"
+          className="inline-flex min-h-11 items-start font-semibold text-brand-700 hover:text-brand-900"
         >
           Request another email
         </Link>
@@ -119,7 +119,7 @@ export default function VerificationCodePage() {
         <Button className="w-full" onClick={retry}>Try again</Button>
         <Link
           href="/verify-email"
-          className="inline-flex min-h-11 items-center font-semibold text-brand-700 hover:text-brand-900"
+          className="inline-flex min-h-11 items-start font-semibold text-brand-700 hover:text-brand-900"
         >
           Request another email
         </Link>
