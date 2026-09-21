@@ -26,7 +26,12 @@ export const eventsService = {
   listAudit: (workspaceId: string, filters: AuditFilters = {}): Promise<WorkspaceEventItem[]> =>
     axiosInstance
       .get(`/api/workspaces/${workspaceId}/audit`, {
-        params: { page: filters.page ?? 1, actorId: filters.actorId, from: rangeToFrom(filters.range) },
+        params: {
+          page: filters.page ?? 1,
+          limit: filters.limit,
+          actorId: filters.actorId,
+          from: rangeToFrom(filters.range),
+        },
       })
       .then((r) => toEvents(r.data)),
 

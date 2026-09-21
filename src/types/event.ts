@@ -9,10 +9,15 @@ export interface WorkspaceEventItem {
   targetId: string;
   targetLabel: string;
   createdAt: string;
+  // Backend contract to confirm (BE 0.4): the Audit Log wireframe has an IP column but design.md
+  // §11.2's contract has no IP field. Optional and shown as-is — the Sprint 11 security audit
+  // requires "no raw IPs", so whatever the backend sends here should already be masked/hashed.
+  ip?: string | null;
 }
 
 export interface AuditFilters {
   actorId?: string;
   range?: '7d' | '30d' | 'all';
   page?: number;
+  limit?: number;
 }
