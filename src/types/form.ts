@@ -123,6 +123,14 @@ export interface Form {
   createdAt: string;         // ISO 8601
   updatedAt: string;         // ISO 8601
   publishedAt?: string;      // ISO 8601
+  // sprint-10-events-migration requirements.md §7.9 — Backend contract to confirm whether
+  // GET /api/forms already returns owner identity for a workspace-form row; read defensively
+  // (optional, may be absent). A personal form's owner is always the caller, so this is only
+  // ever consulted for a workspace-context row.
+  owner?: {
+    name: string;
+    avatarUrl?: string;
+  };
 }
 
 // ─── API Payload Types ────────────────────────────────────────────────────────
