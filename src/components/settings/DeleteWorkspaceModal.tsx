@@ -115,8 +115,8 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
         />
 
         <div>
-          <label htmlFor="delete-workspace-name-input" className="block text-body-sm text-neutral-600 mb-1.5">
-            Type <span className="font-semibold text-neutral-900">{workspaceName}</span> to confirm
+          <label htmlFor="delete-workspace-name-input" className="block text-body-sm text-[var(--text-secondary)] mb-1.5">
+            Type <span className="font-semibold text-[var(--text-primary)]">{workspaceName}</span> to confirm
           </label>
           <input
             id="delete-workspace-name-input"
@@ -126,7 +126,7 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
             placeholder={workspaceName}
             aria-describedby="delete-workspace-name-hint"
             disabled={isDeleting}
-            className="w-full border border-neutral-300 rounded-md px-3 py-2 text-body focus:outline-none focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 transition-colors"
+            className="w-full bg-[var(--bg-page)] text-[var(--text-primary)] border border-[var(--border-strong)] rounded-md px-3 py-2 text-body focus:outline-none focus:border-[var(--border-focus)] focus:ring-2 focus:ring-[var(--border-default)] transition-colors"
             autoComplete="off"
           />
           <p id="delete-workspace-name-hint" className="sr-only">
@@ -136,7 +136,7 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
 
         {submitError && <p className="text-caption text-rose-600">{submitError}</p>}
 
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-neutral-100">
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-[var(--border-subtle)]">
           <Button type="button" variant="secondary" onClick={onClose} disabled={isDeleting}>
             Cancel
           </Button>

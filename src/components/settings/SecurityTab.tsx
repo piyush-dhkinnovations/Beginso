@@ -8,8 +8,9 @@ import { formatResponseDate } from '@/lib/formatters';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
 import { ChangePasswordModal } from './ChangePasswordModal';
-import { SessionsList } from './SessionsList';
 
+// Password and email-verification only — "Active sessions" moved to its own Sessions & Devices tab
+// (sprint-10 requirements.md §7.12, SessionsTab.tsx).
 // Verification/dates share ProfileTab's own settingsKeys.profile() query — no duplicate fetch.
 // "Change Password" is shown unconditionally rather than hidden for Google-only accounts, the
 // same revised decision Requirement 4.1/ChangePasswordModal already applies (no live Firebase
@@ -25,25 +26,25 @@ export function SecurityTab() {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-3">
-        <h3 className="text-heading-2 font-bold text-neutral-900">Account security</h3>
+        <h3 className="text-heading-2 font-bold text-[var(--text-primary)]">Account security</h3>
 
         {isLoading ? (
-          <div className="flex flex-col gap-3 animate-pulse rounded-lg border border-neutral-200 bg-white p-4">
-            <div className="h-6 bg-neutral-200 rounded w-32" />
-            <div className="h-4 bg-neutral-100 rounded w-48" />
-            <div className="h-4 bg-neutral-100 rounded w-48" />
+          <div className="flex flex-col gap-3 animate-pulse rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
+            <div className="h-6 bg-[var(--border-default)] rounded w-32" />
+            <div className="h-4 bg-[var(--border-subtle)] rounded w-48" />
+            <div className="h-4 bg-[var(--border-subtle)] rounded w-48" />
           </div>
         ) : isError || !profile ? (
-          <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-4">
-            <p className="text-body-sm text-neutral-700">Unable to load your security details.</p>
+          <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
+            <p className="text-body-sm text-[var(--text-primary)]">Unable to load your security details.</p>
             <Button variant="secondary" size="small" onClick={() => refetch()}>Try again</Button>
           </div>
         ) : (
-          <div className="flex flex-col gap-3 rounded-lg border border-neutral-200 bg-white p-4">
+          <div className="flex flex-col gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
             <StatusBadge variant={profile.emailVerified ? 'active' : 'draft'} className="self-start">
               {profile.emailVerified ? 'Email verified' : 'Email not verified'}
             </StatusBadge>
-            <div className="text-body-sm text-neutral-600 flex flex-col gap-1">
+            <div className="text-body-sm text-[var(--text-secondary)] flex flex-col gap-1">
               <p>Account created {formatResponseDate(profile.createdAt)}</p>
               <p>Last login {formatResponseDate(profile.lastLoginAt)}</p>
             </div>
@@ -62,11 +63,6 @@ export function SecurityTab() {
             />
           </div>
         )}
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <h3 className="text-heading-2 font-bold text-neutral-900">Active sessions</h3>
-        <SessionsList />
       </div>
     </div>
   );

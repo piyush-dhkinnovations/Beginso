@@ -39,17 +39,17 @@ export function SessionsList() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-3 animate-pulse rounded-lg border border-neutral-200 bg-white p-4">
-        <div className="h-11 bg-neutral-200 rounded w-full" />
-        <div className="h-11 bg-neutral-100 rounded w-full" />
+      <div className="flex flex-col gap-3 animate-pulse rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
+        <div className="h-11 bg-[var(--border-default)] rounded w-full" />
+        <div className="h-11 bg-[var(--border-subtle)] rounded w-full" />
       </div>
     );
   }
 
   if (isError || !data) {
     return (
-      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-4">
-        <p className="text-body-sm text-neutral-700">Unable to load your sessions.</p>
+      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
+        <p className="text-body-sm text-[var(--text-primary)]">Unable to load your sessions.</p>
         <Button variant="secondary" size="small" onClick={() => refetch()}>Try again</Button>
       </div>
     );
@@ -67,7 +67,7 @@ export function SessionsList() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1 divide-y divide-neutral-100 rounded-lg border border-neutral-200 bg-white p-4">
+      <div className="flex flex-col gap-1 divide-y divide-[var(--border-subtle)] rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
         {pageSessions.map((session) => (
           <SessionRow
             key={session.id}
@@ -77,7 +77,7 @@ export function SessionsList() {
           />
         ))}
         {otherSessions.length === 0 && (
-          <p className="text-body-sm text-neutral-500 py-2">No other active sessions.</p>
+          <p className="text-body-sm text-[var(--text-muted)] py-2">No other active sessions.</p>
         )}
       </div>
 
@@ -89,7 +89,7 @@ export function SessionsList() {
         title="Revoke this session?"
         description={pendingSession ? `You'll be signed out on ${pendingSession.deviceLabel}. You can sign back in there anytime.` : undefined}
       >
-        <div className="flex flex-col gap-3 pt-4 border-t border-neutral-100">
+        <div className="flex flex-col gap-3 pt-4 border-t border-[var(--border-subtle)]">
           <Button
             type="button"
             variant="destructive"
@@ -101,7 +101,7 @@ export function SessionsList() {
           <button
             type="button"
             onClick={() => setPendingRevokeId(null)}
-            className="min-h-11 text-body-sm text-neutral-500 hover:text-neutral-700 underline underline-offset-2 py-1"
+            className="min-h-11 text-body-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] underline underline-offset-2 py-1"
           >
             Cancel
           </button>

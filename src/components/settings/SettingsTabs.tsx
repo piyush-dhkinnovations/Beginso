@@ -1,8 +1,8 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { Tabs, type TabItem } from '@/components/ui/Tabs';
 
-export type SettingsTab = 'profile' | 'workspace' | 'branding' | 'notifications' | 'security';
+export type SettingsTab = 'profile' | 'workspace' | 'branding' | 'notifications' | 'security' | 'sessions';
 
 interface SettingsTabsProps {
   activeTab: SettingsTab;
@@ -17,42 +17,37 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: 'branding', label: 'Branding' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'security', label: 'Security' },
+  // sprint-10 requirements.md §7.12 — split out of Security, wireframe screen 18's exact label.
+  { id: 'sessions', label: 'Sessions & Devices' },
 ];
 
-// Visual treatment mirrors BuilderTabs' underline-active style, but with real role="tablist"/
-// role="tab"/aria-selected semantics — BuilderTabs itself turned out not to have these (verified
-// while building this component, see tasks.md Day 1 Notes), so this isn't copied from it.
+// Rebuilt on ui/Tabs (sprint-10 requirements.md §7.13) — the hand-rolled version hardcoded
+// text-neutral-*/border-neutral-* colours that never followed the theme. ui/Tabs also brings the
+// WAI-ARIA roving-tabindex/arrow-key behaviour this strip didn't have. `.settings-tabs-scroll`
+// stays: it is only the small-screen right-edge fade (globals.css), not a colour.
 export function SettingsTabs({ activeTab, onChange, dirtyTabs }: SettingsTabsProps) {
+  const tabs: TabItem[] = TABS.map((tab) => ({
+    id: tab.id,
+    label: (
+      <>
+        {tab.label}
+        {dirtyTabs?.has(tab.id) && (
+          <span
+            className="h-1.5 w-1.5 rounded-full bg-[var(--action-primary)]"
+            aria-label="Unsaved changes"
+          />
+        )}
+      </>
+    ),
+  }));
+
   return (
-    <div
-      role="tablist"
-      aria-label="Settings"
-      className="settings-tabs-scroll flex items-center gap-1 border-b border-neutral-200 overflow-x-auto scroll-smooth pr-6"
-    >
-      {TABS.map((tab) => {
-        const isActive = activeTab === tab.id;
-        const isDirty = dirtyTabs?.has(tab.id);
-        return (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={isActive}
-            onClick={() => onChange(tab.id)}
-            className={cn(
-              'flex shrink-0 items-center gap-1.5 px-3 sm:px-4 py-3 text-body-sm font-semibold whitespace-nowrap transition-all border-b-2 focus:outline-none min-h-11',
-              isActive
-                ? 'border-brand-700 text-brand-700'
-                : 'border-transparent text-neutral-500 hover:text-neutral-800 hover:border-neutral-200'
-            )}
-          >
-            {tab.label}
-            {isDirty && (
-              <span className="h-1.5 w-1.5 rounded-full bg-brand-600" aria-label="Unsaved changes" />
-            )}
-          </button>
-        );
-      })}
-    </div>
+    <Tabs
+      tabs={tabs}
+      activeId={activeTab}
+      onChange={(id) => onChange(id as SettingsTab)}
+      ariaLabel="Settings"
+      className="settings-tabs-scroll"
+    />
   );
 }

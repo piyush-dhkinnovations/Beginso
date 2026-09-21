@@ -23,6 +23,14 @@ describe('Tabs component', () => {
     expect(screen.getByRole('tab', { name: 'Build' })).toHaveAttribute('aria-selected', 'false');
   });
 
+  it('names the tablist when ariaLabel is given, and stays unnamed otherwise', () => {
+    const { rerender } = render(<Tabs tabs={tabs} activeId="build" onChange={() => {}} ariaLabel="Settings" />);
+    expect(screen.getByRole('tablist', { name: 'Settings' })).toBeInTheDocument();
+
+    rerender(<Tabs tabs={tabs} activeId="build" onChange={() => {}} />);
+    expect(screen.getByRole('tablist')).not.toHaveAttribute('aria-label');
+  });
+
   it('calls onChange when a tab is clicked', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
