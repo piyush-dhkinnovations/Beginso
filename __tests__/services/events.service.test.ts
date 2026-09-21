@@ -46,9 +46,9 @@ describe('eventsService', () => {
   it('listWorkspaceActivity() calls GET /api/workspaces/:id/events', async () => {
     mockGet.mockResolvedValueOnce({ data: [EVENT] });
 
-    await eventsService.listWorkspaceActivity('w1', 3);
+    await eventsService.listWorkspaceActivity('w1', 3, 20);
 
-    expect(mockGet).toHaveBeenCalledWith('/api/workspaces/w1/events', { params: { page: 3 } });
+    expect(mockGet).toHaveBeenCalledWith('/api/workspaces/w1/events', { params: { page: 3, limit: 20 } });
   });
 
   it('listAudit() sends actorId and turns a range into a `from` timestamp server-side filter', async () => {
