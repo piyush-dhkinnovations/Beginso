@@ -86,6 +86,30 @@ export const formAccessKeys = {
   grants: (formId: string) => ['form-access', formId, 'grants'] as const,
 };
 
+// Sprint 10 (events-migration), design.md §10. activityKeys/auditKeys are workspace-namespaced from
+// creation (teamKeys' precedent): switching workspaces must never serve another workspace's rows.
+// `limit` is part of formEventKeys.list — Form Overview's 5-row preview and the "View all" drawer's
+// fuller page would otherwise share a cache entry for page 1 and show each other's row counts.
+export const formKeys = {
+  all: (formId: string) => ['form', formId] as const,
+  overview: (formId: string) => [...formKeys.all(formId), 'overview'] as const,
+};
+
+export const formEventKeys = {
+  list: (formId: string, page = 1, limit = 5) => ['form-events', formId, 'list', page, limit] as const,
+};
+
+export const activityKeys = {
+  all: (workspaceId: string) => ['activity', workspaceId] as const,
+  list: (workspaceId: string, page = 1) => [...activityKeys.all(workspaceId), 'list', page] as const,
+};
+
+export const auditKeys = {
+  all: (workspaceId: string) => ['audit', workspaceId] as const,
+  list: (workspaceId: string, filters: { actorId?: string; range?: string; page?: number }) =>
+    [...auditKeys.all(workspaceId), 'list', filters] as const,
+};
+
 export const sharedKeys = {
   all: ['shared-with-me'] as const,
   list: () => [...sharedKeys.all, 'list'] as const,

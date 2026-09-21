@@ -51,3 +51,41 @@ describe('formsService.getForms', () => {
     expect(config.params).toEqual({ limit: 10, workspaceId: 'personal' });
   });
 });
+
+// sprint-10-events-migration, tasks.md 2.2 — Backend contract to confirm (BE 0.6); written against
+// the "extend GET /api/forms/:id" shape, degrading every unconfirmed stat to null.
+describe('formsService.getFormOverview', () => {
+  const FORM = { _id: 'f1', title: 'Survey', status: 'draft', responseCount: 7, workspaceId: null };
+
+  beforeEach(() => {
+    mockGet.mockReset();
+  });
+
+  it('calls GET /api/forms/:id and reads stats from an extended response', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: { ...FORM, responseCountThisWeek: 3, completionRate: 62.5 },
+    });
+
+    const { form, stats } = await formsService.getFormOverview('f1');
+
+    expect(mockGet).toHaveBeenCalledWith('/api/forms/f1');
+    expect(form.title).toBe('Survey');
+    expect(stats).toEqual({ responseCount: 7, responseCountThisWeek: 3, completionRate: 62.5 });
+  });
+
+  it('degrades unconfirmed stats to null (not 0) when the backend has not extended the endpoint', async () => {
+    mockGet.mockResolvedValueOnce({ data: FORM });
+
+    const { stats } = await formsService.getFormOverview('f1');
+
+    expect(stats).toEqual({ responseCount: 7, responseCountThisWeek: null, completionRate: null });
+  });
+
+  it('unwraps a { form } envelope', async () => {
+    mockGet.mockResolvedValueOnce({ data: { success: true, form: FORM } });
+
+    const { form } = await formsService.getFormOverview('f1');
+
+    expect(form._id).toBe('f1');
+  });
+});

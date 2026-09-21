@@ -1,5 +1,6 @@
 import axiosInstance from '@/lib/axios';
-import type { Form, CreateFormPayload, UpdateFormPayload } from '@/types/form';
+import { unwrapEnvelope } from '@/lib/apiEnvelope';
+import type { Form, FormOverviewStats, CreateFormPayload, UpdateFormPayload } from '@/types/form';
 import type { FormDestination, FormsContext } from '@/types/workspace';
 
 export const formsService = {
@@ -49,6 +50,27 @@ export const formsService = {
 
   getFormById: (id: string) =>
     axiosInstance.get<Form>(`/api/forms/${id}`).then(r => r.data),
+
+  // Backend contract to confirm (BE 0.6): written against the "extend GET /api/forms/:id" shape
+  // (tasks.md 2.2's stated smaller diff), not a separate /overview route. Nothing about the
+  // stats fields is confirmed live, so each one degrades to null rather than being invented —
+  // `completionRate` because view-tracking (B5.4) may not exist, `responseCountThisWeek` because
+  // the extension itself may not have shipped. Envelope unwrapped defensively (`form` key) like
+  // every service since Sprint 9.
+  getFormOverview: (id: string): Promise<{ form: Form; stats: FormOverviewStats }> =>
+    axiosInstance.get(`/api/forms/${id}`).then((r) => {
+      const raw = r.data as Record<string, unknown>;
+      const form = unwrapEnvelope<Form>(raw, 'form');
+      const source = (raw?.stats ?? raw?.form ?? raw ?? {}) as Partial<FormOverviewStats>;
+      return {
+        form,
+        stats: {
+          responseCount: source.responseCount ?? form.responseCount ?? 0,
+          responseCountThisWeek: source.responseCountThisWeek ?? null,
+          completionRate: source.completionRate ?? null,
+        },
+      };
+    }),
 
   updateForm: (id: string, payload: UpdateFormPayload) =>
     axiosInstance.patch<Form>(`/api/forms/${id}`, payload).then(r => r.data),
