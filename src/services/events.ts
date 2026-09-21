@@ -18,9 +18,9 @@ function rangeToFrom(range: AuditFilters['range']): string | undefined {
 }
 
 export const eventsService = {
-  listWorkspaceActivity: (workspaceId: string, page = 1): Promise<WorkspaceEventItem[]> =>
+  listWorkspaceActivity: (workspaceId: string, page = 1, limit?: number): Promise<WorkspaceEventItem[]> =>
     axiosInstance
-      .get(`/api/workspaces/${workspaceId}/events`, { params: { page } })
+      .get(`/api/workspaces/${workspaceId}/events`, { params: { page, limit } })
       .then((r) => toEvents(r.data)),
 
   listAudit: (workspaceId: string, filters: AuditFilters = {}): Promise<WorkspaceEventItem[]> =>

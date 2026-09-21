@@ -97,4 +97,19 @@ describe('WorkspaceSidebar', () => {
     });
   });
 
+  // Sprint 10, requirements.md §7.6 — "Activity" is visible to every role, unlike Team.
+  describe('Activity nav item (all roles)', () => {
+    it.each([undefined, 'viewer', 'member', 'admin', 'owner'] as const)('is visible for role=%s', (role) => {
+      renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc', role });
+      expect(screen.getByRole('link', { name: 'Activity' })).toHaveAttribute('href', '/w/acme/activity');
+    });
+
+    it('is marked active on /w/[slug]/activity', () => {
+      mockPathname.mockReturnValue('/w/acme/activity');
+      renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc' });
+      expect(screen.getByRole('link', { name: 'Activity' })).toHaveAttribute('aria-current', 'page');
+      expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
+    });
+  });
+
 });
