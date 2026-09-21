@@ -1,0 +1,245 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { Copy, Lock, FileQuestion, Share2 } from 'lucide-react';
+import { formsService } from '@/services/forms';
+import { formAccessService } from '@/services/formAccess';
+import { eventsService } from '@/services/events';
+import { responsesService } from '@/services/responses';
+import { workspacesService } from '@/services/workspaces';
+import { formKeys, formAccessKeys, formEventKeys, responseKeys, workspaceKeys } from '@/lib/queryKeys';
+import { hasCapability } from '@/lib/roles';
+import { formatRelativeTime } from '@/lib/formatters';
+import { useToast } from '@/components/common/Toast';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Input } from '@/components/ui/Input';
+import { Alert } from '@/components/ui/Alert';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { FormOverviewStats } from '@/components/forms/FormOverviewStats';
+import { FormActivityCard, FORM_ACTIVITY_PREVIEW_COUNT } from '@/components/forms/FormActivityCard';
+import { FormActivityDrawer } from '@/components/forms/FormActivityDrawer';
+import { FormAccessPanel } from '@/components/team/FormAccessPanel';
+import type { IResponse } from '@/types/response';
+import type { BreadcrumbItem } from '@/components/ui/Breadcrumb';
+
+const RECENT_RESPONSES = 5;
+
+const STATUS_LABEL = { draft: 'Draft', published: 'Published', closed: 'Closed' } as const;
+
+function firstAnswer(response: IResponse): string {
+  const value = Object.values(response.answers)[0];
+  if (Array.isArray(value)) return value.join(', ');
+  return value === null || value === undefined || value === '' ? '—' : String(value);
+}
+
+// requirements.md §7.2–7.5 / design.md §5. One flat route for personal and workspace forms alike
+// (design.md §4) — only the breadcrumb differs. No form-level sidebar this sprint (§3): the
+// breadcrumb plus the header/card links are the only cross-navigation.
+export default function FormOverviewPage() {
+  const { id: formId } = useParams<{ id: string }>();
+  const { toast } = useToast();
+  const [isAccessOpen, setIsAccessOpen] = useState(false);
+  const [isActivityOpen, setIsActivityOpen] = useState(false);
+
+  const overviewQuery = useQuery({
+    queryKey: formKeys.overview(formId),
+    queryFn: () => formsService.getFormOverview(formId),
+  });
+  const form = overviewQuery.data?.form;
+  const stats = overviewQuery.data?.stats;
+
+  // Same key FormAccessPanel reads, so opening the panel from this page is a cache hit (design.md §5).
+  const grantsQuery = useQuery({
+    queryKey: formAccessKeys.grants(formId),
+    queryFn: () => formAccessService.listGrants(formId),
+  });
+
+  // One row over the preview count, so the card can tell "View all" is warranted (FormActivityCard).
+  const eventsQuery = useQuery({
+    queryKey: formEventKeys.list(formId, 1, FORM_ACTIVITY_PREVIEW_COUNT + 1),
+    queryFn: () => eventsService.listFormEvents(formId, 1, FORM_ACTIVITY_PREVIEW_COUNT + 1),
+  });
+
+  const responsesQuery = useQuery({
+    queryKey: responseKeys.list(formId, { limit: RECENT_RESPONSES }),
+    queryFn: () => responsesService.getResponses({ formId, limit: RECENT_RESPONSES }),
+  });
+
+  const workspaceId = form?.workspaceId ?? null;
+  const workspacesQuery = useQuery({
+    queryKey: workspaceKeys.list(),
+    queryFn: workspacesService.list,
+    enabled: workspaceId !== null,
+  });
+  const workspace = workspacesQuery.data?.find((w) => w.id === workspaceId);
+
+  if (overviewQuery.isLoading) {
+    return (
+      <div className="flex flex-col gap-4" aria-label="Loading form overview">
+        <Skeleton variant="title" width="40%" />
+        <Skeleton variant="text" width="100%" height={96} />
+      </div>
+    );
+  }
+
+  if (overviewQuery.isError || !form || !stats) {
+    const status = (overviewQuery.error as { response?: { status?: number } } | null)?.response?.status;
+    if (status === 403) {
+      return <EmptyState icon={<Lock className="bg-icon" aria-hidden="true" />} title="You do not have access to this form." />;
+    }
+    if (status === 404) {
+      return <EmptyState icon={<FileQuestion className="bg-icon" aria-hidden="true" />} title="This form could not be found." />;
+    }
+    return (
+      <Alert variant="error" title="We could not load this form.">
+        <Button variant="secondary" size="small" onClick={() => void overviewQuery.refetch()}>
+          Retry
+        </Button>
+      </Alert>
+    );
+  }
+
+  // Owner-type breadcrumb (requirements.md §7.2). A form reached only through a per-form grant has
+  // no matching workspace membership to name, so it falls back to Shared with me.
+  const breadcrumb: BreadcrumbItem[] =
+    workspaceId === null
+      ? [{ label: 'My Forms', href: '/forms' }, { label: form.title }]
+      : workspace
+        ? [
+            { label: workspace.name, href: `/w/${workspace.slug}` },
+            { label: 'Forms', href: `/w/${workspace.slug}/forms` },
+            { label: form.title },
+          ]
+        : [{ label: 'Shared with me', href: '/shared' }, { label: form.title }];
+
+  // Personal form: the caller owns it. Workspace form: their membership role, fail-closed while
+  // unknown — Reviewer (or an unresolved role) sees Preview only (requirements.md §7.2). A
+  // convenience only; the server enforces every one of these (CLAUDE.md).
+  const role = workspaceId === null ? 'owner' : workspace?.role;
+  const canEdit = role !== undefined && hasCapability(role, 'forms:edit');
+
+  const grantCount = grantsQuery.data?.length;
+  const accessLabel =
+    grantCount === undefined
+      ? grantsQuery.isError ? '—' : '…'
+      : workspaceId === null
+        ? grantCount === 0 ? 'Just you' : `${grantCount} ${grantCount === 1 ? 'person' : 'people'}`
+        : // Backend contract to confirm whether the count distinguishes role-covered members from
+          // explicit grants (requirements.md §7.4) — until then, don't assert a false precise count.
+          grantCount === 0 ? 'Workspace team' : `Workspace team + ${grantCount} other${grantCount === 1 ? '' : 's'}`;
+
+  const publicUrl = form.slug ? `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/f/${form.slug}` : '';
+
+  return (
+    <div className="flex flex-col gap-6 animate-fade-in">
+      <PageHeader
+        breadcrumb={breadcrumb}
+        eyebrow="Form overview"
+        title={form.title}
+        description={
+          <span className="inline-flex items-center gap-2">
+            <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge>
+            {stats.responseCount} response{stats.responseCount === 1 ? '' : 's'}
+          </span>
+        }
+        actions={
+          <>
+            <Link href={`/forms/${formId}/preview`}>
+              <Button variant="secondary">Preview</Button>
+            </Link>
+            {canEdit && (
+              <Button variant="secondary" onClick={() => setIsAccessOpen(true)}>
+                <Share2 size={16} className="mr-2" aria-hidden="true" />
+                Share
+              </Button>
+            )}
+            {canEdit && (
+              <Link href={`/forms/${formId}/edit`}>
+                <Button variant="primary">Edit form</Button>
+              </Link>
+            )}
+          </>
+        }
+      />
+
+      <FormOverviewStats stats={stats} accessLabel={accessLabel} onOpenAccess={() => setIsAccessOpen(true)} />
+
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
+        <Card className="flex flex-col gap-3">
+          <h2 className="bg-h4">Share link</h2>
+          {publicUrl ? (
+            <div className="flex items-center gap-2">
+              <Input id="overview-public-url" aria-label="Public link" value={publicUrl} readOnly className="font-mono" />
+              <Button
+                variant="secondary"
+                aria-label="Copy link"
+                onClick={() => {
+                  void navigator.clipboard.writeText(publicUrl);
+                  toast('Link copied to clipboard.', 'success');
+                }}
+              >
+                <Copy size={16} aria-hidden="true" />
+              </Button>
+            </div>
+          ) : (
+            <p className="bg-body-sm" style={{ color: 'var(--text-muted)', margin: 0 }}>
+              This form is not published yet, so there is no public link.
+            </p>
+          )}
+        </Card>
+
+        <Card className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="bg-h4">Recent responses</h2>
+            <Link href={`/forms/${formId}/responses`} className="bg-body-sm">
+              View inbox
+            </Link>
+          </div>
+          {responsesQuery.isLoading ? (
+            <Skeleton variant="text" width="100%" height={64} />
+          ) : responsesQuery.isError ? (
+            <Alert variant="error" title="Could not load responses." />
+          ) : !responsesQuery.data || responsesQuery.data.data.length === 0 ? (
+            <p className="bg-body-sm" style={{ color: 'var(--text-muted)', margin: 0 }}>
+              No responses yet.
+            </p>
+          ) : (
+            <ul className="flex flex-col" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {responsesQuery.data.data.map((response) => (
+                <li
+                  key={response._id}
+                  className="flex items-baseline justify-between gap-3 py-2"
+                  style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                >
+                  <span className="bg-body-sm truncate">{firstAnswer(response)}</span>
+                  <time className="bg-caption shrink-0" dateTime={response.submittedAt}>
+                    {formatRelativeTime(response.submittedAt)}
+                  </time>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </div>
+
+      <FormActivityCard
+        events={eventsQuery.data}
+        isLoading={eventsQuery.isLoading}
+        isError={eventsQuery.isError}
+        onRetry={() => void eventsQuery.refetch()}
+        onViewAll={() => setIsActivityOpen(true)}
+      />
+
+      <FormActivityDrawer formId={formId} isOpen={isActivityOpen} onClose={() => setIsActivityOpen(false)} />
+
+      <FormAccessPanel formId={formId} formTitle={form.title} isOpen={isAccessOpen} onClose={() => setIsAccessOpen(false)} />
+    </div>
+  );
+}

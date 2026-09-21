@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink, Share2, Users, PinOff, Archive } from 'lucide-react';
+import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink, LayoutDashboard, Share2, Users, PinOff, Archive } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { sharedService } from '@/services/shared';
 import { workspaceKeys, sharedKeys } from '@/lib/queryKeys';
@@ -168,7 +168,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
               <FileText size={16} style={{ color: 'var(--text-muted)' }} />
             </div>
             <div className="flex flex-col min-w-0">
-              <Link href={`/forms/${form._id}/edit`} className="bg-body font-semibold truncate hover:underline">
+              <Link href={`/forms/${form._id}/overview`} className="bg-body font-semibold truncate hover:underline">
                 {form.title}
               </Link>
               <span className="bg-caption mt-0.5">
@@ -204,6 +204,12 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
       render: (form) => {
         const formId = form._id;
         const menuItems: MenuItem[] = [
+          {
+            id: 'overview',
+            label: 'Overview',
+            icon: <LayoutDashboard className="bg-icon" />,
+            onSelect: () => router.push(`/forms/${formId}/overview`),
+          },
           {
             id: 'responses',
             label: 'View Responses',

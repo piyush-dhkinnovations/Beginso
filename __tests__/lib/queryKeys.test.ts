@@ -5,7 +5,10 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { workspaceKeys, teamKeys, invitationKeys, formAccessKeys, sharedKeys } from '@/lib/queryKeys';
+import {
+  workspaceKeys, teamKeys, invitationKeys, formAccessKeys, sharedKeys,
+  formKeys, formEventKeys, activityKeys, auditKeys,
+} from '@/lib/queryKeys';
 
 describe('workspaceKeys', () => {
   it('list() and detail() are stable, namespaced keys', () => {
@@ -73,5 +76,30 @@ describe('invitationKeys / formAccessKeys / sharedKeys', () => {
 
   it('sharedKeys.list() is stable and caller-scoped implicitly (no id param — one caller per session)', () => {
     expect(sharedKeys.list()).toEqual(['shared-with-me', 'list']);
+  });
+});
+
+// Sprint 10 (events-migration), design.md §10 / tasks.md 1.3.
+describe('activityKeys / auditKeys / formEventKeys', () => {
+  it('activityKeys.list() differs across workspaces', () => {
+    expect(activityKeys.list('a')).not.toEqual(activityKeys.list('b'));
+  });
+
+  it('auditKeys.list() differs across workspaces — no cross-workspace cache bleed', () => {
+    expect(auditKeys.list('a', {})).not.toEqual(auditKeys.list('b', {}));
+  });
+
+  it('auditKeys.list() differs by filters', () => {
+    expect(auditKeys.list('a', { range: '7d' })).not.toEqual(auditKeys.list('a', { range: '30d' }));
+  });
+
+  it('formEventKeys.list() differs by page and by limit (preview vs drawer never share an entry)', () => {
+    expect(formEventKeys.list('f', 1)).not.toEqual(formEventKeys.list('f', 2));
+    expect(formEventKeys.list('f', 1, 6)).not.toEqual(formEventKeys.list('f', 1, 20));
+  });
+
+  it('formKeys.overview() is namespaced per form', () => {
+    expect(formKeys.overview('a')).not.toEqual(formKeys.overview('b'));
+    expect(formKeys.overview('a')).toEqual(['form', 'a', 'overview']);
   });
 });

@@ -134,6 +134,29 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
     expect(await screen.findByLabelText('Owned by Priya Shah')).toBeInTheDocument();
   });
 
+  it('a form title links to its Overview, and the row menu offers Overview first (tasks.md 3.4)', async () => {
+    mockGetForms.mockResolvedValue({
+      forms: [{
+        _id: 'f1', title: 'Workspace Survey', status: 'published',
+        responseCount: 5, updatedAt: new Date().toISOString(),
+        fields: [], pages: [], branding: {},
+        settings: { honeypotEnabled: true }, workspaceId: 'acme',
+        schemaVersion: 1, createdAt: new Date().toISOString(),
+      }],
+      total: 1, page: 1, limit: 10,
+    });
+    renderPage();
+
+    const titleLink = await screen.findByRole('link', { name: 'Workspace Survey' });
+    expect(titleLink).toHaveAttribute('href', '/forms/f1/overview');
+    // The pencil icon button still goes straight to the editor.
+    expect(screen.getByRole('link', { name: 'Edit Form' })).toHaveAttribute('href', '/forms/f1/edit');
+
+    await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
+    const items = await screen.findAllByRole('menuitem');
+    expect(items[0]).toHaveTextContent('Overview');
+  });
+
   it('renders every Forms Manager tab', async () => {
     mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
     renderPage();
