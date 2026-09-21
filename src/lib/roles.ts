@@ -53,6 +53,8 @@ export const CAPABILITIES: readonly CapabilityGroup[] = [
     items: [
       { key: 'workspace:members', label: 'Manage members', roles: ['owner', 'admin'] },
       { key: 'workspace:settings', label: 'Manage workspace settings', roles: ['owner', 'admin'] },
+      // Sprint 10 (requirements.md §7.7) — the Audit Log is a security record, not a general feed.
+      { key: 'workspace:audit', label: 'View audit log', roles: ['owner', 'admin'] },
     ],
   },
 ];
@@ -67,6 +69,10 @@ export function hasCapability(role: Role, capabilityKey: string): boolean {
 // string key it has to already know.
 export function canManageMembers(role: Role | undefined): boolean {
   return role !== undefined && hasCapability(role, 'workspace:members');
+}
+
+export function canViewAudit(role: Role | undefined): boolean {
+  return role !== undefined && hasCapability(role, 'workspace:audit');
 }
 
 export function canDeleteForm(role: Role | undefined): boolean {

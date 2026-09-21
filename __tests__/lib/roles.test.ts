@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { ROLE_LABELS, CAPABILITIES, hasCapability, canManageMembers, canDeleteForm, canViewTemplates } from '@/lib/roles';
+import { ROLE_LABELS, CAPABILITIES, hasCapability, canManageMembers, canDeleteForm, canViewTemplates, canViewAudit } from '@/lib/roles';
 import type { Role } from '@/types/workspace';
 
 const ALL_ROLES: Role[] = ['owner', 'admin', 'member', 'viewer'];
@@ -53,6 +53,29 @@ describe('canManageMembers', () => {
 
   it('fails closed when the role is not yet known', () => {
     expect(canManageMembers(undefined)).toBe(false);
+  });
+});
+
+// Sprint 10, tasks.md 1.4 — one more entry in the single CAPABILITIES source, not a second matrix.
+describe('workspace:audit / canViewAudit', () => {
+  it('is granted to owner and admin only', () => {
+    expect(hasCapability('owner', 'workspace:audit')).toBe(true);
+    expect(hasCapability('admin', 'workspace:audit')).toBe(true);
+    expect(hasCapability('member', 'workspace:audit')).toBe(false);
+    expect(hasCapability('viewer', 'workspace:audit')).toBe(false);
+  });
+
+  it('canViewAudit mirrors the capability and fails closed on an unknown role', () => {
+    expect(canViewAudit('owner')).toBe(true);
+    expect(canViewAudit('viewer')).toBe(false);
+    expect(canViewAudit(undefined)).toBe(false);
+  });
+
+  it('lives in the Workspace group of the one matrix, exactly once', () => {
+    const keys = CAPABILITIES.flatMap((g) => g.items).map((i) => i.key);
+    expect(keys.filter((k) => k === 'workspace:audit')).toHaveLength(1);
+    const workspace = CAPABILITIES.find((g) => g.group === 'Workspace')!;
+    expect(workspace.items.map((i) => i.key)).toContain('workspace:audit');
   });
 });
 

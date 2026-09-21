@@ -227,4 +227,19 @@ describe('TeamPage (/w/[slug]/team)', () => {
     renderPage();
     expect(await screen.findByRole('button', { name: 'Roles & Permissions' })).toBeInTheDocument();
   });
+
+  // Sprint 10, tasks.md 4.6 — the wireframe's "View Audit Log →" link, owner/admin only.
+  it('an admin sees a View Audit Log link to /w/[slug]/audit', async () => {
+    mockListMembers.mockResolvedValue([ADMIN]);
+    renderPage();
+    expect(await screen.findByRole('link', { name: 'View Audit Log →' })).toHaveAttribute('href', '/w/acme/audit');
+  });
+
+  it.each(['member', 'viewer'] as const)('a role=%s does not see the View Audit Log link', async (role) => {
+    mockList.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role }]);
+    mockListMembers.mockResolvedValue([ADMIN]);
+    renderPage();
+    await screen.findByText('Priya Sharma');
+    expect(screen.queryByRole('link', { name: 'View Audit Log →' })).not.toBeInTheDocument();
+  });
 });

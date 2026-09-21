@@ -5,6 +5,7 @@
 // Monday's Members card. Day 4 (Thursday) wires the "Roles & Permissions" header action now that
 // /w/[slug]/roles (task 4.2) exists.
 import { useState } from 'react';
+import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
@@ -12,7 +13,7 @@ import { teamService } from '@/services/team';
 import { invitationsService } from '@/services/invitations';
 import { workspacesService } from '@/services/workspaces';
 import { teamKeys, workspaceKeys } from '@/lib/queryKeys';
-import { canManageMembers } from '@/lib/roles';
+import { canManageMembers, canViewAudit } from '@/lib/roles';
 import { MemberTable } from '@/components/team/MemberTable';
 import { PendingInvitesTable } from '@/components/team/PendingInvitesTable';
 import { InviteMembersModal } from '@/components/team/InviteMembersModal';
@@ -158,6 +159,14 @@ export default function TeamPage() {
             />
           )}
         </Card>
+      )}
+
+      {/* Bottom-of-page link from the wireframe (sprint-10 requirements.md §7.7). Only offered to
+          roles that can open the Audit Log — a Reviewer/Editor would just land on its denied state. */}
+      {canViewAudit(currentWorkspace?.role) && (
+        <Link href={`/w/${slug}/audit`} className="bg-body-sm self-start">
+          View Audit Log →
+        </Link>
       )}
 
       <InviteMembersModal
