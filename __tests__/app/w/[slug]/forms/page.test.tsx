@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // Import FormsPage directly (not WorkspaceFormsPage, which is an async server component
 // that simply delegates to FormsPage). This correctly isolates the test to the UI
@@ -22,6 +23,10 @@ vi.mock('@/components/common/Toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({ user: { id: 'u1', name: 'Ada Lovelace', email: 'ada@example.com' } }),
+}));
+
 const mockGetForms = vi.fn();
 vi.mock('@/services/forms', () => ({
   formsService: {
@@ -31,6 +36,13 @@ vi.mock('@/services/forms', () => ({
     deleteForm: vi.fn(),
     createForm: vi.fn(),
     updateForm: vi.fn(),
+  },
+}));
+
+const mockSharedList = vi.fn();
+vi.mock('@/services/shared', () => ({
+  sharedService: {
+    list: (...args: unknown[]) => mockSharedList(...args),
   },
 }));
 
@@ -61,6 +73,7 @@ function renderPage() {
 describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () => {
   beforeEach(() => {
     mockGetForms.mockReset();
+    mockSharedList.mockReset();
   });
 
   it('renders the Forms heading', async () => {
@@ -102,5 +115,72 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
 
     await screen.findByText('No forms yet');
     expect(mockGetForms).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders the owner avatar for each row', async () => {
+    mockGetForms.mockResolvedValue({
+      forms: [{
+        _id: 'f1', title: 'Workspace Survey', status: 'published',
+        responseCount: 5, updatedAt: new Date().toISOString(),
+        fields: [], pages: [], branding: {},
+        settings: { honeypotEnabled: true }, workspaceId: 'acme',
+        schemaVersion: 1, createdAt: new Date().toISOString(),
+        owner: { name: 'Priya Shah' },
+      }],
+      total: 1, page: 1, limit: 10,
+    });
+    renderPage();
+
+    expect(await screen.findByLabelText('Owned by Priya Shah')).toBeInTheDocument();
+  });
+
+  it('renders every Forms Manager tab', async () => {
+    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
+    renderPage();
+    await screen.findByText('No forms yet');
+
+    for (const name of ['Recent', 'Pinned', 'Draft', 'Published', 'Archived', 'Shared with me']) {
+      expect(screen.getByRole('tab', { name })).toBeInTheDocument();
+    }
+  });
+
+  it('switching to the Pinned tab shows a placeholder and fires no extra forms query', async () => {
+    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
+    renderPage();
+    await screen.findByText('No forms yet');
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Pinned' }));
+
+    expect(await screen.findByText('Coming soon')).toBeInTheDocument();
+    expect(mockGetForms).toHaveBeenCalledTimes(1);
+  });
+
+  it('switching to the Shared with me tab fetches and renders shared forms', async () => {
+    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
+    mockSharedList.mockResolvedValue([
+      { id: 's1', title: 'Customer Survey', sharedBy: 'u1', workspaceName: 'Acme', role: 'viewer', accessLevel: 'read', sharedAt: new Date().toISOString() },
+    ]);
+    renderPage();
+    await screen.findByText('No forms yet');
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Shared with me' }));
+
+    expect(await screen.findByText('Customer Survey')).toBeInTheDocument();
+    expect(mockSharedList).toHaveBeenCalledTimes(1);
+  });
+
+  it('switching to the Draft tab filters by status and resets the page', async () => {
+    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
+    renderPage();
+    await screen.findByText('No forms yet');
+    mockGetForms.mockClear();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Draft' }));
+
+    await screen.findByText('No matching forms');
+    expect(mockGetForms).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'draft', page: 1 }),
+      WORKSPACE_CONTEXT
+    );
   });
 });
