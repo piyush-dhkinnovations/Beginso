@@ -12,9 +12,12 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { SettingsTabs } from '@/components/settings/SettingsTabs';
 
 describe('SettingsTabs', () => {
-  it('renders all 5 active tabs', () => {
+  it('renders all 6 tabs, Sessions & Devices last', () => {
     render(<SettingsTabs activeTab="profile" onChange={vi.fn()} />);
-    ['Profile', 'Workspace', 'Branding', 'Notifications', 'Security'].forEach((label) => {
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual([
+      'Profile', 'Workspace', 'Branding', 'Notifications', 'Security', 'Sessions & Devices',
+    ]);
+    ['Profile', 'Workspace', 'Branding', 'Notifications', 'Security', 'Sessions & Devices'].forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();
     });
     expect(screen.queryByText('Billing & Integrations')).not.toBeInTheDocument();
@@ -39,5 +42,31 @@ describe('SettingsTabs', () => {
     const workspaceTab = screen.getByText('Workspace').closest('button')!;
     expect(profileTab.querySelector('[aria-label="Unsaved changes"]')).toBeInTheDocument();
     expect(workspaceTab.querySelector('[aria-label="Unsaved changes"]')).not.toBeInTheDocument();
+  });
+
+  // sprint-10 requirements.md §7.12/§7.13 — new tab, and the strip now rides ui/Tabs.
+  it('calls onChange with "sessions" for the Sessions & Devices tab', () => {
+    const onChange = vi.fn();
+    render(<SettingsTabs activeTab="profile" onChange={onChange} />);
+    fireEvent.click(screen.getByText('Sessions & Devices'));
+    expect(onChange).toHaveBeenCalledWith('sessions');
+  });
+
+  it('marks the sessions tab active', () => {
+    render(<SettingsTabs activeTab="sessions" onChange={vi.fn()} />);
+    expect(screen.getByRole('tab', { name: 'Sessions & Devices' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('keeps the named "Settings" tablist and carries no hardcoded neutral colour classes', () => {
+    const { container } = render(<SettingsTabs activeTab="profile" onChange={vi.fn()} />);
+    expect(screen.getByRole('tablist', { name: 'Settings' })).toBeInTheDocument();
+    expect(container.innerHTML).not.toMatch(/neutral-\d|bg-white|brand-\d/);
+  });
+
+  it('moves between tabs with the arrow keys (ui/Tabs behaviour the old strip lacked)', () => {
+    const onChange = vi.fn();
+    render(<SettingsTabs activeTab="profile" onChange={onChange} />);
+    fireEvent.keyDown(screen.getByRole('tab', { name: 'Profile' }), { key: 'ArrowRight' });
+    expect(onChange).toHaveBeenCalledWith('workspace');
   });
 });

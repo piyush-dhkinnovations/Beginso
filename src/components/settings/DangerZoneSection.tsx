@@ -84,7 +84,7 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
 
       <div className="flex flex-col gap-3">
         <div>
-          <p className="text-body-sm font-semibold text-neutral-800">Export workspace data</p>
+          <p className="text-body-sm font-semibold text-[var(--text-primary)]">Export workspace data</p>
           {!jobId ? (
             <Button
               variant="secondary"
@@ -114,7 +114,7 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
               </Button>
             </div>
           ) : (
-            <span className="mt-2 inline-flex items-center gap-1.5 text-caption text-neutral-500">
+            <span className="mt-2 inline-flex items-center gap-1.5 text-caption text-[var(--text-muted)]">
               <Loader2 size={14} className="animate-spin" aria-hidden="true" />
               Preparing your export…
             </span>
@@ -122,7 +122,7 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
         </div>
 
         <div className="border-t border-rose-200 pt-3">
-          <p className="text-body-sm font-semibold text-neutral-800">Delete workspace</p>
+          <p className="text-body-sm font-semibold text-[var(--text-primary)]">Delete workspace</p>
           <Button
             variant="destructive"
             size="small"
@@ -140,7 +140,7 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
         title="Export workspace data?"
         description="This prepares a downloadable archive of your workspace data. It may take a few minutes to prepare — this doesn't affect or remove anything in your workspace."
       >
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-100">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--border-subtle)]">
           <Button type="button" variant="secondary" onClick={() => setIsExportModalOpen(false)}>
             Cancel
           </Button>
