@@ -185,13 +185,13 @@ export default function WorkspaceHomePage() {
                       <Badge>{f.status === 'published' ? `Active · ${f.responseCount} responses` : 'Draft'}</Badge>
                     </div>
                     <div className="flex items-center gap-3 text-caption text-[var(--text-muted)]">
-                      <Link href={`/forms/${f._id}/responses`} className="hover:text-[var(--text-primary)] flex items-center gap-1">
+                      <Link href={`/forms/${f._id}/responses?ws=${slug}`} className="hover:text-[var(--text-primary)] flex items-center gap-1">
                         <Table size={12} /> Responses
                       </Link>
-                      <Link href={`/forms/${f._id}/analytics`} className="hover:text-[var(--text-primary)] flex items-center gap-1">
+                      <Link href={`/forms/${f._id}/analytics?ws=${slug}`} className="hover:text-[var(--text-primary)] flex items-center gap-1">
                         <BarChart2 size={12} /> Dashboard
                       </Link>
-                      <Link href={`/forms/${f._id}/edit`} className="hover:text-[var(--text-primary)] flex items-center gap-1">
+                      <Link href={`/forms/${f._id}/edit?ws=${slug}`} className="hover:text-[var(--text-primary)] flex items-center gap-1">
                         <Edit3 size={12} /> Edit
                       </Link>
                       {/* Real bug found and fixed: this linked to /w/[slug]/share, a route that

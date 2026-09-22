@@ -46,7 +46,22 @@ export const formsService = {
         },
         headers: context?.type === 'workspace' ? { 'x-workspace-slug': context.workspaceId } : undefined,
       })
-      .then(r => r.data),
+      .then((r) => {
+        // Real bug found and fixed: the comment above already flagged this as unconfirmed — now
+        // confirmed live. A brand-new user whose "default workspace" (the backend's own
+        // resolution-order fallback) is the workspace they just joined via invite accept sees
+        // that workspace's forms leak into their *personal* space list — `workspaceId=personal`
+        // isn't honored server-side for this case. Filtered here as a client-side safety net
+        // (never trust the backend's own scoping without checking, this session's own
+        // established pattern) so Personal space can never show a workspace-owned form
+        // regardless of what the backend's query actually returned.
+        if (context?.type !== 'personal') return r.data;
+        const forms = r.data.forms.filter((form) => form.workspaceId === null);
+        const filteredOut = r.data.forms.length - forms.length;
+        return filteredOut === 0
+          ? r.data
+          : { ...r.data, forms, total: Math.max(0, r.data.total - filteredOut) };
+      }),
 
   getFormById: (id: string) =>
     axiosInstance.get<Form>(`/api/forms/${id}`).then(r => r.data),

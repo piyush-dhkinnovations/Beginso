@@ -118,7 +118,9 @@ describe('WorkspaceHomePage (/w/[slug]/page)', () => {
     renderPage();
 
     const editLink = await screen.findByRole('link', { name: /Edit/ });
-    expect(editLink).toHaveAttribute('href', '/forms/f99/edit');
+    // `?ws=acme` hint carried so PersonalShell can paint the workspace sidebar on the next
+    // page's first render instead of flashing Personal (real bug this fixed).
+    expect(editLink).toHaveAttribute('href', '/forms/f99/edit?ws=acme');
   });
 
   // Real bug found and fixed: this row action used to link to /w/[slug]/share, a route that

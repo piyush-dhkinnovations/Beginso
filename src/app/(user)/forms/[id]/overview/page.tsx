@@ -146,7 +146,13 @@ export default function FormOverviewPage() {
           // explicit grants (requirements.md §7.4) — until then, don't assert a false precise count.
           grantCount === 0 ? 'Workspace team' : `Workspace team + ${grantCount} other${grantCount === 1 ? '' : 's'}`;
 
-  const publicUrl = form.slug ? `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/f/${form.slug}` : '';
+  // Real bug found and fixed: this only checked `form.slug` truthy, so a never-published draft
+  // (which already has a slug reserved at creation, per the backend) showed a live-looking,
+  // copyable public URL here — while the builder's own Share tab, for the exact same form,
+  // correctly says "Publish your form first to get a shareable link." Gated on status too, so
+  // the two surfaces agree.
+  const publicUrl =
+    form.slug && form.status === 'published' ? `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/f/${form.slug}` : '';
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in">
@@ -172,7 +178,7 @@ export default function FormOverviewPage() {
               </Button>
             )}
             {canEdit && (
-              <Link href={`/forms/${formId}/edit`}>
+              <Link href={workspace?.slug ? `/forms/${formId}/edit?ws=${workspace.slug}` : `/forms/${formId}/edit`}>
                 <Button variant="primary">Edit form</Button>
               </Link>
             )}
@@ -218,7 +224,7 @@ export default function FormOverviewPage() {
         <Card className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
             <h2 className="bg-h4">Recent responses</h2>
-            <Link href={`/forms/${formId}/responses`} className="bg-body-sm">
+            <Link href={workspace?.slug ? `/forms/${formId}/responses?ws=${workspace.slug}` : `/forms/${formId}/responses`} className="bg-body-sm">
               View inbox
             </Link>
           </div>

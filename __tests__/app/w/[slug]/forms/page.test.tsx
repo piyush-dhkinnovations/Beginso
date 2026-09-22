@@ -140,9 +140,11 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
     renderPage();
 
     const titleLink = await screen.findByRole('link', { name: 'Workspace Survey' });
-    expect(titleLink).toHaveAttribute('href', '/forms/f1/overview');
+    // `?ws=acme` hint carried so PersonalShell can paint the workspace sidebar on the next
+    // page's first render instead of flashing Personal (real bug this fixed).
+    expect(titleLink).toHaveAttribute('href', '/forms/f1/overview?ws=acme');
     // The pencil icon button still goes straight to the editor.
-    expect(screen.getByRole('link', { name: 'Edit Form' })).toHaveAttribute('href', '/forms/f1/edit');
+    expect(screen.getByRole('link', { name: 'Edit Form' })).toHaveAttribute('href', '/forms/f1/edit?ws=acme');
 
     await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
     const items = await screen.findAllByRole('menuitem');
