@@ -21,6 +21,8 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { GripVertical } from 'lucide-react';
 import { formsService } from '@/services/forms';
+import { workspacesService } from '@/services/workspaces';
+import { workspaceKeys } from '@/lib/queryKeys';
 import { useBuilderStore } from '@/store/builderStore';
 import { BuilderHeader } from '@/components/form-builder/BuilderHeader';
 import { BuilderTabs, BuilderTab } from '@/components/form-builder/BuilderTabs';
@@ -139,6 +141,19 @@ export default function BuilderPageShell() {
     retry: false,
   });
 
+  // Same lookup PersonalShell's sidebar already does (shares its cache, same query keys) — a
+  // workspace-owned form's "back"/leave/delete destinations should return to that workspace's
+  // own Forms list, not Personal space's, same reasoning as the sidebar context fix.
+  const { data: workspaces = [] } = useQuery({
+    queryKey: workspaceKeys.list(),
+    queryFn: workspacesService.list,
+    enabled: !!form?.workspaceId,
+  });
+  const formWorkspaceSlug = form?.workspaceId
+    ? workspaces.find((ws) => ws.id === form.workspaceId)?.slug
+    : undefined;
+  const formsListHref = formWorkspaceSlug ? `/w/${formWorkspaceSlug}/forms` : '/forms';
+
   // Init builderStore state when query returns data. Guarded to run once per
   // form id — not on every query-cache update. Publish/close success handlers
   // call queryClient.setQueryData to patch status/slug into the cache, which
@@ -160,9 +175,9 @@ export default function BuilderPageShell() {
     if (error && !hasRedirected.current) {
       hasRedirected.current = true;
       toast('Form not found or access denied', 'error');
-      router.push('/forms');
+      router.push(formsListHref);
     }
-  }, [error, router, toast]);
+  }, [error, router, toast, formsListHref]);
 
   // ─── Autosave ────────────────────────────────────────────────────────────────
 
@@ -337,7 +352,7 @@ export default function BuilderPageShell() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['forms'] });
       toast('Form deleted successfully', 'success');
-      router.push('/forms');
+      router.push(formsListHref);
     },
     onError: () => {
       toast('Failed to delete form. Please try again.', 'error');
@@ -369,12 +384,12 @@ export default function BuilderPageShell() {
 
   const handleBack = useCallback(() => {
     if (dirtyRef.current) {
-      setPendingNavUrl('/forms');
+      setPendingNavUrl(formsListHref);
       setShowLeaveModal(true);
     } else {
-      router.push('/forms');
+      router.push(formsListHref);
     }
-  }, [router]);
+  }, [router, formsListHref]);
 
   // "Save and leave" in the leave-guard modal
   const handleSaveAndLeave = useCallback(async () => {
@@ -391,18 +406,18 @@ export default function BuilderPageShell() {
         return;
       }
     }
-    const dest = pendingNavUrl ?? '/forms';
+    const dest = pendingNavUrl ?? formsListHref;
     setPendingNavUrl(null);
     setShowLeaveModal(false);
     router.push(dest);
-  }, [pendingNavUrl, markSaved, toast, router]);
+  }, [pendingNavUrl, markSaved, toast, router, formsListHref]);
 
   const handleLeaveWithoutSaving = useCallback(() => {
-    const dest = pendingNavUrl ?? '/forms';
+    const dest = pendingNavUrl ?? formsListHref;
     setPendingNavUrl(null);
     setShowLeaveModal(false);
     router.push(dest);
-  }, [pendingNavUrl, router]);
+  }, [pendingNavUrl, router, formsListHref]);
 
   const handleStay = useCallback(() => {
     setPendingNavUrl(null);

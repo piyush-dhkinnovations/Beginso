@@ -72,6 +72,15 @@ export default function FormOverviewPage() {
     queryFn: () => responsesService.getResponses({ formId, limit: RECENT_RESPONSES }),
   });
 
+  // Real bug found and fixed: `stats.responseCount` comes from GET /api/forms/:id's own
+  // `responseCount` field (getFormOverview's fallback chain), which the backend does not keep in
+  // sync with the actual Response collection — the "Recent responses" card right next to it
+  // queries /api/responses directly and shows the true count. Same reasoning responsesService.ts's
+  // own getStats() already documents for the identical field: don't trust a denormalized count,
+  // derive it from the real list endpoint's `total` instead. Overrides `stats.responseCount` with
+  // it wherever it's loaded so the two cards on this page can never disagree.
+  const responseCount = responsesQuery.data?.total;
+
   const workspaceId = form?.workspaceId ?? null;
   const workspacesQuery = useQuery({
     queryKey: workspaceKeys.list(),
@@ -105,6 +114,8 @@ export default function FormOverviewPage() {
       </Alert>
     );
   }
+
+  const effectiveStats = { ...stats, responseCount: responseCount ?? stats.responseCount };
 
   // Owner-type breadcrumb (requirements.md §7.2). A form reached only through a per-form grant has
   // no matching workspace membership to name, so it falls back to Shared with me.
@@ -146,7 +157,7 @@ export default function FormOverviewPage() {
         description={
           <span className="inline-flex items-center gap-2">
             <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge>
-            {stats.responseCount} response{stats.responseCount === 1 ? '' : 's'}
+            {effectiveStats.responseCount} response{effectiveStats.responseCount === 1 ? '' : 's'}
           </span>
         }
         actions={
@@ -169,14 +180,23 @@ export default function FormOverviewPage() {
         }
       />
 
-      <FormOverviewStats stats={stats} accessLabel={accessLabel} onOpenAccess={() => setIsAccessOpen(true)} />
+      <FormOverviewStats stats={effectiveStats} accessLabel={accessLabel} onOpenAccess={() => setIsAccessOpen(true)} />
 
       <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
         <Card className="flex flex-col gap-3">
           <h2 className="bg-h4">Share link</h2>
           {publicUrl ? (
             <div className="flex items-center gap-2">
-              <Input id="overview-public-url" aria-label="Public link" value={publicUrl} readOnly className="font-mono" />
+              <Input
+                id="overview-public-url"
+                aria-label="Public link"
+                value={publicUrl}
+                readOnly
+                title={publicUrl}
+                className="font-mono"
+                style={{ textOverflow: 'ellipsis' }}
+                onFocus={(e) => e.currentTarget.select()}
+              />
               <Button
                 variant="secondary"
                 aria-label="Copy link"

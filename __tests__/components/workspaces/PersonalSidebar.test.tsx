@@ -23,6 +23,11 @@ vi.mock('@/services/workspaces', () => ({
   workspacesService: { list: () => Promise.resolve([]) },
 }));
 
+const mockGetAnalytics = vi.fn();
+vi.mock('@/services/dashboard', () => ({
+  dashboardService: { getAnalytics: () => mockGetAnalytics() },
+}));
+
 function renderSidebar() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
@@ -35,6 +40,14 @@ function renderSidebar() {
 describe('PersonalSidebar', () => {
   beforeEach(() => {
     mockPathname.mockReturnValue('/dashboard');
+    mockGetAnalytics.mockReset();
+    mockGetAnalytics.mockResolvedValue({
+      totalForms: 0,
+      publishedForms: 0,
+      totalResponses: 0,
+      responsesThisMonth: 0,
+      recentActivity: [],
+    });
   });
 
   it('renders the real A1.1 personal nav set plus the still-live top-level pages', () => {
@@ -97,6 +110,38 @@ describe('PersonalSidebar', () => {
     mockPathname.mockReturnValue('/workspaces');
     renderSidebar();
     expect(screen.getByRole('link', { name: /Create workspace/ })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('hides Responses/Analytics/Reports once analytics confirms zero forms, keeping the always-relevant items', async () => {
+    renderSidebar();
+    expect(await screen.findByText('My Forms')).toBeInTheDocument();
+    expect(screen.queryByText('Responses')).not.toBeInTheDocument();
+    expect(screen.queryByText('Analytics')).not.toBeInTheDocument();
+    expect(screen.queryByText('Reports')).not.toBeInTheDocument();
+    ['Home', 'My Forms', 'Shared with me', 'Templates', 'Settings', 'Create workspace'].forEach((label) => {
+      expect(screen.getByText(label)).toBeInTheDocument();
+    });
+  });
+
+  it('keeps Responses visible once forms exist', async () => {
+    mockGetAnalytics.mockResolvedValue({
+      totalForms: 3,
+      publishedForms: 1,
+      totalResponses: 5,
+      responsesThisMonth: 2,
+      recentActivity: [],
+    });
+    renderSidebar();
+    expect(await screen.findByText('Reports')).toBeInTheDocument();
+    expect(screen.getByText('Analytics')).toBeInTheDocument();
+    expect(screen.getByText('Responses')).toBeInTheDocument();
+  });
+
+  it('keeps Responses visible when already deep-linked onto it, even with zero forms', async () => {
+    mockPathname.mockReturnValue('/responses');
+    renderSidebar();
+    await screen.findByText('My Forms');
+    expect(screen.getByRole('link', { name: /Responses/ })).toHaveAttribute('aria-current', 'page');
   });
 
   it('marks nothing active on an unrelated route', () => {
