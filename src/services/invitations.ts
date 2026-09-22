@@ -18,10 +18,22 @@ import type { Role } from '@/types/workspace';
 //    anyone's accept link), only an `id`. The flat token routes exist too (dual-routing, per the
 //    same doc) but only the invitee's own Accept page has a token to use them with.
 export const invitationsService = {
+  // Real bug found and fixed: `GET /api/workspaces/:id/invitations` returns the workspace's full
+  // invitation history — every status (`accepted`, `revoked`, `declined`, ...), not just the
+  // still-actionable ones `PendingInvitation`'s own type always assumed. Revoking an
+  // already-accepted or just-revoked row therefore looked like it "did nothing": the POST
+  // succeeded server-side (status flips to `revoked`), but the row never left this unfiltered
+  // list, so it stayed on screen with its Resend/Revoke actions still showing. Filtered here, at
+  // the trust boundary, so "listPending" actually only returns pending/expired invitations.
   listPending: (workspaceId: string): Promise<PendingInvitation[]> =>
     axiosInstance
       .get(`/api/workspaces/${workspaceId}/invitations`)
-      .then((r) => unwrapEnvelope<PendingInvitation[]>(r.data, 'invitations')),
+      .then((r) => unwrapEnvelope<PendingInvitation[]>(r.data, 'invitations'))
+      .then((invitations) =>
+        (Array.isArray(invitations) ? invitations : []).filter(
+          (i) => i.status === 'pending' || i.status === 'expired'
+        )
+      ),
 
   send: (workspaceId: string, emails: string[], role: Exclude<Role, 'owner'>): Promise<PendingInvitation[]> =>
     Promise.all(

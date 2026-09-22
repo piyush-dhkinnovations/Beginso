@@ -64,6 +64,16 @@ export interface FormsPageProps {
   context?: FormsContext;
 }
 
+// Every link this page builds into a form's own detail routes (edit/overview/responses/
+// analytics) carries this hint when reached from a workspace context — PersonalShell reads it
+// to paint the correct sidebar/context immediately on the next page, instead of flashing
+// Personal while it re-fetches the form to figure out its workspace from scratch (real bug this
+// fixes: crossing from /w/[slug]/forms into /forms/:id/edit unmounts WorkspaceShell entirely,
+// so the next shell starts knowing nothing).
+function formHref(path: string, context: FormsContext): string {
+  return context.type === 'workspace' ? `${path}?ws=${context.workspaceId}` : path;
+}
+
 export default function FormsPage({ context = { type: 'personal' } }: FormsPageProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -154,7 +164,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
               <FileText size={16} style={{ color: 'var(--text-muted)' }} />
             </div>
             <div className="flex flex-col min-w-0">
-              <Link href={`/forms/${form._id}/overview`} className="bg-body font-semibold truncate hover:underline">
+              <Link href={formHref(`/forms/${form._id}/overview`, context)} className="bg-body font-semibold truncate hover:underline">
                 {form.title}
               </Link>
               <span className="bg-caption mt-0.5">
@@ -194,19 +204,19 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
             id: 'overview',
             label: 'Overview',
             icon: <LayoutDashboard className="bg-icon" />,
-            onSelect: () => router.push(`/forms/${formId}/overview`),
+            onSelect: () => router.push(formHref(`/forms/${formId}/overview`, context)),
           },
           {
             id: 'responses',
             label: 'View Responses',
             icon: <Table2 className="bg-icon" />,
-            onSelect: () => router.push(`/forms/${formId}/responses`),
+            onSelect: () => router.push(formHref(`/forms/${formId}/responses`, context)),
           },
           {
             id: 'analytics',
             label: 'View Analytics',
             icon: <BarChart2 className="bg-icon" />,
-            onSelect: () => router.push(`/forms/${formId}/analytics`),
+            onSelect: () => router.push(formHref(`/forms/${formId}/analytics`, context)),
           },
           {
             id: 'move',
@@ -240,7 +250,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
         return (
           <div className="flex items-center justify-end gap-1.5">
             <Link
-              href={`/forms/${formId}/edit`}
+              href={formHref(`/forms/${formId}/edit`, context)}
               className="bg-btn bg-btn-ghost bg-btn-icon"
               title="Edit Form"
               aria-label="Edit Form"

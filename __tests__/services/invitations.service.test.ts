@@ -46,6 +46,24 @@ describe('invitationsService', () => {
     expect(result).toEqual([INVITE]);
   });
 
+  it('listPending() filters out accepted/revoked/declined rows — the real bug: revoke succeeding server-side never made the row disappear because the list endpoint returns full invitation history, not just pending ones', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: {
+        invitations: [
+          INVITE,
+          { ...INVITE, id: 'inv-2', status: 'accepted' },
+          { ...INVITE, id: 'inv-3', status: 'revoked' },
+          { ...INVITE, id: 'inv-4', status: 'declined' },
+          { ...INVITE, id: 'inv-5', status: 'expired' },
+        ],
+      },
+    });
+
+    const result = await invitationsService.listPending('w1');
+
+    expect(result.map((i) => i.id)).toEqual(['inv-1', 'inv-5']);
+  });
+
   it('send() fires one POST per email, not a single batch request', async () => {
     mockPost
       .mockResolvedValueOnce({ data: { invitation: { ...INVITE, email: 'a@example.com' } } })

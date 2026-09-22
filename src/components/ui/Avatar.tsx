@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { User } from "lucide-react";
 import { bx } from "@/lib/utils";
 
 export interface AvatarProps extends React.HTMLAttributes<HTMLSpanElement> {
@@ -33,13 +34,19 @@ function initialsFrom(name?: string): string {
 export function Avatar({ src, name, alt, size = "default", square, className, ...props }: AvatarProps) {
   const [failed, setFailed] = useState(false);
   const showImage = src && !failed;
+  const initials = initialsFrom(name);
   return (
     <span className={bx("bg-avatar", sizeClass[size], square && "bg-avatar-square", className)} {...props}>
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={alt ?? name ?? ""} onError={() => setFailed(true)} />
+      ) : initials ? (
+        initials
       ) : (
-        initialsFrom(name)
+        // Real bug found and fixed: an unknown name (e.g. a workspace form's owner — not yet
+        // returned by GET /api/forms, per forms/page.tsx's own comment) rendered as a blank
+        // colored circle with no visible content, reading as broken rather than "unknown."
+        <User aria-hidden="true" style={{ width: "60%", height: "60%" }} />
       )}
     </span>
   );

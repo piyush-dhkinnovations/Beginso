@@ -12,9 +12,9 @@
 // self-contained dropdown triggers with no positioning dependency on the old fixed TopNav.
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { AppShell, TopBar } from '@/components/ui';
+import { AppShell, TopBar, Skeleton } from '@/components/ui';
 import { PersonalSidebar } from '@/components/workspaces/PersonalSidebar';
 import { WorkspaceSidebar } from '@/components/workspaces/WorkspaceSidebar';
 import { NotificationBell } from '@/components/dashboard/NotificationBell';
@@ -38,9 +38,22 @@ export interface PersonalShellProps {
 // workspace, and render the same WorkspaceSidebar/label the workspace's own pages use instead.
 const FORM_DETAIL_ROUTE_RE = /^\/forms\/([^/]+)(?:\/|$)/;
 
+// Real bug found and fixed (round 2): the first fix above still flashed the *wrong* sidebar for
+// a couple of seconds on every navigation into a workspace form — `/w/[slug]/forms` and
+// `/forms/:id/edit` sit under two different layouts, so crossing between them unmounts
+// WorkspaceShell and mounts this shell fresh, `formWorkspace` starting at `undefined` again
+// every time. Two fixes, not one: (1) every link into a form's detail routes from a workspace
+// page now carries `?ws=<slug>` (see FormsManagerTabs consumer in forms/page.tsx, and
+// w/[slug]/page.tsx's own quick links) — a same-render synchronous hint that needs no fetch to
+// resolve, since the previous page already knew its own workspace; (2) failing that hint, while
+// still resolving via the `form`/`workspaces` fetches, this now renders a neutral loading
+// sidebar instead of defaulting to PersonalSidebar — showing nothing definite beats showing the
+// wrong thing.
 export function PersonalShell({ initialCollapsed, children }: PersonalShellProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const formId = FORM_DETAIL_ROUTE_RE.exec(pathname)?.[1];
+  const wsHint = searchParams.get('ws');
 
   const { data: form } = useQuery({
     queryKey: ['form', formId],
@@ -48,15 +61,26 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
     enabled: !!formId,
   });
 
+  // Unconditional (not gated on form.workspaceId) so it fetches in parallel with `form` above
+  // rather than waiting on it — and it's usually already warm anyway, since every sidebar's own
+  // WorkspaceContextSwitcher fetches this identical query key on mount.
   const { data: workspaces = [] } = useQuery({
     queryKey: workspaceKeys.list(),
     queryFn: workspacesService.list,
-    enabled: !!form?.workspaceId,
+    enabled: !!formId,
   });
 
-  const formWorkspace = form?.workspaceId
-    ? workspaces.find((ws) => ws.id === form.workspaceId)
-    : undefined;
+  const formWorkspace = wsHint
+    ? workspaces.find((ws) => ws.slug === wsHint)
+    : form?.workspaceId
+      ? workspaces.find((ws) => ws.id === form.workspaceId)
+      : undefined;
+
+  // True only on a form-detail route where we haven't yet resolved *either* answer (not
+  // personal, not a known workspace) — the window this shell used to fill with the wrong
+  // sidebar. Once `form` resolves (confirming a personal form, `workspaceId: null`) or a
+  // workspace match lands, this clears immediately.
+  const contextUnresolved = !!formId && !wsHint && !form && !formWorkspace;
 
   return (
     <AppShell
@@ -91,6 +115,19 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
             collapsed={collapsed}
             role={formWorkspace.role}
           />
+        ) : contextUnresolved ? (
+          // Not built from Sidebar/groups — that component always renders each item as a real
+          // <Link>, which isn't right for placeholder rows with nowhere to go yet.
+          <nav className={collapsed ? 'bg-sidenav bg-sidenav-rail' : 'bg-sidenav'} aria-label="Loading navigation">
+            <div className={collapsed ? 'w-full flex justify-center mb-2 px-1' : 'w-full mb-2.5 pb-2.5 border-b border-border-default/60'}>
+              <Skeleton variant="text" width={collapsed ? 32 : '70%'} height={32} />
+            </div>
+            <div className="flex flex-col gap-3 px-1 pt-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Skeleton key={i} variant="text" width={collapsed ? 24 : '80%'} height={20} />
+              ))}
+            </div>
+          </nav>
         ) : (
           <PersonalSidebar collapsed={collapsed} />
         )

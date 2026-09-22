@@ -50,6 +50,34 @@ describe('formsService.getForms', () => {
     expect(config.headers).toBeUndefined();
     expect(config.params).toEqual({ limit: 10, workspaceId: 'personal' });
   });
+
+  it('filters out workspace-owned forms from a personal-context response — the confirmed-live follow-up bug: workspaceId=personal is not honored for a brand-new user whose default workspace is the one they just joined via invite accept', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: {
+        forms: [
+          { _id: 'f1', title: 'My personal form', workspaceId: null },
+          { _id: 'f2', title: 'Leaked workspace form', workspaceId: 'w1' },
+        ],
+        total: 2,
+        page: 1,
+        limit: 10,
+      },
+    });
+
+    const result = await formsService.getForms({ limit: 10 }, { type: 'personal' });
+
+    expect(result.forms.map((f) => f._id)).toEqual(['f1']);
+  });
+
+  it('does not filter for a workspace context — a workspace legitimately lists its own forms', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: { forms: [{ _id: 'f2', title: 'Workspace form', workspaceId: 'w1' }], total: 1, page: 1, limit: 10 },
+    });
+
+    const result = await formsService.getForms({ limit: 10 }, { type: 'workspace', workspaceId: 'acme' });
+
+    expect(result.forms).toHaveLength(1);
+  });
 });
 
 // sprint-10-events-migration, tasks.md 2.2 — Backend contract to confirm (BE 0.6); written against
