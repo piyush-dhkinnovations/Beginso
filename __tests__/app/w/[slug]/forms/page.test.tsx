@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // Import FormsPage directly (not WorkspaceFormsPage, which is an async server component
 // that simply delegates to FormsPage). This correctly isolates the test to the UI
@@ -20,6 +21,10 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/components/common/Toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
+}));
+
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({ user: { id: 'u1', name: 'Ada Lovelace', email: 'ada@example.com' } }),
 }));
 
 const mockGetForms = vi.fn();
@@ -102,5 +107,82 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
 
     await screen.findByText('No forms yet');
     expect(mockGetForms).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders the owner avatar for each row', async () => {
+    mockGetForms.mockResolvedValue({
+      forms: [{
+        _id: 'f1', title: 'Workspace Survey', status: 'published',
+        responseCount: 5, updatedAt: new Date().toISOString(),
+        fields: [], pages: [], branding: {},
+        settings: { honeypotEnabled: true }, workspaceId: 'acme',
+        schemaVersion: 1, createdAt: new Date().toISOString(),
+        owner: { name: 'Priya Shah' },
+      }],
+      total: 1, page: 1, limit: 10,
+    });
+    renderPage();
+
+    expect(await screen.findByLabelText('Owned by Priya Shah')).toBeInTheDocument();
+  });
+
+  it('a form title links to its Overview, and the row menu offers Overview first (tasks.md 3.4)', async () => {
+    mockGetForms.mockResolvedValue({
+      forms: [{
+        _id: 'f1', title: 'Workspace Survey', status: 'published',
+        responseCount: 5, updatedAt: new Date().toISOString(),
+        fields: [], pages: [], branding: {},
+        settings: { honeypotEnabled: true }, workspaceId: 'acme',
+        schemaVersion: 1, createdAt: new Date().toISOString(),
+      }],
+      total: 1, page: 1, limit: 10,
+    });
+    renderPage();
+
+    const titleLink = await screen.findByRole('link', { name: 'Workspace Survey' });
+    expect(titleLink).toHaveAttribute('href', '/forms/f1/overview');
+    // The pencil icon button still goes straight to the editor.
+    expect(screen.getByRole('link', { name: 'Edit Form' })).toHaveAttribute('href', '/forms/f1/edit');
+
+    await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
+    const items = await screen.findAllByRole('menuitem');
+    expect(items[0]).toHaveTextContent('Overview');
+  });
+
+  it('renders every Forms Manager tab', async () => {
+    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
+    renderPage();
+    await screen.findByText('No forms yet');
+
+    for (const name of ['Recent', 'Pinned', 'Draft', 'Published', 'Archived']) {
+      expect(screen.getByRole('tab', { name })).toBeInTheDocument();
+    }
+    expect(screen.queryByRole('tab', { name: 'Shared with me' })).not.toBeInTheDocument();
+  });
+
+  it('switching to the Pinned tab shows a placeholder and fires no extra forms query', async () => {
+    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
+    renderPage();
+    await screen.findByText('No forms yet');
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Pinned' }));
+
+    expect(await screen.findByText('Coming soon')).toBeInTheDocument();
+    expect(mockGetForms).toHaveBeenCalledTimes(1);
+  });
+
+  it('switching to the Draft tab filters by status and resets the page', async () => {
+    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
+    renderPage();
+    await screen.findByText('No forms yet');
+    mockGetForms.mockClear();
+
+    await userEvent.click(screen.getByRole('tab', { name: 'Draft' }));
+
+    await screen.findByText('No matching forms');
+    expect(mockGetForms).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'draft', page: 1 }),
+      WORKSPACE_CONTEXT
+    );
   });
 });

@@ -97,7 +97,9 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <StatisticsCards isLoading={analyticsLoading} counts={analytics} />
+      {(analyticsLoading || hasForms) && (
+        <StatisticsCards isLoading={analyticsLoading} counts={analytics} />
+      )}
 
       {formsLoading ? (
         <Card className="flex flex-col gap-3">

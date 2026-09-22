@@ -93,15 +93,26 @@ export function CreateFormModal({ isOpen, onClose, defaultDestination }: CreateF
 
   const mutation = useMutation({
     mutationFn: async (data: CreateFormValues) => {
-      const destPayload: FormDestination =
+      // `destination` is the URL slug when it comes from `defaultDestination` (a workspace
+      // page's own context — see FormsContext/formsService.ts's own comment on why that's a
+      // slug, not an id) but the real Mongo `_id` when it comes from the Select dropdown (built
+      // from `workspaces`, which carries both). POST /api/forms needs the real id in the body —
+      // unlike GET, there's no `x-workspace-slug` header fallback here — so resolve through the
+      // fetched workspace list before sending, whichever shape `destination` happens to be.
+      const resolvedWorkspaceId =
         destination === 'personal'
+          ? null
+          : (workspaces.find((ws) => ws.id === destination || ws.slug === destination)?.id ?? destination);
+
+      const destPayload: FormDestination =
+        resolvedWorkspaceId === null
           ? { type: 'personal' }
-          : { type: 'workspace', workspaceId: destination };
+          : { type: 'workspace', workspaceId: resolvedWorkspaceId };
 
       const created = await formsService.createForm({
         ...data,
         destination: destPayload,
-        destinationWorkspaceId: destination === 'personal' ? null : destination,
+        destinationWorkspaceId: resolvedWorkspaceId,
       });
 
       const defaultBranding = workspace?.branding;
@@ -174,8 +185,11 @@ export function CreateFormModal({ isOpen, onClose, defaultDestination }: CreateF
           {...register('description')}
         />
 
-        {/* Wireframe Screen 40: Destination picker (hidden if user has 0 workspaces) */}
-        {workspaces.length > 0 && (
+        {/* Wireframe Screen 40: Destination picker — hidden if the user has 0 workspaces, and
+            also hidden when already inside a specific workspace's own Forms page: that context
+            is unambiguous (defaultDestination.type === 'workspace'), so asking "where should it
+            live?" only makes sense from Personal space, where a workspace could still be chosen. */}
+        {workspaces.length > 0 && defaultDestination?.type !== 'workspace' && (
           <div className="flex flex-col gap-2">
             <Select
               id="create-form-destination-select"

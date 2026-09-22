@@ -97,4 +97,32 @@ describe('WorkspaceSidebar', () => {
     });
   });
 
+  // Sprint 10, requirements.md §7.7 — role-gated "Audit Log", same fail-closed pattern as Team.
+  describe('Audit Log nav item (role-gated)', () => {
+    it.each([undefined, 'viewer', 'member'] as const)('is hidden for role=%s', (role) => {
+      renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc', role });
+      expect(screen.queryByRole('link', { name: 'Audit Log' })).not.toBeInTheDocument();
+    });
+
+    it.each(['owner', 'admin'] as const)('is visible for role=%s, scoped under the workspace slug', (role) => {
+      renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc', role });
+      expect(screen.getByRole('link', { name: 'Audit Log' })).toHaveAttribute('href', '/w/acme/audit');
+    });
+  });
+
+  // Sprint 10, requirements.md §7.6 — "Activity" is visible to every role, unlike Team.
+  describe('Activity nav item (all roles)', () => {
+    it.each([undefined, 'viewer', 'member', 'admin', 'owner'] as const)('is visible for role=%s', (role) => {
+      renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc', role });
+      expect(screen.getByRole('link', { name: 'Activity' })).toHaveAttribute('href', '/w/acme/activity');
+    });
+
+    it('is marked active on /w/[slug]/activity', () => {
+      mockPathname.mockReturnValue('/w/acme/activity');
+      renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc' });
+      expect(screen.getByRole('link', { name: 'Activity' })).toHaveAttribute('aria-current', 'page');
+      expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
+    });
+  });
+
 });

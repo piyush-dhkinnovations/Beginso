@@ -4,13 +4,17 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink, Share2 } from 'lucide-react';
+import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink, LayoutDashboard, Share2, PinOff, Archive } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { workspaceKeys } from '@/lib/queryKeys';
 import { useToast } from '@/components/common/Toast';
+import { useAuth } from '@/hooks/useAuth';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Alert } from '@/components/ui/Alert';
+import { Table, type TableColumn } from '@/components/ui/Table';
+import { Avatar } from '@/components/ui/Avatar';
 import { EmptyState } from '@/components/common/EmptyState';
 import { CreateFormModal } from '@/components/form-builder/CreateFormModal';
 import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
@@ -19,8 +23,8 @@ import { FormAccessPanel } from '@/components/team/FormAccessPanel';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { PaginationControls } from '@/components/responses/PaginationControls';
+import { FormsManagerTabs, type FormsManagerTab } from '@/components/forms/FormsManagerTabs';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { Form, FormStatus } from '@/types/form';
 import type { FormsContext } from '@/types/workspace';
@@ -42,121 +46,16 @@ const STATUS_LABEL: Record<FormStatus, string> = {
 
 const FORMS_PAGE_LIMIT = 10;
 
-// ─── Row component ────────────────────────────────────────────────────────────
+// Tabs backed by the existing status filter (requirements.md §7.10) — Pinned/Archived have no
+// backing data yet (design.md §23) and fire no forms query at all.
+const TAB_STATUS: Partial<Record<FormsManagerTab, FormStatus | 'all'>> = {
+  recent: 'all',
+  draft: 'draft',
+  published: 'published',
+};
 
-function FormRow({
-  form,
-  onDuplicate,
-  isDuplicating,
-  onDelete,
-  isDeleting,
-  onMove,
-  onShare,
-}: {
-  form: Form;
-  onDuplicate: (id: string) => void;
-  isDuplicating: boolean;
-  onDelete: (id: string) => void;
-  isDeleting: boolean;
-  onMove?: (form: Form) => void;
-  onShare: (form: Form) => void;
-}) {
-  const router = useRouter();
-  const updatedAt = new Date(form.updatedAt).toLocaleDateString('en-US', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  });
-
-  const formId = form._id;
-
-  const menuItems: MenuItem[] = [
-    {
-      id: 'responses',
-      label: 'View Responses',
-      icon: <Table2 className="bg-icon" />,
-      onSelect: () => router.push(`/forms/${formId}/responses`),
-    },
-    {
-      id: 'analytics',
-      label: 'View Analytics',
-      icon: <BarChart2 className="bg-icon" />,
-      onSelect: () => router.push(`/forms/${formId}/analytics`),
-    },
-    ...(onMove
-      ? [
-          {
-            id: 'move',
-            label: 'Move',
-            icon: <FolderSymlink className="bg-icon" />,
-            onSelect: () => onMove(form),
-          } satisfies MenuItem,
-        ]
-      : []),
-    {
-      id: 'share',
-      label: 'Share access',
-      icon: <Share2 className="bg-icon" />,
-      onSelect: () => onShare(form),
-    },
-    {
-      id: 'duplicate',
-      label: isDuplicating ? 'Duplicating…' : 'Duplicate',
-      icon: <Copy className="bg-icon" />,
-      disabled: isDuplicating,
-      onSelect: () => onDuplicate(formId),
-    },
-    {
-      id: 'delete',
-      label: isDeleting ? 'Deleting…' : 'Delete',
-      icon: <Trash2 className="bg-icon" />,
-      disabled: isDeleting,
-      danger: true,
-      onSelect: () => onDelete(formId),
-    },
-  ];
-
-  return (
-    <div
-      className="forms-row forms-row-hoverable px-4 py-3 transition-colors group"
-      style={{ borderBottom: '1px solid var(--border-subtle)' }}
-    >
-      <div
-        className="[grid-area:icon] w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-        style={{ backgroundColor: 'var(--bg-subtle)' }}
-      >
-        <FileText size={16} style={{ color: 'var(--text-muted)' }} />
-      </div>
-
-      <div className="[grid-area:title] flex flex-col min-w-0">
-        <Link href={`/forms/${formId}/edit`} className="bg-body font-semibold truncate hover:underline">
-          {form.title}
-        </Link>
-        <span className="bg-caption mt-0.5">
-          Updated {updatedAt} · {form.responseCount} response{form.responseCount !== 1 ? 's' : ''}
-        </span>
-      </div>
-
-      <div className="[grid-area:badge] flex justify-start sm:justify-center">
-        <StatusBadge variant={STATUS_VARIANT[form.status]}>
-          {STATUS_LABEL[form.status]}
-        </StatusBadge>
-      </div>
-
-      <div className="[grid-area:actions] flex items-center justify-end gap-1.5">
-        <Link
-          href={`/forms/${formId}/edit`}
-          className="bg-btn bg-btn-ghost bg-btn-icon"
-          title="Edit Form"
-          aria-label="Edit Form"
-        >
-          <Edit2 className="bg-icon" />
-        </Link>
-
-        <Menu trigger={<MoreVertical className="bg-icon" />} triggerLabel="More Options" items={menuItems} align="end" />
-      </div>
-    </div>
-  );
+function formsQueryEnabled(tab: FormsManagerTab): boolean {
+  return tab in TAB_STATUS;
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -168,6 +67,8 @@ export interface FormsPageProps {
 export default function FormsPage({ context = { type: 'personal' } }: FormsPageProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formToMove, setFormToMove] = useState<Form | null>(null);
   const [formToShare, setFormToShare] = useState<Form | null>(null);
@@ -177,7 +78,15 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<FormStatus | 'all'>('all');
   const [page, setPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<FormsManagerTab>('recent');
   const debouncedSearch = useDebounce(search, 300);
+
+  const handleTabChange = (tab: FormsManagerTab) => {
+    setActiveTab(tab);
+    setPage(1);
+    const tabStatus = TAB_STATUS[tab];
+    if (tabStatus) setStatus(tabStatus);
+  };
 
   const { data, isLoading, error } = useQuery({
     queryKey: workspaceKeys.forms(
@@ -194,6 +103,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
         },
         context
       ),
+    enabled: formsQueryEnabled(activeTab),
   });
 
   const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / FORMS_PAGE_LIMIT));
@@ -225,6 +135,125 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
     onSettled: () => setDeletingId(null),
   });
 
+  const columns: TableColumn<Form>[] = [
+    {
+      key: 'form',
+      header: 'Form Title',
+      render: (form) => {
+        const updatedAt = new Date(form.updatedAt).toLocaleDateString('en-US', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        });
+        return (
+          <div className="flex items-center gap-3 min-w-0">
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+              style={{ backgroundColor: 'var(--bg-subtle)' }}
+            >
+              <FileText size={16} style={{ color: 'var(--text-muted)' }} />
+            </div>
+            <div className="flex flex-col min-w-0">
+              <Link href={`/forms/${form._id}/overview`} className="bg-body font-semibold truncate hover:underline">
+                {form.title}
+              </Link>
+              <span className="bg-caption mt-0.5">
+                Updated {updatedAt} · {form.responseCount} response{form.responseCount !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'owner',
+      header: 'Owner',
+      render: (form) =>
+        context.type === 'personal' ? (
+          // A personal form has exactly one possible owner: the caller (requirements.md §7.9).
+          <Avatar name={user?.name} size="sm" aria-label={user?.name ? `Owned by ${user.name}` : undefined} />
+        ) : (
+          // Backend contract to confirm — GET /api/forms does not yet document owner identity
+          // for a workspace-form row (form.ts's `owner` field, added optional this sprint).
+          <Avatar name={form.owner?.name} src={form.owner?.avatarUrl} size="sm" aria-label={form.owner?.name ? `Owned by ${form.owner.name}` : undefined} />
+        ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (form) => <StatusBadge variant={STATUS_VARIANT[form.status]}>{STATUS_LABEL[form.status]}</StatusBadge>,
+    },
+    {
+      key: 'actions',
+      header: '',
+      align: 'right',
+      render: (form) => {
+        const formId = form._id;
+        const menuItems: MenuItem[] = [
+          {
+            id: 'overview',
+            label: 'Overview',
+            icon: <LayoutDashboard className="bg-icon" />,
+            onSelect: () => router.push(`/forms/${formId}/overview`),
+          },
+          {
+            id: 'responses',
+            label: 'View Responses',
+            icon: <Table2 className="bg-icon" />,
+            onSelect: () => router.push(`/forms/${formId}/responses`),
+          },
+          {
+            id: 'analytics',
+            label: 'View Analytics',
+            icon: <BarChart2 className="bg-icon" />,
+            onSelect: () => router.push(`/forms/${formId}/analytics`),
+          },
+          {
+            id: 'move',
+            label: 'Move',
+            icon: <FolderSymlink className="bg-icon" />,
+            onSelect: () => setFormToMove(form),
+          },
+          {
+            id: 'share',
+            label: 'Share access',
+            icon: <Share2 className="bg-icon" />,
+            onSelect: () => setFormToShare(form),
+          },
+          {
+            id: 'duplicate',
+            label: duplicatingId === formId ? 'Duplicating…' : 'Duplicate',
+            icon: <Copy className="bg-icon" />,
+            disabled: duplicatingId === formId,
+            onSelect: () => duplicateMutation.mutate(formId),
+          },
+          {
+            id: 'delete',
+            label: deletingId === formId ? 'Deleting…' : 'Delete',
+            icon: <Trash2 className="bg-icon" />,
+            disabled: deletingId === formId,
+            danger: true,
+            onSelect: () => setFormToDelete(form),
+          },
+        ];
+
+        return (
+          <div className="flex items-center justify-end gap-1.5">
+            <Link
+              href={`/forms/${formId}/edit`}
+              className="bg-btn bg-btn-ghost bg-btn-icon"
+              title="Edit Form"
+              aria-label="Edit Form"
+            >
+              <Edit2 className="bg-icon" />
+            </Link>
+            <Menu trigger={<MoreVertical className="bg-icon" />} triggerLabel="More Options" items={menuItems} align="end" />
+          </div>
+        );
+      },
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
       <PageHeader
@@ -242,131 +271,89 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
         }
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <div className="w-full sm:max-w-sm">
-          <Input
-            id="forms-search"
-            aria-label="Search forms"
-            placeholder="Search forms…"
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-              setPage(1);
-            }}
-          />
-        </div>
-        <div className="sm:w-48">
-          <Select
-            id="forms-status-filter"
-            aria-label="Filter forms by status"
-            value={status}
-            onChange={(event) => {
-              setStatus(event.target.value as FormStatus | 'all');
-              setPage(1);
-            }}
-          >
-            <option value="all">All statuses</option>
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-            <option value="closed">Closed</option>
-          </Select>
-        </div>
-      </div>
+      <FormsManagerTabs activeTab={activeTab} onChange={handleTabChange} />
 
-      {isLoading ? (
-        <div className="bg-card overflow-hidden">
-          {/* Table header — hidden on the stacked mobile layout, see .forms-row-header */}
-          <div
-            className="forms-row forms-row-header px-4 py-2.5"
-            style={{ backgroundColor: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-default)' }}
-          >
-            <div className="[grid-area:icon]" />
-            <span className="[grid-area:title] bg-caption font-semibold uppercase tracking-wider">
-              Form Title
-            </span>
-            <span className="[grid-area:badge] bg-caption font-semibold uppercase tracking-wider text-center">
-              Status
-            </span>
-            <div className="[grid-area:actions]" />
-          </div>
-
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="forms-row px-4 py-3"
-              style={{ borderBottom: '1px solid var(--border-subtle)' }}
-            >
-              <Skeleton variant="circle" width={36} height={36} className="[grid-area:icon]" />
-              <div className="[grid-area:title] flex flex-col gap-1.5 min-w-0">
-                <Skeleton variant="text" width="50%" height={14} />
-                <Skeleton variant="text" width="33%" height={12} />
-              </div>
-              <div className="[grid-area:badge] flex justify-start sm:justify-center">
-                <Skeleton variant="text" width={64} height={20} />
-              </div>
-              <div className="[grid-area:actions] flex items-center justify-end gap-1.5">
-                <Skeleton variant="circle" width={32} height={32} />
-                <Skeleton variant="circle" width={32} height={32} />
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : error ? (
-        <div className="flex items-center justify-center py-20">
-          <p className="text-body text-error">Failed to load forms. Please refresh.</p>
-        </div>
-      ) : !data || data.forms.length === 0 ? (
+      {activeTab === 'pinned' || activeTab === 'archived' ? (
         <EmptyState
-          icon={<FileText />}
-          heading={search || status !== 'all' ? 'No matching forms' : 'No forms yet'}
-          body={search || status !== 'all' ? 'Try changing your search or status filter.' : 'Create your first form to get started collecting responses.'}
-          action={
-            <Button variant="primary" onClick={() => setIsModalOpen(true)}>
-              <Plus size={16} className="mr-2" />
-              Create Form
-            </Button>
+          icon={activeTab === 'pinned' ? <PinOff /> : <Archive />}
+          heading="Coming soon"
+          body={
+            activeTab === 'pinned'
+              ? 'Pinning forms is not available yet.'
+              : 'Archived forms will show up here once archiving ships.'
           }
         />
       ) : (
-        <div className="bg-card overflow-hidden">
-          {/* Table header — hidden on the stacked mobile layout, see .forms-row-header */}
-          <div
-            className="forms-row forms-row-header px-4 py-2.5"
-            style={{ backgroundColor: 'var(--bg-subtle)', borderBottom: '1px solid var(--border-default)' }}
-          >
-            <div className="[grid-area:icon]" />
-            <span className="[grid-area:title] bg-caption font-semibold uppercase tracking-wider">
-              Form Title
-            </span>
-            <span className="[grid-area:badge] bg-caption font-semibold uppercase tracking-wider text-center">
-              Status
-            </span>
-            <div className="[grid-area:actions]" />
+        <>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="w-full sm:max-w-sm">
+              <Input
+                id="forms-search"
+                aria-label="Search forms"
+                placeholder="Search forms…"
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(1);
+                }}
+              />
+            </div>
+            {activeTab === 'recent' && (
+              <div className="sm:w-48">
+                <Select
+                  id="forms-status-filter"
+                  aria-label="Filter forms by status"
+                  value={status}
+                  onChange={(event) => {
+                    setStatus(event.target.value as FormStatus | 'all');
+                    setPage(1);
+                  }}
+                >
+                  <option value="all">All statuses</option>
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="closed">Closed</option>
+                </Select>
+              </div>
+            )}
           </div>
 
-          {data.forms.map((form) => (
-            <FormRow
-              key={form._id}
-              form={form}
-              onDuplicate={(id) => duplicateMutation.mutate(id)}
-              isDuplicating={duplicatingId === form._id}
-              onDelete={(id) => setFormToDelete(data.forms.find((f) => f._id === id) ?? null)}
-              isDeleting={deletingId === form._id}
-              onMove={(f) => setFormToMove(f)}
-              onShare={(f) => setFormToShare(f)}
+          {error ? (
+            <Alert variant="error" title="Failed to load forms. Please refresh." />
+          ) : (
+            <Table
+              columns={columns}
+              rows={data?.forms ?? []}
+              rowKey={(form) => form._id}
+              isLoading={isLoading}
+              emptyState={
+                <EmptyState
+                  icon={<FileText />}
+                  heading={search || status !== 'all' ? 'No matching forms' : 'No forms yet'}
+                  body={search || status !== 'all' ? 'Try changing your search or status filter.' : 'Create your first form to get started collecting responses.'}
+                  action={
+                    <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+                      <Plus size={16} className="mr-2" />
+                      Create Form
+                    </Button>
+                  }
+                />
+              }
             />
-          ))}
+          )}
 
-          <div className="px-4 py-2.5" style={{ backgroundColor: 'var(--bg-subtle)', borderTop: '1px solid var(--border-subtle)' }}>
-            <span className="bg-caption">
-              {data.total} form{data.total !== 1 ? 's' : ''} total
-            </span>
-          </div>
-        </div>
-      )}
+          {!isLoading && !error && data && data.forms.length > 0 && (
+            <div className="bg-card px-4 py-2.5" style={{ borderTop: '1px solid var(--border-subtle)' }}>
+              <span className="bg-caption">
+                {data.total} form{data.total !== 1 ? 's' : ''} total
+              </span>
+            </div>
+          )}
 
-      {!isLoading && !error && data && (
-        <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
+          {!isLoading && !error && data && (
+            <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
+          )}
+        </>
       )}
 
       <CreateFormModal
@@ -408,4 +395,3 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
     </div>
   );
 }
-

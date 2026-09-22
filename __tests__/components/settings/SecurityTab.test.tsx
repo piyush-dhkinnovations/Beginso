@@ -1,8 +1,8 @@
 /**
  * __tests__/components/settings/SecurityTab.test.tsx
  * Feature: sprint-6-settings
- * Tests: SecurityTab — verification badge variant mapping, account dates, partial-failure
- * tolerance (a sessions-load failure doesn't blank the verification/dates section, and vice versa)
+ * Tests: SecurityTab — verification badge variant mapping, account dates, error state (sessions
+ * moved to SessionsTab in sprint-10)
  * Requirements: 8.1-8.3, 9.6
  */
 
@@ -84,23 +84,30 @@ describe('SecurityTab', () => {
     expect(screen.getByText(/Last login/)).toBeInTheDocument();
   });
 
-  it('still shows the verification badge and dates when the sessions list fails to load', async () => {
+  // sprint-10 requirements.md §7.12 — sessions moved to their own tab, so SecurityTab neither
+  // fetches nor renders them any more (its old partial-failure tests for that no longer apply).
+  it('no longer renders or fetches the sessions list', async () => {
     mockGetProfile.mockResolvedValue(mockProfile());
-    mockGetSessions.mockRejectedValue(new Error('fail'));
     renderTab();
 
     expect(await screen.findByText('Email verified')).toBeInTheDocument();
-    expect(screen.getByText('Unable to load your sessions.')).toBeInTheDocument();
+    expect(screen.queryByText('Active sessions')).not.toBeInTheDocument();
+    expect(mockGetSessions).not.toHaveBeenCalled();
   });
 
-  it('still shows the sessions list when the profile fails to load', async () => {
+  it('shows a retryable error when the profile fails to load', async () => {
     mockGetProfile.mockRejectedValue(new Error('fail'));
-    mockGetSessions.mockResolvedValue({
-      sessions: [{ id: 's1', deviceLabel: 'Chrome on Windows', approxLocation: { city: 'Mumbai', country: 'India' }, lastActiveAt: '2026-08-17T08:30:00.000Z', isCurrent: true }],
-    });
     renderTab();
 
     expect(await screen.findByText('Unable to load your security details.')).toBeInTheDocument();
-    expect(await screen.findByText('Chrome on Windows')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
+  });
+
+  it('carries no hardcoded neutral/white colour classes (themed tokens only)', async () => {
+    mockGetProfile.mockResolvedValue(mockProfile());
+    const { container } = renderTab();
+    await screen.findByText('Email verified');
+
+    expect(container.innerHTML).not.toMatch(/neutral-\d|bg-white/);
   });
 });

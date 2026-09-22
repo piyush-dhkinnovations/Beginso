@@ -78,7 +78,17 @@ export const responsesService = {
       .get<ListEnvelope>('/api/responses', { params })
       .then((r): PaginatedResponsesResult => {
         const { data, total, page, limit, totalPages } = r.data;
-        return { data: data.map((item) => ({ ...item, answers: cleanAnswers(item.answers) })), total, page, limit, totalPages };
+        // Same defensive-array guard `sharedService`/`formAccessService` already carry
+        // (CLAUDE.md's own noted pattern) — the all-forms/no-formId call (zero-forms account)
+        // is the case most likely to hit a shape the rest of this endpoint's callers never see;
+        // fail to an empty page instead of throwing out of the query function.
+        return {
+          data: Array.isArray(data) ? data.map((item) => ({ ...item, answers: cleanAnswers(item.answers) })) : [],
+          total: typeof total === 'number' ? total : 0,
+          page: typeof page === 'number' ? page : params.page ?? 1,
+          limit: typeof limit === 'number' ? limit : params.limit ?? 10,
+          totalPages: typeof totalPages === 'number' ? totalPages : 1,
+        };
       }),
 
   getResponseById: (id: string) =>
@@ -124,7 +134,7 @@ export const responsesService = {
       (['new', 'in_progress', 'completed'] as const).map((status) =>
         axiosInstance
           .get<ListEnvelope>('/api/responses', { params: { formId, status, limit: 1 } })
-          .then((r) => r.data.total)
+          .then((r) => (typeof r.data.total === 'number' ? r.data.total : 0))
       )
     ).then(([newCount, inProgressCount, completedCount]) => ({
       total: newCount + inProgressCount + completedCount,

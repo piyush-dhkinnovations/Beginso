@@ -1,10 +1,10 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Home, FileText, Users } from 'lucide-react';
+import { Home, FileText, Users, History, Shield } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
-import { canManageMembers } from '@/lib/roles';
+import { canManageMembers, canViewAudit } from '@/lib/roles';
 import type { Role } from '@/types/workspace';
 
 export interface WorkspaceSidebarProps {
@@ -41,7 +41,12 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }
   const items = [
     { label: 'Home', href: base, icon: Home },
     { label: 'Forms', href: `${base}/forms`, icon: FileText },
+    // Every role — seeing what happened in a workspace you belong to is not manager-only
+    // (sprint-10 requirements.md §7.6). "Audit Log" is the role-gated counterpart (§7.7), failing
+    // closed on an undefined role exactly like "Team".
+    { label: 'Activity', href: `${base}/activity`, icon: History },
     ...(canManageMembers(role) ? [{ label: 'Team', href: `${base}/team`, icon: Users }] : []),
+    ...(canViewAudit(role) ? [{ label: 'Audit Log', href: `${base}/audit`, icon: Shield }] : []),
   ];
 
   return (

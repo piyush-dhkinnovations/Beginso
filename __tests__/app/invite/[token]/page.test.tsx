@@ -115,9 +115,15 @@ describe('InviteAcceptPage (/invite/[token])', () => {
     await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/w/acme-marketing'));
   });
 
-  it('accept() succeeding without a usable slug fails gracefully instead of crashing', async () => {
+  it('accept() succeeding without a usable slug fails gracefully instead of crashing, and drops the stale Accept/Decline row once the real membership is confirmed', async () => {
     mockAuthState.current = { user: { email: 'sam@example.com' }, isAuthenticated: true, isLoading: false };
-    mockPreview.mockResolvedValue({ ...BASE, callerEmailMatches: true });
+    // First fetch: still pending (renders Accept/Decline). After accept() succeeds server-side
+    // but returns no usable slug, the fallback branch invalidates the preview query — this
+    // second, refetched value reflects what the real backend would now report (status flipped to
+    // accepted), matching a real user's experience rather than assuming the mock never changes.
+    mockPreview
+      .mockResolvedValueOnce({ ...BASE, callerEmailMatches: true })
+      .mockResolvedValueOnce({ ...BASE, callerEmailMatches: true, status: 'accepted' });
     // Reproduces a real live-backend response shape gap found via manual testing: accept()
     // resolves (no thrown/rejected error) but the workspace object it returns has no slug.
     mockAccept.mockResolvedValue({ id: 'w1', name: 'Acme Marketing' } as unknown as { id: string; slug: string; name: string });
@@ -126,6 +132,14 @@ describe('InviteAcceptPage (/invite/[token])', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Accept' }));
     expect(await screen.findByText(/couldn't open the workspace automatically/)).toBeInTheDocument();
     expect(mockPush).not.toHaveBeenCalled();
+
+    // Real bug fixed: the page used to leave Accept/Decline rendered here, directly under a
+    // message saying the invitation was already accepted. The invalidated refetch now flips
+    // deriveState() to 'already-member', which drops the stale action row for a working retry.
+    await waitFor(() => expect(screen.getByText(/You're already a member/)).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: 'Accept' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Decline' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Go to workspace' })).toBeInTheDocument();
   });
 
   it('a raw backend crash message is never shown verbatim to the user', async () => {

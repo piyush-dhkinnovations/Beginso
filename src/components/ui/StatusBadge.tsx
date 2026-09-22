@@ -29,7 +29,7 @@ export function StatusBadge({ variant, children, className, ...props }: StatusBa
     completed: "bg-status-active-bg border-status-active-border text-status-active-text",
     // Not a status — for non-status chips (e.g. a template's category) that just need
     // the same pill/border shape without implying draft/active/etc.
-    neutral: "bg-neutral-100 border-neutral-300 text-neutral-600",
+    neutral: "bg-[var(--bg-sunken)] border-[var(--border-default)] text-[var(--text-secondary)]",
   };
 
   const dotStyles = {
@@ -40,7 +40,7 @@ export function StatusBadge({ variant, children, className, ...props }: StatusBa
     new: "bg-status-new-dot",
     in_progress: "bg-status-progress-dot",
     completed: "bg-status-active-dot",
-    neutral: "bg-neutral-400",
+    neutral: "bg-[var(--text-muted)]",
   };
 
   return (

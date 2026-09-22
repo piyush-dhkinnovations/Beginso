@@ -73,7 +73,7 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
 
   return (
     <div className="flex items-center gap-4">
-      <div className="relative h-16 w-16 shrink-0 rounded-full bg-brand-600 text-white flex items-center justify-center text-heading-2 font-bold overflow-hidden">
+      <div className="relative h-16 w-16 shrink-0 rounded-full bg-[var(--action-primary)] text-[var(--text-on-brand)] flex items-center justify-center text-heading-2 font-bold overflow-hidden">
         {avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
@@ -99,7 +99,7 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
           />
           <label
             htmlFor="avatar-file-input"
-            className="min-h-11 inline-flex items-center px-3 rounded-md border-2 border-neutral-200 text-body-sm font-semibold text-neutral-800 hover:bg-neutral-100 cursor-pointer transition-colors"
+            className="min-h-11 inline-flex items-center px-3 rounded-md border-2 border-[var(--border-default)] text-body-sm font-semibold text-[var(--text-primary)] hover:bg-[var(--surface-hover)] cursor-pointer transition-colors"
           >
             Change photo
           </label>

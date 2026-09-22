@@ -117,7 +117,17 @@ export default function InviteAcceptPage() {
           // known backend issue "500 responses can leak internal error.message detail" is the
           // sibling symptom of the same underlying handler bug. Fail visibly but gracefully
           // instead of crashing on `undefined.slug`.
+          //
+          // Real bug found and fixed: this branch never invalidated the preview query, so
+          // deriveState() kept reading the invitation's last-fetched status ('pending') and left
+          // the Accept/Decline row rendered — a real user saw "Your invitation was accepted"
+          // directly above still-live Accept/Decline buttons. The accept call itself did succeed
+          // (membership was created), so refetching now picks up status: 'accepted' from the
+          // backend and deriveState() naturally swaps to the 'already-member' panel — no more
+          // stale action row, and its own "Go to workspace" button retries the same idempotent
+          // accept() call, which succeeds cleanly if the slug issue was transient.
           setActionError("Your invitation was accepted, but we couldn't open the workspace automatically. Go to All Workspaces to find it.");
+          void queryClient.invalidateQueries({ queryKey: invitationKeys.detail(token) });
           return;
         }
         router.push(`/w/${result.slug}`);

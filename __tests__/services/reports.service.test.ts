@@ -69,8 +69,12 @@ describe('reportsService', () => {
   });
 
   it('getReports calls GET /api/reports with params and maps each job\'s id to _id', async () => {
+    // Real live shape (22 Sep 2026 capture): the job array is keyed `reports`, not `data` —
+    // the previous mock here asserted the wrong key, which is what let the actual bug (reading
+    // r.data.data, always undefined) go unnoticed. See reports.ts's own comment.
     const raw = {
-      data: [
+      success: true,
+      reports: [
         { id: 'r1', format: 'pdf', status: 'failed', createdAt: '2026-08-13T09:00:00.000Z', errorMessage: 'Failed to generate report due to an internal processing error. Please try again.' },
       ],
       total: 1,
@@ -86,6 +90,14 @@ describe('reportsService', () => {
     expect(result.data[0]._id).toBe('r1');
     expect(result.data[0].errorMessage).toBe('Failed to generate report due to an internal processing error. Please try again.');
     expect(result.total).toBe(1);
+  });
+
+  it('getReports returns an empty page instead of throwing when `reports` is missing (zero-reports account)', async () => {
+    mockGet.mockResolvedValueOnce({ data: { success: true, reports: [], total: 0, page: 1, limit: 10, totalPages: 0 } });
+
+    const result = await reportsService.getReports({ page: 1, limit: 20 });
+
+    expect(result).toEqual({ data: [], total: 0, page: 1, limit: 10, totalPages: 0 });
   });
 
   it('getReportById calls GET /api/reports/:id and maps id to _id', async () => {

@@ -67,17 +67,17 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4 animate-pulse">
-        <div className="h-16 w-16 rounded-full bg-neutral-200" />
-        <div className="h-10 bg-neutral-200 rounded w-full" />
-        <div className="h-10 bg-neutral-100 rounded w-full" />
+        <div className="h-16 w-16 rounded-full bg-[var(--border-default)]" />
+        <div className="h-10 bg-[var(--border-default)] rounded w-full" />
+        <div className="h-10 bg-[var(--border-subtle)] rounded w-full" />
       </div>
     );
   }
 
   if (isError || !profile) {
     return (
-      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-4">
-        <p className="text-body-sm text-neutral-700">Unable to load your profile.</p>
+      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
+        <p className="text-body-sm text-[var(--text-primary)]">Unable to load your profile.</p>
         <Button variant="secondary" size="small" onClick={() => refetch()}>Try again</Button>
       </div>
     );
@@ -94,7 +94,7 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
         <button
           type="button"
           onClick={() => toast("Changing your email isn't available yet.", 'info')}
-          className="self-start text-body-sm text-brand-700 hover:text-brand-900 -mt-2"
+          className="self-start text-body-sm text-[var(--text-link)] hover:text-[var(--text-primary)] -mt-2"
         >
           Change email
         </button>

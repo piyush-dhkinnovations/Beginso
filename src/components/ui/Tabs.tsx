@@ -14,12 +14,14 @@ export interface TabsProps {
   activeId: string;
   onChange: (id: string) => void;
   className?: string;
+  /** Names the tablist for assistive tech when the surrounding page doesn't (e.g. "Settings"). */
+  ariaLabel?: string;
 }
 
 // beginso-ui.css classes — see src/styles/beginso-ui.css §12 NAVIGATION ("Tabs"). WAI-ARIA tabs
 // pattern: roving tabindex, arrow/Home/End keyboard navigation — matching the role="tablist"/
 // role="tab"/aria-selected pattern already added to BuilderTabs (CHANGELOG.md, 2026-08-18).
-export function Tabs({ tabs, activeId, onChange, className }: TabsProps) {
+export function Tabs({ tabs, activeId, onChange, className, ariaLabel }: TabsProps) {
   const refs = React.useRef<Record<string, HTMLButtonElement | null>>({});
 
   const focusAndSelect = (index: number) => {
@@ -50,7 +52,7 @@ export function Tabs({ tabs, activeId, onChange, className }: TabsProps) {
   };
 
   return (
-    <div role="tablist" className={bx("bg-tabs", className)}>
+    <div role="tablist" aria-label={ariaLabel} className={bx("bg-tabs", className)}>
       {tabs.map((tab, index) => {
         const selected = tab.id === activeId;
         return (

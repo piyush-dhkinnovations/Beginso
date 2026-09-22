@@ -1,0 +1,62 @@
+import axiosInstance from '@/lib/axios';
+import { unwrapEnvelope } from '@/lib/apiEnvelope';
+import { workspacesService } from '@/services/workspaces';
+import type { WorkspaceEventItem, AuditFilters } from '@/types/event';
+
+// Backend contract to confirm (BE 0.3–0.5) — none of these routes is verified against a live
+// backend; the envelope key is a guess, so every method guards the non-array case at this trust
+// boundary (the `shares.map is not a function` crash, sharedService's own comment) instead of in
+// every consumer.
+function toEvents(raw: unknown): WorkspaceEventItem[] {
+  const unwrapped = unwrapEnvelope<unknown>(raw, 'events');
+  return Array.isArray(unwrapped) ? (unwrapped as WorkspaceEventItem[]) : [];
+}
+
+// `range` is a UI choice (7d/30d/all); the wire format is a `from` timestamp.
+function rangeToFrom(range: AuditFilters['range']): string | undefined {
+  const days = range === '7d' ? 7 : range === '30d' ? 30 : undefined;
+  return days ? new Date(Date.now() - days * 86_400_000).toISOString() : undefined;
+}
+
+const OBJECT_ID_RE = /^[0-9a-f]{24}$/i;
+
+// Real bug found and fixed: every caller of listWorkspaceActivity/listAudit passes the URL
+// slug (`/w/[slug]/...` pages only ever have the slug, not the real id), but
+// GET /api/workspaces/:id/events|audit needs the real Mongo id in the path — unlike
+// GET /api/workspaces/:id itself (resolveWorkspaceBySlug's own confirmed contract note, which
+// explicitly accepts either). Sending the slug there 500s ("Server error listing workspace
+// activity") instead of the clean 400 the forms-create endpoint gives for the identical mistake.
+// Resolved here, once, so every caller keeps passing whichever it already has (slug or id) —
+// same reasoning formsService.ts's own x-workspace-slug header fix already established: this
+// translation belongs at the trust boundary, not duplicated into every page.
+async function resolveWorkspaceId(workspaceIdOrSlug: string): Promise<string> {
+  if (OBJECT_ID_RE.test(workspaceIdOrSlug)) return workspaceIdOrSlug;
+  const workspace = await workspacesService.get(workspaceIdOrSlug);
+  return workspace.id;
+}
+
+export const eventsService = {
+  listWorkspaceActivity: async (workspaceId: string, page = 1, limit?: number): Promise<WorkspaceEventItem[]> => {
+    const id = await resolveWorkspaceId(workspaceId);
+    return axiosInstance
+      .get(`/api/workspaces/${id}/events`, { params: { page, limit } })
+      .then((r) => toEvents(r.data));
+  },
+
+  listAudit: async (workspaceId: string, filters: AuditFilters = {}): Promise<WorkspaceEventItem[]> => {
+    const id = await resolveWorkspaceId(workspaceId);
+    return axiosInstance
+      .get(`/api/workspaces/${id}/audit`, {
+        params: {
+          page: filters.page ?? 1,
+          limit: filters.limit,
+          actorId: filters.actorId,
+          from: rangeToFrom(filters.range),
+        },
+      })
+      .then((r) => toEvents(r.data));
+  },
+
+  listFormEvents: (formId: string, page = 1, limit?: number): Promise<WorkspaceEventItem[]> =>
+    axiosInstance.get(`/api/forms/${formId}/events`, { params: { page, limit } }).then((r) => toEvents(r.data)),
+};

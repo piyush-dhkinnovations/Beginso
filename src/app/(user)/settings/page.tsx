@@ -11,8 +11,9 @@ import { WorkspaceTab } from '@/components/settings/WorkspaceTab';
 import { BrandingTab } from '@/components/settings/BrandingTab';
 import { NotificationsTab } from '@/components/settings/NotificationsTab';
 import { SecurityTab } from '@/components/settings/SecurityTab';
+import { SessionsTab } from '@/components/settings/SessionsTab';
 
-const VALID_TABS: SettingsTab[] = ['profile', 'workspace', 'branding', 'notifications', 'security'];
+const VALID_TABS: SettingsTab[] = ['profile', 'workspace', 'branding', 'notifications', 'security', 'sessions'];
 
 const TAB_LABEL: Record<SettingsTab, string> = {
   profile: 'Profile',
@@ -20,6 +21,7 @@ const TAB_LABEL: Record<SettingsTab, string> = {
   branding: 'Branding',
   notifications: 'Notifications',
   security: 'Security',
+  sessions: 'Sessions & Devices',
 };
 
 export default function SettingsPage() {
@@ -107,6 +109,11 @@ export default function SettingsPage() {
             <SecurityTab />
           </div>
         )}
+        {visitedTabs.has('sessions') && (
+          <div className={activeTab === 'sessions' ? '' : 'hidden'}>
+            <SessionsTab />
+          </div>
+        )}
       </div>
 
       <Modal
@@ -115,7 +122,7 @@ export default function SettingsPage() {
         title="Leave without saving?"
         description={`Your changes to ${TAB_LABEL[activeTab]} will be lost.`}
       >
-        <div className="flex flex-col gap-3 pt-4 border-t border-neutral-100">
+        <div className="flex flex-col gap-3 pt-4 border-t border-[var(--border-subtle)]">
           <Button
             type="button"
             variant="destructive"
@@ -132,7 +139,7 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={() => setPendingTab(null)}
-            className="min-h-11 text-body-sm text-neutral-500 hover:text-neutral-700 underline underline-offset-2 py-1"
+            className="min-h-11 text-body-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] underline underline-offset-2 py-1"
           >
             Stay
           </button>

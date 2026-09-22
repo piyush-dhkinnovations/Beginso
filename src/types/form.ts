@@ -109,8 +109,8 @@ export interface FormSettings {
 
 export interface Form {
   _id: string;
-  workspaceId: string;
-  title: string;              // user-facing name — Forms Manager, browser tab, BuilderHeader top bar
+  workspaceId: string | null; // null = personal form (no workspace)
+  title: string;             // user-facing name — Forms Manager, browser tab, BuilderHeader top bar
   description?: string;       // user-facing note — set once at creation, not builder-editable
   status: FormStatus;
   slug?: string;             // nanoid(10) — generated on publish only
@@ -123,6 +123,25 @@ export interface Form {
   createdAt: string;         // ISO 8601
   updatedAt: string;         // ISO 8601
   publishedAt?: string;      // ISO 8601
+  // sprint-10-events-migration requirements.md §7.9 — Backend contract to confirm whether
+  // GET /api/forms already returns owner identity for a workspace-form row; read defensively
+  // (optional, may be absent). A personal form's owner is always the caller, so this is only
+  // ever consulted for a workspace-context row.
+  owner?: {
+    name: string;
+    avatarUrl?: string;
+  };
+}
+
+// ─── Form Overview (sprint-10, design.md §13) ─────────────────────────────────
+// Backend contract to confirm (BE 0.6). Both figures are nullable here, one more than design.md
+// §13's sketch (which only nulls `completionRate`): until the backend extends GET /api/forms/:id,
+// "this week" is simply absent, and the UI must tell "not tracked" apart from a real zero.
+
+export interface FormOverviewStats {
+  responseCount: number;
+  responseCountThisWeek: number | null;
+  completionRate: number | null;
 }
 
 // ─── API Payload Types ────────────────────────────────────────────────────────

@@ -16,10 +16,10 @@ export function SessionRow({ session, onRevoke, isRevoking }: SessionRowProps) {
     <div className="flex items-center justify-between gap-4 min-h-11 py-2">
       <div className="flex flex-col gap-0.5 min-w-0">
         <div className="flex items-center gap-2">
-          <p className="text-body-sm font-semibold text-neutral-800 truncate">{session.deviceLabel}</p>
+          <p className="text-body-sm font-semibold text-[var(--text-primary)] truncate">{session.deviceLabel}</p>
           {session.isCurrent && <StatusBadge variant="neutral">This device</StatusBadge>}
         </div>
-        <p className="text-caption text-neutral-500">
+        <p className="text-caption text-[var(--text-muted)]">
           {formatApproxLocation(session.approxLocation)} · Last active {formatResponseDate(session.lastActiveAt)}
         </p>
       </div>
