@@ -100,4 +100,40 @@ describe('eventsService', () => {
 
     await expect(eventsService.listFormEvents('f1')).resolves.toEqual([]);
   });
+
+  it('maps the real nested `actor: { name }` shape onto `actorName` — the real bug: every event came back with actor nested, not flat, so AuditTable/ActivityFeed rendered a blank Actor cell for every row', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: {
+        events: [
+          {
+            id: 'e2',
+            action: 'member.remove',
+            targetType: 'member',
+            targetId: 'u1',
+            targetLabel: 'jane@example.com',
+            createdAt: '2026-09-22T10:19:33.217Z',
+            actor: { id: 'u2', name: 'Test User', email: 'test@example.com' },
+          },
+        ],
+      },
+    });
+
+    const [event] = await eventsService.listFormEvents('f1');
+
+    expect(event.actorName).toBe('Test User');
+  });
+
+  it('falls back to actor.email, then "Unknown", when actor.name is missing', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: { events: [{ id: 'e3', action: 'x', targetType: 't', targetId: 'x', targetLabel: 'x', createdAt: 'x', actor: { email: 'x@example.com' } }] },
+    });
+    const [withEmail] = await eventsService.listFormEvents('f1');
+    expect(withEmail.actorName).toBe('x@example.com');
+
+    mockGet.mockResolvedValueOnce({
+      data: { events: [{ id: 'e4', action: 'x', targetType: 't', targetId: 'x', targetLabel: 'x', createdAt: 'x' }] },
+    });
+    const [withNothing] = await eventsService.listFormEvents('f1');
+    expect(withNothing.actorName).toBe('Unknown');
+  });
 });

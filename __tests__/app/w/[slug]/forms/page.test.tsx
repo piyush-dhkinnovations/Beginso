@@ -28,12 +28,14 @@ vi.mock('@/hooks/useAuth', () => ({
 }));
 
 const mockGetForms = vi.fn();
+const mockDeleteForm = vi.fn();
+const mockDuplicateForm = vi.fn();
 vi.mock('@/services/forms', () => ({
   formsService: {
     getForms: (...args: unknown[]) => mockGetForms(...args),
     moveForm: vi.fn(),
-    duplicateForm: vi.fn(),
-    deleteForm: vi.fn(),
+    duplicateForm: (...args: unknown[]) => mockDuplicateForm(...args),
+    deleteForm: (...args: unknown[]) => mockDeleteForm(...args),
     createForm: vi.fn(),
     updateForm: vi.fn(),
   },
@@ -63,9 +65,26 @@ function renderPage() {
   );
 }
 
+function threeForms() {
+  const base = {
+    status: 'published' as const, responseCount: 0, updatedAt: new Date().toISOString(),
+    fields: [], pages: [], branding: {}, settings: { honeypotEnabled: true },
+    workspaceId: 'acme', schemaVersion: 1, createdAt: new Date().toISOString(),
+  };
+  return [
+    { ...base, _id: 'f1', title: 'Form One' },
+    { ...base, _id: 'f2', title: 'Form Two' },
+    { ...base, _id: 'f3', title: 'Form Three' },
+  ];
+}
+
 describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () => {
   beforeEach(() => {
     mockGetForms.mockReset();
+    mockDeleteForm.mockReset();
+    mockDeleteForm.mockResolvedValue(undefined);
+    mockDuplicateForm.mockReset();
+    mockDuplicateForm.mockResolvedValue({ _id: 'new-id', title: 'Copy' });
   });
 
   it('renders the Forms heading', async () => {
@@ -186,5 +205,125 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       expect.objectContaining({ status: 'draft', page: 1 }),
       WORKSPACE_CONTEXT
     );
+  });
+
+  // sprint-10-events-migration, task 6.4.
+  describe('bulk selection and delete (task 6.4)', () => {
+    it('shows no bulk action bar until a row is selected, then shows the count', async () => {
+      mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
+      renderPage();
+      await screen.findByText('Form One');
+
+      expect(screen.queryByText(/selected/)).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form One' }));
+      expect(await screen.findByText('1 selected')).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form Two' }));
+      expect(await screen.findByText('2 selected')).toBeInTheDocument();
+    });
+
+    it('"select all on this page" checks every row and its own label updates', async () => {
+      mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
+      renderPage();
+      await screen.findByText('Form One');
+
+      await userEvent.click(screen.getByRole('checkbox', { name: 'Select all forms on this page' }));
+
+      expect(await screen.findByText('3 selected')).toBeInTheDocument();
+      expect(screen.getByRole('checkbox', { name: 'Select Form One' })).toBeChecked();
+      expect(screen.getByRole('checkbox', { name: 'Select Form Two' })).toBeChecked();
+      expect(screen.getByRole('checkbox', { name: 'Select Form Three' })).toBeChecked();
+      expect(screen.getByRole('checkbox', { name: 'Deselect all forms on this page' })).toBeInTheDocument();
+    });
+
+    it('deleting a bulk selection calls deleteForm once per selected id, sequentially, with no typed confirmation required', async () => {
+      mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
+      renderPage();
+      await screen.findByText('Form One');
+
+      await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form One' }));
+      await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form Two' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
+
+      expect(await screen.findByText('Delete 2 forms?')).toBeInTheDocument();
+      // No typed-title input in bulk mode — the confirm button is enabled immediately.
+      const confirmButton = screen.getByRole('button', { name: 'Delete 2 forms' });
+      expect(confirmButton).toBeEnabled();
+
+      await userEvent.click(confirmButton);
+
+      await vi.waitFor(() => expect(mockDeleteForm).toHaveBeenCalledTimes(2));
+      expect(mockDeleteForm).toHaveBeenNthCalledWith(1, 'f1');
+      expect(mockDeleteForm).toHaveBeenNthCalledWith(2, 'f2');
+    });
+
+    it('a single row selected via checkbox also uses the lighter bulk-confirm flow, not the typed-title one', async () => {
+      mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
+      renderPage();
+      await screen.findByText('Form One');
+
+      await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form One' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
+
+      expect(await screen.findByText('Delete 1 form?')).toBeInTheDocument();
+      expect(screen.queryByLabelText(/Type .* to confirm/)).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Delete 1 form' })).toBeEnabled();
+    });
+
+    it('switching tabs clears the current selection', async () => {
+      mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
+      renderPage();
+      await screen.findByText('Form One');
+
+      await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form One' }));
+      expect(await screen.findByText('1 selected')).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('tab', { name: 'Draft' }));
+      await vi.waitFor(() => expect(screen.getByRole('tab', { name: 'Draft' })).toHaveAttribute('aria-selected', 'true'));
+
+      expect(screen.queryByText(/selected/)).not.toBeInTheDocument();
+    });
+  });
+
+  // sprint-10-events-migration, task 6.5 — proves the ui/Table migration (6.2) plus adding the
+  // select column (6.4) didn't disturb any existing row action's wiring.
+  describe('row-action wiring unchanged after the ui/Table migration and select column (task 6.5)', () => {
+    it('View Responses and View Analytics still navigate to the same per-form URLs', async () => {
+      mockGetForms.mockResolvedValue({ forms: [threeForms()[0]], total: 1, page: 1, limit: 10 });
+      renderPage();
+      await screen.findByText('Form One');
+
+      await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
+      const items = await screen.findAllByRole('menuitem');
+      const labels = items.map((i) => i.textContent);
+      expect(labels).toEqual(
+        expect.arrayContaining(['Overview', 'View Responses', 'View Analytics', 'Move', 'Share access', 'Duplicate', 'Delete'])
+      );
+    });
+
+    it('Duplicate still calls duplicateForm with the row\'s own id', async () => {
+      mockGetForms.mockResolvedValue({ forms: [threeForms()[0]], total: 1, page: 1, limit: 10 });
+      renderPage();
+      await screen.findByText('Form One');
+
+      await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
+      await userEvent.click(await screen.findByRole('menuitem', { name: /Duplicate/ }));
+
+      await vi.waitFor(() => expect(mockDuplicateForm).toHaveBeenCalledWith('f1'));
+    });
+
+    it('the row menu\'s single-item Delete still uses the strict typed-title confirmation, unaffected by bulk mode existing', async () => {
+      mockGetForms.mockResolvedValue({ forms: [threeForms()[0]], total: 1, page: 1, limit: 10 });
+      renderPage();
+      await screen.findByText('Form One');
+
+      await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
+      await userEvent.click(await screen.findByRole('menuitem', { name: /Delete/ }));
+
+      expect(await screen.findByText('Delete form?')).toBeInTheDocument();
+      expect(screen.getByLabelText(/Type .* to confirm/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Delete permanently' })).toBeDisabled();
+    });
   });
 });

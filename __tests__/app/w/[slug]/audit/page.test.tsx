@@ -65,6 +65,23 @@ describe('AuditLogPage (/w/[slug]/audit)', () => {
     expect(mockAudit).toHaveBeenCalledWith('acme', expect.objectContaining({ range: 'all', page: 1, limit: 20 }));
   });
 
+  // sprint-10-events-migration, task 7.1 — this page's two distinct loading states
+  // (workspacesQuery for role resolution, then auditQuery for the table itself) had no test
+  // proving either actually surfaces the skeleton rather than a blank/empty-looking table.
+  it('shows the AuditTable skeleton while the audit query is loading, not an empty table', () => {
+    // Resolved but asserted synchronously, before any microtask is awaited — same reasoning
+    // activity/page.test.tsx's equivalent test uses (a truly never-resolving mock hangs Testing
+    // Library's own cleanup). Whichever of workspacesQuery/auditQuery is still pending at this
+    // instant, both render the identical `<AuditTable isLoading />` skeleton branch.
+    mockAudit.mockResolvedValue(events(2));
+    renderPage();
+
+    // AuditTable's own loading behavior (5 skeleton rows) is unit-tested directly in
+    // AuditTable.test.tsx — this only proves the page actually passes isLoading through.
+    expect(screen.queryByText('No activity recorded yet.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('rowheader')).not.toBeInTheDocument();
+  });
+
   it.each(['member', 'viewer'] as const)('a role=%s never reaches the audit endpoint and sees a permission state', async (role) => {
     mockWorkspaces.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role }]);
     renderPage();

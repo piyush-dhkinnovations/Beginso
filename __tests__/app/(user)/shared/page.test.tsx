@@ -18,7 +18,7 @@ vi.mock('@/services/shared', () => ({
 const SHARE: SharedFormItem = {
   id: 'f1',
   title: 'Customer Survey',
-  sharedBy: 'u-priya',
+  sharedByName: 'Priya Shah',
   workspaceName: 'Acme Inc',
   role: 'viewer',
   accessLevel: 'read',
