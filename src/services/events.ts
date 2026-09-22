@@ -3,13 +3,26 @@ import { unwrapEnvelope } from '@/lib/apiEnvelope';
 import { workspacesService } from '@/services/workspaces';
 import type { WorkspaceEventItem, AuditFilters } from '@/types/event';
 
-// Backend contract to confirm (BE 0.3–0.5) — none of these routes is verified against a live
-// backend; the envelope key is a guess, so every method guards the non-array case at this trust
-// boundary (the `shares.map is not a function` crash, sharedService's own comment) instead of in
-// every consumer.
+// Real bug found and fixed: a live capture of GET /api/workspaces/:id/audit returned each event
+// as `{ ..., actor: { id, name, email }, ... }` — nested, not the flat `actorName: string` this
+// type was written against (a pre-backend design guess, per its own "Backend contract to
+// confirm" comment, never corrected once a real response existed). `event.actorName` was
+// therefore always `undefined`, rendering a blank Actor cell for every row in AuditTable. Mapped
+// here, at the trust boundary, into the flat shape every consumer (AuditTable, ActivityFeed,
+// FormActivityCard) already expects — same reasoning as toReportJob/toResponseDetail elsewhere
+// in this codebase, so no consumer needs to change.
+interface RawWorkspaceEvent extends Omit<WorkspaceEventItem, 'actorName'> {
+  actorName?: string;
+  actor?: { id?: string; name?: string; email?: string };
+}
+
+function toEvent(raw: RawWorkspaceEvent): WorkspaceEventItem {
+  return { ...raw, actorName: raw.actorName ?? raw.actor?.name ?? raw.actor?.email ?? 'Unknown' };
+}
+
 function toEvents(raw: unknown): WorkspaceEventItem[] {
   const unwrapped = unwrapEnvelope<unknown>(raw, 'events');
-  return Array.isArray(unwrapped) ? (unwrapped as WorkspaceEventItem[]) : [];
+  return Array.isArray(unwrapped) ? (unwrapped as RawWorkspaceEvent[]).map(toEvent) : [];
 }
 
 // `range` is a UI choice (7d/30d/all); the wire format is a `from` timestamp.

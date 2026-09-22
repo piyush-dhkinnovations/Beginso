@@ -15,6 +15,8 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Alert } from '@/components/ui/Alert';
 import { Table, type TableColumn } from '@/components/ui/Table';
 import { Avatar } from '@/components/ui/Avatar';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { BulkActionBar } from '@/components/forms/BulkActionBar';
 import { EmptyState } from '@/components/common/EmptyState';
 import { CreateFormModal } from '@/components/form-builder/CreateFormModal';
 import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
@@ -89,11 +91,18 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
   const [status, setStatus] = useState<FormStatus | 'all'>('all');
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<FormsManagerTab>('recent');
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteConfirming, setBulkDeleteConfirming] = useState(false);
   const debouncedSearch = useDebounce(search, 300);
 
+  // Selection is page/filter-scoped, not global — switching tabs, filtering, searching, or
+  // paging changes which rows are even on screen, so a selection made before that change would
+  // otherwise silently point at forms the user can no longer see (sprint-10-events-migration,
+  // task 6.4's own "per-row" framing implies this, not a global cross-page selection).
   const handleTabChange = (tab: FormsManagerTab) => {
     setActiveTab(tab);
     setPage(1);
+    setSelectedIds(new Set());
     const tabStatus = TAB_STATUS[tab];
     if (tabStatus) setStatus(tabStatus);
   };
@@ -145,7 +154,67 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
     onSettled: () => setDeletingId(null),
   });
 
+  const bulkDeleteMutation = useMutation({
+    // Sequential per-id calls, not Promise.all — task 6.4's own stated reasoning: acceptable at
+    // this sprint's expected list sizes, no batching infrastructure to build speculatively.
+    mutationFn: async (ids: string[]) => {
+      for (const id of ids) {
+        await formsService.deleteForm(id);
+      }
+    },
+    onSuccess: (_data, ids) => {
+      queryClient.invalidateQueries({ queryKey: ['forms'] });
+      setSelectedIds(new Set());
+      toast(`${ids.length} form${ids.length === 1 ? '' : 's'} deleted`, 'success');
+    },
+    onError: () => {
+      toast('Failed to delete the selected forms. Please try again.', 'error');
+    },
+    onSettled: () => setBulkDeleteConfirming(false),
+  });
+
+  const rows = data?.forms ?? [];
+  const allOnPageSelected = rows.length > 0 && rows.every((form) => selectedIds.has(form._id));
+  const someOnPageSelected = rows.some((form) => selectedIds.has(form._id)) && !allOnPageSelected;
+
   const columns: TableColumn<Form>[] = [
+    {
+      key: 'select',
+      header: (
+        <Checkbox
+          id="forms-select-all"
+          aria-label={allOnPageSelected ? 'Deselect all forms on this page' : 'Select all forms on this page'}
+          checked={allOnPageSelected}
+          ref={(el) => {
+            if (el) el.indeterminate = someOnPageSelected;
+          }}
+          onChange={(e) => {
+            const checked = e.target.checked;
+            setSelectedIds((prev) => {
+              const next = new Set(prev);
+              rows.forEach((form) => (checked ? next.add(form._id) : next.delete(form._id)));
+              return next;
+            });
+          }}
+        />
+      ),
+      render: (form) => (
+        <Checkbox
+          id={`forms-select-${form._id}`}
+          aria-label={`Select ${form.title}`}
+          checked={selectedIds.has(form._id)}
+          onChange={(e) => {
+            const checked = e.target.checked;
+            setSelectedIds((prev) => {
+              const next = new Set(prev);
+              if (checked) next.add(form._id);
+              else next.delete(form._id);
+              return next;
+            });
+          }}
+        />
+      ),
+    },
     {
       key: 'form',
       header: 'Form Title',
@@ -305,6 +374,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
                 onChange={(event) => {
                   setSearch(event.target.value);
                   setPage(1);
+                  setSelectedIds(new Set());
                 }}
               />
             </div>
@@ -317,6 +387,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
                   onChange={(event) => {
                     setStatus(event.target.value as FormStatus | 'all');
                     setPage(1);
+                    setSelectedIds(new Set());
                   }}
                 >
                   <option value="all">All statuses</option>
@@ -327,6 +398,12 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
               </div>
             )}
           </div>
+
+          <BulkActionBar
+            count={selectedIds.size}
+            isDeleting={bulkDeleteMutation.isPending}
+            onDeleteSelected={() => setBulkDeleteConfirming(true)}
+          />
 
           {error ? (
             <Alert variant="error" title="Failed to load forms. Please refresh." />
@@ -361,7 +438,14 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
           )}
 
           {!isLoading && !error && data && (
-            <PaginationControls page={page} totalPages={totalPages} onPageChange={setPage} />
+            <PaginationControls
+              page={page}
+              totalPages={totalPages}
+              onPageChange={(p) => {
+                setPage(p);
+                setSelectedIds(new Set());
+              }}
+            />
           )}
         </>
       )}
@@ -401,6 +485,14 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
           }
         }}
         isDeleting={deletingId !== null}
+      />
+
+      <DeleteFormModal
+        isOpen={bulkDeleteConfirming}
+        count={selectedIds.size}
+        onClose={() => setBulkDeleteConfirming(false)}
+        onConfirm={() => bulkDeleteMutation.mutate([...selectedIds])}
+        isDeleting={bulkDeleteMutation.isPending}
       />
     </div>
   );

@@ -62,15 +62,23 @@ export default function DashboardPage() {
   // was already fixed for (a brand-new user's "default workspace" — the one they just joined via
   // invite accept — bleeds into personal counts). That endpoint returns no per-form breakdown to
   // filter, but `formsData` (the already-filtered, already-fetched query right below) is ground
-  // truth for "how many personal forms actually exist" — prefer it once it's loaded, so the page
-  // can't show "1 form" in the stat cards while "Your forms" and /forms both correctly say zero.
-  const hasForms = formsData ? formsData.total > 0 : (analytics?.totalForms ?? 0) > 0;
+  // truth for "how many personal forms actually exist" — trust it exclusively, so the page can't
+  // show "1 form" in the stat cards while "Your forms" and /forms both correctly say zero.
+  //
+  // Second bug found and fixed, same root cause: falling back to `analytics?.totalForms` while
+  // `formsData` was still loading (this used to be `formsData ? ... : analytics?.totalForms`)
+  // meant a page reload flashed the stat cards on — `analyticsLoading` flips false first,
+  // typically before `formsData` resolves, and until this fix that gap read a stale/leaked
+  // analytics count as if it were confirmed. Never claim "has forms" until the reliable query
+  // has actually answered; no fallback, no interim guess.
+  const formsLoaded = !!formsData;
+  const hasForms = formsLoaded && formsData.total > 0;
   const effectiveCounts = analytics && {
     ...analytics,
-    totalForms: formsData ? formsData.total : analytics.totalForms,
+    totalForms: formsLoaded ? formsData.total : analytics.totalForms,
     // Can't exceed the corrected total — caps the same leaked-form case without needing to know
     // exactly which of the (at most 5) previewed rows are published.
-    publishedForms: formsData ? Math.min(analytics.publishedForms, formsData.total) : analytics.publishedForms,
+    publishedForms: formsLoaded ? Math.min(analytics.publishedForms, formsData.total) : analytics.publishedForms,
   };
 
   return (
@@ -111,7 +119,12 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {(analyticsLoading || hasForms) && (
+      {/* Gated on formsLoaded (not analyticsLoading) — showing this as a loading skeleton
+          before we know hasForms is what caused the reported flash: cards appear on every
+          reload, then vanish a moment later once the real (zero-forms) answer lands. Waiting
+          for the one query this page actually trusts means the cards simply don't render at
+          all for a zero-forms account, instead of rendering wrong and then correcting. */}
+      {formsLoaded && hasForms && (
         <StatisticsCards isLoading={analyticsLoading} counts={effectiveCounts} />
       )}
 

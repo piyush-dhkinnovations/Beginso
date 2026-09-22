@@ -30,7 +30,7 @@ export function RolesMatrix() {
           </tr>
         </thead>
         <tbody>
-          {CAPABILITIES.map((group) => (
+          {CAPABILITIES.map((group, groupIndex) => (
             <Fragment key={group.group}>
               <tr>
                 <th
@@ -41,9 +41,28 @@ export function RolesMatrix() {
                   {group.group}
                 </th>
               </tr>
-              {group.items.map((item) => (
+              {group.items.map((item, itemIndex) => {
+                const isLastRow = groupIndex === CAPABILITIES.length - 1 && itemIndex === group.items.length - 1;
+                return (
                 <tr key={item.key}>
-                  <th scope="row" className="font-normal text-left">
+                  {/* Same fix as AuditTable's row header: `.bg-table th` (beginso-ui.css) styles
+                      every <th> as a column label — uppercase, `--text-muted` (fails WCAG AA
+                      contrast, 4.16:1 below 4.5:1), a `--bg-subtle` gray background, and a
+                      darker `--border-default` bottom border that `.bg-table tbody tr:last-child
+                      td` never strips (that rule only targets `td`, so the table's true last row
+                      showed a stray line under Capability with none under any checkmark column).
+                      This one is a row header holding a real capability sentence (e.g. "Create
+                      forms"), not a label — without the rest of this fix it also sits in its own
+                      gray stripe down the whole Capability column while every checkmark column
+                      beside it stays white. */}
+                  <th
+                    scope="row"
+                    className="font-normal text-left normal-case text-[var(--text-secondary)]"
+                    style={{
+                      backgroundColor: 'transparent',
+                      borderBottom: isLastRow ? 0 : '1px solid var(--border-subtle)',
+                    }}
+                  >
                     {item.label}
                   </th>
                   {MATRIX_ROLES.map((role) => {
@@ -60,7 +79,8 @@ export function RolesMatrix() {
                     );
                   })}
                 </tr>
-              ))}
+                );
+              })}
             </Fragment>
           ))}
         </tbody>

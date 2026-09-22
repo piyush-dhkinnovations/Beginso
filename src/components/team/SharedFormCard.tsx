@@ -16,10 +16,11 @@ export interface SharedFormCardProps {
 // this sprint, so this links to the nearest existing equivalent — the form's response view —
 // which is stated rather than silently left broken, per requirements.md §7.9's own allowance.
 //
-// requirements.md §7.9 asks for "sharer" on the card, but the real backend's `sharedBy`
-// (`backend_updates_for_frontend.md` §13) is a raw userId, not a populated name — there is
-// nothing here to display as a person. Not fabricated; the workspace/personal fact still renders,
-// the "shared by" clause doesn't. Backend action required if a display name is wanted here.
+// requirements.md §7.9 asks for "sharer" on the card. Real bug found and fixed (22 Sep 2026):
+// this used to render nothing here at all, because the live `sharedBy` was a raw userId with no
+// name anywhere in the payload — now live-confirmed enriched (services/shared.ts's own mapping),
+// so the sharer's name renders when the backend actually sent one, and degrades to nothing
+// (never a raw id) when it didn't.
 export function SharedFormCard({ item }: SharedFormCardProps) {
   return (
     <Link href={`/forms/${item.id}/responses`} className="block h-full no-underline">
@@ -27,7 +28,10 @@ export function SharedFormCard({ item }: SharedFormCardProps) {
         <div className="flex flex-col gap-2">
           <Tag>SHARED FORM</Tag>
           <h3 className="text-body font-semibold text-[var(--text-primary)] truncate">{item.title}</h3>
-          <p className="text-caption text-[var(--text-muted)]">{item.workspaceName ?? 'Personal'}</p>
+          <p className="text-caption text-[var(--text-muted)]">
+            {item.workspaceName ?? 'Personal'}
+            {item.sharedByName && ` · Shared by ${item.sharedByName}`}
+          </p>
         </div>
         <div className="flex items-center justify-between pt-2 border-t border-[var(--border-default)]">
           <Badge variant="outline">{ROLE_LABELS[item.role]}</Badge>

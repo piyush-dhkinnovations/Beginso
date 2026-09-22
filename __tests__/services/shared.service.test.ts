@@ -24,20 +24,24 @@ const mockGet = axiosInstance.get as ReturnType<typeof vi.fn>;
 const SHARE: SharedFormItem = {
   id: 'f1',
   title: 'Customer Survey',
-  sharedBy: 'u-priya',
+  sharedByName: 'Priya Shah',
   workspaceName: null,
   role: 'viewer',
   accessLevel: 'read',
   sharedAt: '2026-09-11T00:00:00.000Z',
 };
+// Raw wire shape — mirrors the live-confirmed response: a flat `sharedByName`, plus a raw
+// `sharedBy` userId the app never displays directly (services/shared.ts's own
+// resolveSharedByName() picks the flat field first).
+const RAW_SHARE = { ...SHARE, sharedBy: 'u-priya' };
 
 describe('sharedService', () => {
   beforeEach(() => {
     mockGet.mockReset();
   });
 
-  it('list() calls GET /api/shared-with-me and unwraps a { forms } envelope', async () => {
-    mockGet.mockResolvedValueOnce({ data: { success: true, forms: [SHARE], total: 1 } });
+  it('list() calls GET /api/shared-with-me, unwraps a { forms } envelope, and resolves sharedByName from the flat field', async () => {
+    mockGet.mockResolvedValueOnce({ data: { success: true, forms: [RAW_SHARE], total: 1 } });
 
     const result = await sharedService.list();
 
@@ -45,8 +49,28 @@ describe('sharedService', () => {
     expect(result).toEqual([SHARE]);
   });
 
+  it('resolves sharedByName from a nested sharedBy object when the flat field is absent', async () => {
+    const raw = { ...SHARE, sharedByName: undefined, sharedBy: { name: 'Priya Shah' } };
+    delete raw.sharedByName;
+    mockGet.mockResolvedValueOnce({ data: { forms: [raw] } });
+
+    const result = await sharedService.list();
+
+    expect(result[0].sharedByName).toBe('Priya Shah');
+  });
+
+  it('leaves sharedByName undefined, never a raw id, when the backend gives no name at all', async () => {
+    const raw = { ...SHARE, sharedByName: undefined, sharedBy: 'u-priya' };
+    delete raw.sharedByName;
+    mockGet.mockResolvedValueOnce({ data: { forms: [raw] } });
+
+    const result = await sharedService.list();
+
+    expect(result[0].sharedByName).toBeUndefined();
+  });
+
   it('list() falls back to a bare array if the response is ever shaped that way', async () => {
-    mockGet.mockResolvedValueOnce({ data: [SHARE] });
+    mockGet.mockResolvedValueOnce({ data: [RAW_SHARE] });
 
     const result = await sharedService.list();
 
