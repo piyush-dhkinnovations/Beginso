@@ -39,13 +39,6 @@ vi.mock('@/services/forms', () => ({
   },
 }));
 
-const mockSharedList = vi.fn();
-vi.mock('@/services/shared', () => ({
-  sharedService: {
-    list: (...args: unknown[]) => mockSharedList(...args),
-  },
-}));
-
 vi.mock('@/services/workspaces', () => ({
   workspacesService: { list: () => Promise.resolve([]) },
 }));
@@ -73,7 +66,6 @@ function renderPage() {
 describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () => {
   beforeEach(() => {
     mockGetForms.mockReset();
-    mockSharedList.mockReset();
   });
 
   it('renders the Forms heading', async () => {
@@ -162,9 +154,10 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
     renderPage();
     await screen.findByText('No forms yet');
 
-    for (const name of ['Recent', 'Pinned', 'Draft', 'Published', 'Archived', 'Shared with me']) {
+    for (const name of ['Recent', 'Pinned', 'Draft', 'Published', 'Archived']) {
       expect(screen.getByRole('tab', { name })).toBeInTheDocument();
     }
+    expect(screen.queryByRole('tab', { name: 'Shared with me' })).not.toBeInTheDocument();
   });
 
   it('switching to the Pinned tab shows a placeholder and fires no extra forms query', async () => {
@@ -176,20 +169,6 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
 
     expect(await screen.findByText('Coming soon')).toBeInTheDocument();
     expect(mockGetForms).toHaveBeenCalledTimes(1);
-  });
-
-  it('switching to the Shared with me tab fetches and renders shared forms', async () => {
-    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
-    mockSharedList.mockResolvedValue([
-      { id: 's1', title: 'Customer Survey', sharedBy: 'u1', workspaceName: 'Acme', role: 'viewer', accessLevel: 'read', sharedAt: new Date().toISOString() },
-    ]);
-    renderPage();
-    await screen.findByText('No forms yet');
-
-    await userEvent.click(screen.getByRole('tab', { name: 'Shared with me' }));
-
-    expect(await screen.findByText('Customer Survey')).toBeInTheDocument();
-    expect(mockSharedList).toHaveBeenCalledTimes(1);
   });
 
   it('switching to the Draft tab filters by status and resets the page', async () => {

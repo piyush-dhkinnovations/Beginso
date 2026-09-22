@@ -1,10 +1,13 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { Home, FileText, LayoutTemplate, Table2, PieChart, Download, Settings, Plus, Share2 } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { useBuilderStore } from '@/store/builderStore';
+import { dashboardService } from '@/services/dashboard';
+import { dashboardKeys } from '@/lib/queryKeys';
 
 export interface PersonalSidebarProps {
   collapsed?: boolean;
@@ -29,6 +32,16 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
   const pathname = usePathname();
   const dirty = useBuilderStore((state) => state.dirty);
   const setPendingLeaveUrl = useBuilderStore((state) => state.setPendingLeaveUrl);
+  // Shares its cache with (user)/dashboard/page.tsx's identical query key — no extra request
+  // once the dashboard has loaded it. This sidebar only ever renders inside the already
+  // auth-protected (user)/ layout, so no separate auth gate is needed here. Defaults to "has
+  // forms" (item shown) until we actually know otherwise, so nav items don't flash
+  // hidden-then-visible while this loads.
+  const { data: analytics } = useQuery({
+    queryKey: dashboardKeys.analytics(),
+    queryFn: dashboardService.getAnalytics,
+  });
+  const hasForms = analytics ? analytics.totalForms > 0 : true;
   // Same guard src/components/dashboard/Sidebar.tsx already enforces — must be preserved by
   // whichever sidebar is actually mounted, since the confirm-leave modal
   // ((user)/forms/[id]/edit/page.tsx) only fires when something actually calls
@@ -57,9 +70,20 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
             { label: 'My Forms', href: '/forms', icon: FileText, active: pathname.startsWith('/forms') && !isInBuilder, onClick: guard('/forms') },
             { label: 'Shared with me', href: '/shared', icon: Share2, active: pathname.startsWith('/shared'), onClick: guard('/shared') },
             { label: 'Templates', href: '/templates', icon: LayoutTemplate, active: pathname.startsWith('/templates'), onClick: guard('/templates') },
-            { label: 'Responses', href: '/responses', icon: Table2, active: isResponsesActive, onClick: guard('/responses') },
-            { label: 'Analytics', href: '/analytics', icon: PieChart, active: isAnalyticsActive, onClick: guard('/analytics') },
-            { label: 'Reports', href: '/reports', icon: Download, active: pathname.startsWith('/reports'), onClick: guard('/reports') },
+            // Responses/Analytics/Reports have nothing to show until a form exists — hidden
+            // rather than left to render their own all-zero/empty state, same reasoning as the
+            // dashboard's stat cards. Still shown while loading (hasForms defaults true) and if
+            // the user is deep-linked onto one of them already, so an active page never vanishes
+            // from its own nav.
+            ...(hasForms || isResponsesActive
+              ? [{ label: 'Responses', href: '/responses', icon: Table2, active: isResponsesActive, onClick: guard('/responses') }]
+              : []),
+            ...(hasForms || isAnalyticsActive
+              ? [{ label: 'Analytics', href: '/analytics', icon: PieChart, active: isAnalyticsActive, onClick: guard('/analytics') }]
+              : []),
+            ...(hasForms || pathname.startsWith('/reports')
+              ? [{ label: 'Reports', href: '/reports', icon: Download, active: pathname.startsWith('/reports'), onClick: guard('/reports') }]
+              : []),
             { label: 'Settings', href: '/settings', icon: Settings, active: pathname.startsWith('/settings'), onClick: guard('/settings') },
           ],
         },

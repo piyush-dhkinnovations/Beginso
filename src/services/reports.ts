@@ -3,11 +3,18 @@ import type { CreateReportPayload, ReportJob, GetReportsParams, PaginatedReports
 
 // Wire shape observed live 13 Aug 2026 for POST /api/reports: wrapped in
 // { success, message, report }, and the job itself is keyed `id`, not `_id` (see
-// docs/backend-contract/known-issues/reports-job-id-field-missing.md). GET /api/reports' outer
-// pagination shape ({ data, total, page, limit, totalPages }) has behaved consistently with what
-// was assumed — a real, multi-job list rendered as one collapsed row rather than zero rows,
-// which only happens if `.data` really is the job array — so only each job's own `id` field is
-// adapted here, not the outer envelope. Re-verify against a real GET response if that changes.
+// docs/backend-contract/known-issues/reports-job-id-field-missing.md).
+//
+// Real bug found and fixed (22 Sep 2026): the note this replaced claimed GET /api/reports' outer
+// pagination shape was `{ data, total, page, limit, totalPages }`, "re-verify if that changes" —
+// it was never actually that shape. A live capture against a zero-reports account returned
+// `{"success":true,"reports":[],"total":0,"page":1,"limit":10,"totalPages":0}` — the array is
+// keyed `reports`, not `data`. The old code read `r.data.data`, always `undefined`, so
+// `.map()` either threw (surfacing as "Unable to load report jobs" — what actually got reported)
+// or, for an account WITH report jobs, would have silently rendered an empty list forever (worse:
+// this shape mismatch was never limited to the empty-state case). Corrected to the real key, with
+// the same non-array-safe guard as every other service that's already been burned by exactly this
+// (`sharedService`'s own `shares` vs `forms` key-name precedent).
 interface RawReportJob {
   id: string;
   format: ReportJob['format'];
@@ -47,7 +54,7 @@ interface RawCreateReportEnvelope {
 }
 
 interface RawPaginatedReports {
-  data: RawReportJob[];
+  reports: RawReportJob[];
   total: number;
   page: number;
   limit: number;
@@ -60,8 +67,11 @@ export const reportsService = {
 
   getReports: (params: GetReportsParams): Promise<PaginatedReportsResult> =>
     axiosInstance.get<RawPaginatedReports>('/api/reports', { params }).then((r) => ({
-      ...r.data,
-      data: r.data.data.map(toReportJob),
+      total: typeof r.data.total === 'number' ? r.data.total : 0,
+      page: typeof r.data.page === 'number' ? r.data.page : params.page ?? 1,
+      limit: typeof r.data.limit === 'number' ? r.data.limit : params.limit ?? 20,
+      totalPages: typeof r.data.totalPages === 'number' ? r.data.totalPages : 1,
+      data: Array.isArray(r.data.reports) ? r.data.reports.map(toReportJob) : [],
     })),
 
   getReportById: (id: string): Promise<ReportJob> =>

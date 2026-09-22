@@ -4,10 +4,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink, LayoutDashboard, Share2, Users, PinOff, Archive } from 'lucide-react';
+import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink, LayoutDashboard, Share2, PinOff, Archive } from 'lucide-react';
 import { formsService } from '@/services/forms';
-import { sharedService } from '@/services/shared';
-import { workspaceKeys, sharedKeys } from '@/lib/queryKeys';
+import { workspaceKeys } from '@/lib/queryKeys';
 import { useToast } from '@/components/common/Toast';
 import { useAuth } from '@/hooks/useAuth';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -21,11 +20,9 @@ import { CreateFormModal } from '@/components/form-builder/CreateFormModal';
 import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
 import { MoveFormModal } from '@/components/workspaces/MoveFormModal';
 import { FormAccessPanel } from '@/components/team/FormAccessPanel';
-import { SharedFormCard } from '@/components/team/SharedFormCard';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
-import { Skeleton } from '@/components/ui/Skeleton';
 import { PaginationControls } from '@/components/responses/PaginationControls';
 import { FormsManagerTabs, type FormsManagerTab } from '@/components/forms/FormsManagerTabs';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -107,17 +104,6 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
         context
       ),
     enabled: formsQueryEnabled(activeTab),
-  });
-
-  const {
-    data: shares,
-    isLoading: sharesLoading,
-    error: sharesError,
-    refetch: refetchShares,
-  } = useQuery({
-    queryKey: sharedKeys.list(),
-    queryFn: sharedService.list,
-    enabled: activeTab === 'shared',
   });
 
   const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / FORMS_PAGE_LIMIT));
@@ -297,35 +283,6 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
               : 'Archived forms will show up here once archiving ships.'
           }
         />
-      ) : activeTab === 'shared' ? (
-        sharesLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-card p-4">
-                <Skeleton variant="title" width="70%" />
-                <Skeleton variant="text" width="50%" />
-              </div>
-            ))}
-          </div>
-        ) : sharesError ? (
-          <Alert variant="error" title="Could not load shared forms.">
-            <Button variant="secondary" onClick={() => void refetchShares()}>
-              Retry
-            </Button>
-          </Alert>
-        ) : !shares || shares.length === 0 ? (
-          <EmptyState
-            icon={<Users />}
-            heading="Nothing shared with you yet"
-            body="When someone shares a form with you directly, it will appear here."
-          />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {shares.map((share) => (
-              <SharedFormCard key={share.id} item={share} />
-            ))}
-          </div>
-        )
       ) : (
         <>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
