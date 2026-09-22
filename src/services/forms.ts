@@ -66,26 +66,32 @@ export const formsService = {
   getFormById: (id: string) =>
     axiosInstance.get<Form>(`/api/forms/${id}`).then(r => r.data),
 
-  // Backend contract to confirm (BE 0.6): written against the "extend GET /api/forms/:id" shape
-  // (tasks.md 2.2's stated smaller diff), not a separate /overview route. Nothing about the
-  // stats fields is confirmed live, so each one degrades to null rather than being invented —
-  // `completionRate` because view-tracking (B5.4) may not exist, `responseCountThisWeek` because
-  // the extension itself may not have shipped. Envelope unwrapped defensively (`form` key) like
-  // every service since Sprint 9.
+  // Real bug found and fixed (22 Sep 2026): this was written against "extend GET /api/forms/:id"
+  // (tasks.md 2.2's stated smaller diff) because no live example existed yet — confirmed live
+  // today that the backend instead built a genuinely separate `GET /api/forms/:id/overview`
+  // route, `{ success, overview: { formId, title, description, status, workspaceId,
+  // responseCount, responseCountThisWeek, completionRate, createdAt, updatedAt } }`. The base
+  // `GET /api/forms/:id` was never extended with stats at all — calling only it, as this used to,
+  // meant every stat silently degraded to its null/0 fallback forever, never actually reading a
+  // real number. That slim `overview` object is also missing `slug` (needed for the public share
+  // link) and the builder-only fields (`fields`/`pages`/`branding`/`settings`) this page doesn't
+  // need — so this still calls the base route too, for the parts only it has, rather than
+  // pretend the new endpoint is a full replacement.
   getFormOverview: (id: string): Promise<{ form: Form; stats: FormOverviewStats }> =>
-    axiosInstance.get(`/api/forms/${id}`).then((r) => {
-      const raw = r.data as Record<string, unknown>;
-      const form = unwrapEnvelope<Form>(raw, 'form');
-      const source = (raw?.stats ?? raw?.form ?? raw ?? {}) as Partial<FormOverviewStats>;
-      return {
-        form,
-        stats: {
-          responseCount: source.responseCount ?? form.responseCount ?? 0,
-          responseCountThisWeek: source.responseCountThisWeek ?? null,
-          completionRate: source.completionRate ?? null,
-        },
-      };
-    }),
+    Promise.all([
+      axiosInstance.get(`/api/forms/${id}`).then((r) => unwrapEnvelope<Form>(r.data, 'form')),
+      axiosInstance
+        .get(`/api/forms/${id}/overview`)
+        .then((r) => unwrapEnvelope<Partial<FormOverviewStats>>(r.data, 'overview'))
+        .catch(() => ({}) as Partial<FormOverviewStats>),
+    ]).then(([form, stats]) => ({
+      form,
+      stats: {
+        responseCount: stats.responseCount ?? form.responseCount ?? 0,
+        responseCountThisWeek: stats.responseCountThisWeek ?? null,
+        completionRate: stats.completionRate ?? null,
+      },
+    })),
 
   updateForm: (id: string, payload: UpdateFormPayload) =>
     axiosInstance.patch<Form>(`/api/forms/${id}`, payload).then(r => r.data),
