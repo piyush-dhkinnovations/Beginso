@@ -80,40 +80,68 @@ describe('formsService.getForms', () => {
   });
 });
 
-// sprint-10-events-migration, tasks.md 2.2 — Backend contract to confirm (BE 0.6); written against
-// the "extend GET /api/forms/:id" shape, degrading every unconfirmed stat to null.
+// sprint-10-events-migration, tasks.md 2.2. Real bug found and fixed (22 Sep 2026): this was
+// originally written against "extend GET /api/forms/:id with stats" (BE 0.6's smaller-diff
+// guess, no live example existed yet). Confirmed live that the backend instead built a genuinely
+// separate `GET /api/forms/:id/overview` route returning a slim `{ overview: {...} }` object with
+// no `slug`/`fields`/`pages` — so this now calls both: the base route for the full form (which
+// never gained stats fields at all), the new route for the stats themselves.
 describe('formsService.getFormOverview', () => {
-  const FORM = { _id: 'f1', title: 'Survey', status: 'draft', responseCount: 7, workspaceId: null };
+  const FORM = { _id: 'f1', title: 'Survey', status: 'draft', responseCount: 7, workspaceId: null, slug: 'survey-abc' };
 
   beforeEach(() => {
     mockGet.mockReset();
   });
 
-  it('calls GET /api/forms/:id and reads stats from an extended response', async () => {
-    mockGet.mockResolvedValueOnce({
-      data: { ...FORM, responseCountThisWeek: 3, completionRate: 62.5 },
+  it('calls both GET /api/forms/:id and GET /api/forms/:id/overview, merging the full form with the real stats', async () => {
+    mockGet.mockImplementation((url: string) => {
+      if (url === '/api/forms/f1/overview') {
+        return Promise.resolve({ data: { success: true, overview: { formId: 'f1', responseCount: 7, responseCountThisWeek: 3, completionRate: 62.5 } } });
+      }
+      return Promise.resolve({ data: FORM });
     });
 
     const { form, stats } = await formsService.getFormOverview('f1');
 
     expect(mockGet).toHaveBeenCalledWith('/api/forms/f1');
+    expect(mockGet).toHaveBeenCalledWith('/api/forms/f1/overview');
     expect(form.title).toBe('Survey');
+    expect(form.slug).toBe('survey-abc');
     expect(stats).toEqual({ responseCount: 7, responseCountThisWeek: 3, completionRate: 62.5 });
   });
 
-  it('degrades unconfirmed stats to null (not 0) when the backend has not extended the endpoint', async () => {
-    mockGet.mockResolvedValueOnce({ data: FORM });
+  it('degrades stats to null (not fabricated) if the overview endpoint errors', async () => {
+    mockGet.mockImplementation((url: string) => {
+      if (url === '/api/forms/f1/overview') return Promise.reject(new Error('boom'));
+      return Promise.resolve({ data: FORM });
+    });
 
     const { stats } = await formsService.getFormOverview('f1');
 
     expect(stats).toEqual({ responseCount: 7, responseCountThisWeek: null, completionRate: null });
   });
 
-  it('unwraps a { form } envelope', async () => {
-    mockGet.mockResolvedValueOnce({ data: { success: true, form: FORM } });
+  it('unwraps a { form } envelope from the base route', async () => {
+    mockGet.mockImplementation((url: string) => {
+      if (url === '/api/forms/f1/overview') return Promise.resolve({ data: { overview: {} } });
+      return Promise.resolve({ data: { success: true, form: FORM } });
+    });
 
     const { form } = await formsService.getFormOverview('f1');
 
     expect(form._id).toBe('f1');
+  });
+
+  it('unwraps a { overview } envelope from the stats route', async () => {
+    mockGet.mockImplementation((url: string) => {
+      if (url === '/api/forms/f1/overview') {
+        return Promise.resolve({ data: { success: true, overview: { responseCount: 99, responseCountThisWeek: 1, completionRate: 10 } } });
+      }
+      return Promise.resolve({ data: FORM });
+    });
+
+    const { stats } = await formsService.getFormOverview('f1');
+
+    expect(stats.responseCount).toBe(99);
   });
 });
