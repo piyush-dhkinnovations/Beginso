@@ -145,7 +145,15 @@ export function CreateFormModal({ isOpen, onClose, defaultDestination }: CreateF
         updatedAt: new Date().toISOString(),
       });
       onClose();
-      router.push(`/forms/${formId}/edit`);
+      // Same `?ws=` hint forms/page.tsx's own links carry — lets PersonalShell paint the
+      // workspace sidebar on the builder's first render instead of flashing Personal while it
+      // re-fetches the form to work out its workspace from scratch.
+      const responseDestination = response.destination;
+      const destinationSlug =
+        responseDestination.type === 'workspace'
+          ? workspaces.find((ws) => ws.id === responseDestination.workspaceId)?.slug
+          : undefined;
+      router.push(destinationSlug ? `/forms/${formId}/edit?ws=${destinationSlug}` : `/forms/${formId}/edit`);
     },
     onError: () => {
       toast('Failed to create form. Please try again.', 'error');

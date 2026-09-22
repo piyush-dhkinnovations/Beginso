@@ -7,7 +7,8 @@ import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { useBuilderStore } from '@/store/builderStore';
 import { dashboardService } from '@/services/dashboard';
-import { dashboardKeys } from '@/lib/queryKeys';
+import { formsService } from '@/services/forms';
+import { dashboardKeys, workspaceKeys } from '@/lib/queryKeys';
 
 export interface PersonalSidebarProps {
   collapsed?: boolean;
@@ -41,7 +42,21 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
     queryKey: dashboardKeys.analytics(),
     queryFn: dashboardService.getAnalytics,
   });
-  const hasForms = analytics ? analytics.totalForms > 0 : true;
+  // Real bug found and fixed: `analytics.totalForms` leaks a workspace-owned form into its count
+  // for a brand-new user whose default workspace is the one they just joined via invite accept
+  // (formsService.getForms()'s own comment has the full root-cause) — this sidebar then kept
+  // Responses/Analytics/Reports visible for an account with zero real personal forms. `getForms`
+  // is already fixed to filter that leak out, so prefer its (small, cheap) count here instead of
+  // trusting the separate, still-contaminated analytics aggregate.
+  const { data: personalForms } = useQuery({
+    queryKey: workspaceKeys.forms({ type: 'personal' }, { page: 1, limit: 1 }),
+    queryFn: () => formsService.getForms({ page: 1, limit: 1 }, { type: 'personal' }),
+  });
+  const hasForms = personalForms
+    ? personalForms.total > 0
+    : analytics
+      ? analytics.totalForms > 0
+      : true;
   // Same guard src/components/dashboard/Sidebar.tsx already enforces — must be preserved by
   // whichever sidebar is actually mounted, since the confirm-leave modal
   // ((user)/forms/[id]/edit/page.tsx) only fires when something actually calls

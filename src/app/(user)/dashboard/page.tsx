@@ -57,7 +57,21 @@ export default function DashboardPage() {
     return <LoadingSpinner variant="overlay" />;
   }
 
-  const hasForms = (analytics?.totalForms ?? 0) > 0;
+  // Real bug found and fixed: `analytics.totalForms` comes from GET /api/dashboard/analytics,
+  // a separate backend aggregate that has the identical workspace-leak bug formsService.getForms()
+  // was already fixed for (a brand-new user's "default workspace" — the one they just joined via
+  // invite accept — bleeds into personal counts). That endpoint returns no per-form breakdown to
+  // filter, but `formsData` (the already-filtered, already-fetched query right below) is ground
+  // truth for "how many personal forms actually exist" — prefer it once it's loaded, so the page
+  // can't show "1 form" in the stat cards while "Your forms" and /forms both correctly say zero.
+  const hasForms = formsData ? formsData.total > 0 : (analytics?.totalForms ?? 0) > 0;
+  const effectiveCounts = analytics && {
+    ...analytics,
+    totalForms: formsData ? formsData.total : analytics.totalForms,
+    // Can't exceed the corrected total — caps the same leaked-form case without needing to know
+    // exactly which of the (at most 5) previewed rows are published.
+    publishedForms: formsData ? Math.min(analytics.publishedForms, formsData.total) : analytics.publishedForms,
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -98,7 +112,7 @@ export default function DashboardPage() {
       </div>
 
       {(analyticsLoading || hasForms) && (
-        <StatisticsCards isLoading={analyticsLoading} counts={analytics} />
+        <StatisticsCards isLoading={analyticsLoading} counts={effectiveCounts} />
       )}
 
       {formsLoading ? (

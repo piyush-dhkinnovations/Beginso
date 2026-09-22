@@ -28,6 +28,11 @@ vi.mock('@/services/dashboard', () => ({
   dashboardService: { getAnalytics: () => mockGetAnalytics() },
 }));
 
+const mockGetForms = vi.fn();
+vi.mock('@/services/forms', () => ({
+  formsService: { getForms: (...args: unknown[]) => mockGetForms(...args) },
+}));
+
 function renderSidebar() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
@@ -48,6 +53,10 @@ describe('PersonalSidebar', () => {
       responsesThisMonth: 0,
       recentActivity: [],
     });
+    // The sidebar now prefers this (already-filtered, already-fixed) count over the separate
+    // analytics aggregate for hasForms — see the component's own comment on why.
+    mockGetForms.mockReset();
+    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 1 });
   });
 
   it('renders the real A1.1 personal nav set plus the still-live top-level pages', () => {
@@ -124,17 +133,27 @@ describe('PersonalSidebar', () => {
   });
 
   it('keeps Responses visible once forms exist', async () => {
-    mockGetAnalytics.mockResolvedValue({
-      totalForms: 3,
-      publishedForms: 1,
-      totalResponses: 5,
-      responsesThisMonth: 2,
-      recentActivity: [],
-    });
+    mockGetForms.mockResolvedValue({ forms: [{ _id: 'f1' }], total: 3, page: 1, limit: 1 });
     renderSidebar();
     expect(await screen.findByText('Reports')).toBeInTheDocument();
     expect(screen.getByText('Analytics')).toBeInTheDocument();
     expect(screen.getByText('Responses')).toBeInTheDocument();
+  });
+
+  it('trusts the filtered forms count over analytics when they disagree — the real bug: a brand-new invited user\'s analytics.totalForms leaked a workspace form, so the sidebar kept showing Responses/Analytics/Reports for an account with zero real personal forms', async () => {
+    mockGetAnalytics.mockResolvedValue({
+      totalForms: 1,
+      publishedForms: 1,
+      totalResponses: 0,
+      responsesThisMonth: 0,
+      recentActivity: [],
+    });
+    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 1 });
+    renderSidebar();
+    expect(await screen.findByText('My Forms')).toBeInTheDocument();
+    expect(screen.queryByText('Responses')).not.toBeInTheDocument();
+    expect(screen.queryByText('Analytics')).not.toBeInTheDocument();
+    expect(screen.queryByText('Reports')).not.toBeInTheDocument();
   });
 
   it('keeps Responses visible when already deep-linked onto it, even with zero forms', async () => {
