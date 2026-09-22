@@ -70,7 +70,10 @@ export interface FormAccessGrant {
 export interface SharedFormItem {
   id: string;
   title: string;
-  sharedBy: string;
+  /** The sharer's display name, resolved from whichever of the backend's several redundant
+   * fields for this actually carried one (see services/shared.ts's own mapping) — undefined,
+   * never fabricated, when none of them did. */
+  sharedByName?: string;
   workspaceName: string | null;
   role: Exclude<Role, 'owner'>;
   accessLevel: 'read' | 'write';

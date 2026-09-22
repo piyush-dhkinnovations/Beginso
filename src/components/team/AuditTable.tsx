@@ -45,9 +45,16 @@ export function AuditTable({ events, isLoading }: AuditTableProps) {
                   ))}
                 </tr>
               ))
-            : events.map((event) => (
+            : events.map((event, i) => (
                 <tr key={event.id}>
-                  <th scope="row" className="font-medium text-left">
+                  <th
+                    scope="row"
+                    className="font-medium text-left normal-case text-[var(--text-secondary)]"
+                    style={{
+                      backgroundColor: 'transparent',
+                      borderBottom: i === events.length - 1 ? 0 : '1px solid var(--border-subtle)',
+                    }}
+                  >
                     {event.actorName}
                   </th>
                   <td>{describeEventAction(event.action)}</td>

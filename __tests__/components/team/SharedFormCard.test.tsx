@@ -11,7 +11,7 @@ import type { SharedFormItem } from '@/types/team';
 const WORKSPACE_SHARE: SharedFormItem = {
   id: 'f1',
   title: 'Customer Survey',
-  sharedBy: 'u-priya',
+  sharedByName: 'Priya Shah',
   workspaceName: 'Acme Inc',
   role: 'viewer',
   accessLevel: 'read',
@@ -28,14 +28,23 @@ describe('SharedFormCard', () => {
   it('renders the form title and workspace name', () => {
     render(<SharedFormCard item={WORKSPACE_SHARE} />);
     expect(screen.getByText('Customer Survey')).toBeInTheDocument();
-    expect(screen.getByText('Acme Inc')).toBeInTheDocument();
+    // Workspace name and the "· Shared by X" suffix are sibling text nodes in the same <p>, so
+    // an exact getByText('Acme Inc') no longer matches a single node's full text — substring
+    // match against the paragraph's combined content instead.
+    expect(screen.getByText(/Acme Inc/)).toBeInTheDocument();
   });
 
-  // The real backend's `sharedBy` is a raw userId, not a populated name (backend_updates_for_
-  // frontend.md §13) — nothing here to display as a person, so the card must not invent one.
-  it('does not render a raw userId as if it were a display name', () => {
+  // Real bug found and fixed (22 Sep 2026): the raw backend `sharedBy` used to be a userId with
+  // no name anywhere in the payload, so this card rendered nothing for the sharer at all — now
+  // live-confirmed enriched (services/shared.ts's own resolveSharedByName()).
+  it('renders the sharer\'s name when the backend provided one', () => {
     render(<SharedFormCard item={WORKSPACE_SHARE} />);
-    expect(screen.queryByText(/u-priya/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Shared by Priya Shah/)).toBeInTheDocument();
+  });
+
+  it('renders no "shared by" clause, never a raw id, when the backend gave no name', () => {
+    render(<SharedFormCard item={{ ...WORKSPACE_SHARE, sharedByName: undefined }} />);
+    expect(screen.queryByText(/Shared by/)).not.toBeInTheDocument();
   });
 
   it('renders "Personal" when the shared form is itself standalone (no workspace)', () => {

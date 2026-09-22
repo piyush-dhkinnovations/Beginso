@@ -51,6 +51,20 @@ describe('WorkspaceActivityPage', () => {
     expect(screen.queryByRole('button', { name: 'Next' })).not.toBeInTheDocument();
   });
 
+  // sprint-10-events-migration, task 7.1 — this page's own loading state (a 6-row skeleton,
+  // per the component's own markup) had no test asserting it actually renders before data
+  // arrives, unlike the empty/error states below.
+  it('shows a loading state before the query resolves, not the empty state', () => {
+    // Resolved, but the assertion below runs before this microtask is awaited anywhere — same
+    // synchronous-first-paint pattern already used elsewhere in this test suite for a loading
+    // check (a truly never-resolving promise hangs Testing Library's own cleanup).
+    mockList.mockResolvedValue([]);
+    renderPage();
+
+    expect(screen.getByLabelText('Loading activity')).toBeInTheDocument();
+    expect(screen.queryByText('Nothing has happened yet.')).not.toBeInTheDocument();
+  });
+
   it('shows the empty state when there is no activity', async () => {
     mockList.mockResolvedValue([]);
     renderPage();

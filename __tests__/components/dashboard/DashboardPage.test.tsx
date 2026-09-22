@@ -89,4 +89,25 @@ describe('DashboardPage analytics integration', () => {
     expect(screen.queryByText('Total Forms')).not.toBeInTheDocument();
     expect(screen.getAllByText('Create your first form').length).toBeGreaterThan(0);
   });
+
+  it('does not flash the stat cards on load for a zero-forms account — the real bug: analyticsLoading resolved before the more reliable forms query, so cards briefly rendered (as a loading skeleton) then vanished once the real answer landed', () => {
+    mockUseQuery.mockImplementation((options: { queryKey: unknown[] }) => {
+      if (options.queryKey[0] === 'dashboard') {
+        // Analytics has already resolved (isLoading: false) — this is the exact gap that used
+        // to read a stale fallback and show the cards.
+        return {
+          data: { totalForms: 0, publishedForms: 0, totalResponses: 0, responsesThisMonth: 0, recentActivity: [] },
+          isLoading: false,
+          isError: false,
+          refetch: vi.fn(),
+        };
+      }
+      // The forms query is still loading — data is undefined.
+      return { data: undefined, isLoading: true };
+    });
+
+    render(<DashboardPage />);
+
+    expect(screen.queryByText('Total Forms')).not.toBeInTheDocument();
+  });
 });
