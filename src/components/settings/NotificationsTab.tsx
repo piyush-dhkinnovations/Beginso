@@ -61,17 +61,17 @@ export function NotificationsTab() {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4 animate-pulse">
-        <div className="h-11 bg-neutral-200 rounded w-full" />
-        <div className="h-11 bg-neutral-100 rounded w-full" />
-        <div className="h-11 bg-neutral-100 rounded w-full" />
+        <div className="h-11 bg-[var(--border-default)] rounded w-full" />
+        <div className="h-11 bg-[var(--bg-subtle)] rounded w-full" />
+        <div className="h-11 bg-[var(--bg-subtle)] rounded w-full" />
       </div>
     );
   }
 
   if (isError || !workspace) {
     return (
-      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-4">
-        <p className="text-body-sm text-neutral-700">Unable to load notification preferences.</p>
+      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
+        <p className="text-body-sm text-[var(--text-primary)]">Unable to load notification preferences.</p>
         <Button variant="secondary" size="small" onClick={() => refetch()}>Try again</Button>
       </div>
     );
@@ -86,12 +86,12 @@ export function NotificationsTab() {
         const inputId = `notif-${key}`;
         return (
           <div key={key} className="flex items-center justify-between gap-4 min-h-11 py-1">
-            <label htmlFor={inputId} className="text-body-sm text-neutral-800">
+            <label htmlFor={inputId} className="text-body-sm text-[var(--text-primary)]">
               {label}
             </label>
             <div className="flex items-center gap-2">
               {mutation.isPending && (
-                <span className="h-3 w-3 rounded-full border-2 border-neutral-300 border-t-brand-600 animate-spin" />
+                <span className="h-3 w-3 rounded-full border-2 border-[var(--border-default)] border-t-[var(--action-primary)] animate-spin" />
               )}
               <Switch id={inputId} checked={prefs[key]} onChange={(next) => mutation.mutate(next)} />
             </div>

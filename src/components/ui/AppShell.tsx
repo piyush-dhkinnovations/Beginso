@@ -105,7 +105,15 @@ export function AppShell({
         </aside>
         <main
           className={bx(
-            "flex-1 flex flex-col gap-4 w-full max-w-[1600px] mx-auto",
+            // sprint-11-v2a-hardening 5.1 — real bug found by the width pass: a flex item's
+            // default min-width is `auto`, not 0, so this column refused to shrink below its
+            // widest child's intrinsic width. Any page with a wide inner table (Roles matrix,
+            // Audit log, any `.bg-table-wrap`) grew the *entire page* past the viewport instead
+            // of scrolling inside its own `overflow-x: auto` wrapper — a page-level horizontal
+            // scroll bug on every such screen, not just the two with a documented "scrolls
+            // inside its container" exception. One shared fix here (every V2a/V1 page routes
+            // through this single `<main>`), not five per-page patches.
+            "flex-1 min-w-0 flex flex-col gap-4 w-full max-w-[1600px] mx-auto",
             "px-4 pt-6 pb-16 md:px-8 md:pt-8 xl:px-12",
             contentClassName
           )}

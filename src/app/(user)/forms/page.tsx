@@ -6,7 +6,9 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink, LayoutDashboard, Share2, PinOff, Archive } from 'lucide-react';
 import { formsService } from '@/services/forms';
+import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
+import { canDeleteForm } from '@/lib/roles';
 import { useToast } from '@/components/common/Toast';
 import { useAuth } from '@/hooks/useAuth';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -95,6 +97,49 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
   const [bulkDeleteConfirming, setBulkDeleteConfirming] = useState(false);
   const debouncedSearch = useDebounce(search, 300);
 
+  // sprint-11-v2a-hardening 2.5 — real bug found by the context-switch isolation test: this page
+  // is shared between /forms and /w/[slug]/forms (Sprint 8), and switching workspace A -> B hits
+  // the same route pattern, so Next.js can reuse this exact component instance instead of
+  // remounting it. Every per-form modal/selection state above is local useState, so without this
+  // reset, an open FormAccessPanel/MoveFormModal/DeleteFormModal kept pointing at the form from
+  // the space just left, showing workspace A's form data inside workspace B's page. Query-cache
+  // isolation (workspaceKeys.forms() namespaced by context, 2.6) never protected against this —
+  // that's a data-fetch key, not local component state.
+  //
+  // Reset during render (BrandingTab.tsx's own "re-sync when the source changes externally"
+  // pattern — CLAUDE.md doesn't want an effect for this), not useEffect: an effect's setState
+  // would paint one extra frame with the stale panel still visible before clearing it.
+  const contextKey = context.type === 'workspace' ? `workspace:${context.workspaceId}` : 'personal';
+  const [syncedContextKey, setSyncedContextKey] = useState(contextKey);
+  if (contextKey !== syncedContextKey) {
+    setSyncedContextKey(contextKey);
+    setIsModalOpen(false);
+    setFormToMove(null);
+    setFormToShare(null);
+    setFormToDelete(null);
+    setSelectedIds(new Set());
+    setBulkDeleteConfirming(false);
+    setPage(1);
+  }
+
+  // sprint-11-v2a-hardening 2.3 — real gap found by the cross-role matrix: this page never
+  // checked canDeleteForm(role) at all, so bulk delete and the row Delete action were showing
+  // (and firing) for every role, not owner-only as requirements.md §7.2 (task 1.2) specified.
+  // Same lookup pattern team/page.tsx already established (workspacesService.list() already
+  // returns the caller's per-workspace role, confirmed live since Sprint 8 — no need to wait on
+  // BE 0.1, which only gates the sidebar's nav visibility). Personal context has no workspace
+  // role to look up — a personal form's only possible owner is the caller, so delete is always
+  // allowed there (design.md §13's "{owner} × {personal}" cell).
+  const { data: callerWorkspaces } = useQuery({
+    queryKey: workspaceKeys.list(),
+    queryFn: workspacesService.list,
+    enabled: context.type === 'workspace',
+  });
+  const currentRole = context.type === 'workspace'
+    ? callerWorkspaces?.find((w) => w.slug === context.workspaceId)?.role
+    : undefined;
+  const canDelete = context.type === 'personal' || canDeleteForm(currentRole);
+
   // Selection is page/filter-scoped, not global — switching tabs, filtering, searching, or
   // paging changes which rows are even on screen, so a selection made before that change would
   // otherwise silently point at forms the user can no longer see (sprint-10-events-migration,
@@ -178,7 +223,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
   const someOnPageSelected = rows.some((form) => selectedIds.has(form._id)) && !allOnPageSelected;
 
   const columns: TableColumn<Form>[] = [
-    {
+    ...(canDelete ? [{
       key: 'select',
       header: (
         <Checkbox
@@ -198,7 +243,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
           }}
         />
       ),
-      render: (form) => (
+      render: (form: Form) => (
         <Checkbox
           id={`forms-select-${form._id}`}
           aria-label={`Select ${form.title}`}
@@ -214,7 +259,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
           }}
         />
       ),
-    },
+    }] : []),
     {
       key: 'form',
       header: 'Form Title',
@@ -306,14 +351,16 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
             disabled: duplicatingId === formId,
             onSelect: () => duplicateMutation.mutate(formId),
           },
-          {
-            id: 'delete',
-            label: deletingId === formId ? 'Deleting…' : 'Delete',
-            icon: <Trash2 className="bg-icon" />,
-            disabled: deletingId === formId,
-            danger: true,
-            onSelect: () => setFormToDelete(form),
-          },
+          ...(canDelete
+            ? [{
+                id: 'delete',
+                label: deletingId === formId ? 'Deleting…' : 'Delete',
+                icon: <Trash2 className="bg-icon" />,
+                disabled: deletingId === formId,
+                danger: true,
+                onSelect: () => setFormToDelete(form),
+              }]
+            : []),
         ];
 
         return (
@@ -399,11 +446,13 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
             )}
           </div>
 
-          <BulkActionBar
-            count={selectedIds.size}
-            isDeleting={bulkDeleteMutation.isPending}
-            onDeleteSelected={() => setBulkDeleteConfirming(true)}
-          />
+          {canDelete && (
+            <BulkActionBar
+              count={selectedIds.size}
+              isDeleting={bulkDeleteMutation.isPending}
+              onDeleteSelected={() => setBulkDeleteConfirming(true)}
+            />
+          )}
 
           {error ? (
             <Alert variant="error" title="Failed to load forms. Please refresh." />

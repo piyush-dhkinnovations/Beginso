@@ -7,6 +7,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -93,5 +95,11 @@ describe('BrandingTab', () => {
     fireEvent.click(await screen.findByText('Trigger update'));
 
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Failed to update branding. Please try again.', 'error'));
+  });
+
+  // sprint-11-v2a-hardening 1.4 — token pass regression: no raw neutral/white class left in source.
+  it('has no raw bg-white/neutral/gray class in its source', () => {
+    const source = readFileSync(join(__dirname, '../../../src/components/settings/BrandingTab.tsx'), 'utf-8');
+    expect(source).not.toMatch(/bg-white|text-neutral-|bg-neutral-|border-neutral-|text-gray-|bg-gray-|text-black/);
   });
 });

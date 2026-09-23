@@ -62,16 +62,16 @@ export function BrandingTab() {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4 animate-pulse">
-        <div className="h-24 w-24 rounded-lg bg-neutral-200" />
-        <div className="h-10 bg-neutral-200 rounded w-full" />
+        <div className="h-24 w-24 rounded-lg bg-[var(--border-default)]" />
+        <div className="h-10 bg-[var(--border-default)] rounded w-full" />
       </div>
     );
   }
 
   if (isError || !workspace) {
     return (
-      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-4">
-        <p className="text-body-sm text-neutral-700">Unable to load branding defaults.</p>
+      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
+        <p className="text-body-sm text-[var(--text-primary)]">Unable to load branding defaults.</p>
         <Button variant="secondary" size="small" onClick={() => refetch()}>Try again</Button>
       </div>
     );
@@ -80,7 +80,7 @@ export function BrandingTab() {
   return (
     <div className="flex flex-col gap-3">
       <BrandingPanel branding={branding} formTitle="New Form" onUpdate={handleUpdate} showHeading={false} />
-      <p className="text-caption text-neutral-500">
+      <p className="text-caption text-[var(--text-muted)]">
         These defaults apply to new forms only — existing forms keep their own branding.
       </p>
     </div>
