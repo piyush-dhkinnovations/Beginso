@@ -41,8 +41,9 @@ vi.mock('@/services/forms', () => ({
   },
 }));
 
+const mockListWorkspaces = vi.fn();
 vi.mock('@/services/workspaces', () => ({
-  workspacesService: { list: () => Promise.resolve([]) },
+  workspacesService: { list: (...args: unknown[]) => mockListWorkspaces(...args) },
 }));
 
 vi.mock('@/services/settings', () => ({
@@ -85,6 +86,11 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
     mockDeleteForm.mockResolvedValue(undefined);
     mockDuplicateForm.mockReset();
     mockDuplicateForm.mockResolvedValue({ _id: 'new-id', title: 'Copy' });
+    mockListWorkspaces.mockReset();
+    // Owner by default — every existing delete/bulk test in this file predates the role gate
+    // (sprint-11-v2a-hardening 2.3) and exercises the caller's own delete permission, not the
+    // gate itself; the gate has its own dedicated describe block below.
+    mockListWorkspaces.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role: 'owner' }]);
   });
 
   it('renders the Forms heading', async () => {
@@ -324,6 +330,35 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       expect(await screen.findByText('Delete form?')).toBeInTheDocument();
       expect(screen.getByLabelText(/Type .* to confirm/)).toBeInTheDocument();
       expect(screen.getByRole('button', { name: 'Delete permanently' })).toBeDisabled();
+    });
+  });
+
+  // sprint-11-v2a-hardening 2.3 — real gap found by the cross-role matrix: canDeleteForm(role) was
+  // never actually checked anywhere in this page. Delete (row menu item, select column, bulk bar)
+  // must be owner-only per requirements.md §7.2 (task 1.2's own acceptance criteria).
+  describe('delete is gated by canDeleteForm(role) — owner only', () => {
+    it.each(['admin', 'member', 'viewer'] as const)('role=%s: no select column, no row Delete action', async (role) => {
+      mockListWorkspaces.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role }]);
+      mockGetForms.mockResolvedValue({ forms: [threeForms()[0]], total: 1, page: 1, limit: 10 });
+      renderPage();
+      await screen.findByText('Form One');
+
+      expect(screen.queryByLabelText('Select Form One')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/Select all forms/)).not.toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
+      expect(screen.queryByRole('menuitem', { name: /Delete/ })).not.toBeInTheDocument();
+    });
+
+    it('role=owner: select column and row Delete action are present', async () => {
+      mockListWorkspaces.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role: 'owner' }]);
+      mockGetForms.mockResolvedValue({ forms: [threeForms()[0]], total: 1, page: 1, limit: 10 });
+      renderPage();
+      await screen.findByText('Form One');
+
+      expect(screen.getByLabelText('Select Form One')).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
+      expect(await screen.findByRole('menuitem', { name: /Delete/ })).toBeInTheDocument();
     });
   });
 });

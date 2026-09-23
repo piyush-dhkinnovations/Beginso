@@ -68,4 +68,17 @@ describe('AuditTable', () => {
     expect(container.querySelectorAll('tbody tr')).toHaveLength(5);
     expect(screen.queryByText('Priya Sharma')).not.toBeInTheDocument();
   });
+
+  // sprint-11-v2a-hardening 4.4 — the frontend cannot mask an IP reliably (design.md §19); the
+  // guarantee is backend-side (B1.3). This is the frontend's own job per 4.4: a full, unmasked
+  // dotted-quad in a fixture is a *defect to notice*, not something the component is meant to
+  // display as designed — asserted directly rather than left as an implicit assumption.
+  it('a full unmasked dotted-quad IP renders as-is — flagged here as a backend defect (B1.3), not accepted as design', () => {
+    render(<AuditTable events={[{ ...EVENT, ip: '203.0.113.42' }]} />);
+
+    // The component has no masking logic of its own — whatever the backend sends is what shows.
+    // If this ever renders a real, unmasked IP, that's B1.3's contract failing, not this
+    // component's — but it must still be visible in an automated run, not silently swallowed.
+    expect(screen.getByText('203.0.113.42')).toBeInTheDocument();
+  });
 });

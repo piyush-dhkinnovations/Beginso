@@ -6,6 +6,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -112,5 +114,11 @@ describe('NotificationsTab', () => {
     mockGetWorkspace.mockRejectedValue(new Error('fail'));
     renderTab();
     expect(await screen.findByRole('alert')).toBeInTheDocument();
+  });
+
+  // sprint-11-v2a-hardening 1.4 — token pass regression: no raw neutral/white/brand class left in source.
+  it('has no raw bg-white/neutral/gray/brand class in its source', () => {
+    const source = readFileSync(join(__dirname, '../../../src/components/settings/NotificationsTab.tsx'), 'utf-8');
+    expect(source).not.toMatch(/bg-white|text-neutral-|bg-neutral-|border-neutral-|text-gray-|bg-gray-|text-black|border-t-brand-/);
   });
 });

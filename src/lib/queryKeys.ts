@@ -1,6 +1,33 @@
 import type { GetResponsesParams } from '@/types/response';
 import type { FormsContext } from '@/types/workspace';
 
+// sprint-11-v2a-hardening, requirements.md §7.3 (2.6) — query-key audit, classified per
+// design.md §10. Every factory below falls into one of three buckets:
+//
+// (a) Workspace-namespaced: workspaceKeys.forms() (context is a key segment), teamKeys,
+//     activityKeys, auditKeys — all namespaced from creation; regression tests proving
+//     key('a') !== key('b') live in __tests__/lib/queryKeys.test.ts.
+// (b) Namespaced by something else that is itself globally unique or per-caller, so a workspace
+//     segment would be redundant: formKeys/formEventKeys/formAccessKeys (by formId — a Mongo
+//     ObjectId, globally unique across every workspace and personal space, so no two forms in
+//     different contexts can ever collide on this key); invitationKeys (by token); sharedKeys,
+//     notificationKeys, settingsKeys.profile()/sessions() (per-user by nature — scoped to the
+//     caller's own session, not any workspace).
+// (c) Workspace-scoped data read with NO workspace in the key at all: responseKeys, dashboardKeys,
+//     analyticsKeys, reportKeys, settingsKeys.workspace(). Every one of these renders only under
+//     the personal (user) shell — no /w/[slug]/responses|analytics|reports|dashboard route
+//     exists — so a *cache* bleed across a context switch cannot happen (nothing here can ever be
+//     mounted twice with two different contexts competing for the same key). But of every service
+//     call in this codebase, only formsService.getForms() sends x-workspace-slug
+//     (src/services/forms.ts) — these calls send no workspace indicator at all, so the backend
+//     resolves one by its own fallback order (API_CONTRACT.md "Workspace Resolution"), the same
+//     fallback that caused the 16 Sep forms leak. **Backend contract to confirm:** do these
+//     personal-shell pages actually receive personal-scoped data, or the caller's default
+//     workspace's data? Unproven from this checkout — a confirmed leak here is a wrong-data risk,
+//     release-blocking per design.md §10, not a stale-cache bug this key structure can fix.
+//     Fixing it (if confirmed) is Sprint 12+ scope, since Responses/Analytics/Reports/Dashboard are
+//     rewritten there — this audit's job is to record the result, not silently assume it's fine.
+
 // formId is optional throughout — omitted formId means the "All Responses" view spanning
 // every form in the workspace, keyed under the literal 'all' segment.
 export const responseKeys = {
