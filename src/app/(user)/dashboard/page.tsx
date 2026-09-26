@@ -165,13 +165,15 @@ export default function DashboardPage() {
         </Card>
       )}
 
-      <RecentActivitySection
-        hasForms={hasForms}
-        activities={analytics?.recentActivity}
-        isLoading={analyticsLoading}
-        isError={isError}
-        onRetry={() => void refetch()}
-      />
+      {formsLoaded && hasForms && (
+        <RecentActivitySection
+          hasForms={hasForms}
+          activities={analytics?.recentActivity}
+          isLoading={analyticsLoading}
+          isError={isError}
+          onRetry={() => void refetch()}
+        />
+      )}
     </div>
   );
 }

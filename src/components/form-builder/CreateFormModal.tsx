@@ -8,8 +8,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Info } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { settingsService } from '@/services/settings';
-import { workspacesService } from '@/services/workspaces';
 import { settingsKeys, workspaceKeys } from '@/lib/queryKeys';
+import { useWorkspaceList } from '@/hooks/useWorkspaceDestinations';
 import { createFormSchema, CreateFormValues } from '@/lib/schemas/formSchema';
 import { useBuilderStore } from '@/store/builderStore';
 import { useToast } from '@/components/common/Toast';
@@ -44,11 +44,7 @@ export function CreateFormModal({ isOpen, onClose, defaultDestination }: CreateF
   const destination = userSelectedDestination ?? defaultDestId;
 
   // Fetch workspaces to populate the destination selector
-  const { data: workspaces = [] } = useQuery({
-    queryKey: workspaceKeys.list(),
-    queryFn: workspacesService.list,
-    enabled: isOpen,
-  });
+  const { data: workspaces = [] } = useWorkspaceList(isOpen);
 
   // Shares the same cache Settings' BrandingTab reads/writes — new forms should start with the
   // workspace's default branding (Requirement 6's Branding_Defaults concept), and `POST
