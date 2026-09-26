@@ -24,8 +24,17 @@ const COLUMNS = [
     links: [
       { label: "About", href: "/about" },
       { label: "Contact", href: "/contact" },
-      { label: "Privacy", href: "/privacy" },
-      { label: "Terms", href: "/terms" },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { label: "Terms of Use", href: "/terms" },
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Cookie Policy", href: "/cookie-policy" },
+      { label: "Acceptable Use", href: "/acceptable-use-policy" },
+      { label: "Fair Use Policy", href: "/fair-use-policy" },
+      { label: "Data Processing Agreement", href: "/data-processing-agreement" },
     ],
   },
 ];
@@ -36,7 +45,7 @@ export default function Footer() {
   return (
     <footer className="bg-[var(--ink-900)] py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10">
           <div>
             <Wordmark height={32} force="dark" />
             <p className="text-[13px] text-white/60 mt-3">&copy; {currentYear} Beginso. All rights reserved.</p>
