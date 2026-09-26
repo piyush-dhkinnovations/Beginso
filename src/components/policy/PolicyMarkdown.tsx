@@ -181,7 +181,7 @@ export function PolicyMarkdown({ content }: { content: string }) {
           case "callout":
             return (
               <Alert key={key} variant="warning" title={block.title} className="mb-6">
-                {renderInline(block.text, key)}
+                <p>{renderInline(block.text, key)}</p>
               </Alert>
             );
           case "table": {

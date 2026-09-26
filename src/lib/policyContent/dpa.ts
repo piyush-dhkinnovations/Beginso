@@ -349,13 +349,6 @@ Because providers and hosting locations may change as the Platform evolves, this
 
 # Annex E. Execution / Acceptance
 
-This DPA may be incorporated electronically into the Agreement. Where the parties require signatures, they may execute below or through an applicable order form or enterprise agreement.
-
-| Customer | Beginso |
-| --- | --- |
-| Name: __________________________ | Name: __________________________ |
-| Title: ___________________________ | Title: ___________________________ |
-| Signature: ________________________ | Signature: ________________________ |
-| Date: ____________________________ | Date: ____________________________ |
+This DPA may be incorporated electronically into the Agreement. Where the parties require signatures, they execute this DPA through a signed order form, enterprise agreement, or other executed document incorporating it by reference, rather than through this published version.
 `.trim(),
 };
