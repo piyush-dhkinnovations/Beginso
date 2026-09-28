@@ -16,9 +16,16 @@ export interface MemberTableProps {
   members: MemberListItem[];
   currentUserId: string;
   canManage: boolean;
+  /**
+   * Only the owner may change, remove or create an admin (the backend answers 403
+   * ADMIN_REQUIRES_OWNER to anyone else). Hiding the controls is a convenience: the server enforces it.
+   */
+  callerIsOwner?: boolean;
   isLoading?: boolean;
   onRoleChange: (member: MemberListItem, role: Role) => void;
   onRemove: (member: MemberListItem) => void;
+  /** Owner only: hand the workspace to this member (they become owner, the caller becomes admin). */
+  onTransferOwnership?: (member: MemberListItem) => void;
 }
 
 const ASSIGNABLE_ROLES: Exclude<Role, 'owner'>[] = ['admin', 'member', 'viewer'];
@@ -26,8 +33,21 @@ const ASSIGNABLE_ROLES: Exclude<Role, 'owner'>[] = ['admin', 'member', 'viewer']
 // Presentational — no fetching, no mutation calls (design.md §7). Owns row layout, per-row
 // canManage gating, and the remove-confirmation modal's open/close state; the actual API calls
 // are the parent page's job (design.md §8's data flow).
-export function MemberTable({ members, currentUserId, canManage, isLoading, onRoleChange, onRemove }: MemberTableProps) {
+export function MemberTable({
+  members,
+  currentUserId,
+  canManage,
+  callerIsOwner = false,
+  isLoading,
+  onRoleChange,
+  onRemove,
+  onTransferOwnership,
+}: MemberTableProps) {
   const [pendingRemoval, setPendingRemoval] = useState<MemberListItem | null>(null);
+  const [pendingTransfer, setPendingTransfer] = useState<MemberListItem | null>(null);
+  // An admin row is off limits to anyone but the owner.
+  const lockedForCaller = (m: MemberListItem) => !callerIsOwner && m.role === 'admin';
+  const roleOptions = callerIsOwner ? ASSIGNABLE_ROLES : ASSIGNABLE_ROLES.filter((r) => r !== 'admin');
 
   const columns: TableColumn<MemberListItem>[] = [
     {
@@ -48,7 +68,7 @@ export function MemberTable({ members, currentUserId, canManage, isLoading, onRo
         // The Owner row renders role as a plain Badge, never editable — ownership only
         // transfers, never gets re-roled through this control (requirements.md §7.2).
         if (m.isOwner) return <Badge variant="neutral">{ROLE_LABELS[m.role]}</Badge>;
-        if (!canManage) return <Badge variant="outline">{ROLE_LABELS[m.role]}</Badge>;
+        if (!canManage || lockedForCaller(m)) return <Badge variant="outline">{ROLE_LABELS[m.role]}</Badge>;
         return (
           <Select
             id={`role-select-${m.membershipId}`}
@@ -56,7 +76,7 @@ export function MemberTable({ members, currentUserId, canManage, isLoading, onRo
             value={m.role}
             onChange={(e) => onRoleChange(m, e.target.value as Role)}
           >
-            {ASSIGNABLE_ROLES.map((role) => (
+            {roleOptions.map((role) => (
               <option key={role} value={role}>
                 {ROLE_LABELS[role]}
               </option>
@@ -81,17 +101,30 @@ export function MemberTable({ members, currentUserId, canManage, isLoading, onRo
       render: (m) => {
         // Never shown on the Owner row, and never on the caller's own row (design.md §15.1's
         // region notes) — a manager doesn't remove themselves through this control.
-        if (!canManage || m.isOwner || m.userId === currentUserId) return null;
+        if (!canManage || m.isOwner || m.userId === currentUserId || lockedForCaller(m)) return null;
         return (
-          <Button
-            type="button"
-            variant="ghost"
-            size="small"
-            aria-label={`Remove ${m.name}`}
-            onClick={() => setPendingRemoval(m)}
-          >
-            <X size={14} />
-          </Button>
+          <div className="flex items-center justify-end gap-1">
+            {callerIsOwner && onTransferOwnership && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="small"
+                aria-label={`Make ${m.name} the owner`}
+                onClick={() => setPendingTransfer(m)}
+              >
+                Make owner
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="small"
+              aria-label={`Remove ${m.name}`}
+              onClick={() => setPendingRemoval(m)}
+            >
+              <X size={14} />
+            </Button>
+          </div>
         );
       },
     },
@@ -129,6 +162,33 @@ export function MemberTable({ members, currentUserId, canManage, isLoading, onRo
             }}
           >
             Remove
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={pendingTransfer !== null}
+        onClose={() => setPendingTransfer(null)}
+        title="Make this member the owner?"
+        description={
+          pendingTransfer
+            ? `${pendingTransfer.name} will own this workspace and you will become an admin. Only the new owner can delete the workspace or change admins.`
+            : undefined
+        }
+      >
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-[var(--border-default)]">
+          <Button type="button" variant="secondary" onClick={() => setPendingTransfer(null)}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => {
+              if (pendingTransfer) onTransferOwnership?.(pendingTransfer);
+              setPendingTransfer(null);
+            }}
+          >
+            Transfer ownership
           </Button>
         </div>
       </Modal>

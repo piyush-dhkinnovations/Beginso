@@ -91,6 +91,7 @@ describe('MemberTable', () => {
         members={[ADMIN]}
         currentUserId="someone-else"
         canManage
+        callerIsOwner
         onRoleChange={onRoleChange}
         onRemove={noop}
       />
@@ -107,6 +108,7 @@ describe('MemberTable', () => {
         members={[ADMIN]}
         currentUserId="someone-else"
         canManage
+        callerIsOwner
         onRoleChange={noop}
         onRemove={onRemove}
       />
@@ -127,6 +129,7 @@ describe('MemberTable', () => {
         members={[ADMIN]}
         currentUserId="someone-else"
         canManage
+        callerIsOwner
         onRoleChange={noop}
         onRemove={onRemove}
       />
@@ -134,5 +137,43 @@ describe('MemberTable', () => {
     await userEvent.click(screen.getByLabelText('Remove Priya Sharma'));
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onRemove).not.toHaveBeenCalled();
+  });
+});
+
+
+describe('MemberTable: only the owner manages admins (backend: ADMIN_REQUIRES_OWNER)', () => {
+  const noop = () => {};
+
+  it('an admin caller cannot edit or remove another admin, but can still manage a viewer', () => {
+    render(
+      <MemberTable members={[OWNER, ADMIN, VIEWER]} currentUserId="u-me" canManage callerIsOwner={false} onRoleChange={noop} onRemove={noop} />
+    );
+    expect(screen.queryByLabelText('Change role for Priya Sharma')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Remove Priya Sharma')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Change role for Chidi Okafor')).toBeInTheDocument();
+    expect(screen.getByLabelText('Remove Chidi Okafor')).toBeInTheDocument();
+    // and cannot promote anyone to admin
+    const options = Array.from((screen.getByLabelText('Change role for Chidi Okafor') as HTMLSelectElement).options).map((o) => o.value);
+    expect(options).not.toContain('admin');
+  });
+
+  it('the owner can edit and remove an admin, offer admin as a role, and hand over ownership', async () => {
+    const onTransfer = vi.fn();
+    render(
+      <MemberTable members={[OWNER, ADMIN]} currentUserId="u-owner" canManage callerIsOwner onRoleChange={noop} onRemove={noop} onTransferOwnership={onTransfer} />
+    );
+    expect(screen.getByLabelText('Change role for Priya Sharma')).toBeInTheDocument();
+    expect(screen.getByLabelText('Remove Priya Sharma')).toBeInTheDocument();
+    const options = Array.from((screen.getByLabelText('Change role for Priya Sharma') as HTMLSelectElement).options).map((o) => o.value);
+    expect(options).toContain('admin');
+
+    await userEvent.click(screen.getByLabelText('Make Priya Sharma the owner'));
+    await userEvent.click(screen.getByRole('button', { name: 'Transfer ownership' }));
+    expect(onTransfer).toHaveBeenCalledWith(ADMIN);
+  });
+
+  it('nobody sees "make owner" unless they are the owner', () => {
+    render(<MemberTable members={[OWNER, VIEWER]} currentUserId="u-me" canManage callerIsOwner={false} onRoleChange={noop} onRemove={noop} onTransferOwnership={vi.fn()} />);
+    expect(screen.queryByLabelText('Make Chidi Okafor the owner')).not.toBeInTheDocument();
   });
 });

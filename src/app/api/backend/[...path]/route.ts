@@ -126,6 +126,11 @@ async function forward(request: NextRequest, pathParts: string[]): Promise<NextR
   const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip');
   const clientUserAgent = request.headers.get('user-agent');
   if (clientIp) headers.set('x-client-ip', clientIp);
+  // The backend only believes x-client-ip when this shared secret comes with it (anyone can send
+  // the header). Same value as PROXY_SHARED_SECRET on the backend; unset here = backend uses the
+  // proxy's own address for rate limits and login location.
+  const proxySecret = process.env.BACKEND_PROXY_SECRET;
+  if (proxySecret) headers.set('x-proxy-secret', proxySecret);
   if (clientUserAgent) headers.set('x-client-user-agent', clientUserAgent);
 
   const hasBody = !['GET', 'HEAD'].includes(request.method);

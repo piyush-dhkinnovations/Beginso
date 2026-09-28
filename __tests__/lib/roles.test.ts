@@ -8,10 +8,10 @@ import { describe, it, expect } from 'vitest';
 import { ROLE_LABELS, CAPABILITIES, hasCapability, canManageMembers, canDeleteForm, canViewTemplates, canViewAudit } from '@/lib/roles';
 import type { Role } from '@/types/workspace';
 
-const ALL_ROLES: Role[] = ['owner', 'admin', 'member', 'viewer'];
+const ALL_ROLES: Role[] = ['owner', 'admin', 'member', 'editor', 'viewer', 'reviewer'];
 
 describe('ROLE_LABELS', () => {
-  it('covers exactly the four wire Role values, nothing more or fewer', () => {
+  it('covers exactly the six wire Role values, nothing more or fewer', () => {
     const keys = Object.keys(ROLE_LABELS).sort();
     expect(keys).toEqual([...ALL_ROLES].sort());
   });

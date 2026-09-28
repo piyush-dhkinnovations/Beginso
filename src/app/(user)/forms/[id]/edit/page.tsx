@@ -567,7 +567,7 @@ export default function BuilderPageShell() {
             </div>
             <div className="h-12 border-b bg-white animate-pulse"></div>
             <div className="flex-1 flex p-6 gap-6 animate-pulse max-w-7xl mx-auto w-full mt-10">
-              <div className="w-[280px] bg-white border rounded-lg h-96"></div>
+              <div className="w-280px bg-white border rounded-lg h-96"></div>
               <div className="flex-1 bg-white border rounded-lg h-96"></div>
               <div className="w-[320px] bg-white border rounded-lg h-96"></div>
             </div>
@@ -640,14 +640,14 @@ export default function BuilderPageShell() {
                   />
                   <DragOverlay dropAnimation={dropAnimation}>
                     {activeDragConfig ? (
-                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-white border border-brand-500 shadow-lg opacity-90 min-h-[44px] cursor-grabbing pointer-events-none">
+                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-white border border-brand-500 shadow-lg opacity-90 min-h-44px cursor-grabbing pointer-events-none">
                         <activeDragConfig.icon size={16} className="text-brand-500 shrink-0" />
                         <span className="text-body font-medium text-neutral-700">
                           {activeDragConfig.label}
                         </span>
                       </div>
                     ) : activeDragField ? (
-                      <div className="w-full flex items-center justify-between p-4 bg-white border border-neutral-200 rounded-lg min-h-[56px] cursor-grabbing pointer-events-none"
+                      <div className="w-full flex items-center justify-between p-4 bg-white border border-neutral-200 rounded-lg min-h-56px cursor-grabbing pointer-events-none"
                         style={{ boxShadow: '0 8px 24px rgba(15,23,42,0.14), 0 2px 8px rgba(15,23,42,0.08)', transform: 'scale(1.015)' }}
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
