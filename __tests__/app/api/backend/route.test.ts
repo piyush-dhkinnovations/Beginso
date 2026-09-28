@@ -52,6 +52,20 @@ describe('BFF proxy — header forwarding', () => {
     expect(sentHeaders.has('x-workspace-id')).toBe(false);
   });
 
+  it('sends the shared proxy secret to the backend when configured, and never one the caller supplied', async () => {
+    vi.stubEnv('BACKEND_PROXY_SECRET', 'shared-secret');
+    await GET(makeRequest('api/forms', { 'x-proxy-secret': 'caller-guess' }), { params: Promise.resolve({ path: ['api', 'forms'] }) });
+    let [, init] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect((init.headers as Headers).get('x-proxy-secret')).toBe('shared-secret');
+
+    vi.unstubAllEnvs();
+    vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://backend.example');
+    (fetch as ReturnType<typeof vi.fn>).mockClear();
+    await GET(makeRequest('api/forms', { 'x-proxy-secret': 'caller-guess' }), { params: Promise.resolve({ path: ['api', 'forms'] }) });
+    [, init] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect((init.headers as Headers).has('x-proxy-secret')).toBe(false);
+  });
+
   // sprint-11-v2a-hardening 4.3 — the whitelist must be closed, not just "includes the workspace
   // headers": an arbitrary header the caller sends must never reach the real backend un-vetted.
   it('does not forward an arbitrary header the caller sent (whitelist is closed)', async () => {
