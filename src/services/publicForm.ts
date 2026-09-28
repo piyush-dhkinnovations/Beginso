@@ -35,6 +35,15 @@ export const publicFormService = {
   },
 
   /**
+   * Tells the backend a visitor opened the form (feeds the completion rate on Form Overview).
+   * Fire-and-forget: it never throws and never blocks the page. The backend counts one view per
+   * visitor per form per hour, so calling it on every load is safe.
+   */
+  recordView(slug: string): void {
+    void fetch(`${BASE}/api/public/${slug}/view`, { method: 'POST', keepalive: true }).catch(() => {});
+  },
+
+  /**
    * Sends multipart/form-data: `data` (JSON), `_hp` (honeypot), one part per file field.
    * `honeypot` defaults to '' for real respondents — passed through as-is (not hardcoded)
    * so a bot that actually fills the hidden `_hp` input is still reported to the backend.
