@@ -11,7 +11,11 @@ export type UserId = string;
 // where a product decision is needed on whether the backend enum gets renamed to match, or the
 // frontend maps wire values to display labels — flagging here since Sprint 8 is the first consumer
 // that reads `role` at all (context switcher, All Workspaces). Not resolved silently either way.
-export type Role = 'owner' | 'admin' | 'member' | 'viewer';
+// The backend stores six values (Beginso-Report/API_CONTRACT.md "Roles"): `editor` is an alias of
+// `member` and `reviewer` an alias of `viewer`. A member row can carry any of the six on the wire
+// (a role set through per-form grants or an older invitation), so every consumer must accept all
+// six; ROLE_LABELS and CAPABILITIES in src/lib/roles.ts treat each alias like its twin.
+export type Role = 'owner' | 'admin' | 'member' | 'editor' | 'viewer' | 'reviewer';
 
 /**
  * P1: per-member notification preference. Defaults to "none" for every

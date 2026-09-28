@@ -23,4 +23,12 @@ export const teamService = {
     axiosInstance
       .delete(`/api/workspaces/${workspaceId}/members/${membershipId}`)
       .then(() => undefined),
+
+  // Owner only. The target must already be a member; the caller becomes an admin.
+  transferOwnership: (workspaceId: string, userId: string): Promise<void> =>
+    axiosInstance.post(`/api/workspaces/${workspaceId}/transfer-ownership`, { userId }).then(() => undefined),
+
+  // Any member. The only owner is refused with LAST_OWNER (transfer ownership first).
+  leave: (workspaceId: string): Promise<void> =>
+    axiosInstance.post(`/api/workspaces/${workspaceId}/leave`).then(() => undefined),
 };

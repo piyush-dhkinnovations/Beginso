@@ -7,7 +7,9 @@ export const ROLE_LABELS: Record<Role, string> = {
   owner: 'Owner',
   admin: 'Admin',
   member: 'Editor',
+  editor: 'Editor',
   viewer: 'Reviewer',
+  reviewer: 'Reviewer',
 };
 
 export interface CapabilityItem {
@@ -30,7 +32,15 @@ export interface CapabilityGroup {
 // §13's own sketch) — TS can't infer a clean flatMap()/find() return type across a tuple of
 // object-literal types that each have a different `roles` literal-union shape; typing `roles` as
 // `readonly Role[]` up front avoids the cast design.md's version would have otherwise needed.
-export const CAPABILITIES: readonly CapabilityGroup[] = [
+// The backend treats `editor` as `member` and `reviewer` as `viewer`, so a capability granted to one
+// is granted to its alias: written once with the original four names and expanded below.
+const withAliases = (roles: readonly Role[]): readonly Role[] => [
+  ...roles,
+  ...(roles.includes('member') ? (['editor'] as const) : []),
+  ...(roles.includes('viewer') ? (['reviewer'] as const) : []),
+];
+
+const RAW_CAPABILITIES: readonly CapabilityGroup[] = [
   {
     group: 'Forms',
     items: [
@@ -58,6 +68,11 @@ export const CAPABILITIES: readonly CapabilityGroup[] = [
     ],
   },
 ];
+
+export const CAPABILITIES: readonly CapabilityGroup[] = RAW_CAPABILITIES.map((g) => ({
+  group: g.group,
+  items: g.items.map((i) => ({ ...i, roles: withAliases(i.roles) })),
+}));
 
 export function hasCapability(role: Role, capabilityKey: string): boolean {
   const item = CAPABILITIES.flatMap((g) => g.items).find((i) => i.key === capabilityKey);
@@ -91,5 +106,5 @@ export function canDeleteForm(role: Role | undefined): boolean {
 // regression for a purely cosmetic nav-filter rule (the CAPABILITIES matrix above has no
 // `templates:*` entry at all, so nothing server-side actually gates this route by role either).
 export function canViewTemplates(role: Role | undefined): boolean {
-  return role !== 'viewer';
+  return role !== 'viewer' && role !== 'reviewer';
 }

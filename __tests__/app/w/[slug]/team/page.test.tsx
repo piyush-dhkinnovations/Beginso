@@ -126,9 +126,23 @@ describe('TeamPage (/w/[slug]/team)', () => {
   });
 
   it('a caller with role=admin can edit roles (canManage derived from the already-live list endpoint)', async () => {
-    mockListMembers.mockResolvedValue([ADMIN]);
+    mockListMembers.mockResolvedValue([OTHER_MEMBER]);
     renderPage();
-    expect(await screen.findByLabelText('Change role for Priya Sharma')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Change role for Chidi Okafor')).toBeInTheDocument();
+  });
+
+  it('a caller with role=admin cannot edit or remove another admin (only the owner can)', async () => {
+    mockListMembers.mockResolvedValue([ADMIN, OTHER_MEMBER]);
+    renderPage();
+    await screen.findByLabelText('Change role for Chidi Okafor');
+    expect(screen.queryByLabelText('Change role for Priya Sharma')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Remove Priya Sharma')).not.toBeInTheDocument();
+  });
+
+  it('a caller with role=admin is offered "Leave workspace", the owner is not', async () => {
+    mockListMembers.mockResolvedValue([OTHER_MEMBER]);
+    renderPage();
+    expect(await screen.findByRole('button', { name: 'Leave workspace' })).toBeInTheDocument();
   });
 
   it('a caller with role=viewer sees a read-only table', async () => {
@@ -140,12 +154,12 @@ describe('TeamPage (/w/[slug]/team)', () => {
   });
 
   it('changing a role calls teamService.updateMemberRole and invalidates the members query', async () => {
-    mockListMembers.mockResolvedValue([ADMIN]);
+    mockListMembers.mockResolvedValue([OTHER_MEMBER]);
     mockUpdateMemberRole.mockResolvedValue(undefined);
     renderPage();
-    const select = await screen.findByLabelText('Change role for Priya Sharma');
+    const select = await screen.findByLabelText('Change role for Chidi Okafor');
     await userEvent.selectOptions(select, 'Reviewer');
-    await waitFor(() => expect(mockUpdateMemberRole).toHaveBeenCalledWith('acme', 'm-admin', 'viewer'));
+    await waitFor(() => expect(mockUpdateMemberRole).toHaveBeenCalledWith('acme', 'm-other', 'viewer'));
   });
 
   it('removing a member calls teamService.removeMember after confirmation', async () => {

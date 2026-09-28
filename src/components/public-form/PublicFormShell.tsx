@@ -192,6 +192,11 @@ export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellPr
         setSubmitError('Too many submissions from your connection. Please wait a minute and try again.');
       } else if (result.status === 422 && result.message) {
         setSubmitError(result.message);
+      } else if (result.status === 413) {
+        setSubmitError('Your answers are too large. Please shorten them and try again.');
+      } else if (result.status === 400) {
+        // Multer's limits: a file over the size cap, or more files than allowed.
+        setSubmitError('An attachment is too large (25 MB maximum per file) or there are too many files (10 maximum). Please check your files and try again.');
       } else {
         setSubmitError('Something went wrong. Please try again.');
       }

@@ -28,6 +28,8 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  // Set when the backend refuses with 409 OWNS_SHARED_WORKSPACES: workspaces other people still belong to.
+  const [sharedWorkspaces, setSharedWorkspaces] = useState<{ id: string; name: string; otherMembers: number }[]>([]);
 
   // Shares the cache ProfileTab/SecurityTab already populate — needed for signInWithEmailAndPassword
   // below, which requires an email even though this modal is reached from the Workspace tab.
@@ -47,6 +49,8 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
       setTypedName('');
       setPasswordError(null);
       setSubmitError(null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSharedWorkspaces([]);
     }
   }, [isOpen]);
 
@@ -64,6 +68,7 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
     if (!profile || !canAttemptDelete) return;
     setPasswordError(null);
     setSubmitError(null);
+    setSharedWorkspaces([]);
     setIsDeleting(true);
 
     let reauthToken: string;
@@ -85,6 +90,10 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
     try {
       await settingsService.deleteWorkspace({ reauthToken });
     } catch (error: unknown) {
+      const body = (error as { response?: { data?: { workspaces?: unknown } } })?.response?.data;
+      if (Array.isArray(body?.workspaces)) {
+        setSharedWorkspaces(body.workspaces as { id: string; name: string; otherMembers: number }[]);
+      }
       setSubmitError(getFriendlyErrorMessage(error));
       setIsDeleting(false);
       return;
@@ -135,6 +144,15 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
         </div>
 
         {submitError && <p className="text-caption text-rose-600">{submitError}</p>}
+        {sharedWorkspaces.length > 0 && (
+          <ul className="list-disc pl-5 text-caption text-[var(--text-secondary)]" aria-label="Workspaces you still own">
+            {sharedWorkspaces.map((w) => (
+              <li key={w.id}>
+                {w.name} ({w.otherMembers} other {w.otherMembers === 1 ? 'member' : 'members'})
+              </li>
+            ))}
+          </ul>
+        )}
 
         <div className="flex items-center justify-end gap-3 pt-2 border-t border-[var(--border-subtle)]">
           <Button type="button" variant="secondary" onClick={onClose} disabled={isDeleting}>
