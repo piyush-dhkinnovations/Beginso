@@ -55,7 +55,7 @@ describe('analyticsService', () => {
     expect(mockGet).toHaveBeenCalledWith('/api/analytics/overview', {
       params: { formId: 'form-1', from: '2026-08-01', to: '2026-08-10' },
     });
-    expect(result).toEqual({ totalResponses: 3, statusCounts: { new: 3, in_progress: 0, completed: 0 } });
+    expect(result).toEqual({ totalResponses: 3, categoryCounts: { new: 3, in_progress: 0, completed: 0 } });
   });
 
   it('getTrends calls GET /api/analytics/trends with params and reads bucket out of dateRange', async () => {

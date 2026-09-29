@@ -33,7 +33,10 @@ export interface ExpectedCell {
 // manager-only"). Team and Audit Log are owner/admin only (§7.7). Templates has no entry in this
 // shell at all for any role — the wireframe's "Reviewer: no Templates" rule is trivially true here
 // because nobody sees it in a workspace context, not a per-role distinction worth asserting.
-const WORKSPACE_NAV_BASE = ['Home', 'Forms', 'Activity'];
+// Sprint 12 (inbox-collaboration), task 1.9 — 'Inbox' added in the same PR as
+// src/app/w/[slug]/inbox/page.tsx (WorkspaceSidebar's own "never before" rule). Visible to every
+// role, same as Activity — collaboration signals are not manager-only.
+const WORKSPACE_NAV_BASE = ['Home', 'Forms', 'Inbox', 'Activity'];
 
 export const WORKSPACE_NAV_MATRIX: ExpectedCell[] = [
   {

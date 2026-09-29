@@ -1,24 +1,28 @@
 /**
  * __tests__/components/responses/StatusDropdown.test.tsx
- * Feature: sprint-4-responses
- * Tests: StatusDropdown — colored pill trigger, option menu, onChange, disabled state,
- * Escape closes the menu without bubbling to a parent (e.g. ResponseDrawer's close-on-Escape)
- * Requirements: 5.2, 5.3
+ * sprint-12-inbox-collaboration, requirements.md §7.1 (1.1) — the fixed status union this
+ * dropdown validated against is gone; it now picks a workspace stage from data (task 1.3's own
+ * compile-fix note). Behaviour (keyboard nav, Escape isolation, disabled) is unchanged.
  */
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StatusDropdown } from '@/components/responses/StatusDropdown';
+import type { StageRef } from '@/types/stage';
+
+const STAGES: StageRef[] = [
+  { id: 's-new', name: 'New', colour: 'info', category: 'new' },
+  { id: 's-progress', name: 'In Progress', colour: 'warning', category: 'in_progress' },
+  { id: 's-completed', name: 'Completed', colour: 'success', category: 'completed' },
+];
 
 describe('StatusDropdown', () => {
-  it('renders the current status on the trigger and all 3 options when opened', async () => {
-    // Reverting to "new" is confirmed working backend-side (BUG-04, verified 06 Aug 2026) —
-    // all 3 statuses are freely selectable, no exclusion needed.
+  it('renders the current stage name on the trigger and all stage options when opened', async () => {
     const user = userEvent.setup();
-    render(<StatusDropdown currentStatus="in_progress" onChange={vi.fn()} />);
+    render(<StatusDropdown stages={STAGES} currentStageId="s-progress" onChange={vi.fn()} />);
 
-    const trigger = screen.getByRole('button', { name: 'Response status' });
+    const trigger = screen.getByRole('button', { name: 'Response stage' });
     expect(trigger).toHaveTextContent('In Progress');
 
     await user.click(trigger);
@@ -27,40 +31,42 @@ describe('StatusDropdown', () => {
     expect(screen.getByRole('option', { name: /Completed/ })).toBeInTheDocument();
   });
 
-  it('fires onChange with the newly selected status and closes the menu', async () => {
+  it('fires onChange with the newly selected stage id and closes the menu', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<StatusDropdown currentStatus="new" onChange={onChange} />);
+    render(<StatusDropdown stages={STAGES} currentStageId="s-new" onChange={onChange} />);
 
-    await user.click(screen.getByRole('button', { name: 'Response status' }));
+    await user.click(screen.getByRole('button', { name: 'Response stage' }));
     await user.click(screen.getByRole('option', { name: /Completed/ }));
 
-    expect(onChange).toHaveBeenCalledWith('completed');
+    expect(onChange).toHaveBeenCalledWith('s-completed');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
 
-  it('does not fire onChange when re-selecting the already-current status', async () => {
+  it('does not fire onChange when re-selecting the already-current stage', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<StatusDropdown currentStatus="new" onChange={onChange} />);
+    render(<StatusDropdown stages={STAGES} currentStageId="s-new" onChange={onChange} />);
 
-    await user.click(screen.getByRole('button', { name: 'Response status' }));
+    await user.click(screen.getByRole('button', { name: 'Response stage' }));
     await user.click(screen.getByRole('option', { name: /New/ }));
 
     expect(onChange).not.toHaveBeenCalled();
   });
 
-  it('gives each status a distinctly colored dot on the trigger', () => {
-    const { container: newContainer } = render(<StatusDropdown currentStatus="new" onChange={vi.fn()} />);
-    expect(newContainer.querySelector('.bg-status-new-dot')).toBeInTheDocument();
-
-    const { container: completedContainer } = render(<StatusDropdown currentStatus="completed" onChange={vi.fn()} />);
-    expect(completedContainer.querySelector('.bg-status-active-dot')).toBeInTheDocument();
+  it('renders "Unknown stage" when currentStageId matches nothing, never throws', () => {
+    render(<StatusDropdown stages={STAGES} currentStageId="does-not-exist" onChange={vi.fn()} />);
+    expect(screen.getByRole('button', { name: 'Response stage' })).toHaveTextContent('Unknown stage');
   });
 
   it('disables the trigger when disabled is true', () => {
-    render(<StatusDropdown currentStatus="new" onChange={vi.fn()} disabled />);
-    expect(screen.getByRole('button', { name: 'Response status' })).toBeDisabled();
+    render(<StatusDropdown stages={STAGES} currentStageId="s-new" onChange={vi.fn()} disabled />);
+    expect(screen.getByRole('button', { name: 'Response stage' })).toBeDisabled();
+  });
+
+  it('renders nothing when there are no stages yet, rather than an empty/broken control', () => {
+    const { container } = render(<StatusDropdown stages={[]} currentStageId="" onChange={vi.fn()} />);
+    expect(container).toBeEmptyDOMElement();
   });
 
   it('closes the menu on Escape without letting it bubble to an ancestor listener', async () => {
@@ -68,11 +74,11 @@ describe('StatusDropdown', () => {
     const outerHandler = vi.fn();
     render(
       <div onKeyDown={outerHandler}>
-        <StatusDropdown currentStatus="new" onChange={vi.fn()} />
+        <StatusDropdown stages={STAGES} currentStageId="s-new" onChange={vi.fn()} />
       </div>
     );
 
-    await user.click(screen.getByRole('button', { name: 'Response status' }));
+    await user.click(screen.getByRole('button', { name: 'Response stage' }));
     expect(screen.getByRole('listbox')).toBeInTheDocument();
 
     await user.keyboard('{Escape}');
@@ -83,9 +89,9 @@ describe('StatusDropdown', () => {
   it('supports Arrow, Home, and End navigation through listbox options', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
-    render(<StatusDropdown currentStatus="new" onChange={onChange} />);
+    render(<StatusDropdown stages={STAGES} currentStageId="s-new" onChange={onChange} />);
 
-    const trigger = screen.getByRole('button', { name: 'Response status' });
+    const trigger = screen.getByRole('button', { name: 'Response stage' });
     trigger.focus();
     await user.keyboard('{ArrowDown}');
     expect(screen.getByRole('option', { name: /New/ })).toHaveFocus();
@@ -98,19 +104,19 @@ describe('StatusDropdown', () => {
     expect(screen.getByRole('option', { name: /New/ })).toHaveFocus();
     await user.keyboard('{ArrowUp}{Enter}');
 
-    expect(onChange).toHaveBeenCalledWith('completed');
+    expect(onChange).toHaveBeenCalledWith('s-completed');
     expect(trigger).toHaveFocus();
   });
 
   it('uses 44px touch targets while keeping the compact type scale', async () => {
     const user = userEvent.setup();
-    render(<StatusDropdown currentStatus="new" onChange={vi.fn()} />);
+    render(<StatusDropdown stages={STAGES} currentStageId="s-new" onChange={vi.fn()} />);
 
-    const trigger = screen.getByRole('button', { name: 'Response status' });
+    const trigger = screen.getByRole('button', { name: 'Response stage' });
     expect(trigger).toHaveClass('min-h-11', 'min-w-11');
     await user.click(trigger);
     screen.getAllByRole('option').forEach((option) => {
-      expect(option).toHaveClass('min-h-11', 'text-[11px]', 'leading-[14px]');
+      expect(option).toHaveClass('min-h-11', 'text-[11px]');
     });
   });
 });

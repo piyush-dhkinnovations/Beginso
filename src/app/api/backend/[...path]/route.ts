@@ -34,6 +34,12 @@ const ALLOWED_API_ROOTS = new Set([
   'templates',
   'upload',
   'users',
+  // Sprint 12 (inbox-collaboration, task 1.9) — GET/POST/PATCH/DELETE /api/views (saved views,
+  // B7.1) live under their own root, not /workspaces or /responses — same allowlist trap this
+  // file already documents twice above for 'invitations'/'shared-with-me': without this entry
+  // every saved-view call 404s through the BFF with "Backend path is not allowed" even once the
+  // real backend route exists (design.md §4/§22, requirements.md §13's own "allowlist trap").
+  'views',
   'workspaces',
 ]);
 

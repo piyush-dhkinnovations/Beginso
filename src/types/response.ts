@@ -1,18 +1,14 @@
 /**
- * Shared TypeScript interfaces for Response Management (Sprint 4).
- * Matches the confirmed-live backend contract in docs/backend-contract/api-reference.md §3
- * (frozen 2026-08-05) — NOT the originally assumed shape design.md/requirements.md were
- * written against. Notably: `answers` is a flat label→value object (no fieldId/fieldType),
- * there is no `userAgent`, and `ipHash` is a top-level field, not nested under `metadata`.
+ * Shared TypeScript interfaces for Response Management.
+ * Sprint 12 (inbox-collaboration), requirements.md §7.1/§13, design.md §11.2/§13:
+ * `ResponseStatus`/`STATUS_LABELS` are REMOVED — a response now carries a workspace-defined
+ * `stage` (see `types/stage.ts`). `status` survives only as an optional, deprecated field the
+ * backend derives from `stage.category` during the deprecation window (design.md §11.1,
+ * OQ-2) — new code must not read it. Backend contract to confirm throughout (design.md §11.2);
+ * uncertain fields are flagged per design.md §13.
  */
 
-export type ResponseStatus = 'new' | 'in_progress' | 'completed';
-
-export const STATUS_LABELS: Record<ResponseStatus, string> = {
-  new: 'New',
-  in_progress: 'In Progress',
-  completed: 'Completed',
-};
+import type { Stage, StageCategory, StageRef } from './stage';
 
 export type AnswerValue = string | string[] | number | null;
 
@@ -28,11 +24,45 @@ export interface IResponseFile {
   uploadTime: string;        // ISO 8601
 }
 
+export interface ResponseAssignee {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  /** Uncertain (design.md §13) — set when the assignee's membership has been removed (F16/B3.3);
+   * the name is kept, never blanked (requirements.md §7.8). */
+  removed?: boolean;
+}
+
+export interface ResponseTag {
+  id: string;
+  name: string;
+  colour: string;
+}
+
 export interface IResponse {
   _id: string;
   formId: string;
+  /** Immutable per-form human reference, e.g. "#142" (B8.1). Backend contract to confirm — until
+   * BE 0.3 ships and back-fills existing responses this may be absent; render `shortId(_id)` as a
+   * fallback (kept in `lib/formatters.ts`), never a blank. */
+  reference?: string;
   answers: ResponseAnswers;
-  status: ResponseStatus;
+  stage: StageRef;
+  /** @deprecated Derived from `stage.category` by the backend during the migration window
+   * (design.md §11.1, OQ-2). Do not read in new code — use `stage.category` instead. Kept only so
+   * an unmigrated caller (a saved report scope, a cached bundle) degrades instead of breaking. */
+  status?: StageCategory;
+  assignee: ResponseAssignee | null;
+  tags: ResponseTag[];
+  /** Uncertain (design.md §13) — defaults assumed 0 until BE 0.3/0.2 ship. */
+  noteCount?: number;
+  attachmentCount?: number;
+  /** Per-caller read state (B8.2). Uncertain until BE 0.2 ships — treat an absent value as read
+   * (matches the migration's own "existing = read" default, OQ-4) rather than falsely unread. */
+  unread?: boolean;
+  duplicateOfId?: string | null;
+  /** Uncertain (design.md §13) — cuttable (B6, requirements.md §7.10). */
+  score?: { average: number; count: number } | null;
   ipHash?: string;            // SHA-256(rawIP), never the raw IP — absent when the backend
                                // couldn't resolve a client IP for this submission
   submittedAt: string;        // ISO 8601
@@ -44,13 +74,27 @@ export interface ResponseDetail extends IResponse {
   responseFiles: IResponseFile[];  // mapped from the wire's snake_case `response_files`
 }
 
-export interface GetResponsesParams {
+/** URL/query filter shape shared by the list call and saved views (design.md §11.2/§13). */
+export interface ResponseFilters {
+  stageId?: string;
+  tagIds?: string[];
+  /** A membership id, or the literal 'unassigned' / 'me' (resolved server-side). */
+  assigneeId?: string;
+  unread?: boolean;
+  duplicate?: boolean;
+  from?: string;
+  to?: string;
+  q?: string;
+}
+
+export interface GetResponsesParams extends ResponseFilters {
   /** Omit to list responses across every form in the workspace (the "All Responses" view). */
   formId?: string;
-  status?: ResponseStatus;
-  search?: string;
+  sort?: string;
   page?: number;
   limit?: number;
+  /** @deprecated legacy search param, superseded by `q` — kept only while callers migrate. */
+  search?: string;
 }
 
 export interface PaginatedResponsesResult {
@@ -61,10 +105,13 @@ export interface PaginatedResponsesResult {
   totalPages: number;
 }
 
-/** GET /api/responses/stats */
+/** GET /api/responses/stats (design.md §11.2 — extends the already-live endpoint). */
 export interface ResponseStats {
   total: number;
-  new: number;
-  in_progress: number;
-  completed: number;
+  unread: number;
+  byStage: { stageId: string; name: string; category: StageCategory; count: number }[];
+  byCategory: Record<StageCategory, number>;
 }
+
+// Re-exported for callers that only need the stage shape alongside response types.
+export type { Stage, StageCategory, StageRef };

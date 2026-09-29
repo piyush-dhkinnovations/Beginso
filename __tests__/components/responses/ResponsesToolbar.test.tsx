@@ -1,21 +1,27 @@
 /**
  * __tests__/components/responses/ResponsesToolbar.test.tsx
- * Feature: sprint-4-responses
- * Tests: ResponsesToolbar — debounced search, clear button, status select, count label
- * Requirements: 3.1-3.7
+ * sprint-12-inbox-collaboration, requirements.md §7.2 (2.2) — stage/assignee filters now come
+ * from workspace data (`stages`/`members` props), not the removed status union (task 1.7).
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ResponsesToolbar } from '@/components/responses/ResponsesToolbar';
+import type { StageRef } from '@/types/stage';
+
+const STAGES: StageRef[] = [
+  { id: 's-new', name: 'Screening', colour: 'info', category: 'new' },
+  { id: 's-completed', name: 'Offer', colour: 'success', category: 'completed' },
+];
 
 const baseProps = {
   search: '',
-  status: 'all' as const,
+  filters: {},
+  stages: STAGES,
   total: 3,
   onSearchChange: vi.fn(),
-  onStatusChange: vi.fn(),
+  onFilterChange: vi.fn(),
 };
 
 describe('ResponsesToolbar', () => {
@@ -53,13 +59,38 @@ describe('ResponsesToolbar', () => {
     expect(onSearchChange).toHaveBeenCalledWith('');
   });
 
-  it('fires onStatusChange when the status select changes', async () => {
+  it('lists stages from data — never a hardcoded label — and fires onFilterChange with the stage id', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    const onStatusChange = vi.fn();
-    render(<ResponsesToolbar {...baseProps} onStatusChange={onStatusChange} />);
+    const onFilterChange = vi.fn();
+    render(<ResponsesToolbar {...baseProps} onFilterChange={onFilterChange} />);
 
-    await user.selectOptions(screen.getByLabelText('Filter by status'), 'completed');
-    expect(onStatusChange).toHaveBeenCalledWith('completed');
+    const select = screen.getByLabelText('Filter by stage');
+    expect(screen.getByRole('option', { name: 'Screening' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Offer' })).toBeInTheDocument();
+
+    await user.selectOptions(select, 's-completed');
+    expect(onFilterChange).toHaveBeenCalledWith({ stageId: 's-completed' });
+  });
+
+  it('hides the assignee filter when members is undefined (personal shell, OQ-9)', () => {
+    render(<ResponsesToolbar {...baseProps} members={undefined} />);
+    expect(screen.queryByLabelText('Filter by assignee')).not.toBeInTheDocument();
+  });
+
+  it('shows Unassigned and Me first in the assignee filter when members is given', () => {
+    render(<ResponsesToolbar {...baseProps} members={[]} />);
+    const select = screen.getByLabelText('Filter by assignee') as HTMLSelectElement;
+    const options = Array.from(select.options).map((o) => o.textContent);
+    expect(options.slice(0, 3)).toEqual(['Everyone', 'Unassigned', 'Me']);
+  });
+
+  it('fires onFilterChange when the unread toggle changes', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const onFilterChange = vi.fn();
+    render(<ResponsesToolbar {...baseProps} onFilterChange={onFilterChange} />);
+
+    await user.click(screen.getByLabelText('Unread only'));
+    expect(onFilterChange).toHaveBeenCalledWith({ unread: true });
   });
 
   it('renders the count label in singular and plural form', () => {

@@ -3,18 +3,31 @@
 import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
+import { Select } from '@/components/ui/Select';
+import { Switch } from '@/components/ui/Switch';
 import { useDebounce } from '@/hooks/useDebounce';
-import { STATUS_LABELS, type ResponseStatus } from '@/types/response';
+import type { ResponseFilters } from '@/types/response';
+import type { StageRef } from '@/types/stage';
+import type { MemberListItem } from '@/types/team';
 
 interface ResponsesToolbarProps {
   search: string;
-  status: ResponseStatus | 'all';
+  filters: ResponseFilters;
+  stages: readonly StageRef[];
+  /** Undefined/empty for the personal shell — the assignee filter is hidden there (OQ-9). */
+  members?: MemberListItem[];
   total: number;
   onSearchChange: (v: string) => void;
-  onStatusChange: (s: ResponseStatus | 'all') => void;
+  onFilterChange: (patch: Partial<ResponseFilters>) => void;
 }
 
-export function ResponsesToolbar({ search, status, total, onSearchChange, onStatusChange }: ResponsesToolbarProps) {
+/**
+ * Sprint 12 (inbox-collaboration), requirements.md §7.2 (2.2). Rebuilt on `components/ui/` —
+ * the stage filter now comes from workspace data (`stages` prop), never a hardcoded union
+ * (requirements.md §7.1's own rule: "renders the stage's name ... from data, never a hardcoded
+ * label"). Tag filter and "Save view" are Phase 2 (task 2.2/2.6) — not built here.
+ */
+export function ResponsesToolbar({ search, filters, stages, members, total, onSearchChange, onFilterChange }: ResponsesToolbarProps) {
   const [inputValue, setInputValue] = useState(search);
   const [syncedSearch, setSyncedSearch] = useState(search);
   const debounced = useDebounce(inputValue, 300);
@@ -32,8 +45,8 @@ export function ResponsesToolbar({ search, status, total, onSearchChange, onStat
   }, [debounced]);
 
   return (
-    <div className="flex items-center gap-3">
-      <div className="flex-1 max-w-sm">
+    <div className="flex flex-wrap items-center gap-3">
+      <div className="flex-1 min-w-50 max-w-sm">
         <Input
           id="responses-search"
           placeholder="Search responses…"
@@ -48,7 +61,7 @@ export function ResponsesToolbar({ search, status, total, onSearchChange, onStat
                   setInputValue('');
                   onSearchChange('');
                 }}
-                className="flex min-h-11 min-w-11 items-center justify-center text-neutral-400 hover:text-neutral-600"
+                className="flex min-h-11 min-w-11 items-center justify-center text-text-muted hover:text-text-secondary"
               >
                 <X size={16} />
               </button>
@@ -57,19 +70,40 @@ export function ResponsesToolbar({ search, status, total, onSearchChange, onStat
         />
       </div>
 
-      <select
-        value={status}
-        onChange={(e) => onStatusChange(e.target.value as ResponseStatus | 'all')}
-        aria-label="Filter by status"
-        className="h-[38px] min-h-[44px] rounded-md px-3 text-[13px] bg-white border-2 border-neutral-200 focus:border-neutral-500 outline-none transition-colors"
+      <Select
+        id="responses-stage-filter"
+        aria-label="Filter by stage"
+        value={filters.stageId ?? 'all'}
+        onChange={(e) => onFilterChange({ stageId: e.target.value === 'all' ? undefined : e.target.value })}
       >
-        <option value="all">All Statuses</option>
-        {(Object.keys(STATUS_LABELS) as ResponseStatus[]).map((s) => (
-          <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+        <option value="all">All Stages</option>
+        {stages.map((s) => (
+          <option key={s.id} value={s.id}>{s.name}</option>
         ))}
-      </select>
+      </Select>
 
-      <span className="text-body-sm text-neutral-500 whitespace-nowrap ml-auto">
+      {members !== undefined && (
+        <Select
+          id="responses-assignee-filter"
+          aria-label="Filter by assignee"
+          value={filters.assigneeId ?? 'all'}
+          onChange={(e) => onFilterChange({ assigneeId: e.target.value === 'all' ? undefined : e.target.value })}
+        >
+          <option value="all">Everyone</option>
+          <option value="unassigned">Unassigned</option>
+          <option value="me">Me</option>
+          {members.map((m) => (
+            <option key={m.membershipId} value={m.membershipId}>{m.name}</option>
+          ))}
+        </Select>
+      )}
+
+      <label htmlFor="responses-unread-filter" className="flex items-center gap-2 text-body-sm text-text-secondary">
+        <Switch id="responses-unread-filter" checked={!!filters.unread} onChange={(checked) => onFilterChange({ unread: checked || undefined })} />
+        Unread only
+      </label>
+
+      <span className="text-body-sm text-text-muted whitespace-nowrap ml-auto">
         {total} response{total === 1 ? '' : 's'}
       </span>
     </div>

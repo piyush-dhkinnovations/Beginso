@@ -24,7 +24,7 @@ vi.mock('@/services/responses', () => ({
   responsesService: {
     getResponses: (...args: unknown[]) => mockGetResponses(...args),
     getStats: (...args: unknown[]) => mockGetStats(...args),
-    updateStatus: vi.fn(),
+    update: vi.fn(),
     deleteResponse: vi.fn(),
   },
 }));
@@ -52,7 +52,7 @@ describe('ResponsesHubView query and pagination states', () => {
     mockPush.mockReset();
     mockGetFormById.mockReset().mockResolvedValue(form);
     mockGetResponses.mockReset().mockResolvedValue(emptyPage);
-    mockGetStats.mockReset().mockResolvedValue({ total: 0, new: 0, in_progress: 0, completed: 0 });
+    mockGetStats.mockReset().mockResolvedValue({ total: 0, unread: 0, byStage: [], byCategory: { new: 0, in_progress: 0, completed: 0 } });
   });
 
   it('attributes a response-list failure to the list, not to a missing form', async () => {
@@ -79,13 +79,20 @@ describe('ResponsesHubView query and pagination states', () => {
     expect(mockReplace).toHaveBeenCalledWith('/forms/form-1/responses?page=1');
   });
 
-  it('removes an invalid status URL and does not send it to the service', async () => {
+  it('ignores an invalid legacy status URL — never sent to the service, valid page kept', async () => {
+    // sprint-12-inbox-collaboration: legacy `?status=` is now resolved against real workspace
+    // stages (lib/inboxFilters.ts), not validated against the removed fixed union. An
+    // unrecognised value simply maps to no stage filter, rather than being stripped and
+    // resetting the page — see inboxFilters.test.ts for the mapping's own coverage.
     search = 'status=administrator&page=4';
+    mockGetResponses.mockResolvedValue({ ...emptyPage, page: 4, totalPages: 5 });
     renderHub();
 
     await waitFor(() => expect(mockGetResponses).toHaveBeenCalled());
-    expect(mockGetResponses.mock.calls[0][0]).toMatchObject({ status: undefined, page: 4 });
-    expect(mockReplace).toHaveBeenCalledWith('/forms/form-1/responses?page=1');
+    const [params] = mockGetResponses.mock.calls[0];
+    expect(params).not.toHaveProperty('status');
+    expect(params.stageId).toBeUndefined();
+    expect(params.page).toBe(4);
   });
 
   it('clamps a beyond-last-page URL to the final available page', async () => {

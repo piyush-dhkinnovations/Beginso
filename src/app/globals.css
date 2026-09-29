@@ -255,6 +255,22 @@
   container-type: inline-size;
 }
 
+/* Sprint 12 (inbox-collaboration), design.md §3/§6: ResponseSignals renders in three genuinely
+   different available widths at the same viewport size — a wide table cell, a narrow board
+   column, a stacked mobile card — so it needs a container query, not a media query, same
+   reasoning as .branding-panel-shell above. `density` (row/card/compact) is the primary driver,
+   passed explicitly by the parent view; this query only trims the assignee name once the
+   signals row itself is genuinely narrow, regardless of which density variant is active. */
+.response-signals {
+  container-type: inline-size;
+}
+
+@container (max-width: 160px) {
+  .response-signals-assignee-name {
+    display: none;
+  }
+}
+
 /* Forms Manager row: same icon/title/badge/actions elements, rearranged per breakpoint via named
    grid areas instead of duplicated markup — avoids fixed w-64/w-20 columns overflowing narrow
    screens. Title stacks over its own meta text (nested inside the "title" cell, not a separate

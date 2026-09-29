@@ -187,7 +187,6 @@ describe('ReportJobsList', () => {
       expect(mockCreateReport).toHaveBeenCalledWith({
         format: 'csv',
         formId: 'form-9',
-        status: 'completed',
         from: '2026-07-01T00:00:00.000Z',
         to: '2026-07-31T00:00:00.000Z',
       })

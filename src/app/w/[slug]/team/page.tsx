@@ -210,7 +210,7 @@ export default function TeamPage() {
         title="Leave this workspace?"
         description="You will lose access to its forms and responses immediately. An owner or admin can invite you back."
       >
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-[var(--border-default)]">
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-(--border-default)">
           <Button type="button" variant="secondary" onClick={() => setIsLeaveOpen(false)}>
             Cancel
           </Button>
