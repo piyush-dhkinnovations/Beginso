@@ -34,7 +34,7 @@ describe('StatusDistributionChart', () => {
   });
 
   it('does not render the donut when total responses is 0 — renders the shared empty state instead', () => {
-    const overview = mockAnalyticsOverview({ totalResponses: 0, statusCounts: { new: 0, in_progress: 0, completed: 0 } });
+    const overview = mockAnalyticsOverview({ totalResponses: 0, categoryCounts: { new: 0, in_progress: 0, completed: 0 } });
     render(<StatusDistributionChart overview={overview} isLoading={false} isAllTime />);
 
     expect(screen.getByText('No responses yet')).toBeInTheDocument();
@@ -42,7 +42,7 @@ describe('StatusDistributionChart', () => {
   });
 
   it('renders exactly 3 segments with the status-dot design-token colors, and the center total', () => {
-    const overview = mockAnalyticsOverview({ totalResponses: 128, statusCounts: { new: 42, in_progress: 36, completed: 50 } });
+    const overview = mockAnalyticsOverview({ totalResponses: 128, categoryCounts: { new: 42, in_progress: 36, completed: 50 } });
     render(<StatusDistributionChart overview={overview} isLoading={false} />);
 
     const chart = screen.getByRole('img', { name: 'Response status distribution' });
@@ -61,14 +61,14 @@ describe('StatusDistributionChart', () => {
   });
 
   it('comma-formats a large center total (e.g. "1,284")', () => {
-    const overview = mockAnalyticsOverview({ totalResponses: 1284, statusCounts: { new: 184, in_progress: 326, completed: 774 } });
+    const overview = mockAnalyticsOverview({ totalResponses: 1284, categoryCounts: { new: 184, in_progress: 326, completed: 774 } });
     render(<StatusDistributionChart overview={overview} isLoading={false} />);
 
     expect(screen.getByText('1,284')).toBeInTheDocument();
   });
 
   it('renders a legend with status name, count, and percentage, plus a matching sr-only table', () => {
-    const overview = mockAnalyticsOverview({ totalResponses: 10, statusCounts: { new: 5, in_progress: 3, completed: 2 } });
+    const overview = mockAnalyticsOverview({ totalResponses: 10, categoryCounts: { new: 5, in_progress: 3, completed: 2 } });
     render(<StatusDistributionChart overview={overview} isLoading={false} />);
 
     expect(screen.getAllByText('New').length).toBeGreaterThan(0);

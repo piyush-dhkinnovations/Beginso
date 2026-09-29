@@ -12,14 +12,6 @@ import { formsService } from '@/services/forms';
 import { reportsService } from '@/services/reports';
 import { reportKeys } from '@/lib/queryKeys';
 import type { CreateReportPayload, PaginatedReportsResult, ReportFormat, ReportJob } from '@/types/report';
-import type { ResponseStatus } from '@/types/response';
-
-const STATUS_OPTIONS: { value: ResponseStatus | 'all'; label: string }[] = [
-  { value: 'all', label: 'All Statuses' },
-  { value: 'new', label: 'New' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'completed', label: 'Completed' },
-];
 
 const SELECT_CLASS = 'min-h-11 rounded-md border-2 border-neutral-200 bg-white px-3 text-body-sm outline-none focus:border-neutral-500';
 
@@ -43,7 +35,6 @@ export function ReportsView() {
   // view, so none of these fire a request until "Generate" is clicked. `?formId=` only seeds the
   // initial selection on mount (Requirement 9.4), it doesn't keep the form select URL-bound.
   const [formId, setFormId] = useState<string | undefined>(searchParams.get('formId') ?? undefined);
-  const [status, setStatus] = useState<ResponseStatus | 'all'>('all');
   const [dateRange, setDateRange] = useState<{ from?: string; to?: string }>({});
 
   const { data: formsData } = useQuery({
@@ -71,7 +62,6 @@ export function ReportsView() {
       const optimisticJob: ReportJob = {
         ...job,
         formId: job.formId ?? payload.formId,
-        responseStatus: job.responseStatus ?? payload.status,
         from: job.from ?? payload.from,
         to: job.to ?? payload.to,
       };
@@ -87,7 +77,6 @@ export function ReportsView() {
     createReportMutation.mutate({
       format,
       formId,
-      status: status === 'all' ? undefined : status,
       from: dateRange.from,
       to: dateRange.to,
     });
@@ -104,17 +93,17 @@ export function ReportsView() {
       <PageHeader title="Reports" description="Export your form responses as a CSV or PDF file." />
 
       <div className="flex flex-col gap-4 rounded-lg border border-neutral-200 bg-white p-4">
+        {/* Sprint 12 (inbox-collaboration), requirements.md §7.3 #4: the status scope picker is
+            removed, not replaced with a stage picker — this view only renders under the personal
+            shell today (this file's own comment above), where stages are OQ-9's fixed defaults,
+            not a fetchable workspace list. A stage-scoped export picker lands once Reports gets a
+            workspace-scoped route (design.md §4's "revisit if/when Reports gets a workspace-scoped
+            route"), rather than shipping a picker with no real stage data behind it. */}
         <div className="flex flex-col sm:flex-row gap-3">
           <select aria-label="Form" value={formId ?? 'all'} onChange={(e) => setFormId(e.target.value === 'all' ? undefined : e.target.value)} className={SELECT_CLASS}>
             <option value="all">All Forms</option>
             {forms.map((f) => (
               <option key={f._id} value={f._id}>{f.title}</option>
-            ))}
-          </select>
-
-          <select aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value as ResponseStatus | 'all')} className={SELECT_CLASS}>
-            {STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
         </div>

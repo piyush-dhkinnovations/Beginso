@@ -56,6 +56,12 @@ const RAW_CAPABILITIES: readonly CapabilityGroup[] = [
       { key: 'responses:view', label: 'View responses', roles: ['owner', 'admin', 'member', 'viewer'] },
       { key: 'responses:export', label: 'Export responses', roles: ['owner', 'admin', 'member'] },
       { key: 'responses:delete', label: 'Delete responses', roles: ['owner', 'admin'] },
+      // Sprint 12 (inbox-collaboration), requirements.md §14 / design.md §11.3 — tag, assign, note,
+      // score and change stage. Matches the wireframe's own `act` capability; granted to Reviewer
+      // too (design.md §11.3's permission table), same as `responses:view` above.
+      { key: 'responses:act', label: 'Tag, assign, note and change stage', roles: ['owner', 'admin', 'member', 'viewer'] },
+      { key: 'stages:manage', label: 'Manage pipeline stages', roles: ['owner', 'admin'] },
+      { key: 'tags:manage', label: 'Manage tag library', roles: ['owner', 'admin'] },
     ],
   },
   {
@@ -92,6 +98,20 @@ export function canViewAudit(role: Role | undefined): boolean {
 
 export function canDeleteForm(role: Role | undefined): boolean {
   return role !== undefined && hasCapability(role, 'forms:delete');
+}
+
+// Sprint 12 (inbox-collaboration), requirements.md §14 — named helpers for the three new
+// capabilities, matching this file's own canManageMembers/canViewAudit precedent.
+export function canActOnResponses(role: Role | undefined): boolean {
+  return role !== undefined && hasCapability(role, 'responses:act');
+}
+
+export function canManageStages(role: Role | undefined): boolean {
+  return role !== undefined && hasCapability(role, 'stages:manage');
+}
+
+export function canManageTags(role: Role | undefined): boolean {
+  return role !== undefined && hasCapability(role, 'tags:manage');
 }
 
 // Role-filtered navigation (requirements.md §7.7) — exact rule from the wireframe's own

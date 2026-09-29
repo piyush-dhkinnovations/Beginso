@@ -68,7 +68,7 @@ export default function FormOverviewPage() {
   });
 
   const responsesQuery = useQuery({
-    queryKey: responseKeys.list(formId, { limit: RECENT_RESPONSES }),
+    queryKey: responseKeys.list('personal', formId, { limit: RECENT_RESPONSES }),
     queryFn: () => responsesService.getResponses({ formId, limit: RECENT_RESPONSES }),
   });
 

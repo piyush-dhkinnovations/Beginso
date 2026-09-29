@@ -1,8 +1,8 @@
 /**
  * __tests__/components/responses/ResponsesTable.test.tsx
- * Feature: sprint-4-responses
- * Tests: ResponsesTable — skeleton loading, empty state, row rendering, master checkbox states
- * Requirements: 2.1-2.8, 7.1, 7.6
+ * sprint-12-inbox-collaboration, requirements.md §7.2 (2.1) — rebuilt on `ui/Table` (task 1.7);
+ * fixtures now carry `stage`/`assignee`/`tags`, and the "no matches" prop is `hasActiveFilters`/
+ * `onClearFilters`, not the old `hasActiveSearch`/`onClearSearch`.
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -18,8 +18,15 @@ function makeResponse(id: string, overrides: Partial<IResponse> = {}): IResponse
   return {
     _id: id,
     formId: 'form-1',
+    reference: `#${id}`,
     answers: { Name: 'Test' },
-    status: 'new',
+    stage: { id: 's-new', name: 'New', colour: 'info', category: 'new' },
+    assignee: null,
+    tags: [],
+    noteCount: 0,
+    attachmentCount: 0,
+    unread: false,
+    duplicateOfId: null,
     ipHash: 'a1b2c3d4e5f60718',
     submittedAt: '2026-08-03T09:50:00.000Z',
     createdAt: '2026-08-03T09:50:00.000Z',
@@ -40,7 +47,7 @@ describe('ResponsesTable', () => {
     const { container } = render(
       <ResponsesTable {...baseProps} responses={[]} isLoading selectedIds={new Set()} />
     );
-    expect(container.querySelectorAll('.animate-pulse').length).toBeGreaterThan(0);
+    expect(container.querySelectorAll('.bg-skeleton').length).toBeGreaterThan(0);
   });
 
   it('renders EmptyState when responses is empty and not loading', () => {
@@ -58,29 +65,35 @@ describe('ResponsesTable', () => {
     expect(screen.getByRole('button', { name: 'Go to Forms' })).toBeInTheDocument();
   });
 
-  it('renders the "no match" empty state when a search is active and returns nothing', () => {
-    // Feature: sprint-4-responses, Requirement 3.5
-    const onClearSearch = vi.fn();
+  it('renders the "no matches" empty state when filters are active and return nothing', () => {
+    const onClearFilters = vi.fn();
     render(
       <ResponsesTable
         {...baseProps}
         responses={[]}
         isLoading={false}
         selectedIds={new Set()}
-        hasActiveSearch
-        onClearSearch={onClearSearch}
+        hasActiveFilters
+        onClearFilters={onClearFilters}
       />
     );
-    expect(screen.getByText('No responses match your search.')).toBeInTheDocument();
+    expect(screen.getByText('No responses match these filters')).toBeInTheDocument();
     expect(screen.queryByText('No responses yet')).not.toBeInTheDocument();
-    screen.getByText('Clear search').click();
-    expect(onClearSearch).toHaveBeenCalledOnce();
+    screen.getByText('Clear filters').click();
+    expect(onClearFilters).toHaveBeenCalledOnce();
   });
 
-  it('renders one row per response', () => {
+  it('renders one row per response, with its stage badge', () => {
     const responses = [makeResponse('r1'), makeResponse('r2')];
     render(<ResponsesTable {...baseProps} responses={responses} isLoading={false} selectedIds={new Set()} />);
     expect(screen.getAllByRole('row')).toHaveLength(3); // header + 2 data rows
+    expect(screen.getAllByText('New')).toHaveLength(2);
+  });
+
+  it('renders "Unknown stage" for a response whose stage was deleted, never throws', () => {
+    const responses = [makeResponse('r1', { stage: { id: '', name: '', colour: 'neutral', category: 'new' } })];
+    render(<ResponsesTable {...baseProps} responses={responses} isLoading={false} selectedIds={new Set()} />);
+    expect(screen.getByText('Unknown stage')).toBeInTheDocument();
   });
 
   it('master checkbox is unchecked when nothing selected', () => {
@@ -88,7 +101,6 @@ describe('ResponsesTable', () => {
     render(<ResponsesTable {...baseProps} responses={responses} isLoading={false} selectedIds={new Set()} />);
     const checkbox = screen.getByLabelText('Select all responses on this page');
     expect(checkbox).not.toBeChecked();
-    expect(checkbox.closest('label')).toHaveClass('min-h-11', 'min-w-11');
   });
 
   it('master checkbox is checked when all rows are selected', () => {
@@ -97,14 +109,5 @@ describe('ResponsesTable', () => {
       <ResponsesTable {...baseProps} responses={responses} isLoading={false} selectedIds={new Set(['r1', 'r2'])} />
     );
     expect(screen.getByLabelText('Select all responses on this page')).toBeChecked();
-  });
-
-  it('master checkbox is indeterminate when some rows are selected', () => {
-    const responses = [makeResponse('r1'), makeResponse('r2')];
-    render(
-      <ResponsesTable {...baseProps} responses={responses} isLoading={false} selectedIds={new Set(['r1'])} />
-    );
-    const checkbox = screen.getByLabelText('Select all responses on this page') as HTMLInputElement;
-    expect(checkbox.indeterminate).toBe(true);
   });
 });

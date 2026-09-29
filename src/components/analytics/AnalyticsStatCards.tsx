@@ -5,6 +5,9 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import type { AnalyticsOverview } from '@/types/analytics';
 
+// Sprint 12 (inbox-collaboration), requirements.md §7.3 #3 — see StatusDistributionChart.tsx's
+// own comment: these three labels are the fixed category enum, not a workspace-defined stage name.
+
 interface AnalyticsStatCardsProps {
   overview?: AnalyticsOverview;
   isLoading: boolean;
@@ -27,9 +30,9 @@ export function AnalyticsStatCards({ overview, isLoading, isError = false, onRet
 
   const cards = [
     { label: 'Total Responses', value: overview?.totalResponses ?? 0, icon: Inbox },
-    { label: 'Completed', value: overview?.statusCounts?.completed ?? 0, icon: CheckCircle2 },
-    { label: 'In Progress', value: overview?.statusCounts?.in_progress ?? 0, icon: Clock },
-    { label: 'New', value: overview?.statusCounts?.new ?? 0, icon: Sparkles },
+    { label: 'Completed', value: overview?.categoryCounts?.completed ?? 0, icon: CheckCircle2 },
+    { label: 'In Progress', value: overview?.categoryCounts?.in_progress ?? 0, icon: Clock },
+    { label: 'New', value: overview?.categoryCounts?.new ?? 0, icon: Sparkles },
   ];
 
   return (

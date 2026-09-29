@@ -29,12 +29,30 @@ function pickAnswers(keys: string[]): ResponseAnswers {
   return Object.fromEntries(keys.map((k) => [k, ALL_FIELD_ANSWERS[k]]));
 }
 
+// Sprint 12 (inbox-collaboration) — `stage`/`assignee`/`tags` are now required on `IResponse`;
+// `status` is kept only as the deprecated derived field, still handy for these mocks' own
+// `status: 'new' | 'in_progress' | 'completed'` overrides below (mapped onto a matching stage).
+export const MOCK_STAGES: Record<'new' | 'in_progress' | 'completed', IResponse['stage']> = {
+  new: { id: 'stage-new', name: 'New', colour: 'info', category: 'new' },
+  in_progress: { id: 'stage-in-progress', name: 'In Progress', colour: 'warning', category: 'in_progress' },
+  completed: { id: 'stage-completed', name: 'Completed', colour: 'success', category: 'completed' },
+};
+
 function makeResponse(overrides: Partial<IResponse> = {}): IResponse {
+  const status = overrides.status ?? 'new';
   return {
     _id: '6b1f0e2a9497f0a0ea093b01',
     formId: 'mock-form-id',
+    reference: '#1',
     answers: pickAnswers(['Full Name', 'Email Address']),
-    status: 'new',
+    stage: MOCK_STAGES[status],
+    status,
+    assignee: null,
+    tags: [],
+    noteCount: 0,
+    attachmentCount: 0,
+    unread: false,
+    duplicateOfId: null,
     ipHash: 'a1b2c3d4e5f60718',
     submittedAt: '2026-08-03T09:50:00.000Z',
     createdAt: '2026-08-03T09:50:00.000Z',

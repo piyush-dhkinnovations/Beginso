@@ -1,7 +1,12 @@
 /**
  * Shared TypeScript interfaces for Analytics.
- * Shapes match the backend contract in docs/backend-contract/api-reference.md §4.
+ * Shapes match the backend contract in docs/backend-contract/api-reference.md §4, extended by
+ * Sprint 12 (inbox-collaboration) requirements.md §7.3 #3 / design.md §2: the status split groups
+ * by workspace-defined stage `category` (OQ-11's default) so a custom stage set still yields a
+ * coherent three-bucket donut, rather than by the removed fixed `status` union.
  */
+
+import type { StageCategory } from './stage';
 
 export interface GetAnalyticsParams {
   formId?: string;
@@ -14,11 +19,11 @@ export type DateRangePreset = '7d' | '30d' | '90d' | 'all' | 'custom';
 
 export interface AnalyticsOverview {
   totalResponses: number;
-  statusCounts: {
-    new: number;
-    in_progress: number;
-    completed: number;
-  };
+  /** Grouped by stage `category`, not the removed `status` union — same three keys, new meaning
+   * (requirements.md §7.3). @deprecated alias name kept as `categoryCounts` for clarity; the old
+   * `statusCounts` name is gone entirely, not kept as a second deprecated field, since every known
+   * consumer is migrated in this same sprint (task 1.10). */
+  categoryCounts: Record<StageCategory, number>;
 }
 
 export interface AnalyticsTrendPoint {

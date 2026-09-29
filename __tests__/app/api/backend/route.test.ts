@@ -109,6 +109,15 @@ describe('BFF proxy — allowlist', () => {
     expect(fetch).toHaveBeenCalled();
   });
 
+  // sprint-12-inbox-collaboration, task 1.9 — saved views (B7.1) live under their own root; the
+  // allowlist trap this same describe block already documents for events/audit above.
+  it('allows GET /api/views (Sprint 12 saved views)', async () => {
+    const req = makeRequest('api/views');
+    const res = await GET(req, { params: Promise.resolve({ path: ['api', 'views'] }) });
+    expect(res.status).not.toBe(404);
+    expect(fetch).toHaveBeenCalled();
+  });
+
   it('rejects an unknown root with 404 "Backend path is not allowed"', async () => {
     const req = makeRequest('api/not-a-real-root');
     const res = await GET(req, { params: Promise.resolve({ path: ['api', 'not-a-real-root'] }) });

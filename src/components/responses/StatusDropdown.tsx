@@ -3,36 +3,36 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { STATUS_LABELS, type ResponseStatus } from '@/types/response';
+import type { StageRef } from '@/types/stage';
 
+/**
+ * Sprint 12 (inbox-collaboration), requirements.md §7.1 (1.1): the fixed `ResponseStatus` union
+ * this dropdown validated against is gone — it now picks a workspace stage from data instead of a
+ * hardcoded label. Kept as a compiling, working stage picker for `MetadataSidebar`/`ResponseDrawer`
+ * (still Phase 4 components per design.md's file list) until task 4.3 replaces this whole sidebar
+ * with `WorkflowSidebar`'s stage `<select>`, per design.md §22's "Remove: ... StatusDropdown.tsx
+ * (replaced by stage select)".
+ */
 interface StatusDropdownProps {
-  currentStatus: ResponseStatus;
-  onChange: (s: ResponseStatus) => void;
+  stages: readonly StageRef[];
+  currentStageId: string;
+  onChange: (stageId: string) => void;
   disabled?: boolean;
 }
 
-const STATUSES = Object.keys(STATUS_LABELS) as ResponseStatus[];
-
-// Same color tokens Badge.tsx uses per status — the dot alone carries the color-coding here
-// (reference design uses a neutral pill for the trigger, not a per-status colored badge).
-const STATUS_DOT: Record<ResponseStatus, string> = {
-  new: 'bg-status-new-dot',
-  in_progress: 'bg-status-progress-dot',
-  completed: 'bg-status-active-dot',
-};
-
-export function StatusDropdown({ currentStatus, onChange, disabled }: StatusDropdownProps) {
+export function StatusDropdown({ stages, currentStageId, onChange, disabled }: StatusDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(() => STATUSES.indexOf(currentStatus));
+  const currentIndex = Math.max(stages.findIndex((s) => s.id === currentStageId), 0);
+  const [activeIndex, setActiveIndex] = useState(currentIndex);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const current = stages.find((s) => s.id === currentStageId);
 
   useEffect(() => {
     if (isOpen) optionRefs.current[activeIndex]?.focus();
   }, [activeIndex, isOpen]);
 
-  // Same outside-click pattern as UserProfileDropdown.
   useEffect(() => {
     if (!isOpen) return;
     const handleOutsideClick = (e: MouseEvent) => {
@@ -42,21 +42,20 @@ export function StatusDropdown({ currentStatus, onChange, disabled }: StatusDrop
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [isOpen]);
 
-  const selectStatus = (status: ResponseStatus) => {
+  const selectStage = (stageId: string) => {
     setIsOpen(false);
     triggerRef.current?.focus();
-    if (status !== currentStatus) onChange(status);
+    if (stageId !== currentStageId) onChange(stageId);
   };
 
   const openMenu = () => {
-    setActiveIndex(Math.max(STATUSES.indexOf(currentStatus), 0));
+    setActiveIndex(Math.max(stages.findIndex((s) => s.id === currentStageId), 0));
     setIsOpen(true);
   };
 
+  if (stages.length === 0) return null;
+
   return (
-    // stopPropagation on Escape so this only closes the menu — without it, the keydown
-    // bubbles to ResponseDrawer's document-level Escape listener and closes the whole
-    // drawer instead of just the status menu.
     <div
       className="relative inline-block"
       ref={containerRef}
@@ -79,12 +78,12 @@ export function StatusDropdown({ currentStatus, onChange, disabled }: StatusDrop
             return;
           }
           const direction = e.key === 'ArrowDown' ? 1 : -1;
-          setActiveIndex((index) => (index + direction + STATUSES.length) % STATUSES.length);
+          setActiveIndex((index) => (index + direction + stages.length) % stages.length);
           return;
         }
         if (isOpen && (e.key === 'Home' || e.key === 'End')) {
           e.preventDefault();
-          setActiveIndex(e.key === 'Home' ? 0 : STATUSES.length - 1);
+          setActiveIndex(e.key === 'Home' ? 0 : stages.length - 1);
         }
       }}
     >
@@ -92,44 +91,40 @@ export function StatusDropdown({ currentStatus, onChange, disabled }: StatusDrop
         ref={triggerRef}
         type="button"
         disabled={disabled}
-        onClick={() => {
-          if (isOpen) setIsOpen(false);
-          else openMenu();
-        }}
+        onClick={() => (isOpen ? setIsOpen(false) : openMenu())}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        aria-label="Response status"
-        className="flex min-h-11 min-w-11 items-center gap-1.5 rounded-md border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-body-sm font-medium text-neutral-800 outline-none transition-colors hover:border-neutral-300 hover:bg-white focus:ring-2 focus:ring-neutral-400 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60"
+        aria-label="Response stage"
+        className="flex min-h-11 min-w-11 items-center gap-1.5 rounded-md border border-(--border-default) bg-(--bg-subtle) px-2.5 py-1 text-body-sm font-medium text-(--text-primary) outline-none transition-colors hover:bg-(--surface-hover) focus:ring-2 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <span className={cn('h-2 w-2 shrink-0 rounded-full', STATUS_DOT[currentStatus])} />
-        {STATUS_LABELS[currentStatus]}
-        <ChevronDown size={14} className={cn('shrink-0 text-neutral-400 transition-transform', isOpen && 'rotate-180')} />
+        <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full bg-(--action-primary)" />
+        {current?.name ?? 'Unknown stage'}
+        <ChevronDown size={14} className={cn('shrink-0 text-(--text-muted) transition-transform', isOpen && 'rotate-180')} />
       </button>
 
       {isOpen && (
         <ul
           role="listbox"
-          aria-label="Response status options"
-          className="absolute right-0 z-10 mt-1 w-32 rounded-md border border-neutral-200 bg-white py-1 shadow-md animate-fade-in"
+          aria-label="Stage options"
+          className="absolute right-0 z-10 mt-1 w-40 rounded-md border border-(--border-default) bg-(--surface-card) py-1 shadow-md animate-fade-in"
         >
-          {STATUSES.map((status, index) => (
-            <li key={status}>
+          {stages.map((stage, index) => (
+            <li key={stage.id}>
               <button
                 ref={(node) => { optionRefs.current[index] = node; }}
                 type="button"
                 role="option"
                 tabIndex={index === activeIndex ? 0 : -1}
-                aria-selected={status === currentStatus}
+                aria-selected={stage.id === currentStageId}
                 onFocus={() => setActiveIndex(index)}
-                onClick={() => selectStatus(status)}
+                onClick={() => selectStage(stage.id)}
                 className={cn(
-                  'flex min-h-11 w-full items-center gap-1.5 px-2.5 py-1 text-left text-[11px] leading-[14px] transition-colors outline-none focus:bg-neutral-100',
-                  status === currentStatus ? 'bg-brand-50 font-medium text-neutral-900' : 'font-normal text-neutral-700 hover:bg-neutral-50'
+                  'flex min-h-11 w-full items-center gap-1.5 px-2.5 py-1 text-left text-[11px] leading-3.5 transition-colors outline-none focus:bg-(--surface-hover)',
+                  stage.id === currentStageId ? 'font-medium text-(--text-primary)' : 'font-normal text-(--text-secondary) hover:bg-(--surface-hover)'
                 )}
               >
-                <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', STATUS_DOT[status])} />
-                <span className="flex-1">{STATUS_LABELS[status]}</span>
-                {status === currentStatus && <Check size={12} className="shrink-0 text-brand-600" />}
+                <span className="flex-1">{stage.name}</span>
+                {stage.id === currentStageId && <Check size={12} className="shrink-0 text-(--action-primary)" />}
               </button>
             </li>
           ))}

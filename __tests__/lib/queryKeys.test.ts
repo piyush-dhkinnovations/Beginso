@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   workspaceKeys, teamKeys, invitationKeys, formAccessKeys, sharedKeys,
-  formKeys, formEventKeys, activityKeys, auditKeys,
+  formKeys, formEventKeys, activityKeys, auditKeys, responseKeys, stageKeys,
 } from '@/lib/queryKeys';
 
 describe('workspaceKeys', () => {
@@ -101,5 +101,29 @@ describe('activityKeys / auditKeys / formEventKeys', () => {
   it('formKeys.overview() is namespaced per form', () => {
     expect(formKeys.overview('a')).not.toEqual(formKeys.overview('b'));
     expect(formKeys.overview('a')).toEqual(['form', 'a', 'overview']);
+  });
+});
+
+// Sprint 12 (inbox-collaboration), design.md §10, task 1.4 — resolves OQ-1's frontend half.
+// responseKeys/stageKeys gain a scope segment; two scopes must never share a key.
+describe('responseKeys / stageKeys — scope-namespaced (Sprint 12)', () => {
+  it('responseKeys.all() differs across scopes', () => {
+    expect(responseKeys.all('personal')).not.toEqual(responseKeys.all('acme'));
+  });
+
+  it('responseKeys.list() differs across scopes with identical params/formId', () => {
+    expect(responseKeys.list('personal', 'f1', {})).not.toEqual(responseKeys.list('acme', 'f1', {}));
+  });
+
+  it('responseKeys.detail() differs across scopes for the same response id', () => {
+    expect(responseKeys.detail('personal', 'r1')).not.toEqual(responseKeys.detail('acme', 'r1'));
+  });
+
+  it('responseKeys.stats() differs across scopes', () => {
+    expect(responseKeys.stats('personal')).not.toEqual(responseKeys.stats('acme'));
+  });
+
+  it('stageKeys.list() differs across scopes', () => {
+    expect(stageKeys.list('acme')).not.toEqual(stageKeys.list('other'));
   });
 });

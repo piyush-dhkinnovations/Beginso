@@ -1,10 +1,13 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Home, FileText, Users, History, Shield } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Home, FileText, Inbox, Users, History, Shield } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { canManageMembers, canViewAudit } from '@/lib/roles';
+import { responsesService } from '@/services/responses';
+import { responseKeys } from '@/lib/queryKeys';
 import type { Role } from '@/types/workspace';
 
 export interface WorkspaceSidebarProps {
@@ -32,15 +35,28 @@ export interface WorkspaceSidebarProps {
 export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }: WorkspaceSidebarProps) {
   const pathname = usePathname();
   const base = `/w/${slug}`;
+
+  // Sprint 12 (inbox-collaboration), task 1.9 — the unread count badge from the stats call
+  // (design.md §4: "wireframe shows a count badge; if that call fails, no badge, no error").
+  // Failing the query is deliberately not surfaced here; the badge is a convenience, not a
+  // load-bearing signal, and the Inbox page itself shows its own error state if stats fail there.
+  const { data: stats } = useQuery({
+    queryKey: responseKeys.stats(slug),
+    queryFn: () => responsesService.getStats(undefined, slug),
+    retry: false,
+  });
+
   // Real bug found and fixed: this linked to /templates, /responses, /analytics, /reports, and
-  // /settings under /w/[slug] — none of which exist (only forms/, team/, roles/ do; confirmed
+  // /settings under /w/[slug] — none of which exist (only forms/, team/, roles/ did; confirmed
   // by listing src/app/w/[slug]/). Every one of those was a dead link, 404-ing on click and
   // spamming the console with Next.js's own Link-prefetch failures the moment this sidebar
   // rendered. Hidden until each page actually ships — re-add the item as each one lands, rather
-  // than linking ahead of the page that would make it real.
+  // than linking ahead of the page that would make it real. `inbox/` now exists (task 1.9,
+  // same-PR rule: the nav item lands with the page, never before).
   const items = [
     { label: 'Home', href: base, icon: Home },
     { label: 'Forms', href: `${base}/forms`, icon: FileText },
+    { label: 'Inbox', href: `${base}/inbox`, icon: Inbox, count: stats?.unread },
     // Every role — seeing what happened in a workspace you belong to is not manager-only
     // (sprint-10 requirements.md §7.6). "Audit Log" is the role-gated counterpart (§7.7), failing
     // closed on an undefined role exactly like "Team".
