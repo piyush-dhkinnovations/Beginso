@@ -8,6 +8,7 @@
  */
 
 import type { StageCategory, StageColorToken } from './stage';
+import type { ResponseFilters } from './response';
 
 export type ReportFormat = 'csv' | 'pdf';
 export type ReportStatus = 'queued' | 'processing' | 'completed' | 'failed' | 'expired';
@@ -20,6 +21,13 @@ export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
   expired: 'Expired',
 };
 
+/**
+ * POST /api/reports (design.md §11.2 — Extends, task 2.7): "Accept the ResponseFilters object
+ * (or ids[]) in place of the single status." `stageId`/`search`/`from`/`to` kept as individual
+ * top-level fields for ReportsView's existing personal-shell callers (predates this sprint);
+ * `filters`/`ids` are the new Inbox-driven shape (B2.3: "the export IS the list: same rows, same
+ * permission scoping"). Backend contract to confirm.
+ */
 export interface CreateReportPayload {
   format: ReportFormat;
   formId?: string;
@@ -27,6 +35,11 @@ export interface CreateReportPayload {
   search?: string;
   from?: string;
   to?: string;
+  /** The Inbox's active filter object — mutually exclusive with `ids`. */
+  filters?: ResponseFilters;
+  /** An explicit selection (bulk "Export" over a checked subset) — mutually exclusive with
+   * `filters`. */
+  ids?: string[];
 }
 
 export interface ReportJob {

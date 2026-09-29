@@ -2,7 +2,7 @@
 
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
 
-export type SettingsTab = 'profile' | 'workspace' | 'branding' | 'notifications' | 'security' | 'sessions';
+export type SettingsTab = 'profile' | 'workspace' | 'branding' | 'notifications' | 'security' | 'sessions' | 'tags';
 
 interface SettingsTabsProps {
   activeTab: SettingsTab;
@@ -19,6 +19,9 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: 'security', label: 'Security' },
   // sprint-10 requirements.md §7.12 — split out of Security, wireframe screen 18's exact label.
   { id: 'sessions', label: 'Sessions & Devices' },
+  // Sprint 12 (inbox-collaboration), requirements.md §7.7 (task 2.5). No wireframe — derived
+  // from RolesMatrix's list+edit pattern (design.md §15).
+  { id: 'tags', label: 'Tags' },
 ];
 
 // Rebuilt on ui/Tabs (sprint-10 requirements.md §7.13) — the hand-rolled version hardcoded

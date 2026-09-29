@@ -13,8 +13,6 @@ export function clampResponsePage(page: number, totalPages: number): number {
   return Math.min(Math.max(page, 1), Math.max(totalPages, 1));
 }
 
-export async function runSequentially<T>(items: readonly T[], operation: (item: T) => Promise<unknown>): Promise<void> {
-  for (const item of items) {
-    await operation(item);
-  }
-}
+// runSequentially() removed (task 2.3, design.md §2): retired for bulk in favor of one-request
+// `POST /api/responses/bulk` (`useInboxMutations.bulk`). Confirmed it had no other importer
+// before deleting (design.md §2's own instruction).
