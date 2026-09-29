@@ -94,6 +94,19 @@ export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellPr
     hiddenFieldIdsRef.current = hiddenFieldIds;
   });
 
+  // Count this visit once per tab session so the completion rate on Form Overview has a denominator
+  // (the backend also counts one view per visitor per hour, so a reload cannot inflate it).
+  useEffect(() => {
+    try {
+      const key = `beginso:viewed:${slug}`;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+    } catch {
+      // storage blocked (private mode): count it anyway, the backend de-duplicates
+    }
+    publicFormService.recordView(slug);
+  }, [slug]);
+
   // Fields hidden by a logic rule are unmounted from RHF state so they're never submitted
   // and never contribute a required-validation error (Requirements 5.3, 5.5).
   useEffect(() => {
