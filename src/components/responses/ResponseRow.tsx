@@ -53,8 +53,8 @@ export function RespondentCell({ response }: { response: IResponse }) {
 
 const MAX_VISIBLE_TAGS = 2;
 
-export function TagsCell({ tags }: { tags: ResponseTag[] }) {
-  if (tags.length === 0) return <span className="text-text-muted">—</span>;
+export function TagsCell({ tags }: { tags: ResponseTag[] | undefined }) {
+  if (!tags || tags.length === 0) return <span className="text-text-muted">—</span>;
   const visible = tags.slice(0, MAX_VISIBLE_TAGS);
   const overflow = tags.slice(MAX_VISIBLE_TAGS);
   return (
