@@ -59,4 +59,15 @@ describe('BulkActionBar', () => {
     expect(within(completed).queryByRole('status')).not.toBeInTheDocument();
     expect(within(remove).getByRole('status')).toBeInTheDocument();
   });
+
+  // Sprint 11 5.3: the count must be announced when it changes, not just visible.
+  it('the selected count is in an aria-live region, and the value updates on re-render', () => {
+    const { rerender, container } = render(<BulkActionBar {...baseProps} count={2} />);
+    const live = container.querySelector('[aria-live="polite"]');
+    expect(live).not.toBeNull();
+    expect(live).toHaveTextContent('2 selected');
+
+    rerender(<BulkActionBar {...baseProps} count={5} />);
+    expect(container.querySelector('[aria-live="polite"]')).toHaveTextContent('5 selected');
+  });
 });

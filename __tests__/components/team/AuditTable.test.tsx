@@ -62,11 +62,16 @@ describe('AuditTable', () => {
     expect(screen.getByRole('table').className).not.toContain('bg-table-stack');
   });
 
-  it('renders five skeleton rows while loading, not events', () => {
+  it('renders five skeleton rows while loading, not events, hidden from assistive tech', () => {
     const { container } = render(<AuditTable events={[EVENT]} isLoading />);
 
-    expect(container.querySelectorAll('tbody tr')).toHaveLength(5);
+    const rows = container.querySelectorAll('tbody tr');
+    expect(rows).toHaveLength(5);
     expect(screen.queryByText('Priya Sharma')).not.toBeInTheDocument();
+    // A screen reader must not announce five rows of empty skeleton cells.
+    rows.forEach((row) => expect(row).toHaveAttribute('aria-hidden', 'true'));
+    // And a keyboard user tabbing through the page hits nothing inside the loading table.
+    expect(within(container as unknown as HTMLElement).queryAllByRole('button')).toHaveLength(0);
   });
 
   // sprint-11-v2a-hardening 4.4 — the frontend cannot mask an IP reliably (design.md §19); the

@@ -1917,3 +1917,17 @@
   .bg-actionbar { flex-direction: column-reverse; align-items: stretch; }
   .bg-actionbar .bg-btn { width: 100%; }
 }
+
+/* Sprint 11 5.3: respect the OS-level reduced-motion preference. Kept broad (transition/animation
+   duration collapsed to near-zero) rather than a per-selector list, so a future animation added
+   anywhere in this file is covered automatically. Colour/opacity/shadow *changes* still apply
+   instantly — this removes the motion, not the end-state feedback (focus rings, hover states,
+   error/success colour changes all still work, just without the transition). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
