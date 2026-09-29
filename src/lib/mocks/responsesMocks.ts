@@ -32,7 +32,7 @@ function pickAnswers(keys: string[]): ResponseAnswers {
 // Sprint 12 (inbox-collaboration) — `stage`/`assignee`/`tags` are now required on `IResponse`;
 // `status` is kept only as the deprecated derived field, still handy for these mocks' own
 // `status: 'new' | 'in_progress' | 'completed'` overrides below (mapped onto a matching stage).
-export const MOCK_STAGES: Record<'new' | 'in_progress' | 'completed', IResponse['stage']> = {
+export const MOCK_STAGES: Record<'new' | 'in_progress' | 'completed', NonNullable<IResponse['stage']>> = {
   new: { id: 'stage-new', name: 'New', colour: 'info', category: 'new' },
   in_progress: { id: 'stage-in-progress', name: 'In Progress', colour: 'warning', category: 'in_progress' },
   completed: { id: 'stage-completed', name: 'Completed', colour: 'success', category: 'completed' },

@@ -51,7 +51,7 @@ describe('responsesService', () => {
 
     expect(mockGet).toHaveBeenCalledWith('/api/responses', {
       params: { formId: 'form-1', stageId: 's1', page: 1 },
-      headers: undefined,
+      headers: { 'x-workspace-slug': 'personal' },
     });
     expect(result).toEqual(payload);
   });
@@ -72,7 +72,7 @@ describe('responsesService', () => {
 
     await responsesService.getResponses({ formId: 'form-1' }, 'personal');
 
-    expect(mockGet).toHaveBeenCalledWith('/api/responses', { params: { formId: 'form-1' }, headers: undefined });
+    expect(mockGet).toHaveBeenCalledWith('/api/responses', { params: { formId: 'form-1' }, headers: { 'x-workspace-slug': 'personal' } });
   });
 
   it('getResponseById calls GET /api/responses/:id and unwraps the {success, response} envelope', async () => {
@@ -94,7 +94,7 @@ describe('responsesService', () => {
 
     const result = await responsesService.getResponseById('r1');
 
-    expect(mockGet).toHaveBeenCalledWith('/api/responses/r1', { headers: undefined });
+    expect(mockGet).toHaveBeenCalledWith('/api/responses/r1', { headers: { 'x-workspace-slug': 'personal' } });
     const { response_files, ...rest } = rawResponse;
     expect(result).toEqual({ ...rest, responseFiles: response_files });
   });
@@ -114,7 +114,7 @@ describe('responsesService', () => {
 
     const result = await responsesService.deleteResponse('r1');
 
-    expect(mockDelete).toHaveBeenCalledWith('/api/responses/r1', { headers: undefined });
+    expect(mockDelete).toHaveBeenCalledWith('/api/responses/r1', { headers: { 'x-workspace-slug': 'personal' } });
     expect(result).toBeUndefined();
   });
 
@@ -158,7 +158,7 @@ describe('responsesService', () => {
 
     const result = await responsesService.getStats();
 
-    expect(mockGet).toHaveBeenCalledWith('/api/responses/stats', { params: { formId: undefined }, headers: undefined });
+    expect(mockGet).toHaveBeenCalledWith('/api/responses/stats', { params: { formId: undefined }, headers: { 'x-workspace-slug': 'personal' } });
     expect(result.byStage).toEqual([]);
     expect(result.total).toBe(3);
   });
@@ -260,7 +260,7 @@ describe('responsesService', () => {
 
     mockPost.mockResolvedValueOnce({ data: {} });
     await responsesService.markRead('r1', false);
-    expect(mockPost).toHaveBeenCalledWith('/api/responses/r1/unread', {}, { headers: undefined });
+    expect(mockPost).toHaveBeenCalledWith('/api/responses/r1/unread', {}, { headers: { 'x-workspace-slug': 'personal' } });
   });
 });
 

@@ -78,7 +78,7 @@ describe('useInboxMutations — bulk', () => {
     // for the mock to settle.
     await waitFor(() => {
       const optimistic = queryClient.getQueryData<PaginatedResponsesResult>(responseKeys.all('acme', undefined));
-      expect(optimistic?.data.every((r) => r.stage.id === 's2')).toBe(true);
+      expect(optimistic?.data.every((r) => r.stage?.id === 's2')).toBe(true);
     });
 
     await waitFor(() => expect(mockBulk).toHaveBeenCalledTimes(1));
@@ -101,7 +101,7 @@ describe('useInboxMutations — bulk', () => {
 
     await waitFor(() => expect(toastMock).toHaveBeenCalledWith('Failed to update responses. Please try again.', 'error'));
     const rolledBack = queryClient.getQueryData<PaginatedResponsesResult>(responseKeys.all('acme', undefined));
-    expect(rolledBack?.data[0].stage.id).toBe('s1');
+    expect(rolledBack?.data[0].stage?.id).toBe('s1');
   });
 
   it('undo posts exactly one restore request carrying the previous snapshot', async () => {

@@ -145,7 +145,9 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
   function optimisticBulkPatch(action: BulkAction): ((r: IResponse) => Partial<IResponse>) | undefined {
     switch (action.type) {
       case 'stage':
-        return (r) => ({ stage: { ...r.stage, id: action.stageId } });
+        // r.stage is null for an unmigrated response (no stageId yet) — nothing to optimistically
+        // patch onto in that case; the real stage arrives on refetch/success instead.
+        return (r) => (r.stage ? { stage: { ...r.stage, id: action.stageId } } : {});
       case 'assign':
         return action.assigneeId === null ? () => ({ assignee: null }) : undefined;
       case 'read':

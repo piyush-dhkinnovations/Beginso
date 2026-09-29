@@ -47,7 +47,11 @@ export interface IResponse {
    * fallback (kept in `lib/formatters.ts`), never a blank. */
   reference?: string;
   answers: ResponseAnswers;
-  stage: StageRef;
+  /** Null for a response with no `stageId` yet (unmigrated real data — the stage migration has
+   * not been run against production). `StageBadge` already renders this as "Unknown stage"; any
+   * new consumer of `.stage` must not assume it is present (real crash found in manual QA when
+   * `BoardCard` read `.stage.id` directly). */
+  stage: StageRef | null;
   /** @deprecated Derived from `stage.category` by the backend during the migration window
    * (design.md §11.1, OQ-2). Do not read in new code — use `stage.category` instead. Kept only so
    * an unmigrated caller (a saved report scope, a cached bundle) degrades instead of breaking. */

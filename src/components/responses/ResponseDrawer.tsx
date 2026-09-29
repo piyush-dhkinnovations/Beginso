@@ -221,7 +221,7 @@ export function ResponseDrawer({
       await queryClient.cancelQueries({ queryKey: detailKey });
       const previousDetail = queryClient.getQueryData<ResponseDetail>(detailKey);
       queryClient.setQueryData<ResponseDetail>(detailKey, (old) =>
-        old ? { ...old, stage: { ...old.stage, id: stageId } } : old
+        old ? { ...old, stage: old.stage ? { ...old.stage, id: stageId } : old.stage } : old
       );
 
       // Also patch every cached responses-list query for this form, so the table behind
@@ -235,7 +235,12 @@ export function ResponseDrawer({
       const previousLists = queryClient.getQueriesData({ queryKey: listKey });
       queryClient.setQueriesData<PaginatedResponsesResult>({ queryKey: listKey }, (old) =>
         old && Array.isArray(old.data)
-          ? { ...old, data: old.data.map((r) => (r._id === responseId ? { ...r, stage: { ...r.stage, id: stageId } } : r)) }
+          ? {
+              ...old,
+              data: old.data.map((r) =>
+                r._id === responseId ? { ...r, stage: r.stage ? { ...r.stage, id: stageId } : r.stage } : r
+              ),
+            }
           : old
       );
 

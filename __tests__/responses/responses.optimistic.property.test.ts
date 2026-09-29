@@ -29,11 +29,13 @@ describe('optimistic stage update — property test', () => {
         queryClient.setQueryData(key, initial);
 
         // Same onMutate pattern used in ResponseDrawer.tsx.
-        queryClient.setQueryData<ResponseDetail>(key, (old) => (old ? { ...old, stage: { ...old.stage, id: stageId } } : old));
+        queryClient.setQueryData<ResponseDetail>(key, (old) =>
+          old ? { ...old, stage: old.stage ? { ...old.stage, id: stageId } : old.stage } : old
+        );
 
         const updated = queryClient.getQueryData<ResponseDetail>(key);
         return (
-          updated?.stage.id === stageId &&
+          updated?.stage?.id === stageId &&
           updated?._id === initial._id &&
           updated?.answers === initial.answers
         );

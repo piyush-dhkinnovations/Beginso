@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, FileText, LockKeyhole } from 'lucide-react';
@@ -9,7 +10,11 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { Tabs } from '@/components/ui/Tabs';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { ResponsesTable } from './ResponsesTable';
+import { ResponsesBoard } from './ResponsesBoard';
+import { ResponsesCalendar } from './ResponsesCalendar';
 import { ResponsesToolbar } from './ResponsesToolbar';
 import { ActiveFilterChips } from './ActiveFilterChips';
 import { PaginationControls } from './PaginationControls';
@@ -28,13 +33,36 @@ import { useInboxMutations } from '@/hooks/useInboxMutations';
 import { useMembers } from '@/hooks/useMembers';
 import { useTags } from '@/hooks/useTags';
 import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
+import { useWorkspaceTimezone } from '@/hooks/useWorkspaceTimezone';
 import { useToast } from '@/components/common/Toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { hasCapability } from '@/lib/roles';
 import { exportPayloadFromFilters, exportPayloadFromTarget } from '@/lib/reportExport';
+import type { InboxViewMode } from '@/lib/inboxFilters';
 import type { IResponse, BulkTarget } from '@/types/response';
 import type { SavedView } from '@/types/savedView';
+
+// Sprint 12 (inbox-collaboration), design.md §20 (task 3.4): "Chart components lazy-loaded
+// (next/dynamic)" — echarts is the heaviest dependency this view can pull in, and most sessions
+// never switch to the Chart tab, so it's only fetched once someone does. `ssr: false` matches
+// EChartContainer's own canvas-only nature (it already needs `window`/`ResizeObserver`).
+const ResponsesChart = dynamic(() => import('./ResponsesChart').then((m) => m.ResponsesChart), {
+  ssr: false,
+  loading: () => (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2" aria-busy="true">
+      <Skeleton variant="block" height={240} className="rounded-lg" />
+      <Skeleton variant="block" height={240} className="rounded-lg" />
+    </div>
+  ),
+});
+
+const VIEW_TABS = [
+  { id: 'table', label: 'Table' },
+  { id: 'board', label: 'Board' },
+  { id: 'calendar', label: 'Calendar' },
+  { id: 'chart', label: 'Chart' },
+];
 
 interface ConfirmDeleteState {
   mode: 'single' | 'bulk';
@@ -62,10 +90,11 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const { filters, page, search, pageLimit, stages, setFilters, setPage, clear } = useInboxFilters({ scope });
+  const { filters, page, view, search, pageLimit, stages, stagesLoading, setFilters, setPage, setView, clear } = useInboxFilters({ scope });
   const { data: members } = useMembers(scope === 'personal' ? undefined : scope);
   const { data: tags } = useTags(scope === 'personal' ? undefined : scope);
   const role = useWorkspaceRole(scope);
+  const timezone = useWorkspaceTimezone(scope);
   const mutations = useInboxMutations({ scope, formId });
   const { toast } = useToast();
   const { user } = useAuth();
@@ -97,11 +126,13 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   }
 
   function saveView(values: { name: string; visibility: 'personal' | 'team' }) {
+    // Sprint 12 (inbox-collaboration), task 3.1: was hardcoded to 'table' (yesterday's report) —
+    // Save view now captures whichever view is actually active.
     viewsService
-      .create(scope, { name: values.name, visibility: values.visibility, formId: formId ?? null, filters, viewMode: 'table' })
-      .then((view) => {
+      .create(scope, { name: values.name, visibility: values.visibility, formId: formId ?? null, filters, viewMode: view })
+      .then((savedView) => {
         invalidateViews();
-        setActiveViewId(view.id);
+        setActiveViewId(savedView.id);
         setSaveViewOpen(false);
         toast('View saved.', 'success');
       })
@@ -348,6 +379,13 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         }}
       />
 
+      <Tabs
+        tabs={VIEW_TABS}
+        activeId={view}
+        onChange={(id) => setView(id as InboxViewMode)}
+        ariaLabel="Responses view"
+      />
+
       <ActiveFilterChips
         filters={filters}
         stages={stages}
@@ -379,58 +417,101 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         </div>
       )}
 
-      <BulkActionBar
-        selectedIds={[...selectedIds]}
-        selectAllMatching={selectAllMatching}
-        totalMatching={data?.total}
-        onToggleSelectAllMatching={setSelectAllMatching}
-        filters={filters}
-        formId={formId}
-        stages={stages}
-        tags={scope === 'personal' ? undefined : tags}
-        members={scope === 'personal' ? undefined : members}
-        role={role}
-        isLoading={mutations.isBulkRunning}
-        onBulk={(target, action) => mutations.bulk(target, action, { onSuccess: () => clearSelection() })}
-        onDeleteRequest={(target, count) => setConfirmDelete({ mode: 'bulk', target, count })}
-        onExport={runExport}
-        onClear={clearSelection}
-      />
+      {/* Sprint 12 (inbox-collaboration), task 3.1: selection/bulk and pagination are Table-only —
+          selectedIds only ever gets populated via the Table's own checkboxes, and Board/Calendar/
+          Chart each own their data fetching (per-column/per-month/per-range), not this page's
+          single `data` query. */}
+      {view === 'table' && (
+        <>
+          <BulkActionBar
+            selectedIds={[...selectedIds]}
+            selectAllMatching={selectAllMatching}
+            totalMatching={data?.total}
+            onToggleSelectAllMatching={setSelectAllMatching}
+            filters={filters}
+            formId={formId}
+            stages={stages}
+            tags={scope === 'personal' ? undefined : tags}
+            members={scope === 'personal' ? undefined : members}
+            role={role}
+            isLoading={mutations.isBulkRunning}
+            onBulk={(target, action) => mutations.bulk(target, action, { onSuccess: () => clearSelection() })}
+            onDeleteRequest={(target, count) => setConfirmDelete({ mode: 'bulk', target, count })}
+            onExport={runExport}
+            onClear={clearSelection}
+          />
 
-      <ResponsesTable
-        responses={responses}
-        isLoading={isLoading}
-        selectedIds={selectedIds}
-        formId={formId}
-        hasActiveFilters={hasActiveFilters}
-        onClearFilters={() => {
-          clearSelection();
-          clear();
-        }}
-        onSelectAll={(checked) => {
-          setSelectAllMatching(false);
-          setSelectedIds(checked ? new Set(responses.map((r) => r._id)) : new Set());
-        }}
-        onSelectRow={(id, checked) =>
-          setSelectedIds((prev) => {
-            const next = new Set(prev);
-            if (checked) next.add(id);
-            else next.delete(id);
-            return next;
-          })
-        }
-        onViewResponse={openResponse}
-        onDeleteResponse={(id) => setConfirmDelete({ mode: 'single', target: { ids: [id] }, count: 1 })}
-      />
+          <ResponsesTable
+            responses={responses}
+            isLoading={isLoading}
+            selectedIds={selectedIds}
+            formId={formId}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={() => {
+              clearSelection();
+              clear();
+            }}
+            onSelectAll={(checked) => {
+              setSelectAllMatching(false);
+              setSelectedIds(checked ? new Set(responses.map((r) => r._id)) : new Set());
+            }}
+            onSelectRow={(id, checked) =>
+              setSelectedIds((prev) => {
+                const next = new Set(prev);
+                if (checked) next.add(id);
+                else next.delete(id);
+                return next;
+              })
+            }
+            onViewResponse={openResponse}
+            onDeleteResponse={(id) => setConfirmDelete({ mode: 'single', target: { ids: [id] }, count: 1 })}
+          />
 
-      <PaginationControls
-        page={page}
-        totalPages={data?.totalPages ?? 1}
-        onPageChange={(p) => {
-          clearSelection();
-          setPage(p);
-        }}
-      />
+          <PaginationControls
+            page={page}
+            totalPages={data?.totalPages ?? 1}
+            onPageChange={(p) => {
+              clearSelection();
+              setPage(p);
+            }}
+          />
+        </>
+      )}
+
+      {view === 'board' && (
+        <ResponsesBoard
+          scope={scope}
+          formId={formId}
+          filters={filters}
+          stages={stages}
+          stagesLoading={stagesLoading}
+          role={role}
+          onViewResponse={openResponse}
+          onChangeStage={(id, stageId) => mutations.updateStage(id, stageId)}
+        />
+      )}
+
+      {view === 'calendar' && (
+        <ResponsesCalendar
+          scope={scope}
+          formId={formId}
+          filters={filters}
+          timezone={timezone}
+          onViewResponse={openResponse}
+        />
+      )}
+
+      {view === 'chart' && (
+        <ResponsesChart
+          scope={scope}
+          formId={formId}
+          filters={filters}
+          stats={stats}
+          statsLoading={statsLoading}
+          statsError={isStatsError}
+          onRetryStats={() => void refetchStats()}
+        />
+      )}
 
       <Modal
         isOpen={confirmDelete !== null}

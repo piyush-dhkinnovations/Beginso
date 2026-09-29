@@ -9,7 +9,10 @@ import type { ResponseAssignee, ResponseTag } from '@/types/response';
 export interface ResponseSignalsData {
   unread?: boolean;
   assignee: ResponseAssignee | null;
-  tags: ResponseTag[];
+  /** Not always present on real data (predates the Tag feature, or an endpoint that doesn't
+   * populate it) despite the documented contract saying it always is — defaulted below like
+   * `noteCount`/`attachmentCount` already are. Real crash found in manual QA (Calendar view). */
+  tags?: ResponseTag[];
   noteCount?: number;
   attachmentCount?: number;
   duplicateOfId?: string | null;
@@ -33,7 +36,7 @@ const MAX_VISIBLE_TAGS = 2;
  * task 3.5). Pure render — no fetching (design.md §7).
  */
 export function ResponseSignals({ response, density, className }: ResponseSignalsProps) {
-  const { unread, assignee, tags, noteCount = 0, attachmentCount = 0, duplicateOfId } = response;
+  const { unread, assignee, tags = [], noteCount = 0, attachmentCount = 0, duplicateOfId } = response;
   const visibleTags = tags.slice(0, MAX_VISIBLE_TAGS);
   const overflowTags = tags.slice(MAX_VISIBLE_TAGS);
   const isCompact = density === 'compact';
@@ -63,8 +66,17 @@ export function ResponseSignals({ response, density, className }: ResponseSignal
         </Badge>
       )}
 
-      {/* Assignee — requirements.md §7.2: "Unassigned renders a — with accessible name 'Unassigned'." */}
-      <span className="inline-flex min-w-0 items-center gap-1.5 shrink-0" aria-label={assignee ? undefined : 'Unassigned'}>
+      {/* Assignee — requirements.md §7.2: "Unassigned renders a — with accessible name 'Unassigned'."
+          `aria-label` names the assignee even at `compact` density, where the visible name is
+          hidden and only the avatar's initials show — without it, "who is this assigned to" has
+          no accessible representation at all in that density (caught by the viewSignals guard,
+          task 3.5). */}
+      <span
+        className="inline-flex min-w-0 items-center gap-1.5 shrink-0"
+        aria-label={
+          assignee ? `${assignee.name}${assignee.removed ? ' · no longer has access' : ''}` : 'Unassigned'
+        }
+      >
         {assignee ? (
           <>
             <Avatar size="xs" name={assignee.name} src={assignee.avatarUrl ?? undefined} alt="" />
