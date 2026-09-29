@@ -28,14 +28,22 @@ import type { FormsContext } from '@/types/workspace';
 //     Fixing it (if confirmed) is Sprint 12+ scope, since Responses/Analytics/Reports/Dashboard are
 //     rewritten there — this audit's job is to record the result, not silently assume it's fine.
 
-// formId is optional throughout — omitted formId means the "All Responses" view spanning
-// every form in the workspace, keyed under the literal 'all' segment.
+// Sprint 12 (inbox-collaboration), design.md §10 — resolves OQ-1's frontend half. `scope` (a
+// workspace slug, or the literal 'personal') is now a key segment, matching workspaceKeys.forms()'s
+// own precedent: switching workspaces (or personal ⇄ workspace) must never serve another scope's
+// cached responses. formId is optional throughout — omitted formId means the "All Responses" view
+// spanning every form in the scope, keyed under the literal 'all' segment.
 export const responseKeys = {
-  all: (formId?: string) => ['responses', formId ?? 'all'] as const,
-  list: (formId: string | undefined, params: Partial<Omit<GetResponsesParams, 'formId'>>) =>
-    ['responses', formId ?? 'all', params] as const,
-  detail: (id: string) => ['response', id] as const,
-  stats: (formId?: string) => ['responses', formId ?? 'all', 'stats'] as const,
+  all: (scope: string, formId?: string) => ['responses', scope, formId ?? 'all'] as const,
+  list: (scope: string, formId: string | undefined, params: Partial<Omit<GetResponsesParams, 'formId'>>) =>
+    ['responses', scope, formId ?? 'all', params] as const,
+  detail: (scope: string, id: string) => ['responses', scope, 'detail', id] as const,
+  stats: (scope: string, formId?: string) => ['responses', scope, formId ?? 'all', 'stats'] as const,
+};
+
+// Sprint 12, design.md §10 — workspace-namespaced from creation, teamKeys' own precedent.
+export const stageKeys = {
+  list: (scope: string) => ['stages', scope] as const,
 };
 
 export const dashboardKeys = {

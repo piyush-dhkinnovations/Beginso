@@ -1,30 +1,39 @@
 /**
  * __tests__/responses/responses.optimistic.property.test.ts
- * Feature: sprint-4-responses, Property 1: Status optimistic update is exact
- * Requirements: 5.3, 11.1
+ * sprint-12-inbox-collaboration, requirements.md §7.1 (1.1) — migrated to stage optimistic
+ * updates; the removed `ResponseStatus` union is no longer what gets patched into the cache.
+ * Feature: sprint-4-responses, Property 1: Stage optimistic update is exact
  */
 
 import { describe, it } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
 import fc from 'fast-check';
 import { mockResponseDetail } from '@/lib/mocks/responsesMocks';
-import type { ResponseDetail, ResponseStatus } from '@/types/response';
+import type { ResponseDetail } from '@/types/response';
+import type { StageCategory } from '@/types/stage';
 
-describe('optimistic status update — property test', () => {
-  it('always writes exactly the given status into the cache, with no other field touched', () => {
+const STAGE_IDS: Record<StageCategory, string> = {
+  new: 'stage-new',
+  in_progress: 'stage-in-progress',
+  completed: 'stage-completed',
+};
+
+describe('optimistic stage update — property test', () => {
+  it('always writes exactly the given stage id into the cache, with no other field touched', () => {
     fc.assert(
-      fc.property(fc.constantFrom<ResponseStatus>('new', 'in_progress', 'completed'), (status) => {
+      fc.property(fc.constantFrom<StageCategory>('new', 'in_progress', 'completed'), (category) => {
+        const stageId = STAGE_IDS[category];
         const queryClient = new QueryClient();
-        const key = ['response', 'resp-1'];
+        const key = ['responses', 'personal', 'detail', 'resp-1'];
         const initial = mockResponseDetail('resp-1');
         queryClient.setQueryData(key, initial);
 
-        // Same onMutate pattern used in src/app/(user)/responses/[id]/page.tsx
-        queryClient.setQueryData<ResponseDetail>(key, (old) => (old ? { ...old, status } : old));
+        // Same onMutate pattern used in ResponseDrawer.tsx.
+        queryClient.setQueryData<ResponseDetail>(key, (old) => (old ? { ...old, stage: { ...old.stage, id: stageId } } : old));
 
         const updated = queryClient.getQueryData<ResponseDetail>(key);
         return (
-          updated?.status === status &&
+          updated?.stage.id === stageId &&
           updated?._id === initial._id &&
           updated?.answers === initial.answers
         );

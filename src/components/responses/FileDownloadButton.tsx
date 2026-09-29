@@ -109,7 +109,7 @@ export function FileDownloadButton({
       title={unavailable ? 'File no longer available' : undefined}
     >
       {renderFileIcon(mimeType)}
-      <span className="text-body-sm font-medium text-neutral-700 break-words min-w-0 flex-1" title={originalName}>
+      <span className="text-body-sm font-medium text-neutral-700 wrap-break-word min-w-0 flex-1" title={originalName}>
         {originalName}
       </span>
       <span className="text-caption text-neutral-400 shrink-0">{formatFileSize(size)}</span>

@@ -21,6 +21,10 @@ interface RawReportJob {
   status: ReportJob['status'];
   formId?: string;
   formTitle?: string;
+  // Sprint 12 (inbox-collaboration), design.md §11.2 — Backend contract to confirm: the stage
+  // name snapshot replacing `responseStatus`. Uncertain/not yet live (BE 0.4), so both are read
+  // defensively; `responseStatus` stays for a job created before this sprint (OQ-2's alias).
+  stage?: ReportJob['stage'];
   responseStatus?: ReportJob['responseStatus'];
   from?: string;
   to?: string;
@@ -37,6 +41,7 @@ function toReportJob(raw: RawReportJob): ReportJob {
     status: raw.status,
     formId: raw.formId,
     formTitle: raw.formTitle,
+    stage: raw.stage,
     responseStatus: raw.responseStatus,
     from: raw.from,
     to: raw.to,

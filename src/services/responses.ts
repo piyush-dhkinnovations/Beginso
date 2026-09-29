@@ -1,4 +1,5 @@
 import axiosInstance from '@/lib/axios';
+import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import type {
   GetResponsesParams,
   PaginatedResponsesResult,
@@ -7,7 +8,6 @@ import type {
   ResponseAnswers,
   ResponseDetail,
   ResponseStats,
-  ResponseStatus,
 } from '@/types/response';
 
 // Wire shapes from docs/backend-contract/api-reference.md §3 — every response is wrapped
@@ -24,14 +24,20 @@ interface DetailEnvelope {
   success: boolean;
   response: RawResponseDetail;
 }
-interface UpdateStatusEnvelope {
+interface UpdateResponseEnvelope {
   success: boolean;
   message: string;
-  response: Pick<IResponse, '_id' | 'status' | 'updatedAt'>;
+  response: IResponse;
 }
 interface FileUrlEnvelope {
   success: boolean;
   url: string;
+}
+// GET /api/responses/stats (design.md §11.2 — Extends). Keeps the legacy new/in_progress/
+// completed numeric keys as aliases during the deprecation window; this app reads `byStage`/
+// `byCategory` only.
+interface StatsEnvelope extends ResponseStats {
+  success: boolean;
 }
 
 // The backend sends each answer twice — once keyed by the field's raw internal id, once by its
@@ -72,10 +78,18 @@ function toResponseDetail(raw: RawResponseDetail): ResponseDetail {
   return { ...rest, answers: cleanAnswers(answers), responseFiles: response_files };
 }
 
+/** PATCH /api/responses/:id body (design.md §11.2 — Extends). `status` is no longer sent by the
+ * frontend; the backend still accepts it during the deprecation window for other callers. */
+export interface UpdateResponsePayload {
+  stageId?: string;
+  assigneeId?: string | null;
+  tagIds?: string[];
+}
+
 export const responsesService = {
-  getResponses: (params: GetResponsesParams) =>
+  getResponses: (params: GetResponsesParams, scope?: string) =>
     axiosInstance
-      .get<ListEnvelope>('/api/responses', { params })
+      .get<ListEnvelope>('/api/responses', { params, headers: workspaceHeaders(scope) })
       .then((r): PaginatedResponsesResult => {
         const { data, total, page, limit, totalPages } = r.data;
         // Same defensive-array guard `sharedService`/`formAccessService` already carry
@@ -91,16 +105,18 @@ export const responsesService = {
         };
       }),
 
-  getResponseById: (id: string) =>
-    axiosInstance.get<DetailEnvelope>(`/api/responses/${id}`).then((r) => toResponseDetail(r.data.response)),
-
-  updateStatus: (id: string, status: ResponseStatus) =>
+  getResponseById: (id: string, scope?: string) =>
     axiosInstance
-      .patch<UpdateStatusEnvelope>(`/api/responses/${id}`, { status })
+      .get<DetailEnvelope>(`/api/responses/${id}`, { headers: workspaceHeaders(scope) })
+      .then((r) => toResponseDetail(r.data.response)),
+
+  update: (id: string, payload: UpdateResponsePayload, scope?: string) =>
+    axiosInstance
+      .patch<UpdateResponseEnvelope>(`/api/responses/${id}`, payload, { headers: workspaceHeaders(scope) })
       .then((r) => r.data.response),
 
-  deleteResponse: (id: string) =>
-    axiosInstance.delete(`/api/responses/${id}`).then(() => undefined),
+  deleteResponse: (id: string, scope?: string) =>
+    axiosInstance.delete(`/api/responses/${id}`, { headers: workspaceHeaders(scope) }).then(() => undefined),
 
   getFileDownloadUrl: (responseId: string, fileId: string) =>
     axiosInstance
@@ -126,20 +142,16 @@ export const responsesService = {
     return URL.createObjectURL(res.data);
   },
 
-  // GET /api/responses/stats is confirmed live (docs/backend-contract/api-reference.md §3), but
-  // this still computes counts client-side via three limit:1 list requests — swapping to the
-  // dedicated one-call endpoint is a known, not-yet-done frontend-only performance cleanup.
-  getStats: (formId?: string): Promise<ResponseStats> =>
-    Promise.all(
-      (['new', 'in_progress', 'completed'] as const).map((status) =>
-        axiosInstance
-          .get<ListEnvelope>('/api/responses', { params: { formId, status, limit: 1 } })
-          .then((r) => (typeof r.data.total === 'number' ? r.data.total : 0))
-      )
-    ).then(([newCount, inProgressCount, completedCount]) => ({
-      total: newCount + inProgressCount + completedCount,
-      new: newCount,
-      in_progress: inProgressCount,
-      completed: completedCount,
-    })),
+  // Sprint 12 (inbox-collaboration), task 1.3: replaces the old 3-request client-side computation
+  // with the confirmed-live single GET /api/responses/stats call (closes the known low-severity
+  // issue in PROJECT_STATUS.md), extended for stages (design.md §2/§11.2).
+  getStats: (formId?: string, scope?: string): Promise<ResponseStats> =>
+    axiosInstance
+      .get<StatsEnvelope>('/api/responses/stats', { params: { formId }, headers: workspaceHeaders(scope) })
+      .then((r): ResponseStats => ({
+        total: typeof r.data.total === 'number' ? r.data.total : 0,
+        unread: typeof r.data.unread === 'number' ? r.data.unread : 0,
+        byStage: Array.isArray(r.data.byStage) ? r.data.byStage : [],
+        byCategory: r.data.byCategory ?? { new: 0, in_progress: 0, completed: 0 },
+      })),
 };

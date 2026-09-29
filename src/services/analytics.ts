@@ -26,10 +26,15 @@ interface RawOverviewEnvelope {
   };
 }
 
+// Sprint 12 (inbox-collaboration), requirements.md §7.3 #3 / design.md §2: the backend's overview
+// response hasn't itself changed shape this sprint (it still reports the fixed three counts, not
+// per-stage rows) — only the frontend's field name changes, from `statusCounts` to
+// `categoryCounts`, to stop implying these are the removed `status` union rather than the stable
+// `category` grouping every custom stage still falls back to.
 function toAnalyticsOverview(raw: RawOverviewEnvelope): AnalyticsOverview {
   return {
     totalResponses: raw.data.total,
-    statusCounts: {
+    categoryCounts: {
       new: raw.data.new,
       in_progress: raw.data.in_progress,
       completed: raw.data.completed,

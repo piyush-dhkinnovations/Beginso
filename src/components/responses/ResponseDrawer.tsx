@@ -28,12 +28,16 @@ import { formsService } from '@/services/forms';
 import { responseKeys } from '@/lib/queryKeys';
 import { detectRespondentIdentity, shortId } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
-import type { PaginatedResponsesResult, ResponseDetail, ResponseStatus } from '@/types/response';
+import type { PaginatedResponsesResult, ResponseDetail } from '@/types/response';
+import type { StageRef } from '@/types/stage';
 
 interface ResponseDrawerProps {
   responseId: string | null;
   /** Undefined on the all-forms view — invalidations target the workspace-wide 'all' cache key. */
   formId?: string;
+  /** Workspace slug, or 'personal' (OQ-1). */
+  scope?: string;
+  stages?: readonly StageRef[];
   formTitle?: string;
   fileFieldLabels?: string[];
   displayMode?: 'drawer' | 'page';
@@ -115,6 +119,8 @@ function DrawerErrorState({
 export function ResponseDrawer({
   responseId,
   formId,
+  scope = 'personal',
+  stages = [],
   formTitle,
   fileFieldLabels = [],
   displayMode = 'drawer',
@@ -190,8 +196,8 @@ export function ResponseDrawer({
   }, [displayMode, responseId, onClose]);
 
   const { data: response, error: responseError, isError, isFetching, isLoading, refetch } = useQuery({
-    queryKey: responseKeys.detail(responseId ?? ''),
-    queryFn: () => responsesService.getResponseById(responseId as string),
+    queryKey: responseKeys.detail(scope, responseId ?? ''),
+    queryFn: () => responsesService.getResponseById(responseId as string, scope),
     enabled: !!responseId,
   });
 
@@ -208,33 +214,35 @@ export function ResponseDrawer({
         .sort((a, b) => a.order - b.order)
         .map((field) => field.label);
 
-  const statusMutation = useMutation({
-    mutationFn: (status: ResponseStatus) => responsesService.updateStatus(responseId as string, status),
-    onMutate: async (status) => {
-      const detailKey = responseKeys.detail(responseId as string);
+  const stageMutation = useMutation({
+    mutationFn: (stageId: string) => responsesService.update(responseId as string, { stageId }, scope),
+    onMutate: async (stageId) => {
+      const detailKey = responseKeys.detail(scope, responseId as string);
       await queryClient.cancelQueries({ queryKey: detailKey });
       const previousDetail = queryClient.getQueryData<ResponseDetail>(detailKey);
-      queryClient.setQueryData<ResponseDetail>(detailKey, (old) => (old ? { ...old, status } : old));
+      queryClient.setQueryData<ResponseDetail>(detailKey, (old) =>
+        old ? { ...old, stage: { ...old.stage, id: stageId } } : old
+      );
 
       // Also patch every cached responses-list query for this form, so the table behind
       // the drawer reflects the change immediately, not just after invalidation refetches.
-      // responseKeys.all(formId) is a prefix of the stats key too (['responses', formId, 'stats']),
-      // so setQueriesData's fuzzy match also hits the stats cache — whose shape has no `data`
-      // array. Guard on that shape rather than assuming every match is a paginated list, or the
-      // stats entry throws here and the whole mutation aborts before mutationFn ever runs.
-      const listKey = responseKeys.all(formId);
+      // responseKeys.all(scope, formId) is a prefix of the stats key too, so setQueriesData's
+      // fuzzy match also hits the stats cache — whose shape has no `data` array. Guard on that
+      // shape rather than assuming every match is a paginated list, or the stats entry throws
+      // here and the whole mutation aborts before mutationFn ever runs.
+      const listKey = responseKeys.all(scope, formId);
       await queryClient.cancelQueries({ queryKey: listKey });
       const previousLists = queryClient.getQueriesData({ queryKey: listKey });
       queryClient.setQueriesData<PaginatedResponsesResult>({ queryKey: listKey }, (old) =>
         old && Array.isArray(old.data)
-          ? { ...old, data: old.data.map((r) => (r._id === responseId ? { ...r, status } : r)) }
+          ? { ...old, data: old.data.map((r) => (r._id === responseId ? { ...r, stage: { ...r.stage, id: stageId } } : r)) }
           : old
       );
 
       return { previousDetail, previousLists };
     },
-    onError: (err, _status, context) => {
-      queryClient.setQueryData(responseKeys.detail(responseId as string), context?.previousDetail);
+    onError: (err, _stageId, context) => {
+      queryClient.setQueryData(responseKeys.detail(scope, responseId as string), context?.previousDetail);
       context?.previousLists?.forEach(([key, data]) => queryClient.setQueryData(key, data));
 
       // Surface the backend's actual reason (e.g. 422 "Validation failed") instead of a
@@ -242,21 +250,20 @@ export function ResponseDrawer({
       // a validation 422, or a genuine server 500 apart, either for the user or in the console.
       const serverMessage = isAxiosError(err) ? (err.response?.data as { message?: string } | undefined)?.message : undefined;
       if (isAxiosError(err)) {
-        console.error('Status update failed:', err.response?.status, err.response?.data ?? err.message);
+        console.error('Stage update failed:', err.response?.status, err.response?.data ?? err.message);
       }
-      toast(serverMessage ?? 'Failed to update status. Please try again.', 'error');
+      toast(serverMessage ?? 'Failed to update stage. Please try again.', 'error');
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: responseKeys.detail(responseId as string) });
-      // ['responses', formId] is a prefix of the stats key ['responses', formId, 'stats'],
-      // so this one invalidation already covers both the list and stats queries — invalidating
-      // stats separately here fired its 3-request refetch a second time on every status change.
-      queryClient.invalidateQueries({ queryKey: responseKeys.all(formId) });
+      queryClient.invalidateQueries({ queryKey: responseKeys.detail(scope, responseId as string) });
+      // A prefix of the stats key too, so this one invalidation already covers both the list and
+      // stats queries — invalidating stats separately here fired its refetch a second time.
+      queryClient.invalidateQueries({ queryKey: responseKeys.all(scope, formId) });
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => responsesService.deleteResponse(responseId as string),
+    mutationFn: () => responsesService.deleteResponse(responseId as string, scope),
     onSuccess: () => {
       toast('Response deleted.', 'success');
       onClose();
@@ -264,7 +271,7 @@ export function ResponseDrawer({
     onError: () => toast('Failed to delete response. Please try again.', 'error'),
     onSettled: () => {
       setConfirmDeleteOpen(false);
-      queryClient.invalidateQueries({ queryKey: responseKeys.all(formId) });
+      queryClient.invalidateQueries({ queryKey: responseKeys.all(scope, formId) });
     },
   });
 
@@ -319,11 +326,12 @@ export function ResponseDrawer({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            {response && (
+            {response && stages.length > 0 && (
               <StatusDropdown
-                currentStatus={response.status}
-                onChange={(status) => statusMutation.mutate(status)}
-                disabled={statusMutation.isPending}
+                stages={stages}
+                currentStageId={response.stage?.id ?? ''}
+                onChange={(stageId) => stageMutation.mutate(stageId)}
+                disabled={stageMutation.isPending}
               />
             )}
             {position !== undefined && totalResponses !== undefined && (

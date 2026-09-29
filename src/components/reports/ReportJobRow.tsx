@@ -10,7 +10,7 @@ import { detectDateRangePreset } from '@/lib/dateRange';
 import { reportsService } from '@/services/reports';
 import { FORMAT_ICON } from './ReportFormatCard';
 import { REPORT_STATUS_LABELS, type ReportJob, type ReportStatus } from '@/types/report';
-import { STATUS_LABELS } from '@/types/response';
+import { CATEGORY_LABELS } from '@/types/stage';
 
 const STATUS_BADGE_VARIANT: Record<ReportStatus, 'new' | 'completed' | 'closed' | 'draft'> = {
   queued: 'new',
@@ -49,7 +49,11 @@ function formLabel(job: ReportJob, formTitleById: Map<string, string>): string {
 // from/to happens to match "Last 30 days" etc. reads as a friendly label instead of raw dates.
 function scopeSubtitle(job: ReportJob): string {
   const parts: string[] = [];
-  if (job.responseStatus) parts.push(STATUS_LABELS[job.responseStatus]);
+  // `job.stage` (a name snapshot) wins; `responseStatus` is only read for a job created before
+  // this sprint (OQ-2's deprecated-status alias) — mapped through the same fixed category labels
+  // StatusDistributionChart.tsx uses, since it's still the removed union's literal value.
+  if (job.stage) parts.push(job.stage.name);
+  else if (job.responseStatus) parts.push(CATEGORY_LABELS[job.responseStatus]);
   if (job.from && job.to) {
     const preset = detectDateRangePreset(job.from, job.to);
     parts.push(preset === 'custom' ? `${formatShortDate(job.from)} – ${formatShortDate(job.to)}` : PRESET_LABEL[preset]);
@@ -175,10 +179,10 @@ export function ReportJobRow({ job, onRetry, isRetrying = false, formTitleById =
         </span>
       </td>
       <td className="px-4 py-3">
-        <p className="text-body-sm font-semibold text-neutral-800 truncate max-w-[280px]">{title}</p>
-        <p className="text-caption text-neutral-500 truncate max-w-[280px]">{subtitle}</p>
+        <p className="text-body-sm font-semibold text-neutral-800 truncate max-w-70">{title}</p>
+        <p className="text-caption text-neutral-500 truncate max-w-70">{subtitle}</p>
         {job.status === 'failed' && job.errorMessage && (
-          <p className="text-caption text-rose-600 truncate max-w-[280px]">{job.errorMessage}</p>
+          <p className="text-caption text-rose-600 truncate max-w-70">{job.errorMessage}</p>
         )}
       </td>
       <td className="px-4 py-3 text-body-sm text-neutral-500 whitespace-nowrap">{created}</td>

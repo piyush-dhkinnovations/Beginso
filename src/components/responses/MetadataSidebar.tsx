@@ -3,12 +3,14 @@
 import { CalendarDays, Hash, Shield, Workflow as WorkflowIcon } from 'lucide-react';
 import { StatusDropdown } from './StatusDropdown';
 import { formatResponseDate, shortId } from '@/lib/formatters';
-import type { ResponseDetail, ResponseStatus } from '@/types/response';
+import type { ResponseDetail } from '@/types/response';
+import type { StageRef } from '@/types/stage';
 
 interface MetadataSidebarProps {
   response: ResponseDetail;
-  onStatusChange?: (s: ResponseStatus) => void;
-  isUpdatingStatus?: boolean;
+  stages?: readonly StageRef[];
+  onStageChange?: (stageId: string) => void;
+  isUpdatingStage?: boolean;
 }
 
 const ORIGIN_TOOLTIP = 'Anonymised origin hash — raw IPs are never stored.';
@@ -18,12 +20,12 @@ const CARD = 'flex flex-col gap-3 p-4 bg-white border border-neutral-200 rounded
 const META_ROW = 'flex items-center justify-between gap-3 py-2 border-b border-neutral-100 last:border-0 last:pb-0';
 const META_LABEL = 'flex items-center gap-1.5 shrink-0 text-caption text-neutral-500';
 
-export function MetadataSidebar({ response, onStatusChange, isUpdatingStatus }: MetadataSidebarProps) {
+export function MetadataSidebar({ response, stages = [], onStageChange, isUpdatingStage }: MetadataSidebarProps) {
   const ipHash = response.ipHash ? response.ipHash.slice(0, 16) : null;
 
   return (
     <aside className="w-full shrink-0 flex flex-col gap-4">
-      {onStatusChange && (
+      {onStageChange && stages.length > 0 && (
         <div
           role="group"
           aria-labelledby="workflow-status-heading"
@@ -34,9 +36,9 @@ export function MetadataSidebar({ response, onStatusChange, isUpdatingStatus }: 
               <WorkflowIcon size={13} />
               Workflow
             </span>
-            <span className="mt-1 block text-body-sm font-medium text-neutral-700">Status</span>
+            <span className="mt-1 block text-body-sm font-medium text-neutral-700">Stage</span>
           </div>
-          <StatusDropdown currentStatus={response.status} onChange={onStatusChange} disabled={isUpdatingStatus} />
+          <StatusDropdown stages={stages} currentStageId={response.stage?.id ?? ''} onChange={onStageChange} disabled={isUpdatingStage} />
         </div>
       )}
       <div className={CARD}>

@@ -12,7 +12,7 @@ import { mockAnalyticsOverview } from '@/lib/mocks/analyticsMocks';
 
 describe('AnalyticsStatCards', () => {
   it('renders 4 cards in Total/Completed/In Progress/New order with their values', () => {
-    const overview = mockAnalyticsOverview({ totalResponses: 128, statusCounts: { new: 42, in_progress: 36, completed: 50 } });
+    const overview = mockAnalyticsOverview({ totalResponses: 128, categoryCounts: { new: 42, in_progress: 36, completed: 50 } });
     render(<AnalyticsStatCards overview={overview} isLoading={false} />);
 
     expect(screen.getByText('Total Responses')).toBeInTheDocument();
@@ -26,7 +26,7 @@ describe('AnalyticsStatCards', () => {
   });
 
   it('renders a zero value in muted text-text-muted (theme-aware, unlike the old static text-neutral-400)', () => {
-    const overview = mockAnalyticsOverview({ totalResponses: 0, statusCounts: { new: 0, in_progress: 0, completed: 0 } });
+    const overview = mockAnalyticsOverview({ totalResponses: 0, categoryCounts: { new: 0, in_progress: 0, completed: 0 } });
     render(<AnalyticsStatCards overview={overview} isLoading={false} />);
 
     screen.getAllByText('0').forEach((el) => expect(el).toHaveClass('text-text-muted'));

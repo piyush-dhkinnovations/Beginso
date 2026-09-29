@@ -72,7 +72,6 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
       const optimisticJob: ReportJob = {
         ...job,
         formId: job.formId ?? payload.formId,
-        responseStatus: job.responseStatus ?? payload.status,
         from: job.from ?? payload.from,
         to: job.to ?? payload.to,
       };
@@ -122,7 +121,6 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
     retryMutation.mutate({
       format: job.format,
       formId: job.formId,
-      status: job.responseStatus,
       from: job.from,
       to: job.to,
     });
