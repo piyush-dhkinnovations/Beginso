@@ -4,25 +4,51 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react";
 import { bx } from "@/lib/utils";
 
+// Sprint 12 (inbox-collaboration), task 2.1: an optional action slot for reversible mutations
+// (bulk Undo, saved-view delete Undo). `label`/`onClick` only — never a raw JSX slot, so every
+// toast stays a plain, accessible role="status" text region regardless of caller.
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 export interface ToastMessage {
   id: string;
   message: string;
   type: "success" | "error" | "warning" | "info";
   duration?: number;
+  action?: ToastAction;
 }
 
 interface ToastContextType {
-  toast: (message: string, type: "success" | "error" | "warning" | "info", duration?: number) => void;
+  /** Existing 3-argument callers (24+ sites) are unchanged — `action` is a new, optional 4th
+   * argument. When an action is present and no explicit `duration` was passed, the toast stays
+   * up at least 8s (requirements.md §11: "does not disappear before a screen-reader user can
+   * act") rather than the normal 4s default. */
+  toast: (
+    message: string,
+    type: "success" | "error" | "warning" | "info",
+    duration?: number,
+    action?: ToastAction
+  ) => void;
 }
+
+const MIN_ACTION_DURATION = 8000;
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
 
-  const toast = (message: string, type: "success" | "error" | "warning" | "info", duration = 4000) => {
+  const toast = (
+    message: string,
+    type: "success" | "error" | "warning" | "info",
+    duration?: number,
+    action?: ToastAction
+  ) => {
     const id = crypto.randomUUID();
-    setToasts((prev) => [...prev, { id, message, type, duration }]);
+    const resolvedDuration = duration ?? (action ? MIN_ACTION_DURATION : 4000);
+    setToasts((prev) => [...prev, { id, message, type, duration: resolvedDuration, action }]);
   };
 
   const removeToast = (id: string) => {
@@ -87,6 +113,18 @@ function ToastItem({ toast, onClose }: { toast: ToastMessage; onClose: () => voi
             than in <span> (muted/secondary — wrong weight for a toast's only content). */}
         <strong>{toast.message}</strong>
       </div>
+      {toast.action && (
+        <button
+          type="button"
+          onClick={() => {
+            toast.action?.onClick();
+            onClose();
+          }}
+          className="bg-btn bg-btn-ghost bg-btn-sm"
+        >
+          {toast.action.label}
+        </button>
+      )}
       <button type="button" onClick={onClose} className="bg-btn bg-btn-ghost bg-btn-icon bg-btn-sm">
         <span className="bg-sr-only">Close</span>
         <svg className="bg-icon-sm" fill="none" viewBox="0 0 24 24" stroke="currentColor">

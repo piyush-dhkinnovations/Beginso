@@ -1,4 +1,6 @@
+import { isAxiosError } from 'axios';
 import axiosInstance from '@/lib/axios';
+import { unwrapEnvelope } from '@/lib/apiEnvelope';
 import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import type {
   GetResponsesParams,
@@ -8,6 +10,8 @@ import type {
   ResponseAnswers,
   ResponseDetail,
   ResponseStats,
+  BulkRequest,
+  BulkResult,
 } from '@/types/response';
 
 // Wire shapes from docs/backend-contract/api-reference.md §3 — every response is wrapped
@@ -86,6 +90,24 @@ export interface UpdateResponsePayload {
   tagIds?: string[];
 }
 
+// POST /api/responses/bulk (design.md §11.2, task 2.2): "413 batch over cap (cap stated in
+// response)". Surfaced as a typed error rather than a generic axios failure so
+// `useInboxMutations`/`BulkActionBar` can show a specific message instead of the default
+// "failed to update" toast. `cap` is read defensively — the exact response shape for the cap is
+// itself "Backend contract to confirm".
+export class BulkBatchLimitError extends Error {
+  cap?: number;
+  constructor(cap?: number) {
+    super(cap ? `Bulk actions are limited to ${cap} responses at a time.` : 'Too many responses selected for one bulk action.');
+    this.name = 'BulkBatchLimitError';
+    this.cap = cap;
+  }
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 export const responsesService = {
   getResponses: (params: GetResponsesParams, scope?: string) =>
     axiosInstance
@@ -141,6 +163,36 @@ export const responsesService = {
     );
     return URL.createObjectURL(res.data);
   },
+
+  // Sprint 12 (inbox-collaboration), task 2.2: one request per bulk action (B2.1) — never one per
+  // id. `previous` comes back only for a reversible action; defensively defaulted to `[]` like
+  // every other array field in this file (cleanAnswers' own precedent) since nothing here has
+  // been exercised against a live response yet.
+  bulk: (request: BulkRequest, scope?: string): Promise<BulkResult> =>
+    axiosInstance
+      .post('/api/responses/bulk', request, { headers: workspaceHeaders(scope) })
+      .then((r) => {
+        const raw = unwrapEnvelope<Partial<BulkResult>>(r.data, 'result');
+        return {
+          succeeded: Array.isArray(raw.succeeded) ? raw.succeeded : [],
+          failed: Array.isArray(raw.failed) ? raw.failed : [],
+          previous: Array.isArray(raw.previous) ? raw.previous : [],
+        };
+      })
+      .catch((err) => {
+        if (isAxiosError(err) && err.response?.status === 413) {
+          const data = err.response.data;
+          const cap = isPlainObject(data) && typeof data.cap === 'number' ? data.cap : undefined;
+          throw new BulkBatchLimitError(cap);
+        }
+        throw err;
+      }),
+
+  // POST /api/responses/:id/read · /unread (design.md §11.2): "idempotent; GET never mutates."
+  markRead: (id: string, read: boolean, scope?: string): Promise<void> =>
+    axiosInstance
+      .post(`/api/responses/${id}/${read ? 'read' : 'unread'}`, {}, { headers: workspaceHeaders(scope) })
+      .then(() => undefined),
 
   // Sprint 12 (inbox-collaboration), task 1.3: replaces the old 3-request client-side computation
   // with the confirmed-live single GET /api/responses/stats call (closes the known low-severity

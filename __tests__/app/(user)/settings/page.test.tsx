@@ -23,6 +23,8 @@ vi.mock('@/components/settings/BrandingTab', () => ({ BrandingTab: () => <div>br
 vi.mock('@/components/settings/NotificationsTab', () => ({ NotificationsTab: () => <div>notifications-body</div> }));
 vi.mock('@/components/settings/SecurityTab', () => ({ SecurityTab: () => <div>security-body</div> }));
 vi.mock('@/components/settings/SessionsTab', () => ({ SessionsTab: () => <div>sessions-body</div> }));
+vi.mock('@/components/settings/TagManager', () => ({ TagManager: () => <div>tags-body</div> }));
+vi.mock('@/hooks/useTagManagerScope', () => ({ useTagManagerScope: () => undefined }));
 
 describe('SettingsPage tab wiring', () => {
   beforeEach(() => {
@@ -72,5 +74,15 @@ describe('SettingsPage tab wiring', () => {
     screen.getByRole('tab', { name: 'Sessions & Devices' }).click();
 
     expect(mockReplace).toHaveBeenCalledWith('/settings?tab=sessions', { scroll: false });
+  });
+
+  // Sprint 12 (inbox-collaboration), task 2.5 — the Tags tab joins the same visitedTabs set as
+  // every other tab.
+  it('accepts ?tab=tags and shows the Tags tab as active', () => {
+    mockTab = 'tags';
+    render(<SettingsPage />);
+
+    expect(screen.getByRole('tab', { name: 'Tags' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('tags-body')).toBeVisible();
   });
 });

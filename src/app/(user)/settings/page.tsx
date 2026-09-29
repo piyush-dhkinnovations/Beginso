@@ -12,8 +12,10 @@ import { BrandingTab } from '@/components/settings/BrandingTab';
 import { NotificationsTab } from '@/components/settings/NotificationsTab';
 import { SecurityTab } from '@/components/settings/SecurityTab';
 import { SessionsTab } from '@/components/settings/SessionsTab';
+import { TagManager } from '@/components/settings/TagManager';
+import { useTagManagerScope } from '@/hooks/useTagManagerScope';
 
-const VALID_TABS: SettingsTab[] = ['profile', 'workspace', 'branding', 'notifications', 'security', 'sessions'];
+const VALID_TABS: SettingsTab[] = ['profile', 'workspace', 'branding', 'notifications', 'security', 'sessions', 'tags'];
 
 const TAB_LABEL: Record<SettingsTab, string> = {
   profile: 'Profile',
@@ -22,6 +24,7 @@ const TAB_LABEL: Record<SettingsTab, string> = {
   notifications: 'Notifications',
   security: 'Security',
   sessions: 'Sessions & Devices',
+  tags: 'Tags',
 };
 
 export default function SettingsPage() {
@@ -48,6 +51,8 @@ export default function SettingsPage() {
   if (!visitedTabs.has(activeTab)) {
     setVisitedTabs(new Set(visitedTabs).add(activeTab));
   }
+
+  const tagManagerScope = useTagManagerScope();
 
   function setTabDirty(tab: SettingsTab, isDirty: boolean) {
     setDirtyTabs((prev) => {
@@ -83,7 +88,7 @@ export default function SettingsPage() {
           the same max-w-4xl BrandingPanel already applies to itself internally, not left
           unbounded — otherwise its own `mx-auto` has extra room to center it away from the left
           edge that every other tab's content starts flush against. */}
-      <div className={activeTab === 'branding' ? 'max-w-4xl' : 'max-w-[440px]'}>
+      <div className={activeTab === 'branding' ? 'max-w-4xl' : activeTab === 'tags' ? '' : 'max-w-110'}>
         {visitedTabs.has('profile') && (
           <div className={activeTab === 'profile' ? '' : 'hidden'}>
             <ProfileTab onDirtyChange={(isDirty) => setTabDirty('profile', isDirty)} />
@@ -112,6 +117,11 @@ export default function SettingsPage() {
         {visitedTabs.has('sessions') && (
           <div className={activeTab === 'sessions' ? '' : 'hidden'}>
             <SessionsTab />
+          </div>
+        )}
+        {visitedTabs.has('tags') && (
+          <div className={activeTab === 'tags' ? '' : 'hidden'}>
+            <TagManager scope={tagManagerScope} onDirtyChange={(isDirty) => setTabDirty('tags', isDirty)} />
           </div>
         )}
       </div>

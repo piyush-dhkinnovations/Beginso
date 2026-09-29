@@ -79,6 +79,8 @@ Test files live under `__tests__/`, mirroring `src/`'s structure; the glob is `*
 
 **Screens import from `components/ui/`, never a raw class name.** The V2 design system is a CSS library (`beginso-ui.css`, in `Beginso-Report/Beginso-Design-System/Beginso V2/`) wrapped by a `components/ui/` package built in Sprint 7. A screen that writes `class="bg-btn bg-btn-primary"` directly bypasses the wrapper and makes a later token change unsafe.
 
+**When a CSS variable has to appear in a class string anyway, use Tailwind v4's canonical `(--token)` syntax, never `[var(--token)]`.** Write `text-(--text-muted)`, `bg-(--surface-hover)`, `border-(--border-default)` — not `text-[var(--text-muted)]` etc. Same idea for arbitrary values in general: prefer the nearest scale token over a raw arbitrary value when one exists (`max-w-70` not `max-w-[280px]`, `leading-3.5` not `leading-[14px]`). The IDE's Tailwind IntelliSense flags every violation as `suggestCanonicalClasses` — treat that as a lint to fix, not a suggestion to ignore.
+
 **Every screen is built in both themes from the first commit.** Dark mode is a token swap — the default palette is Slate, with `midnight` and `dimmed` available via `data-dark`. Retro-fitting dark at the end means re-testing everything twice.
 
 **The theme preference is read server-side and written into the initial HTML.** Otherwise every dark-mode user gets a white flash on every page load.

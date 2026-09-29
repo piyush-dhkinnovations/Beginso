@@ -46,6 +46,16 @@ export const stageKeys = {
   list: (scope: string) => ['stages', scope] as const,
 };
 
+// Sprint 12 (inbox-collaboration), design.md §10, task 2.2/2.5.
+export const tagKeys = {
+  list: (scope: string) => ['tags', scope] as const,
+};
+
+// Sprint 12 (inbox-collaboration), design.md §10, task 2.2/2.6.
+export const viewKeys = {
+  list: (scope: string, formId?: string) => ['views', scope, formId ?? 'all'] as const,
+};
+
 export const dashboardKeys = {
   all: ['dashboard'] as const,
   analytics: () => [...dashboardKeys.all, 'analytics'] as const,

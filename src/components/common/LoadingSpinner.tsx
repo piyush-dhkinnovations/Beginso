@@ -8,7 +8,7 @@ interface LoadingSpinnerProps {
 export function LoadingSpinner({ variant = "inline", className }: LoadingSpinnerProps) {
   if (variant === "overlay") {
     return (
-      <div className="fixed inset-0 flex items-center justify-center bg-[var(--bg-page)]/70 z-50">
+      <div className="fixed inset-0 flex items-center justify-center bg-(--bg-page)/70 z-50">
         <div
           role="status"
           className={cn(
