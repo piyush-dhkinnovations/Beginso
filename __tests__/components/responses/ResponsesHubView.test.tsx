@@ -33,6 +33,10 @@ vi.mock('@/components/common/Toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({ user: { id: 'u1', name: 'Test User', email: 't@example.com' } }),
+}));
+
 const form = { _id: 'form-1', title: 'Customer survey' };
 const emptyPage = { data: [], total: 0, page: 1, limit: 50, totalPages: 1 };
 

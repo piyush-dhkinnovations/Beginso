@@ -123,3 +123,69 @@ describe('Toast component', () => {
     expect(screen.getByText(/test error message/i)).toBeInTheDocument();
   }, 10000);
 });
+
+// Sprint 12 (inbox-collaboration), task 2.1: the optional action slot. Existing 3-arg callers
+// above are untouched by this addition.
+describe('Toast action slot', () => {
+  function UndoTrigger({ onUndo }: { onUndo: () => void }) {
+    const { toast } = useToast();
+    return (
+      <button onClick={() => toast('3 responses updated.', 'success', undefined, { label: 'Undo', onClick: onUndo })}>
+        Trigger undo toast
+      </button>
+    );
+  }
+
+  it('renders the action button, keyboard-reachable, and invokes onClick', async () => {
+    const user = userEvent.setup();
+    const onUndo = vi.fn();
+    render(
+      <ToastProvider>
+        <UndoTrigger onUndo={onUndo} />
+      </ToastProvider>
+    );
+    await user.click(screen.getByRole('button', { name: /trigger undo toast/i }));
+    const undoButton = screen.getByRole('button', { name: 'Undo' });
+    undoButton.focus();
+    expect(undoButton).toHaveFocus();
+    await user.keyboard('{Enter}');
+    expect(onUndo).toHaveBeenCalledTimes(1);
+  });
+
+  it('defaults to at least an 8s duration when an action is present', () => {
+    vi.useFakeTimers();
+    const onUndo = vi.fn();
+    const { getByRole, queryByText } = render(
+      <ToastProvider>
+        <UndoTrigger onUndo={onUndo} />
+      </ToastProvider>
+    );
+    act(() => {
+      getByRole('button', { name: /trigger undo toast/i }).click();
+    });
+    expect(queryByText(/3 responses updated/i)).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(7999);
+    });
+    expect(queryByText(/3 responses updated/i)).toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(200);
+    });
+    expect(queryByText(/3 responses updated/i)).not.toBeInTheDocument();
+
+    vi.useRealTimers();
+  });
+
+  it('keeps role="status" on the toast region with an action present', async () => {
+    const user = userEvent.setup();
+    render(
+      <ToastProvider>
+        <UndoTrigger onUndo={() => {}} />
+      </ToastProvider>
+    );
+    await user.click(screen.getByRole('button', { name: /trigger undo toast/i }));
+    expect(screen.getByRole('status')).toBeInTheDocument();
+  });
+});

@@ -113,5 +113,47 @@ export interface ResponseStats {
   byCategory: Record<StageCategory, number>;
 }
 
+/**
+ * POST /api/responses/bulk (design.md §11.2, task 2.2). Backend contract to confirm — field
+ * names are a proposal. `target` is `{ids}` for an explicit selection or `{filter}` for "Select
+ * all N matching" (requirements.md §7.2 (2.2): sent as a filter, never as N ids).
+ */
+export type BulkTarget = { ids: string[] } | { filter: ResponseFilters; formId?: string };
+
+export type BulkAction =
+  | { type: 'stage'; stageId: string }
+  | { type: 'assign'; assigneeId: string | null }
+  | { type: 'tag'; tagId: string }
+  | { type: 'untag'; tagId: string }
+  | { type: 'read' }
+  | { type: 'unread' }
+  | { type: 'delete' }
+  | { type: 'restore' };
+
+/** Snapshot of one response's prior values, returned by a bulk mutation so `restore` can undo it
+ * with a single follow-up request (design.md §8 "Bulk"). Only `restore` sends `previous` back. */
+export interface BulkPrevious {
+  id: string;
+  stageId?: string;
+  assigneeId?: string | null;
+  tagIds?: string[];
+  read?: boolean;
+  deleted?: boolean;
+}
+
+export interface BulkRequest {
+  target: BulkTarget;
+  action: BulkAction;
+  /** Only present for a `restore` action — the `previous` snapshot from the bulk call being
+   * undone. */
+  previous?: BulkPrevious[];
+}
+
+export interface BulkResult {
+  succeeded: string[];
+  failed: { id: string; reason: string }[];
+  previous: BulkPrevious[];
+}
+
 // Re-exported for callers that only need the stage shape alongside response types.
 export type { Stage, StageCategory, StageRef };

@@ -4,4 +4,4 @@
 // CLAUDE.md's "a screen imports from components/ui/, never a raw class name" rule, without a
 // second Toast implementation (requirements.md 2.2 explicitly rules that out).
 export { ToastProvider, useToast } from "@/components/common/Toast";
-export type { ToastMessage } from "@/components/common/Toast";
+export type { ToastMessage, ToastAction } from "@/components/common/Toast";

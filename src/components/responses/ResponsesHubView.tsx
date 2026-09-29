@@ -16,17 +16,30 @@ import { PaginationControls } from './PaginationControls';
 import { BulkActionBar } from './BulkActionBar';
 import { ResponsesStatCards } from './ResponsesStatCards';
 import { ResponseDrawer } from './ResponseDrawer';
+import { SavedViewSelect } from './SavedViewSelect';
+import { SaveViewModal } from './SaveViewModal';
 import { formsService } from '@/services/forms';
 import { responsesService } from '@/services/responses';
-import { responseKeys } from '@/lib/queryKeys';
+import { reportsService } from '@/services/reports';
+import { viewsService } from '@/services/views';
+import { responseKeys, viewKeys } from '@/lib/queryKeys';
 import { useInboxFilters } from '@/hooks/useInboxFilters';
 import { useInboxMutations } from '@/hooks/useInboxMutations';
 import { useMembers } from '@/hooks/useMembers';
-import type { IResponse } from '@/types/response';
+import { useTags } from '@/hooks/useTags';
+import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
+import { useToast } from '@/components/common/Toast';
+import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
+import { hasCapability } from '@/lib/roles';
+import { exportPayloadFromFilters, exportPayloadFromTarget } from '@/lib/reportExport';
+import type { IResponse, BulkTarget } from '@/types/response';
+import type { SavedView } from '@/types/savedView';
 
 interface ConfirmDeleteState {
   mode: 'single' | 'bulk';
-  ids: string[];
+  target: BulkTarget;
+  count: number;
 }
 
 interface ResponsesHubViewProps {
@@ -51,13 +64,108 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
 
   const { filters, page, search, pageLimit, stages, setFilters, setPage, clear } = useInboxFilters({ scope });
   const { data: members } = useMembers(scope === 'personal' ? undefined : scope);
+  const { data: tags } = useTags(scope === 'personal' ? undefined : scope);
+  const role = useWorkspaceRole(scope);
   const mutations = useInboxMutations({ scope, formId });
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Sprint 12 (inbox-collaboration), requirements.md §7.6 (task 2.6). Views are a workspace
+  // concept (OQ-9) — not fetched for the personal shell, same gate `useTags`/`useMembers` apply.
+  const { data: views } = useQuery({
+    queryKey: viewKeys.list(scope, formId),
+    queryFn: () => viewsService.list(scope, formId),
+    enabled: scope !== 'personal',
+  });
+  const [saveViewOpen, setSaveViewOpen] = useState(false);
+  const [activeViewId, setActiveViewId] = useState<string | undefined>();
+  const canCreateTeamView = role === 'owner' || role === 'admin' || role === 'editor' || role === 'member';
+
+  function invalidateViews() {
+    queryClient.invalidateQueries({ queryKey: viewKeys.list(scope, formId) });
+  }
+
+  function applyView(view: SavedView) {
+    setActiveViewId(view.id);
+    clearSelection();
+    setFilters({ ...view.filters, view: view.viewMode }, { resetPage: true });
+  }
+
+  function clearAppliedView() {
+    setActiveViewId(undefined);
+  }
+
+  function saveView(values: { name: string; visibility: 'personal' | 'team' }) {
+    viewsService
+      .create(scope, { name: values.name, visibility: values.visibility, formId: formId ?? null, filters, viewMode: 'table' })
+      .then((view) => {
+        invalidateViews();
+        setActiveViewId(view.id);
+        setSaveViewOpen(false);
+        toast('View saved.', 'success');
+      })
+      .catch(() => toast('Failed to save the view. Please try again.', 'error'));
+  }
+
+  function renameView(view: SavedView, name: string) {
+    viewsService
+      .update(scope, view.id, { name })
+      .then(() => {
+        invalidateViews();
+        toast('View renamed.', 'success');
+      })
+      .catch(() => toast('Failed to rename the view. Please try again.', 'error'));
+  }
+
+  function deleteView(view: SavedView) {
+    viewsService
+      .remove(scope, view.id)
+      .then(() => {
+        invalidateViews();
+        if (activeViewId === view.id) clearAppliedView();
+        toast('View deleted.', 'success', undefined, {
+          label: 'Undo',
+          onClick: () =>
+            viewsService
+              .create(scope, { name: view.name, visibility: view.visibility, formId: view.formId, filters: view.filters, viewMode: view.viewMode })
+              .then(() => {
+                invalidateViews();
+                toast('View restored.', 'success');
+              })
+              .catch(() => toast('Failed to restore the view.', 'error')),
+        });
+      })
+      .catch(() => toast('Failed to delete the view. Please try again.', 'error'));
+  }
 
   const responseId = searchParams.get('responseId');
   const listKey = responseKeys.list(scope, formId, { ...filters, page, limit: pageLimit });
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectAllMatching, setSelectAllMatching] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<ConfirmDeleteState | null>(null);
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+    setSelectAllMatching(false);
+  }
+
+  const canExport = role !== undefined && hasCapability(role, 'responses:export');
+
+  function runExport(target: BulkTarget) {
+    reportsService
+      .createReport(exportPayloadFromTarget('csv', target))
+      .then(() => toast('Export started. Find it under Reports when it finishes.', 'success'))
+      .catch(() => toast('Failed to start the export. Please try again.', 'error'));
+  }
+
+  function exportCurrentFilter() {
+    reportsService
+      .createReport(exportPayloadFromFilters('csv', formId, filters))
+      .then(() => toast('Export started. Find it under Reports when it finishes.', 'success'))
+      .catch(() => toast('Failed to start the export. Please try again.', 'error'));
+  }
 
   const replacePage = useCallback((nextPage: number) => setPage(nextPage), [setPage]);
 
@@ -187,16 +295,17 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   const handleConfirmDelete = () => {
     if (!confirmDelete) return;
     if (confirmDelete.mode === 'bulk') {
-      mutations.bulkDelete(confirmDelete.ids, {
+      mutations.bulk(confirmDelete.target, { type: 'delete' }, {
+        attemptedIds: 'ids' in confirmDelete.target ? confirmDelete.target.ids : undefined,
         onSettled: () => setConfirmDelete(null),
-        onSuccess: () => setSelectedIds(new Set()),
+        onSuccess: () => clearSelection(),
       });
-    } else {
-      mutations.singleDelete(confirmDelete.ids[0], { onSettled: () => setConfirmDelete(null) });
+    } else if ('ids' in confirmDelete.target) {
+      mutations.singleDelete(confirmDelete.target.ids[0], { onSettled: () => setConfirmDelete(null) });
     }
   };
 
-  const isDeleting = mutations.isBulkDeleting || mutations.isSingleDeleting;
+  const isDeleting = mutations.isBulkRunning || mutations.isSingleDeleting;
   const hasActiveFilters = !!search || !!filters.stageId || !!filters.assigneeId || !!filters.unread;
 
   return (
@@ -205,8 +314,15 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
     // AppShell owns page width (CLAUDE.md) — this component sets none of its own.
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Responses"
+        title={scope !== 'personal' ? 'Inbox' : 'Responses'}
         description={formId ? `Responses · ${form?.title ?? ''}` : 'Track, view, and organize submissions across every form.'}
+        actions={
+          canExport ? (
+            <Button variant="secondary" size="small" onClick={exportCurrentFilter}>
+              Export
+            </Button>
+          ) : undefined
+        }
       />
 
       <ResponsesStatCards
@@ -223,11 +339,11 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         members={scope === 'personal' ? undefined : members}
         total={data?.total ?? 0}
         onSearchChange={(v) => {
-          setSelectedIds(new Set());
+          clearSelection();
           setFilters({ q: v || undefined }, { resetPage: true });
         }}
         onFilterChange={(patch) => {
-          setSelectedIds(new Set());
+          clearSelection();
           setFilters(patch, { resetPage: true });
         }}
       />
@@ -237,17 +353,48 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         stages={stages}
         onRemove={(key) => setFilters({ [key]: undefined }, { resetPage: true })}
         onClearAll={() => {
-          setSelectedIds(new Set());
+          clearSelection();
           clear();
         }}
       />
 
+      {scope !== 'personal' && (
+        <div className="flex items-center gap-3">
+          <SavedViewSelect
+            views={views ?? []}
+            currentUserId={user?.id ?? ''}
+            activeViewId={activeViewId}
+            stages={stages}
+            tags={tags}
+            members={members}
+            role={role}
+            onApply={applyView}
+            onClearApplied={clearAppliedView}
+            onRename={renameView}
+            onDelete={deleteView}
+          />
+          <Button variant="secondary" size="small" onClick={() => setSaveViewOpen(true)}>
+            Save view
+          </Button>
+        </div>
+      )}
+
       <BulkActionBar
-        count={selectedIds.size}
+        selectedIds={[...selectedIds]}
+        selectAllMatching={selectAllMatching}
+        totalMatching={data?.total}
+        onToggleSelectAllMatching={setSelectAllMatching}
+        filters={filters}
+        formId={formId}
         stages={stages}
-        isLoading={mutations.isBulkUpdatingStage || mutations.isBulkDeleting}
-        onChangeStage={(stageId) => mutations.bulkUpdateStage({ ids: [...selectedIds], stageId }, { onSuccess: () => setSelectedIds(new Set()) })}
-        onDeleteSelected={() => setConfirmDelete({ mode: 'bulk', ids: [...selectedIds] })}
+        tags={scope === 'personal' ? undefined : tags}
+        members={scope === 'personal' ? undefined : members}
+        role={role}
+        isLoading={mutations.isBulkRunning}
+        onBulk={(target, action) => mutations.bulk(target, action, { onSuccess: () => clearSelection() })}
+        onDeleteRequest={(target, count) => setConfirmDelete({ mode: 'bulk', target, count })}
+        onExport={runExport}
+        onClear={clearSelection}
       />
 
       <ResponsesTable
@@ -257,12 +404,13 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         formId={formId}
         hasActiveFilters={hasActiveFilters}
         onClearFilters={() => {
-          setSelectedIds(new Set());
+          clearSelection();
           clear();
         }}
-        onSelectAll={(checked) =>
-          setSelectedIds(checked ? new Set(responses.map((r) => r._id)) : new Set())
-        }
+        onSelectAll={(checked) => {
+          setSelectAllMatching(false);
+          setSelectedIds(checked ? new Set(responses.map((r) => r._id)) : new Set());
+        }}
         onSelectRow={(id, checked) =>
           setSelectedIds((prev) => {
             const next = new Set(prev);
@@ -272,14 +420,14 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
           })
         }
         onViewResponse={openResponse}
-        onDeleteResponse={(id) => setConfirmDelete({ mode: 'single', ids: [id] })}
+        onDeleteResponse={(id) => setConfirmDelete({ mode: 'single', target: { ids: [id] }, count: 1 })}
       />
 
       <PaginationControls
         page={page}
         totalPages={data?.totalPages ?? 1}
         onPageChange={(p) => {
-          setSelectedIds(new Set());
+          clearSelection();
           setPage(p);
         }}
       />
@@ -287,10 +435,10 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
       <Modal
         isOpen={confirmDelete !== null}
         onClose={() => setConfirmDelete(null)}
-        title={confirmDelete?.mode === 'bulk' ? `Delete ${confirmDelete.ids.length} responses?` : 'Delete this response?'}
+        title={confirmDelete?.mode === 'bulk' ? `Delete ${confirmDelete.count} responses?` : 'Delete this response?'}
         description={
           confirmDelete?.mode === 'bulk'
-            ? 'This cannot be undone.'
+            ? 'You can undo this from the toast after deleting.'
             : 'This will permanently delete the response and all uploaded files. This action cannot be undone.'
         }
       >
@@ -303,6 +451,14 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
           </Button>
         </div>
       </Modal>
+
+      <SaveViewModal
+        isOpen={saveViewOpen}
+        onClose={() => setSaveViewOpen(false)}
+        canCreateTeamView={canCreateTeamView}
+        isSaving={false}
+        onSave={saveView}
+      />
 
       <ResponseDrawer
         responseId={responseId}

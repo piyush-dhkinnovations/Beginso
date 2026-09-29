@@ -8,14 +8,17 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import fc from 'fast-check';
 
 vi.mock('@/lib/axios', () => {
   const mockGet = vi.fn();
+  const mockPost = vi.fn();
   const mockPatch = vi.fn();
   const mockDelete = vi.fn();
   return {
     default: {
       get: mockGet,
+      post: mockPost,
       patch: mockPatch,
       delete: mockDelete,
       interceptors: { response: { use: vi.fn() } },
@@ -24,15 +27,18 @@ vi.mock('@/lib/axios', () => {
 });
 
 import axiosInstance from '@/lib/axios';
-import { responsesService } from '@/services/responses';
+import { responsesService, BulkBatchLimitError } from '@/services/responses';
+import { idsRemainingSelected } from '@/lib/bulkActions';
 
 const mockGet = axiosInstance.get as ReturnType<typeof vi.fn>;
+const mockPost = axiosInstance.post as ReturnType<typeof vi.fn>;
 const mockPatch = axiosInstance.patch as ReturnType<typeof vi.fn>;
 const mockDelete = axiosInstance.delete as ReturnType<typeof vi.fn>;
 
 describe('responsesService', () => {
   beforeEach(() => {
     mockGet.mockReset();
+    mockPost.mockReset();
     mockPatch.mockReset();
     mockDelete.mockReset();
   });
@@ -203,5 +209,83 @@ describe('responsesService', () => {
     const result = await responsesService.getResponseById('r1');
 
     expect(result.answers).toEqual({ 'Full Name': 'Priya' });
+  });
+
+  // Sprint 12 (inbox-collaboration), task 2.2 — bulk/markRead.
+  it('bulk posts one request for ids and returns succeeded/failed/previous', async () => {
+    mockPost.mockResolvedValueOnce({
+      data: { success: true, result: { succeeded: ['r1', 'r2'], failed: [{ id: 'r3', reason: 'no access' }], previous: [{ id: 'r1', stageId: 's1' }] } },
+    });
+
+    const result = await responsesService.bulk(
+      { target: { ids: ['r1', 'r2', 'r3'] }, action: { type: 'stage', stageId: 's2' } },
+      'acme'
+    );
+
+    expect(mockPost).toHaveBeenCalledTimes(1);
+    expect(mockPost).toHaveBeenCalledWith(
+      '/api/responses/bulk',
+      { target: { ids: ['r1', 'r2', 'r3'] }, action: { type: 'stage', stageId: 's2' } },
+      { headers: { 'x-workspace-slug': 'acme' } }
+    );
+    expect(result).toEqual({
+      succeeded: ['r1', 'r2'],
+      failed: [{ id: 'r3', reason: 'no access' }],
+      previous: [{ id: 'r1', stageId: 's1' }],
+    });
+  });
+
+  it('bulk defensively defaults missing succeeded/failed/previous arrays', async () => {
+    mockPost.mockResolvedValueOnce({ data: {} });
+    const result = await responsesService.bulk({ target: { ids: ['r1'] }, action: { type: 'read' } });
+    expect(result).toEqual({ succeeded: [], failed: [], previous: [] });
+  });
+
+  it('bulk surfaces a 413 as a typed BulkBatchLimitError, not a generic axios error', async () => {
+    const axiosError = Object.assign(new Error('Payload Too Large'), {
+      isAxiosError: true,
+      response: { status: 413, data: { cap: 200 } },
+    });
+    mockPost.mockRejectedValueOnce(axiosError);
+
+    await expect(
+      responsesService.bulk({ target: { ids: Array.from({ length: 500 }, (_, i) => `r${i}`) }, action: { type: 'delete' } })
+    ).rejects.toBeInstanceOf(BulkBatchLimitError);
+  });
+
+  it('markRead posts to /read or /unread depending on the flag', async () => {
+    mockPost.mockResolvedValueOnce({ data: {} });
+    await responsesService.markRead('r1', true, 'acme');
+    expect(mockPost).toHaveBeenCalledWith('/api/responses/r1/read', {}, { headers: { 'x-workspace-slug': 'acme' } });
+
+    mockPost.mockResolvedValueOnce({ data: {} });
+    await responsesService.markRead('r1', false);
+    expect(mockPost).toHaveBeenCalledWith('/api/responses/r1/unread', {}, { headers: undefined });
+  });
+});
+
+// design.md §21: "fast-check: ... bulk partial failure accounting". `idsRemainingSelected` is the
+// pure reducer `useInboxMutations` (task 2.3) uses to decide which ids stay selected after a bulk
+// call — property: a succeeded id is never among the ids left selected.
+describe('bulk partial-failure accounting (property)', () => {
+  it('never reports a succeeded id as still-selected/failed', () => {
+    fc.assert(
+      fc.property(
+        fc.uniqueArray(fc.string({ minLength: 1 }), { minLength: 1, maxLength: 30 }),
+        fc.array(fc.string({ minLength: 1 })),
+        (attemptedIds, succeededPool) => {
+          // succeeded must be a subset of attemptedIds to be a realistic server response.
+          const succeeded = succeededPool.filter((id) => attemptedIds.includes(id));
+          const remaining = idsRemainingSelected(attemptedIds, {
+            succeeded,
+            failed: attemptedIds.filter((id) => !succeeded.includes(id)).map((id) => ({ id, reason: 'x' })),
+            previous: [],
+          });
+          const succeededSet = new Set(succeeded);
+          return remaining.every((id) => !succeededSet.has(id));
+        }
+      ),
+      { numRuns: 200 }
+    );
   });
 });
