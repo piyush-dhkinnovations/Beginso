@@ -62,6 +62,10 @@ const RAW_CAPABILITIES: readonly CapabilityGroup[] = [
       { key: 'responses:act', label: 'Tag, assign, note and change stage', roles: ['owner', 'admin', 'member', 'viewer'] },
       { key: 'stages:manage', label: 'Manage pipeline stages', roles: ['owner', 'admin'] },
       { key: 'tags:manage', label: 'Manage tag library', roles: ['owner', 'admin'] },
+      // Sprint 12 (inbox-collaboration), requirements.md §B6.1 — OQ-7 resolved 3 Oct 2026. Criteria
+      // management is Owner/Admin (same as stage management, design.md §11.2's own "Permission"
+      // line); scoring a response itself is `responses:act`, already granted above.
+      { key: 'scoring:manage', label: 'Manage scoring criteria', roles: ['owner', 'admin'] },
     ],
   },
   {
@@ -112,6 +116,10 @@ export function canManageStages(role: Role | undefined): boolean {
 
 export function canManageTags(role: Role | undefined): boolean {
   return role !== undefined && hasCapability(role, 'tags:manage');
+}
+
+export function canManageScoring(role: Role | undefined): boolean {
+  return role !== undefined && hasCapability(role, 'scoring:manage');
 }
 
 // Role-filtered navigation (requirements.md §7.7) — exact rule from the wireframe's own

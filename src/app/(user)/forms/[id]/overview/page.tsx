@@ -224,9 +224,16 @@ export default function FormOverviewPage() {
         <Card className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
             <h2 className="bg-h4">Recent responses</h2>
-            <Link href={workspace?.slug ? `/forms/${formId}/responses?ws=${workspace.slug}` : `/forms/${formId}/responses`} className="bg-body-sm">
-              View inbox
-            </Link>
+            <span className="flex items-center gap-3">
+              {/* Sprint 12 (inbox-collaboration), task 5.2 — placement judgment call, no wireframe
+                  names a surface for this (see ScoreComparison's own comment). */}
+              <Link href={`/forms/${formId}/scores`} className="bg-body-sm">
+                Score comparison
+              </Link>
+              <Link href={workspace?.slug ? `/forms/${formId}/responses?ws=${workspace.slug}` : `/forms/${formId}/responses`} className="bg-body-sm">
+                View inbox
+              </Link>
+            </span>
           </div>
           {responsesQuery.isLoading ? (
             <Skeleton variant="text" width="100%" height={64} />

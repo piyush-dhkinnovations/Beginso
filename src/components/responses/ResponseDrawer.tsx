@@ -485,6 +485,7 @@ export function ResponseDrawer({
                 tags={tags}
                 members={members}
                 canCreateTag={canCreateTag}
+                canScore={canCreateTag}
                 isUpdating={mutations.isUpdating}
                 onOpenOriginal={onOpenResponse}
                 onStageChange={(stageId) => mutations.updateStage(response._id, stageId)}

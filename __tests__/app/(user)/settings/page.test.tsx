@@ -27,6 +27,8 @@ vi.mock('@/components/settings/TagManager', () => ({ TagManager: () => <div>tags
 vi.mock('@/hooks/useTagManagerScope', () => ({ useTagManagerScope: () => undefined }));
 vi.mock('@/components/settings/StageManager', () => ({ StageManager: () => <div>stages-body</div> }));
 vi.mock('@/hooks/useStageManagerScope', () => ({ useStageManagerScope: () => undefined }));
+vi.mock('@/components/scoring/CriteriaManager', () => ({ CriteriaManager: () => <div>scoring-body</div> }));
+vi.mock('@/hooks/useScoreCriteriaScope', () => ({ useScoreCriteriaScope: () => undefined }));
 
 describe('SettingsPage tab wiring', () => {
   beforeEach(() => {

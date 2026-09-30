@@ -8,7 +8,9 @@ import { AssigneePicker } from './AssigneePicker';
 import { TagPicker } from './TagPicker';
 import { ActivityTimeline } from './ActivityTimeline';
 import { DuplicateCallout } from './DuplicateCallout';
+import { ScoreCard } from '@/components/scoring/ScoreCard';
 import { activityService } from '@/services/activity';
+import { useScoreCriteria } from '@/hooks/useScoreCriteria';
 import { responseActivityKeys } from '@/lib/queryKeys';
 import { formatResponseDate, shortId } from '@/lib/formatters';
 import type { ResponseDetail } from '@/types/response';
@@ -25,6 +27,9 @@ export interface WorkflowSidebarProps {
   /** OQ-5 default: any `responses:act` role may create a tag inline from this picker — distinct
    * from `tags:manage` (Owner/Admin), which gates the full Settings tag manager (task 2.5). */
   canCreateTag: boolean;
+  /** `responses:act` — gates the scorecard the same way `canCreateTag` gates the tag picker's
+   * inline create (task 5.3). */
+  canScore?: boolean;
   onStageChange: (stageId: string) => void;
   onAssigneeChange: (assigneeId: string | null) => void;
   onTagAdd: (tagId: string) => void;
@@ -55,6 +60,7 @@ export function WorkflowSidebar({
   tags,
   members,
   canCreateTag,
+  canScore,
   onStageChange,
   onAssigneeChange,
   onTagAdd,
@@ -69,6 +75,7 @@ export function WorkflowSidebar({
   });
 
   const ipHash = response.ipHash ? response.ipHash.slice(0, 16) : null;
+  const { data: criteria = [] } = useScoreCriteria(scope);
 
   return (
     <aside className="flex w-full shrink-0 flex-col gap-4 lg:max-w-65">
@@ -120,8 +127,14 @@ export function WorkflowSidebar({
           </div>
         </div>
 
-        {/* Score — Sprint 13/Phase 5 (blocked on OQ-7, cuttable). Deliberately not built; this is
-            the reserved slot design.md §15 names ("Score" between Tags and Submission metadata). */}
+        {scope !== 'personal' && (
+          <div>
+            <span className={SECTION_LABEL}>Score</span>
+            <div className="mt-1">
+              <ScoreCard responseId={response._id} criteria={criteria} disabled={!canScore} />
+            </div>
+          </div>
+        )}
       </Card>
 
       <Card className="flex flex-col gap-3">

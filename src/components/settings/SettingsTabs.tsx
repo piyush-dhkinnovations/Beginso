@@ -2,7 +2,7 @@
 
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
 
-export type SettingsTab = 'profile' | 'workspace' | 'branding' | 'notifications' | 'security' | 'sessions' | 'tags' | 'stages';
+export type SettingsTab = 'profile' | 'workspace' | 'branding' | 'notifications' | 'security' | 'sessions' | 'tags' | 'stages' | 'scoring';
 
 interface SettingsTabsProps {
   activeTab: SettingsTab;
@@ -25,6 +25,9 @@ const TABS: { id: SettingsTab; label: string }[] = [
   // Sprint 12 (inbox-collaboration), task 5.1. Same "no wireframe, derived from RolesMatrix's
   // list+edit pattern" precedent as the Tags tab above.
   { id: 'stages', label: 'Stages' },
+  // Sprint 12 (inbox-collaboration), OQ-7 resolved 3 Oct 2026 (task 5.2). Same "no wireframe,
+  // derived from StageManager's own list+edit pattern" precedent as the Stages tab above.
+  { id: 'scoring', label: 'Scoring' },
 ];
 
 // Rebuilt on ui/Tabs (sprint-10 requirements.md §7.13) — the hand-rolled version hardcoded
