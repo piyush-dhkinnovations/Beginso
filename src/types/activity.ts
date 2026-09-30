@@ -1,7 +1,8 @@
 /**
  * Sprint 12 (inbox-collaboration), design.md §11.2 (confirmed live, BE 0.3).
- * `GET /api/responses/:id/activity` — oldest first (per Day 4's brief; design.md's own §11.2 line
- * says "newest last", same ordering stated two ways).
+ * `GET /api/responses/:id/activity` — newest first (changed Sprint 12 close-out: a reviewer
+ * opening the sidebar wants the most recent activity without scrolling, overriding the original
+ * "oldest first" call).
  */
 
 export type ActivityType =

@@ -82,10 +82,13 @@ function toResponseDetail(raw: RawResponseDetail): ResponseDetail {
   return { ...rest, answers: cleanAnswers(answers), responseFiles: response_files };
 }
 
-/** PATCH /api/responses/:id body (design.md §11.2 — Extends). `status` is no longer sent by the
- * frontend; the backend still accepts it during the deprecation window for other callers. */
+/** PATCH /api/responses/:id body (design.md §11.2 — Extends). `status` is only sent for a
+ * personal-shell response's stage change (OQ-9's "fixed default stages" — there is no real Stage
+ * document to reference by id there, only the status category); every workspace-scoped caller
+ * still sends `stageId`, never `status`. */
 export interface UpdateResponsePayload {
   stageId?: string;
+  status?: 'new' | 'in_progress' | 'completed';
   assigneeId?: string | null;
   tagIds?: string[];
 }

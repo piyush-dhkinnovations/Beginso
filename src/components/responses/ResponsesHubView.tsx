@@ -563,8 +563,12 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         onNext={() => void navigateResponse('next')}
         onExpand={(response) => {
           const returnTo = `${pathname}?${searchParams.toString()}`;
+          // Bug fix, Sprint 12 close-out: `scope` was never passed to the full-page view, which
+          // always fell back to its 'personal' default — a workspace response's Stage/prev-next
+          // context silently broke (wrong or empty stage list) the moment it was expanded.
           const fullPageParams = new URLSearchParams({
             formId: response.formId,
+            scope,
             returnTo,
           });
           router.push(`/responses/${response._id}?${fullPageParams.toString()}`);

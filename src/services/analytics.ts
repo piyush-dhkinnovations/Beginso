@@ -1,4 +1,5 @@
 import axiosInstance from '@/lib/axios';
+import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import type {
   AnalyticsOverview,
   AnalyticsFormSummary,
@@ -105,18 +106,32 @@ function toFormsSummaryResult(raw: RawFormsSummaryEnvelope): AnalyticsFormsSumma
   };
 }
 
+// Bug fix, Sprint 12 close-out: none of these four calls ever sent a workspace header at all —
+// the backend's `getVerifiedWorkspaceId` then fell through its normal header→query→body→"caller's
+// default workspace" chain and silently resolved to whatever workspace the caller happens to
+// belong to, so the Personal analytics page showed that workspace's forms instead of nothing
+// (same root cause as the Inbox personal-shell leak fixed earlier this sprint). Explicit
+// 'personal' is unconditionally correct here — no /w/[slug]/analytics route exists yet, same
+// reasoning `ReportsView`'s own `formsService.getForms(..., { type: 'personal' })` already
+// established for this page family.
 export const analyticsService = {
   getOverview: (params: GetAnalyticsParams): Promise<AnalyticsOverview> =>
-    axiosInstance.get<RawOverviewEnvelope>('/api/analytics/overview', { params }).then((r) => toAnalyticsOverview(r.data)),
+    axiosInstance
+      .get<RawOverviewEnvelope>('/api/analytics/overview', { params, headers: workspaceHeaders('personal') })
+      .then((r) => toAnalyticsOverview(r.data)),
 
   getTrends: (params: GetAnalyticsParams & { bucket: 'day' | 'week' }): Promise<AnalyticsTrendResult> =>
-    axiosInstance.get<RawTrendsEnvelope>('/api/analytics/trends', { params }).then((r) => toAnalyticsTrendResult(r.data)),
+    axiosInstance
+      .get<RawTrendsEnvelope>('/api/analytics/trends', { params, headers: workspaceHeaders('personal') })
+      .then((r) => toAnalyticsTrendResult(r.data)),
 
   getQuestions: (params: GetAnalyticsParams): Promise<{ questions: QuestionBreakdown[] }> =>
-    axiosInstance.get<RawQuestionsEnvelope>('/api/analytics/questions', { params }).then((r) => toQuestionBreakdowns(r.data)),
+    axiosInstance
+      .get<RawQuestionsEnvelope>('/api/analytics/questions', { params, headers: workspaceHeaders('personal') })
+      .then((r) => toQuestionBreakdowns(r.data)),
 
   getFormsSummary: (params: { from?: string; to?: string; page?: number; limit?: number }): Promise<AnalyticsFormsSummaryResult> =>
     axiosInstance
-      .get<RawFormsSummaryEnvelope>('/api/analytics/forms', { params })
+      .get<RawFormsSummaryEnvelope>('/api/analytics/forms', { params, headers: workspaceHeaders('personal') })
       .then((r) => toFormsSummaryResult(r.data)),
 };

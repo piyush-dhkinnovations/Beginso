@@ -216,13 +216,16 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
   // sprint-10-events-migration, task 6.4.
   describe('bulk selection and delete (task 6.4)', () => {
     it('shows no bulk action bar until a row is selected, then shows the count', async () => {
+      // Same pattern as the Inbox table: the checkbox column is collapsed to zero width until
+      // something is selected — double-clicking a row is what first reveals it.
       mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
       renderPage();
       await screen.findByText('Form One');
 
       expect(screen.queryByText(/selected/)).not.toBeInTheDocument();
+      expect(screen.queryByRole('checkbox', { name: 'Select Form One' })).not.toBeInTheDocument();
 
-      await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form One' }));
+      await userEvent.dblClick(screen.getByText('Form One'));
       expect(await screen.findByText('1 selected')).toBeInTheDocument();
 
       await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form Two' }));
@@ -234,6 +237,8 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
+      // Reveal the checkbox column first (double-click any row), then use "select all".
+      await userEvent.dblClick(screen.getByText('Form One'));
       await userEvent.click(screen.getByRole('checkbox', { name: 'Select all forms on this page' }));
 
       expect(await screen.findByText('3 selected')).toBeInTheDocument();
@@ -248,7 +253,7 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
-      await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form One' }));
+      await userEvent.dblClick(screen.getByText('Form One'));
       await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form Two' }));
       await userEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
 
@@ -269,7 +274,7 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
-      await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form One' }));
+      await userEvent.dblClick(screen.getByText('Form One'));
       await userEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
 
       expect(await screen.findByText('Delete 1 form?')).toBeInTheDocument();
@@ -282,7 +287,7 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
-      await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form One' }));
+      await userEvent.dblClick(screen.getByText('Form One'));
       expect(await screen.findByText('1 selected')).toBeInTheDocument();
 
       await userEvent.click(screen.getByRole('tab', { name: 'Draft' }));
@@ -356,6 +361,9 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
+      // Checkbox column is revealed by double-click, not shown at rest (see the bulk-selection
+      // describe block above) — proves the select column exists, just no longer always visible.
+      await userEvent.dblClick(screen.getByText('Form One'));
       expect(screen.getByLabelText('Select Form One')).toBeInTheDocument();
       await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
       expect(await screen.findByRole('menuitem', { name: /Delete/ })).toBeInTheDocument();

@@ -93,12 +93,16 @@ export function WorkflowSidebar({
           <Select
             id="workflow-stage-select"
             aria-labelledby="workflow-stage-label"
-            value={response.stage?.id ?? ''}
+            // Personal-shell responses never have a real `stage` (OQ-9 — no Stage document can
+            // exist without a workspace) — `status` is the raw field there, and its value lines
+            // up 1:1 with PERSONAL_DEFAULT_STAGES' synthetic ids, so it's the correct fallback
+            // rather than always reading as "Unknown stage."
+            value={response.stage?.id ?? (scope === 'personal' ? response.status ?? '' : '')}
             disabled={isUpdating || stages.length === 0}
             onChange={(e) => onStageChange(e.target.value)}
             className="mt-1"
           >
-            {!response.stage && <option value="">Unknown stage</option>}
+            {!response.stage && scope !== 'personal' && <option value="">Unknown stage</option>}
             {stages.map((stage) => (
               <option key={stage.id} value={stage.id}>{stage.name}</option>
             ))}

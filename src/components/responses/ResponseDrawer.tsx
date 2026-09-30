@@ -301,7 +301,10 @@ export function ResponseDrawer({
       className={cn(
         displayMode === 'drawer'
           ? 'fixed inset-0 z-50 flex justify-end bg-black/40 animate-fade-in'
-          : 'mx-auto flex min-h-[calc(100vh-104px)] w-full max-w-6xl animate-fade-in'
+          // Bug fix, Sprint 12 close-out: this set its own max-w-6xl cap, directly against
+          // CLAUDE.md's "pages never set their own width" rule (AppShell already owns that) —
+          // the full-page view read as a slightly-wider card, not an actual full-screen view.
+          : 'flex min-h-[calc(100vh-104px)] w-full animate-fade-in'
       )}
       onClick={(e) => {
         if (displayMode === 'drawer' && e.target === e.currentTarget) onClose();

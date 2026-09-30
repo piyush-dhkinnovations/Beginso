@@ -3,6 +3,12 @@
  * Feature: sprint-5-analytics-reports
  * Tests: analyticsService — getOverview, getTrends, getQuestions, getFormsSummary
  * Requirements: 14.1
+ *
+ * Bug fix, Sprint 12 close-out: none of these four calls ever sent a workspace header — the
+ * exact gap `workspaceHeaders.ts`'s own comment already named ("Sprint 11's audit flagged that
+ * responses/analytics/reports/dashboard send none at all") but that was never actually applied
+ * here. Every call now sends the explicit 'personal' signal (no /w/[slug]/analytics route exists
+ * yet, so personal is unconditionally correct), asserted below.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -54,6 +60,7 @@ describe('analyticsService', () => {
 
     expect(mockGet).toHaveBeenCalledWith('/api/analytics/overview', {
       params: { formId: 'form-1', from: '2026-08-01', to: '2026-08-10' },
+      headers: { 'x-workspace-slug': 'personal' },
     });
     expect(result).toEqual({ totalResponses: 3, categoryCounts: { new: 3, in_progress: 0, completed: 0 } });
   });
@@ -70,7 +77,10 @@ describe('analyticsService', () => {
 
     const result = await analyticsService.getTrends({ formId: 'form-1', bucket: 'day' });
 
-    expect(mockGet).toHaveBeenCalledWith('/api/analytics/trends', { params: { formId: 'form-1', bucket: 'day' } });
+    expect(mockGet).toHaveBeenCalledWith('/api/analytics/trends', {
+      params: { formId: 'form-1', bucket: 'day' },
+      headers: { 'x-workspace-slug': 'personal' },
+    });
     expect(result).toEqual({ bucket: 'day', points: [{ bucketStart: '2026-08-11', responses: 3 }] });
   });
 
@@ -101,7 +111,10 @@ describe('analyticsService', () => {
 
     const result = await analyticsService.getQuestions({ formId: 'form-1' });
 
-    expect(mockGet).toHaveBeenCalledWith('/api/analytics/questions', { params: { formId: 'form-1' } });
+    expect(mockGet).toHaveBeenCalledWith('/api/analytics/questions', {
+      params: { formId: 'form-1' },
+      headers: { 'x-workspace-slug': 'personal' },
+    });
     expect(result).toEqual({
       questions: [
         { fieldId: 'f0', label: 'Attendee Name', options: [] },
@@ -127,7 +140,10 @@ describe('analyticsService', () => {
 
     const result = await analyticsService.getFormsSummary({ page: 1, limit: 20 });
 
-    expect(mockGet).toHaveBeenCalledWith('/api/analytics/forms', { params: { page: 1, limit: 20 } });
+    expect(mockGet).toHaveBeenCalledWith('/api/analytics/forms', {
+      params: { page: 1, limit: 20 },
+      headers: { 'x-workspace-slug': 'personal' },
+    });
     expect(result).toEqual({
       forms: [{ _id: '6a7ac7717b99397f828e235b', title: 'Event Registration', status: 'published', totalResponses: 3, completionRate: 82 }],
       total: 1,

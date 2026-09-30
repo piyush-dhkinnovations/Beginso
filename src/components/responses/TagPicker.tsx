@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { Tag as TagChip } from '@/components/ui/Tag';
 import { Input } from '@/components/ui/Input';
 import type { Tag } from '@/types/tag';
@@ -72,9 +73,12 @@ export function TagPicker({ available, selectedIds, canCreate, disabled, onAdd, 
         disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        className="bg-btn bg-btn-ghost bg-btn-sm"
+        // A plain ghost button read as empty space next to a tag pill — its own dashed-border
+        // pill makes it unmistakably a second, clickable chip rather than blank space.
+        className="flex items-center gap-1 rounded-full border border-dashed border-(--border-default) px-2.5 py-1 text-caption text-(--text-secondary) hover:border-(--text-muted) hover:text-(--text-primary) disabled:opacity-60"
         onClick={() => setIsOpen((v) => !v)}
       >
+        <Plus size={12} aria-hidden="true" />
         Add tag
       </button>
 

@@ -223,9 +223,12 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
   const someOnPageSelected = rows.some((form) => selectedIds.has(form._id)) && !allOnPageSelected;
 
   const columns: TableColumn<Form>[] = [
+    // Same pattern as the Inbox table: the column collapses to zero width (not just hidden
+    // content) until something is selected — double-clicking a row is what first reveals it.
     ...(canDelete ? [{
       key: 'select',
-      header: (
+      className: selectedIds.size > 0 ? undefined : 'w-0 !p-0 overflow-hidden',
+      header: selectedIds.size > 0 ? (
         <Checkbox
           id="forms-select-all"
           aria-label={allOnPageSelected ? 'Deselect all forms on this page' : 'Select all forms on this page'}
@@ -242,8 +245,8 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
             });
           }}
         />
-      ),
-      render: (form: Form) => (
+      ) : null,
+      render: (form: Form) => selectedIds.size > 0 ? (
         <Checkbox
           id={`forms-select-${form._id}`}
           aria-label={`Select ${form.title}`}
@@ -258,7 +261,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
             });
           }}
         />
-      ),
+      ) : null,
     }] : []),
     {
       key: 'form',
@@ -462,6 +465,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
               rows={data?.forms ?? []}
               rowKey={(form) => form._id}
               isLoading={isLoading}
+              onRowDoubleClick={canDelete ? (form) => setSelectedIds((prev) => new Set(prev).add(form._id)) : undefined}
               emptyState={
                 <EmptyState
                   icon={<FileText />}

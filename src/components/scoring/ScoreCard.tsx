@@ -1,14 +1,71 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Radio } from '@/components/ui/Radio';
+import { Star } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/common/Toast';
 import { scoresService } from '@/services/scores';
 import { scoreKeys } from '@/lib/queryKeys';
 import type { ScoreCriterion, ResponseScore } from '@/types/score';
 
-const SCALE = Array.from({ length: 10 }, (_, i) => i + 1);
+const STARS = [1, 2, 3, 4, 5];
+
+/**
+ * 5 stars, half-star precision — the underlying value is still the full 1-10 scale (B6.1's
+ * resolved decision, unchanged), each star just represents 2 points. Left half of a star sets the
+ * odd value, right half sets the even value, same as any half-star rating widget.
+ */
+function StarRating({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: number | undefined;
+  disabled?: boolean;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <div className="flex gap-0.5" role="radiogroup">
+      {STARS.map((star) => {
+        const evenValue = star * 2;
+        const oddValue = evenValue - 1;
+        const fill = value === undefined ? 0 : value >= evenValue ? 1 : value >= oddValue ? 0.5 : 0;
+        return (
+          <span key={star} className="relative inline-flex">
+            <Star size={22} strokeWidth={1.5} className="text-(--border-default)" aria-hidden="true" />
+            {fill > 0 && (
+              <span
+                className="absolute inset-0 overflow-hidden"
+                style={{ width: fill === 1 ? '100%' : '50%' }}
+                aria-hidden="true"
+              >
+                <Star size={22} strokeWidth={1.5} className="fill-(--action-primary) text-(--action-primary)" />
+              </span>
+            )}
+            <button
+              type="button"
+              role="radio"
+              aria-checked={value === oddValue}
+              aria-label={`${oddValue} out of 10`}
+              disabled={disabled}
+              onClick={() => onChange(oddValue)}
+              className="absolute inset-y-0 left-0 w-1/2 disabled:cursor-not-allowed"
+            />
+            <button
+              type="button"
+              role="radio"
+              aria-checked={value === evenValue}
+              aria-label={`${evenValue} out of 10`}
+              disabled={disabled}
+              onClick={() => onChange(evenValue)}
+              className="absolute inset-y-0 right-0 w-1/2 disabled:cursor-not-allowed"
+            />
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 export interface ScoreCardProps {
   responseId: string;
@@ -87,24 +144,29 @@ export function ScoreCard({ responseId, criteria, disabled }: ScoreCardProps) {
   return (
     // Bordered box matching Stage/Assignee/Tags above it — was floating with no container before.
     <div className="flex flex-col gap-4 rounded-md border border-(--border-default) bg-(--bg-subtle) p-2.5">
-      {criteria.map((criterion) => (
-        <fieldset key={criterion.id} className="flex flex-col gap-1.5">
-          <legend className="text-caption text-(--text-secondary)">{criterion.label || 'Unnamed criterion'}</legend>
-          <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label={criterion.label || 'Unnamed criterion'}>
-            {SCALE.map((value) => (
-              <Radio
-                key={value}
-                id={`score-${responseId}-${criterion.id}-${value}`}
-                name={`score-${responseId}-${criterion.id}`}
-                label={String(value)}
-                checked={ownValue(criterion.id) === value}
-                disabled={disabled || submitMutation.isPending}
-                onChange={() => submitMutation.mutate({ criterionId: criterion.id, value })}
-              />
-            ))}
-          </div>
-        </fieldset>
-      ))}
+      {criteria.map((criterion) => {
+        const own = ownValue(criterion.id);
+        return (
+          <fieldset key={criterion.id} className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <legend className="text-body-sm font-semibold text-(--text-primary)">
+                {criterion.label || 'Unnamed criterion'}
+              </legend>
+              {own !== undefined && (
+                <span className="shrink-0 rounded-md bg-(--accent-soft) px-2 py-0.5 text-caption font-medium text-(--accent-soft-text)">
+                  {own}/10
+                </span>
+              )}
+            </div>
+
+            <StarRating
+              value={own}
+              disabled={disabled || submitMutation.isPending}
+              onChange={(value) => submitMutation.mutate({ criterionId: criterion.id, value })}
+            />
+          </fieldset>
+        );
+      })}
 
       <p className="text-body-sm text-(--text-muted)">
         {score && score.scoreAverage !== null

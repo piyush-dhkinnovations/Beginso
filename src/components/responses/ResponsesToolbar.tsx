@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ListFilter, X } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
@@ -87,24 +88,23 @@ export function ResponsesToolbar({ search, filters, stages, members, total, onSe
       {/* Sprint 12 close-out: Stage/Assignee/Unread/Duplicate consolidated into one popover —
           four separate controls on the toolbar read as clutter at rest. */}
       <div ref={filterRef} className="relative">
-        <button
+        <Button
           type="button"
+          variant="secondary"
+          size="small"
           aria-haspopup="dialog"
           aria-expanded={isFilterOpen}
           onClick={() => setIsFilterOpen((v) => !v)}
-          className={cn(
-            'flex min-h-11 items-center gap-1.5 rounded-md border border-(--border-default) bg-(--bg-subtle) px-3 text-body-sm text-(--text-secondary) hover:bg-(--surface-hover)',
-            isFilterOpen && 'bg-(--surface-hover)'
-          )}
+          className={cn('gap-1.5', isFilterOpen && 'bg-(--surface-hover)')}
         >
           <ListFilter size={15} aria-hidden="true" />
           Filter
           {activeCount > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-(--color-brand-600) px-1 text-caption font-medium text-white">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-(--action-primary) px-1 text-caption font-medium text-(--text-on-brand)">
               {activeCount}
             </span>
           )}
-        </button>
+        </Button>
 
         {isFilterOpen && (
           <div role="dialog" aria-label="Filter responses" className="bg-popover absolute left-0 z-20 mt-1 flex w-70 flex-col gap-4">

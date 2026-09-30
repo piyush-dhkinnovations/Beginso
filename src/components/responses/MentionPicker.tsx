@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Avatar } from '@/components/ui/Avatar';
-import { cn } from '@/lib/utils';
 import type { MemberListItem } from '@/types/team';
 
 export interface MentionPickerProps {
@@ -16,6 +16,9 @@ export interface MentionPickerProps {
   onClose: () => void;
   /** Returns focus to the composer's textarea on Escape (requirements.md §9.2). */
   returnFocusRef: React.RefObject<HTMLTextAreaElement | null>;
+  /** Lets the owning `<textarea role="combobox">` point `aria-controls` at this listbox — falls
+   * back to an internally generated id when the caller doesn't need to reference it. */
+  id?: string;
 }
 
 /**
@@ -23,10 +26,20 @@ export interface MentionPickerProps {
  * pattern (the one place this sprint requires it, unlike TagPicker's lighter listbox): arrow keys
  * move `aria-activedescendant`, Enter selects, Escape closes and returns focus to the textarea.
  */
-export function MentionPicker({ members, query, selectedIds, onSelect, onClose, returnFocusRef }: MentionPickerProps) {
-  const listboxId = useId();
+export function MentionPicker({ members, query, selectedIds, onSelect, onClose, returnFocusRef, id }: MentionPickerProps) {
+  const generatedId = useId();
+  const listboxId = id ?? generatedId;
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<{ bottom: number; left: number; width: number } | null>(null);
+
+  // Portaled to document.body, fixed-positioned from the textarea's real screen position — same
+  // fix as `Menu.tsx`/the note composer's emoji picker: anchored `absolute` inside the notes
+  // list's scrollable ancestor otherwise clips this popover at that ancestor's edge.
+  useEffect(() => {
+    const rect = returnFocusRef.current?.getBoundingClientRect();
+    if (rect) setPosition({ bottom: window.innerHeight - rect.top + 6, left: rect.left, width: Math.max(rect.width, 256) });
+  }, [returnFocusRef]);
 
   const matches = members.filter(
     (m) => !selectedIds.includes(m.userId) && m.name.toLowerCase().includes(query.trim().toLowerCase())
@@ -59,13 +72,16 @@ export function MentionPicker({ members, query, selectedIds, onSelect, onClose, 
     return () => document.removeEventListener('keydown', handleKey);
   }, [matches, clampedActiveIndex, onSelect, onClose, returnFocusRef]);
 
-  return (
+  if (!position) return null;
+
+  return createPortal(
     <div
       ref={containerRef}
       id={listboxId}
       role="listbox"
       aria-label="Mention a teammate"
-      className="bg-menu absolute bottom-full left-0 z-20 mb-1 max-h-56 w-64 overflow-y-auto"
+      style={{ position: 'fixed', bottom: position.bottom, left: position.left, width: position.width }}
+      className="bg-menu z-50 max-h-56 overflow-y-auto"
     >
       {matches.length === 0 ? (
         <p className="px-3 py-2 text-body-sm text-(--text-muted)">No matching members.</p>
@@ -77,15 +93,21 @@ export function MentionPicker({ members, query, selectedIds, onSelect, onClose, 
             type="button"
             role="option"
             aria-selected={index === clampedActiveIndex}
-            className={cn('bg-menu-item flex items-center gap-2', index === clampedActiveIndex && 'bg-(--surface-hover)')}
+            // Plain `.bg-menu-item` — its own `:hover` already gives hover feedback; no extra
+            // mouse-driven background class on top of it (name-only, compact, nothing more).
+            className="bg-menu-item flex items-center gap-2"
             onMouseEnter={() => setActiveIndex(index)}
             onClick={() => onSelect(member)}
           >
-            <Avatar name={member.name} src={member.avatarUrl ?? undefined} size="xs" />
-            <span className="min-w-0 flex-1 truncate">{member.name}</span>
+            {/* Initials only, never `avatarUrl` — a wrong/unrelated image (real bug found here:
+                two members both named "test" rendered with random-looking logo images instead of
+                a person's actual photo) is worse than a deterministic colour+initials circle. */}
+            <Avatar name={member.name} size="xs" className="shrink-0" />
+            <span className="min-w-0 flex-1 truncate text-left">{member.name}</span>
           </button>
         ))
       )}
-    </div>
+    </div>,
+    document.body
   );
 }

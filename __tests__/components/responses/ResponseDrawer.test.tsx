@@ -230,13 +230,18 @@ describe('ResponseDrawer', () => {
   });
 
   it('optimistically patches both the detail and list caches on stage change, then invalidates', async () => {
+    // Explicit workspace scope: a *real* Stage-id dropdown (this fixture's STAGES) only exists
+    // for a workspace — personal-shell responses use PERSONAL_DEFAULT_STAGES and send {status},
+    // not {stageId} (OQ-9's "fixed default stages", Sprint 12 close-out). This test is about the
+    // optimistic-cache-patch mechanism, not personal-vs-workspace stage semantics, so it exercises
+    // the workspace path explicitly rather than relying on the drawer's personal-shell default.
     mockGetResponseById.mockResolvedValue(detail);
     mockUpdate.mockResolvedValue({ ...detail, stage: STAGES[1] });
     const user = userEvent.setup();
-    const { queryClient } = renderDrawer('resp-1');
+    const { queryClient } = renderDrawer('resp-1', undefined, { scope: 'acme' });
     await screen.findByText('Submitted Answers');
 
-    queryClient.setQueryData(responseKeys.list('personal', 'form-1', {}), {
+    queryClient.setQueryData(responseKeys.list('acme', 'form-1', {}), {
       data: [detail],
       total: 1,
       page: 1,
@@ -247,7 +252,7 @@ describe('ResponseDrawer', () => {
     await user.selectOptions(screen.getByLabelText('Stage'), 'Completed');
 
     await waitFor(() => {
-      expect(mockUpdate).toHaveBeenCalledWith('resp-1', { stageId: 's-completed' }, 'personal');
+      expect(mockUpdate).toHaveBeenCalledWith('resp-1', { stageId: 's-completed' }, 'acme');
     });
   });
 
@@ -257,21 +262,21 @@ describe('ResponseDrawer', () => {
     // fuzzy-matches the stats cache (['responses', scope, formId, 'stats'], shape
     // { total, unread, byStage, byCategory } — no `data` array). In real usage
     // ResponsesHubView's stats query always populates this entry, so the drawer must not assume
-    // every match is a paginated list.
+    // every match is a paginated list. Explicit workspace scope — see the previous test's comment.
     mockGetResponseById.mockResolvedValue(detail);
     mockUpdate.mockResolvedValue({ ...detail, stage: STAGES[1] });
     const user = userEvent.setup();
-    const { queryClient } = renderDrawer('resp-1');
+    const { queryClient } = renderDrawer('resp-1', undefined, { scope: 'acme' });
     await screen.findByText('Submitted Answers');
 
-    queryClient.setQueryData(responseKeys.list('personal', 'form-1', {}), {
+    queryClient.setQueryData(responseKeys.list('acme', 'form-1', {}), {
       data: [detail],
       total: 1,
       page: 1,
       limit: 50,
       totalPages: 1,
     });
-    queryClient.setQueryData(responseKeys.stats('personal', 'form-1'), {
+    queryClient.setQueryData(responseKeys.stats('acme', 'form-1'), {
       total: 1,
       unread: 0,
       byStage: [],
@@ -281,7 +286,7 @@ describe('ResponseDrawer', () => {
     await user.selectOptions(screen.getByLabelText('Stage'), 'Completed');
 
     await waitFor(() => {
-      expect(mockUpdate).toHaveBeenCalledWith('resp-1', { stageId: 's-completed' }, 'personal');
+      expect(mockUpdate).toHaveBeenCalledWith('resp-1', { stageId: 's-completed' }, 'acme');
     });
     // The bug made onMutate throw before mutationFn ever ran, which always produced this
     // exact generic toast instead of a real success/error outcome — assert it's absent.

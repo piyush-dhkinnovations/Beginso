@@ -27,7 +27,7 @@ export function RespondentCell({ response }: { response: IResponse }) {
       <span
         aria-hidden="true"
         className="h-2 w-2 shrink-0 rounded-full"
-        style={{ backgroundColor: response.unread ? 'var(--color-brand-600)' : 'transparent' }}
+        style={{ backgroundColor: response.unread ? 'var(--action-primary)' : 'transparent' }}
       />
       <span className="sr-only">{response.unread ? 'Unread. ' : ''}</span>
       <Avatar size="sm" name={name} alt="" />

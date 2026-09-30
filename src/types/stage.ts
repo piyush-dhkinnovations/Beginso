@@ -49,3 +49,15 @@ export const CATEGORY_LABELS: Record<StageCategory, string> = {
   in_progress: 'In Progress',
   completed: 'Completed',
 };
+
+// Bug fix, Sprint 12 close-out: OQ-9's resolution ("stages fixed to defaults" for the personal
+// shell) was documented in `useStages`'s own comment but never actually built — the query was
+// just disabled for `scope === 'personal'`, so a personal response's Stage select had zero
+// options and rendered blank even though the response genuinely has a status. These mirror the
+// backend's own default-stage seed (`stage.service.ts`'s DEFAULT_STAGES) exactly, so the ids line
+// up with `StageCategory`/`status` one to one for the personal-shell write path.
+export const PERSONAL_DEFAULT_STAGES: readonly StageRef[] = [
+  { id: 'new', name: 'New', colour: 'neutral', category: 'new' },
+  { id: 'in_progress', name: 'In Progress', colour: 'warning', category: 'in_progress' },
+  { id: 'completed', name: 'Completed', colour: 'success', category: 'completed' },
+];
