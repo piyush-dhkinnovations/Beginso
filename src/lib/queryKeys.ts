@@ -56,6 +56,18 @@ export const viewKeys = {
   list: (scope: string, formId?: string) => ['views', scope, formId ?? 'all'] as const,
 };
 
+// Sprint 12 (inbox-collaboration), design.md §10, task 4.1 — namespaced by response id (a Mongo
+// ObjectId, globally unique) plus scope, matching responseKeys.detail()'s own segment order.
+export const noteKeys = {
+  list: (scope: string, responseId: string) => ['responses', scope, 'detail', responseId, 'notes'] as const,
+};
+
+// Named distinctly from `activityKeys` below (the workspace activity feed, Sprint 10) — this is a
+// single response's own timeline, a different query entirely.
+export const responseActivityKeys = {
+  list: (scope: string, responseId: string) => ['responses', scope, 'detail', responseId, 'activity'] as const,
+};
+
 export const dashboardKeys = {
   all: ['dashboard'] as const,
   analytics: () => [...dashboardKeys.all, 'analytics'] as const,

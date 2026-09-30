@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AtSign, Bell, FileText, KeyRound, PartyPopper, UserPlus } from 'lucide-react';
 import { notificationsService } from '@/services/notifications';
@@ -28,6 +29,7 @@ export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const { data: notifications = [] } = useQuery({
     queryKey: notificationKeys.list(),
@@ -61,8 +63,19 @@ export function NotificationBell() {
     };
   }, [isOpen]);
 
+  // Sprint 12 (inbox-collaboration), requirements.md §7.12/§9: mention/assignment notifications
+  // carry a `responseId` and route into the Inbox at that response — the same
+  // `?responseId=`-opens-the-drawer contract `ResponsesHubView`/`ResponseDrawer` already use.
+  // `formId` present but no workspace context (Sprint 14's page doesn't exist yet) falls back to
+  // the form-scoped responses route, matching `(user)/responses/[id]/page.tsx`'s own precedent.
   function handleItemClick(notification: AppNotification) {
     if (!notification.read) markAsReadMutation.mutate(notification.id);
+    setIsOpen(false);
+    if (!notification.responseId) return;
+    const target = notification.formId
+      ? `/forms/${notification.formId}/responses?responseId=${notification.responseId}`
+      : `/responses?responseId=${notification.responseId}`;
+    router.push(target);
   }
 
   return (

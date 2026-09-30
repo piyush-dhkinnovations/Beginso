@@ -10,6 +10,14 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import type { AppNotification } from '@/types/notification';
 
+// Sprint 12 (inbox-collaboration), task 4.5: clicking a mention/assignment notification now
+// routes via next/navigation's useRouter — mocked the same way every other router-dependent
+// component test in this repo does, since NotificationBell renders outside an app-router context.
+const mockPush = vi.fn();
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: mockPush }),
+}));
+
 const mockGetNotifications = vi.fn();
 const mockMarkAsRead = vi.fn();
 vi.mock('@/services/notifications', () => ({

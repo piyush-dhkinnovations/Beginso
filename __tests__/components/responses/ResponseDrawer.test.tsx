@@ -22,6 +22,27 @@ vi.mock('@/components/common/Toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
+// Sprint 12 (inbox-collaboration), task 4.4: ResponseDrawer now renders NotesPanel and
+// WorkflowSidebar's ActivityTimeline unconditionally, both of which fetch on mount — mocked here
+// so this suite (which only exercises the drawer's own header/answers/delete/navigation behaviour)
+// doesn't make real network calls. useAuth is required unconditionally by NotesPanel's
+// `currentUserId` prop.
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({ user: { id: 'user-1', email: 'user@example.com' } }),
+}));
+vi.mock('@/services/notes', () => ({
+  notesService: {
+    list: vi.fn().mockResolvedValue([]),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+  },
+  MentionAccessError: class MentionAccessError extends Error {},
+}));
+vi.mock('@/services/activity', () => ({
+  activityService: { list: vi.fn().mockResolvedValue([]) },
+}));
+
 const mockGetResponseById = vi.fn();
 const mockUpdate = vi.fn();
 const mockDeleteResponse = vi.fn();
@@ -32,6 +53,8 @@ vi.mock('@/services/responses', () => ({
     update: (...args: unknown[]) => mockUpdate(...args),
     deleteResponse: (...args: unknown[]) => mockDeleteResponse(...args),
     getFileDownloadUrl: (...args: unknown[]) => mockGetFileDownloadUrl(...args),
+    markRead: vi.fn().mockResolvedValue(undefined),
+    bulk: vi.fn(),
   },
 }));
 
@@ -221,8 +244,7 @@ describe('ResponseDrawer', () => {
       totalPages: 1,
     });
 
-    await user.click(screen.getByRole('button', { name: 'Response stage' }));
-    await user.click(screen.getByRole('option', { name: /Completed/ }));
+    await user.selectOptions(screen.getByLabelText('Stage'), 'Completed');
 
     await waitFor(() => {
       expect(mockUpdate).toHaveBeenCalledWith('resp-1', { stageId: 's-completed' }, 'personal');
@@ -256,8 +278,7 @@ describe('ResponseDrawer', () => {
       byCategory: { new: 1, in_progress: 0, completed: 0 },
     });
 
-    await user.click(screen.getByRole('button', { name: 'Response stage' }));
-    await user.click(screen.getByRole('option', { name: /Completed/ }));
+    await user.selectOptions(screen.getByLabelText('Stage'), 'Completed');
 
     await waitFor(() => {
       expect(mockUpdate).toHaveBeenCalledWith('resp-1', { stageId: 's-completed' }, 'personal');
@@ -267,19 +288,10 @@ describe('ResponseDrawer', () => {
     expect(mockToast).not.toHaveBeenCalledWith('Failed to update stage. Please try again.', 'error');
   });
 
-  it('Escape closing the stage menu does not also close the drawer', async () => {
-    mockGetResponseById.mockResolvedValue(detail);
-    const user = userEvent.setup();
-    const { onClose } = renderDrawer('resp-1');
-    await screen.findByText('Submitted Answers');
-
-    await user.click(screen.getByRole('button', { name: 'Response stage' }));
-    expect(screen.getByRole('listbox')).toBeInTheDocument();
-
-    await user.keyboard('{Escape}');
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-    expect(onClose).not.toHaveBeenCalled();
-  });
+  // The dedicated "Escape closing the stage menu doesn't also close the drawer" case is retired:
+  // task 4.3 replaced the custom-listbox stage control (StatusDropdown, which owned its own
+  // Escape/stopPropagation) with WorkflowSidebar's native `ui/Select`, which has no open/close JS
+  // state to guard — Escape now behaves exactly like the "calls onClose on Escape" case above.
 
   it('shows uploaded files under their form field labels in Submitted Answers', async () => {
     mockGetResponseById.mockResolvedValue({
@@ -348,7 +360,7 @@ describe('ResponseDrawer', () => {
     const { onClose } = renderDrawer('resp-1');
     await screen.findByText('Submitted Answers');
 
-    await user.click(screen.getByRole('button', { name: 'Delete Response' }));
+    await user.click(screen.getByRole('button', { name: 'Delete response' }));
     await user.click(screen.getByRole('button', { name: 'Delete' }));
 
     await waitFor(() => {

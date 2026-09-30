@@ -13,6 +13,13 @@ vi.mock('@/components/dashboard/UserProfileDropdown', () => ({
   UserProfileDropdown: () => <div data-testid="user-profile-dropdown" />,
 }));
 
+// Sprint 12 (inbox-collaboration), task 4.5: NotificationBell (rendered inside TopNav) now calls
+// next/navigation's useRouter for the mention/assignment click-through — mocked the same way
+// NotificationBell.test.tsx does.
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
+}));
+
 const mockGetNotifications = vi.fn();
 vi.mock('@/services/notifications', () => ({
   notificationsService: {
