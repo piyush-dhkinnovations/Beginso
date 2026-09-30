@@ -25,6 +25,8 @@ vi.mock('@/components/settings/SecurityTab', () => ({ SecurityTab: () => <div>se
 vi.mock('@/components/settings/SessionsTab', () => ({ SessionsTab: () => <div>sessions-body</div> }));
 vi.mock('@/components/settings/TagManager', () => ({ TagManager: () => <div>tags-body</div> }));
 vi.mock('@/hooks/useTagManagerScope', () => ({ useTagManagerScope: () => undefined }));
+vi.mock('@/components/settings/StageManager', () => ({ StageManager: () => <div>stages-body</div> }));
+vi.mock('@/hooks/useStageManagerScope', () => ({ useStageManagerScope: () => undefined }));
 
 describe('SettingsPage tab wiring', () => {
   beforeEach(() => {

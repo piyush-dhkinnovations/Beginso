@@ -83,6 +83,12 @@ export default function TeamPage() {
     mutationFn: (member: MemberListItem) => teamService.removeMember(slug, member.membershipId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: teamKeys.members(slug) });
+      // Sprint 12, task 5.6: a removed member may still hold response assignments/notes — the
+      // Inbox must reflect "no longer has access" without a manual refresh. `invalidateQueries`
+      // partial-matches by array prefix, so the bare `['responses', slug]` prefix catches every
+      // formId variant (responseKeys.all/.list/.detail/.stats all start with it), not just the
+      // 'all' formId segment that `responseKeys.all(slug)` alone would produce.
+      queryClient.invalidateQueries({ queryKey: ['responses', slug] });
       toast('Member removed', 'success');
     },
     onError: (error) => toast(getFriendlyErrorMessage(error), 'error'),

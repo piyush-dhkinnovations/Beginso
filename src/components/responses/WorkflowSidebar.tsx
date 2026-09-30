@@ -7,6 +7,7 @@ import { Select } from '@/components/ui/Select';
 import { AssigneePicker } from './AssigneePicker';
 import { TagPicker } from './TagPicker';
 import { ActivityTimeline } from './ActivityTimeline';
+import { DuplicateCallout } from './DuplicateCallout';
 import { activityService } from '@/services/activity';
 import { responseActivityKeys } from '@/lib/queryKeys';
 import { formatResponseDate, shortId } from '@/lib/formatters';
@@ -30,6 +31,9 @@ export interface WorkflowSidebarProps {
   onTagRemove: (tagId: string) => void;
   onTagCreate: (name: string) => void;
   isUpdating?: boolean;
+  /** Wired to the duplicate callout's "view original" link (task 5.5). Undefined = no
+   * cross-response navigation available from this caller. */
+  onOpenOriginal?: (id: string) => void;
 }
 
 const SECTION_LABEL = 'text-caption font-semibold text-(--text-muted) uppercase tracking-wide';
@@ -57,6 +61,7 @@ export function WorkflowSidebar({
   onTagRemove,
   onTagCreate,
   isUpdating,
+  onOpenOriginal,
 }: WorkflowSidebarProps) {
   const { data: activity, isLoading: activityLoading, isError: activityError, refetch: refetchActivity } = useQuery({
     queryKey: responseActivityKeys.list(scope, response._id),
@@ -67,6 +72,14 @@ export function WorkflowSidebar({
 
   return (
     <aside className="flex w-full shrink-0 flex-col gap-4 lg:max-w-65">
+      {response.duplicateOfId && onOpenOriginal && (
+        <DuplicateCallout
+          duplicateOfId={response.duplicateOfId}
+          scope={scope}
+          onOpenOriginal={onOpenOriginal}
+        />
+      )}
+
       <Card className="flex flex-col gap-3">
         <div>
           <span id="workflow-stage-label" className={SECTION_LABEL}>Stage</span>

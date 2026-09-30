@@ -13,9 +13,11 @@ import { NotificationsTab } from '@/components/settings/NotificationsTab';
 import { SecurityTab } from '@/components/settings/SecurityTab';
 import { SessionsTab } from '@/components/settings/SessionsTab';
 import { TagManager } from '@/components/settings/TagManager';
+import { StageManager } from '@/components/settings/StageManager';
 import { useTagManagerScope } from '@/hooks/useTagManagerScope';
+import { useStageManagerScope } from '@/hooks/useStageManagerScope';
 
-const VALID_TABS: SettingsTab[] = ['profile', 'workspace', 'branding', 'notifications', 'security', 'sessions', 'tags'];
+const VALID_TABS: SettingsTab[] = ['profile', 'workspace', 'branding', 'notifications', 'security', 'sessions', 'tags', 'stages'];
 
 const TAB_LABEL: Record<SettingsTab, string> = {
   profile: 'Profile',
@@ -25,6 +27,7 @@ const TAB_LABEL: Record<SettingsTab, string> = {
   security: 'Security',
   sessions: 'Sessions & Devices',
   tags: 'Tags',
+  stages: 'Stages',
 };
 
 export default function SettingsPage() {
@@ -53,6 +56,7 @@ export default function SettingsPage() {
   }
 
   const tagManagerScope = useTagManagerScope();
+  const stageManagerScope = useStageManagerScope();
 
   function setTabDirty(tab: SettingsTab, isDirty: boolean) {
     setDirtyTabs((prev) => {
@@ -88,7 +92,7 @@ export default function SettingsPage() {
           the same max-w-4xl BrandingPanel already applies to itself internally, not left
           unbounded — otherwise its own `mx-auto` has extra room to center it away from the left
           edge that every other tab's content starts flush against. */}
-      <div className={activeTab === 'branding' ? 'max-w-4xl' : activeTab === 'tags' ? '' : 'max-w-110'}>
+      <div className={activeTab === 'branding' ? 'max-w-4xl' : activeTab === 'tags' || activeTab === 'stages' ? '' : 'max-w-110'}>
         {visitedTabs.has('profile') && (
           <div className={activeTab === 'profile' ? '' : 'hidden'}>
             <ProfileTab onDirtyChange={(isDirty) => setTabDirty('profile', isDirty)} />
@@ -122,6 +126,11 @@ export default function SettingsPage() {
         {visitedTabs.has('tags') && (
           <div className={activeTab === 'tags' ? '' : 'hidden'}>
             <TagManager scope={tagManagerScope} onDirtyChange={(isDirty) => setTabDirty('tags', isDirty)} />
+          </div>
+        )}
+        {visitedTabs.has('stages') && (
+          <div className={activeTab === 'stages' ? '' : 'hidden'}>
+            <StageManager scope={stageManagerScope} onDirtyChange={(isDirty) => setTabDirty('stages', isDirty)} />
           </div>
         )}
       </div>

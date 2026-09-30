@@ -1,8 +1,8 @@
-import { Copy, MessageSquare, Paperclip } from 'lucide-react';
+import { MessageSquare, Paperclip } from 'lucide-react';
 import { Avatar } from '@/components/ui/Avatar';
 import { Tag } from '@/components/ui/Tag';
-import { Badge } from '@/components/ui/Badge';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { DuplicateBadge } from './DuplicateBadge';
 import { bx } from '@/lib/utils';
 import type { ResponseAssignee, ResponseTag } from '@/types/response';
 
@@ -59,12 +59,7 @@ export function ResponseSignals({ response, density, className }: ResponseSignal
         <span className="sr-only">{unread ? 'Unread' : 'Read'}</span>
       </span>
 
-      {duplicateOfId && (
-        <Badge variant="warning" pill className="shrink-0 gap-1">
-          <Copy size={11} aria-hidden="true" />
-          Duplicate
-        </Badge>
-      )}
+      {duplicateOfId && <DuplicateBadge />}
 
       {/* Assignee — requirements.md §7.2: "Unassigned renders a — with accessible name 'Unassigned'."
           `aria-label` names the assignee even at `compact` density, where the visible name is

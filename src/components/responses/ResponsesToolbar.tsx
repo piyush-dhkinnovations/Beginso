@@ -103,6 +103,12 @@ export function ResponsesToolbar({ search, filters, stages, members, total, onSe
         Unread only
       </label>
 
+      {/* Sprint 12, task 5.5: nothing is auto-hidden by default — duplicates only get flagged. */}
+      <label htmlFor="responses-duplicate-filter" className="flex items-center gap-2 text-body-sm text-text-secondary">
+        <Switch id="responses-duplicate-filter" checked={!!filters.duplicate} onChange={(checked) => onFilterChange({ duplicate: checked || undefined })} />
+        Show duplicates
+      </label>
+
       <span className="text-body-sm text-text-muted whitespace-nowrap ml-auto">
         {total} response{total === 1 ? '' : 's'}
       </span>

@@ -58,6 +58,10 @@ interface ResponseDrawerProps {
   onExpand?: (response: ResponseDetail) => void;
   collapseHref?: string;
   onClose: () => void;
+  /** Navigates to another response by id — wired to the duplicate callout's "view original" link
+   * (task 5.5). Optional: a caller with no cross-response navigation (e.g. the standalone
+   * `/responses/[id]` page) simply doesn't render the callout's link as clickable-elsewhere. */
+  onOpenResponse?: (id: string) => void;
 }
 
 function DrawerSkeleton() {
@@ -141,6 +145,7 @@ export function ResponseDrawer({
   onExpand,
   collapseHref,
   onClose,
+  onOpenResponse,
 }: ResponseDrawerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -481,6 +486,7 @@ export function ResponseDrawer({
                 members={members}
                 canCreateTag={canCreateTag}
                 isUpdating={mutations.isUpdating}
+                onOpenOriginal={onOpenResponse}
                 onStageChange={(stageId) => mutations.updateStage(response._id, stageId)}
                 onAssigneeChange={(assigneeId) => mutations.updateAssignee(response._id, assigneeId)}
                 onTagAdd={(tagId) => mutations.updateTags(response._id, [...response.tags.map((t) => t.id), tagId])}

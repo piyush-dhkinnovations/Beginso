@@ -545,6 +545,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         responseId={responseId}
         formId={formId}
         scope={scope}
+        onOpenResponse={openResponse}
         formTitle={form?.title}
         fileFieldLabels={fileFieldLabels}
         stages={stages}
