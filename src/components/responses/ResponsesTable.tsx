@@ -74,24 +74,29 @@ export function ResponsesTable({
   );
 
   const columns: TableColumn<IResponse>[] = [
+    // Collapsed to zero width (not just hidden) until something is selected — double-clicking any
+    // row is what first reveals the whole column (see onRowDoubleClick below), not hover. Column
+    // itself, not just its content, disappears so the Respondent column doesn't sit with a gap
+    // in front of it at rest.
     {
       key: 'select',
-      header: (
+      className: selectedIds.size > 0 ? undefined : 'w-0 !p-0 overflow-hidden',
+      header: selectedIds.size > 0 ? (
         <Checkbox
           id="responses-select-all"
           checked={allSelected}
           onChange={(e) => onSelectAll(e.target.checked)}
           aria-label="Select all responses on this page"
         />
-      ),
-      render: (r) => (
+      ) : null,
+      render: (r) => selectedIds.size > 0 ? (
         <Checkbox
           id={`response-select-${r._id}`}
           checked={selectedIds.has(r._id)}
           onChange={(e) => onSelectRow(r._id, e.target.checked)}
           aria-label={`Select response from ${detectRespondentIdentity(r.answers).label ?? detectRespondentIdentity(r.answers).email ?? shortId(r._id)}`}
         />
-      ),
+      ) : null,
     },
     { key: 'respondent', header: 'Respondent', render: (r) => <RespondentCell response={r} /> },
     { key: 'email', header: 'Email', render: (r) => detectRespondentIdentity(r.answers).email ?? '—' },
@@ -137,6 +142,8 @@ export function ResponsesTable({
       skeletonRows={5}
       emptyState={emptyState}
       stickyFirstColumn
+      className="bg-table-compact"
+      onRowDoubleClick={(r) => onSelectRow(r._id, true)}
     />
   );
 }

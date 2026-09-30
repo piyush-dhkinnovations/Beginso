@@ -43,11 +43,12 @@ export function ScoreCard({ responseId, criteria, disabled }: ScoreCardProps) {
       const previous = queryClient.getQueryData<ResponseScore>(detailKey);
 
       queryClient.setQueryData<ResponseScore>(detailKey, (old) => {
-        const base: ResponseScore = old ?? { responseId, entries: [], scoreAverage: null, scoreCount: 0 };
-        const hadOwnEntry = base.entries.some((e) => e.criterionId === criterionId);
+        const base: ResponseScore = { responseId, scoreAverage: null, scoreCount: 0, ...old };
+        const ownEntries = base.entries ?? [];
+        const hadOwnEntry = ownEntries.some((e) => e.criterionId === criterionId);
         const nextEntries = hadOwnEntry
-          ? base.entries.map((e) => (e.criterionId === criterionId ? { ...e, value } : e))
-          : [...base.entries, { criterionId, value }];
+          ? ownEntries.map((e) => (e.criterionId === criterionId ? { ...e, value } : e))
+          : [...ownEntries, { criterionId, value }];
         // Optimistic-only nudge to the displayed average using the caller's own rows — the real
         // all-reviewers average is authoritative only once onSettled's refetch lands.
         const ownAverage = nextEntries.reduce((sum, e) => sum + e.value, 0) / nextEntries.length;
@@ -81,10 +82,11 @@ export function ScoreCard({ responseId, criteria, disabled }: ScoreCardProps) {
     return <p className="text-body-sm text-(--text-muted)">No scoring criteria configured for this workspace.</p>;
   }
 
-  const ownValue = (criterionId: string) => score?.entries.find((e) => e.criterionId === criterionId)?.value;
+  const ownValue = (criterionId: string) => score?.entries?.find((e) => e.criterionId === criterionId)?.value;
 
   return (
-    <div className="flex flex-col gap-4">
+    // Bordered box matching Stage/Assignee/Tags above it — was floating with no container before.
+    <div className="flex flex-col gap-4 rounded-md border border-(--border-default) bg-(--bg-subtle) p-2.5">
       {criteria.map((criterion) => (
         <fieldset key={criterion.id} className="flex flex-col gap-1.5">
           <legend className="text-caption text-(--text-secondary)">{criterion.label || 'Unnamed criterion'}</legend>

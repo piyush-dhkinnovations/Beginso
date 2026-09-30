@@ -273,7 +273,7 @@ export function ResponseDrawer({
   const createTagMutation = useMutation({
     mutationFn: (name: string) => tagsService.create(scope, { name, colour: 'neutral' }),
     onSuccess: (tag) => {
-      if (response) mutations.updateTags(response._id, [...response.tags.map((t) => t.id), tag.id]);
+      if (response) mutations.updateTags(response._id, [...(response.tags ?? []).map((t) => t.id), tag.id]);
     },
     onError: () => toast('Failed to create tag. Please try again.', 'error'),
   });
@@ -490,8 +490,8 @@ export function ResponseDrawer({
                 onOpenOriginal={onOpenResponse}
                 onStageChange={(stageId) => mutations.updateStage(response._id, stageId)}
                 onAssigneeChange={(assigneeId) => mutations.updateAssignee(response._id, assigneeId)}
-                onTagAdd={(tagId) => mutations.updateTags(response._id, [...response.tags.map((t) => t.id), tagId])}
-                onTagRemove={(tagId) => mutations.updateTags(response._id, response.tags.map((t) => t.id).filter((id) => id !== tagId))}
+                onTagAdd={(tagId) => mutations.updateTags(response._id, [...(response.tags ?? []).map((t) => t.id), tagId])}
+                onTagRemove={(tagId) => mutations.updateTags(response._id, (response.tags ?? []).map((t) => t.id).filter((id) => id !== tagId))}
                 onTagCreate={(name) => createTagMutation.mutate(name)}
               />
             </div>

@@ -379,12 +379,36 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         }}
       />
 
-      <Tabs
-        tabs={VIEW_TABS}
-        activeId={view}
-        onChange={(id) => setView(id as InboxViewMode)}
-        ariaLabel="Responses view"
-      />
+      <div className="flex items-center justify-between gap-3">
+        <Tabs
+          tabs={VIEW_TABS}
+          activeId={view}
+          onChange={(id) => setView(id as InboxViewMode)}
+          ariaLabel="Responses view"
+          className="flex-1"
+        />
+
+        {scope !== 'personal' && (
+          <div className="flex shrink-0 items-center gap-3">
+            <SavedViewSelect
+              views={views ?? []}
+              currentUserId={user?.id ?? ''}
+              activeViewId={activeViewId}
+              stages={stages}
+              tags={tags}
+              members={members}
+              role={role}
+              onApply={applyView}
+              onClearApplied={clearAppliedView}
+              onRename={renameView}
+              onDelete={deleteView}
+            />
+            <Button variant="secondary" size="small" onClick={() => setSaveViewOpen(true)}>
+              Save view
+            </Button>
+          </div>
+        )}
+      </div>
 
       <ActiveFilterChips
         filters={filters}
@@ -396,33 +420,15 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         }}
       />
 
-      {scope !== 'personal' && (
-        <div className="flex items-center gap-3">
-          <SavedViewSelect
-            views={views ?? []}
-            currentUserId={user?.id ?? ''}
-            activeViewId={activeViewId}
-            stages={stages}
-            tags={tags}
-            members={members}
-            role={role}
-            onApply={applyView}
-            onClearApplied={clearAppliedView}
-            onRename={renameView}
-            onDelete={deleteView}
-          />
-          <Button variant="secondary" size="small" onClick={() => setSaveViewOpen(true)}>
-            Save view
-          </Button>
-        </div>
-      )}
-
       {/* Sprint 12 (inbox-collaboration), task 3.1: selection/bulk and pagination are Table-only —
           selectedIds only ever gets populated via the Table's own checkboxes, and Board/Calendar/
           Chart each own their data fetching (per-column/per-month/per-range), not this page's
           single `data` query. */}
       {view === 'table' && (
-        <>
+        // -mt-2 tightens just the gap above the table specifically (the page's other sections
+        // keep the parent's gap-4) — the list itself shouldn't have extra breathing room before
+        // the header row.
+        <div className="flex flex-col gap-4 -mt-2">
           <BulkActionBar
             selectedIds={[...selectedIds]}
             selectAllMatching={selectAllMatching}
@@ -475,7 +481,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
               setPage(p);
             }}
           />
-        </>
+        </div>
       )}
 
       {view === 'board' && (

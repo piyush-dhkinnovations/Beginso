@@ -1095,6 +1095,10 @@
 .bg-table tbody tr:hover { background-color: var(--surface-hover); }
 .bg-table tbody tr:last-child td { border-bottom: 0; }
 .bg-table tr.is-selected { background-color: var(--accent-soft); }
+/* Compact density modifier — opt-in via className, does not affect any other table on
+   `bg-table` (Stages/Tags/Saved Views managers, etc. keep the default row height). */
+.bg-table-compact th,
+.bg-table-compact td { padding: var(--space-2) var(--space-4); }
 .bg-table .bg-num { text-align: right; font-variant-numeric: tabular-nums; }
 .bg-table th.bg-sortable { cursor: pointer; user-select: none; }
 .bg-table th.bg-sortable:hover { color: var(--text-primary); }

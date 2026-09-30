@@ -2,7 +2,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Tag } from '@/components/ui/Tag';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { MessageSquare, Paperclip } from 'lucide-react';
-import { formatResponseDate, buildAnswerPreview, detectRespondentIdentity, shortId } from '@/lib/formatters';
+import { formatResponseDate, detectRespondentIdentity } from '@/lib/formatters';
 import type { IResponse, ResponseTag } from '@/types/response';
 
 /**
@@ -15,9 +15,12 @@ import type { IResponse, ResponseTag } from '@/types/response';
 export function RespondentCell({ response }: { response: IResponse }) {
   const identity = detectRespondentIdentity(response.answers);
   const name = identity.label ?? identity.email ?? 'Anonymous';
-  const reference = response.reference ?? `#${shortId(response._id)}`;
   const noteCount = response.noteCount ?? 0;
   const attachmentCount = response.attachmentCount ?? 0;
+  const hasMeta = noteCount > 0 || attachmentCount > 0;
+  // Second line is the email only, never other form answers — and only when it isn't already
+  // the name shown above it (a form with no separate name field falls back to email as `name`).
+  const secondLine = identity.label ? identity.email : undefined;
 
   return (
     <div className="flex min-w-0 items-center gap-2.5">
@@ -29,23 +32,26 @@ export function RespondentCell({ response }: { response: IResponse }) {
       <span className="sr-only">{response.unread ? 'Unread. ' : ''}</span>
       <Avatar size="sm" name={name} alt="" />
       <div className="flex min-w-0 flex-col">
-        <span className="truncate font-medium text-text-primary">{name}</span>
-        <span className="flex items-center gap-2 text-caption text-text-muted">
-          <span>{reference}</span>
-          {noteCount > 0 && (
-            <span className="inline-flex items-center gap-0.5" aria-label={`${noteCount} note${noteCount === 1 ? '' : 's'}`}>
-              <MessageSquare size={11} aria-hidden="true" />
-              {noteCount}
-            </span>
-          )}
-          {attachmentCount > 0 && (
-            <span className="inline-flex items-center gap-0.5" aria-label={`${attachmentCount} attachment${attachmentCount === 1 ? '' : 's'}`}>
-              <Paperclip size={11} aria-hidden="true" />
-              {attachmentCount}
+        <span className="flex items-center gap-1.5">
+          <span className="truncate font-medium text-text-primary">{name}</span>
+          {hasMeta && (
+            <span className="flex shrink-0 items-center gap-1.5 text-caption text-text-muted">
+              {noteCount > 0 && (
+                <span className="inline-flex items-center gap-1" aria-label={`${noteCount} note${noteCount === 1 ? '' : 's'}`}>
+                  <MessageSquare size={14} aria-hidden="true" />
+                  {noteCount}
+                </span>
+              )}
+              {attachmentCount > 0 && (
+                <span className="inline-flex items-center gap-1" aria-label={`${attachmentCount} attachment${attachmentCount === 1 ? '' : 's'}`}>
+                  <Paperclip size={14} aria-hidden="true" />
+                  {attachmentCount}
+                </span>
+              )}
             </span>
           )}
         </span>
-        <span className="truncate text-caption text-text-muted">{buildAnswerPreview(response.answers)}</span>
+        {secondLine && <span className="truncate text-caption text-text-muted">{secondLine}</span>}
       </div>
     </div>
   );

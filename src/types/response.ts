@@ -57,7 +57,8 @@ export interface IResponse {
    * an unmigrated caller (a saved report scope, a cached bundle) degrades instead of breaking. */
   status?: StageCategory;
   assignee: ResponseAssignee | null;
-  tags: ResponseTag[];
+  /** Undefined on data from before tags existed (design.md §13) — treat as empty, never assume present. */
+  tags?: ResponseTag[];
   /** Uncertain (design.md §13) — defaults assumed 0 until BE 0.3/0.2 ship. */
   noteCount?: number;
   attachmentCount?: number;

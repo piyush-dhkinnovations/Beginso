@@ -64,7 +64,8 @@ describe('ResponsesToolbar', () => {
     const onFilterChange = vi.fn();
     render(<ResponsesToolbar {...baseProps} onFilterChange={onFilterChange} />);
 
-    const select = screen.getByLabelText('Filter by stage');
+    await user.click(screen.getByRole('button', { name: /filter/i }));
+    const select = screen.getByLabelText('Stage');
     expect(screen.getByRole('option', { name: 'Screening' })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: 'Offer' })).toBeInTheDocument();
 
@@ -72,14 +73,18 @@ describe('ResponsesToolbar', () => {
     expect(onFilterChange).toHaveBeenCalledWith({ stageId: 's-completed' });
   });
 
-  it('hides the assignee filter when members is undefined (personal shell, OQ-9)', () => {
+  it('hides the assignee filter when members is undefined (personal shell, OQ-9)', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(<ResponsesToolbar {...baseProps} members={undefined} />);
-    expect(screen.queryByLabelText('Filter by assignee')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /filter/i }));
+    expect(screen.queryByLabelText('Assignee')).not.toBeInTheDocument();
   });
 
-  it('shows Unassigned and Me first in the assignee filter when members is given', () => {
+  it('shows Unassigned and Me first in the assignee filter when members is given', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     render(<ResponsesToolbar {...baseProps} members={[]} />);
-    const select = screen.getByLabelText('Filter by assignee') as HTMLSelectElement;
+    await user.click(screen.getByRole('button', { name: /filter/i }));
+    const select = screen.getByLabelText('Assignee') as HTMLSelectElement;
     const options = Array.from(select.options).map((o) => o.textContent);
     expect(options.slice(0, 3)).toEqual(['Everyone', 'Unassigned', 'Me']);
   });
@@ -89,8 +94,14 @@ describe('ResponsesToolbar', () => {
     const onFilterChange = vi.fn();
     render(<ResponsesToolbar {...baseProps} onFilterChange={onFilterChange} />);
 
+    await user.click(screen.getByRole('button', { name: /filter/i }));
     await user.click(screen.getByLabelText('Unread only'));
     expect(onFilterChange).toHaveBeenCalledWith({ unread: true });
+  });
+
+  it('shows an active-filter count badge on the trigger when a filter is applied', () => {
+    render(<ResponsesToolbar {...baseProps} filters={{ unread: true, stageId: 's-new' }} />);
+    expect(screen.getByRole('button', { name: /filter/i })).toHaveTextContent('2');
   });
 
   it('renders the count label in singular and plural form', () => {

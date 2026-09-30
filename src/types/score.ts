@@ -33,7 +33,8 @@ export interface ScoreEntry {
  */
 export interface ResponseScore {
   responseId: string;
-  entries: ScoreEntry[];
+  /** Undefined when the response has no scores yet — treat as empty, never assume present. */
+  entries?: ScoreEntry[];
   scoreAverage: number | null;
   scoreCount: number;
 }

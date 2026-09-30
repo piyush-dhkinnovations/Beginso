@@ -96,11 +96,10 @@ describe('ResponsesTable', () => {
     expect(screen.getByText('Unknown stage')).toBeInTheDocument();
   });
 
-  it('master checkbox is unchecked when nothing selected', () => {
+  it('select-all checkbox is not rendered until something is selected (double-click reveals it)', () => {
     const responses = [makeResponse('r1'), makeResponse('r2')];
     render(<ResponsesTable {...baseProps} responses={responses} isLoading={false} selectedIds={new Set()} />);
-    const checkbox = screen.getByLabelText('Select all responses on this page');
-    expect(checkbox).not.toBeChecked();
+    expect(screen.queryByLabelText('Select all responses on this page')).not.toBeInTheDocument();
   });
 
   it('master checkbox is checked when all rows are selected', () => {

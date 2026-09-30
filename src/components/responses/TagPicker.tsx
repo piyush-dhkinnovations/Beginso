@@ -54,7 +54,12 @@ export function TagPicker({ available, selectedIds, canCreate, disabled, onAdd, 
   }
 
   return (
-    <div ref={containerRef} className="relative flex flex-wrap items-center gap-2">
+    // Bordered box like Stage/Assignee's own controls (min-h-11 to match) — was a bare ghost
+    // button with no border before, standing out from the rest of the sidebar.
+    <div
+      ref={containerRef}
+      className="relative flex min-h-11 w-full flex-wrap items-center gap-1.5 rounded-md border border-(--border-default) bg-(--bg-subtle) px-2.5 py-1.5"
+    >
       {selected.map((tag) => (
         <TagChip key={tag.id} onRemove={disabled ? undefined : () => onRemove(tag.id)} removeLabel={`Remove tag ${tag.name}`}>
           {tag.name}

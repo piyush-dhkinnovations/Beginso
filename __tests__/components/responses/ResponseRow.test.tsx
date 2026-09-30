@@ -29,10 +29,10 @@ const response: IResponse = {
 };
 
 describe('RespondentCell', () => {
-  it('renders the detected identity, reference, note and attachment counts', () => {
+  it('renders the detected identity, note and attachment counts, never the raw #reference', () => {
     render(<RespondentCell response={response} />);
     expect(screen.getByText('Priya Sharma')).toBeInTheDocument();
-    expect(screen.getByText('#7')).toBeInTheDocument();
+    expect(screen.queryByText('#7')).not.toBeInTheDocument();
     expect(screen.getByLabelText('2 notes')).toBeInTheDocument();
     expect(screen.getByLabelText('1 attachment')).toBeInTheDocument();
   });
