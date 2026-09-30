@@ -203,13 +203,18 @@ export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellPr
 
       if (result.status === 429) {
         setSubmitError('Too many submissions from your connection. Please wait a minute and try again.');
-      } else if (result.status === 422 && result.message) {
+      } else if ((result.status === 422 || result.status === 400) && result.message) {
+        // Bug fix: a 400 used to always show one hardcoded "file too large / too many files"
+        // guess, discarding whatever specific message the backend actually sent — including for
+        // Multer errors that have nothing to do with file size at all (e.g. a field value too
+        // long). The backend's message now states the real limit for whichever check actually
+        // failed; show that instead of guessing.
         setSubmitError(result.message);
       } else if (result.status === 413) {
         setSubmitError('Your answers are too large. Please shorten them and try again.');
       } else if (result.status === 400) {
-        // Multer's limits: a file over the size cap, or more files than allowed.
-        setSubmitError('An attachment is too large (25 MB maximum per file) or there are too many files (10 maximum). Please check your files and try again.');
+        // Fallback only for the rare case the backend sent a 400 with no message at all.
+        setSubmitError('An attachment is too large or there are too many files. Please check your files and try again.');
       } else {
         setSubmitError('Something went wrong. Please try again.');
       }

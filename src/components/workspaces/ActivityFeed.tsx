@@ -1,6 +1,6 @@
 import { History } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { describeEventAction } from '@/lib/eventLabels';
+import { describeEventAction, displayTargetLabel } from '@/lib/eventLabels';
 import { formatRelativeTime } from '@/lib/formatters';
 import type { WorkspaceEventItem } from '@/types/event';
 
@@ -32,7 +32,7 @@ export function ActivityFeed({ events }: ActivityFeedProps) {
         >
           <span className="bg-body min-w-0">
             <strong>{event.actorName}</strong> {describeEventAction(event.action)}{' '}
-            <span className="font-medium">{event.targetLabel}</span>
+            <span className="font-medium">{displayTargetLabel(event.targetLabel)}</span>
           </span>
           <time className="bg-caption shrink-0" dateTime={event.createdAt}>
             {formatRelativeTime(event.createdAt)}

@@ -1,4 +1,4 @@
-import { describeEventAction } from '@/lib/eventLabels';
+import { describeEventAction, displayTargetLabel } from '@/lib/eventLabels';
 import { formatResponseDate } from '@/lib/formatters';
 import type { WorkspaceEventItem } from '@/types/event';
 
@@ -29,7 +29,7 @@ export function AuditTable({ events, isLoading }: AuditTableProps) {
               Target
             </th>
             <th scope="col" className={SECONDARY}>
-              IP
+              Origin
             </th>
             <th scope="col">Timestamp</th>
           </tr>
@@ -49,7 +49,7 @@ export function AuditTable({ events, isLoading }: AuditTableProps) {
                 <tr key={event.id}>
                   <th
                     scope="row"
-                    className="font-medium text-left normal-case text-[var(--text-secondary)]"
+                    className="font-medium text-left normal-case text-(--text-secondary)"
                     style={{
                       backgroundColor: 'transparent',
                       borderBottom: i === events.length - 1 ? 0 : '1px solid var(--border-subtle)',
@@ -58,8 +58,15 @@ export function AuditTable({ events, isLoading }: AuditTableProps) {
                     {event.actorName}
                   </th>
                   <td>{describeEventAction(event.action)}</td>
-                  <td className={SECONDARY}>{event.targetLabel}</td>
-                  <td className={SECONDARY}>{event.ip || '—'}</td>
+                  <td className={SECONDARY}>{displayTargetLabel(event.targetLabel)}</td>
+                  {/* "Origin", not "IP" — this is a one-way hash (design.md's own "ipHash only,
+                      never a raw address" rule), too long to read as a real IP and not one. Only
+                      truncate genuinely long hash-length values — a real, short IP (however
+                      unlikely to appear given the hashing contract) stays fully visible, same as
+                      before. */}
+                  <td className={SECONDARY} title={event.ip && event.ip.length > 20 ? event.ip : undefined}>
+                    {event.ip ? (event.ip.length > 20 ? `${event.ip.slice(0, 10)}…` : event.ip) : '—'}
+                  </td>
                   <td>{formatResponseDate(event.createdAt)}</td>
                 </tr>
               ))}

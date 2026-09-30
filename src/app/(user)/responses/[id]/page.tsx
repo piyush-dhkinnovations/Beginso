@@ -87,11 +87,23 @@ export default function ResponseDetailPage() {
     .sort((a, b) => a.order - b.order)
     .map((field) => field.label);
 
-  const fallbackDrawerUrl = formId
+  // Bug fix: the fallback (and the safe-url check below) never accounted for the workspace-scoped
+  // Inbox route (`/w/[slug]/inbox`) — only `/responses` (personal) and `/forms/[id]/responses`.
+  // Expanding a workspace response and then collapsing/closing it fell back to the *personal*
+  // Responses page regardless of which workspace the response actually belonged to, which then
+  // correctly failed to load it (it was never there) and showed "Unable to load responses" — the
+  // sidebar still said Personal because that's genuinely which page it had silently landed on.
+  const fallbackDrawerUrl = scope !== 'personal'
+    ? `/w/${scope}/inbox?responseId=${id}`
+    : formId
     ? `/forms/${formId}/responses?responseId=${id}`
     : `/responses?responseId=${id}`;
   const isSafeDrawerUrl = !!returnTo
-    && (returnTo.startsWith('/responses?') || /^\/forms\/[^/]+\/responses\?/.test(returnTo))
+    && (
+      returnTo.startsWith('/responses?')
+      || /^\/forms\/[^/]+\/responses\?/.test(returnTo)
+      || /^\/w\/[^/]+\/inbox\?/.test(returnTo)
+    )
     && returnToParams.get('responseId') === id;
   const drawerUrl = isSafeDrawerUrl ? returnTo : fallbackDrawerUrl;
 
