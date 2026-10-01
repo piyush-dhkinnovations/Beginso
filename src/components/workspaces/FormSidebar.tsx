@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { ArrowLeft, FileText, LayoutDashboard, Table2, PieChart, Pencil, Eye, Star, Settings } from 'lucide-react';
+import { ArrowLeft, FileText, LayoutDashboard, Table2, PieChart, Pencil, Settings } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { useBuilderStore } from '@/store/builderStore';
 import type { Form } from '@/types/form';
@@ -15,8 +15,10 @@ export interface FormSidebarProps {
 
 /**
  * Form-specific sidebar — replaces the global Personal sidebar while inside a single form's
- * detail routes (overview, responses, analytics, edit, preview, scores). Every nav target already
- * exists as a real route; this is purely a navigation-chrome swap, not new pages.
+ * detail routes (overview, responses, analytics, edit, settings). Every nav target already
+ * exists as a real route; this is purely a navigation-chrome swap, not new pages. Preview and Scores
+ * are deliberately not listed — their routes still exist (reached from the Overview page's Preview
+ * button and "Score comparison" link) but they are not top-level destinations of a form.
  *
  * "Inbox" and "Responses" are intentionally one link, not two — there is only one such page built
  * (`/forms/:id/responses`). Labelled "Responses" here, not "Inbox": that's what the page itself
@@ -105,8 +107,6 @@ export function FormSidebar({ formId, form, collapsed = false }: FormSidebarProp
             { label: 'Responses', href: `${base}/responses`, icon: Table2, active: isActive('/responses'), onClick: guard(`${base}/responses`) },
             { label: 'Analytics', href: `${base}/analytics`, icon: PieChart, active: isActive('/analytics'), onClick: guard(`${base}/analytics`) },
             { label: 'Edit form', href: `${base}/edit`, icon: Pencil, active: onEditPage && !onSettingsTab, onClick: guard(`${base}/edit`) },
-            { label: 'Preview', href: `${base}/preview`, icon: Eye, active: isActive('/preview'), onClick: guard(`${base}/preview`) },
-            { label: 'Scores', href: `${base}/scores`, icon: Star, active: isActive('/scores'), onClick: guard(`${base}/scores`) },
             { label: 'Settings', href: `${base}/edit?tab=settings`, icon: Settings, active: onSettingsTab, onClick: guard(`${base}/edit?tab=settings`) },
           ],
         },

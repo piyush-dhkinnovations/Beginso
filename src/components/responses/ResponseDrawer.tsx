@@ -23,6 +23,9 @@ import { StageBadge } from './StageBadge';
 import { NotesPanel } from './NotesPanel';
 import { WorkflowSidebar } from './WorkflowSidebar';
 import { responsesService } from '@/services/responses';
+import { formAccessService } from '@/services/formAccess';
+import { notesService } from '@/services/notes';
+import { FormAccessPanel } from '@/components/team/FormAccessPanel';
 import { formsService } from '@/services/forms';
 import { tagsService } from '@/services/tags';
 import { reportsService } from '@/services/reports';
@@ -30,7 +33,7 @@ import { useInboxMutations } from '@/hooks/useInboxMutations';
 import { useMembers } from '@/hooks/useMembers';
 import { useTags } from '@/hooks/useTags';
 import { useAuth } from '@/hooks/useAuth';
-import { responseKeys, workspaceKeys } from '@/lib/queryKeys';
+import { formAccessKeys, noteKeys, responseKeys, workspaceKeys } from '@/lib/queryKeys';
 import { detectRespondentIdentity, shortId } from '@/lib/formatters';
 import { exportPayloadFromTarget } from '@/lib/reportExport';
 import { hasCapability } from '@/lib/roles';
@@ -151,6 +154,7 @@ export function ResponseDrawer({
   const queryClient = useQueryClient();
   const drawerRef = useRef<HTMLDivElement>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const { user } = useAuth();
   const mutations = useInboxMutations({ scope, formId });
   const { data: members = [] } = useMembers(scope === 'personal' ? undefined : scope);
@@ -231,6 +235,32 @@ export function ResponseDrawer({
     queryFn: () => responsesService.getResponseById(responseId as string, scope),
     enabled: !!responseId,
   });
+
+  // Collaboration (internal notes, assignee, activity) only means something when more than one
+  // person is involved. Always on in a workspace; in a personal space only once the form is shared
+  // with someone (a grant), or if notes already exist (never hide data, e.g. a form that was shared
+  // and later unshared). While that is still being worked out the sections stay hidden rather than
+  // flashing in and out, and a failed lookup fails open (shown) so nothing is hidden by mistake.
+  const isPersonal = scope === 'personal';
+  const grantFormId = formId ?? response?.formId;
+  const grantsQuery = useQuery({
+    queryKey: formAccessKeys.grants(grantFormId ?? ''),
+    queryFn: () => formAccessService.listGrants(grantFormId as string),
+    enabled: isPersonal && !!grantFormId && !!responseId,
+    retry: false,
+  });
+  const personalNotesQuery = useQuery({
+    queryKey: noteKeys.list(scope, responseId ?? ''),
+    queryFn: () => notesService.list(responseId as string, scope),
+    enabled: isPersonal && !!responseId,
+    retry: false,
+  });
+  const showCollaboration =
+    !isPersonal ||
+    grantsQuery.isError ||
+    (grantsQuery.data?.length ?? 0) > 0 ||
+    (personalNotesQuery.data?.length ?? 0) > 0;
+  const collaborationSettled = !isPersonal || grantsQuery.isSuccess || grantsQuery.isError;
 
   const { data: responseForm } = useQuery({
     queryKey: ['form', response?.formId],
@@ -445,13 +475,15 @@ export function ResponseDrawer({
             <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_260px]">
               {/* Main column: notes above the answers (wireframe screen 12 order). */}
               <div className="flex min-w-0 flex-col gap-4">
-                <NotesPanel
-                  responseId={response._id}
-                  scope={scope}
-                  workspaceName={workspaceName}
-                  currentUserId={user?.id ?? ''}
-                  canDeleteAny={canDeleteAnyNote}
-                />
+                {showCollaboration && (
+                  <NotesPanel
+                    responseId={response._id}
+                    scope={scope}
+                    workspaceName={workspaceName}
+                    currentUserId={user?.id ?? ''}
+                    canDeleteAny={canDeleteAnyNote}
+                  />
+                )}
 
                 <section className="min-w-0 rounded-lg border border-(--border-default) bg-(--surface-card) p-4">
                   <div className="mb-3">
@@ -487,6 +519,8 @@ export function ResponseDrawer({
                 stages={stages}
                 tags={tags}
                 members={members}
+                collaboration={showCollaboration}
+                onShare={isPersonal && collaborationSettled && !showCollaboration && grantFormId ? () => setShareOpen(true) : undefined}
                 canCreateTag={canCreateTag}
                 canScore={canCreateTag}
                 isUpdating={mutations.isUpdating}
@@ -501,6 +535,15 @@ export function ResponseDrawer({
           )}
         </div>
       </div>
+
+      {isPersonal && grantFormId && (
+        <FormAccessPanel
+          isOpen={shareOpen}
+          formId={grantFormId}
+          formTitle={formTitle ?? responseForm?.title ?? 'this form'}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
 
       <Modal
         isOpen={confirmDeleteOpen}

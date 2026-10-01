@@ -1,9 +1,10 @@
 'use client';
 
-import { CalendarDays, Hash, Shield } from 'lucide-react';
+import { CalendarDays, Hash, Share2, Shield } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/Card';
 import { Select } from '@/components/ui/Select';
+import { Button } from '@/components/ui/Button';
 import { AssigneePicker } from './AssigneePicker';
 import { TagPicker } from './TagPicker';
 import { ActivityTimeline } from './ActivityTimeline';
@@ -24,6 +25,11 @@ export interface WorkflowSidebarProps {
   stages: readonly StageRef[];
   tags: readonly Tag[];
   members: readonly MemberListItem[];
+  /** Assignee and Activity only make sense with more than one person involved — false hides them
+   * (a personal form shared with nobody). Default true so every other caller is unchanged. */
+  collaboration?: boolean;
+  /** When set (solo personal form), shows a small "share this form" nudge that calls it. */
+  onShare?: () => void;
   /** OQ-5 default: any `responses:act` role may create a tag inline from this picker — distinct
    * from `tags:manage` (Owner/Admin), which gates the full Settings tag manager (task 2.5). */
   canCreateTag: boolean;
@@ -59,6 +65,8 @@ export function WorkflowSidebar({
   stages,
   tags,
   members,
+  collaboration = true,
+  onShare,
   canCreateTag,
   canScore,
   onStageChange,
@@ -72,6 +80,12 @@ export function WorkflowSidebar({
   const { data: activity, isLoading: activityLoading, isError: activityError, refetch: refetchActivity } = useQuery({
     queryKey: responseActivityKeys.list(scope, response._id),
     queryFn: () => activityService.list(response._id, scope),
+    // The Activity card is hidden for a solo personal form — don't fetch what nobody will see.
+    enabled: collaboration,
+    // Live like the notes: a teammate's stage change or assignment shows up without a reload.
+    refetchInterval: 10_000,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
   });
 
   const ipHash = response.ipHash ? response.ipHash.slice(0, 16) : null;
@@ -109,12 +123,14 @@ export function WorkflowSidebar({
           </Select>
         </div>
 
-        <div>
-          <span className={SECTION_LABEL}>Assignee</span>
-          <div className="mt-1">
-            <AssigneePicker members={members} current={response.assignee} onChange={onAssigneeChange} disabled={isUpdating} />
+        {collaboration && (
+          <div>
+            <span className={SECTION_LABEL}>Assignee</span>
+            <div className="mt-1">
+              <AssigneePicker members={members} current={response.assignee} onChange={onAssigneeChange} disabled={isUpdating} />
+            </div>
           </div>
-        </div>
+        )}
 
         <div>
           <span className={SECTION_LABEL}>Tags</span>
@@ -170,10 +186,25 @@ export function WorkflowSidebar({
         </div>
       </Card>
 
-      <Card className="flex flex-col gap-3">
-        <span className={SECTION_LABEL}>Activity</span>
-        <ActivityTimeline entries={activity} isLoading={activityLoading} isError={activityError} onRetry={() => void refetchActivity()} />
-      </Card>
+      {collaboration ? (
+        <Card className="flex flex-col gap-3">
+          <span className={SECTION_LABEL}>Activity</span>
+          <ActivityTimeline entries={activity} isLoading={activityLoading} isError={activityError} onRetry={() => void refetchActivity()} />
+        </Card>
+      ) : (
+        onShare && (
+          <Card className="flex flex-col gap-2">
+            <span className={SECTION_LABEL}>Working with others?</span>
+            <p className="bg-body-sm text-(--text-muted)">
+              Share this form and your teammates can add notes, take responses and see the activity here.
+            </p>
+            <Button variant="secondary" size="small" onClick={onShare}>
+              <Share2 size={14} className="mr-2" aria-hidden="true" />
+              Share this form
+            </Button>
+          </Card>
+        )
+      )}
     </aside>
   );
 }

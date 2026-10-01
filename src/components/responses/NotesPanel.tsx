@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { Lock } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowDown, Lock } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -27,24 +27,58 @@ export interface NotesPanelProps {
  * notes query, composer state, edit/delete/undo." Oldest-first (the wireframe's own order — a
  * conversation reads top to bottom, newest at the bottom next to the composer).
  */
+/** How often an open notes panel checks for new notes. */
+const NOTES_POLL_MS = 5_000;
+
 export function NotesPanel({ responseId, scope, workspaceName, currentUserId, canDeleteAny }: NotesPanelProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const { data: members = [] } = useMembers(scope === 'personal' ? undefined : scope);
   const listKey = noteKeys.list(scope, responseId);
 
+  // Live: a note a teammate posts shows up without a reload. There is no push channel, so this
+  // polls every few seconds while the tab is visible (TanStack pauses it in a background tab) and
+  // refetches the moment the tab regains focus. The app-wide default turns focus-refetch off, which
+  // is why notes used to need a page reload.
   const { data: notes, isLoading, isError, refetch } = useQuery({
     queryKey: listKey,
     queryFn: () => notesService.list(responseId, scope),
+    refetchInterval: NOTES_POLL_MS,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,
   });
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  // Auto-scroll to the latest note (bottom, oldest-first order) whenever the list changes —
-  // otherwise a new message lands off-screen inside the now-scrollable box instead of in view.
+  // Chat behaviour: stay glued to the newest note while the reader is at the bottom, but never yank
+  // someone who scrolled up to read earlier notes — show a "New notes" pill instead.
+  const atBottomRef = useRef(true);
+  const [atBottom, setAtBottom] = useState(true);
+  const [countWhenLeft, setCountWhenLeft] = useState(0);
+  const noteCount = notes?.length ?? 0;
+  const hasUnseen = !atBottom && noteCount > countWhenLeft;
+
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (el && atBottomRef.current) el.scrollTop = el.scrollHeight;
   }, [notes]);
+
+  function handleScroll() {
+    const el = scrollRef.current;
+    if (!el) return;
+    const near = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
+    if (near === atBottomRef.current) return;
+    atBottomRef.current = near;
+    setAtBottom(near);
+    if (!near) setCountWhenLeft(noteCount);
+  }
+
+  function jumpToLatest() {
+    const el = scrollRef.current;
+    if (!el) return;
+    atBottomRef.current = true;
+    setAtBottom(true);
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: listKey });
@@ -52,7 +86,11 @@ export function NotesPanel({ responseId, scope, workspaceName, currentUserId, ca
 
   const createMutation = useMutation({
     mutationFn: (payload: { body: string; mentionIds: string[] }) => notesService.create(responseId, payload, scope),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      atBottomRef.current = true; // your own message always scrolls into view
+      setAtBottom(true);
+      invalidate();
+    },
     onError: (err) => toast(err instanceof MentionAccessError ? err.message : 'Failed to post note. Please try again.', 'error'),
   });
 
@@ -100,8 +138,8 @@ export function NotesPanel({ responseId, scope, workspaceName, currentUserId, ca
               forcing an unnecessarily narrow wrap on what should read as one flowing sentence
               across the card's actual width. */}
           <p className="mt-0.5 bg-caption text-(--text-muted)">
-            Only members of {workspaceName} can see these. The respondent never does, and notes are never
-            included in exports or copies.
+            {scope === 'personal' ? 'Only you and the people this form is shared with can see these.' : `Only members of ${workspaceName} can see these.`}{' '}
+            The respondent never does, and notes are never included in exports or copies.
           </p>
         </div>
       </div>
@@ -110,7 +148,7 @@ export function NotesPanel({ responseId, scope, workspaceName, currentUserId, ca
 
       {/* min-h-0 is required for a flex child to actually shrink and scroll instead of
           stretching the flex container past its own max-h. */}
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto">
+      <div ref={scrollRef} onScroll={handleScroll} className="relative min-h-0 flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="flex flex-col gap-2" aria-busy="true">
             <Skeleton variant="text" width="40%" />
@@ -150,6 +188,17 @@ export function NotesPanel({ responseId, scope, workspaceName, currentUserId, ca
           </div>
         )}
       </div>
+
+      {hasUnseen && (
+        <button
+          type="button"
+          onClick={jumpToLatest}
+          className="bg-btn bg-btn-secondary bg-btn-sm self-center shadow-(--shadow-md)"
+        >
+          <ArrowDown size={14} className="mr-1.5" aria-hidden="true" />
+          New notes
+        </button>
+      )}
 
       <NoteComposer
         members={members}

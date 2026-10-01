@@ -42,6 +42,11 @@ vi.mock('@/services/notes', () => ({
 vi.mock('@/services/activity', () => ({
   activityService: { list: vi.fn().mockResolvedValue([]) },
 }));
+// Whether a personal form is shared with anyone decides if notes/assignee/activity show at all.
+const mockListGrants = vi.fn();
+vi.mock('@/services/formAccess', () => ({
+  formAccessService: { listGrants: (...args: unknown[]) => mockListGrants(...args), addGrant: vi.fn(), removeGrant: vi.fn() },
+}));
 
 const mockGetResponseById = vi.fn();
 const mockUpdate = vi.fn();
@@ -102,6 +107,7 @@ describe('ResponseDrawer', () => {
     mockGetResponseById.mockReset();
     mockUpdate.mockReset();
     mockDeleteResponse.mockReset();
+    mockListGrants.mockReset().mockResolvedValue([]); // default: a personal form shared with nobody
   });
 
   it('renders nothing when responseId is null', () => {
@@ -372,5 +378,48 @@ describe('ResponseDrawer', () => {
       expect(onClose).toHaveBeenCalled();
     });
     expect(mockToast).toHaveBeenCalledWith('Response deleted.', 'success');
+  });
+
+  describe('collaboration sections (notes, assignee, activity)', () => {
+    it('hides them on a personal form that is shared with nobody, and offers to share it', async () => {
+      mockGetResponseById.mockResolvedValue(detail);
+      renderDrawer('resp-1');
+      await screen.findByText('Submitted Answers');
+
+      await waitFor(() => expect(screen.getByText('Working with others?')).toBeInTheDocument());
+      expect(screen.queryByText('Internal notes')).not.toBeInTheDocument();
+      expect(screen.queryByText('Assignee')).not.toBeInTheDocument();
+      expect(screen.queryByText('Activity')).not.toBeInTheDocument();
+      // Triage controls stay for everyone.
+      expect(screen.getByText('Stage')).toBeInTheDocument();
+      expect(screen.getByText('Tags')).toBeInTheDocument();
+    });
+
+    it('shows them on a personal form once it is shared with someone', async () => {
+      mockGetResponseById.mockResolvedValue(detail);
+      mockListGrants.mockResolvedValue([{ userId: 'u2', name: 'Sam', role: 'viewer' }]);
+      renderDrawer('resp-1');
+
+      expect(await screen.findByText('Internal notes')).toBeInTheDocument();
+      expect(screen.getByText('Assignee')).toBeInTheDocument();
+      expect(screen.getByText('Activity')).toBeInTheDocument();
+      expect(screen.queryByText('Working with others?')).not.toBeInTheDocument();
+    });
+
+    it('shows them if the share lookup fails, rather than hiding something by mistake', async () => {
+      mockGetResponseById.mockResolvedValue(detail);
+      mockListGrants.mockRejectedValue(new Error('403'));
+      renderDrawer('resp-1');
+
+      expect(await screen.findByText('Internal notes')).toBeInTheDocument();
+    });
+
+    it('always shows them in a workspace', async () => {
+      mockGetResponseById.mockResolvedValue(detail);
+      renderDrawer('resp-1', vi.fn(), { scope: 'acme' });
+
+      expect(await screen.findByText('Internal notes')).toBeInTheDocument();
+      expect(mockListGrants).not.toHaveBeenCalled();
+    });
   });
 });
