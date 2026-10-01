@@ -81,6 +81,7 @@ export const responseActivityKeys = {
 export const dashboardKeys = {
   all: ['dashboard'] as const,
   analytics: () => [...dashboardKeys.all, 'analytics'] as const,
+  responseTrend: () => [...dashboardKeys.all, 'response-trend-30d'] as const,
 };
 
 export interface AnalyticsRangeParams {

@@ -13,7 +13,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, LayoutTemplate, FilePlus, Table, Settings, Download, Pin, BarChart2, Edit3, Share2 } from 'lucide-react';
+import { FormsOverviewCharts } from '@/components/analytics/FormsOverviewCharts';
+import { FileText, Files, MessageSquare, Plus, LayoutTemplate, FilePlus, Table, Settings, Download, Pin, BarChart2, Edit3, Share2 } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { workspaceKeys } from '@/lib/queryKeys';
 import { PageHeader, Button, EmptyState, StatCard, Card, Badge, Skeleton } from '@/components/ui';
@@ -140,10 +141,28 @@ export default function WorkspaceHomePage() {
         <div className="flex flex-col gap-5">
           {/* Stat cards grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard label="Total Forms" value={forms.length} />
-            <StatCard label="Total Responses" value={forms.reduce((s, f) => s + (f.responseCount ?? 0), 0)} />
-            <StatCard label="Active Forms" value={forms.filter((f) => f.status === 'published').length} />
+            <StatCard label="Total Forms" value={forms.length} icon={<FileText aria-hidden="true" />} />
+            <StatCard
+              label="Total Responses"
+              value={forms.reduce((s, f) => s + (f.responseCount ?? 0), 0)}
+              icon={<MessageSquare aria-hidden="true" />}
+            />
+            <StatCard
+              label="Active Forms"
+              value={forms.filter((f) => f.status === 'published').length}
+              unit={forms.length > 0 ? `/ ${forms.length}` : undefined}
+              icon={<Files aria-hidden="true" />}
+              chart={
+                forms.length > 0
+                  ? { kind: 'ring', percent: Math.round((forms.filter((f) => f.status === 'published').length / forms.length) * 100) }
+                  : undefined
+              }
+            />
           </div>
+
+          <FormsOverviewCharts
+            forms={forms.map((f) => ({ title: f.title, status: f.status, responses: f.responseCount ?? 0 }))}
+          />
 
           {/* Quick actions strip */}
           <Card className="flex flex-wrap items-center justify-between gap-3 p-4">

@@ -1,11 +1,8 @@
 'use client';
 
 import { Card } from '@/components/ui/Card';
-import { EChartContainer } from '@/components/charts/EChartContainer';
-import { getBaseChartOption, CHART_COLORS, type EChartsOption } from '@/lib/chartTheme';
+import { ProgressBars } from '@/components/ui/charts';
 import type { QuestionBreakdown, QuestionOption } from '@/types/analytics';
-
-const CHART_HEIGHT = 220;
 
 export interface QuestionOptionWithPercentage extends QuestionOption {
   percentage: number;
@@ -35,36 +32,6 @@ export function computeOptionPercentages(options: QuestionOption[]): QuestionOpt
   return options.map((o, i) => ({ ...o, percentage: rounded[i] }));
 }
 
-function buildBarOption(sorted: QuestionOptionWithPercentage[]): EChartsOption {
-  const base = getBaseChartOption();
-  return {
-    ...base,
-    grid: { left: 8, right: 72, top: 8, bottom: 8, containLabel: true },
-    xAxis: { type: 'value', minInterval: 1, show: false },
-    yAxis: {
-      type: 'category',
-      inverse: true,
-      data: sorted.map((o) => o.option),
-      axisLabel: { width: 100, overflow: 'truncate' },
-    },
-    series: [
-      {
-        type: 'bar',
-        data: sorted.map((o) => o.count),
-        color: CHART_COLORS.brand,
-        label: {
-          show: true,
-          position: 'right',
-          formatter: (params) => {
-            const item = sorted[params.dataIndex];
-            return item ? `${item.count} (${item.percentage}%)` : '';
-          },
-        },
-      },
-    ],
-  };
-}
-
 interface QuestionBreakdownChartProps {
   question: QuestionBreakdown;
 }
@@ -80,7 +47,7 @@ export function QuestionBreakdownChart({ question }: QuestionBreakdownChartProps
         <p className="bg-body-sm text-(--text-muted)">No answers yet in this range.</p>
       ) : (
         <>
-          <EChartContainer option={buildBarOption(sorted)} height={CHART_HEIGHT} ariaLabel={`${question.label} answer breakdown`} />
+          <ProgressBars items={sorted.map((o) => ({ label: o.option, value: o.count, display: `${o.count} (${o.percentage}%)` }))} />
           <table className="sr-only">
             <caption>{question.label} — answer breakdown</caption>
             <thead>

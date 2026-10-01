@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink, LayoutDashboard, Share2, PinOff, Archive } from 'lucide-react';
+import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink, LayoutDashboard, LayoutTemplate, Share2, PinOff, Archive, Search } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
@@ -29,6 +29,10 @@ import { Select } from '@/components/ui/Select';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { PaginationControls } from '@/components/responses/PaginationControls';
 import { FormsManagerTabs, type FormsManagerTab } from '@/components/forms/FormsManagerTabs';
+import { FormsViewToggle } from '@/components/forms/FormsViewToggle';
+import { FormTile } from '@/components/forms/FormTile';
+import { FormCard } from '@/components/forms/FormCard';
+import { useFormsView } from '@/hooks/useFormsView';
 import { useDebounce } from '@/hooks/useDebounce';
 import type { Form, FormStatus } from '@/types/form';
 import type { FormsContext } from '@/types/workspace';
@@ -48,7 +52,31 @@ const STATUS_LABEL: Record<FormStatus, string> = {
   closed: 'Closed',
 };
 
-const FORMS_PAGE_LIMIT = 10;
+const PAGE_SIZES = [10, 25, 50] as const;
+
+type SortKey = 'updated' | 'oldest' | 'name' | 'responses';
+
+// ponytail: sorting is applied to the loaded page only — the forms API takes no sort parameter yet.
+// With the page-size selector (10/25/50) that is exact for most accounts; add a server-side `sort`
+// query param if lists routinely span several pages.
+function sortForms(forms: Form[], sort: SortKey): Form[] {
+  const list = [...forms];
+  switch (sort) {
+    case 'oldest': return list.sort((a, b) => a.updatedAt.localeCompare(b.updatedAt));
+    case 'name': return list.sort((a, b) => a.title.localeCompare(b.title));
+    case 'responses': return list.sort((a, b) => b.responseCount - a.responseCount);
+    default: return list.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  }
+}
+
+// "26 Sep 2026, 12:30" — day-first, three-letter month, 24-hour. Built from parts because the en-GB
+// locale spells September "Sept".
+const formatUpdated = (iso: string) => {
+  const d = new Date(iso);
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return `${d.getDate()} ${month} ${d.getFullYear()}, ${time}`;
+};
 
 // Tabs backed by the existing status filter (requirements.md §7.10) — Pinned/Archived have no
 // backing data yet (design.md §23) and fire no forms query at all.
@@ -83,6 +111,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
   const { toast } = useToast();
   const { user } = useAuth();
   const router = useRouter();
+  const [view, setView] = useFormsView();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formToMove, setFormToMove] = useState<Form | null>(null);
   const [formToShare, setFormToShare] = useState<Form | null>(null);
@@ -91,6 +120,8 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
   const [formToDelete, setFormToDelete] = useState<Form | null>(null);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<FormStatus | 'all'>('all');
+  const [sort, setSort] = useState<SortKey>('updated');
+  const [pageSize, setPageSize] = useState<(typeof PAGE_SIZES)[number]>(10);
   const [page, setPage] = useState(1);
   const [activeTab, setActiveTab] = useState<FormsManagerTab>('recent');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -155,7 +186,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
   const { data, isLoading, error } = useQuery({
     queryKey: workspaceKeys.forms(
       context,
-      { search: debouncedSearch, status, page, limit: FORMS_PAGE_LIMIT }
+      { search: debouncedSearch, status, page, limit: pageSize }
     ),
     queryFn: () =>
       formsService.getForms(
@@ -163,14 +194,14 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
           search: debouncedSearch || undefined,
           status: status === 'all' ? undefined : status,
           page,
-          limit: FORMS_PAGE_LIMIT,
+          limit: pageSize,
         },
         context
       ),
     enabled: formsQueryEnabled(activeTab),
   });
 
-  const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / FORMS_PAGE_LIMIT));
+  const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / pageSize));
 
   // First run: nothing exists yet and nothing is filtered. Tabs, search, the status filter and the
   // table header would all be controls over zero rows, so only the empty state is shown.
@@ -223,17 +254,80 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
     onSettled: () => setBulkDeleteConfirming(false),
   });
 
-  const rows = data?.forms ?? [];
+  const rows = useMemo(() => sortForms(data?.forms ?? [], sort), [data, sort]);
+  const maxResponses = Math.max(0, ...rows.map((form) => form.responseCount));
   const allOnPageSelected = rows.length > 0 && rows.every((form) => selectedIds.has(form._id));
   const someOnPageSelected = rows.some((form) => selectedIds.has(form._id)) && !allOnPageSelected;
 
+  // One owner for the row: in a personal space it is always the caller; in a workspace the backend
+  // may include `owner` on the row (contract to confirm — form.ts), so read it defensively.
+  const ownerOf = (form: Form) =>
+    context.type === 'personal'
+      ? { name: user?.name, email: user?.email, avatarUrl: undefined as string | undefined }
+      : { name: form.owner?.name, email: undefined as string | undefined, avatarUrl: form.owner?.avatarUrl };
+
+  const buildMenuItems = (form: Form): MenuItem[] => {
+    const formId = form._id;
+    return [
+      {
+        id: 'overview',
+        label: 'Overview',
+        icon: <LayoutDashboard className="bg-icon" />,
+        onSelect: () => router.push(formHref(`/forms/${formId}/overview`, context)),
+      },
+      {
+        id: 'responses',
+        label: 'View Responses',
+        icon: <Table2 className="bg-icon" />,
+        onSelect: () => router.push(formHref(`/forms/${formId}/responses`, context)),
+      },
+      {
+        id: 'analytics',
+        label: 'View Analytics',
+        icon: <BarChart2 className="bg-icon" />,
+        onSelect: () => router.push(formHref(`/forms/${formId}/analytics`, context)),
+      },
+      {
+        id: 'move',
+        label: 'Move',
+        icon: <FolderSymlink className="bg-icon" />,
+        onSelect: () => setFormToMove(form),
+      },
+      {
+        id: 'share',
+        label: 'Share access',
+        icon: <Share2 className="bg-icon" />,
+        onSelect: () => setFormToShare(form),
+      },
+      {
+        id: 'duplicate',
+        label: duplicatingId === formId ? 'Duplicating…' : 'Duplicate',
+        icon: <Copy className="bg-icon" />,
+        disabled: duplicatingId === formId,
+        onSelect: () => duplicateMutation.mutate(formId),
+      },
+      ...(canDelete
+        ? [{
+            id: 'delete',
+            label: deletingId === formId ? 'Deleting…' : 'Delete',
+            icon: <Trash2 className="bg-icon" />,
+            disabled: deletingId === formId,
+            danger: true,
+            onSelect: () => setFormToDelete(form),
+          }]
+        : []),
+    ];
+  };
+
+  const rowMenu = (form: Form) => (
+    <Menu trigger={<MoreVertical className="bg-icon" />} triggerLabel="More Options" items={buildMenuItems(form)} align="end" />
+  );
+
   const columns: TableColumn<Form>[] = [
-    // Same pattern as the Inbox table: the column collapses to zero width (not just hidden
-    // content) until something is selected — double-clicking a row is what first reveals it.
     ...(canDelete ? [{
       key: 'select',
-      className: selectedIds.size > 0 ? undefined : 'undefined !p-0 overflow-hidden',
-      header: selectedIds.size > 0 ? (
+      className: 'w-10',
+      header: (
         <Checkbox
           id="forms-select-all"
           aria-label={allOnPageSelected ? 'Deselect all forms on this page' : 'Select all forms on this page'}
@@ -250,8 +344,8 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
             });
           }}
         />
-      ) : null,
-      render: (form: Form) => selectedIds.size > 0 ? (
+      ),
+      render: (form: Form) => (
         <Checkbox
           id={`forms-select-${form._id}`}
           aria-label={`Select ${form.title}`}
@@ -266,49 +360,38 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
             });
           }}
         />
-      ) : null,
+      ),
     }] : []),
     {
       key: 'form',
       header: 'Form Title',
-      render: (form) => {
-        const updatedAt = new Date(form.updatedAt).toLocaleDateString('en-US', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
-        });
-        return (
-          <div className="flex items-center gap-3 min-w-0">
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-              style={{ backgroundColor: 'var(--bg-subtle)' }}
-            >
-              <FileText size={16} style={{ color: 'var(--text-muted)' }} />
-            </div>
-            <div className="flex flex-col min-w-0">
-              <Link href={formHref(`/forms/${form._id}/overview`, context)} className="bg-body font-semibold truncate hover:underline">
-                {form.title}
-              </Link>
-              <span className="bg-caption mt-0.5">
-                Updated {updatedAt} · {form.responseCount} response{form.responseCount !== 1 ? 's' : ''}
-              </span>
-            </div>
+      render: (form) => (
+        <div className="flex min-w-0 items-center gap-3">
+          <FormTile title={form.title} />
+          <div className="flex min-w-0 flex-col">
+            <Link href={formHref(`/forms/${form._id}/overview`, context)} className="bg-body-sm font-semibold truncate text-(--text-primary) hover:underline">
+              {form.title}
+            </Link>
+            <span className="bg-caption truncate text-(--text-muted)">{form.description || 'No description'}</span>
           </div>
-        );
-      },
+        </div>
+      ),
     },
     {
       key: 'owner',
       header: 'Owner',
-      render: (form) =>
-        context.type === 'personal' ? (
-          // A personal form has exactly one possible owner: the caller (requirements.md §7.9).
-          <Avatar name={user?.name} size="sm" aria-label={user?.name ? `Owned by ${user.name}` : undefined} />
-        ) : (
-          // Backend contract to confirm — GET /api/forms does not yet document owner identity
-          // for a workspace-form row (form.ts's `owner` field, added optional this sprint).
-          <Avatar name={form.owner?.name} src={form.owner?.avatarUrl} size="sm" aria-label={form.owner?.name ? `Owned by ${form.owner.name}` : undefined} />
-        ),
+      render: (form) => {
+        const owner = ownerOf(form);
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar name={owner.name} src={owner.avatarUrl} size="sm" aria-label={owner.name ? `Owned by ${owner.name}` : undefined} />
+            <div className="min-w-0">
+              {owner.name && <span className="block bg-body-sm font-semibold text-(--text-primary)">{owner.name}</span>}
+              {owner.email && <span className="block truncate bg-caption text-(--text-muted)">{owner.email}</span>}
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: 'status',
@@ -316,92 +399,71 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
       render: (form) => <StatusBadge variant={STATUS_VARIANT[form.status]}>{STATUS_LABEL[form.status]}</StatusBadge>,
     },
     {
+      key: 'responses',
+      header: 'Responses',
+      render: (form) => <span className="bg-body-sm tabular-nums text-(--text-primary)">{form.responseCount}</span>,
+    },
+    {
+      key: 'updated',
+      header: 'Updated',
+      render: (form) => <span className="bg-body-sm text-(--text-secondary)">{formatUpdated(form.updatedAt)}</span>,
+    },
+    {
       key: 'actions',
       header: '',
       align: 'right',
-      render: (form) => {
-        const formId = form._id;
-        const menuItems: MenuItem[] = [
-          {
-            id: 'overview',
-            label: 'Overview',
-            icon: <LayoutDashboard className="bg-icon" />,
-            onSelect: () => router.push(formHref(`/forms/${formId}/overview`, context)),
-          },
-          {
-            id: 'responses',
-            label: 'View Responses',
-            icon: <Table2 className="bg-icon" />,
-            onSelect: () => router.push(formHref(`/forms/${formId}/responses`, context)),
-          },
-          {
-            id: 'analytics',
-            label: 'View Analytics',
-            icon: <BarChart2 className="bg-icon" />,
-            onSelect: () => router.push(formHref(`/forms/${formId}/analytics`, context)),
-          },
-          {
-            id: 'move',
-            label: 'Move',
-            icon: <FolderSymlink className="bg-icon" />,
-            onSelect: () => setFormToMove(form),
-          },
-          {
-            id: 'share',
-            label: 'Share access',
-            icon: <Share2 className="bg-icon" />,
-            onSelect: () => setFormToShare(form),
-          },
-          {
-            id: 'duplicate',
-            label: duplicatingId === formId ? 'Duplicating…' : 'Duplicate',
-            icon: <Copy className="bg-icon" />,
-            disabled: duplicatingId === formId,
-            onSelect: () => duplicateMutation.mutate(formId),
-          },
-          ...(canDelete
-            ? [{
-                id: 'delete',
-                label: deletingId === formId ? 'Deleting…' : 'Delete',
-                icon: <Trash2 className="bg-icon" />,
-                disabled: deletingId === formId,
-                danger: true,
-                onSelect: () => setFormToDelete(form),
-              }]
-            : []),
-        ];
-
-        return (
-          <div className="flex items-center justify-end gap-1.5">
-            <Link
-              href={formHref(`/forms/${formId}/edit`, context)}
-              className="bg-btn bg-btn-ghost bg-btn-icon"
-              title="Edit Form"
-              aria-label="Edit Form"
-            >
-              <Edit2 className="bg-icon" />
-            </Link>
-            <Menu trigger={<MoreVertical className="bg-icon" />} triggerLabel="More Options" items={menuItems} align="end" />
-          </div>
-        );
-      },
+      render: (form) => (
+        <div className="flex items-center justify-end gap-1.5">
+          <Link
+            href={formHref(`/forms/${form._id}/edit`, context)}
+            className="bg-btn bg-btn-ghost bg-btn-icon"
+            title="Edit Form"
+            aria-label="Edit Form"
+          >
+            <Edit2 className="bg-icon" />
+          </Link>
+          {rowMenu(form)}
+        </div>
+      ),
     },
   ];
+
+  const emptyFiltered = (
+    <EmptyState
+      illustration={search || status !== 'all' ? 'no-results' : 'empty-forms'}
+      icon={<FileText />}
+      title={search || status !== 'all' ? 'No matching forms' : 'No forms yet'}
+      description={search || status !== 'all' ? 'Try changing your search or status filter.' : 'Create your first form to get started collecting responses.'}
+      actions={
+        <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+          <Plus size={16} className="mr-2" />
+          Create Form
+        </Button>
+      }
+    />
+  );
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
       <PageHeader
         title="Forms"
         description="Build, manage, and publish your forms."
+        actionsAlign="center"
         actions={
-          <Button
-            variant="primary"
-            onClick={() => setIsModalOpen(true)}
-            aria-label="Create new form"
-          >
-            <Plus size={16} className="mr-2" />
-            Create Form
-          </Button>
+          <>
+            <Link href="/templates" className="bg-btn bg-btn-secondary">
+              <LayoutTemplate size={16} className="mr-2" aria-hidden="true" />
+              Templates
+            </Link>
+            <Button
+              variant="primary"
+              onClick={() => setIsModalOpen(true)}
+              aria-label="Create new form"
+            >
+              <Plus size={16} className="mr-2" />
+              Create Form
+            </Button>
+          </>
         }
       />
 
@@ -420,108 +482,145 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
         />
       ) : (
         <>
-      <FormsManagerTabs activeTab={activeTab} onChange={handleTabChange} />
+          <FormsManagerTabs activeTab={activeTab} onChange={handleTabChange} />
 
-      {activeTab === 'pinned' || activeTab === 'archived' ? (
-        <EmptyState
-          icon={activeTab === 'pinned' ? <PinOff /> : <Archive />}
-          title="Coming soon"
-          description={
-            activeTab === 'pinned'
-              ? 'Pinning forms is not available yet.'
-              : 'Archived forms will show up here once archiving ships.'
-          }
-        />
-      ) : (
-        <>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="w-full sm:max-w-sm">
-              <Input
-                id="forms-search"
-                aria-label="Search forms"
-                placeholder="Search forms…"
-                value={search}
-                onChange={(event) => {
-                  setSearch(event.target.value);
-                  setPage(1);
-                  setSelectedIds(new Set());
-                }}
-              />
-            </div>
-            {activeTab === 'recent' && (
-              <div className="sm:w-48">
-                <Select
-                  id="forms-status-filter"
-                  aria-label="Filter forms by status"
-                  value={status}
-                  onChange={(event) => {
-                    setStatus(event.target.value as FormStatus | 'all');
-                    setPage(1);
-                    setSelectedIds(new Set());
-                  }}
-                >
-                  <option value="all">All statuses</option>
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                  <option value="closed">Closed</option>
-                </Select>
-              </div>
-            )}
-          </div>
-
-          {canDelete && (
-            <BulkActionBar
-              count={selectedIds.size}
-              isDeleting={bulkDeleteMutation.isPending}
-              onDeleteSelected={() => setBulkDeleteConfirming(true)}
-            />
-          )}
-
-          {error ? (
-            <Alert variant="error" title="Failed to load forms. Please refresh." />
-          ) : (
-            <Table
-              columns={columns}
-              rows={data?.forms ?? []}
-              rowKey={(form) => form._id}
-              isLoading={isLoading}
-              onRowDoubleClick={canDelete ? (form) => setSelectedIds((prev) => new Set(prev).add(form._id)) : undefined}
-              emptyState={
-                <EmptyState illustration={search || status !== 'all' ? 'no-results' : 'empty-forms'}
-                  icon={<FileText />}
-                  title={search || status !== 'all' ? 'No matching forms' : 'No forms yet'}
-                  description={search || status !== 'all' ? 'Try changing your search or status filter.' : 'Create your first form to get started collecting responses.'}
-                  actions={
-                    <Button variant="primary" onClick={() => setIsModalOpen(true)}>
-                      <Plus size={16} className="mr-2" />
-                      Create Form
-                    </Button>
-                  }
-                />
+          {activeTab === 'pinned' || activeTab === 'archived' ? (
+            <EmptyState
+              icon={activeTab === 'pinned' ? <PinOff /> : <Archive />}
+              title="Coming soon"
+              description={
+                activeTab === 'pinned'
+                  ? 'Pinning forms is not available yet.'
+                  : 'Archived forms will show up here once archiving ships.'
               }
             />
-          )}
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="w-full sm:max-w-sm">
+                  <Input
+                    id="forms-search"
+                    aria-label="Search forms"
+                    placeholder="Search forms…"
+                    leftIcon={<Search className="bg-icon" />}
+                    value={search}
+                    onChange={(event) => {
+                      setSearch(event.target.value);
+                      setPage(1);
+                      setSelectedIds(new Set());
+                    }}
+                  />
+                </div>
+                {activeTab === 'recent' && (
+                  <div className="sm:w-44">
+                    <Select
+                      id="forms-status-filter"
+                      aria-label="Filter forms by status"
+                      value={status}
+                      onChange={(event) => {
+                        setStatus(event.target.value as FormStatus | 'all');
+                        setPage(1);
+                        setSelectedIds(new Set());
+                      }}
+                    >
+                      <option value="all">All statuses</option>
+                      <option value="draft">Draft</option>
+                      <option value="published">Published</option>
+                      <option value="closed">Closed</option>
+                    </Select>
+                  </div>
+                )}
+                <div className="ml-auto flex items-center gap-3">
+                  <FormsViewToggle value={view} onChange={setView} />
+                  <div className="w-44">
+                    <Select id="forms-sort" aria-label="Sort forms" value={sort} onChange={(event) => setSort(event.target.value as SortKey)}>
+                      <option value="updated">Latest updated</option>
+                      <option value="oldest">Oldest updated</option>
+                      <option value="name">Name (A–Z)</option>
+                      <option value="responses">Most responses</option>
+                    </Select>
+                  </div>
+                </div>
+              </div>
 
-          {!isLoading && !error && data && data.forms.length > 0 && (
-            <div className="bg-card px-4 py-2.5" style={{ borderTop: '1px solid var(--border-subtle)' }}>
-              <span className="bg-caption">
-                {data.total} form{data.total !== 1 ? 's' : ''} total
-              </span>
-            </div>
-          )}
+              {canDelete && view === 'list' && (
+                <BulkActionBar
+                  count={selectedIds.size}
+                  isDeleting={bulkDeleteMutation.isPending}
+                  onDeleteSelected={() => setBulkDeleteConfirming(true)}
+                />
+              )}
 
-          {!isLoading && !error && data && (
-            <PaginationControls
-              page={page}
-              totalPages={totalPages}
-              onPageChange={(p) => {
-                setPage(p);
-                setSelectedIds(new Set());
-              }}
-            />
+              {error ? (
+                <Alert variant="error" title="Failed to load forms. Please refresh." />
+              ) : view === 'list' ? (
+                <Table
+                  columns={columns}
+                  rows={rows}
+                  rowKey={(form) => form._id}
+                  isLoading={isLoading}
+                  onRowDoubleClick={canDelete ? (form) => setSelectedIds((prev) => new Set(prev).add(form._id)) : undefined}
+                  emptyState={emptyFiltered}
+                />
+              ) : isLoading ? (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="h-44 animate-pulse rounded-lg border border-(--border-default) bg-(--bg-sunken)" />
+                  ))}
+                </div>
+              ) : rows.length === 0 ? (
+                emptyFiltered
+              ) : (
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {rows.map((form) => (
+                    <FormCard
+                      key={form._id}
+                      form={form}
+                      href={formHref(`/forms/${form._id}/overview`, context)}
+                      menu={rowMenu(form)}
+                      maxResponses={maxResponses}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {!isLoading && !error && data && (
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="bg-caption text-(--text-muted)">
+                    {data.total} form{data.total !== 1 ? 's' : ''} total
+                  </span>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="forms-page-size" className="bg-body-sm text-(--text-muted)">Rows per page</label>
+                      <div className="w-20">
+                        <Select
+                          id="forms-page-size"
+                          value={pageSize}
+                          onChange={(event) => {
+                            setPageSize(Number(event.target.value) as (typeof PAGE_SIZES)[number]);
+                            setPage(1);
+                            setSelectedIds(new Set());
+                          }}
+                        >
+                          {PAGE_SIZES.map((size) => (
+                            <option key={size} value={size}>{size}</option>
+                          ))}
+                        </Select>
+                      </div>
+                    </div>
+                    <PaginationControls
+                      page={page}
+                      totalPages={totalPages}
+                      onPageChange={(p) => {
+                        setPage(p);
+                        setSelectedIds(new Set());
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
+            </>
           )}
-        </>
-      )}
         </>
       )}
 

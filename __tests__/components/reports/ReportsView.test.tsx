@@ -91,7 +91,7 @@ describe('ReportsView', () => {
     await waitFor(() => expect(mockGetForms).toHaveBeenCalled());
 
     fireEvent.change(screen.getByLabelText('Form'), { target: { value: 'form-1' } });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Generate' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /^Generate/ })[0]);
 
     await waitFor(() =>
       expect(mockCreateReport).toHaveBeenCalledWith(
@@ -115,7 +115,7 @@ describe('ReportsView', () => {
     await waitFor(() => expect(mockGetForms).toHaveBeenCalled());
     await waitFor(() => expect(mockGetReports).toHaveBeenCalled());
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Generate' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /^Generate/ })[0]);
 
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Report generation started.', 'success'));
     await waitFor(() =>
@@ -134,7 +134,7 @@ describe('ReportsView', () => {
     await waitFor(() => expect(mockGetReports).toHaveBeenCalled());
 
     fireEvent.change(screen.getByLabelText('Form'), { target: { value: 'form-1' } });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Generate' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /^Generate/ })[0]);
 
     await waitFor(() => {
       const cached = queryClient.getQueryData(reportKeys.list(1)) as { data: { formId?: string }[] };
@@ -147,7 +147,7 @@ describe('ReportsView', () => {
     renderView();
     await waitFor(() => expect(mockGetForms).toHaveBeenCalled());
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Generate' })[1]);
+    fireEvent.click(screen.getAllByRole('button', { name: /^Generate/ })[1]);
 
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Failed to start report generation. Please try again.', 'error'));
   });
@@ -158,7 +158,7 @@ describe('ReportsView', () => {
     renderView();
     await waitFor(() => expect(mockGetForms).toHaveBeenCalled());
 
-    const buttons = screen.getAllByRole('button', { name: 'Generate' });
+    const buttons = screen.getAllByRole('button', { name: /^Generate/ });
     fireEvent.click(buttons[0]);
 
     await waitFor(() => expect(buttons[1]).toBeDisabled());

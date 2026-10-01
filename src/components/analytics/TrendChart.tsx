@@ -4,8 +4,7 @@ import { TrendingUp } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { EChartContainer } from '@/components/charts/EChartContainer';
-import { getBaseChartOption, CHART_COLORS, type EChartsOption } from '@/lib/chartTheme';
+import { LineChart } from '@/components/ui/charts';
 import type { AnalyticsTrendPoint, AnalyticsTrendResult } from '@/types/analytics';
 
 const CHART_HEIGHT = 280;
@@ -26,29 +25,6 @@ function formatBucketLabel(bucketStart: string, bucket: 'day' | 'week'): string 
     timeZone: 'UTC',
   });
   return bucket === 'week' ? `Wk of ${label}` : label;
-}
-
-function buildTrendOption(result: AnalyticsTrendResult, points: AnalyticsTrendPoint[]): EChartsOption {
-  const base = getBaseChartOption();
-  return {
-    ...base,
-    grid: { left: 40, right: 16, top: 16, bottom: 32, containLabel: true },
-    xAxis: {
-      type: 'category',
-      data: points.map((p) => formatBucketLabel(p.bucketStart, result.bucket)),
-    },
-    yAxis: { type: 'value', minInterval: 1 },
-    tooltip: { ...base.tooltip, trigger: 'axis' },
-    series: [
-      {
-        type: 'line',
-        data: points.map((p) => p.responses),
-        color: CHART_COLORS.brand,
-        smooth: true,
-        areaStyle: { color: CHART_COLORS.brandLight },
-      },
-    ],
-  };
 }
 
 interface TrendChartProps {
@@ -105,7 +81,11 @@ export function TrendChart({ data, isLoading, isError = false, onRetry, isAllTim
   return (
     <Card>
       <h3 className="bg-h5 text-(--text-primary) font-bold mb-4">Response Trend</h3>
-      <EChartContainer option={buildTrendOption(data as AnalyticsTrendResult, mapped)} height={CHART_HEIGHT} ariaLabel="Response trend over time" />
+      <LineChart
+        data={mapped.map((p) => ({ label: formatBucketLabel(p.bucketStart, data?.bucket ?? 'day'), value: p.responses }))}
+        height={CHART_HEIGHT}
+        ariaLabel="Response trend over time"
+      />
       <table className="sr-only">
         <caption>Responses per {data?.bucket === 'week' ? 'week' : 'day'}</caption>
         <thead>

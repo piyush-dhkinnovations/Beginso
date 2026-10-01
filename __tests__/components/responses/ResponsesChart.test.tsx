@@ -2,12 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-vi.mock('@/components/charts/EChartContainer', () => ({
-  EChartContainer: ({ option, ariaLabel }: { option: unknown; ariaLabel: string }) => (
-    <div role="img" aria-label={ariaLabel} data-option={JSON.stringify(option)} />
-  ),
-}));
-
 const mockGetResponses = vi.fn();
 vi.mock('@/services/responses', () => ({
   responsesService: { getResponses: (...args: unknown[]) => mockGetResponses(...args) },
@@ -58,7 +52,6 @@ describe('ResponsesChart', () => {
     renderChart();
 
     await waitFor(() => expect(screen.getByRole('img', { name: 'Daily submissions volume' })).toBeInTheDocument());
-    expect(screen.getByRole('img', { name: 'Stage distribution' })).toBeInTheDocument();
 
     const tables = document.querySelectorAll('table.sr-only');
     expect(tables).toHaveLength(2);

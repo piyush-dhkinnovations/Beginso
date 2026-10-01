@@ -1,13 +1,21 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FileText, Plus } from 'lucide-react';
+import { BarChart2, FileText, MoreVertical, Plus, Search } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Input } from '@/components/ui/Input';
+import { Menu } from '@/components/ui/Menu';
+import { ProgressBar } from '@/components/ui/charts';
+import { Table, type TableColumn } from '@/components/ui/Table';
+import { FormTile } from '@/components/forms/FormTile';
 import { PaginationControls } from '@/components/responses/PaginationControls';
 import { computeChangePercent, formatChangeLabel } from '@/lib/analyticsChange';
+import { cn } from '@/lib/utils';
 import type { AnalyticsFormsSummaryResult, AnalyticsFormSummary } from '@/types/analytics';
 
 const STATUS_LABEL: Record<AnalyticsFormSummary['status'], string> = {
@@ -28,6 +36,10 @@ interface FormsSummaryTableProps {
   onPageChange: (page: number) => void;
 }
 
+// "Form performance": one row per form — tinted icon (colour from its title), status, responses,
+// change vs the previous period, completion as a number plus a bar, and a ⋮ menu. The title links
+// to that form's own analytics. Search filters the rows already loaded (the summary fetch covers
+// up to 100 forms per page).
 export function FormsSummaryTable({
   data,
   previousForms,
@@ -38,6 +50,13 @@ export function FormsSummaryTable({
   onPageChange,
 }: FormsSummaryTableProps) {
   const router = useRouter();
+  const [search, setSearch] = useState('');
+
+  const forms = useMemo(() => data?.forms ?? [], [data]);
+  const visible = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return term ? forms.filter((f) => f.title.toLowerCase().includes(term)) : forms;
+  }, [forms, search]);
 
   if (isLoading) {
     return (
@@ -67,8 +86,6 @@ export function FormsSummaryTable({
     );
   }
 
-  const forms = data?.forms ?? [];
-
   if (forms.length === 0) {
     return (
       <EmptyState
@@ -87,68 +104,103 @@ export function FormsSummaryTable({
     );
   }
 
-  const previousByFormId = new Map(previousForms?.map((f) => [f._id, f.totalResponses]));
-  const changeFor = (form: AnalyticsFormSummary) => {
-    const previous = previousByFormId.get(form._id);
-    return formatChangeLabel(previous === undefined ? null : computeChangePercent(form.totalResponses, previous));
-  };
-
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
   const goToForm = (formId: string) => router.push(`/forms/${formId}/analytics`);
 
+  const previousByFormId = new Map(previousForms?.map((f) => [f._id, f.totalResponses]));
+  const changePercent = (form: AnalyticsFormSummary) => {
+    const previous = previousByFormId.get(form._id);
+    return previous === undefined ? null : computeChangePercent(form.totalResponses, previous);
+  };
+
+  const columns: TableColumn<AnalyticsFormSummary>[] = [
+    {
+      key: 'form',
+      header: 'Form',
+      render: (form) => (
+        <div className="flex min-w-0 items-center gap-3">
+          <FormTile title={form.title} />
+          <Link href={`/forms/${form._id}/analytics`} className="bg-body-sm min-w-0 truncate font-semibold text-(--text-primary) hover:underline">
+            {form.title}
+          </Link>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (form) => <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge>,
+    },
+    {
+      key: 'responses',
+      header: 'Responses',
+      render: (form) => <span className="bg-body-sm tabular-nums text-(--text-primary)">{form.totalResponses}</span>,
+    },
+    {
+      key: 'change',
+      header: 'Change',
+      render: (form) => {
+        const change = changePercent(form);
+        return (
+          <span
+            className={cn(
+              'bg-body-sm tabular-nums',
+              change === null || change === 0 ? 'text-(--text-muted)' : change > 0 ? 'text-(--success-text)' : 'text-(--error-text)',
+            )}
+          >
+            {formatChangeLabel(change)}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'completion',
+      header: 'Completion Rate',
+      render: (form) => (
+        <div className="flex items-center gap-3">
+          <span className="w-10 bg-body-sm tabular-nums text-(--text-primary)">{Math.round(form.completionRate)}%</span>
+          <ProgressBar percent={form.completionRate} width={110} />
+        </div>
+      ),
+    },
+    {
+      key: 'actions',
+      header: '',
+      align: 'right',
+      render: (form) => (
+        <Menu
+          trigger={<MoreVertical className="bg-icon" />}
+          triggerLabel="More Options"
+          align="end"
+          items={[{ id: 'analytics', label: 'View analytics', icon: <BarChart2 className="bg-icon" />, onSelect: () => goToForm(form._id) }]}
+        />
+      ),
+    },
+  ];
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="hidden sm:block bg-(--surface-card) border border-(--border-default) rounded-xl overflow-x-auto shadow-(--shadow-sm)">
-        <table className="w-full text-left">
-          <thead>
-            <tr className="bg-(--bg-subtle) border-b border-(--border-default) bg-caption font-semibold text-(--text-muted) uppercase tracking-wider">
-              <th className="px-4 py-2.5">Form</th>
-              <th className="px-4 py-2.5">Status</th>
-              <th className="px-4 py-2.5 text-right">Responses</th>
-              <th className="hidden md:table-cell px-4 py-2.5 text-right">Change</th>
-              <th className="hidden md:table-cell px-4 py-2.5 text-right">Completion Rate</th>
-            </tr>
-          </thead>
-          <tbody>
-            {forms.map((form) => (
-              <tr
-                key={form._id}
-                onClick={() => goToForm(form._id)}
-                className="hover:bg-(--surface-hover) cursor-pointer border-b border-(--border-subtle) last:border-0"
-              >
-                <td className="px-4 py-3 bg-body-sm font-semibold text-(--text-primary) truncate max-w-[280px]">{form.title}</td>
-                <td className="px-4 py-3">
-                  <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge>
-                </td>
-                <td className="px-4 py-3 bg-body-sm text-(--text-secondary) text-right">{form.totalResponses}</td>
-                <td className="hidden md:table-cell px-4 py-3 bg-body-sm text-(--text-secondary) text-right">{changeFor(form)}</td>
-                <td className="hidden md:table-cell px-4 py-3 bg-body-sm text-(--text-secondary) text-right">
-                  {Math.round(form.completionRate)}%
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="sm:hidden flex flex-col gap-3">
-        {forms.map((form) => (
-          <button
-            key={form._id}
-            type="button"
-            onClick={() => goToForm(form._id)}
-            className="flex flex-col gap-2 rounded-lg border border-(--border-default) bg-(--surface-card) p-4 text-left shadow-(--shadow-sm) hover:bg-(--surface-hover)"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="bg-body-sm font-semibold text-(--text-primary) truncate">{form.title}</span>
-              <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge>
-            </div>
-            <span className="bg-caption text-(--text-muted)">
-              {form.totalResponses} response{form.totalResponses === 1 ? '' : 's'} · {Math.round(form.completionRate)}% completion · {changeFor(form)}
-            </span>
-          </button>
-        ))}
-      </div>
+      <Card padded={false} className="overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+          <h3 className="bg-h5 text-(--text-primary)">Form performance</h3>
+          <div className="w-full sm:w-72">
+            <Input
+              id="forms-performance-search"
+              aria-label="Search forms"
+              placeholder="Search forms…"
+              leftIcon={<Search className="bg-icon" />}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        </div>
+        <Table
+          columns={columns}
+          rows={visible}
+          rowKey={(form) => form._id}
+          emptyState={<EmptyState illustration="no-results" icon={<Search />} title="No matching forms" description="Try a different search term." />}
+        />
+      </Card>
 
       <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} />
     </div>

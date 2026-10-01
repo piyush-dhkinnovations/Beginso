@@ -100,7 +100,8 @@ describe('WorkspaceHomePage (/w/[slug]/page)', () => {
     expect(await screen.findByText('Total Forms')).toBeInTheDocument();
     expect(screen.getByText('Active Forms')).toBeInTheDocument();
     // Pinned form title
-    expect(screen.getByText('Customer Survey')).toBeInTheDocument();
+    // Shown as the pinned form and again as a row in the new "Responses by form" chart.
+    expect(screen.getAllByText('Customer Survey').length).toBeGreaterThanOrEqual(1);
     // Quick actions
     expect(screen.getByRole('link', { name: /View Tables/ })).toBeInTheDocument();
   });

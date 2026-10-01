@@ -3,19 +3,24 @@
 import { CheckCircle2, Clock, Inbox, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { StatCard, type StatChart } from '@/components/ui/StatCard';
 import type { AnalyticsOverview } from '@/types/analytics';
 
-// Sprint 12 (inbox-collaboration), requirements.md §7.3 #3 — see StatusDistributionChart.tsx's
-// own comment: these three labels are the fixed category enum, not a workspace-defined stage name.
+// These three labels are the fixed category enum (Sprint 12 requirements §7.3), not a
+// workspace-defined stage name.
 
 interface AnalyticsStatCardsProps {
   overview?: AnalyticsOverview;
   isLoading: boolean;
   isError?: boolean;
   onRetry?: () => void;
+  /** Responses per bucket from the trend query, oldest first — drives the Total Responses bars. */
+  trend?: number[];
 }
 
-export function AnalyticsStatCards({ overview, isLoading, isError = false, onRetry }: AnalyticsStatCardsProps) {
+const mutedZero = (n: number) => (n === 0 ? 'text-(--text-muted)' : undefined);
+
+export function AnalyticsStatCards({ overview, isLoading, isError = false, onRetry, trend }: AnalyticsStatCardsProps) {
   if (isError) {
     return (
       <Card role="alert" className="flex min-h-28 items-center justify-between gap-4 col-span-2 lg:col-span-4">
@@ -28,11 +33,21 @@ export function AnalyticsStatCards({ overview, isLoading, isError = false, onRet
     );
   }
 
-  const cards = [
-    { label: 'Total Responses', value: overview?.totalResponses ?? 0, icon: Inbox },
-    { label: 'Completed', value: overview?.categoryCounts?.completed ?? 0, icon: CheckCircle2 },
-    { label: 'In Progress', value: overview?.categoryCounts?.in_progress ?? 0, icon: Clock },
-    { label: 'New', value: overview?.categoryCounts?.new ?? 0, icon: Sparkles },
+  const total = overview?.totalResponses ?? 0;
+  const share = (n: number): StatChart | undefined =>
+    total > 0 ? { kind: 'ring', percent: Math.round((n / total) * 100) } : undefined;
+  const counts = overview?.categoryCounts;
+
+  const cards: Array<{ label: string; value: number; icon: typeof Inbox; chart?: StatChart }> = [
+    {
+      label: 'Total Responses',
+      value: total,
+      icon: Inbox,
+      chart: trend && trend.length > 1 && trend.some((v) => v > 0) ? { kind: 'line', values: trend } : undefined,
+    },
+    { label: 'Completed', value: counts?.completed ?? 0, icon: CheckCircle2, chart: share(counts?.completed ?? 0) },
+    { label: 'In Progress', value: counts?.in_progress ?? 0, icon: Clock, chart: share(counts?.in_progress ?? 0) },
+    { label: 'New', value: counts?.new ?? 0, icon: Sparkles, chart: share(counts?.new ?? 0) },
   ];
 
   return (
@@ -40,24 +55,14 @@ export function AnalyticsStatCards({ overview, isLoading, isError = false, onRet
       {cards.map((card) => {
         const Icon = card.icon;
         return (
-          <Card key={card.label} className="flex flex-col gap-2 p-4 sm:gap-4 sm:p-6">
-            <div className="flex items-center justify-between gap-2">
-              <span className="bg-caption sm:bg-body-sm text-(--text-muted) font-medium">{card.label}</span>
-              <Icon size={20} className="sm:hidden shrink-0 text-(--accent-soft-text)" />
-              <Icon size={24} className="hidden sm:block shrink-0 text-(--accent-soft-text)" />
-            </div>
-            {isLoading ? (
-              <div className="animate-pulse">
-                <div className="h-8 bg-skeleton rounded w-16" />
-              </div>
-            ) : (
-              <span
-                className={`bg-h3 font-bold leading-none ${card.value === 0 ? 'text-(--text-muted)' : 'text-(--text-primary)'}`}
-              >
-                {card.value}
-              </span>
-            )}
-          </Card>
+          <StatCard
+            key={card.label}
+            label={card.label}
+            icon={<Icon aria-hidden="true" />}
+            value={isLoading ? <span className="block h-8 w-16 animate-pulse rounded bg-skeleton" /> : card.value}
+            valueClassName={isLoading ? undefined : mutedZero(card.value)}
+            chart={isLoading ? undefined : card.chart}
+          />
         );
       })}
     </div>

@@ -134,6 +134,8 @@
   /* ---- Elevation · navy-tinted, never black ----------------------------- */
   --shadow-sm: 0 1px 2px rgba(4, 19, 71, 0.06);
   --shadow-md: 0 4px 12px rgba(4, 19, 71, 0.08);
+  /* Card hover: one small step above --shadow-sm, well under --shadow-md. */
+  --shadow-hover: 0 2px 6px rgba(4, 19, 71, 0.08);
   --shadow-lg: 0 12px 32px rgba(4, 19, 71, 0.12);
   --shadow-focus: 0 0 0 3px rgba(66, 116, 217, 0.18);
   --shadow-focus-error: 0 0 0 3px rgba(220, 38, 38, 0.15);
@@ -157,15 +159,15 @@
      product needs. Shrunk roughly one notch across the board; --control-md (40px, the nav-item/
      button minimum tap target — requirements.md's own accessibility floor) is deliberately left
      untouched, only type and padding shrink. */
-  --text-display: 700 44px/52px var(--bg-font-sans);
-  --text-h1:      700 36px/44px var(--bg-font-sans);
-  --text-h2:      700 28px/36px var(--bg-font-sans);
-  --text-h3:      600 22px/30px var(--bg-font-sans);
-  --text-h4:      600 18px/26px var(--bg-font-sans);
-  --text-h5:      600 16px/24px var(--bg-font-sans);
-  --text-body-lg: 400 16px/24px var(--bg-font-sans);
-  --text-body:    400 14px/22px var(--bg-font-sans);
-  --text-body-sm: 400 13px/20px var(--bg-font-sans);
+  --text-display: 700 36px/44px var(--bg-font-sans);
+  --text-h1:      700 30px/38px var(--bg-font-sans);
+  --text-h2:      700 24px/32px var(--bg-font-sans);
+  --text-h3:      600 20px/28px var(--bg-font-sans);
+  --text-h4:      600 17px/24px var(--bg-font-sans);
+  --text-h5:      600 15px/22px var(--bg-font-sans);
+  --text-body-lg: 400 15px/22px var(--bg-font-sans);
+  --text-body:    400 13px/20px var(--bg-font-sans);
+  --text-body-sm: 400 12px/18px var(--bg-font-sans);
   --text-caption: 400 11px/16px var(--bg-font-sans);
   --text-button:  500 13px/20px var(--bg-font-sans);
 
@@ -261,6 +263,7 @@
   /* Navy shadows vanish on a dark surface. */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.38);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.44);
+  --shadow-hover: 0 2px 6px rgba(0, 0, 0, 0.42);
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.54);
   --shadow-focus: 0 0 0 3px rgba(104, 144, 225, 0.32);
   --shadow-focus-error: 0 0 0 3px rgba(220, 38, 38, 0.32);
@@ -427,11 +430,11 @@ body {
 /* Mobile type scale. Body sizes are deliberately unchanged. Rebalanced to stay below the
    post-density-pass desktop values above (was tuned against the old, larger desktop scale). */
 @media (max-width: 767px) {
-  .bg-display { font-size: 32px; line-height: 38px; }
-  .bg-h1 { font-size: 26px; line-height: 32px; }
-  .bg-h2 { font-size: 22px; line-height: 28px; }
-  .bg-h3 { font-size: 19px; line-height: 26px; }
-  .bg-h4 { font-size: 17px; line-height: 24px; }
+  .bg-display { font-size: 28px; line-height: 34px; }
+  .bg-h1 { font-size: 24px; line-height: 30px; }
+  .bg-h2 { font-size: 20px; line-height: 26px; }
+  .bg-h3 { font-size: 18px; line-height: 24px; }
+  .bg-h4 { font-size: 16px; line-height: 22px; }
 }
 
 /* ==========================================================================
@@ -593,7 +596,7 @@ body {
 .bg-field { display: flex; flex-direction: column; gap: var(--space-2); }
 
 .bg-label {
-  font: 500 14px/20px var(--bg-font-sans);
+  font: 500 13px/20px var(--bg-font-sans);
   color: var(--text-primary);
   display: flex;
   align-items: center;
@@ -831,7 +834,7 @@ body {
   box-shadow: inset 0 0 0 1px var(--primary-500);
 }
 .bg-choice-card:has(input:focus-visible) { box-shadow: var(--shadow-focus); }
-.bg-choice-card strong { font: 600 14px/20px var(--bg-font-sans); }
+.bg-choice-card strong { font: 600 13px/20px var(--bg-font-sans); }
 .bg-choice-card small { display: block; margin-top: 2px; font: var(--text-caption); color: var(--text-muted); }
 
 /* ---- File dropzone ----------------------------------------------------- */
@@ -848,7 +851,7 @@ body {
 }
 .bg-dropzone:hover, .bg-dropzone.is-dragging { border-color: var(--primary-500); background-color: var(--accent-soft); }
 .bg-dropzone .bg-icon { width: 24px; height: 24px; color: var(--text-muted); }
-.bg-dropzone strong { font: 600 14px/20px var(--bg-font-sans); }
+.bg-dropzone strong { font: 600 13px/20px var(--bg-font-sans); }
 .bg-dropzone small { font: var(--text-caption); color: var(--text-muted); }
 
 .bg-file-row {
@@ -859,7 +862,7 @@ body {
   background-color: var(--surface-card);
 }
 .bg-file-row .bg-file-meta { flex: 1; min-width: 0; }
-.bg-file-row .bg-file-meta strong { display: block; font: 500 14px/20px var(--bg-font-sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bg-file-row .bg-file-meta strong { display: block; font: 500 13px/20px var(--bg-font-sans); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bg-file-row .bg-file-meta small { font: var(--text-caption); color: var(--text-muted); }
 .bg-file-row.is-error { border-color: var(--error-border); background-color: var(--error-surface); }
 
@@ -980,14 +983,19 @@ body {
    10. CARDS
    ========================================================================== */
 
+/* Tinted surface: a soft gradient from the card colour toward the accent tint, hairline ring,
+   lifts on hover. Every card in the app (Card, StatCard, list/action cards) inherits it. */
 .bg-card {
   display: flex;
   flex-direction: column;
   background-color: var(--surface-card);
+  background-image: linear-gradient(160deg, var(--surface-card) 0%, var(--accent-soft) 160%);
   border: 1px solid var(--border-default);
   border-radius: var(--bg-radius-lg);
   box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--standard) var(--ease), border-color var(--standard) var(--ease);
 }
+.bg-card:hover { box-shadow: var(--shadow-hover); }
 .bg-card-pad { padding: var(--space-4); gap: var(--space-3); }
 
 .bg-card-head {
@@ -997,7 +1005,7 @@ body {
   padding: var(--space-4) var(--space-4) 0;
 }
 .bg-card-pad > .bg-card-head { padding: 0; }
-.bg-card-head h3 { font: 600 15px/22px var(--bg-font-sans); }
+.bg-card-head h3 { font: 600 13px/20px var(--bg-font-sans); }
 .bg-card-head p { font: var(--text-body-sm); color: var(--text-muted); margin-top: 2px; }
 .bg-card-body { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
 .bg-card-foot {
@@ -1009,7 +1017,7 @@ body {
 }
 
 .bg-card-hover { transition: box-shadow var(--standard) var(--ease), border-color var(--standard) var(--ease), transform var(--standard) var(--ease); }
-.bg-card-hover:hover { box-shadow: var(--shadow-md); border-color: var(--border-strong); transform: translateY(-2px); }
+.bg-card-hover:hover { box-shadow: var(--shadow-hover); border-color: var(--border-strong); transform: translateY(-2px); }
 
 .bg-card-interactive { cursor: pointer; text-align: left; width: 100%; font: inherit; color: inherit; }
 .bg-card-selected { border-color: var(--primary-500); box-shadow: inset 0 0 0 1px var(--primary-500); }
@@ -1017,22 +1025,26 @@ body {
 .bg-card-sunken { background-color: var(--bg-subtle); box-shadow: none; }
 
 /* ---- Stat / KPI card --------------------------------------------------- */
-.bg-stat { padding: var(--space-4); gap: var(--space-2); }
+.bg-stat { flex-direction: row; align-items: stretch; justify-content: space-between; gap: var(--space-3); min-height: 120px; padding: var(--space-4) var(--space-5); }
+.bg-stat-main { display: flex; flex-direction: column; justify-content: flex-start; gap: 2px; min-width: 0; }
 .bg-stat-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
-.bg-stat-label { font: 500 13px/18px var(--bg-font-sans); color: var(--text-muted); }
+.bg-stat-label { font: 500 13px/18px var(--bg-font-sans); color: var(--text-secondary); }
+/* Large bare icon — deliberately no tile behind it. */
 .bg-stat-icon {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; flex-shrink: 0;
-  border-radius: var(--bg-radius-md);
-  background-color: var(--accent-soft);
-  color: var(--accent-soft-text);
+  display: inline-flex; width: 32px; height: 32px; flex-shrink: 0;
+  margin-bottom: var(--space-2);
+  color: var(--action-primary);
 }
-.bg-stat-icon .bg-icon { width: 16px; height: 16px; }
+.bg-stat-icon .bg-icon, .bg-stat-icon svg { width: 100%; height: 100%; stroke-width: 1.6; }
 .bg-stat-value {
-  font: 700 24px/30px var(--bg-font-sans);
+  font: 700 26px/32px var(--bg-font-sans);
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
 }
+.bg-stat-unit { font: 500 12px/16px var(--bg-font-sans); color: var(--text-muted); letter-spacing: 0; }
+.bg-stat-chart { display: flex; flex-shrink: 0; align-self: flex-end; align-items: flex-end; }
+/* A text value ("Just you", "—") reads at label weight, not as a 26px number. */
+.bg-stat-value-text { font-size: 18px; line-height: 28px; letter-spacing: -0.01em; }
 .bg-stat-foot { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
 .bg-delta {
   display: inline-flex; align-items: center; gap: 2px;
@@ -1082,7 +1094,7 @@ body {
 .bg-list-row:last-child { border-bottom: 0; }
 .bg-list-row:hover { background-color: var(--surface-hover); }
 .bg-list-main { flex: 1; min-width: 0; }
-.bg-list-main strong { display: block; font: 500 14px/20px var(--bg-font-sans); }
+.bg-list-main strong { display: block; font: 500 13px/20px var(--bg-font-sans); }
 .bg-list-main small { font: var(--text-caption); color: var(--text-muted); }
 
 /* ==========================================================================
@@ -1188,7 +1200,7 @@ body {
   padding-inline: var(--space-3);
   border: 0; border-radius: var(--bg-radius-md);
   background: transparent;
-  font: 500 14px/20px var(--bg-font-sans);
+  font: 500 13px/20px var(--bg-font-sans);
   color: var(--text-secondary);
   cursor: pointer;
   text-align: left;
@@ -1219,7 +1231,7 @@ body {
   padding: var(--space-3) 2px;
   border: 0; border-bottom: 2px solid transparent;
   background: none;
-  font: 500 14px/20px var(--bg-font-sans);
+  font: 500 13px/20px var(--bg-font-sans);
   color: var(--text-muted);
   cursor: pointer;
   white-space: nowrap;
@@ -1271,7 +1283,7 @@ body {
 .bg-step-bar { flex: 1; height: 2px; background-color: var(--border-default); border-radius: var(--radius-full); }
 .bg-step:last-child .bg-step-bar { display: none; }
 .bg-step-text { padding-right: var(--space-3); }
-.bg-step-text strong { display: block; font: 500 14px/20px var(--bg-font-sans); color: var(--text-secondary); }
+.bg-step-text strong { display: block; font: 500 13px/20px var(--bg-font-sans); color: var(--text-secondary); }
 .bg-step-text small { font: var(--text-caption); color: var(--text-muted); }
 
 .bg-step.is-done .bg-step-dot { background-color: var(--action-primary); border-color: var(--action-primary); color: var(--text-on-brand); }
@@ -1383,7 +1395,7 @@ body {
 .bg-illustration svg { height: 100%; width: auto; max-width: 100%; }
 .bg-illustration-sm { height: 112px; }
 @media (max-width: 639px) { .bg-illustration { height: 128px; } .bg-illustration-sm { height: 96px; } }
-.bg-empty h3 { font: 600 17px/24px var(--bg-font-sans); }
+.bg-empty h3 { font: 600 16px/22px var(--bg-font-sans); }
 .bg-empty p { font: var(--text-body-sm); color: var(--text-muted); max-width: 42ch; }
 .bg-empty-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; justify-content: center; margin-top: var(--space-2); }
 
@@ -1412,7 +1424,7 @@ body {
 @keyframes bg-modal-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } }
 .bg-modal-lg { max-width: 720px; }
 .bg-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); padding: var(--space-5) var(--space-5) 0; }
-.bg-modal-head h2 { font: 600 18px/26px var(--bg-font-sans); }
+.bg-modal-head h2 { font: 600 16px/24px var(--bg-font-sans); }
 .bg-modal-head p { font: var(--text-body-sm); color: var(--text-muted); margin-top: var(--space-1); }
 .bg-modal-body { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
 .bg-modal-foot {
@@ -1493,7 +1505,7 @@ body {
 .bg-accordion summary {
   display: flex; align-items: center; gap: var(--space-3);
   padding: var(--space-4) var(--space-5);
-  font: 500 15px/22px var(--bg-font-sans);
+  font: 500 14px/20px var(--bg-font-sans);
   cursor: pointer;
   list-style: none;
   transition: background-color var(--micro) var(--ease);
@@ -1550,8 +1562,7 @@ body {
 
 /* Horizontal — icon leads, for dense dashboards and sidebars. */
 .bg-stat-h { flex-direction: row; align-items: center; gap: var(--space-4); }
-.bg-stat-h .bg-stat-icon { width: 44px; height: 44px; border-radius: var(--bg-radius-lg); }
-.bg-stat-h .bg-stat-icon .bg-icon { width: 20px; height: 20px; }
+.bg-stat-h .bg-stat-icon { margin-bottom: 0; }
 .bg-stat-h .bg-stat-value { font-size: 20px; line-height: 26px; }
 .bg-stat-h > div { min-width: 0; }
 
@@ -1732,7 +1743,7 @@ body {
 }
 .bg-setting-row:last-child { border-bottom: 0; }
 .bg-setting-text { flex: 1; min-width: 0; }
-.bg-setting-text strong { display: block; font: 500 14px/20px var(--bg-font-sans); }
+.bg-setting-text strong { display: block; font: 500 13px/20px var(--bg-font-sans); }
 .bg-setting-text small { font: var(--text-caption); color: var(--text-muted); }
 .bg-setting-control { flex-shrink: 0; }
 @media (max-width: 639px) {
@@ -1767,7 +1778,7 @@ body {
   border: 1px solid var(--border-default);
   border-radius: var(--bg-radius-md);
   background-color: var(--surface-card);
-  font: 500 14px/1 var(--bg-font-sans);
+  font: 500 13px/1 var(--bg-font-sans);
   color: var(--text-secondary);
   cursor: pointer;
   transition: all var(--micro) var(--ease);
@@ -1808,7 +1819,7 @@ body {
 }
 .bg-review-row:last-child { border-bottom: 0; }
 .bg-review-q { font: var(--text-caption); color: var(--text-muted); margin-bottom: 2px; }
-.bg-review-a { font: 500 14px/20px var(--bg-font-sans); color: var(--text-primary); }
+.bg-review-a { font: 500 13px/20px var(--bg-font-sans); color: var(--text-primary); }
 
 /* Toolbar — search + filters above a table or list */
 .bg-toolbar {
@@ -1843,7 +1854,7 @@ body {
   background-color: var(--surface-card); border: 2px solid var(--border-strong);
 }
 .bg-timeline-item.is-brand::before { border-color: var(--primary-500); background-color: var(--primary-500); }
-.bg-timeline-item strong { display: block; font: 500 14px/20px var(--bg-font-sans); }
+.bg-timeline-item strong { display: block; font: 500 13px/20px var(--bg-font-sans); }
 .bg-timeline-item small { font: var(--text-caption); color: var(--text-muted); }
 
 /* Comment / internal note thread */

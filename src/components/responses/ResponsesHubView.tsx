@@ -44,9 +44,9 @@ import type { IResponse, BulkTarget } from '@/types/response';
 import type { SavedView } from '@/types/savedView';
 
 // Sprint 12 (inbox-collaboration), design.md §20 (task 3.4): "Chart components lazy-loaded
-// (next/dynamic)" — echarts is the heaviest dependency this view can pull in, and most sessions
-// never switch to the Chart tab, so it's only fetched once someone does. `ssr: false` matches
-// EChartContainer's own canvas-only nature (it already needs `window`/`ResizeObserver`).
+// (next/dynamic)" — the chart code is only needed on the Chart tab, and most sessions
+// never switch to the Chart tab, so it's only fetched once someone does. `ssr: false` keeps
+// the measured-width SVG charts (they need `ResizeObserver`) out of server rendering.
 const ResponsesChart = dynamic(() => import('./ResponsesChart').then((m) => m.ResponsesChart), {
   ssr: false,
   loading: () => (

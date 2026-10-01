@@ -7,13 +7,13 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
 import { ReportFormatCard } from './ReportFormatCard';
 import { ReportJobsList } from './ReportJobsList';
+import { ReportsSidebar } from './ReportsSidebar';
+import { Select } from '@/components/ui/Select';
 import { useToast } from '@/components/ui/Toast';
 import { formsService } from '@/services/forms';
 import { reportsService } from '@/services/reports';
 import { reportKeys } from '@/lib/queryKeys';
 import type { CreateReportPayload, PaginatedReportsResult, ReportFormat, ReportJob } from '@/types/report';
-
-const SELECT_CLASS = 'min-h-11 rounded-md border-2 border-(--border-default) bg-(--surface-card) px-3 bg-body-sm outline-none focus:border-(--border-strong)';
 
 export function ReportsView() {
   const router = useRouter();
@@ -90,28 +90,14 @@ export function ReportsView() {
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
-      <PageHeader title="Reports" description="Export your form responses as a CSV or PDF file." />
+      <PageHeader
+        title="Reports"
+        description="Export your form responses as a CSV or PDF file."
+        actionsAlign="center"
+        actions={<DateRangeFilter part="range" value={dateRange} onChange={setDateRange} />}
+      />
 
-      <div className="flex flex-col gap-4 rounded-lg border border-(--border-default) bg-(--surface-card) p-4">
-        {/* Sprint 12 (inbox-collaboration), requirements.md §7.3 #4: the status scope picker is
-            removed, not replaced with a stage picker — this view only renders under the personal
-            shell today (this file's own comment above), where stages are OQ-9's fixed defaults,
-            not a fetchable workspace list. A stage-scoped export picker lands once Reports gets a
-            workspace-scoped route (design.md §4's "revisit if/when Reports gets a workspace-scoped
-            route"), rather than shipping a picker with no real stage data behind it. */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <select aria-label="Form" value={formId ?? 'all'} onChange={(e) => setFormId(e.target.value === 'all' ? undefined : e.target.value)} className={SELECT_CLASS}>
-            <option value="all">All Forms</option>
-            {forms.map((f) => (
-              <option key={f._id} value={f._id}>{f.title}</option>
-            ))}
-          </select>
-        </div>
-
-        <DateRangeFilter value={dateRange} onChange={setDateRange} />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ReportFormatCard
           format="csv"
           title="CSV Export"
@@ -130,7 +116,33 @@ export function ReportsView() {
         />
       </div>
 
-      <ReportJobsList page={jobsPage} onPageChange={goToJobsPage} formTitleById={formTitleById} />
+      {/* Sprint 12 (inbox-collaboration), requirements.md §7.3 #4: the status scope picker is
+          removed, not replaced with a stage picker — this view only renders under the personal
+          shell today (this file's own comment above), where stages are OQ-9's fixed defaults,
+          not a fetchable workspace list. A stage-scoped export picker lands once Reports gets a
+          workspace-scoped route (design.md §4's "revisit if/when Reports gets a workspace-scoped
+          route"), rather than shipping a picker with no real stage data behind it. */}
+      <div className="flex flex-wrap items-center gap-3">
+        <DateRangeFilter part="presets" value={dateRange} onChange={setDateRange} />
+        <div className="ml-auto w-52">
+          <Select
+            id="reports-form"
+            aria-label="Form"
+            value={formId ?? 'all'}
+            onChange={(e) => setFormId(e.target.value === 'all' ? undefined : e.target.value)}
+          >
+            <option value="all">All Forms</option>
+            {forms.map((f) => (
+              <option key={f._id} value={f._id}>{f.title}</option>
+            ))}
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <ReportJobsList page={jobsPage} onPageChange={goToJobsPage} formTitleById={formTitleById} />
+        <ReportsSidebar />
+      </div>
     </div>
   );
 }

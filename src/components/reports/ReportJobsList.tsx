@@ -5,6 +5,7 @@ import { FileText, RefreshCw } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { PaginationControls } from '@/components/responses/PaginationControls';
 import { useToast } from '@/components/ui/Toast';
 import { ReportJobRow } from './ReportJobRow';
@@ -127,10 +128,10 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
   }
 
   const header = (
-    <div className="flex items-start justify-between gap-4">
+    <div className="flex items-start justify-between gap-4 px-5 pt-5">
       <div>
-        <h2 className="bg-body font-semibold text-(--text-primary)">Generated Reports</h2>
-        <p className="bg-caption text-(--text-muted)">Your recent report generation history.</p>
+        <h2 className="bg-h5 font-bold text-(--text-primary)">Recent Reports</h2>
+        <p className="bg-body-sm text-(--text-muted)">Your latest report generation history.</p>
       </div>
       <Button
         variant="ghost"
@@ -146,9 +147,9 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
 
   if (jobsQuery.isLoading) {
     return (
-      <div className="flex flex-col gap-4">
+      <Card padded={false} className="gap-4 overflow-hidden pb-5">
         {header}
-        <div className="bg-(--surface-card) border border-(--border-default) rounded-xl overflow-hidden shadow-(--shadow-sm)">
+        <div className="mx-5 overflow-hidden rounded-lg border border-(--border-default)">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-(--border-subtle) last:border-0 animate-pulse">
               <div className="h-9 w-9 rounded-lg bg-(--bg-sunken) shrink-0" />
@@ -160,31 +161,31 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     );
   }
 
   if (jobsQuery.isError) {
     return (
-      <div className="flex flex-col gap-4">
+      <Card padded={false} className="gap-4 overflow-hidden pb-5">
         {header}
-        <div role="alert" className="flex min-h-28 items-center justify-between gap-4 rounded-lg border border-(--border-default) bg-(--surface-card) p-6">
+        <div role="alert" className="mx-5 flex min-h-28 items-center justify-between gap-4 rounded-lg border border-(--border-default) bg-(--surface-card) p-6">
           <div>
             <p className="bg-body-sm font-semibold text-(--text-primary)">Unable to load report jobs</p>
             <p className="mt-1 bg-caption text-(--text-muted)">Please try again.</p>
           </div>
           <Button variant="secondary" size="small" onClick={() => void jobsQuery.refetch()}>Try again</Button>
         </div>
-      </div>
+      </Card>
     );
   }
 
   if (jobs.length === 0) {
     return (
-      <div className="flex flex-col gap-4">
+      <Card padded={false} className="gap-2 overflow-hidden pb-5">
         {header}
         <EmptyState illustration="empty-reports" icon={<FileText />} title="No reports yet" description="Generate your first CSV or PDF export above." />
-      </div>
+      </Card>
     );
   }
 
@@ -195,16 +196,16 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
   const rangeEnd = Math.min(page * limit, total);
 
   return (
-    <div className="flex flex-col gap-4">
+    <Card padded={false} className="gap-4 overflow-hidden pb-5">
       {header}
 
-      <div className="hidden sm:block bg-(--surface-card) border border-(--border-default) rounded-xl overflow-x-auto shadow-(--shadow-sm)">
+      <div className="hidden sm:block mx-5 overflow-x-auto rounded-lg border border-(--border-default)">
         <table className="w-full text-left">
           <thead>
             <tr className="bg-(--bg-subtle) border-b border-(--border-default) bg-caption font-semibold text-(--text-muted) uppercase tracking-wider">
-              <th className="px-4 py-2.5">Format</th>
-              <th className="px-4 py-2.5">Report</th>
-              <th className="px-4 py-2.5">Created</th>
+              <th className="px-4 py-2.5">Form Title</th>
+              <th className="px-4 py-2.5">Type</th>
+              <th className="px-4 py-2.5">Generated On</th>
               <th className="px-4 py-2.5">Status</th>
               <th className="px-4 py-2.5 text-right">Action</th>
             </tr>
@@ -220,18 +221,18 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
         </table>
       </div>
 
-      <div className="sm:hidden flex flex-col gap-3">
+      <div className="sm:hidden mx-5 flex flex-col gap-3">
         {jobs.map((job, index) => (
           <ReportJobRow key={job._id ?? index} job={job} onRetry={handleRetry} isRetrying={retryingJobId === job._id} formTitleById={formTitleById} variant="card" />
         ))}
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="flex flex-col gap-2 px-5 sm:flex-row sm:items-center sm:justify-between">
         <p className="bg-caption text-(--text-muted)">
           Showing {rangeStart} to {rangeEnd} of {total} report{total === 1 ? '' : 's'}
         </p>
         <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} />
       </div>
-    </div>
+    </Card>
   );
 }

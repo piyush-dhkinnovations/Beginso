@@ -9,15 +9,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-vi.mock('@/components/charts/EChartContainer', () => ({
-  EChartContainer: ({ option, ariaLabel }: { option: unknown; ariaLabel: string }) => (
-    <div role="img" aria-label={ariaLabel} data-option={JSON.stringify(option)} />
-  ),
-}));
-
 import { StatusDistributionChart } from '@/components/analytics/StatusDistributionChart';
 import { mockAnalyticsOverview } from '@/lib/mocks/analyticsMocks';
-import { CHART_COLORS } from '@/lib/chartTheme';
 
 describe('StatusDistributionChart', () => {
   it('shows a pulsing skeleton block while loading', () => {
@@ -45,16 +38,16 @@ describe('StatusDistributionChart', () => {
     const overview = mockAnalyticsOverview({ totalResponses: 128, categoryCounts: { new: 42, in_progress: 36, completed: 50 } });
     render(<StatusDistributionChart overview={overview} isLoading={false} />);
 
-    const chart = screen.getByRole('img', { name: 'Response status distribution' });
-    const option = JSON.parse(chart.getAttribute('data-option') as string);
-    const segments = option.series[0].data;
-    expect(segments).toHaveLength(3);
-    expect(segments.map((s: { itemStyle: { color: string } }) => s.itemStyle.color)).toEqual([
-      CHART_COLORS.statusNew,
-      CHART_COLORS.statusProgress,
-      CHART_COLORS.statusCompleted,
+    // Legend rows carry the three category counts; each dot uses a design-token colour.
+    const dots = Array.from(document.querySelectorAll('span[aria-hidden="true"].rounded-full')) as HTMLElement[];
+    expect(dots.map((d) => d.style.backgroundColor)).toEqual([
+      'var(--action-primary)',
+      'var(--warning)',
+      'var(--success)',
     ]);
-    expect(segments.map((s: { value: number }) => s.value)).toEqual([42, 36, 50]);
+    expect(screen.getAllByText('42').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('36').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('50').length).toBeGreaterThan(0);
 
     expect(screen.getByText('128')).toBeInTheDocument();
     expect(screen.getByText('Total')).toBeInTheDocument();

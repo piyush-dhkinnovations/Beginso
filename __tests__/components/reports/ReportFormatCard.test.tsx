@@ -29,7 +29,7 @@ describe('ReportFormatCard', () => {
     const onGenerate = vi.fn();
     render(<ReportFormatCard format="pdf" title="PDF Report" description="desc" onGenerate={onGenerate} isLoading={false} />);
 
-    fireEvent.click(screen.getByRole('button', { name: 'Generate' }));
+    fireEvent.click(screen.getByRole('button', { name: /^Generate/ }));
 
     expect(onGenerate).toHaveBeenCalledTimes(1);
   });
@@ -41,6 +41,6 @@ describe('ReportFormatCard', () => {
 
   it('disables the button when disabled is set, independent of isLoading', () => {
     render(<ReportFormatCard format="csv" title="CSV Export" description="desc" onGenerate={vi.fn()} isLoading={false} disabled />);
-    expect(screen.getByRole('button', { name: 'Generate' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /^Generate/ })).toBeDisabled();
   });
 });

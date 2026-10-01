@@ -4,12 +4,12 @@ import { PieChart as PieChartIcon } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { EChartContainer } from '@/components/charts/EChartContainer';
-import { getBaseChartOption, CHART_COLORS, type EChartsOption } from '@/lib/chartTheme';
+import { CHART_COLOR, Donut } from '@/components/ui/charts';
 import { CATEGORY_LABELS, type StageCategory } from '@/types/stage';
 import type { AnalyticsOverview } from '@/types/analytics';
 
 const CHART_HEIGHT = 240;
+const DONUT_SIZE = 168;
 
 // Sprint 12 (inbox-collaboration), requirements.md §7.3 #3, design.md §2/§23 (OQ-11 default):
 // grouped by stage `category`, not the removed fixed `status` union — the three category buckets
@@ -19,32 +19,10 @@ const CHART_HEIGHT = 240;
 const SEGMENT_ORDER: StageCategory[] = ['new', 'in_progress', 'completed'];
 
 const SEGMENT_COLORS: Record<StageCategory, string> = {
-  new: CHART_COLORS.statusNew,
-  in_progress: CHART_COLORS.statusProgress,
-  completed: CHART_COLORS.statusCompleted,
+  new: CHART_COLOR.primary,
+  in_progress: CHART_COLOR.warning,
+  completed: CHART_COLOR.success,
 };
-
-function buildDonutOption(categoryCounts: AnalyticsOverview['categoryCounts']): EChartsOption {
-  const base = getBaseChartOption();
-  return {
-    ...base,
-    tooltip: { ...base.tooltip, trigger: 'item' },
-    series: [
-      {
-        type: 'pie',
-        radius: ['55%', '80%'],
-        avoidLabelOverlap: true,
-        label: { show: false },
-        labelLine: { show: false },
-        data: SEGMENT_ORDER.map((category) => ({
-          name: CATEGORY_LABELS[category],
-          value: categoryCounts[category],
-          itemStyle: { color: SEGMENT_COLORS[category] },
-        })),
-      },
-    ],
-  };
-}
 
 interface StatusDistributionChartProps {
   overview?: AnalyticsOverview;
@@ -102,13 +80,16 @@ export function StatusDistributionChart({ overview, isLoading, isError = false, 
     <Card>
       <h3 className="bg-h5 text-(--text-primary) font-bold mb-4">Status Distribution</h3>
       <div className="flex flex-col items-center gap-6">
-        <div className="relative shrink-0" style={{ height: CHART_HEIGHT, width: CHART_HEIGHT }}>
-          <EChartContainer option={buildDonutOption(categoryCounts)} height={CHART_HEIGHT} ariaLabel="Response status distribution" />
-          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-            <span className="bg-h3 font-bold text-(--text-primary)">{total.toLocaleString()}</span>
-            <span className="bg-caption text-(--text-muted)">Total</span>
-          </div>
-        </div>
+        <Donut
+          size={DONUT_SIZE}
+          centre={total.toLocaleString()}
+          sub="Total"
+          segments={SEGMENT_ORDER.map((category) => ({
+            label: CATEGORY_LABELS[category],
+            value: categoryCounts[category],
+            color: SEGMENT_COLORS[category],
+          }))}
+        />
 
         <div className="flex flex-col gap-2.5 w-full">
           {SEGMENT_ORDER.map((category) => (

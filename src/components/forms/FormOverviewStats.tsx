@@ -43,6 +43,7 @@ export function FormOverviewStats({ stats, accessLabel, onOpenAccess }: FormOver
             `${Math.round(completionRate)}%`
           )
         }
+        chart={completionRate === null ? undefined : { kind: 'ring', percent: completionRate }}
       />
 
       {/* A real button, not a clickable div (design.md §18) — it opens FormAccessPanel. */}

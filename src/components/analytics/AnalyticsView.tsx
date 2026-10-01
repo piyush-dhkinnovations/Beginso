@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, FileText, LockKeyhole } from 'lucide-react';
@@ -13,7 +14,11 @@ import { TrendChart } from './TrendChart';
 import { StatusDistributionChart } from './StatusDistributionChart';
 import { QuestionBreakdownSection } from './QuestionBreakdownSection';
 import { FormsSummaryTable } from './FormsSummaryTable';
+import { FormsByStatusCard } from './FormsByStatusCard';
+import { ResponsesOverTimeCard, type TrendBucket } from './ResponsesOverTimeCard';
 import { WorkspaceSummaryCards } from './WorkspaceSummaryCards';
+import { Select } from '@/components/ui/Select';
+import { useAnalyticsTrend } from '@/hooks/useAnalyticsTrend';
 import { formsService } from '@/services/forms';
 import { analyticsService } from '@/services/analytics';
 import { analyticsKeys } from '@/lib/queryKeys';
@@ -37,7 +42,9 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
 
   const { from, to, preset } = resolveEffectiveDateRange(searchParams.get('from'), searchParams.get('to'));
   const isAllTime = preset === 'all';
-  const bucket = resolveTrendBucket(from, to);
+  const defaultBucket = resolveTrendBucket(from, to);
+  const [bucketOverride, setBucketOverride] = useState<TrendBucket | null>(null);
+  const bucket: TrendBucket = bucketOverride ?? defaultBucket;
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const range = { from, to };
 
@@ -107,6 +114,38 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
     ? computeChangePercent(workspaceTotalResponses, previousWorkspaceTotalResponses)
     : null;
 
+  // Workspace view extras: per-form previous-period baselines for every card's change, the daily
+  // series behind the charts (see useAnalyticsTrend), and the figures the stat cards show.
+  const previousForms = previousFormsSummaryQuery.data?.forms ?? [];
+  const meanCompletion = (list: typeof currentForms) => {
+    const withResponses = list.filter((f) => f.totalResponses > 0);
+    return withResponses.length > 0 ? withResponses.reduce((sum, f) => sum + f.completionRate, 0) / withResponses.length : null;
+  };
+  const workspaceCompletion = meanCompletion(currentForms);
+  const previousCompletion = meanCompletion(previousForms);
+  const previousAverage = previousForms.length > 0 ? previousWorkspaceTotalResponses / previousForms.length : 0;
+  const summaryChanges = {
+    responses: workspaceChangePercent,
+    average: hasPreviousRange ? computeChangePercent(workspaceAverageResponsesPerForm, previousAverage) : null,
+    completion:
+      hasPreviousRange && workspaceCompletion !== null && previousCompletion !== null
+        ? computeChangePercent(workspaceCompletion, previousCompletion)
+        : null,
+  };
+  const periodLabel = { '7d': 'vs previous 7 days', '30d': 'vs previous 30 days', '90d': 'vs previous 90 days' }[preset as '7d' | '30d' | '90d'] ?? 'vs previous period';
+  const workspaceTrend = useAnalyticsTrend({
+    from,
+    to,
+    bucket,
+    formIds: currentForms.map((f) => f._id),
+    enabled: !formId && formsSummaryQuery.isSuccess && currentForms.length > 0,
+  });
+  const statusCounts = {
+    published: currentForms.filter((f) => f.status === 'published').length,
+    draft: currentForms.filter((f) => f.status === 'draft').length,
+    closed: currentForms.filter((f) => f.status === 'closed').length,
+  };
+
   // First run: nothing to analyse yet (no forms, or the form has no responses at all) across all
   // time. The summary cards, date filter and charts would all show zeros, so only an empty state is shown.
   const isFirstRun = formId
@@ -144,6 +183,8 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
       <PageHeader
         title="Analytics"
         description={formId ? `Analytics · ${form?.title ?? ''}` : 'See how every form in your workspace is performing.'}
+        actionsAlign="center"
+        actions={isFirstRun ? undefined : <DateRangeFilter part="range" />}
       />
 
       {isFirstRun ? (
@@ -166,17 +207,40 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
         />
       ) : (
         <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <DateRangeFilter part="presets" />
+        {!formId && currentForms.length > 0 && (
+          <div className="w-48">
+            <Select
+              id="analytics-jump-form"
+              aria-label="Open a form's analytics"
+              value=""
+              onChange={(e) => e.target.value && router.push(`/forms/${e.target.value}/analytics`)}
+            >
+              <option value="">All forms</option>
+              {currentForms.map((f) => (
+                <option key={f._id} value={f._id}>{f.title}</option>
+              ))}
+            </Select>
+          </div>
+        )}
+      </div>
+
       {!formId && (
         <WorkspaceSummaryCards
           totalResponses={workspaceTotalResponses}
           activeForms={workspaceActiveForms}
+          totalForms={currentForms.length}
           averageResponsesPerForm={workspaceAverageResponsesPerForm}
-          changePercent={workspaceChangePercent}
+          completionRate={workspaceCompletion}
+          changes={summaryChanges}
+          periodLabel={periodLabel}
+          trend={workspaceTrend.points?.map((p) => p.responses)}
+          previousTotalResponses={hasPreviousRange ? previousWorkspaceTotalResponses : undefined}
+          perFormResponses={currentForms.map((f) => f.totalResponses)}
           isLoading={formsSummaryQuery.isLoading}
         />
       )}
-
-      <DateRangeFilter />
 
       {formId ? (
         <>
@@ -185,6 +249,7 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
             isLoading={overviewQuery.isLoading}
             isError={overviewQuery.isError}
             onRetry={() => void overviewQuery.refetch()}
+            trend={trendsQuery.data?.points.map((point) => point.responses)}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-4">
@@ -214,6 +279,16 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
           />
         </>
       ) : (
+        <>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <ResponsesOverTimeCard
+            points={workspaceTrend.points}
+            isLoading={formsSummaryQuery.isLoading || workspaceTrend.isLoading}
+            bucket={bucket}
+            onBucketChange={setBucketOverride}
+          />
+          <FormsByStatusCard counts={statusCounts} isLoading={formsSummaryQuery.isLoading} />
+        </div>
         <FormsSummaryTable
           data={formsSummaryQuery.data}
           previousForms={previousFormsSummaryQuery.data?.forms}
@@ -223,6 +298,7 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
           page={page}
           onPageChange={goToPage}
         />
+        </>
       )}
         </>
       )}

@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { Download, FileText, Info, Loader2, RotateCcw } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Badge } from '@/components/ui/Badge';
+import { FormTile } from '@/components/forms/FormTile';
 import { Button } from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import { formatRelativeTime } from '@/lib/formatters';
@@ -35,6 +37,14 @@ const ACTION_LINK_CLASS = 'text-(--accent-soft-text) hover:text-(--accent-soft-t
 
 function formatShortDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// "26 Sep 2026, 12:30" — day-first, three-letter month, 24-hour (the en-GB locale spells it "Sept").
+function formatGeneratedOn(iso: string): string {
+  const d = new Date(iso);
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return `${d.getDate()} ${month} ${d.getFullYear()}, ${time}`;
 }
 
 // The backend never sends a denormalized `formTitle` — only the raw `formId` — so the display
@@ -146,6 +156,7 @@ export function ReportJobRow({ job, onRetry, isRetrying = false, formTitleById =
   const title = formLabel(job, formTitleById);
   const subtitle = scopeSubtitle(job);
   const created = formatRelativeTime(job.createdAt);
+  const generatedOn = formatGeneratedOn(job.createdAt);
   const formatText = FORMAT_SHORT_LABEL[job.format] ?? job.format;
 
   if (variant === 'card') {
@@ -171,21 +182,23 @@ export function ReportJobRow({ job, onRetry, isRetrying = false, formTitleById =
   }
 
   return (
-    <tr className="border-b border-(--border-subtle) last:border-0">
+    <tr className="border-b border-(--border-subtle) last:border-0 transition-colors hover:bg-(--surface-hover)">
       <td className="px-4 py-3">
-        <span className="inline-flex items-center gap-2 bg-body-sm text-(--text-secondary) whitespace-nowrap">
-          <FormatIcon size={16} className="text-(--text-disabled)" aria-hidden="true" />
-          {formatText}
-        </span>
+        <div className="flex min-w-0 items-center gap-3">
+          <FormTile title={title} />
+          <div className="min-w-0">
+            <p className="bg-body-sm font-semibold text-(--text-primary) truncate max-w-70">{title}</p>
+            <p className="bg-caption text-(--text-muted) truncate max-w-70">{subtitle}</p>
+            {job.status === 'failed' && job.errorMessage && (
+              <p className="bg-caption text-(--error-text) truncate max-w-70">{job.errorMessage}</p>
+            )}
+          </div>
+        </div>
       </td>
       <td className="px-4 py-3">
-        <p className="bg-body-sm font-semibold text-(--text-primary) truncate max-w-70">{title}</p>
-        <p className="bg-caption text-(--text-muted) truncate max-w-70">{subtitle}</p>
-        {job.status === 'failed' && job.errorMessage && (
-          <p className="bg-caption text-(--error-text) truncate max-w-70">{job.errorMessage}</p>
-        )}
+        <Badge variant={job.format === 'pdf' ? 'error' : 'success'} pill>{formatText}</Badge>
       </td>
-      <td className="px-4 py-3 bg-body-sm text-(--text-muted) whitespace-nowrap">{created}</td>
+      <td className="px-4 py-3 bg-body-sm text-(--text-secondary) whitespace-nowrap" title={created}>{generatedOn}</td>
       <td className="px-4 py-3">
         <StatusBadge variant={STATUS_BADGE_VARIANT[job.status]}>{REPORT_STATUS_LABELS[job.status]}</StatusBadge>
       </td>

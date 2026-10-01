@@ -7,8 +7,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { EChartContainer } from '@/components/charts/EChartContainer';
-import { getBaseChartOption, CHART_COLORS, type EChartsOption } from '@/lib/chartTheme';
+import { BarChart, CHART_COLOR, DonutWithLegend } from '@/components/ui/charts';
 import { fetchAllResponses } from '@/lib/fetchAllResponses';
 import { responseKeys } from '@/lib/queryKeys';
 import type { ResponseFilters, ResponseStats } from '@/types/response';
@@ -48,39 +47,18 @@ function dailyVolume(items: { submittedAt: string }[]): { date: string; count: n
   return [...counts.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, count]) => ({ date, count }));
 }
 
-function buildVolumeOption(series: { date: string; count: number }[]): EChartsOption {
-  const base = getBaseChartOption();
-  return {
-    ...base,
-    grid: { left: 40, right: 16, top: 16, bottom: 32 },
-    xAxis: { type: 'category', data: series.map((s) => s.date) },
-    yAxis: { type: 'value' },
-    series: [{ type: 'bar', data: series.map((s) => s.count), itemStyle: { color: CHART_COLORS.brand } }],
-  };
-}
-
-function buildStageOption(byStage: ResponseStats['byStage']): EChartsOption {
-  const base = getBaseChartOption();
-  return {
-    ...base,
-    tooltip: { ...base.tooltip, trigger: 'item' },
-    series: [
-      {
-        type: 'pie',
-        radius: ['55%', '80%'],
-        avoidLabelOverlap: true,
-        label: { show: false },
-        labelLine: { show: false },
-        data: byStage.map((s) => ({ name: s.name, value: s.count })),
-      },
-    ],
-  };
-}
+const STAGE_COLORS = [
+  CHART_COLOR.primary,
+  CHART_COLOR.success,
+  CHART_COLOR.warning,
+  CHART_COLOR.soft,
+  CHART_COLOR.error,
+];
 
 /**
  * Sprint 12 (inbox-collaboration), requirements.md §7.4 (4.1), design.md §6/§21 (task 3.4). Two
- * charts — daily submissions volume, stage distribution — on the existing `components/charts` +
- * `chartTheme` (no new charting dependency: `package.json`'s chart deps are untouched). Each has a
+ * charts — daily submissions volume, stage distribution — on the shared SVG chart
+ * components (`components/ui/charts`). Each has a
  * visually-hidden data-table alternative, same precedent `StatusDistributionChart` already
  * established. `byStage` here only carries `category`, not each stage's own colour token (the
  * `GET /api/responses/stats` contract, design.md §11.2) — so per-stage colouring falls back to
@@ -127,7 +105,11 @@ export function ResponsesChart({ scope, formId, filters, stats, statsLoading, st
           <EmptyState icon={<BarChart3 />} title="No responses in this range" description="Try a wider date range to see submission volume." />
         ) : (
           <>
-            <EChartContainer option={buildVolumeOption(volume)} height={CHART_HEIGHT} ariaLabel="Daily submissions volume" />
+            <BarChart
+              data={volume.map((v) => ({ label: v.date.slice(5), value: v.count }))}
+              height={CHART_HEIGHT}
+              ariaLabel="Daily submissions volume"
+            />
             <table className="sr-only">
               <caption>Daily submissions volume</caption>
               <thead>
@@ -168,7 +150,9 @@ export function ResponsesChart({ scope, formId, filters, stats, statsLoading, st
           <EmptyState icon={<PieChartIcon />} title="No responses yet" description="Responses will appear here once your form starts receiving submissions." />
         ) : (
           <>
-            <EChartContainer option={buildStageOption(stats.byStage)} height={CHART_HEIGHT} ariaLabel="Stage distribution" />
+            <DonutWithLegend
+              segments={stats.byStage.map((s, i) => ({ label: s.name, value: s.count, color: STAGE_COLORS[i % STAGE_COLORS.length] }))}
+            />
             <table className="sr-only">
               <caption>Stage distribution</caption>
               <thead>

@@ -102,7 +102,10 @@ describe('AnalyticsView', () => {
     expect(screen.getByText('Total Responses')).toBeInTheDocument();
     expect(screen.getByText('Active Forms')).toBeInTheDocument();
     expect(screen.getByText('Avg. Responses / Form')).toBeInTheDocument();
-    expect(screen.getByText('Change vs Previous Period')).toBeInTheDocument();
+    // Also the table's column header, so more than one match.
+    expect(screen.getAllByText('Completion Rate').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Forms by status')).toBeInTheDocument();
+    expect(screen.getByText('Form performance')).toBeInTheDocument();
   });
 
   it('shows "Access denied" for a 403 on the form query, without rendering any chart', async () => {

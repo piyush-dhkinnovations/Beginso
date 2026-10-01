@@ -3,6 +3,7 @@
 import { CheckCircle2, Clock, Inbox, Mail } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { StatCard, type StatChart } from '@/components/ui/StatCard';
 import type { ResponseStats } from '@/types/response';
 import { CATEGORY_LABELS } from '@/types/stage';
 
@@ -18,6 +19,7 @@ interface ResponsesStatCardsProps {
  * `ResponseStats.byCategory` (`GET /api/responses/stats`, extended for stages) rather than the
  * removed `new`/`in_progress`/`completed` fields — the category buckets (OQ-11's default) keep a
  * custom stage set legible as three cards instead of a hardcoded per-status label.
+ * Each card except Total carries a ring showing its share of all responses.
  */
 export function ResponsesStatCards({ stats, isLoading, isError = false, onRetry }: ResponsesStatCardsProps) {
   if (isError) {
@@ -32,12 +34,15 @@ export function ResponsesStatCards({ stats, isLoading, isError = false, onRetry 
     );
   }
 
+  const total = stats?.total ?? 0;
+  const share = (n: number): StatChart | undefined =>
+    total > 0 ? { kind: 'ring', percent: Math.round((n / total) * 100) } : undefined;
   const byCategory = stats?.byCategory ?? { new: 0, in_progress: 0, completed: 0 };
-  const cards = [
-    { label: 'Total', value: stats?.total ?? 0, icon: Inbox },
-    { label: 'Unread', value: stats?.unread ?? 0, icon: Mail },
-    { label: CATEGORY_LABELS.new, value: byCategory.new, icon: Clock },
-    { label: CATEGORY_LABELS.completed, value: byCategory.completed, icon: CheckCircle2 },
+  const cards: Array<{ label: string; value: number; icon: typeof Inbox; chart?: StatChart }> = [
+    { label: 'Total', value: total, icon: Inbox },
+    { label: 'Unread', value: stats?.unread ?? 0, icon: Mail, chart: share(stats?.unread ?? 0) },
+    { label: CATEGORY_LABELS.new, value: byCategory.new, icon: Clock, chart: share(byCategory.new) },
+    { label: CATEGORY_LABELS.completed, value: byCategory.completed, icon: CheckCircle2, chart: share(byCategory.completed) },
   ];
 
   return (
@@ -45,24 +50,14 @@ export function ResponsesStatCards({ stats, isLoading, isError = false, onRetry 
       {cards.map((card) => {
         const Icon = card.icon;
         return (
-          <Card key={card.label} className="flex flex-col gap-2 p-4 sm:gap-4 sm:p-6">
-            <div className="flex items-center justify-between gap-2">
-              <span className="bg-caption sm:bg-body-sm text-(--text-muted) font-medium">{card.label}</span>
-              <Icon size={20} className="sm:hidden shrink-0 text-(--accent-soft-text)" />
-              <Icon size={24} className="hidden sm:block shrink-0 text-(--accent-soft-text)" />
-            </div>
-            {isLoading ? (
-              <div className="animate-pulse">
-                <div className="h-8 bg-skeleton rounded w-16" />
-              </div>
-            ) : (
-              <span
-                className={`bg-h3 font-bold leading-none ${card.value === 0 ? 'text-(--text-muted)' : 'text-(--text-primary)'}`}
-              >
-                {card.value}
-              </span>
-            )}
-          </Card>
+          <StatCard
+            key={card.label}
+            label={card.label}
+            icon={<Icon aria-hidden="true" />}
+            value={isLoading ? <span className="block h-8 w-16 animate-pulse rounded bg-skeleton" /> : card.value}
+            valueClassName={!isLoading && card.value === 0 ? 'text-(--text-muted)' : undefined}
+            chart={isLoading ? undefined : card.chart}
+          />
         );
       })}
     </div>

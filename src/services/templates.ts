@@ -20,8 +20,17 @@ export const templatesService = {
   // Same dual-shape handling as getTemplates(): the backend may wrap this in `{ data: {...} }`
   // rather than returning the form object raw, so unwrap both shapes and throw on anything
   // else — otherwise a missing `_id` silently navigates to `/forms/undefined/edit`.
-  useTemplate: (templateId: string): Promise<{ _id: string; title: string }> =>
-    axiosInstance.post(`/api/templates/${templateId}/use`).then((r) => {
+  //
+  // Real bug found and fixed: this sent no `destinationWorkspaceId` at all, even though
+  // `template.controller.ts`'s `useTemplate` explicitly supports one (same body field
+  // `formsService.createForm` already sends) and only falls back to
+  // `getVerifiedWorkspaceId(req)` — the caller's default workspace membership — when it's
+  // omitted. A Personal-space user who also belongs to a workspace had every "Use template"
+  // silently land the new form in that workspace instead of Personal. `/templates` is reachable
+  // only from the Personal shell today (no workspace-scoped templates route exists yet), so this
+  // always sends `null` (personal), mirroring `CreateFormModal`'s own personal case.
+  useTemplate: (templateId: string, destinationWorkspaceId: string | null = null): Promise<{ _id: string; title: string }> =>
+    axiosInstance.post(`/api/templates/${templateId}/use`, { destinationWorkspaceId }).then((r) => {
       const body = r.data as { _id?: string; title?: string; data?: { _id?: string; title?: string } };
       const form = body?._id ? body : body?.data;
       if (!form?._id) {

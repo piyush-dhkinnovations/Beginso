@@ -8,6 +8,9 @@ export interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   description?: React.ReactNode;
   breadcrumb?: BreadcrumbItem[];
   actions?: React.ReactNode;
+  /** Vertical alignment of the actions against the title block. Default `start` (top edge);
+   * `center` lines buttons up with the middle of the title + description. */
+  actionsAlign?: "start" | "center";
 }
 
 // Composition-only primitive — no dedicated beginso-ui.css section, built from Breadcrumb
@@ -21,13 +24,14 @@ export function PageHeader({
   description,
   breadcrumb,
   actions,
+  actionsAlign = "start",
   className,
   ...props
 }: PageHeaderProps) {
   return (
     <div className={bx("bg-stack", "bg-gap-2", className)} {...props}>
       {breadcrumb && breadcrumb.length > 0 && <Breadcrumb items={breadcrumb} />}
-      <div className={bx("bg-row", "bg-gap-4", "flex-wrap")} style={{ justifyContent: "space-between", alignItems: "flex-start" }}>
+      <div className={bx("bg-row", "bg-gap-4", "flex-wrap")} style={{ justifyContent: "space-between", alignItems: actionsAlign === "center" ? "center" : "flex-start" }}>
         <div className={bx("bg-stack", "bg-gap-1")}>
           {eyebrow && <span className="bg-overline">{eyebrow}</span>}
           <h1 className="bg-h2">{title}</h1>

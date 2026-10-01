@@ -217,16 +217,14 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
   // sprint-10-events-migration, task 6.4.
   describe('bulk selection and delete (task 6.4)', () => {
     it('shows no bulk action bar until a row is selected, then shows the count', async () => {
-      // Same pattern as the Inbox table: the checkbox column is collapsed to zero width until
-      // something is selected — double-clicking a row is what first reveals it.
+      // The checkbox column is always visible (Forms page redesign) — no double-click needed.
       mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
       renderPage();
       await screen.findByText('Form One');
 
       expect(screen.queryByText(/selected/)).not.toBeInTheDocument();
-      expect(screen.queryByRole('checkbox', { name: 'Select Form One' })).not.toBeInTheDocument();
 
-      await userEvent.dblClick(screen.getByText('Form One'));
+      await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form One' }));
       expect(await screen.findByText('1 selected')).toBeInTheDocument();
 
       await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form Two' }));
