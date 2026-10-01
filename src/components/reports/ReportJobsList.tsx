@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FileText, RefreshCw } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { PaginationControls } from '@/components/responses/PaginationControls';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { ReportJobRow } from './ReportJobRow';
 import { reportsService } from '@/services/reports';
 import { reportKeys } from '@/lib/queryKeys';
@@ -129,8 +129,8 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
   const header = (
     <div className="flex items-start justify-between gap-4">
       <div>
-        <h2 className="text-body font-semibold text-neutral-900">Generated Reports</h2>
-        <p className="text-caption text-neutral-500">Your recent report generation history.</p>
+        <h2 className="bg-body font-semibold text-(--text-primary)">Generated Reports</h2>
+        <p className="bg-caption text-(--text-muted)">Your recent report generation history.</p>
       </div>
       <Button
         variant="ghost"
@@ -148,15 +148,15 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
     return (
       <div className="flex flex-col gap-4">
         {header}
-        <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="bg-(--surface-card) border border-(--border-default) rounded-xl overflow-hidden shadow-(--shadow-sm)">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-neutral-100 last:border-0 animate-pulse">
-              <div className="h-9 w-9 rounded-lg bg-neutral-100 shrink-0" />
+            <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-(--border-subtle) last:border-0 animate-pulse">
+              <div className="h-9 w-9 rounded-lg bg-(--bg-sunken) shrink-0" />
               <div className="flex flex-col flex-1 gap-1.5">
-                <div className="h-3.5 bg-neutral-200 rounded w-1/3" />
-                <div className="h-3 bg-neutral-100 rounded w-1/4" />
+                <div className="h-3.5 bg-(--border-default) rounded w-1/3" />
+                <div className="h-3 bg-(--bg-sunken) rounded w-1/4" />
               </div>
-              <div className="h-5 w-16 bg-neutral-200 rounded-full shrink-0" />
+              <div className="h-5 w-16 bg-(--border-default) rounded-full shrink-0" />
             </div>
           ))}
         </div>
@@ -168,10 +168,10 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
     return (
       <div className="flex flex-col gap-4">
         {header}
-        <div role="alert" className="flex min-h-28 items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-6">
+        <div role="alert" className="flex min-h-28 items-center justify-between gap-4 rounded-lg border border-(--border-default) bg-(--surface-card) p-6">
           <div>
-            <p className="text-body-sm font-semibold text-neutral-900">Unable to load report jobs</p>
-            <p className="mt-1 text-caption text-neutral-500">Please try again.</p>
+            <p className="bg-body-sm font-semibold text-(--text-primary)">Unable to load report jobs</p>
+            <p className="mt-1 bg-caption text-(--text-muted)">Please try again.</p>
           </div>
           <Button variant="secondary" size="small" onClick={() => void jobsQuery.refetch()}>Try again</Button>
         </div>
@@ -183,7 +183,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
     return (
       <div className="flex flex-col gap-4">
         {header}
-        <EmptyState icon={<FileText />} heading="No reports yet" body="Generate your first CSV or PDF export above." />
+        <EmptyState illustration="empty-reports" icon={<FileText />} title="No reports yet" description="Generate your first CSV or PDF export above." />
       </div>
     );
   }
@@ -198,10 +198,10 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
     <div className="flex flex-col gap-4">
       {header}
 
-      <div className="hidden sm:block bg-white border border-neutral-200 rounded-xl overflow-x-auto shadow-sm">
+      <div className="hidden sm:block bg-(--surface-card) border border-(--border-default) rounded-xl overflow-x-auto shadow-(--shadow-sm)">
         <table className="w-full text-left">
           <thead>
-            <tr className="bg-neutral-50 border-b border-neutral-200 text-caption font-semibold text-neutral-500 uppercase tracking-wider">
+            <tr className="bg-(--bg-subtle) border-b border-(--border-default) bg-caption font-semibold text-(--text-muted) uppercase tracking-wider">
               <th className="px-4 py-2.5">Format</th>
               <th className="px-4 py-2.5">Report</th>
               <th className="px-4 py-2.5">Created</th>
@@ -227,7 +227,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <p className="text-caption text-neutral-500">
+        <p className="bg-caption text-(--text-muted)">
           Showing {rangeStart} to {rangeEnd} of {total} report{total === 1 ? '' : 's'}
         </p>
         <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} />

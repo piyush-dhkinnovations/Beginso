@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { responsesService, type UpdateResponsePayload } from '@/services/responses';
 import { responseKeys } from '@/lib/queryKeys';
 import { idsRemainingSelected } from '@/lib/bulkActions';

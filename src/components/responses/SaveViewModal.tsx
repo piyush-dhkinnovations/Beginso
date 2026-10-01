@@ -56,12 +56,12 @@ export function SaveViewModal({ isOpen, onClose, canCreateTeamView, isSaving, on
 
         <fieldset className="flex flex-col gap-2">
           <legend className="bg-label">Visibility</legend>
-          <label className="flex items-center gap-2 text-body-sm">
+          <label className="flex items-center gap-2 bg-body-sm">
             <input type="radio" value="personal" {...register('visibility')} defaultChecked />
             Personal — only visible to you
           </label>
           {canCreateTeamView && (
-            <label className="flex items-center gap-2 text-body-sm">
+            <label className="flex items-center gap-2 bg-body-sm">
               <input type="radio" value="team" {...register('visibility')} />
               Team — visible to everyone with access
             </label>

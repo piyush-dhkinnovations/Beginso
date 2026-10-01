@@ -24,18 +24,18 @@ export interface SharedFormCardProps {
 export function SharedFormCard({ item }: SharedFormCardProps) {
   return (
     <Link href={`/forms/${item.id}/responses`} className="block h-full no-underline">
-      <Card className="flex flex-col justify-between gap-3 h-full transition-shadow hover:shadow-md border border-[var(--border-default)] hover:border-[var(--border-strong)]">
+      <Card className="flex flex-col justify-between gap-3 h-full transition-shadow hover:shadow-(--shadow-md) border border-(--border-default) hover:border-(--border-strong)">
         <div className="flex flex-col gap-2">
           <Tag>SHARED FORM</Tag>
-          <h3 className="text-body font-semibold text-[var(--text-primary)] truncate">{item.title}</h3>
-          <p className="text-caption text-[var(--text-muted)]">
+          <h3 className="bg-body font-semibold text-(--text-primary) truncate">{item.title}</h3>
+          <p className="bg-caption text-(--text-muted)">
             {item.workspaceName ?? 'Personal'}
             {item.sharedByName && ` · Shared by ${item.sharedByName}`}
           </p>
         </div>
-        <div className="flex items-center justify-between pt-2 border-t border-[var(--border-default)]">
+        <div className="flex items-center justify-between pt-2 border-t border-(--border-default)">
           <Badge variant="outline">{ROLE_LABELS[item.role]}</Badge>
-          <span className="text-caption text-[var(--text-muted)]">{formatRelativeTime(item.sharedAt)}</span>
+          <span className="bg-caption text-(--text-muted)">{formatRelativeTime(item.sharedAt)}</span>
         </div>
       </Card>
     </Link>

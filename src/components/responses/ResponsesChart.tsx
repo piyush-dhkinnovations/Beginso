@@ -6,7 +6,7 @@ import { BarChart3, PieChart as PieChartIcon } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { EChartContainer } from '@/components/charts/EChartContainer';
 import { getBaseChartOption, CHART_COLORS, type EChartsOption } from '@/lib/chartTheme';
 import { fetchAllResponses } from '@/lib/fetchAllResponses';
@@ -109,22 +109,22 @@ export function ResponsesChart({ scope, formId, filters, stats, statsLoading, st
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <Card>
-        <h3 className="mb-4 text-heading-2 font-bold text-text-primary">Daily submissions volume</h3>
+        <h3 className="mb-4 bg-h5 font-bold text-(--text-primary)">Daily submissions volume</h3>
         {isLoading ? (
           <Skeleton variant="block" height={CHART_HEIGHT} className="rounded-lg" />
         ) : isError ? (
           <EmptyState
             icon={<BarChart3 />}
-            heading="Unable to load volume"
-            body="Something went wrong loading submission volume."
-            action={
+            title="Unable to load volume"
+            description="Something went wrong loading submission volume."
+            actions={
               <Button variant="secondary" size="small" onClick={() => void refetch()}>
                 Try again
               </Button>
             }
           />
         ) : volume.length === 0 ? (
-          <EmptyState icon={<BarChart3 />} heading="No responses in this range" body="Try a wider date range to see submission volume." />
+          <EmptyState icon={<BarChart3 />} title="No responses in this range" description="Try a wider date range to see submission volume." />
         ) : (
           <>
             <EChartContainer option={buildVolumeOption(volume)} height={CHART_HEIGHT} ariaLabel="Daily submissions volume" />
@@ -150,22 +150,22 @@ export function ResponsesChart({ scope, formId, filters, stats, statsLoading, st
       </Card>
 
       <Card>
-        <h3 className="mb-4 text-heading-2 font-bold text-text-primary">Stage distribution</h3>
+        <h3 className="mb-4 bg-h5 font-bold text-(--text-primary)">Stage distribution</h3>
         {statsLoading ? (
           <Skeleton variant="block" height={CHART_HEIGHT} className="rounded-lg" />
         ) : statsError ? (
           <EmptyState
             icon={<PieChartIcon />}
-            heading="Unable to load stage distribution"
-            body="Something went wrong loading stage counts."
-            action={
+            title="Unable to load stage distribution"
+            description="Something went wrong loading stage counts."
+            actions={
               <Button variant="secondary" size="small" onClick={onRetryStats}>
                 Try again
               </Button>
             }
           />
         ) : total === 0 || !stats ? (
-          <EmptyState icon={<PieChartIcon />} heading="No responses yet" body="Responses will appear here once your form starts receiving submissions." />
+          <EmptyState icon={<PieChartIcon />} title="No responses yet" description="Responses will appear here once your form starts receiving submissions." />
         ) : (
           <>
             <EChartContainer option={buildStageOption(stats.byStage)} height={CHART_HEIGHT} ariaLabel="Stage distribution" />

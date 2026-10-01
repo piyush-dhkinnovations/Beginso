@@ -19,7 +19,7 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/w/acme/forms',
 }));
 
-vi.mock('@/components/common/Toast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 
@@ -177,9 +177,9 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
   });
 
   it('renders every Forms Manager tab', async () => {
-    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
+    mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
     renderPage();
-    await screen.findByText('No forms yet');
+    await screen.findByText('Form One');
 
     for (const name of ['Recent', 'Pinned', 'Draft', 'Published', 'Archived']) {
       expect(screen.getByRole('tab', { name })).toBeInTheDocument();
@@ -188,9 +188,9 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
   });
 
   it('switching to the Pinned tab shows a placeholder and fires no extra forms query', async () => {
-    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
+    mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
     renderPage();
-    await screen.findByText('No forms yet');
+    await screen.findByText('Form One');
 
     await userEvent.click(screen.getByRole('tab', { name: 'Pinned' }));
 
@@ -199,10 +199,11 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
   });
 
   it('switching to the Draft tab filters by status and resets the page', async () => {
-    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
+    mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
     renderPage();
-    await screen.findByText('No forms yet');
+    await screen.findByText('Form One');
     mockGetForms.mockClear();
+    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
 
     await userEvent.click(screen.getByRole('tab', { name: 'Draft' }));
 

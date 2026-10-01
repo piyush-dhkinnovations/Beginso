@@ -17,6 +17,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AppShell, TopBar, Skeleton } from '@/components/ui';
 import { PersonalSidebar } from '@/components/workspaces/PersonalSidebar';
 import { WorkspaceSidebar } from '@/components/workspaces/WorkspaceSidebar';
+import { FormSidebar } from '@/components/workspaces/FormSidebar';
 import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown';
 import { Wordmark } from '@/components/landing/Wordmark';
@@ -119,7 +120,7 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
           // Not built from Sidebar/groups — that component always renders each item as a real
           // <Link>, which isn't right for placeholder rows with nowhere to go yet.
           <nav className={collapsed ? 'bg-sidenav bg-sidenav-rail' : 'bg-sidenav'} aria-label="Loading navigation">
-            <div className={collapsed ? 'w-full flex justify-center mb-2 px-1' : 'w-full mb-2.5 pb-2.5 border-b border-border-default/60'}>
+            <div className={collapsed ? 'w-full flex justify-center mb-2 px-1' : 'w-full mb-2.5 pb-2.5 border-b border-(--border-default)/60'}>
               <Skeleton variant="text" width={collapsed ? 32 : '70%'} height={32} />
             </div>
             <div className="flex flex-col gap-3 px-1 pt-1">
@@ -128,6 +129,11 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
               ))}
             </div>
           </nav>
+        ) : formId ? (
+          // Reaching here with formId set means contextUnresolved already cleared — `form` has
+          // resolved and `formWorkspace` didn't match it, so this is confirmed a personal form
+          // (workspaceId: null), not still loading. Form-specific sidebar, not the global one.
+          <FormSidebar formId={formId} form={form} collapsed={collapsed} />
         ) : (
           <PersonalSidebar collapsed={collapsed} />
         )

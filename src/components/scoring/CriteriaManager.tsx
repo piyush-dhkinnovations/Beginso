@@ -8,11 +8,11 @@ import { ArrowDown, ArrowUp } from 'lucide-react';
 import { criteriaSchema, type CriteriaFormValues } from '@/lib/schemas/criteria';
 import { scoresService } from '@/services/scores';
 import { scoreKeys } from '@/lib/queryKeys';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Table, type TableColumn } from '@/components/ui/Table';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import type { ScoreCriterion } from '@/types/score';
 
 interface CriteriaManagerProps {
@@ -101,8 +101,8 @@ export function CriteriaManager({ scope, onDirtyChange }: CriteriaManagerProps) 
   if (!scope) {
     return (
       <EmptyState
-        heading="No workspace to manage scoring criteria for"
-        body="You need to be an Owner or Admin of a workspace to manage its scoring criteria."
+        title="No workspace to manage scoring criteria for"
+        description="You need to be an Owner or Admin of a workspace to manage its scoring criteria."
       />
     );
   }
@@ -110,9 +110,9 @@ export function CriteriaManager({ scope, onDirtyChange }: CriteriaManagerProps) 
   if (isError) {
     return (
       <EmptyState
-        heading="Unable to load scoring criteria"
-        body="The scoring criteria could not be loaded."
-        action={<Button onClick={() => void refetch()}>Try again</Button>}
+        title="Unable to load scoring criteria"
+        description="The scoring criteria could not be loaded."
+        actions={<Button onClick={() => void refetch()}>Try again</Button>}
       />
     );
   }
@@ -160,8 +160,8 @@ export function CriteriaManager({ scope, onDirtyChange }: CriteriaManagerProps) 
           />
         ) : (
           <span className="flex items-center gap-2">
-            <span className="text-body-sm text-(--text-primary)">{criterion.label || 'Unnamed criterion'}</span>
-            {criterion.isDefault && <span className="text-caption text-(--text-muted)">Default</span>}
+            <span className="bg-body-sm text-(--text-primary)">{criterion.label || 'Unnamed criterion'}</span>
+            {criterion.isDefault && <span className="bg-caption text-(--text-muted)">Default</span>}
           </span>
         ),
     },
@@ -207,7 +207,7 @@ export function CriteriaManager({ scope, onDirtyChange }: CriteriaManagerProps) 
         rows={orderedCriteria}
         rowKey={(criterion) => criterion.id}
         isLoading={isLoading}
-        emptyState={<p className="py-6 text-center text-body-sm text-(--text-muted)">No criteria yet. Add one above.</p>}
+        emptyState={<p className="py-6 text-center bg-body-sm text-(--text-muted)">No criteria yet. Add one above.</p>}
       />
     </div>
   );

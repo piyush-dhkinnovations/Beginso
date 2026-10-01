@@ -5,7 +5,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { ToastProvider } from '@/components/common/Toast';
+import { ToastProvider } from '@/components/ui/Toast';
 import { UiGalleryContent } from '@/components/dev/UiGalleryContent';
 
 describe('UiGalleryContent', () => {

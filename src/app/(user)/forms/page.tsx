@@ -9,7 +9,7 @@ import { formsService } from '@/services/forms';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
 import { canDeleteForm } from '@/lib/roles';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/hooks/useAuth';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
@@ -19,7 +19,7 @@ import { Table, type TableColumn } from '@/components/ui/Table';
 import { Avatar } from '@/components/ui/Avatar';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { BulkActionBar } from '@/components/forms/BulkActionBar';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { CreateFormModal } from '@/components/form-builder/CreateFormModal';
 import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
 import { MoveFormModal } from '@/components/workspaces/MoveFormModal';
@@ -172,6 +172,11 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
 
   const totalPages = Math.max(1, Math.ceil((data?.total ?? 0) / FORMS_PAGE_LIMIT));
 
+  // First run: nothing exists yet and nothing is filtered. Tabs, search, the status filter and the
+  // table header would all be controls over zero rows, so only the empty state is shown.
+  const isFirstRun =
+    activeTab === 'recent' && status === 'all' && !search && !error && !isLoading && !!data && data.forms.length === 0;
+
   const duplicateMutation = useMutation({
     mutationFn: (id: string) => formsService.duplicateForm(id),
     onMutate: (id) => setDuplicatingId(id),
@@ -227,7 +232,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
     // content) until something is selected — double-clicking a row is what first reveals it.
     ...(canDelete ? [{
       key: 'select',
-      className: selectedIds.size > 0 ? undefined : 'w-0 !p-0 overflow-hidden',
+      className: selectedIds.size > 0 ? undefined : 'undefined !p-0 overflow-hidden',
       header: selectedIds.size > 0 ? (
         <Checkbox
           id="forms-select-all"
@@ -400,13 +405,28 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
         }
       />
 
+      {isFirstRun ? (
+        <EmptyState
+          illustration="empty-forms"
+          icon={<FileText />}
+          title="No forms yet"
+          description="Create your first form to get started collecting responses."
+          actions={
+            <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+              <Plus size={16} className="mr-2" />
+              Create Form
+            </Button>
+          }
+        />
+      ) : (
+        <>
       <FormsManagerTabs activeTab={activeTab} onChange={handleTabChange} />
 
       {activeTab === 'pinned' || activeTab === 'archived' ? (
         <EmptyState
           icon={activeTab === 'pinned' ? <PinOff /> : <Archive />}
-          heading="Coming soon"
-          body={
+          title="Coming soon"
+          description={
             activeTab === 'pinned'
               ? 'Pinning forms is not available yet.'
               : 'Archived forms will show up here once archiving ships.'
@@ -467,11 +487,11 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
               isLoading={isLoading}
               onRowDoubleClick={canDelete ? (form) => setSelectedIds((prev) => new Set(prev).add(form._id)) : undefined}
               emptyState={
-                <EmptyState
+                <EmptyState illustration={search || status !== 'all' ? 'no-results' : 'empty-forms'}
                   icon={<FileText />}
-                  heading={search || status !== 'all' ? 'No matching forms' : 'No forms yet'}
-                  body={search || status !== 'all' ? 'Try changing your search or status filter.' : 'Create your first form to get started collecting responses.'}
-                  action={
+                  title={search || status !== 'all' ? 'No matching forms' : 'No forms yet'}
+                  description={search || status !== 'all' ? 'Try changing your search or status filter.' : 'Create your first form to get started collecting responses.'}
+                  actions={
                     <Button variant="primary" onClick={() => setIsModalOpen(true)}>
                       <Plus size={16} className="mr-2" />
                       Create Form
@@ -500,6 +520,8 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
               }}
             />
           )}
+        </>
+      )}
         </>
       )}
 

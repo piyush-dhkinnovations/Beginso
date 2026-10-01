@@ -23,7 +23,7 @@ export function BulkActionBar({ count, isDeleting, onDeleteSelected }: BulkActio
       style={{ backgroundColor: 'var(--accent-soft)', border: '1px solid var(--border-focus)' }}
       role="status"
     >
-      <span className="text-body-sm font-medium" style={{ color: 'var(--accent-soft-text)' }}>
+      <span className="bg-body-sm font-medium" style={{ color: 'var(--accent-soft-text)' }}>
         {count} selected
       </span>
       <div className="ml-auto">

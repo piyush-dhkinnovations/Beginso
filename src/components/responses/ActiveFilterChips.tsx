@@ -42,7 +42,7 @@ export function ActiveFilterChips({ filters, stages, onRemove, onClearAll }: Act
           {chip.label}
         </Tag>
       ))}
-      <button type="button" onClick={onClearAll} className="min-h-11 px-2 text-body-sm font-medium text-brand-600 hover:underline">
+      <button type="button" onClick={onClearAll} className="min-h-11 px-2 bg-body-sm font-medium text-(--text-link) hover:underline">
         Clear all
       </button>
     </div>

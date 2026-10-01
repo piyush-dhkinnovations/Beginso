@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { ResponseSignals } from './ResponseSignals';
 import { fetchAllResponses } from '@/lib/fetchAllResponses';
 import { monthFetchRange, monthGridKeys, localDateKey } from '@/lib/calendarDates';
@@ -43,7 +43,7 @@ export function CalendarItemRow({ response, onSelect }: { response: IResponse; o
       className="flex flex-col gap-1 rounded-lg border border-(--border-default) p-2 text-left"
       onClick={() => onSelect(response._id)}
     >
-      <span className="text-body-sm font-medium text-text-primary">{name}</span>
+      <span className="bg-body-sm font-medium text-(--text-primary)">{name}</span>
       <ResponseSignals response={response} density="compact" />
     </button>
   );
@@ -113,7 +113,7 @@ export function ResponsesCalendar({ scope, formId, filters, timezone, onViewResp
 
   const header = (
     <div className="flex items-center justify-between">
-      <h3 className="text-heading-2 font-bold text-text-primary">{monthLabel}</h3>
+      <h3 className="bg-h5 font-bold text-(--text-primary)">{monthLabel}</h3>
       <div className="flex items-center gap-1">
         <Button variant="ghost" size="small" aria-label="Previous month" onClick={() => goToMonth(-1)}>
           <ChevronLeft size={16} />
@@ -144,9 +144,9 @@ export function ResponsesCalendar({ scope, formId, filters, timezone, onViewResp
         {header}
         <EmptyState
           icon={<CalendarDays />}
-          heading="Unable to load the calendar"
-          body="Something went wrong while loading responses for this month."
-          action={
+          title="Unable to load the calendar"
+          description="Something went wrong while loading responses for this month."
+          actions={
             <Button variant="secondary" onClick={() => void refetch()}>
               Try again
             </Button>
@@ -161,17 +161,17 @@ export function ResponsesCalendar({ scope, formId, filters, timezone, onViewResp
       {header}
 
       {daysWithItems.length === 0 ? (
-        <EmptyState
+        <EmptyState illustration="calendar"
           icon={<CalendarDays />}
-          heading="No responses this month"
-          body="Nothing was submitted in this month for the current filters."
+          title="No responses this month"
+          description="Nothing was submitted in this month for the current filters."
         />
       ) : (
         <>
           {/* Desktop/tablet month grid (design.md §16) */}
           <div className="hidden md:grid grid-cols-7 gap-1" role="grid" aria-label={`${monthLabel} calendar`}>
             {WEEKDAY_LABELS.map((label) => (
-              <div key={label} role="columnheader" className="py-1 text-center text-caption text-text-muted">
+              <div key={label} role="columnheader" className="py-1 text-center bg-caption text-(--text-muted)">
                 {label}
               </div>
             ))}
@@ -201,14 +201,14 @@ export function ResponsesCalendar({ scope, formId, filters, timezone, onViewResp
                   }}
                   onClick={() => openDay(key, items)}
                 >
-                  <span className="text-caption text-text-muted">{dayNum}</span>
+                  <span className="bg-caption text-(--text-muted)">{dayNum}</span>
                   {items.slice(0, MAX_VISIBLE_PER_DAY).map((r) => (
-                    <span key={r._id} className="w-full truncate text-caption text-text-primary">
+                    <span key={r._id} className="w-full truncate bg-caption text-(--text-primary)">
                       {detectRespondentIdentity(r.answers).label ?? detectRespondentIdentity(r.answers).email ?? 'Response'}
                     </span>
                   ))}
                   {items.length > MAX_VISIBLE_PER_DAY && (
-                    <span className="text-caption text-brand-600">+{items.length - MAX_VISIBLE_PER_DAY}</span>
+                    <span className="bg-caption text-(--text-link)">+{items.length - MAX_VISIBLE_PER_DAY}</span>
                   )}
                 </button>
               );
@@ -219,7 +219,7 @@ export function ResponsesCalendar({ scope, formId, filters, timezone, onViewResp
           <ul className="flex md:hidden flex-col gap-2" aria-label={`${monthLabel} agenda`}>
             {daysWithItems.map((key) => (
               <li key={key} className="rounded-lg border border-(--border-default) p-2">
-                <p className="mb-1 text-body-sm font-medium text-text-primary">{key}</p>
+                <p className="mb-1 bg-body-sm font-medium text-(--text-primary)">{key}</p>
                 <div className="flex flex-col gap-2">
                   {(byDay.get(key) ?? []).map((r) => (
                     <CalendarItemRow key={r._id} response={r} onSelect={onViewResponse} />

@@ -52,7 +52,7 @@ export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onV
     <div className="board-column flex w-72 shrink-0 snap-start flex-col gap-2" role="listitem" aria-label={`${stage.name} column`}>
       <div className="flex items-center justify-between gap-2 px-1">
         <StageBadge stage={stage} />
-        <span className="text-caption text-text-muted" aria-label={`${total} response${total === 1 ? '' : 's'}`}>
+        <span className="bg-caption text-(--text-muted)" aria-label={`${total} response${total === 1 ? '' : 's'}`}>
           {total}
         </span>
       </div>
@@ -65,8 +65,8 @@ export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onV
 
         {isError && (
           <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-(--border-default) p-3 text-center">
-            <AlertCircle size={16} className="text-text-muted" aria-hidden="true" />
-            <p className="text-body-sm text-text-muted">Couldn&apos;t load this column.</p>
+            <AlertCircle size={16} className="text-(--text-muted)" aria-hidden="true" />
+            <p className="bg-body-sm text-(--text-muted)">Couldn&apos;t load this column.</p>
             <Button variant="secondary" size="small" onClick={() => void refetch()}>
               Retry
             </Button>
@@ -74,7 +74,7 @@ export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onV
         )}
 
         {!isLoading && !isError && responses.length === 0 && (
-          <p className="px-1 py-4 text-center text-body-sm text-text-muted">No responses in {stage.name}</p>
+          <p className="px-1 py-4 text-center bg-body-sm text-(--text-muted)">No responses in {stage.name}</p>
         )}
 
         {responses.map((r) => (

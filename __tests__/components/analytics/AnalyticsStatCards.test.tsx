@@ -25,11 +25,11 @@ describe('AnalyticsStatCards', () => {
     expect(screen.getByText('42')).toBeInTheDocument();
   });
 
-  it('renders a zero value in muted text-text-muted (theme-aware, unlike the old static text-neutral-400)', () => {
+  it('renders a zero value in muted text-(--text-muted) (theme-aware)', () => {
     const overview = mockAnalyticsOverview({ totalResponses: 0, categoryCounts: { new: 0, in_progress: 0, completed: 0 } });
     render(<AnalyticsStatCards overview={overview} isLoading={false} />);
 
-    screen.getAllByText('0').forEach((el) => expect(el).toHaveClass('text-text-muted'));
+    screen.getAllByText('0').forEach((el) => expect(el).toHaveClass('text-(--text-muted)'));
   });
 
   it('shows a pulsing skeleton per card while loading', () => {

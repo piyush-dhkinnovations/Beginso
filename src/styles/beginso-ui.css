@@ -365,21 +365,40 @@
 [data-theme="dark"] ::selection { background-color: #2F3D5E; color: var(--neutral-0); }
 
 /* ==========================================================================
-   2. BASE — deferred, Sprint 7 (Beginso/.kiro/specs/sprint-7-foundation)
+   2. BASE
 
-   This section's rules apply to bare global elements (body, a, headings,
-   ::selection, focus-visible) rather than a `.bg-*` class, so importing them
-   now would restyle every still-unmigrated V1 screen app-wide — a visual
-   regression the sprint's own acceptance criteria (requirements.md 1.1)
-   forbid. Every other section below is scoped to `.bg-*` classes that only
-   `components/ui/` primitives apply, so it carries zero V1 collision risk
-   and is imported as-is.
-
-   Re-enable this section wholesale (restore it verbatim from the design
-   system source at `Beginso-Report/Beginso-Design-System/Beginso V2/
-   beginso-ui.css`) in the Week 8 migration sweep (SPRINT-PLAN.md §3.1),
-   once no V1 screen still depends on the old base styling.
+   Restored in the V2 migration sweep. Deliberately a subset of the design system's
+   own BASE: the global `a { color; :hover underline }` rule is left out, since the
+   app's links are styled per component and a blanket underline-on-hover would
+   regress every nav/breadcrumb link. Box-sizing, margin and svg resets are already
+   covered by Tailwind's Preflight.
    ========================================================================== */
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font: var(--text-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* One focus treatment for the entire library. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+::selection { background-color: var(--accent-soft-hover); color: var(--text-primary); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 /* ==========================================================================
    3. TYPOGRAPHY
@@ -1358,6 +1377,12 @@
   margin-bottom: var(--space-1);
 }
 .bg-empty-art .bg-icon { width: 24px; height: 24px; }
+/* unDraw spot illustration (components/illustrations). Fixed height keeps every state the same
+   visual weight; width follows the artwork's aspect ratio. */
+.bg-illustration { display: inline-flex; justify-content: center; height: 160px; max-width: 100%; margin-bottom: var(--space-2); }
+.bg-illustration svg { height: 100%; width: auto; max-width: 100%; }
+.bg-illustration-sm { height: 112px; }
+@media (max-width: 639px) { .bg-illustration { height: 128px; } .bg-illustration-sm { height: 96px; } }
 .bg-empty h3 { font: 600 17px/24px var(--bg-font-sans); }
 .bg-empty p { font: var(--text-body-sm); color: var(--text-muted); max-width: 42ch; }
 .bg-empty-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; justify-content: center; margin-top: var(--space-2); }

@@ -33,9 +33,9 @@ export function RespondentCell({ response }: { response: IResponse }) {
       <Avatar size="sm" name={name} alt="" />
       <div className="flex min-w-0 flex-col">
         <span className="flex items-center gap-1.5">
-          <span className="truncate font-medium text-text-primary">{name}</span>
+          <span className="truncate font-medium text-(--text-primary)">{name}</span>
           {hasMeta && (
-            <span className="flex shrink-0 items-center gap-1.5 text-caption text-text-muted">
+            <span className="flex shrink-0 items-center gap-1.5 bg-caption text-(--text-muted)">
               {noteCount > 0 && (
                 <span className="inline-flex items-center gap-1" aria-label={`${noteCount} note${noteCount === 1 ? '' : 's'}`}>
                   <MessageSquare size={14} aria-hidden="true" />
@@ -51,7 +51,7 @@ export function RespondentCell({ response }: { response: IResponse }) {
             </span>
           )}
         </span>
-        {secondLine && <span className="truncate text-caption text-text-muted">{secondLine}</span>}
+        {secondLine && <span className="truncate bg-caption text-(--text-muted)">{secondLine}</span>}
       </div>
     </div>
   );
@@ -60,7 +60,7 @@ export function RespondentCell({ response }: { response: IResponse }) {
 const MAX_VISIBLE_TAGS = 2;
 
 export function TagsCell({ tags }: { tags: ResponseTag[] | undefined }) {
-  if (!tags || tags.length === 0) return <span className="text-text-muted">—</span>;
+  if (!tags || tags.length === 0) return <span className="text-(--text-muted)">—</span>;
   const visible = tags.slice(0, MAX_VISIBLE_TAGS);
   const overflow = tags.slice(MAX_VISIBLE_TAGS);
   return (
@@ -77,19 +77,19 @@ export function TagsCell({ tags }: { tags: ResponseTag[] | undefined }) {
 
 export function AssigneeCell({ response }: { response: IResponse }) {
   if (!response.assignee) {
-    return <span aria-label="Unassigned" className="text-text-muted">—</span>;
+    return <span aria-label="Unassigned" className="text-(--text-muted)">—</span>;
   }
   return (
     <div className="flex items-center gap-1.5">
       <Avatar size="xs" name={response.assignee.name} src={response.assignee.avatarUrl ?? undefined} alt="" />
-      <span className="truncate text-body-sm text-text-secondary">
+      <span className="truncate bg-body-sm text-(--text-secondary)">
         {response.assignee.name}
-        {response.assignee.removed && <span className="text-text-muted"> · no longer has access</span>}
+        {response.assignee.removed && <span className="text-(--text-muted)"> · no longer has access</span>}
       </span>
     </div>
   );
 }
 
 export function SubmittedCell({ response }: { response: IResponse }) {
-  return <span className="whitespace-nowrap text-body-sm text-text-secondary">{formatResponseDate(response.submittedAt)}</span>;
+  return <span className="whitespace-nowrap bg-body-sm text-(--text-secondary)">{formatResponseDate(response.submittedAt)}</span>;
 }

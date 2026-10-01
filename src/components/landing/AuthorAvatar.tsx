@@ -6,7 +6,7 @@ export function AuthorAvatar({ name, size = 24 }: { name: string; size?: number 
   if (name === "Beginso Team") {
     return (
       <span
-        className="inline-flex items-center justify-center rounded-full bg-[var(--accent-soft)] shrink-0"
+        className="inline-flex items-center justify-center rounded-full bg-(--accent-soft) shrink-0"
         style={{ height: size + 8, width: size + 8 }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}

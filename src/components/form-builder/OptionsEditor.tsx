@@ -57,7 +57,7 @@ function OptionRow({
         type="button"
         {...listeners}
         {...attributes}
-        className="text-neutral-400 hover:text-neutral-600 cursor-grab active:cursor-grabbing shrink-0 min-w-11 min-h-11 flex items-center justify-center"
+        className="text-(--text-disabled) hover:text-(--text-secondary) cursor-grab active:cursor-grabbing shrink-0 min-w-11 min-h-11 flex items-center justify-center"
         aria-label="Reorder option"
       >
         <GripVertical size={14} />
@@ -73,13 +73,13 @@ function OptionRow({
             (e.target as HTMLInputElement).blur();
           }
         }}
-        className="flex-1 min-w-0 rounded-md border-2 border-neutral-200 px-2.5 min-h-11 text-[13px] bg-white outline-none focus:border-neutral-500"
+        className="flex-1 min-w-0 rounded-md border-2 border-(--border-default) px-2.5 min-h-11 bg-body-sm bg-(--surface-card) outline-none focus:border-(--border-strong)"
       />
       <button
         type="button"
         onClick={onDelete}
         disabled={disabled}
-        className="text-neutral-400 hover:text-rose-600 disabled:opacity-30 disabled:pointer-events-none shrink-0 min-w-11 min-h-11 flex items-center justify-center"
+        className="text-(--text-disabled) hover:text-(--error-text) disabled:opacity-30 disabled:pointer-events-none shrink-0 min-w-11 min-h-11 flex items-center justify-center"
         aria-label="Delete option"
       >
         <X size={14} />
@@ -174,7 +174,7 @@ export function OptionsEditor({ fieldId, options, onUpdate }: OptionsEditorProps
       <button
         type="button"
         onClick={handleAdd}
-        className="flex min-h-11 items-center gap-1.5 self-start px-2 text-body-sm font-medium text-brand-700 hover:text-brand-900"
+        className="flex min-h-11 items-center gap-1.5 self-start px-2 bg-body-sm font-medium text-(--accent-soft-text) hover:text-(--accent-soft-text)"
       >
         <Plus size={14} />
         Add option

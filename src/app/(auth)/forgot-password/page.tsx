@@ -1,5 +1,6 @@
 'use client';
 
+import { StateArt } from '@/components/illustrations/Illustration';
 import { FormEvent, useState } from 'react';
 import Link from 'next/link';
 import { Mail } from 'lucide-react';
@@ -31,14 +32,22 @@ export default function ForgotPasswordPage() {
     }
   };
 
+  const mailIcon = (
+    <div className="w-12 h-12 rounded-full bg-(--accent-soft) flex items-center justify-center text-(--text-link)">
+      <Mail aria-hidden="true" size={22} />
+    </div>
+  );
+
   return (
     <AuthCard className="w-full p-8 flex flex-col items-center text-center gap-6">
-      <div className="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
-        <Mail aria-hidden="true" size={22} />
-      </div>
+      {sent ? (
+        <StateArt name="email-sent" size="sm" fallback={mailIcon} />
+      ) : (
+        mailIcon
+      )}
       <div className="space-y-2">
-        <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Reset your password</h1>
-        <p className="text-body text-[var(--text-muted)]">
+        <h1 className="bg-h5 font-bold text-(--text-primary)">Reset your password</h1>
+        <p className="bg-body text-(--text-muted)">
           {sent
             ? 'If an account exists for that email, a password-reset link is on its way.'
             : 'Enter your email and we will send you a secure password-reset link.'}
@@ -58,7 +67,7 @@ export default function ForgotPasswordPage() {
             required
             disabled={isSubmitting}
           />
-          {error && <p role="alert" className="text-body-sm font-semibold text-error">{error}</p>}
+          {error && <p role="alert" className="bg-body-sm font-semibold text-(--error-text)">{error}</p>}
           <Button type="submit" className="w-full" isLoading={isSubmitting} disabled={isSubmitting}>
             Send reset link
           </Button>
@@ -71,7 +80,7 @@ export default function ForgotPasswordPage() {
         </Button>
       )}
 
-      <Link href="/login" className="inline-flex min-h-11 items-start text-sm font-semibold text-brand-700 hover:text-brand-900">
+      <Link href="/login" className="inline-flex min-h-11 items-start bg-body-sm font-semibold text-(--accent-soft-text) hover:text-(--accent-soft-text)">
         Back to login
       </Link>
     </AuthCard>

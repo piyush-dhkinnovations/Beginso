@@ -17,7 +17,7 @@ import { formAccessService } from '@/services/formAccess';
 import { formAccessKeys } from '@/lib/queryKeys';
 import { formAccessSchema, type FormAccessValues } from '@/lib/schemas/formAccessSchema';
 import { ROLE_LABELS } from '@/lib/roles';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import type { FormAccessGrant } from '@/types/team';
 
 export interface FormAccessPanelProps {
@@ -90,7 +90,7 @@ export function FormAccessPanel({ formId, formTitle, isOpen, onClose }: FormAcce
   });
 
   const columns: TableColumn<FormAccessGrant>[] = [
-    { key: 'email', header: 'Email', render: (g) => <span className="text-body-sm font-medium">{g.email}</span> },
+    { key: 'email', header: 'Email', render: (g) => <span className="bg-body-sm font-medium">{g.email}</span> },
     { key: 'role', header: 'Role', render: (g) => <Badge variant="outline">{ROLE_LABELS[g.role]}</Badge> },
     {
       key: 'revoke',

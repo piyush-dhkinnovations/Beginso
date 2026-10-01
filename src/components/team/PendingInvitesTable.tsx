@@ -23,12 +23,12 @@ export function PendingInvitesTable({ invitations, canManage, isLoading, onResen
   const [pendingRevoke, setPendingRevoke] = useState<PendingInvitation | null>(null);
 
   const columns: TableColumn<PendingInvitation>[] = [
-    { key: 'email', header: 'Email', render: (i) => <span className="text-body-sm font-medium">{i.email}</span> },
+    { key: 'email', header: 'Email', render: (i) => <span className="bg-body-sm font-medium">{i.email}</span> },
     { key: 'role', header: 'Role', render: (i) => <Badge variant="outline">{ROLE_LABELS[i.role]}</Badge> },
     {
       key: 'createdAt',
       header: 'Sent',
-      render: (i) => <span className="text-body-sm text-text-muted">{new Date(i.createdAt).toLocaleDateString()}</span>,
+      render: (i) => <span className="bg-body-sm text-(--text-muted)">{new Date(i.createdAt).toLocaleDateString()}</span>,
     },
     {
       key: 'actions',
@@ -42,7 +42,7 @@ export function PendingInvitesTable({ invitations, canManage, isLoading, onResen
               type="button"
               aria-label={`Resend invite to ${i.email}`}
               onClick={() => onResend(i)}
-              className="text-body-sm font-medium text-brand-700 hover:underline"
+              className="bg-body-sm font-medium text-(--accent-soft-text) hover:underline"
             >
               Resend
             </button>
@@ -50,7 +50,7 @@ export function PendingInvitesTable({ invitations, canManage, isLoading, onResen
               type="button"
               aria-label={`Revoke invite to ${i.email}`}
               onClick={() => setPendingRevoke(i)}
-              className="text-body-sm font-medium text-rose-600 hover:underline"
+              className="bg-body-sm font-medium text-(--error-text) hover:underline"
             >
               Revoke
             </button>
@@ -74,7 +74,7 @@ export function PendingInvitesTable({ invitations, canManage, isLoading, onResen
         title="Revoke invitation?"
         description={pendingRevoke ? `The invite sent to ${pendingRevoke.email} will no longer be usable.` : undefined}
       >
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-[var(--border-default)]">
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-(--border-default)">
           <Button type="button" variant="secondary" onClick={() => setPendingRevoke(null)}>
             Cancel
           </Button>

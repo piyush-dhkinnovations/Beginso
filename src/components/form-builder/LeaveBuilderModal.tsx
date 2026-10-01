@@ -25,7 +25,7 @@ export function LeaveBuilderModal({
       title="You have unsaved changes"
       description="If you leave now, your recent changes will be lost."
     >
-      <div className="flex flex-col gap-3 pt-4 border-t border-neutral-100">
+      <div className="flex flex-col gap-3 pt-4 border-t border-(--border-subtle)">
         <Button type="button" onClick={onSaveAndLeave} isLoading={isSaving}>
           Save and leave
         </Button>
@@ -41,7 +41,7 @@ export function LeaveBuilderModal({
           type="button"
           onClick={onStay}
           disabled={isSaving}
-          className="min-h-11 text-body-sm text-neutral-500 hover:text-neutral-700 underline underline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed py-1"
+          className="min-h-11 bg-body-sm text-(--text-muted) hover:text-(--text-secondary) underline underline-offset-2 disabled:opacity-50 disabled:cursor-not-allowed py-1"
         >
           Stay
         </button>

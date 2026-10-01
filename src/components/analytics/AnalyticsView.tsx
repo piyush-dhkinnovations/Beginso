@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, FileText, LockKeyhole } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { DateRangeFilter } from './DateRangeFilter';
 import { AnalyticsStatCards } from './AnalyticsStatCards';
@@ -107,22 +107,28 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
     ? computeChangePercent(workspaceTotalResponses, previousWorkspaceTotalResponses)
     : null;
 
+  // First run: nothing to analyse yet (no forms, or the form has no responses at all) across all
+  // time. The summary cards, date filter and charts would all show zeros, so only an empty state is shown.
+  const isFirstRun = formId
+    ? !!overviewQuery.data && overviewQuery.data.totalResponses === 0 && isAllTime
+    : !!formsSummaryQuery.data && currentForms.length === 0 && isAllTime;
+
   if (isFormError && formId) {
     const statusCode = isAxiosError(formError) ? formError.response?.status : undefined;
     const isAccessDenied = statusCode === 403;
     const isNotFound = statusCode === 404;
     return (
-      <EmptyState
+      <EmptyState illustration={isAccessDenied ? 'no-access' : isNotFound ? 'not-found' : 'error'}
         icon={isAccessDenied ? <LockKeyhole /> : isNotFound ? <FileText /> : <AlertCircle />}
-        heading={isAccessDenied ? 'Access denied' : isNotFound ? 'Form not found' : 'Unable to load form'}
-        body={
+        title={isAccessDenied ? 'Access denied' : isNotFound ? 'Form not found' : 'Unable to load form'}
+        description={
           isAccessDenied
             ? "You don't have permission to view this form's analytics."
             : isNotFound
               ? "This form doesn't exist or may have been deleted."
               : 'Something went wrong while loading this form.'
         }
-        action={
+        actions={
           isAccessDenied || isNotFound ? (
             <Button onClick={() => router.push('/forms')}>Go to Forms</Button>
           ) : (
@@ -140,6 +146,26 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
         description={formId ? `Analytics · ${form?.title ?? ''}` : 'See how every form in your workspace is performing.'}
       />
 
+      {isFirstRun ? (
+        <EmptyState
+          illustration="empty-reports"
+          icon={<FileText />}
+          title={formId ? 'No responses yet' : 'No forms yet'}
+          description={
+            formId
+              ? 'Responses will appear here once your form starts receiving submissions.'
+              : 'Create a form to start seeing its analytics here.'
+          }
+          actions={
+            formId ? undefined : (
+              <Button variant="primary" onClick={() => router.push('/forms')}>
+                Go to Forms
+              </Button>
+            )
+          }
+        />
+      ) : (
+        <>
       {!formId && (
         <WorkspaceSummaryCards
           totalResponses={workspaceTotalResponses}
@@ -197,6 +223,8 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
           page={page}
           onPageChange={goToPage}
         />
+      )}
+        </>
       )}
     </div>
   );

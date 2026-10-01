@@ -90,10 +90,10 @@ export function DateRangeFilter({ value, onChange }: DateRangeFilterProps) {
             aria-pressed={preset === p.value}
             onClick={() => selectPreset(p.value)}
             className={cn(
-              'px-3 min-h-11 rounded-full text-xs font-semibold whitespace-nowrap transition-colors',
+              'px-3 min-h-11 rounded-full bg-caption font-semibold whitespace-nowrap transition-colors',
               preset === p.value
-                ? 'bg-brand-700 text-white'
-                : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+                ? 'bg-(--action-primary-hover) text-(--text-on-brand)'
+                : 'bg-(--surface-card) border border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)'
             )}
           >
             {p.label}
@@ -107,17 +107,17 @@ export function DateRangeFilter({ value, onChange }: DateRangeFilterProps) {
           aria-label="Custom range start date"
           value={from ? from.slice(0, 10) : ''}
           onChange={(e) => handleFromInputChange(e.target.value)}
-          className="h-[38px] min-h-11 rounded-md px-3 text-[13px] bg-white border-2 border-neutral-200 focus:border-neutral-500 outline-none transition-colors"
+          className="h-9.5 min-h-11 rounded-md px-3 bg-body-sm bg-(--surface-card) border-2 border-(--border-default) focus:border-(--border-strong) outline-none transition-colors"
         />
-        <span className="text-body-sm text-neutral-400">to</span>
+        <span className="bg-body-sm text-(--text-disabled)">to</span>
         <input
           type="date"
           aria-label="Custom range end date"
           value={to ? to.slice(0, 10) : ''}
           onChange={(e) => handleToInputChange(e.target.value)}
-          className="h-[38px] min-h-11 rounded-md px-3 text-[13px] bg-white border-2 border-neutral-200 focus:border-neutral-500 outline-none transition-colors"
+          className="h-9.5 min-h-11 rounded-md px-3 bg-body-sm bg-(--surface-card) border-2 border-(--border-default) focus:border-(--border-strong) outline-none transition-colors"
         />
-        {preset === 'custom' && <span className="text-caption font-semibold text-brand-700">Custom</span>}
+        {preset === 'custom' && <span className="bg-caption font-semibold text-(--accent-soft-text)">Custom</span>}
       </div>
     </div>
   );

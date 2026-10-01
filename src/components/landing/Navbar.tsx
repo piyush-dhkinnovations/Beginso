@@ -52,7 +52,7 @@ export default function Navbar() {
           "fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-[1100px]",
           "rounded-full transition-all duration-[250ms]",
           isScrolled
-            ? "bg-[var(--surface-card)]/90 backdrop-blur-md border border-[var(--border-default)] shadow-[var(--shadow-sm)]"
+            ? "bg-(--surface-card)/90 backdrop-blur-md border border-(--border-default) shadow-(--shadow-sm)"
             : "bg-transparent border border-transparent"
         )}
       >
@@ -66,7 +66,7 @@ export default function Navbar() {
               <a
                 key={link.name}
                 href={link.href}
-                className="bg-body-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium"
+                className="bg-body-sm text-(--text-secondary) hover:text-(--text-primary) transition-colors font-medium"
               >
                 {link.name}
               </a>
@@ -82,7 +82,7 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="bg-body-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors font-medium"
+                  className="bg-body-sm text-(--text-secondary) hover:text-(--text-primary) transition-colors font-medium"
                 >
                   Log in
                 </Link>
@@ -95,7 +95,7 @@ export default function Navbar() {
 
           <div className="md:hidden flex items-center">
             <button
-              className="hamburger-btn min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-full text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)] focus:outline-none"
+              className="hamburger-btn min-h-11 min-w-11 inline-flex items-center justify-center rounded-full text-(--text-secondary) hover:text-(--text-primary) hover:bg-(--surface-hover) focus:outline-none"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-expanded={isMobileMenuOpen}
               aria-label={isMobileMenuOpen ? "Close main menu" : "Open main menu"}
@@ -110,21 +110,21 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div
           id="mobile-menu"
-          className="mobile-menu-container md:hidden fixed inset-0 z-40 bg-[var(--surface-card)] pt-24 px-6"
+          className="mobile-menu-container md:hidden fixed inset-0 z-40 bg-(--surface-card) pt-24 px-6"
         >
           <nav className="flex flex-col gap-1">
             {NAV_LINKS.map((link) => (
               <a
                 key={link.name}
                 href={link.href}
-                className="min-h-[44px] flex items-center bg-body text-[var(--text-primary)] font-medium"
+                className="min-h-11 flex items-center bg-body text-(--text-primary) font-medium"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {link.name}
               </a>
             ))}
           </nav>
-          <div className="mt-6 border-t border-[var(--border-default)] pt-6">
+          <div className="mt-6 border-t border-(--border-default) pt-6">
             {isAuthenticated ? (
               <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
                 <Button variant="primary" className="w-full justify-center">

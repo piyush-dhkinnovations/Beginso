@@ -18,7 +18,7 @@ import type { ResponseDetail } from '@/types/response';
 import type { StageRef } from '@/types/stage';
 
 const mockToast = vi.fn();
-vi.mock('@/components/common/Toast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 

@@ -36,13 +36,16 @@ describe('WorkspaceSummaryCards', () => {
     expect(container.querySelectorAll('.animate-pulse')).toHaveLength(4);
   });
 
-  it('renders a zero total and a null change ("—") in muted text-neutral-400', () => {
+  // Bug fix: the component already uses the real design-system token (`text-(--text-disabled)`,
+  // part of this sprint's colour-token cleanup) for a zero/null muted value — this assertion
+  // still looked for the old raw Tailwind class `text-neutral-400`, which no longer exists here.
+  it('renders a zero total and a null change ("—") in muted text-(--text-disabled)', () => {
     render(
       <WorkspaceSummaryCards totalResponses={0} activeForms={0} averageResponsesPerForm={0} changePercent={null} isLoading={false} />
     );
 
-    expect(screen.getAllByText('0').every((el) => el.className.includes('text-neutral-400'))).toBe(true);
+    expect(screen.getAllByText('0').every((el) => el.className.includes('text-(--text-disabled)'))).toBe(true);
     const dash = screen.getByText('—');
-    expect(dash.className).toContain('text-neutral-400');
+    expect(dash.className).toContain('text-(--text-disabled)');
   });
 });

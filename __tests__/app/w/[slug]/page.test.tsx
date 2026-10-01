@@ -30,7 +30,7 @@ vi.mock('@/services/formAccess', () => ({
   },
 }));
 
-vi.mock('@/components/common/Toast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 

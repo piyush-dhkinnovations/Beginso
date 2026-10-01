@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/ui';
 export default function NotFound() {
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
-      <EmptyState
+      <EmptyState illustration="not-found"
         icon={<Compass className="bg-icon" aria-hidden="true" />}
         title="Page not found"
         description="The page you're looking for doesn't exist or may have moved."

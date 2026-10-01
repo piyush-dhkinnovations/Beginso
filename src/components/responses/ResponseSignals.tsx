@@ -54,7 +54,7 @@ export function ResponseSignals({ response, density, className }: ResponseSignal
       <span className="inline-flex items-center gap-1 shrink-0">
         <span
           aria-hidden="true"
-          className={bx('h-2 w-2 rounded-full', unread ? 'bg-brand-600' : 'bg-transparent')}
+          className={bx('h-2 w-2 rounded-full', unread ? 'bg-(--action-primary)' : 'bg-transparent')}
         />
         <span className="sr-only">{unread ? 'Unread' : 'Read'}</span>
       </span>
@@ -76,14 +76,14 @@ export function ResponseSignals({ response, density, className }: ResponseSignal
           <>
             <Avatar size="xs" name={assignee.name} src={assignee.avatarUrl ?? undefined} alt="" />
             {!isCompact && (
-              <span className="response-signals-assignee-name truncate max-w-24 text-caption text-neutral-600">
+              <span className="response-signals-assignee-name truncate max-w-24 bg-caption text-(--text-secondary)">
                 {assignee.name}
-                {assignee.removed && <span className="text-neutral-400"> · no longer has access</span>}
+                {assignee.removed && <span className="text-(--text-disabled)"> · no longer has access</span>}
               </span>
             )}
           </>
         ) : (
-          <span aria-hidden="true" className="text-neutral-400">—</span>
+          <span aria-hidden="true" className="text-(--text-disabled)">—</span>
         )}
       </span>
 
@@ -104,7 +104,7 @@ export function ResponseSignals({ response, density, className }: ResponseSignal
       )}
 
       {(noteCount > 0 || attachmentCount > 0) && (
-        <span className="inline-flex items-center gap-2 shrink-0 text-caption text-neutral-500">
+        <span className="inline-flex items-center gap-2 shrink-0 bg-caption text-(--text-muted)">
           {noteCount > 0 && (
             <span className="inline-flex items-center gap-0.5" aria-label={`${noteCount} note${noteCount === 1 ? '' : 's'}`}>
               <MessageSquare size={12} aria-hidden="true" />

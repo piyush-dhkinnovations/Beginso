@@ -76,7 +76,7 @@ function EmojiPicker({
           role="option"
           aria-selected={false}
           onClick={() => onSelect(emoji)}
-          className="flex h-8 w-8 items-center justify-center rounded text-body-lg hover:bg-(--surface-hover)"
+          className="flex h-8 w-8 items-center justify-center rounded bg-body-lg hover:bg-(--surface-hover)"
         >
           {emoji}
         </button>
@@ -180,7 +180,7 @@ export function NoteComposer({
       <div
         className={cn(
           'relative flex items-center gap-1.5 rounded-2xl border bg-(--surface-card) py-2 pl-2 pr-2',
-          error ? 'border-error' : 'border-(--border-default) focus-within:border-(--border-focus)'
+          error ? 'border-(--error)' : 'border-(--border-default) focus-within:border-(--border-focus)'
         )}
       >
         <div className="relative shrink-0">
@@ -211,7 +211,7 @@ export function NoteComposer({
           value={body}
           autoFocus={autoFocus}
           rows={1}
-          className="max-h-32 flex-1 resize-none bg-transparent px-1 py-1.5 text-body-sm text-(--text-primary) outline-none placeholder:text-(--text-muted)"
+          className="max-h-32 flex-1 resize-none bg-transparent px-1 py-1.5 bg-body-sm text-(--text-primary) outline-none placeholder:text-(--text-muted)"
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !pickerOpen) {
@@ -245,7 +245,7 @@ export function NoteComposer({
       </div>
 
       {error && (
-        <p role="alert" className="flex items-center gap-1 pl-3 text-caption text-error">
+        <p role="alert" className="flex items-center gap-1 pl-3 bg-caption text-(--error-text)">
           <AlertCircle size={12} aria-hidden="true" />
           {error}
         </p>

@@ -42,7 +42,7 @@ export function SettingsTabs({ activeTab, onChange, dirtyTabs }: SettingsTabsPro
         {tab.label}
         {dirtyTabs?.has(tab.id) && (
           <span
-            className="h-1.5 w-1.5 rounded-full bg-[var(--action-primary)]"
+            className="h-1.5 w-1.5 rounded-full bg-(--action-primary)"
             aria-label="Unsaved changes"
           />
         )}

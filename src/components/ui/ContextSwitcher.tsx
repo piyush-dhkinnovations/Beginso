@@ -48,10 +48,10 @@ export function ContextSwitcher({
           label: (
             <span className="flex w-full items-center justify-between gap-3">
               <span className="flex items-center gap-2 min-w-0">
-                <User className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                <User className="w-3.5 h-3.5 text-(--text-muted) shrink-0" />
                 <span className="truncate font-medium">Personal</span>
               </span>
-              <span className="text-[11px] text-text-muted shrink-0">Only you</span>
+              <span className="bg-caption text-(--text-muted) shrink-0">Only you</span>
             </span>
           ),
           onSelect: () => onSelect({ type: "personal" }),
@@ -62,7 +62,7 @@ export function ContextSwitcher({
             label: (
               <span className="flex w-full items-center justify-between gap-3">
                 <span className="flex items-center gap-2 min-w-0">
-                  <Building2 className="w-3.5 h-3.5 text-text-muted shrink-0" />
+                  <Building2 className="w-3.5 h-3.5 text-(--text-muted) shrink-0" />
                   <span className="truncate font-medium">{workspace.name}</span>
                 </span>
                 {workspace.role && <Badge>{workspace.role}</Badge>}
@@ -77,11 +77,11 @@ export function ContextSwitcher({
   if (collapsed) {
     const compactContent = (
       <span className="flex items-center justify-center w-full h-full" title={triggerLabel}>
-        <Icon className="w-4 h-4 text-text-secondary" aria-hidden="true" />
+        <Icon className="w-4 h-4 text-(--text-secondary)" aria-hidden="true" />
       </span>
     );
     const compactTriggerClassName = bx(
-      "bg-btn bg-btn-secondary w-10 h-10 p-0 !justify-center rounded-lg shadow-xs hover:bg-surface-hover hover:border-border-strong",
+      "bg-btn bg-btn-secondary w-10 h-10 p-0 !justify-center rounded-lg shadow-xs hover:bg-(--surface-hover) hover:border-(--border-strong)",
       className
     );
 
@@ -112,16 +112,16 @@ export function ContextSwitcher({
   const triggerContent = (
     <span className="flex items-center justify-between w-full min-w-0 gap-2">
       <span className="flex items-center min-w-0 gap-2.5">
-        <Icon className="w-4 h-4 text-text-muted shrink-0" aria-hidden="true" />
-        <span className="truncate font-medium text-text-primary text-[13px]">{currentLabel}</span>
+        <Icon className="w-4 h-4 text-(--text-muted) shrink-0" aria-hidden="true" />
+        <span className="truncate font-medium text-(--text-primary) bg-body-sm">{currentLabel}</span>
         {workspaces.length > 0 && <span className="bg-count shrink-0">{workspaces.length}</span>}
       </span>
-      <ChevronsUpDown className="w-3.5 h-3.5 text-text-muted shrink-0 ml-auto" aria-hidden="true" />
+      <ChevronsUpDown className="w-3.5 h-3.5 text-(--text-muted) shrink-0 ml-auto" aria-hidden="true" />
     </span>
   );
 
   const triggerClassName = bx(
-    "bg-btn bg-btn-secondary w-full !justify-between px-3 h-10 rounded-lg text-left font-medium border border-border-default/80 hover:bg-surface-hover hover:border-border-strong text-text-primary transition-all shadow-xs",
+    "bg-btn bg-btn-secondary w-full !justify-between px-3 h-10 rounded-lg text-left font-medium border border-(--border-default)/80 hover:bg-(--surface-hover) hover:border-(--border-strong) text-(--text-primary) transition-all shadow-xs",
     className
   );
 

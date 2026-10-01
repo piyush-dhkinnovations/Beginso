@@ -1,5 +1,6 @@
 "use client";
 
+import { StateArt } from '@/components/illustrations/Illustration';
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronRight, Link2 } from "lucide-react";
@@ -25,7 +26,7 @@ function TableOfContents({ headings }: { headings: string[] }) {
         <li key={h}>
           <a
             href={`#section-${i}`}
-            className="block text-[13px] text-[var(--text-secondary)] hover:text-[var(--primary-600)] transition-colors"
+            className="block bg-body-sm text-(--text-secondary) hover:text-(--text-link) transition-colors"
           >
             {h}
           </a>
@@ -51,11 +52,12 @@ export default function BlogArticlePage() {
 
   if (!post) {
     return (
-      <main className="min-h-screen bg-[var(--bg-page)]">
+      <main className="min-h-screen bg-(--bg-page)">
         <Navbar />
         <div className="pt-[160px] pb-24 text-center max-w-xl mx-auto px-4">
-          <h1 className="bg-h2 text-[var(--text-primary)] mb-4">Post not found</h1>
-          <Link href="/blog" className="text-[var(--primary-600)] font-medium hover:underline">
+          <StateArt name="not-found" className="mb-4" />
+          <h1 className="bg-h2 text-(--text-primary) mb-4">Post not found</h1>
+          <Link href="/blog" className="text-(--text-link) font-medium hover:underline">
             Back to the blog
           </Link>
         </div>
@@ -68,22 +70,22 @@ export default function BlogArticlePage() {
   const related = getRelatedPosts(post.slug);
 
   return (
-    <main className="min-h-screen bg-[var(--bg-page)]">
+    <main className="min-h-screen bg-(--bg-page)">
       <Navbar />
 
       <article className="pt-[140px] pb-24 md:pt-[180px]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 bg-caption text-[var(--text-muted)] mb-6">
-            <Link href="/blog" className="hover:text-[var(--text-primary)]">Blog</Link>
+          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 bg-caption text-(--text-muted) mb-6">
+            <Link href="/blog" className="hover:text-(--text-primary)">Blog</Link>
             <ChevronRight size={12} />
             <span>{post.category}</span>
             <ChevronRight size={12} />
-            <span className="text-[var(--text-secondary)] truncate">{post.title}</span>
+            <span className="text-(--text-secondary) truncate">{post.title}</span>
           </nav>
 
           <h1
             ref={titleRef}
-            className={`reveal ${titleVisible ? "is-visible" : ""} text-[28px] md:text-[40px] font-extrabold text-[var(--text-primary)] leading-[1.15] mb-6`}
+            className={`reveal ${titleVisible ? "is-visible" : ""} text-[28px] md:text-[40px] font-extrabold text-(--text-primary) leading-[1.15] mb-6`}
           >
             {post.title}
           </h1>
@@ -91,17 +93,17 @@ export default function BlogArticlePage() {
           <div className="flex items-center gap-3 mb-8">
             <AuthorAvatar name={post.author} size={24} />
             <div>
-              <div className="text-[14px] font-medium text-[var(--text-primary)]">{post.author}</div>
-              <div className="text-[12px] text-[var(--text-muted)]">
+              <div className="bg-body font-medium text-(--text-primary)">{post.author}</div>
+              <div className="bg-body-sm text-(--text-muted)">
                 {formatDate(post.date)} · {post.readTime}
               </div>
             </div>
           </div>
 
-          <BlogCover post={post} className="h-64 md:h-80 rounded-[var(--bg-radius-md)] mb-10" />
+          <BlogCover post={post} className="h-64 md:h-80 rounded-(--bg-radius-md) mb-10" />
 
-          <details className="lg:hidden mb-8 rounded-[var(--bg-radius-md)] border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
-            <summary className="cursor-pointer bg-body font-semibold text-[var(--text-primary)]">On this page</summary>
+          <details className="lg:hidden mb-8 rounded-(--bg-radius-md) border border-(--border-default) bg-(--surface-card) p-4">
+            <summary className="cursor-pointer bg-body font-semibold text-(--text-primary)">On this page</summary>
             <div className="mt-3">
               <TableOfContents headings={headings} />
             </div>
@@ -111,7 +113,7 @@ export default function BlogArticlePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 grid lg:grid-cols-[200px_1fr] gap-12">
           <aside className="hidden lg:block">
             <div className="sticky top-28">
-              <div className="bg-overline text-[var(--text-muted)] mb-3">On this page</div>
+              <div className="bg-overline text-(--text-muted) mb-3">On this page</div>
               <TableOfContents headings={headings} />
             </div>
           </aside>
@@ -119,17 +121,17 @@ export default function BlogArticlePage() {
           <div className="max-w-[65ch]">
             {post.body.map((section, i) => (
               <section key={section.heading} id={`section-${i}`} className="mb-8 scroll-mt-28">
-                <h2 className="bg-h3 text-[var(--text-primary)] mb-3">{section.heading}</h2>
+                <h2 className="bg-h3 text-(--text-primary) mb-3">{section.heading}</h2>
                 {section.paragraphs.map((p, pi) => (
-                  <p key={pi} className="bg-body text-[var(--text-secondary)] mb-4 leading-relaxed">
+                  <p key={pi} className="bg-body text-(--text-secondary) mb-4 leading-relaxed">
                     {p}
                   </p>
                 ))}
               </section>
             ))}
 
-            <div className="flex items-center gap-3 py-6 border-y border-[var(--border-default)] my-10">
-              <span className="bg-body-sm font-medium text-[var(--text-secondary)]">Share this post</span>
+            <div className="flex items-center gap-3 py-6 border-y border-(--border-default) my-10">
+              <span className="bg-body-sm font-medium text-(--text-secondary)">Share this post</span>
               <Button
                 variant="ghost"
                 size="small"
@@ -145,11 +147,11 @@ export default function BlogArticlePage() {
               </Button>
             </div>
 
-            <div className="flex items-center gap-4 rounded-[var(--bg-radius-md)] border border-[var(--border-default)] bg-[var(--surface-hover)] p-5">
+            <div className="flex items-center gap-4 rounded-(--bg-radius-md) border border-(--border-default) bg-(--surface-hover) p-5">
               <AuthorAvatar name={post.author} size={40} />
               <div>
-                <div className="bg-body font-semibold text-[var(--text-primary)]">{post.author}</div>
-                <div className="bg-body-sm text-[var(--text-secondary)]">Writes about forms, data and workflow at Beginso.</div>
+                <div className="bg-body font-semibold text-(--text-primary)">{post.author}</div>
+                <div className="bg-body-sm text-(--text-secondary)">Writes about forms, data and workflow at Beginso.</div>
               </div>
               <Badge variant="primary" className="ml-auto shrink-0">{post.category}</Badge>
             </div>
@@ -158,7 +160,7 @@ export default function BlogArticlePage() {
 
         {related.length > 0 && (
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-20">
-            <h2 className="bg-h4 text-[var(--text-primary)] mb-6">Related posts</h2>
+            <h2 className="bg-h4 text-(--text-primary) mb-6">Related posts</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {related.map((p, i) => (
                 <RelatedCard key={p.slug} index={i} post={p} />

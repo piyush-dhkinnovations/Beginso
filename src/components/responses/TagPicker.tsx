@@ -75,7 +75,7 @@ export function TagPicker({ available, selectedIds, canCreate, disabled, onAdd, 
         aria-expanded={isOpen}
         // A plain ghost button read as empty space next to a tag pill — its own dashed-border
         // pill makes it unmistakably a second, clickable chip rather than blank space.
-        className="flex items-center gap-1 rounded-full border border-dashed border-(--border-default) px-2.5 py-1 text-caption text-(--text-secondary) hover:border-(--text-muted) hover:text-(--text-primary) disabled:opacity-60"
+        className="flex items-center gap-1 rounded-full border border-dashed border-(--border-default) px-2.5 py-1 bg-caption text-(--text-secondary) hover:border-(--text-muted) hover:text-(--text-primary) disabled:opacity-60"
         onClick={() => setIsOpen((v) => !v)}
       >
         <Plus size={12} aria-hidden="true" />
@@ -132,7 +132,7 @@ export function TagPicker({ available, selectedIds, canCreate, disabled, onAdd, 
             </button>
           )}
           {matches.length === 0 && !canOfferCreate && (
-            <p className="px-3 py-2 text-body-sm text-(--text-muted)">No matching tags.</p>
+            <p className="px-3 py-2 bg-body-sm text-(--text-muted)">No matching tags.</p>
           )}
         </div>
       )}

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { Table, type TableColumn } from '@/components/ui/Table';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Pagination } from '@/components/ui/Pagination';
 import { scoresService } from '@/services/scores';
 import { scoreKeys } from '@/lib/queryKeys';
@@ -36,10 +36,10 @@ export function ScoreComparison({ formId }: ScoreComparisonProps) {
   if (isError) {
     return (
       <EmptyState
-        heading="Unable to load score comparison"
-        body="The score comparison could not be loaded."
-        action={
-          <button type="button" onClick={() => void refetch()} className="text-body-sm text-(--action-primary) underline">
+        title="Unable to load score comparison"
+        description="The score comparison could not be loaded."
+        actions={
+          <button type="button" onClick={() => void refetch()} className="bg-body-sm text-(--action-primary) underline">
             Try again
           </button>
         }
@@ -51,7 +51,7 @@ export function ScoreComparison({ formId }: ScoreComparisonProps) {
     {
       key: 'reference',
       header: 'Response',
-      render: (row) => <span className="text-body-sm text-(--text-primary)">{row.reference ?? row.responseId.slice(-6)}</span>,
+      render: (row) => <span className="bg-body-sm text-(--text-primary)">{row.reference ?? row.responseId.slice(-6)}</span>,
     },
     {
       key: 'scoreAverage',
@@ -59,14 +59,14 @@ export function ScoreComparison({ formId }: ScoreComparisonProps) {
         <button
           type="button"
           onClick={() => setSortDesc((d) => !d)}
-          className="flex items-center gap-1 text-body-sm font-medium text-(--text-secondary)"
+          className="flex items-center gap-1 bg-body-sm font-medium text-(--text-secondary)"
         >
           Average score
           {sortDesc ? <ArrowDown size={13} aria-hidden="true" /> : <ArrowUp size={13} aria-hidden="true" />}
         </button>
       ),
       render: (row) => (
-        <span className="text-body-sm text-(--text-primary)">
+        <span className="bg-body-sm text-(--text-primary)">
           {row.scoreAverage !== null
             ? `${row.scoreAverage.toFixed(1)} (${row.scoreCount} reviewer${row.scoreCount === 1 ? '' : 's'})`
             : '—'}
@@ -82,7 +82,7 @@ export function ScoreComparison({ formId }: ScoreComparisonProps) {
         rows={data?.data ?? []}
         rowKey={(row) => row.responseId}
         isLoading={isLoading}
-        emptyState={<p className="py-6 text-center text-body-sm text-(--text-muted)">No scored responses yet.</p>}
+        emptyState={<p className="py-6 text-center bg-body-sm text-(--text-muted)">No scored responses yet.</p>}
       />
       {data && data.total > data.limit && (
         <Pagination page={data.page} totalPages={Math.ceil(data.total / data.limit)} onPageChange={setPage} />

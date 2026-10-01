@@ -76,7 +76,7 @@ export function ResponsesToolbar({ search, filters, stages, members, total, onSe
                   setInputValue('');
                   onSearchChange('');
                 }}
-                className="flex min-h-11 min-w-11 items-center justify-center text-text-muted hover:text-text-secondary"
+                className="flex min-h-11 min-w-11 items-center justify-center text-(--text-muted) hover:text-(--text-secondary)"
               >
                 <X size={16} />
               </button>
@@ -100,7 +100,7 @@ export function ResponsesToolbar({ search, filters, stages, members, total, onSe
           <ListFilter size={15} aria-hidden="true" />
           Filter
           {activeCount > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-(--action-primary) px-1 text-caption font-medium text-(--text-on-brand)">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-(--action-primary) px-1 bg-caption font-medium text-(--text-on-brand)">
               {activeCount}
             </span>
           )}
@@ -109,7 +109,7 @@ export function ResponsesToolbar({ search, filters, stages, members, total, onSe
         {isFilterOpen && (
           <div role="dialog" aria-label="Filter responses" className="bg-popover absolute left-0 z-20 mt-1 flex w-70 flex-col gap-4">
             <div>
-              <label htmlFor="responses-stage-filter" className="mb-1 block text-caption font-medium text-(--text-muted)">Stage</label>
+              <label htmlFor="responses-stage-filter" className="mb-1 block bg-caption font-medium text-(--text-muted)">Stage</label>
               <Select
                 id="responses-stage-filter"
                 value={filters.stageId ?? 'all'}
@@ -124,7 +124,7 @@ export function ResponsesToolbar({ search, filters, stages, members, total, onSe
 
             {members !== undefined && (
               <div>
-                <label htmlFor="responses-assignee-filter" className="mb-1 block text-caption font-medium text-(--text-muted)">Assignee</label>
+                <label htmlFor="responses-assignee-filter" className="mb-1 block bg-caption font-medium text-(--text-muted)">Assignee</label>
                 <Select
                   id="responses-assignee-filter"
                   value={filters.assigneeId ?? 'all'}
@@ -140,13 +140,13 @@ export function ResponsesToolbar({ search, filters, stages, members, total, onSe
               </div>
             )}
 
-            <label htmlFor="responses-unread-filter" className="flex items-center justify-between gap-2 text-body-sm text-text-secondary">
+            <label htmlFor="responses-unread-filter" className="flex items-center justify-between gap-2 bg-body-sm text-(--text-secondary)">
               Unread only
               <Switch id="responses-unread-filter" checked={!!filters.unread} onChange={(checked) => onFilterChange({ unread: checked || undefined })} />
             </label>
 
             {/* Sprint 12, task 5.5: nothing is auto-hidden by default — duplicates only get flagged. */}
-            <label htmlFor="responses-duplicate-filter" className="flex items-center justify-between gap-2 text-body-sm text-text-secondary">
+            <label htmlFor="responses-duplicate-filter" className="flex items-center justify-between gap-2 bg-body-sm text-(--text-secondary)">
               Show duplicates
               <Switch id="responses-duplicate-filter" checked={!!filters.duplicate} onChange={(checked) => onFilterChange({ duplicate: checked || undefined })} />
             </label>
@@ -154,7 +154,7 @@ export function ResponsesToolbar({ search, filters, stages, members, total, onSe
         )}
       </div>
 
-      <span className="text-body-sm text-text-muted whitespace-nowrap ml-auto">
+      <span className="bg-body-sm text-(--text-muted) whitespace-nowrap ml-auto">
         {total} response{total === 1 ? '' : 's'}
       </span>
     </div>

@@ -15,7 +15,7 @@ vi.mock('@/services/settings', () => ({
     revokeSession: vi.fn(),
   },
 }));
-vi.mock('@/components/common/Toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
+vi.mock('@/components/ui/Toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 
 import { SessionsTab } from '@/components/settings/SessionsTab';
 

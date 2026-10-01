@@ -5,7 +5,7 @@ import { Lock } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { NoteItem } from './NoteItem';
 import { NoteComposer } from './NoteComposer';
 import { notesService, MentionAccessError } from '@/services/notes';
@@ -95,11 +95,11 @@ export function NotesPanel({ responseId, scope, workspaceName, currentUserId, ca
       <div className="flex items-start gap-2">
         <Lock size={15} className="mt-0.5 shrink-0 text-(--text-muted)" aria-hidden="true" />
         <div>
-          <h3 className="text-heading-3 text-(--text-primary)">Internal notes</h3>
+          <h3 className="bg-body font-semibold text-(--text-primary)">Internal notes</h3>
           {/* No max-w cap — this is a short caption, not long-form prose, and the 65ch cap was
               forcing an unnecessarily narrow wrap on what should read as one flowing sentence
               across the card's actual width. */}
-          <p className="mt-0.5 text-body-xs text-(--text-muted)">
+          <p className="mt-0.5 bg-caption text-(--text-muted)">
             Only members of {workspaceName} can see these. The respondent never does, and notes are never
             included in exports or copies.
           </p>
@@ -119,7 +119,7 @@ export function NotesPanel({ responseId, scope, workspaceName, currentUserId, ca
           </div>
         ) : isError ? (
           <div role="alert" className="flex flex-col items-start gap-2 py-2">
-            <p className="text-body-sm text-(--text-muted)">Couldn&apos;t load notes.</p>
+            <p className="bg-body-sm text-(--text-muted)">Couldn&apos;t load notes.</p>
             <button type="button" onClick={() => void refetch()} className="bg-btn bg-btn-secondary bg-btn-sm">
               Retry
             </button>
@@ -143,8 +143,8 @@ export function NotesPanel({ responseId, scope, workspaceName, currentUserId, ca
           </ul>
         ) : (
           <div className="py-2 max-w-[42ch]">
-            <p className="text-body-sm font-medium text-(--text-primary)">No internal notes yet</p>
-            <p className="mt-0.5 text-body-xs text-(--text-muted)">
+            <p className="bg-body-sm font-medium text-(--text-primary)">No internal notes yet</p>
+            <p className="mt-0.5 bg-caption text-(--text-muted)">
               Leave context for whoever picks this up next. Use @ to notify a teammate.
             </p>
           </div>

@@ -11,7 +11,7 @@ export function FormProgress({ currentPage, totalPages }: FormProgressProps) {
 
   return (
     <div className="mb-4">
-      <div className="flex justify-between text-caption text-neutral-500 mb-1">
+      <div className="flex justify-between bg-caption text-(--text-muted) mb-1">
         <span>Step {currentPage} of {totalPages}</span>
         <span>{percent}%</span>
       </div>
@@ -20,10 +20,10 @@ export function FormProgress({ currentPage, totalPages }: FormProgressProps) {
         aria-valuenow={percent}
         aria-valuemin={0}
         aria-valuemax={100}
-        className="h-1.5 w-full bg-neutral-200 rounded-full overflow-hidden"
+        className="h-1.5 w-full bg-(--border-default) rounded-full overflow-hidden"
       >
         <div
-          className="h-full bg-brand-600 rounded-full transition-all duration-300"
+          className="h-full bg-(--action-primary) rounded-full transition-all duration-300"
           style={{ width: `${percent}%` }}
         />
       </div>

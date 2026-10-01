@@ -8,14 +8,14 @@ import { ArrowDown, ArrowUp } from 'lucide-react';
 import { stageSchema, type StageFormValues } from '@/lib/schemas/stage';
 import { stagesService } from '@/services/stages';
 import { stageKeys } from '@/lib/queryKeys';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
 import { Table, type TableColumn } from '@/components/ui/Table';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { STAGE_COLOR_TOKENS, CATEGORY_LABELS, type Stage, type StageCategory } from '@/types/stage';
 
 interface StageManagerProps {
@@ -110,8 +110,8 @@ export function StageManager({ scope, onDirtyChange }: StageManagerProps) {
   if (!scope) {
     return (
       <EmptyState
-        heading="No workspace to manage stages for"
-        body="You need to be an Owner or Admin of a workspace to manage its pipeline stages."
+        title="No workspace to manage stages for"
+        description="You need to be an Owner or Admin of a workspace to manage its pipeline stages."
       />
     );
   }
@@ -119,9 +119,9 @@ export function StageManager({ scope, onDirtyChange }: StageManagerProps) {
   if (isError) {
     return (
       <EmptyState
-        heading="Unable to load stages"
-        body="The pipeline stages could not be loaded."
-        action={<Button onClick={() => void refetch()}>Try again</Button>}
+        title="Unable to load stages"
+        description="The pipeline stages could not be loaded."
+        actions={<Button onClick={() => void refetch()}>Try again</Button>}
       />
     );
   }
@@ -173,20 +173,20 @@ export function StageManager({ scope, onDirtyChange }: StageManagerProps) {
         ) : (
           <span className="flex items-center gap-2">
             <Badge variant={stage.colour} dot pill>{stage.name}</Badge>
-            {stage.isDefault && <span className="text-caption text-(--text-muted)">Default</span>}
+            {stage.isDefault && <span className="bg-caption text-(--text-muted)">Default</span>}
           </span>
         ),
     },
     {
       key: 'category',
       header: 'Category',
-      render: (stage) => <span className="text-body-sm text-(--text-secondary)">{CATEGORY_LABELS[stage.category]}</span>,
+      render: (stage) => <span className="bg-body-sm text-(--text-secondary)">{CATEGORY_LABELS[stage.category]}</span>,
     },
     {
       key: 'usage',
       header: 'Responses',
       align: 'right',
-      render: (stage) => <span className="text-body-sm text-(--text-muted)">{stage.responseCount ?? 0}</span>,
+      render: (stage) => <span className="bg-body-sm text-(--text-muted)">{stage.responseCount ?? 0}</span>,
     },
     {
       key: 'actions',
@@ -240,7 +240,7 @@ export function StageManager({ scope, onDirtyChange }: StageManagerProps) {
         rows={orderedStages}
         rowKey={(stage) => stage.id}
         isLoading={isLoading}
-        emptyState={<p className="py-6 text-center text-body-sm text-(--text-muted)">No stages yet. Add one above.</p>}
+        emptyState={<p className="py-6 text-center bg-body-sm text-(--text-muted)">No stages yet. Add one above.</p>}
       />
 
       <Modal

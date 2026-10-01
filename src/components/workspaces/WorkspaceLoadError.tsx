@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/ui';
 export function WorkspaceLoadError() {
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
-      <EmptyState
+      <EmptyState illustration="error"
         icon={<AlertTriangle className="bg-icon" aria-hidden="true" />}
         title="Couldn't load this workspace"
         description="Something went wrong reaching the server. Please try again."

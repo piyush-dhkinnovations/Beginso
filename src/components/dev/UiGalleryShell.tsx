@@ -48,8 +48,8 @@ export function UiGalleryShell() {
   }, [theme, darkVariant, frameLoaded]);
 
   return (
-    <div className="min-h-screen bg-neutral-100 flex flex-col">
-      <header className="flex flex-wrap items-center gap-6 border-b border-neutral-200 bg-white px-6 py-4">
+    <div className="min-h-screen bg-(--bg-sunken) flex flex-col">
+      <header className="flex flex-wrap items-center gap-6 border-b border-(--border-default) bg-(--surface-card) px-6 py-4">
         <strong>components/ui/ gallery</strong>
 
         <div className="flex items-center gap-2" role="group" aria-label="Theme">
@@ -60,8 +60,8 @@ export function UiGalleryShell() {
               onClick={() => setTheme(t)}
               aria-pressed={theme === t}
               className={bx(
-                "px-3 py-1.5 rounded-md text-sm capitalize border",
-                theme === t ? "bg-neutral-900 text-white border-neutral-900" : "border-neutral-300"
+                "px-3 py-1.5 rounded-md bg-body-sm capitalize border",
+                theme === t ? "bg-(--surface-inverse) text-(--text-on-brand) border-(--text-primary)" : "border-(--border-strong)"
               )}
             >
               {t}
@@ -69,13 +69,13 @@ export function UiGalleryShell() {
           ))}
         </div>
 
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2 bg-body-sm">
           Variant
           <select
             value={darkVariant}
             disabled={theme !== "dark"}
             onChange={(e) => setDarkVariant(e.target.value as DarkVariant)}
-            className="border border-neutral-300 rounded-md px-2 py-1"
+            className="border border-(--border-strong) rounded-md px-2 py-1"
           >
             <option value="slate">Slate</option>
             <option value="midnight">Midnight</option>
@@ -91,8 +91,8 @@ export function UiGalleryShell() {
               onClick={() => setWidth(w)}
               aria-pressed={width === w}
               className={bx(
-                "px-3 py-1.5 rounded-md text-sm border",
-                width === w ? "bg-neutral-900 text-white border-neutral-900" : "border-neutral-300"
+                "px-3 py-1.5 rounded-md bg-body-sm border",
+                width === w ? "bg-(--surface-inverse) text-(--text-on-brand) border-(--text-primary)" : "border-(--border-strong)"
               )}
             >
               {w}px
@@ -106,7 +106,7 @@ export function UiGalleryShell() {
           ref={iframeRef}
           title="components/ui/ preview"
           style={{ width, height: "calc(100vh - 140px)", maxWidth: "100%" }}
-          className="mx-auto block border border-neutral-300 bg-white"
+          className="mx-auto block border border-(--border-strong) bg-(--surface-card)"
         />
       </div>
     </div>

@@ -41,9 +41,9 @@ export interface WorkflowSidebarProps {
   onOpenOriginal?: (id: string) => void;
 }
 
-const SECTION_LABEL = 'text-caption font-semibold text-(--text-muted) uppercase tracking-wide';
+const SECTION_LABEL = 'bg-caption font-semibold text-(--text-muted) uppercase tracking-wide';
 const META_ROW = 'flex items-center justify-between gap-3 py-2 border-b border-(--border-default) last:border-0 last:pb-0';
-const META_LABEL = 'flex items-center gap-1.5 shrink-0 text-caption text-(--text-muted)';
+const META_LABEL = 'flex items-center gap-1.5 shrink-0 bg-caption text-(--text-muted)';
 
 const ORIGIN_TOOLTIP = 'Anonymised origin hash — raw IPs are never stored.';
 
@@ -149,14 +149,14 @@ export function WorkflowSidebar({
               <CalendarDays size={13} aria-hidden="true" />
               Date
             </span>
-            <span className="text-body-sm text-(--text-secondary) text-right">{formatResponseDate(response.submittedAt)}</span>
+            <span className="bg-body-sm text-(--text-secondary) text-right">{formatResponseDate(response.submittedAt)}</span>
           </div>
           <div className={META_ROW}>
             <span className={META_LABEL} title={ORIGIN_TOOLTIP}>
               <Shield size={13} aria-hidden="true" />
               Origin
             </span>
-            <code title={ORIGIN_TOOLTIP} className="font-mono text-caption text-(--text-muted) break-all text-right">
+            <code title={ORIGIN_TOOLTIP} className="font-mono bg-caption text-(--text-muted) break-all text-right">
               {ipHash ?? '—'}
             </code>
           </div>
@@ -165,7 +165,7 @@ export function WorkflowSidebar({
               <Hash size={13} aria-hidden="true" />
               Reference
             </span>
-            <code className="font-mono text-caption text-(--text-muted)">{response.reference ?? shortId(response._id)}</code>
+            <code className="font-mono bg-caption text-(--text-muted)">{response.reference ?? shortId(response._id)}</code>
           </div>
         </div>
       </Card>

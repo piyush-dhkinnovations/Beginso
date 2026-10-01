@@ -78,11 +78,11 @@ export function NoteItem({ note, members, isOwn, canDeleteAny, onEdit, onDelete,
             time, moved below the bubble instead, matching an ordinary chat layout. */}
         {!isOwn && (
           <div className="flex flex-wrap items-baseline gap-x-2">
-            <span className="text-body-xs font-semibold text-(--text-primary)">
+            <span className="bg-caption font-semibold text-(--text-primary)">
               {note.authorName}
               {note.authorRemoved && <span className="font-normal text-(--text-muted)"> · no longer has access</span>}
             </span>
-            <span className="text-body-xs text-(--text-muted)">
+            <span className="bg-caption text-(--text-muted)">
               {formatRelativeTime(note.createdAt)}
               {note.editedAt && ' · edited'}
             </span>
@@ -97,7 +97,7 @@ export function NoteItem({ note, members, isOwn, canDeleteAny, onEdit, onDelete,
           onKeyDown={canAct ? (e) => { if (e.key === 'Enter') setShowActions((v) => !v); } : undefined}
           aria-label={canAct ? 'Double-click for edit and delete options' : undefined}
           className={cn(
-            'relative mt-0.5 rounded-2xl px-3 py-2 text-xs whitespace-pre-wrap',
+            'relative mt-0.5 rounded-2xl px-3 py-2 bg-caption whitespace-pre-wrap',
             isOwn
               ? 'rounded-br-sm bg-(--action-primary) text-(--text-on-brand)'
               : 'rounded-bl-sm bg-(--bg-subtle) text-(--text-secondary)',
@@ -127,7 +127,7 @@ export function NoteItem({ note, members, isOwn, canDeleteAny, onEdit, onDelete,
                 <button
                   type="button"
                   onClick={() => { setShowActions(false); setIsEditing(true); }}
-                  className="flex items-center gap-1 rounded px-2 py-1 text-body-xs text-(--text-secondary) hover:bg-(--surface-hover)"
+                  className="flex items-center gap-1 rounded px-2 py-1 bg-caption text-(--text-secondary) hover:bg-(--surface-hover)"
                 >
                   <Pencil size={12} aria-hidden="true" />
                   Edit
@@ -136,7 +136,7 @@ export function NoteItem({ note, members, isOwn, canDeleteAny, onEdit, onDelete,
               <button
                 type="button"
                 onClick={() => { setShowActions(false); onDelete(); }}
-                className="flex items-center gap-1 rounded px-2 py-1 text-body-xs text-error hover:bg-(--error-surface)"
+                className="flex items-center gap-1 rounded px-2 py-1 bg-caption text-(--error-text) hover:bg-(--error-surface)"
               >
                 <Trash2 size={12} aria-hidden="true" />
                 Delete
@@ -146,7 +146,7 @@ export function NoteItem({ note, members, isOwn, canDeleteAny, onEdit, onDelete,
         </div>
 
         {isOwn && (
-          <span className="mt-0.5 text-body-xs text-(--text-muted)">
+          <span className="mt-0.5 bg-caption text-(--text-muted)">
             {formatRelativeTime(note.createdAt)}
             {note.editedAt && ' · edited'}
           </span>

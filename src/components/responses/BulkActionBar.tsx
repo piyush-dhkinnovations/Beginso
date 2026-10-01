@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { Spinner } from '@/components/ui/Spinner';
 import { hasCapability, canActOnResponses } from '@/lib/roles';
 import type { StageRef } from '@/types/stage';
 import type { Tag } from '@/types/tag';
@@ -112,14 +112,14 @@ export function BulkActionBar({
       aria-label="Bulk actions"
       className="sticky bottom-0 z-10 flex flex-wrap items-center gap-3 px-4 py-2 bg-(--accent-soft) border border-(--border-default) rounded-lg mb-2"
     >
-      <span className="text-body-sm font-medium text-(--accent-soft-text)" aria-live="polite">
+      <span className="bg-body-sm font-medium text-(--accent-soft-text)" aria-live="polite">
         {effectiveCount} selected
       </span>
 
       {canOfferSelectAllMatching && (
         <button
           type="button"
-          className="text-body-sm underline underline-offset-2 text-(--accent-soft-text)"
+          className="bg-body-sm underline underline-offset-2 text-(--accent-soft-text)"
           onClick={() => onToggleSelectAllMatching(true)}
         >
           Select all {totalMatching} matching
@@ -188,7 +188,7 @@ export function BulkActionBar({
 
         {menuItems.length > 0 && (
           <Menu
-            trigger={isLoading ? <LoadingSpinner variant="inline" /> : 'More'}
+            trigger={isLoading ? <Spinner /> : 'More'}
             triggerLabel="More bulk actions"
             triggerClassName="bg-btn bg-btn-secondary bg-btn-sm"
             items={menuItems}

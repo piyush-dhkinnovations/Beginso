@@ -30,7 +30,7 @@ export function DuplicateCallout({ duplicateOfId, scope, onOpenOriginal }: Dupli
   const label = original ? `#${original.reference ?? shortId(original._id)}` : `#${shortId(duplicateOfId)}`;
 
   return (
-    <div className="flex items-center gap-2 rounded-md border border-(--warning-border) bg-(--warning-surface) px-3 py-2 text-body-sm text-(--text-secondary)">
+    <div className="flex items-center gap-2 rounded-md border border-(--warning-border) bg-(--warning-surface) px-3 py-2 bg-body-sm text-(--text-secondary)">
       <Copy size={14} className="shrink-0 text-(--text-muted)" aria-hidden="true" />
       <span className="min-w-0 flex-1">
         Possible duplicate of{' '}

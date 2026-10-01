@@ -34,7 +34,7 @@ interface FieldCardProps {
 function DropZoneCard() {
   return (
     <div
-      className="animate-drop-indicator origin-top w-full rounded-lg border-2 border-dashed border-brand-500 bg-brand-50/60"
+      className="animate-drop-indicator origin-top w-full rounded-lg border-2 border-dashed border-(--border-focus) bg-(--accent-soft)/60"
       style={{ height: '52px' }}
       aria-hidden="true"
     />
@@ -108,12 +108,12 @@ export function FieldCard({
         ref={setNodeRef}
         style={style}
         onClick={(e) => e.stopPropagation()}
-        className={`relative group bg-white border rounded-lg transition-all duration-150 shadow-card select-none ${
+        className={`relative group bg-(--surface-card) border rounded-lg transition-all duration-150 shadow-(--shadow-sm) select-none ${
           isDragging
             ? 'opacity-0'
             : isActive
-            ? 'border-brand-700 ring-2 ring-brand-700/20'
-            : 'border-neutral-200 hover:border-neutral-300'
+            ? 'border-(--action-primary-hover) ring-2 ring-(--action-primary-hover)/20'
+            : 'border-(--border-default) hover:border-(--border-strong)'
         }`}
       >
         {/* Header row — click to select, keyboard delete/reorder. This is the whole
@@ -126,7 +126,7 @@ export function FieldCard({
           role="button"
           aria-label={`Select ${field.label} field`}
           aria-pressed={isActive}
-          className={`flex items-start gap-3 p-4 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-inset ${
+          className={`flex items-start gap-3 p-4 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus) focus-visible:ring-inset ${
             showInlinePanel ? 'rounded-t-lg' : 'rounded-lg'
           }`}
         >
@@ -134,23 +134,23 @@ export function FieldCard({
             {...listeners}
             {...attributes}
             onClick={(e) => e.stopPropagation()}
-            className="text-neutral-400 hover:text-neutral-600 cursor-grab active:cursor-grabbing p-1 -ml-1 rounded transition-colors shrink-0 min-w-11 min-h-11 flex items-center justify-center"
+            className="text-(--text-disabled) hover:text-(--text-secondary) cursor-grab active:cursor-grabbing p-1 -ml-1 rounded transition-colors shrink-0 min-w-11 min-h-11 flex items-center justify-center"
           >
             <GripVertical size={16} />
           </div>
 
           {Icon && (
-            <Icon size={16} className="text-neutral-500 shrink-0 mt-2" />
+            <Icon size={16} className="text-(--text-muted) shrink-0 mt-2" />
           )}
 
           {/* Label row + live preview — both live in the same flex-1 column so the
               preview aligns under the label, not under the grip/icon. */}
           <div className="flex-1 min-w-0 flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2 min-h-[24px]">
-              <span className="text-body font-medium text-neutral-800 truncate">
+              <span className="bg-body font-medium text-(--text-primary) truncate">
                 {field.label}
                 {field.required && (
-                  <span className="text-rose-500 ml-1" title="Required">*</span>
+                  <span className="text-(--error) ml-1" title="Required">*</span>
                 )}
               </span>
 
@@ -161,7 +161,7 @@ export function FieldCard({
                     e.stopPropagation();
                     onDuplicate();
                   }}
-                  className="flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 text-neutral-400 transition-all hover:bg-brand-50 hover:text-brand-700"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 text-(--text-disabled) transition-all hover:bg-(--accent-soft) hover:text-(--accent-soft-text)"
                   title="Duplicate Field"
                 >
                   <Copy size={16} />
@@ -172,7 +172,7 @@ export function FieldCard({
                     e.stopPropagation();
                     onDelete();
                   }}
-                  className="flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 text-neutral-400 transition-all hover:bg-rose-50 hover:text-rose-600"
+                  className="flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 text-(--text-disabled) transition-all hover:bg-(--error-surface) hover:text-(--error-text)"
                   title="Delete Field"
                 >
                   <Trash2 size={16} />
@@ -187,9 +187,9 @@ export function FieldCard({
 
         {/* Inline properties + logic — only rendered while this field is selected */}
         {showInlinePanel && (
-          <div className="border-t border-neutral-200 px-4 pb-4 pt-4 flex flex-col gap-4">
+          <div className="border-t border-(--border-default) px-4 pb-4 pt-4 flex flex-col gap-4">
             <FieldInlineEditor field={field} onUpdate={onUpdate} onUpdateOptions={onUpdateOptions} />
-            <div className="h-px bg-neutral-200" />
+            <div className="h-px bg-(--border-default)" />
             <FieldLogicEditor
               field={field}
               allFields={allFields}

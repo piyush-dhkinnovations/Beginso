@@ -29,7 +29,7 @@ vi.mock('@/services/responses', () => ({
   },
 }));
 
-vi.mock('@/components/common/Toast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 

@@ -26,7 +26,7 @@ import { workspaceKeys } from '@/lib/queryKeys';
 import { useBuilderStore } from '@/store/builderStore';
 import { BuilderHeader } from '@/components/form-builder/BuilderHeader';
 import { BuilderTabs, BuilderTab } from '@/components/form-builder/BuilderTabs';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Canvas, CANVAS_ID } from '@/components/form-builder/Canvas';
 import { PagesPanel } from '@/components/form-builder/PagesPanel';
 import { Toolbox, FIELD_TYPE_CONFIG } from '@/components/form-builder/Toolbox';
@@ -548,28 +548,28 @@ export default function BuilderPageShell() {
   return (
     <>
       {/* -mx-4 md:-mx-8 xl:-mx-12 -mt-6 md:-mt-8 -mb-16 cancels AppShell's responsive content padding; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar */}
-      <div className="flex max-[520px]:flex items-center justify-center h-[calc(100vh-56px)] -mx-4 md:-mx-8 xl:-mx-12 -mt-6 md:-mt-8 -mb-16 min-[521px]:hidden bg-neutral-50 px-6">
-        <div className="text-center bg-white p-8 rounded-xl shadow-card border border-neutral-200 max-w-sm">
-          <p className="text-neutral-600 font-semibold text-body-lg">
+      <div className="flex max-[520px]:flex items-center justify-center h-[calc(100vh-56px)] -mx-4 md:-mx-8 xl:-mx-12 -mt-6 md:-mt-8 -mb-16 min-[521px]:hidden bg-(--bg-subtle) px-6">
+        <div className="text-center bg-(--surface-card) p-8 rounded-xl shadow-(--shadow-sm) border border-(--border-default) max-w-sm">
+          <p className="text-(--text-secondary) font-semibold bg-body-lg">
             For the best experience, use a desktop or laptop to build forms.
           </p>
         </div>
       </div>
 
       {/* -mx-4 md:-mx-8 xl:-mx-12 -mt-6 md:-mt-8 -mb-16 cancels AppShell's responsive content padding; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar. Canvas keeps its own internal overflow-y-auto below. */}
-      <div className="hidden min-[521px]:flex flex-col h-[calc(100vh-56px)] -mx-4 md:-mx-8 xl:-mx-12 -mt-6 md:-mt-8 -mb-16 overflow-hidden bg-neutral-50">
+      <div className="hidden min-[521px]:flex flex-col h-[calc(100vh-56px)] -mx-4 md:-mx-8 xl:-mx-12 -mt-6 md:-mt-8 -mb-16 overflow-hidden bg-(--bg-subtle)">
         {isLoading ? (
           /* Loading Skeleton */
           <div className="flex flex-col h-full w-full">
-            <div className="h-14 border-b bg-white flex items-center justify-between px-4 animate-pulse">
-              <div className="h-6 bg-neutral-200 rounded w-48"></div>
-              <div className="h-8 bg-neutral-200 rounded w-32"></div>
+            <div className="h-14 border-b bg-(--surface-card) flex items-center justify-between px-4 animate-pulse">
+              <div className="h-6 bg-(--border-default) rounded w-48"></div>
+              <div className="h-8 bg-(--border-default) rounded w-32"></div>
             </div>
-            <div className="h-12 border-b bg-white animate-pulse"></div>
+            <div className="h-12 border-b bg-(--surface-card) animate-pulse"></div>
             <div className="flex-1 flex p-6 gap-6 animate-pulse max-w-7xl mx-auto w-full mt-10">
-              <div className="w-280px bg-white border rounded-lg h-96"></div>
-              <div className="flex-1 bg-white border rounded-lg h-96"></div>
-              <div className="w-[320px] bg-white border rounded-lg h-96"></div>
+              <div className="w-70 bg-(--surface-card) border rounded-lg h-96"></div>
+              <div className="flex-1 bg-(--surface-card) border rounded-lg h-96"></div>
+              <div className="w-80 bg-(--surface-card) border rounded-lg h-96"></div>
             </div>
           </div>
         ) : (
@@ -640,22 +640,22 @@ export default function BuilderPageShell() {
                   />
                   <DragOverlay dropAnimation={dropAnimation}>
                     {activeDragConfig ? (
-                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-white border border-brand-500 shadow-lg opacity-90 min-h-44px cursor-grabbing pointer-events-none">
-                        <activeDragConfig.icon size={16} className="text-brand-500 shrink-0" />
-                        <span className="text-body font-medium text-neutral-700">
+                      <div className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-(--surface-card) border border-(--border-focus) shadow-(--shadow-lg) opacity-90 min-h-11 cursor-grabbing pointer-events-none">
+                        <activeDragConfig.icon size={16} className="text-(--action-primary) shrink-0" />
+                        <span className="bg-body font-medium text-(--text-secondary)">
                           {activeDragConfig.label}
                         </span>
                       </div>
                     ) : activeDragField ? (
-                      <div className="w-full flex items-center justify-between p-4 bg-white border border-neutral-200 rounded-lg min-h-56px cursor-grabbing pointer-events-none"
+                      <div className="w-full flex items-center justify-between p-4 bg-(--surface-card) border border-(--border-default) rounded-lg min-h-14 cursor-grabbing pointer-events-none"
                         style={{ boxShadow: '0 8px 24px rgba(15,23,42,0.14), 0 2px 8px rgba(15,23,42,0.08)', transform: 'scale(1.015)' }}
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <GripVertical size={16} className="text-neutral-400 shrink-0" />
+                          <GripVertical size={16} className="text-(--text-disabled) shrink-0" />
                           {activeDragFieldConfig && (
-                            <activeDragFieldConfig.icon size={16} className="text-neutral-500 shrink-0" />
+                            <activeDragFieldConfig.icon size={16} className="text-(--text-muted) shrink-0" />
                           )}
-                          <span className="text-body font-medium text-neutral-800 truncate pr-4">
+                          <span className="bg-body font-medium text-(--text-primary) truncate pr-4">
                             {activeDragField.label}
                           </span>
                         </div>

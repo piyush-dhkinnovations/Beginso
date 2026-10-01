@@ -1,7 +1,7 @@
 'use client';
 
 import { LayoutGrid } from 'lucide-react';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { BoardColumn } from './BoardColumn';
 import { canActOnResponses } from '@/lib/roles';
@@ -58,10 +58,10 @@ export function ResponsesBoard({
 
   if (stages.length === 0) {
     return (
-      <EmptyState
+      <EmptyState illustration="pipeline"
         icon={<LayoutGrid />}
-        heading="No pipeline stages yet"
-        body="Set up this workspace's pipeline stages in Settings to use the board view."
+        title="No pipeline stages yet"
+        description="Set up this workspace's pipeline stages in Settings to use the board view."
       />
     );
   }

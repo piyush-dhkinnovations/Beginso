@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '@/services/settings';
 import { settingsKeys } from '@/lib/queryKeys';
 import type { NotificationPreferences, WorkspaceSettings } from '@/types/settings';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Switch } from '@/components/ui/Switch';
 import { Button } from '@/components/ui/Button';
 
@@ -61,17 +61,17 @@ export function NotificationsTab() {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4 animate-pulse">
-        <div className="h-11 bg-[var(--border-default)] rounded w-full" />
-        <div className="h-11 bg-[var(--bg-subtle)] rounded w-full" />
-        <div className="h-11 bg-[var(--bg-subtle)] rounded w-full" />
+        <div className="h-11 bg-(--border-default) rounded w-full" />
+        <div className="h-11 bg-(--bg-subtle) rounded w-full" />
+        <div className="h-11 bg-(--bg-subtle) rounded w-full" />
       </div>
     );
   }
 
   if (isError || !workspace) {
     return (
-      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
-        <p className="text-body-sm text-[var(--text-primary)]">Unable to load notification preferences.</p>
+      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-(--border-default) bg-(--surface-card) p-4">
+        <p className="bg-body-sm text-(--text-primary)">Unable to load notification preferences.</p>
         <Button variant="secondary" size="small" onClick={() => refetch()}>Try again</Button>
       </div>
     );
@@ -86,12 +86,12 @@ export function NotificationsTab() {
         const inputId = `notif-${key}`;
         return (
           <div key={key} className="flex items-center justify-between gap-4 min-h-11 py-1">
-            <label htmlFor={inputId} className="text-body-sm text-[var(--text-primary)]">
+            <label htmlFor={inputId} className="bg-body-sm text-(--text-primary)">
               {label}
             </label>
             <div className="flex items-center gap-2">
               {mutation.isPending && (
-                <span className="h-3 w-3 rounded-full border-2 border-[var(--border-default)] border-t-[var(--action-primary)] animate-spin" />
+                <span className="h-3 w-3 rounded-full border-2 border-(--border-default) border-t-(--action-primary) animate-spin" />
               )}
               <Switch id={inputId} checked={prefs[key]} onChange={(next) => mutation.mutate(next)} />
             </div>

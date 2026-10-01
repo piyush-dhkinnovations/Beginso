@@ -13,7 +13,7 @@ import { workspacesService } from '@/services/workspaces';
 import { formKeys, formAccessKeys, formEventKeys, responseKeys, workspaceKeys } from '@/lib/queryKeys';
 import { hasCapability } from '@/lib/roles';
 import { formatRelativeTime } from '@/lib/formatters';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -101,10 +101,10 @@ export default function FormOverviewPage() {
   if (overviewQuery.isError || !form || !stats) {
     const status = (overviewQuery.error as { response?: { status?: number } } | null)?.response?.status;
     if (status === 403) {
-      return <EmptyState icon={<Lock className="bg-icon" aria-hidden="true" />} title="You do not have access to this form." />;
+      return <EmptyState illustration="no-access" icon={<Lock className="bg-icon" aria-hidden="true" />} title="You do not have access to this form." />;
     }
     if (status === 404) {
-      return <EmptyState icon={<FileQuestion className="bg-icon" aria-hidden="true" />} title="This form could not be found." />;
+      return <EmptyState illustration="not-found" icon={<FileQuestion className="bg-icon" aria-hidden="true" />} title="This form could not be found." />;
     }
     return (
       <Alert variant="error" title="We could not load this form.">
@@ -188,39 +188,43 @@ export default function FormOverviewPage() {
 
       <FormOverviewStats stats={effectiveStats} accessLabel={accessLabel} onOpenAccess={() => setIsAccessOpen(true)} />
 
-      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
-        <Card className="flex flex-col gap-3">
-          <h2 className="bg-h4">Share link</h2>
-          {publicUrl ? (
-            <div className="flex items-center gap-2">
-              <Input
-                id="overview-public-url"
-                aria-label="Public link"
-                value={publicUrl}
-                readOnly
-                title={publicUrl}
-                className="font-mono"
-                style={{ textOverflow: 'ellipsis' }}
-                onFocus={(e) => e.currentTarget.select()}
-              />
-              <Button
-                variant="secondary"
-                aria-label="Copy link"
-                onClick={() => {
-                  void navigator.clipboard.writeText(publicUrl);
-                  toast('Link copied to clipboard.', 'success');
-                }}
-              >
-                <Copy size={16} aria-hidden="true" />
-              </Button>
-            </div>
-          ) : (
-            <p className="bg-body-sm" style={{ color: 'var(--text-muted)', margin: 0 }}>
-              This form is not published yet, so there is no public link.
-            </p>
-          )}
-        </Card>
+      {/* Bug fix: the share link sat in the same narrow auto-fit column as every other card
+          here, so a real URL (localhost:3000/f/<10-char id>, in monospace) truncated down to
+          "http://localhost:3000/f…" — almost nothing actually readable. Full-width, outside the
+          grid below, gives it the room an id-bearing URL genuinely needs, same as any normal
+          share-link UI. */}
+      <Card className="flex flex-col gap-3">
+        <h2 className="bg-h4">Share link</h2>
+        {publicUrl ? (
+          <div className="flex items-center gap-2">
+            <Input
+              id="overview-public-url"
+              aria-label="Public link"
+              value={publicUrl}
+              readOnly
+              title={publicUrl}
+              className="font-mono flex-1 min-w-0"
+              onFocus={(e) => e.currentTarget.select()}
+            />
+            <Button
+              variant="secondary"
+              aria-label="Copy link"
+              onClick={() => {
+                void navigator.clipboard.writeText(publicUrl);
+                toast('Link copied to clipboard.', 'success');
+              }}
+            >
+              <Copy size={16} aria-hidden="true" />
+            </Button>
+          </div>
+        ) : (
+          <p className="bg-body-sm" style={{ color: 'var(--text-muted)', margin: 0 }}>
+            This form is not published yet, so there is no public link.
+          </p>
+        )}
+      </Card>
 
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
         <Card className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
             <h2 className="bg-h4">Recent responses</h2>

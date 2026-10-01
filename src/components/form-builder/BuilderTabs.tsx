@@ -24,7 +24,7 @@ const TABS: { id: BuilderTab; label: string }[] = [
 
 export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onRedo }: BuilderTabsProps) {
   return (
-    <nav className="flex items-center justify-between border-b bg-white shrink-0 shadow-sm" aria-label="Form Builder Tabs">
+    <nav className="flex items-center justify-between border-b bg-(--surface-card) shrink-0 shadow-(--shadow-sm)" aria-label="Form Builder Tabs">
       {/* Real role="tablist"/role="tab"/aria-selected semantics — confirmed missing during Sprint
           6 (SettingsTabs.tsx was built with its own correct semantics rather than copied from
           here, since this component lacked them), fixed here per that sprint's Friday
@@ -40,16 +40,16 @@ export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onR
                 aria-selected={isActive}
                 onClick={() => onChange(tab.id)}
                 className={cn(
-                  'px-6 py-3 text-body font-semibold transition-all border-b-2 focus:outline-none min-h-[44px] min-w-[60px]',
+                  'px-6 py-3 bg-body font-semibold transition-all border-b-2 focus:outline-none min-h-11 min-w-[60px]',
                   isActive
-                    ? 'border-brand-700 text-brand-700'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-800 hover:border-neutral-200'
+                    ? 'border-(--action-primary-hover) text-(--accent-soft-text)'
+                    : 'border-transparent text-(--text-muted) hover:text-(--text-primary) hover:border-(--border-default)'
                 )}
               >
                 {tab.label}
               </button>
               {index < TABS.length - 1 && (
-                <ChevronRight size={14} className="text-neutral-300 shrink-0" aria-hidden="true" />
+                <ChevronRight size={14} className="text-(--text-disabled) shrink-0" aria-hidden="true" />
               )}
             </div>
           );

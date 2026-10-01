@@ -46,8 +46,8 @@ export function BoardCard({ response, stages, canAct, onView, onChangeStage }: B
           aria-label={`Open response from ${name}`}
           onClick={() => onView(response._id)}
         >
-          <span className="block truncate text-body-sm font-medium text-text-primary">{name}</span>
-          <span className="block text-caption text-text-muted">{reference}</span>
+          <span className="block truncate bg-body-sm font-medium text-(--text-primary)">{name}</span>
+          <span className="block bg-caption text-(--text-muted)">{reference}</span>
         </button>
 
         {canAct && moveItems.length > 0 && (

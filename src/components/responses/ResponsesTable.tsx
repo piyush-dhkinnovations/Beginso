@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Eye, FileText, Trash2 } from 'lucide-react';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Table, type TableColumn } from '@/components/ui/Table';
@@ -44,22 +44,22 @@ export function ResponsesTable({
   const allSelected = responses.length > 0 && selectedIds.size === responses.length;
 
   const emptyState = hasActiveFilters ? (
-    <EmptyState
+    <EmptyState illustration="no-results"
       icon={<FileText />}
-      heading="No responses match these filters"
-      body="Try a different search term or clear a filter."
-      action={
+      title="No responses match these filters"
+      description="Try a different search term or clear a filter."
+      actions={
         onClearFilters && (
           <Button variant="secondary" onClick={onClearFilters}>Clear filters</Button>
         )
       }
     />
   ) : (
-    <EmptyState
+    <EmptyState illustration="empty-inbox"
       icon={<FileText />}
-      heading="No responses yet"
-      body="Once someone submits your published form, their answers land here. Share the link to get started."
-      action={
+      title="No responses yet"
+      description="Once someone submits your published form, their answers land here. Share the link to get started."
+      actions={
         formId ? (
           <Button variant="secondary" onClick={() => router.push(`/forms/${formId}/edit?tab=share`)}>
             Share Form
@@ -124,7 +124,7 @@ export function ResponsesTable({
             size="small"
             aria-label="Delete response"
             onClick={() => onDeleteResponse(r._id)}
-            className="w-11 h-11 p-0 text-error hover:text-error"
+            className="w-11 h-11 p-0 text-(--error-text) hover:text-(--error-text)"
           >
             <Trash2 size={16} />
           </Button>

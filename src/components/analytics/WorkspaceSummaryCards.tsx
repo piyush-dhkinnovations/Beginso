@@ -34,16 +34,16 @@ export function WorkspaceSummaryCards({
         return (
           <Card key={card.label} className="flex flex-col gap-2 p-4 sm:gap-4 sm:p-6">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-caption sm:text-body-sm text-neutral-500 font-medium">{card.label}</span>
-              <Icon size={20} className="sm:hidden shrink-0 text-brand-700" />
-              <Icon size={24} className="hidden sm:block shrink-0 text-brand-700" />
+              <span className="bg-caption sm:bg-body-sm text-(--text-muted) font-medium">{card.label}</span>
+              <Icon size={20} className="sm:hidden shrink-0 text-(--accent-soft-text)" />
+              <Icon size={24} className="hidden sm:block shrink-0 text-(--accent-soft-text)" />
             </div>
             {isLoading ? (
               <div className="animate-pulse">
-                <div className="h-8 bg-neutral-200 rounded w-16" />
+                <div className="h-8 bg-(--border-default) rounded w-16" />
               </div>
             ) : (
-              <span className={`text-display font-bold leading-none ${isMuted ? 'text-neutral-400' : 'text-neutral-900'}`}>
+              <span className={`bg-h3 font-bold leading-none ${isMuted ? 'text-(--text-disabled)' : 'text-(--text-primary)'}`}>
                 {card.value}
               </span>
             )}

@@ -25,12 +25,12 @@ export function ReportFormatCard({ format, title, description, onGenerate, isLoa
   return (
     <Card className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-(--accent-soft) text-(--accent-soft-text)">
           <Icon size={18} />
         </span>
         <div className="min-w-0">
-          <h3 className="text-body font-semibold text-neutral-900">{title}</h3>
-          <p className="text-caption text-neutral-500">{description}</p>
+          <h3 className="bg-body font-semibold text-(--text-primary)">{title}</h3>
+          <p className="bg-caption text-(--text-muted)">{description}</p>
         </div>
       </div>
       <Button variant="primary" onClick={onGenerate} isLoading={isLoading} disabled={disabled}>

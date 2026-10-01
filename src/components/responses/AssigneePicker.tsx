@@ -48,7 +48,7 @@ export function AssigneePicker({ members, current, onChange, disabled }: Assigne
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         onClick={() => setIsOpen((v) => !v)}
-        className="flex min-h-11 w-full items-center gap-2 rounded-md border border-(--border-default) bg-(--bg-subtle) px-2.5 py-1.5 text-left text-body-sm outline-none transition-colors hover:bg-(--surface-hover) disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex min-h-11 w-full items-center gap-2 rounded-md border border-(--border-default) bg-(--bg-subtle) px-2.5 py-1.5 text-left bg-body-sm outline-none transition-colors hover:bg-(--surface-hover) disabled:cursor-not-allowed disabled:opacity-60"
       >
         {current ? (
           <>

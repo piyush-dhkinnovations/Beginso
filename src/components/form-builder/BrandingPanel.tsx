@@ -4,7 +4,7 @@ import { useId, useRef, useState } from 'react';
 import { Loader2, Plus, Upload, X } from 'lucide-react';
 import type { FormBranding } from '@/types/form';
 import { uploadService } from '@/services/upload';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { BrandingLivePreview } from './BrandingLivePreview';
 import { PanelCard } from './PanelCard';
 
@@ -68,10 +68,10 @@ function ImageUploadZone({
         aspect === 'square' ? 'w-24 h-24' : 'w-full aspect-video'
       } ${
         isDragging
-          ? 'border-brand-500 bg-brand-50'
+          ? 'border-(--border-focus) bg-(--accent-soft)'
           : hasImage
-          ? 'border-neutral-200 bg-white'
-          : 'border-neutral-400 bg-neutral-50 hover:border-neutral-600'
+          ? 'border-(--border-default) bg-(--surface-card)'
+          : 'border-(--border-strong) bg-(--bg-subtle) hover:border-(--border-strong)'
       }`}
     >
       <input
@@ -82,14 +82,14 @@ function ImageUploadZone({
         onChange={(e) => void handleFile(e.target.files?.[0])}
       />
       {isUploading ? (
-        <Loader2 size={20} className="animate-spin text-neutral-400" />
+        <Loader2 size={20} className="animate-spin text-(--text-disabled)" />
       ) : imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset
         <img src={imageUrl} alt={label} className="w-full h-full object-cover" />
       ) : (
         <>
-          <Upload size={aspect === 'square' ? 16 : 20} className="text-neutral-400" />
-          <span className="text-caption font-semibold text-neutral-500 text-center px-2">
+          <Upload size={aspect === 'square' ? 16 : 20} className="text-(--text-disabled)" />
+          <span className="bg-caption font-semibold text-(--text-muted) text-center px-2">
             {aspect === 'square' ? 'Upload' : 'Click or drag to upload'}
           </span>
         </>
@@ -101,7 +101,7 @@ function ImageUploadZone({
             e.stopPropagation();
             onRemove();
           }}
-          className="absolute top-1 right-1 h-6 w-6 rounded-full bg-white border border-neutral-200 flex items-center justify-center text-neutral-500 hover:text-rose-600 shadow-card"
+          className="absolute top-1 right-1 h-6 w-6 rounded-full bg-(--surface-card) border border-(--border-default) flex items-center justify-center text-(--text-muted) hover:text-(--error-text) shadow-(--shadow-sm)"
           aria-label={`Remove ${label.toLowerCase()}`}
         >
           <X size={12} />
@@ -175,8 +175,8 @@ export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = tru
     <div className="branding-panel-shell w-full max-w-4xl mx-auto flex flex-col gap-6">
       {showHeading && (
         <div>
-          <h2 className="text-heading-1 font-bold text-neutral-900">Branding</h2>
-          <p className="text-body text-neutral-500 mt-1">
+          <h2 className="bg-h4 font-bold text-(--text-primary)">Branding</h2>
+          <p className="bg-body text-(--text-muted) mt-1">
             Set your brand colour, logo, and cover image. This shapes how your workspace looks everywhere.
           </p>
         </div>
@@ -204,19 +204,19 @@ export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = tru
                   <span
                     aria-hidden="true"
                     className={`h-7 w-7 rounded-full border-2 ${
-                      primaryColor === color ? 'border-neutral-800' : 'border-transparent'
+                      primaryColor === color ? 'border-(--border-strong)' : 'border-transparent'
                     }`}
                     style={{ backgroundColor: color }}
                   />
                 </button>
               ))}
-              <div className="w-px h-5 bg-neutral-200" />
+              <div className="w-px h-5 bg-(--border-default)" />
               <label
                 className="relative w-11 h-11 rounded-full flex items-center justify-center cursor-pointer"
                 aria-label="Custom colour picker"
               >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-neutral-300 transition-colors hover:border-neutral-500">
-                  <Plus size={12} className="text-neutral-400" />
+                <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-(--border-strong) transition-colors hover:border-(--border-strong)">
+                  <Plus size={12} className="text-(--text-disabled)" />
                 </span>
                 <input
                   type="color"
@@ -228,7 +228,7 @@ export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = tru
             </div>
             <div className="flex items-center gap-2">
               <div
-                className="w-9 h-9 rounded-md border border-neutral-200 shrink-0"
+                className="w-9 h-9 rounded-md border border-(--border-default) shrink-0"
                 style={{ backgroundColor: primaryColor }}
               />
               <input
@@ -237,10 +237,10 @@ export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = tru
                 onChange={(e) => setHexInput(e.target.value)}
                 onBlur={commitHexInput}
                 onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-                className="flex-1 rounded-md border-2 border-neutral-200 px-2.5 min-h-11 text-[13px] font-mono bg-white outline-none focus:border-neutral-500"
+                className="flex-1 rounded-md border-2 border-(--border-default) px-2.5 min-h-11 bg-body-sm font-mono bg-(--surface-card) outline-none focus:border-(--border-strong)"
               />
             </div>
-            {hexError && <p className="text-caption text-error font-semibold">{hexError}</p>}
+            {hexError && <p className="bg-caption text-(--error-text) font-semibold">{hexError}</p>}
           </PanelCard>
 
           <PanelCard label="Logo" description="Square image, at least 256×256px. PNG or SVG with transparent background works best.">
@@ -265,7 +265,7 @@ export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = tru
         </div>
 
         <div className="branding-panel-preview w-full flex flex-col gap-2">
-          <span className="text-label text-neutral-500">Preview</span>
+          <span className="bg-overline text-(--text-muted)">Preview</span>
           <BrandingLivePreview
             primaryColor={primaryColor}
             logoUrl={branding.logoUrl}

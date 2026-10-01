@@ -35,15 +35,15 @@ export default function FormPreviewPage() {
     // Fixed full-viewport overlay, independent of the user shell's <main> box model
     // (padding/min-height/overflow-y-auto) — avoids relying on negative-margin math to
     // exactly cancel it out, which is what produced the double-scrollbar bug.
-    <div className="fixed inset-0 z-50 overflow-hidden flex flex-col bg-neutral-50">
-      <div className="flex items-center justify-between h-11 px-4 bg-neutral-900 text-white shrink-0">
-        <span className="flex items-center gap-1.5 text-body-sm font-medium">
+    <div className="fixed inset-0 z-50 overflow-hidden flex flex-col bg-(--bg-subtle)">
+      <div className="flex items-center justify-between h-11 px-4 bg-(--surface-inverse) text-(--text-on-brand) shrink-0">
+        <span className="flex items-center gap-1.5 bg-body-sm font-medium">
           <Eye size={14} />
           Preview — this is what respondents will see
         </span>
         <Link
           href={`/forms/${id}/edit`}
-          className="flex min-h-11 items-center gap-1.5 px-2 text-body-sm font-medium text-neutral-300 transition-colors hover:text-white"
+          className="flex min-h-11 items-center gap-1.5 px-2 bg-body-sm font-medium text-(--text-disabled) transition-colors hover:text-(--text-on-brand)"
         >
           <ArrowLeft size={14} />
           Close preview
@@ -54,11 +54,11 @@ export default function FormPreviewPage() {
           previewMode so it doesn't force a second, independently-scrolling full-viewport box here. */}
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
-          <div className="flex items-center justify-center h-full text-body text-neutral-500">
+          <div className="flex items-center justify-center h-full bg-body text-(--text-muted)">
             Loading preview…
           </div>
         ) : error || !form || !schema ? (
-          <div className="flex items-center justify-center h-full text-body text-error">
+          <div className="flex items-center justify-center h-full bg-body text-(--error-text)">
             Could not load this form. Please go back and try again.
           </div>
         ) : (

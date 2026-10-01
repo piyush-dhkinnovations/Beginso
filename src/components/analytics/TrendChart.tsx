@@ -3,7 +3,7 @@
 import { TrendingUp } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { EChartContainer } from '@/components/charts/EChartContainer';
 import { getBaseChartOption, CHART_COLORS, type EChartsOption } from '@/lib/chartTheme';
 import type { AnalyticsTrendPoint, AnalyticsTrendResult } from '@/types/analytics';
@@ -65,7 +65,7 @@ export function TrendChart({ data, isLoading, isError = false, onRetry, isAllTim
   if (isLoading) {
     return (
       <Card>
-        <div className="animate-pulse rounded bg-neutral-100" style={{ height: CHART_HEIGHT }} />
+        <div className="animate-pulse rounded bg-(--bg-sunken)" style={{ height: CHART_HEIGHT }} />
       </Card>
     );
   }
@@ -74,8 +74,8 @@ export function TrendChart({ data, isLoading, isError = false, onRetry, isAllTim
     return (
       <Card role="alert" className="flex min-h-28 items-center justify-between gap-4">
         <div>
-          <p className="text-body-sm font-semibold text-neutral-900">Unable to load the response trend</p>
-          <p className="mt-1 text-caption text-neutral-500">The rest of the dashboard is still available.</p>
+          <p className="bg-body-sm font-semibold text-(--text-primary)">Unable to load the response trend</p>
+          <p className="mt-1 bg-caption text-(--text-muted)">The rest of the dashboard is still available.</p>
         </div>
         {onRetry && <Button variant="secondary" size="small" onClick={onRetry}>Try again</Button>}
       </Card>
@@ -89,8 +89,8 @@ export function TrendChart({ data, isLoading, isError = false, onRetry, isAllTim
       <Card>
         <EmptyState
           icon={<TrendingUp />}
-          heading={isAllTime ? 'No responses yet' : 'No responses in this range'}
-          body={
+          title={isAllTime ? 'No responses yet' : 'No responses in this range'}
+          description={
             isAllTime
               ? 'Responses will appear here once this form starts receiving submissions.'
               : 'Try a wider date range to see responses outside this window.'
@@ -104,7 +104,7 @@ export function TrendChart({ data, isLoading, isError = false, onRetry, isAllTim
 
   return (
     <Card>
-      <h3 className="text-heading-2 text-neutral-900 font-bold mb-4">Response Trend</h3>
+      <h3 className="bg-h5 text-(--text-primary) font-bold mb-4">Response Trend</h3>
       <EChartContainer option={buildTrendOption(data as AnalyticsTrendResult, mapped)} height={CHART_HEIGHT} ariaLabel="Response trend over time" />
       <table className="sr-only">
         <caption>Responses per {data?.bucket === 'week' ? 'week' : 'day'}</caption>

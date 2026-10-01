@@ -24,7 +24,7 @@ export function FormBanner({ branding }: FormBannerProps) {
         <img
           src={logoUrl}
           alt=""
-          className="absolute bottom-[-20px] left-6 w-10 h-10 rounded-full object-cover border-2 border-white shadow-card"
+          className="absolute bottom-[-20px] left-6 w-10 h-10 rounded-full object-cover border-2 border-white shadow-(--shadow-sm)"
         />
       )}
     </div>

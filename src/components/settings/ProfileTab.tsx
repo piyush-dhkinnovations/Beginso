@@ -7,7 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { profileNameSchema, type ProfileNameFormValues } from '@/lib/schemas/settingsSchemas';
 import { settingsService } from '@/services/settings';
 import { settingsKeys } from '@/lib/queryKeys';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { AvatarUploader } from './AvatarUploader';
@@ -67,17 +67,17 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4 animate-pulse">
-        <div className="h-16 w-16 rounded-full bg-[var(--border-default)]" />
-        <div className="h-10 bg-[var(--border-default)] rounded w-full" />
-        <div className="h-10 bg-[var(--border-subtle)] rounded w-full" />
+        <div className="h-16 w-16 rounded-full bg-(--border-default)" />
+        <div className="h-10 bg-(--border-default) rounded w-full" />
+        <div className="h-10 bg-(--border-subtle) rounded w-full" />
       </div>
     );
   }
 
   if (isError || !profile) {
     return (
-      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
-        <p className="text-body-sm text-[var(--text-primary)]">Unable to load your profile.</p>
+      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-(--border-default) bg-(--surface-card) p-4">
+        <p className="bg-body-sm text-(--text-primary)">Unable to load your profile.</p>
         <Button variant="secondary" size="small" onClick={() => refetch()}>Try again</Button>
       </div>
     );
@@ -94,7 +94,7 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
         <button
           type="button"
           onClick={() => toast("Changing your email isn't available yet.", 'info')}
-          className="self-start text-body-sm text-[var(--text-link)] hover:text-[var(--text-primary)] -mt-2"
+          className="self-start bg-body-sm text-(--text-link) hover:text-(--text-primary) -mt-2"
         >
           Change email
         </button>

@@ -73,7 +73,7 @@ export function ActivityTimeline({ entries, isLoading, isError, onRetry }: Activ
   if (isError) {
     return (
       <div role="alert" className="flex flex-col items-start gap-2">
-        <p className="text-body-sm text-(--text-muted)">Couldn&apos;t load activity.</p>
+        <p className="bg-body-sm text-(--text-muted)">Couldn&apos;t load activity.</p>
         {onRetry && (
           <button type="button" onClick={onRetry} className="bg-btn bg-btn-secondary bg-btn-sm">
             Retry
@@ -84,7 +84,7 @@ export function ActivityTimeline({ entries, isLoading, isError, onRetry }: Activ
   }
 
   if (!entries || entries.length === 0) {
-    return <p className="text-body-sm text-(--text-muted)">No activity yet.</p>;
+    return <p className="bg-body-sm text-(--text-muted)">No activity yet.</p>;
   }
 
   // Defensive newest-first sort — the backend now returns it this way, but a stale cache or a
@@ -104,14 +104,14 @@ export function ActivityTimeline({ entries, isLoading, isError, onRetry }: Activ
                 <Icon size={13} aria-hidden="true" />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-body-sm text-(--text-primary)">
+                <p className="bg-body-sm text-(--text-primary)">
                   <span className="font-medium">{entry.actorName}</span>
                   {entry.actorRemoved && <span className="text-(--text-muted)"> · no longer has access</span>}
                   {' '}
                   {label.toLowerCase()}
                   {entry.detail ? ` — ${entry.detail}` : ''}
                 </p>
-                <p className="text-caption text-(--text-muted)">{formatRelativeTime(entry.at)}</p>
+                <p className="bg-caption text-(--text-muted)">{formatRelativeTime(entry.at)}</p>
               </div>
             </li>
           );
@@ -122,7 +122,7 @@ export function ActivityTimeline({ entries, isLoading, isError, onRetry }: Activ
         <button
           type="button"
           onClick={() => setExpanded((v) => !v)}
-          className="flex items-center gap-1 self-start text-body-sm font-medium text-(--text-link) hover:underline"
+          className="flex items-center gap-1 self-start bg-body-sm font-medium text-(--text-link) hover:underline"
         >
           <ChevronDown size={14} className={expanded ? 'rotate-180' : undefined} aria-hidden="true" />
           {expanded ? 'Show less' : `Show all ${sorted.length}`}

@@ -55,7 +55,7 @@ export function BuilderHeader({
   };
 
   return (
-    <header className="flex items-center justify-between px-4 h-14 border-b bg-white shrink-0 shadow-sm">
+    <header className="flex items-center justify-between px-4 h-14 border-b bg-(--surface-card) shrink-0 shadow-(--shadow-sm)">
       <div className="flex items-center gap-2 flex-1 max-w-[30%]">
         <Button
           onClick={onBack}
@@ -72,22 +72,22 @@ export function BuilderHeader({
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          className="w-full text-heading-2 font-bold text-neutral-900 bg-transparent border-b-2 border-transparent focus:border-neutral-500 focus:outline-none px-1 py-0.5 rounded transition-colors"
+          className="w-full bg-h5 font-bold text-(--text-primary) bg-transparent border-b-2 border-transparent focus:border-(--border-strong) focus:outline-none px-1 py-0.5 rounded transition-colors"
           placeholder="Untitled Form"
           aria-label="Form name"
         />
       </div>
 
       <div className="flex items-center gap-4 flex-1 justify-end">
-        <div className="text-body-sm select-none">
+        <div className="bg-body-sm select-none">
           {isSaving || saveState === 'saving' ? (
-            <span className="text-neutral-500 font-medium animate-pulse">Saving…</span>
+            <span className="text-(--text-muted) font-medium animate-pulse">Saving…</span>
           ) : saveState === 'saved' ? (
-            <span className="text-emerald-600 font-medium">
+            <span className="text-(--success-text) font-medium">
               Saved{savedAt ? ` at ${savedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ' ✓'}
             </span>
           ) : saveState === 'error' ? (
-            <span className="text-rose-600 font-medium font-mono">⚠ Save failed</span>
+            <span className="text-(--error-text) font-medium font-mono">⚠ Save failed</span>
           ) : null}
         </div>
 
@@ -95,7 +95,7 @@ export function BuilderHeader({
           onClick={onDelete}
           variant="ghost"
           size="small"
-          className="h-11 w-11 shrink-0 p-0 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+          className="h-11 w-11 shrink-0 p-0 text-(--error-text) hover:bg-(--error-surface) hover:text-(--error-text)"
           title="Delete form"
           aria-label="Delete form"
         >
@@ -115,7 +115,7 @@ export function BuilderHeader({
 
         {status === 'published' ? (
           <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1.5 text-emerald-600 font-semibold text-body-sm px-2">
+            <span className="flex items-center gap-1.5 text-(--success-text) font-semibold bg-body-sm px-2">
               <CheckCircle2 size={15} />
               Published
             </span>

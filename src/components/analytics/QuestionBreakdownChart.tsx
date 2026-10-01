@@ -75,9 +75,9 @@ export function QuestionBreakdownChart({ question }: QuestionBreakdownChartProps
 
   return (
     <Card>
-      <h4 className="text-body font-semibold text-neutral-900 mb-3">{question.label}</h4>
+      <h4 className="bg-body font-semibold text-(--text-primary) mb-3">{question.label}</h4>
       {total === 0 ? (
-        <p className="text-body-sm text-neutral-500">No answers yet in this range.</p>
+        <p className="bg-body-sm text-(--text-muted)">No answers yet in this range.</p>
       ) : (
         <>
           <EChartContainer option={buildBarOption(sorted)} height={CHART_HEIGHT} ariaLabel={`${question.label} answer breakdown`} />

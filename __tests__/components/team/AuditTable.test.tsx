@@ -22,7 +22,7 @@ describe('AuditTable', () => {
   it('exposes the five real column headers through the scroll wrapper', () => {
     render(<AuditTable events={[EVENT]} />);
     const table = screen.getByRole('table');
-    ['Actor', 'Action', 'Target', 'IP', 'Timestamp'].forEach((name) => {
+    ['Actor', 'Action', 'Target', 'Origin', 'Timestamp'].forEach((name) => {
       expect(within(table).getByRole('columnheader', { name })).toHaveAttribute('scope', 'col');
     });
   });
@@ -47,7 +47,7 @@ describe('AuditTable', () => {
   it('hides Target and IP below the sm breakpoint via a responsive class, never a .wf- class', () => {
     render(<AuditTable events={[EVENT]} />);
 
-    for (const name of ['Target', 'IP']) {
+    for (const name of ['Target', 'Origin']) {
       const th = screen.getByRole('columnheader', { name });
       expect(th.className).toContain('hidden');
       expect(th.className).toContain('sm:table-cell');

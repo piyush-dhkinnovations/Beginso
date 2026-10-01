@@ -15,7 +15,7 @@ vi.mock('@/services/reports', () => ({
   reportsService: { getReportFileBlobUrl: (...args: unknown[]) => mockGetReportFileBlobUrl(...args) },
 }));
 
-vi.mock('@/components/common/Toast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 

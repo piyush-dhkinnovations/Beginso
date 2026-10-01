@@ -9,7 +9,7 @@ export interface BrandingLivePreviewProps {
 
 export function BrandingLivePreview({ primaryColor, logoUrl, coverImageUrl, formTitle }: BrandingLivePreviewProps) {
   return (
-    <div className="w-[280px] rounded-lg border border-neutral-200 bg-white overflow-hidden shadow-card">
+    <div className="w-70 rounded-lg border border-(--border-default) bg-(--surface-card) overflow-hidden shadow-(--shadow-sm)">
       <div className="w-full aspect-video" style={{ backgroundColor: primaryColor }}>
         {coverImageUrl && (
           // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset
@@ -21,11 +21,11 @@ export function BrandingLivePreview({ primaryColor, logoUrl, coverImageUrl, form
           // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset
           <img src={logoUrl} alt="" className="w-8 h-8 rounded object-cover" />
         )}
-        <p className="text-body-sm font-semibold text-neutral-800 truncate">{formTitle || 'Untitled form'}</p>
+        <p className="bg-body-sm font-semibold text-(--text-primary) truncate">{formTitle || 'Untitled form'}</p>
         <button
           type="button"
           disabled
-          className="w-full min-h-11 rounded-md text-white text-[13px] font-semibold"
+          className="w-full min-h-11 rounded-md text-(--text-on-brand) bg-body-sm font-semibold"
           style={{ backgroundColor: primaryColor }}
         >
           Submit

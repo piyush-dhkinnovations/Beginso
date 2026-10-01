@@ -7,13 +7,13 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { tagSchema, type TagFormValues } from '@/lib/schemas/tag';
 import { tagsService } from '@/services/tags';
 import { tagKeys } from '@/lib/queryKeys';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { STAGE_COLOR_TOKENS } from '@/types/stage';
 import type { Tag } from '@/types/tag';
 
@@ -106,8 +106,8 @@ export function TagManager({ scope, onDirtyChange }: TagManagerProps) {
   if (!scope) {
     return (
       <EmptyState
-        heading="No workspace to manage tags for"
-        body="You need to be an Owner or Admin of a workspace to manage its tag library."
+        title="No workspace to manage tags for"
+        description="You need to be an Owner or Admin of a workspace to manage its tag library."
       />
     );
   }
@@ -115,9 +115,9 @@ export function TagManager({ scope, onDirtyChange }: TagManagerProps) {
   if (isError) {
     return (
       <EmptyState
-        heading="Unable to load tags"
-        body="The tag library could not be loaded."
-        action={<Button onClick={() => void refetch()}>Try again</Button>}
+        title="Unable to load tags"
+        description="The tag library could not be loaded."
+        actions={<Button onClick={() => void refetch()}>Try again</Button>}
       />
     );
   }
@@ -145,9 +145,9 @@ export function TagManager({ scope, onDirtyChange }: TagManagerProps) {
       </form>
 
       {isLoading ? (
-        <p className="text-body-sm text-(--text-muted)">Loading tags…</p>
+        <p className="bg-body-sm text-(--text-muted)">Loading tags…</p>
       ) : !tags || tags.length === 0 ? (
-        <p className="text-body-sm text-(--text-muted)">No tags yet. Add one above.</p>
+        <p className="bg-body-sm text-(--text-muted)">No tags yet. Add one above.</p>
       ) : (
         <ul role="list" className="flex flex-col gap-2">
           {tags.map((tag) => (
@@ -162,7 +162,7 @@ export function TagManager({ scope, onDirtyChange }: TagManagerProps) {
               ) : (
                 <>
                   <Badge variant={tag.colour} dot pill>{tag.name}</Badge>
-                  <span className="text-caption text-(--text-muted)">
+                  <span className="bg-caption text-(--text-muted)">
                     {tag.usageCount ?? 0} response{(tag.usageCount ?? 0) === 1 ? '' : 's'}
                   </span>
                   <div className="flex items-center gap-2 ml-auto">

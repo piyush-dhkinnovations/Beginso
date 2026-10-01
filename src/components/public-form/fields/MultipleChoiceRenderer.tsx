@@ -17,7 +17,7 @@ export function MultipleChoiceRenderer({ field, control, error, disabled }: Fiel
               <label
                 key={opt}
                 className={cn(
-                  'flex items-center gap-2 min-h-[44px] text-[13px] text-neutral-800',
+                  'flex items-center gap-2 min-h-11 bg-body-sm text-(--text-primary)',
                   disabled && 'opacity-60 cursor-not-allowed pointer-events-none'
                 )}
               >
@@ -29,7 +29,7 @@ export function MultipleChoiceRenderer({ field, control, error, disabled }: Fiel
                   onChange={() => controllerField.onChange(opt)}
                   onBlur={controllerField.onBlur}
                   disabled={disabled}
-                  className="w-4 h-4 accent-brand-600"
+                  className="w-4 h-4 accent-(--action-primary)"
                 />
                 {opt}
               </label>

@@ -15,7 +15,7 @@ interface StatisticsCardsProps {
 }
 
 // Migrated onto ui/StatCard (built Sprint 7 for exactly this) — was still on raw pre-V2 Tailwind
-// classes (text-display, text-neutral-500, p-4 sm:p-6), which read visually inconsistent with
+// classes (bg-h3, text-(--text-muted), p-4 sm:p-6), which read visually inconsistent with
 // the rest of a page otherwise built on beginso-ui.css tokens, and had no dark-mode styling.
 export function StatisticsCards({
   isLoading = false,

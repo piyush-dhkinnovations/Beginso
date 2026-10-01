@@ -96,7 +96,7 @@ export default function SettingsPage() {
           the same max-w-4xl BrandingPanel already applies to itself internally, not left
           unbounded — otherwise its own `mx-auto` has extra room to center it away from the left
           edge that every other tab's content starts flush against. */}
-      <div className={activeTab === 'branding' ? 'max-w-4xl' : activeTab === 'tags' || activeTab === 'stages' || activeTab === 'scoring' ? '' : 'max-w-110'}>
+      <div className={activeTab === 'branding' ? 'max-w-4xl' : activeTab === 'tags' || activeTab === 'stages' || activeTab === 'scoring' ? '' : 'max-w-160'}>
         {visitedTabs.has('profile') && (
           <div className={activeTab === 'profile' ? '' : 'hidden'}>
             <ProfileTab onDirtyChange={(isDirty) => setTabDirty('profile', isDirty)} />
@@ -150,7 +150,7 @@ export default function SettingsPage() {
         title="Leave without saving?"
         description={`Your changes to ${TAB_LABEL[activeTab]} will be lost.`}
       >
-        <div className="flex flex-col gap-3 pt-4 border-t border-[var(--border-subtle)]">
+        <div className="flex flex-col gap-3 pt-4 border-t border-(--border-subtle)">
           <Button
             type="button"
             variant="destructive"
@@ -167,7 +167,7 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={() => setPendingTab(null)}
-            className="min-h-11 text-body-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] underline underline-offset-2 py-1"
+            className="min-h-11 bg-body-sm text-(--text-muted) hover:text-(--text-primary) underline underline-offset-2 py-1"
           >
             Stay
           </button>

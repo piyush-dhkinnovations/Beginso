@@ -34,7 +34,7 @@ vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ login: mockLogin, logout: vi.fn() }),
 }));
 
-vi.mock('@/components/common/Toast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 

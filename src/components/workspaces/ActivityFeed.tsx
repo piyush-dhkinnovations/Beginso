@@ -14,7 +14,7 @@ export interface ActivityFeedProps {
 export function ActivityFeed({ events }: ActivityFeedProps) {
   if (events.length === 0) {
     return (
-      <EmptyState
+      <EmptyState illustration="team"
         icon={<History className="bg-icon" aria-hidden="true" />}
         title="Nothing has happened yet."
         description="Activity across your workspace — forms, members, access — will show up here."

@@ -56,11 +56,11 @@ export function MemberTable({
       render: (m) => (
         <div className="flex items-center gap-2.5 min-w-0">
           <Avatar name={m.name} src={m.avatarUrl ?? undefined} alt="" size="sm" />
-          <span className="truncate font-medium text-body-sm">{m.name}</span>
+          <span className="truncate font-medium bg-body-sm">{m.name}</span>
         </div>
       ),
     },
-    { key: 'email', header: 'Email', render: (m) => <span className="text-body-sm text-text-muted">{m.email}</span> },
+    { key: 'email', header: 'Email', render: (m) => <span className="bg-body-sm text-(--text-muted)">{m.email}</span> },
     {
       key: 'role',
       header: 'Role',
@@ -89,7 +89,7 @@ export function MemberTable({
       key: 'lastActive',
       header: 'Last active',
       render: (m) => (
-        <span className="text-body-sm text-text-muted">
+        <span className="bg-body-sm text-(--text-muted)">
           {m.lastActiveAt ? new Date(m.lastActiveAt).toLocaleString() : '—'}
         </span>
       ),
@@ -149,7 +149,7 @@ export function MemberTable({
         title="Remove member?"
         description={pendingRemoval ? `${pendingRemoval.name} will lose access to this workspace immediately.` : undefined}
       >
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-[var(--border-default)]">
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-(--border-default)">
           <Button type="button" variant="secondary" onClick={() => setPendingRemoval(null)}>
             Cancel
           </Button>
@@ -176,7 +176,7 @@ export function MemberTable({
             : undefined
         }
       >
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-[var(--border-default)]">
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-(--border-default)">
           <Button type="button" variant="secondary" onClick={() => setPendingTransfer(null)}>
             Cancel
           </Button>

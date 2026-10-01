@@ -7,7 +7,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { signupSchema, SignupFormValues } from '@/lib/schemas/signupSchema';
 import { authService } from '@/services/auth';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
@@ -97,7 +97,7 @@ export function SignupForm() {
     <button
       type="button"
       onClick={togglePasswordVisibility}
-      className="text-[var(--text-muted)] hover:text-[var(--text-primary)] focus:outline-none flex items-center justify-center min-w-[44px] min-h-[44px]"
+      className="text-(--text-muted) hover:text-(--text-primary) focus:outline-none flex items-center justify-center min-w-11 min-h-11"
       aria-label={showPassword ? 'Hide password' : 'Show password'}
     >
       {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -109,7 +109,7 @@ export function SignupForm() {
       type="button"
       onClick={toggleConfirmPasswordVisibility}
       
-      className="text-[var(--text-muted)] hover:text-[var(--text-primary)] focus:outline-none flex items-center justify-center min-w-[44px] min-h-[44px]"
+      className="text-(--text-muted) hover:text-(--text-primary) focus:outline-none flex items-center justify-center min-w-11 min-h-11"
       aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
     >
       {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -163,7 +163,7 @@ export function SignupForm() {
       {serverError && (
         <div
           role="alert"
-          className="p-3 text-[13px] font-semibold text-error bg-red-50 border border-error/20 rounded-md"
+          className="p-3 bg-body-sm font-semibold text-(--error-text) bg-(--error-surface) border border-(--error)/20 rounded-md"
         >
           {serverError}
         </div>
@@ -181,9 +181,9 @@ export function SignupForm() {
 
       <div className="relative my-2 flex items-center justify-center">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-[var(--border-default)]"></div>
+          <div className="w-full border-t border-(--border-default)"></div>
         </div>
-        <span className="relative bg-[var(--surface-card)] px-3 text-[12px] text-[var(--text-muted)] font-medium uppercase">
+        <span className="relative bg-(--surface-card) px-3 bg-body-sm text-(--text-muted) font-medium uppercase">
           Or continue with
         </span>
       </div>

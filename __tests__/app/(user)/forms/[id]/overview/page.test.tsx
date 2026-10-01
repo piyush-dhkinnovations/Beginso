@@ -13,7 +13,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
   usePathname: () => '/forms/f1/overview',
 }));
-vi.mock('@/components/common/Toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
+vi.mock('@/components/ui/Toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 
 const mockOverview = vi.fn();
 vi.mock('@/services/forms', () => ({ formsService: { getFormOverview: (...a: unknown[]) => mockOverview(...a) } }));

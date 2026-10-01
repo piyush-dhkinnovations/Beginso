@@ -33,19 +33,19 @@ export function BlogCard({ post }: { post: BlogPost }) {
   return (
     <Link
       href={`/blog/${post.slug}`}
-      className="lift block rounded-[var(--bg-radius-md)] border border-[var(--border-default)] bg-[var(--surface-card)] overflow-hidden"
+      className="lift block rounded-(--bg-radius-md) border border-(--border-default) bg-(--surface-card) overflow-hidden"
     >
       <BlogCover post={post} />
       <div className="p-5">
         <Badge variant="primary" pill className="mb-3">
           {post.category}
         </Badge>
-        <h3 className="bg-h5 text-[var(--text-primary)] mb-2">{post.title}</h3>
-        <p className="bg-body-sm text-[var(--text-secondary)] mb-4">{post.excerpt}</p>
+        <h3 className="bg-h5 text-(--text-primary) mb-2">{post.title}</h3>
+        <p className="bg-body-sm text-(--text-secondary) mb-4">{post.excerpt}</p>
         <div className="flex items-center gap-2">
           <AuthorAvatar name={post.author} size={20} />
-          <span className="text-[12px] font-medium text-[var(--text-secondary)]">{post.author}</span>
-          <span className="text-[12px] text-[var(--text-muted)]">· {formatDate(post.date)}</span>
+          <span className="bg-body-sm font-medium text-(--text-secondary)">{post.author}</span>
+          <span className="bg-body-sm text-(--text-muted)">· {formatDate(post.date)}</span>
         </div>
       </div>
     </Link>

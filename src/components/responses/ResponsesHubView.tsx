@@ -7,7 +7,7 @@ import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, FileText, LockKeyhole } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { Tabs } from '@/components/ui/Tabs';
@@ -34,7 +34,7 @@ import { useMembers } from '@/hooks/useMembers';
 import { useTags } from '@/hooks/useTags';
 import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
 import { useWorkspaceTimezone } from '@/hooks/useWorkspaceTimezone';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { hasCapability } from '@/lib/roles';
@@ -291,17 +291,17 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
     const isAccessDenied = statusCode === 403;
     const isNotFound = statusCode === 404;
     return (
-      <EmptyState
+      <EmptyState illustration={isAccessDenied ? 'no-access' : isNotFound ? 'not-found' : 'error'}
         icon={isAccessDenied ? <LockKeyhole /> : isNotFound ? <FileText /> : <AlertCircle />}
-        heading={isAccessDenied ? 'Access denied' : isNotFound ? 'Form not found' : 'Unable to load form'}
-        body={
+        title={isAccessDenied ? 'Access denied' : isNotFound ? 'Form not found' : 'Unable to load form'}
+        description={
           isAccessDenied
             ? "You don't have permission to view this form's responses."
             : isNotFound
               ? "This form doesn't exist or may have been deleted."
               : 'Something went wrong while loading this form.'
         }
-        action={
+        actions={
           isAccessDenied || isNotFound ? (
             <Button onClick={() => router.push('/forms')}>Go to Forms</Button>
           ) : (
@@ -314,11 +314,11 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
 
   if (isResponsesError) {
     return (
-      <EmptyState
+      <EmptyState illustration="error"
         icon={<AlertCircle />}
-        heading="Unable to load responses"
-        body="The response list could not be loaded. Please try again."
-        action={<Button onClick={() => void refetchResponses()}>Try again</Button>}
+        title="Unable to load responses"
+        description="The response list could not be loaded. Please try again."
+        actions={<Button onClick={() => void refetchResponses()}>Try again</Button>}
       />
     );
   }
@@ -338,6 +338,9 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
 
   const isDeleting = mutations.isBulkRunning || mutations.isSingleDeleting;
   const hasActiveFilters = !!search || !!filters.stageId || !!filters.assigneeId || !!filters.unread;
+  // First run: no response exists yet and nothing is filtered — stats, search, view tabs and
+  // filters would all be controls over zero rows, so only the empty state is shown.
+  const isFirstRun = !isLoading && !!data && data.total === 0 && !hasActiveFilters && !activeViewId;
 
   return (
     // Keeping this container out of an animated opacity stacking context is important:
@@ -356,6 +359,26 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         }
       />
 
+      {isFirstRun ? (
+        <EmptyState
+          illustration="empty-inbox"
+          icon={<FileText />}
+          title="No responses yet"
+          description="Once someone submits your published form, their answers land here. Share the link to get started."
+          actions={
+            formId ? (
+              <Button variant="secondary" onClick={() => router.push(`/forms/${formId}/edit?tab=share`)}>
+                Share Form
+              </Button>
+            ) : (
+              <Button variant="secondary" onClick={() => router.push('/forms')}>
+                Go to Forms
+              </Button>
+            )
+          }
+        />
+      ) : (
+        <>
       <ResponsesStatCards
         stats={stats}
         isLoading={statsLoading}
@@ -517,6 +540,8 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
           statsError={isStatsError}
           onRetryStats={() => void refetchStats()}
         />
+      )}
+        </>
       )}
 
       <Modal

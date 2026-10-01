@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { AnswerBlock } from './AnswerBlock';
@@ -107,12 +107,12 @@ function DrawerErrorState({
 
   return (
     <div role="alert" className="flex min-h-64 flex-col items-center justify-center gap-3 p-6 text-center">
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-error">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-(--error-surface) text-(--error-text)">
         <Icon size={24} aria-hidden="true" />
       </span>
       <div className="space-y-1">
-        <h3 className="text-heading-3 font-semibold text-(--text-primary)">{heading}</h3>
-        <p className="max-w-[42ch] text-body-sm text-(--text-muted)">{body}</p>
+        <h3 className="bg-body font-semibold font-semibold text-(--text-primary)">{heading}</h3>
+        <p className="max-w-[42ch] bg-body-sm text-(--text-muted)">{body}</p>
       </div>
       <div className="flex items-center gap-2 pt-1">
         <Button variant="secondary" size="small" onClick={onClose}>
@@ -300,7 +300,7 @@ export function ResponseDrawer({
       role={displayMode === 'drawer' ? 'presentation' : undefined}
       className={cn(
         displayMode === 'drawer'
-          ? 'fixed inset-0 z-50 flex justify-end bg-black/40 animate-fade-in'
+          ? 'bg-scrim justify-end p-0'
           // Bug fix, Sprint 12 close-out: this set its own max-w-6xl cap, directly against
           // CLAUDE.md's "pages never set their own width" rule (AppShell already owns that) —
           // the full-page view read as a slightly-wider card, not an actual full-screen view.
@@ -318,8 +318,8 @@ export function ResponseDrawer({
         className={cn(
           'relative flex w-full flex-col overflow-hidden border border-(--border-default) bg-(--surface-card)',
           displayMode === 'drawer'
-            ? 'h-full border-y-0 border-r-0 shadow-2xl animate-slide-in-right sm:max-w-[min(1180px,calc(100vw-32px))]'
-            : 'min-h-full rounded-lg shadow-card'
+            ? 'h-full border-y-0 border-r-0 shadow-(--shadow-lg) animate-slide-in-right sm:max-w-[min(1180px,calc(100vw-32px))]'
+            : 'min-h-full rounded-lg shadow-(--shadow-sm)'
         )}
       >
         <header className="flex shrink-0 items-center justify-between gap-3 border-b border-(--border-default) px-4 py-3 sm:px-6">
@@ -337,20 +337,20 @@ export function ResponseDrawer({
             {response && hasIdentity && (
               <span
                 aria-hidden="true"
-                className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-body-sm font-semibold text-brand-700 sm:flex"
+                className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--accent-soft-hover) bg-body-sm font-semibold text-(--accent-soft-text) sm:flex"
               >
                 {initial}
               </span>
             )}
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 id="drawer-title" className="truncate text-heading-2 text-(--text-primary)">
+                <h2 id="drawer-title" className="truncate bg-h5 text-(--text-primary)">
                   {response ? (identity.label ?? identity.email ?? `Response #${response.reference ?? shortId(response._id)}`) : 'Response Details'}
                 </h2>
                 {response && <StageBadge stage={response.stage} />}
               </div>
               {response && (
-                <p className="flex min-w-0 items-center gap-1 truncate text-body-sm text-(--text-muted)">
+                <p className="flex min-w-0 items-center gap-1 truncate bg-body-sm text-(--text-muted)">
                   <span className="truncate">{formTitle ?? responseForm?.title ?? ''}</span>
                   {identity.email && identity.label ? ` · ${identity.email}` : ''}
                 </p>
@@ -372,7 +372,7 @@ export function ResponseDrawer({
                   <ChevronLeft size={14} aria-hidden="true" />
                   <span className="hidden xl:inline">Previous</span>
                 </Button>
-                <span className="hidden min-w-16 px-1 text-center text-body-sm text-(--text-muted) md:inline">
+                <span className="hidden min-w-16 px-1 text-center bg-body-sm text-(--text-muted) md:inline">
                   {position} of {totalResponses}
                 </span>
                 <Button
@@ -394,7 +394,7 @@ export function ResponseDrawer({
                   <Download size={15} aria-hidden="true" />
                   <span className="hidden lg:inline">Download</span>
                 </Button>
-                <Button variant="ghost" size="small" onClick={() => setConfirmDeleteOpen(true)} aria-label="Delete response" className="gap-1.5 text-error">
+                <Button variant="ghost" size="small" onClick={() => setConfirmDeleteOpen(true)} aria-label="Delete response" className="gap-1.5 text-(--error-text)">
                   <Trash2 size={15} aria-hidden="true" />
                   <span className="hidden lg:inline">Delete</span>
                 </Button>
@@ -455,12 +455,12 @@ export function ResponseDrawer({
 
                 <section className="min-w-0 rounded-lg border border-(--border-default) bg-(--surface-card) p-4">
                   <div className="mb-3">
-                    <h3 className="text-heading-3 text-(--text-primary)">Submitted Answers</h3>
-                    <p className="mt-0.5 text-body-xs text-(--text-muted)">All answers provided with this response</p>
+                    <h3 className="bg-body font-semibold text-(--text-primary)">Submitted Answers</h3>
+                    <p className="mt-0.5 bg-caption text-(--text-muted)">All answers provided with this response</p>
                   </div>
                   <div className="flex flex-col rounded-lg border border-(--border-default) px-4">
                     {Object.keys(response.answers).length === 0 && response.responseFiles.length === 0 ? (
-                      <p className="py-6 text-center text-body-sm text-(--text-muted)">No submitted answers.</p>
+                      <p className="py-6 text-center bg-body-sm text-(--text-muted)">No submitted answers.</p>
                     ) : (
                       Object.entries(response.answers).map(([label, value]) => (
                         <AnswerBlock key={label} label={label} value={value} />
@@ -468,10 +468,10 @@ export function ResponseDrawer({
                     )}
                     {response.responseFiles.map((file, index) => (
                       <div key={file.id} className="flex items-center justify-between gap-4 border-b border-(--border-default) py-2.5 last:border-0">
-                        <span className="shrink-0 text-body-sm text-(--text-muted)">
+                        <span className="shrink-0 bg-body-sm text-(--text-muted)">
                           {resolvedFileFieldLabels[index] ?? (response.responseFiles.length === 1 ? 'Uploaded file' : `Uploaded file ${index + 1}`)}
                         </span>
-                        <span className="flex min-w-0 items-center gap-2 text-right text-body-sm font-medium text-(--text-primary)">
+                        <span className="flex min-w-0 items-center gap-2 text-right bg-body-sm font-medium text-(--text-primary)">
                           <FileText size={14} className="shrink-0 text-(--text-muted)" aria-hidden="true" />
                           <span className="truncate" title={file.name}>{file.name}</span>
                         </span>

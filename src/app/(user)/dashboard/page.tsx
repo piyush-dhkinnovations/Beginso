@@ -7,7 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { dashboardService } from '@/services/dashboard';
 import { formsService } from '@/services/forms';
 import { dashboardKeys, workspaceKeys } from '@/lib/queryKeys';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { Spinner } from '@/components/ui/Spinner';
 import { StatisticsCards } from '@/components/dashboard/StatisticsCards';
 import { RecentActivitySection } from '@/components/dashboard/RecentActivitySection';
 import { Card, EmptyState, PageHeader, Skeleton, StatusBadge } from '@/components/ui';
@@ -54,7 +54,7 @@ export default function DashboardPage() {
   });
 
   if (authLoading) {
-    return <LoadingSpinner variant="overlay" />;
+    return <div className="flex justify-center py-16"><Spinner size="large" /></div>;
   }
 
   // Real bug found and fixed: `analytics.totalForms` comes from GET /api/dashboard/analytics,
@@ -97,17 +97,17 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Link href="/forms" className="block">
-          <Card className="flex flex-col gap-2 h-full transition-shadow hover:shadow-md">
-            <PlusCircle size={24} className="text-text-muted" aria-hidden="true" />
-            <strong className="text-body font-semibold text-text-primary">Create a form</strong>
-            <span className="text-caption text-text-muted">Start from scratch</span>
+          <Card className="flex flex-col gap-2 h-full transition-shadow hover:shadow-(--shadow-md)">
+            <PlusCircle size={24} className="text-(--text-muted)" aria-hidden="true" />
+            <strong className="bg-body font-semibold text-(--text-primary)">Create a form</strong>
+            <span className="bg-caption text-(--text-muted)">Start from scratch</span>
           </Card>
         </Link>
         <Link href="/templates" className="block">
-          <Card className="flex flex-col gap-2 h-full transition-shadow hover:shadow-md">
-            <LayoutTemplate size={24} className="text-text-muted" aria-hidden="true" />
-            <strong className="text-body font-semibold text-text-primary">Browse templates</strong>
-            <span className="text-caption text-text-muted">Start with a proven structure</span>
+          <Card className="flex flex-col gap-2 h-full transition-shadow hover:shadow-(--shadow-md)">
+            <LayoutTemplate size={24} className="text-(--text-muted)" aria-hidden="true" />
+            <strong className="bg-body font-semibold text-(--text-primary)">Browse templates</strong>
+            <span className="bg-caption text-(--text-muted)">Start with a proven structure</span>
           </Card>
         </Link>
       </div>
@@ -135,7 +135,7 @@ export default function DashboardPage() {
           ))}
         </Card>
       ) : (!formsData?.forms || formsData.forms.length === 0) ? (
-        <EmptyState
+        <EmptyState illustration="empty-forms"
           icon={<FileText className="bg-icon" aria-hidden="true" />}
           title="Create your first form"
           description="Your standalone forms will show up here once you create one."
@@ -154,8 +154,8 @@ export default function DashboardPage() {
               style={i !== (formsData?.forms?.length ?? 0) - 1 ? { borderBottom: '1px solid var(--border-default)' } : undefined}
             >
               <Link href={`/forms/${form._id}/edit`} className="min-w-0 flex-1">
-                <p className="text-body-sm font-semibold text-text-primary truncate">{form.title}</p>
-                <p className="text-caption text-text-muted">
+                <p className="bg-body-sm font-semibold text-(--text-primary) truncate">{form.title}</p>
+                <p className="bg-caption text-(--text-muted)">
                   {STATUS_LABEL[form.status]} · {form.responseCount} response{form.responseCount !== 1 ? 's' : ''}
                 </p>
               </Link>

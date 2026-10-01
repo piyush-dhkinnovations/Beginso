@@ -84,7 +84,7 @@ export function MentionPicker({ members, query, selectedIds, onSelect, onClose, 
       className="bg-menu z-50 max-h-56 overflow-y-auto"
     >
       {matches.length === 0 ? (
-        <p className="px-3 py-2 text-body-sm text-(--text-muted)">No matching members.</p>
+        <p className="px-3 py-2 bg-body-sm text-(--text-muted)">No matching members.</p>
       ) : (
         matches.map((member, index) => (
           <button

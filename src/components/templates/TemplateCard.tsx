@@ -15,13 +15,13 @@ export function TemplateCard({ template, onUse, isLoading }: TemplateCardProps) 
   return (
     <Card className="flex flex-col gap-3">
       <div className="flex items-start justify-between gap-2">
-        <h3 className="text-heading-2 text-neutral-800">{template.name}</h3>
+        <h3 className="bg-h5 text-(--text-primary)">{template.name}</h3>
         <StatusBadge variant="neutral" className="capitalize shrink-0">
           {template.category}
         </StatusBadge>
       </div>
-      <p className="text-body text-neutral-500 flex-1">{template.description}</p>
-      <span className="text-caption text-neutral-500">
+      <p className="bg-body text-(--text-muted) flex-1">{template.description}</p>
+      <span className="bg-caption text-(--text-muted)">
         {template.fields.length} {template.fields.length === 1 ? 'field' : 'fields'}
       </span>
       <Button onClick={() => onUse(template._id)} isLoading={isLoading} className="w-full">

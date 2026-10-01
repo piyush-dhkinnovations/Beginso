@@ -47,7 +47,7 @@ describe('ResponsesStatCards', () => {
       />
     );
     const zero = screen.getAllByText('0')[0];
-    expect(zero.className).toContain('text-text-muted');
+    expect(zero.className).toContain('text-(--text-muted)');
   });
 
   it('shows a retryable error instead of misleading zero totals', () => {

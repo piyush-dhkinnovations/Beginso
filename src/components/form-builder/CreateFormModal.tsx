@@ -12,7 +12,7 @@ import { workspacesService } from '@/services/workspaces';
 import { settingsKeys, workspaceKeys } from '@/lib/queryKeys';
 import { createFormSchema, CreateFormValues } from '@/lib/schemas/formSchema';
 import { useBuilderStore } from '@/store/builderStore';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -212,8 +212,8 @@ export function CreateFormModal({ isOpen, onClose, defaultDestination }: CreateF
                 </option>
               ))}
             </Select>
-            <p className="text-caption text-neutral-500 flex items-start gap-1.5">
-              <Info size={14} className="shrink-0 text-neutral-400 mt-0.5" />
+            <p className="bg-caption text-(--text-muted) flex items-start gap-1.5">
+              <Info size={14} className="shrink-0 text-(--text-disabled) mt-0.5" />
               <span>
                 Forms in <strong>Personal space</strong> are visible only to you. Forms in a workspace are visible to everyone in that workspace. You can move a form later.
               </span>

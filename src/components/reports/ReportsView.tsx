@@ -7,13 +7,13 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
 import { ReportFormatCard } from './ReportFormatCard';
 import { ReportJobsList } from './ReportJobsList';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { formsService } from '@/services/forms';
 import { reportsService } from '@/services/reports';
 import { reportKeys } from '@/lib/queryKeys';
 import type { CreateReportPayload, PaginatedReportsResult, ReportFormat, ReportJob } from '@/types/report';
 
-const SELECT_CLASS = 'min-h-11 rounded-md border-2 border-neutral-200 bg-white px-3 text-body-sm outline-none focus:border-neutral-500';
+const SELECT_CLASS = 'min-h-11 rounded-md border-2 border-(--border-default) bg-(--surface-card) px-3 bg-body-sm outline-none focus:border-(--border-strong)';
 
 export function ReportsView() {
   const router = useRouter();
@@ -92,7 +92,7 @@ export function ReportsView() {
     <div className="flex flex-col gap-4 animate-fade-in">
       <PageHeader title="Reports" description="Export your form responses as a CSV or PDF file." />
 
-      <div className="flex flex-col gap-4 rounded-lg border border-neutral-200 bg-white p-4">
+      <div className="flex flex-col gap-4 rounded-lg border border-(--border-default) bg-(--surface-card) p-4">
         {/* Sprint 12 (inbox-collaboration), requirements.md §7.3 #4: the status scope picker is
             removed, not replaced with a stage picker — this view only renders under the personal
             shell today (this file's own comment above), where stages are OQ-9's fixed defaults,

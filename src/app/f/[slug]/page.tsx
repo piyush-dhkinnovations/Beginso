@@ -1,3 +1,4 @@
+import { StateArt } from '@/components/illustrations/Illustration';
 import type { Metadata, Viewport } from 'next';
 import { publicFormService } from '@/services/publicForm';
 import { PublicFormShell } from '@/components/public-form/PublicFormShell';
@@ -36,18 +37,24 @@ export default async function PublicFormPage({ params }: Props) {
     result = await publicFormService.getFormSchema(slug);
   } catch {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-neutral-50 p-4">
-        <div role="alert" className="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-8 text-center shadow-card">
-          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-error">
-            <AlertCircle size={24} aria-hidden="true" />
-          </span>
-          <h1 className="mt-4 text-heading-2 font-bold text-neutral-900">Unable to load this form</h1>
-          <p className="mt-2 text-body text-neutral-600">
+      <main className="flex min-h-screen items-center justify-center bg-(--bg-subtle) p-4">
+        <div role="alert" className="w-full max-w-md rounded-xl border border-(--border-default) bg-(--surface-card) p-8 text-center shadow-(--shadow-sm)">
+          <StateArt
+            name="error"
+            size="sm"
+            fallback={
+              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-(--error-surface) text-(--error-text)">
+                <AlertCircle size={24} aria-hidden="true" />
+              </span>
+            }
+          />
+          <h1 className="mt-4 bg-h5 font-bold text-(--text-primary)">Unable to load this form</h1>
+          <p className="mt-2 bg-body text-(--text-secondary)">
             The service is temporarily unavailable. Your form has not been removed or closed.
           </p>
           <a
             href={`/f/${encodeURIComponent(slug)}`}
-            className="mt-6 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md bg-slate-700 px-4 text-body-sm font-semibold text-white hover:bg-slate-900"
+            className="bg-btn bg-btn-primary mt-6"
           >
             Try again
           </a>

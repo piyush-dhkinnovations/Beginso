@@ -66,7 +66,7 @@ export function AppShell({
       {mobileOpen && (
         <div
           role="presentation"
-          className="fixed inset-0 z-40 bg-neutral-900/40 animate-fade-in md:hidden"
+          className="fixed inset-0 z-40 bg-black/40 animate-fade-in md:hidden"
           onClick={handleMobileClose}
         >
           <div
@@ -74,10 +74,10 @@ export function AppShell({
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
-            className="absolute left-0 top-0 bottom-0 w-[220px] max-w-[80vw] bg-[var(--surface-card)] shadow-2xl z-50 flex flex-col"
+            className="absolute left-0 top-0 bottom-0 w-55 max-w-[80vw] bg-(--surface-card) shadow-(--shadow-lg) z-50 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-2 border-b border-[var(--border-default)]">
+            <div className="flex items-center justify-between p-2 border-b border-(--border-default)">
               <Wordmark height={32} />
               <button
                 type="button"

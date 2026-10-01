@@ -5,9 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { LayoutTemplate } from 'lucide-react';
 import { templatesService } from '@/services/templates';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { TemplateCard } from '@/components/templates/TemplateCard';
 import { cn } from '@/lib/utils';
 
@@ -42,26 +42,26 @@ export default function TemplatesPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex flex-col gap-3 rounded-lg border border-neutral-200 bg-white p-6 animate-pulse">
+            <div key={i} className="flex flex-col gap-3 rounded-lg border border-(--border-default) bg-(--surface-card) p-6 animate-pulse">
               <div className="flex items-start justify-between gap-2">
-                <div className="h-5 bg-neutral-200 rounded w-2/5" />
-                <div className="h-5 w-16 bg-neutral-100 rounded shrink-0" />
+                <div className="h-5 bg-(--border-default) rounded w-2/5" />
+                <div className="h-5 w-16 bg-(--bg-sunken) rounded shrink-0" />
               </div>
               <div className="flex-1 space-y-2">
-                <div className="h-3 bg-neutral-100 rounded w-full" />
-                <div className="h-3 bg-neutral-100 rounded w-4/5" />
+                <div className="h-3 bg-(--bg-sunken) rounded w-full" />
+                <div className="h-3 bg-(--bg-sunken) rounded w-4/5" />
               </div>
-              <div className="h-3 bg-neutral-100 rounded w-1/4" />
-              <div className="h-9 bg-neutral-200 rounded w-full" />
+              <div className="h-3 bg-(--bg-sunken) rounded w-1/4" />
+              <div className="h-9 bg-(--border-default) rounded w-full" />
             </div>
           ))}
         </div>
       ) : error ? (
         <div className="flex items-center justify-center py-20">
-          <p className="text-body text-error">Failed to load templates. Please refresh.</p>
+          <p className="bg-body text-(--error-text)">Failed to load templates. Please refresh.</p>
         </div>
       ) : !templates || templates.length === 0 ? (
-        <EmptyState icon={<LayoutTemplate />} heading="No templates available yet" body="Check back soon for pre-built starter templates." />
+        <EmptyState illustration="empty-forms" icon={<LayoutTemplate />} title="No templates available yet" description="Check back soon for pre-built starter templates." />
       ) : (
         <>
           <div className="flex flex-wrap gap-2">
@@ -71,10 +71,10 @@ export default function TemplatesPage() {
                 type="button"
                 onClick={() => setActiveCategory(category)}
                 className={cn(
-                  'px-3 min-h-11 rounded-full text-body-sm font-semibold capitalize transition-colors',
+                  'px-3 min-h-11 rounded-full bg-body-sm font-semibold capitalize transition-colors',
                   activeCategory === category
-                    ? 'bg-brand-700 text-white'
-                    : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+                    ? 'bg-(--action-primary-hover) text-(--text-on-brand)'
+                    : 'bg-(--surface-card) border border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)'
                 )}
               >
                 {category}
@@ -82,7 +82,7 @@ export default function TemplatesPage() {
             ))}
           </div>
 
-          <p className="text-caption text-neutral-500">
+          <p className="bg-caption text-(--text-muted)">
             Showing {filtered?.length ?? 0} template{(filtered?.length ?? 0) !== 1 ? 's' : ''}
           </p>
 

@@ -25,7 +25,7 @@ function isChoiceField(field: FormField): field is Extract<FormField, { options:
 }
 
 const selectClass =
-  'rounded-md border-2 border-neutral-200 px-2.5 min-h-11 text-[13px] bg-white outline-none focus:border-neutral-500';
+  'rounded-md border-2 border-(--border-default) px-2.5 min-h-11 bg-body-sm bg-(--surface-card) outline-none focus:border-(--border-strong)';
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 // Rendered inline inside the selected FieldCard, below FieldInlineEditor.
@@ -108,7 +108,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span className="text-label text-neutral-500">
+        <span className="bg-overline text-(--text-muted)">
           Conditional Logic
         </span>
         <Switch id={`${field.fieldId}-logic-toggle`} checked={expanded} onChange={setExpanded} />
@@ -121,15 +121,15 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
               {incomingRules.map(({ sourceField: sf, rule, ruleIndex }) => (
                 <div
                   key={`${sf.fieldId}-${ruleIndex}`}
-                  className="flex items-center justify-between gap-3 p-3 bg-white border border-neutral-200 rounded-lg"
+                  className="flex items-center justify-between gap-3 p-3 bg-(--surface-card) border border-(--border-default) rounded-lg"
                 >
                   <div className="flex flex-col gap-1 min-w-0">
-                    <p className="text-body-sm text-neutral-800">
+                    <p className="bg-body-sm text-(--text-primary)">
                       <span className="font-semibold">IF</span> {sf.label} equals &lsquo;{rule.condition.value}&rsquo;{' '}
                       <span className="font-semibold">THEN</span> {rule.action === 'show' ? 'SHOW' : 'HIDE'} this field
                     </p>
                     {sf.deleted && (
-                      <span className="inline-flex items-center gap-1 text-caption font-semibold text-warning">
+                      <span className="inline-flex items-center gap-1 bg-caption font-semibold text-(--warning-text)">
                         <AlertTriangle size={12} />
                         Source field deleted &mdash; this rule has no effect.
                       </span>
@@ -139,7 +139,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
                     <button
                       type="button"
                       onClick={() => openEditForm(sf.fieldId, ruleIndex, rule)}
-                      className="text-neutral-400 hover:text-brand-700 min-w-11 min-h-11 flex items-center justify-center"
+                      className="text-(--text-disabled) hover:text-(--accent-soft-text) min-w-11 min-h-11 flex items-center justify-center"
                       aria-label="Edit condition"
                     >
                       <Pencil size={14} />
@@ -147,7 +147,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
                     <button
                       type="button"
                       onClick={() => onDeleteRule(sf.fieldId, ruleIndex)}
-                      className="text-neutral-400 hover:text-rose-600 min-w-11 min-h-11 flex items-center justify-center"
+                      className="text-(--text-disabled) hover:text-(--error-text) min-w-11 min-h-11 flex items-center justify-center"
                       aria-label="Delete condition"
                     >
                       <X size={14} />
@@ -172,10 +172,10 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
           )}
 
           {showForm && (
-            <div className="flex flex-col gap-3 p-3 bg-white border border-neutral-200 rounded-lg">
+            <div className="flex flex-col gap-3 p-3 bg-(--surface-card) border border-(--border-default) rounded-lg">
               <div className="grid grid-cols-1 min-[881px]:grid-cols-2 gap-3">
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-label text-neutral-500">If field</span>
+                  <span className="bg-overline text-(--text-muted)">If field</span>
                   <select
                     value={sourceFieldId}
                     onChange={(e) => handleSourceChange(e.target.value)}
@@ -190,17 +190,17 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
                 </label>
 
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-label text-neutral-500">Operator</span>
+                  <span className="bg-overline text-(--text-muted)">Operator</span>
                   <input
                     value="equals"
                     disabled
                     readOnly
-                    className="rounded-md border-2 border-neutral-200 px-2.5 min-h-11 text-[13px] bg-neutral-100 text-neutral-500 outline-none"
+                    className="rounded-md border-2 border-(--border-default) px-2.5 min-h-11 bg-body-sm bg-(--bg-sunken) text-(--text-muted) outline-none"
                   />
                 </label>
 
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-label text-neutral-500">Value</span>
+                  <span className="bg-overline text-(--text-muted)">Value</span>
                   {sourceField && isChoiceField(sourceField) ? (
                     <select value={value} onChange={(e) => setValue(e.target.value)} className={selectClass}>
                       <option value="">Select a value</option>
@@ -221,15 +221,15 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
                 </label>
 
                 <label className="flex flex-col gap-1.5">
-                  <span className="text-label text-neutral-500">Then</span>
-                  <div className="flex min-h-11 rounded-md border-2 border-neutral-200 overflow-hidden">
+                  <span className="bg-overline text-(--text-muted)">Then</span>
+                  <div className="flex min-h-11 rounded-md border-2 border-(--border-default) overflow-hidden">
                     {(['show', 'hide'] as const).map((a) => (
                       <button
                         key={a}
                         type="button"
                         onClick={() => setAction(a)}
-                        className={`flex-1 text-[13px] font-semibold ${
-                          action === a ? 'bg-brand-700 text-white' : 'bg-white text-neutral-600'
+                        className={`flex-1 bg-body-sm font-semibold ${
+                          action === a ? 'bg-(--action-primary-hover) text-(--text-on-brand)' : 'bg-(--surface-card) text-(--text-secondary)'
                         }`}
                       >
                         {a === 'show' ? 'SHOW' : 'HIDE'}

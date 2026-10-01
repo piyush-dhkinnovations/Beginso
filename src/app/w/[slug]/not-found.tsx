@@ -11,7 +11,7 @@ import { EmptyState } from '@/components/ui';
 export default function WorkspaceNotFound() {
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
-      <EmptyState
+      <EmptyState illustration="not-found"
         icon={<FolderX className="bg-icon" aria-hidden="true" />}
         title="Workspace not found"
         description="This workspace doesn't exist, or you no longer have access to it."

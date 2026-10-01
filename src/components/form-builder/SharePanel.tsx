@@ -6,7 +6,7 @@ import { Copy, ExternalLink } from 'lucide-react';
 import type { FormStatus } from '@/types/form';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { PanelCard } from './PanelCard';
 
 export interface SharePanelProps {
@@ -65,8 +65,8 @@ export function SharePanel({ status, slug, formTitle, onPublish }: SharePanelPro
   return (
     <div className="max-w-2xl mx-auto flex flex-col gap-6">
       <div>
-        <h2 className="text-heading-1 font-bold text-neutral-900">Share</h2>
-        <p className="text-body text-neutral-500 mt-1">Your form is live — share it however works best.</p>
+        <h2 className="bg-h4 font-bold text-(--text-primary)">Share</h2>
+        <p className="bg-body text-(--text-muted) mt-1">Your form is live — share it however works best.</p>
       </div>
 
       <PanelCard label="Public link" description="Anyone with this link can respond to your form.">
@@ -75,7 +75,7 @@ export function SharePanel({ status, slug, formTitle, onPublish }: SharePanelPro
           <button
             type="button"
             onClick={() => copy(publicUrl, 'Link copied to clipboard.')}
-            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md p-2 text-neutral-400 hover:bg-brand-50 hover:text-brand-700"
+            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md p-2 text-(--text-disabled) hover:bg-(--accent-soft) hover:text-(--accent-soft-text)"
             aria-label="Copy link"
           >
             <Copy size={16} />
@@ -84,7 +84,7 @@ export function SharePanel({ status, slug, formTitle, onPublish }: SharePanelPro
             href={publicUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="p-2 text-neutral-400 hover:text-brand-700 hover:bg-brand-50 rounded-md shrink-0 min-w-11 min-h-11 flex items-center justify-center"
+            className="p-2 text-(--text-disabled) hover:text-(--accent-soft-text) hover:bg-(--accent-soft) rounded-md shrink-0 min-w-11 min-h-11 flex items-center justify-center"
             aria-label="Open in new tab"
           >
             <ExternalLink size={16} />
@@ -93,7 +93,7 @@ export function SharePanel({ status, slug, formTitle, onPublish }: SharePanelPro
       </PanelCard>
 
       <PanelCard label="Embed code" description="Paste this into your website to embed the form.">
-        <pre className="rounded-md border-2 border-neutral-200 bg-neutral-50 p-3 text-[12px] font-mono overflow-x-auto whitespace-pre-wrap break-all">
+        <pre className="rounded-md border-2 border-(--border-default) bg-(--bg-subtle) p-3 bg-body-sm font-mono overflow-x-auto whitespace-pre-wrap break-all">
           {embedCode}
         </pre>
         <Button variant="secondary" onClick={() => copy(embedCode, 'Embed code copied.')} className="self-start">
@@ -106,7 +106,7 @@ export function SharePanel({ status, slug, formTitle, onPublish }: SharePanelPro
           // eslint-disable-next-line @next/next/no-img-element -- client-generated data: URI, not a static asset
           <img src={qrDataUrl} alt="QR code linking to the public form" width={200} height={200} />
         ) : (
-          <p className="text-body-sm text-neutral-500">QR code could not be generated</p>
+          <p className="bg-body-sm text-(--text-muted)">QR code could not be generated</p>
         )}
         <Button variant="secondary" onClick={downloadQr} disabled={!qrDataUrl} className="self-start">
           Download QR

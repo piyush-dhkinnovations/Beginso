@@ -42,9 +42,9 @@ export default function SharedWithMePage() {
         </div>
       ) : isError ? (
         isPermissionDenied ? (
-          <EmptyState icon={<Lock className="bg-icon" aria-hidden="true" />} title="You do not have access." />
+          <EmptyState illustration="no-access" icon={<Lock className="bg-icon" aria-hidden="true" />} title="You do not have access." />
         ) : (
-          <EmptyState
+          <EmptyState illustration="error"
             icon={<Users className="bg-icon" aria-hidden="true" />}
             title="Something went wrong."
             actions={
@@ -55,7 +55,7 @@ export default function SharedWithMePage() {
           />
         )
       ) : !shares || shares.length === 0 ? (
-        <EmptyState
+        <EmptyState illustration="team"
           icon={<Users className="bg-icon" aria-hidden="true" />}
           title="Nothing shared with you yet."
           description="When someone shares a form or invites you to collaborate outside a workspace, it will appear here."

@@ -23,7 +23,7 @@ vi.mock('@/services/tags', () => ({
 }));
 
 const toastMock = vi.fn();
-vi.mock('@/components/common/Toast', () => ({ useToast: () => ({ toast: toastMock }) }));
+vi.mock('@/components/ui/Toast', () => ({ useToast: () => ({ toast: toastMock }) }));
 
 import { tagsService } from '@/services/tags';
 

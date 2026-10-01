@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '@/services/settings';
 import { settingsKeys } from '@/lib/queryKeys';
 import type { SessionSummary } from '@/types/settings';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { PaginationControls } from '@/components/responses/PaginationControls';
@@ -39,17 +39,17 @@ export function SessionsList() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-3 animate-pulse rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
-        <div className="h-11 bg-[var(--border-default)] rounded w-full" />
-        <div className="h-11 bg-[var(--border-subtle)] rounded w-full" />
+      <div className="flex flex-col gap-3 animate-pulse rounded-lg border border-(--border-default) bg-(--surface-card) p-4">
+        <div className="h-11 bg-(--border-default) rounded w-full" />
+        <div className="h-11 bg-(--border-subtle) rounded w-full" />
       </div>
     );
   }
 
   if (isError || !data) {
     return (
-      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
-        <p className="text-body-sm text-[var(--text-primary)]">Unable to load your sessions.</p>
+      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-(--border-default) bg-(--surface-card) p-4">
+        <p className="bg-body-sm text-(--text-primary)">Unable to load your sessions.</p>
         <Button variant="secondary" size="small" onClick={() => refetch()}>Try again</Button>
       </div>
     );
@@ -67,7 +67,7 @@ export function SessionsList() {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex flex-col gap-1 divide-y divide-[var(--border-subtle)] rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
+      <div className="flex flex-col gap-1 divide-y divide-(--border-subtle) rounded-lg border border-(--border-default) bg-(--surface-card) p-4">
         {pageSessions.map((session) => (
           <SessionRow
             key={session.id}
@@ -77,7 +77,7 @@ export function SessionsList() {
           />
         ))}
         {otherSessions.length === 0 && (
-          <p className="text-body-sm text-[var(--text-muted)] py-2">No other active sessions.</p>
+          <p className="bg-body-sm text-(--text-muted) py-2">No other active sessions.</p>
         )}
       </div>
 
@@ -89,7 +89,7 @@ export function SessionsList() {
         title="Revoke this session?"
         description={pendingSession ? `You'll be signed out on ${pendingSession.deviceLabel}. You can sign back in there anytime.` : undefined}
       >
-        <div className="flex flex-col gap-3 pt-4 border-t border-[var(--border-subtle)]">
+        <div className="flex flex-col gap-3 pt-4 border-t border-(--border-subtle)">
           <Button
             type="button"
             variant="destructive"
@@ -101,7 +101,7 @@ export function SessionsList() {
           <button
             type="button"
             onClick={() => setPendingRevokeId(null)}
-            className="min-h-11 text-body-sm text-[var(--text-muted)] hover:text-[var(--text-primary)] underline underline-offset-2 py-1"
+            className="min-h-11 bg-body-sm text-(--text-muted) hover:text-(--text-primary) underline underline-offset-2 py-1"
           >
             Cancel
           </button>

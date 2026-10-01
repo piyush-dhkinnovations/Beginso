@@ -1,5 +1,6 @@
 "use client";
 
+import { StateArt } from '@/components/illustrations/Illustration';
 import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
@@ -35,13 +36,13 @@ export default function BlogListPage() {
   );
 
   return (
-    <main className="min-h-screen bg-[var(--bg-page)]">
+    <main className="min-h-screen bg-(--bg-page)">
       <Navbar />
 
       <section className="pt-[140px] pb-16 md:pt-[180px] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div ref={headerRef} className={`reveal ${headerVisible ? "is-visible" : ""} text-center max-w-2xl mx-auto mb-10`}>
-          <h1 className="bg-h1 text-[var(--text-primary)] mb-3">What&apos;s new in Beginso</h1>
-          <p className="bg-body-lg text-[var(--text-secondary)]">Product updates, guides and release notes.</p>
+          <h1 className="bg-h1 text-(--text-primary) mb-3">What&apos;s new in Beginso</h1>
+          <p className="bg-body-lg text-(--text-secondary)">Product updates, guides and release notes.</p>
         </div>
 
         <div className="flex flex-wrap justify-center gap-2 mb-14">
@@ -52,10 +53,10 @@ export default function BlogListPage() {
               onClick={() => setCategory(c)}
               aria-pressed={category === c}
               className={bx(
-                "min-h-[36px] rounded-full border px-4 text-[13px] font-medium transition-colors",
+                "min-h-[36px] rounded-full border px-4 bg-body-sm font-medium transition-colors",
                 category === c
-                  ? "border-[var(--primary-500)] bg-[var(--accent-soft)] text-[var(--primary-700)]"
-                  : "border-[var(--border-default)] bg-[var(--surface-card)] text-[var(--text-secondary)] hover:bg-[var(--surface-hover)]"
+                  ? "border-(--border-focus) bg-(--accent-soft) text-(--accent-soft-text)"
+                  : "border-(--border-default) bg-(--surface-card) text-(--text-secondary) hover:bg-(--surface-hover)"
               )}
             >
               {c}
@@ -76,7 +77,10 @@ export default function BlogListPage() {
             ))}
           </div>
         ) : (
-          <p className="text-center bg-body text-[var(--text-muted)] py-16">No posts in this category yet.</p>
+          <div className="flex flex-col items-center gap-2 py-16 text-center">
+            <StateArt name="no-results" size="sm" />
+            <p className="bg-body text-(--text-muted)">No posts in this category yet.</p>
+          </div>
         )}
       </section>
 

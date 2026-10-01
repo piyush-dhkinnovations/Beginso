@@ -1,5 +1,6 @@
 'use client';
 
+import { StateArt } from '@/components/illustrations/Illustration';
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -61,7 +62,7 @@ function deriveState(
 
 function InviteShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[var(--bg-page)] px-4 py-12">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-(--bg-page) px-4 py-12">
       <AuthCard className="w-full max-w-[400px] flex flex-col items-center gap-4 p-8 text-center">
         {children}
       </AuthCard>
@@ -160,8 +161,9 @@ export default function InviteAcceptPage() {
     if (status === 404) {
       return (
         <InviteShell>
-          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">This invitation doesn&apos;t exist</h1>
-          <p className="text-body text-[var(--text-muted)]">
+          <StateArt name="link-expired" size="sm" />
+          <h1 className="bg-h5 font-bold text-(--text-primary)">This invitation doesn&apos;t exist</h1>
+          <p className="bg-body text-(--text-muted)">
             Check the link you were sent, or ask the workspace owner to invite you again.
           </p>
         </InviteShell>
@@ -169,9 +171,9 @@ export default function InviteAcceptPage() {
     }
     return (
       <InviteShell>
-        <AlertCircle className="text-error" size={40} aria-hidden="true" />
-        <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">This link isn&apos;t working</h1>
-        <p className="text-body text-[var(--text-muted)]">
+        <StateArt name="error" size="sm" fallback={<AlertCircle className="text-(--error-text)" size={40} aria-hidden="true" />} />
+        <h1 className="bg-h5 font-bold text-(--text-primary)">This link isn&apos;t working</h1>
+        <p className="bg-body text-(--text-muted)">
           The invite link may be broken or the page failed to load. Try again.
         </p>
         <Button onClick={() => refetch()}>Retry</Button>
@@ -187,10 +189,10 @@ export default function InviteAcceptPage() {
   if (state === 'expired') {
     return (
       <InviteShell>
-        <div role="status" className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-[var(--border-default)] p-6">
-          <Clock className="text-[var(--text-muted)]" size={40} aria-hidden="true" />
-          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">This invite has expired</h1>
-          <p className="text-body text-[var(--text-muted)]">Ask {preview.inviterName} to send a new invite link.</p>
+        <div role="status" className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-(--border-default) p-6">
+          <StateArt name="link-expired" size="sm" fallback={<Clock className="text-(--text-muted)" size={40} aria-hidden="true" />} />
+          <h1 className="bg-h5 font-bold text-(--text-primary)">This invite has expired</h1>
+          <p className="bg-body text-(--text-muted)">Ask {preview.inviterName} to send a new invite link.</p>
         </div>
       </InviteShell>
     );
@@ -199,10 +201,10 @@ export default function InviteAcceptPage() {
   if (state === 'revoked') {
     return (
       <InviteShell>
-        <div role="status" className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-[var(--border-default)] p-6">
-          <XCircle className="text-[var(--text-muted)]" size={40} aria-hidden="true" />
-          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">This invite was revoked</h1>
-          <p className="text-body text-[var(--text-muted)]">
+        <div role="status" className="flex flex-col items-center gap-4 rounded-lg border border-dashed border-(--border-default) p-6">
+          <StateArt name="link-expired" size="sm" fallback={<XCircle className="text-(--text-muted)" size={40} aria-hidden="true" />} />
+          <h1 className="bg-h5 font-bold text-(--text-primary)">This invite was revoked</h1>
+          <p className="bg-body text-(--text-muted)">
             Ask {preview.inviterName} for a new invite if you still need access.
           </p>
         </div>
@@ -214,8 +216,8 @@ export default function InviteAcceptPage() {
     return (
       <InviteShell>
         <div role="status" className="flex flex-col items-center gap-2">
-          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Invitation declined</h1>
-          <p className="text-body text-[var(--text-muted)]">
+          <h1 className="bg-h5 font-bold text-(--text-primary)">Invitation declined</h1>
+          <p className="bg-body text-(--text-muted)">
             You can ask the workspace owner to resend it if you change your mind.
           </p>
         </div>
@@ -227,10 +229,10 @@ export default function InviteAcceptPage() {
     return (
       <InviteShell>
         <div role="status" className="flex flex-col items-center gap-4">
-          <CheckCircle2 className="text-success" size={40} aria-hidden="true" />
-          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">You&apos;re already a member</h1>
-          <p className="text-body text-[var(--text-muted)]">Go to {preview.workspaceName}.</p>
-          {actionError && <p role="alert" className="text-body-sm text-error">{actionError}</p>}
+          <StateArt name="success" size="sm" fallback={<CheckCircle2 className="text-(--success-text)" size={40} aria-hidden="true" />} />
+          <h1 className="bg-h5 font-bold text-(--text-primary)">You&apos;re already a member</h1>
+          <p className="bg-body text-(--text-muted)">Go to {preview.workspaceName}.</p>
+          {actionError && <p role="alert" className="bg-body-sm text-(--error-text)">{actionError}</p>}
           <Button className="w-full" isLoading={acceptMutation.isPending} onClick={handleAccept}>
             Go to workspace
           </Button>
@@ -243,8 +245,8 @@ export default function InviteAcceptPage() {
     return (
       <InviteShell>
         <div role="status" className="flex flex-col items-center gap-4">
-          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Signed in as a different account</h1>
-          <p className="text-body text-[var(--text-muted)]">
+          <h1 className="bg-h5 font-bold text-(--text-primary)">Signed in as a different account</h1>
+          <p className="bg-body text-(--text-muted)">
             You&apos;re signed in as {user?.email}, but this invite is for {preview.invitedEmail}.
           </p>
           <Button className="w-full" onClick={handleSwitchAccount}>
@@ -260,15 +262,16 @@ export default function InviteAcceptPage() {
   return (
     <InviteShell>
       <div role="status" className="flex flex-col items-center gap-2">
-        <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">
+        <StateArt name="invite" size="sm" />
+        <h1 className="bg-h5 font-bold text-(--text-primary)">
           You are invited to join {preview.workspaceName}
         </h1>
-        <p className="text-body text-[var(--text-muted)]">
+        <p className="bg-body text-(--text-muted)">
           {preview.inviterName} invited you as a {roleLabel}.
         </p>
       </div>
 
-      {actionError && <p role="alert" className="text-body-sm text-error">{actionError}</p>}
+      {actionError && <p role="alert" className="bg-body-sm text-(--error-text)">{actionError}</p>}
 
       {state === 'matching' ? (
         <div className="flex w-full gap-3">

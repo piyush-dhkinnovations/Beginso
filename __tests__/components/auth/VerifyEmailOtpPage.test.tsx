@@ -24,7 +24,7 @@ vi.mock('@/services/auth', () => ({
   },
 }));
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ login: mockLogin }) }));
-vi.mock('@/components/common/Toast', () => ({ useToast: () => ({ toast: mockToast }) }));
+vi.mock('@/components/ui/Toast', () => ({ useToast: () => ({ toast: mockToast }) }));
 
 describe('VerifyEmailPage OTP mode', () => {
   it('accepts a pasted six-digit code and verifies the account', async () => {

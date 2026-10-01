@@ -52,7 +52,7 @@ export default function AuditLogPage() {
   );
 
   const denied = (
-    <EmptyState icon={<Lock className="bg-icon" aria-hidden="true" />} title="You do not have access to the audit log." />
+    <EmptyState illustration="no-access" icon={<Lock className="bg-icon" aria-hidden="true" />} title="You do not have access to the audit log." />
   );
 
   if (workspacesQuery.isLoading) {
@@ -94,11 +94,14 @@ export default function AuditLogPage() {
   const filtersActive = actorId !== '' || range !== 'all';
   const actors = (membersQuery.data ?? []).map((m) => ({ id: m.userId, name: m.name }));
 
+  // Nothing recorded and nothing filtered: the filters would be controls over zero events.
+  const isFirstRun = !auditQuery.isLoading && !auditQuery.isError && events.length === 0 && page === 1 && !filtersActive;
+
   return (
     <div className="flex flex-col gap-4">
       {header}
 
-      <AuditFilters
+      {!isFirstRun && <AuditFilters
         actors={actors}
         actorId={actorId}
         range={range}
@@ -110,7 +113,7 @@ export default function AuditLogPage() {
           setRange(next);
           setPage(1);
         }}
-      />
+      />}
 
       <Card>
         {auditQuery.isError ? (
@@ -125,13 +128,13 @@ export default function AuditLogPage() {
           // Two different empty screens, not one reused (wireframe-guide.md; design.md §17): nothing
           // has ever been recorded vs. a filter that matched nothing.
           filtersActive ? (
-            <EmptyState
+            <EmptyState illustration="no-results"
               icon={<Shield className="bg-icon" aria-hidden="true" />}
               title="No matching events."
               description="Try a different actor or date range."
             />
           ) : (
-            <EmptyState
+            <EmptyState illustration="team"
               icon={<Shield className="bg-icon" aria-hidden="true" />}
               title="No activity recorded yet."
               description="Audit events will appear here once your team starts making changes."

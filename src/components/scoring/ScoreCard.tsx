@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Star } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { scoresService } from '@/services/scores';
 import { scoreKeys } from '@/lib/queryKeys';
 import type { ScoreCriterion, ResponseScore } from '@/types/score';
@@ -136,7 +136,7 @@ export function ScoreCard({ responseId, criteria, disabled }: ScoreCardProps) {
   }
 
   if (criteria.length === 0) {
-    return <p className="text-body-sm text-(--text-muted)">No scoring criteria configured for this workspace.</p>;
+    return <p className="bg-body-sm text-(--text-muted)">No scoring criteria configured for this workspace.</p>;
   }
 
   const ownValue = (criterionId: string) => score?.entries?.find((e) => e.criterionId === criterionId)?.value;
@@ -149,11 +149,11 @@ export function ScoreCard({ responseId, criteria, disabled }: ScoreCardProps) {
         return (
           <fieldset key={criterion.id} className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">
-              <legend className="text-body-sm font-semibold text-(--text-primary)">
+              <legend className="bg-body-sm font-semibold text-(--text-primary)">
                 {criterion.label || 'Unnamed criterion'}
               </legend>
               {own !== undefined && (
-                <span className="shrink-0 rounded-md bg-(--accent-soft) px-2 py-0.5 text-caption font-medium text-(--accent-soft-text)">
+                <span className="shrink-0 rounded-md bg-(--accent-soft) px-2 py-0.5 bg-caption font-medium text-(--accent-soft-text)">
                   {own}/10
                 </span>
               )}
@@ -168,7 +168,7 @@ export function ScoreCard({ responseId, criteria, disabled }: ScoreCardProps) {
         );
       })}
 
-      <p className="text-body-sm text-(--text-muted)">
+      <p className="bg-body-sm text-(--text-muted)">
         {score && score.scoreAverage !== null
           ? `${score.scoreAverage.toFixed(1)} (${score.scoreCount} reviewer${score.scoreCount === 1 ? '' : 's'})`
           : 'No scores yet'}

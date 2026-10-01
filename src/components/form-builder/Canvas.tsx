@@ -7,7 +7,7 @@ import {
 } from '@dnd-kit/sortable';
 import { Layout } from 'lucide-react';
 import type { FormField, LogicRule } from '@/types/form';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { FieldCard } from './FieldCard';
 import { CanvasFormHeader } from './CanvasFormHeader';
 
@@ -44,13 +44,13 @@ function DroppableCanvas({
       ref={setNodeRef}
       onClick={onBackgroundClick}
       className={`flex-1 min-w-0 p-6 overflow-y-auto transition-colors duration-200 min-h-[500px] ${
-        showOver ? 'bg-brand-50/50' : 'bg-neutral-50'
+        showOver ? 'bg-(--accent-soft)/50' : 'bg-(--bg-subtle)'
       }`}
     >
       {/* Widened from the design system's 440px baseline — with live field previews now
           rendered inline, 440px felt cramped. 560px gives more breathing room without
           spanning the full canvas width. */}
-      <div className="max-w-[560px] mx-auto min-h-[500px] flex flex-col justify-start">
+      <div className="max-w-140 mx-auto min-h-[500px] flex flex-col justify-start">
         {/* Title + description header — always visible, regardless of field count */}
         <CanvasFormHeader
           pageTitle={pageTitle}
@@ -62,10 +62,10 @@ function DroppableCanvas({
 
         {isEmpty ? (
           <div className="flex-1 flex items-center justify-center py-12">
-            <EmptyState
+            <EmptyState illustration="build-form"
               icon={<Layout />}
-              heading="Start building your form"
-              body={
+              title="Start building your form"
+              description={
                 showOver
                   ? 'Release to drop the field here!'
                   : 'Pick a field type from the toolbox to add your first question.'

@@ -53,18 +53,23 @@ describe('NotificationBell', () => {
     expect(screen.queryByText('Notifications')).not.toBeInTheDocument();
   });
 
+  // Bug fix: the component's unread dot was already correctly moved onto the real design-system
+  // token (`bg-(--action-primary)`, part of this sprint's colour-token cleanup) — this assertion
+  // still looked for the old literal `.bg-brand-600` class, which no longer exists anywhere.
+  // `[class*="action-primary"]` matches the token's actual class string (Tailwind v4's `bg-(--x)`
+  // syntax keeps the literal `--x` substring in the rendered class attribute).
   it('shows an unread dot when there is at least one unread notification', async () => {
     mockGetNotifications.mockResolvedValue(NOTIFICATIONS);
     const { container } = renderBell();
     await waitFor(() => expect(mockGetNotifications).toHaveBeenCalled());
-    expect(container.querySelector('.bg-brand-600')).toBeInTheDocument();
+    expect(container.querySelector('[class*="action-primary"]')).toBeInTheDocument();
   });
 
   it('shows no unread dot when every notification is already read', async () => {
     mockGetNotifications.mockResolvedValue(NOTIFICATIONS.map((n) => ({ ...n, read: true })));
     const { container } = renderBell();
     await waitFor(() => expect(mockGetNotifications).toHaveBeenCalled());
-    expect(container.querySelector('.bg-brand-600')).not.toBeInTheDocument();
+    expect(container.querySelector('[class*="action-primary"]')).not.toBeInTheDocument();
   });
 
   it('opens the dropdown on click and lists every notification', async () => {

@@ -124,8 +124,8 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
         />
 
         <div>
-          <label htmlFor="delete-workspace-name-input" className="block text-body-sm text-[var(--text-secondary)] mb-1.5">
-            Type <span className="font-semibold text-[var(--text-primary)]">{workspaceName}</span> to confirm
+          <label htmlFor="delete-workspace-name-input" className="block bg-body-sm text-(--text-secondary) mb-1.5">
+            Type <span className="font-semibold text-(--text-primary)">{workspaceName}</span> to confirm
           </label>
           <input
             id="delete-workspace-name-input"
@@ -135,7 +135,7 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
             placeholder={workspaceName}
             aria-describedby="delete-workspace-name-hint"
             disabled={isDeleting}
-            className="w-full bg-[var(--bg-page)] text-[var(--text-primary)] border border-[var(--border-strong)] rounded-md px-3 py-2 text-body focus:outline-none focus:border-[var(--border-focus)] focus:ring-2 focus:ring-[var(--border-default)] transition-colors"
+            className="w-full bg-(--bg-page) text-(--text-primary) border border-(--border-strong) rounded-md px-3 py-2 bg-body focus:outline-none focus:border-(--border-focus) focus:ring-2 focus:ring-(--border-default) transition-colors"
             autoComplete="off"
           />
           <p id="delete-workspace-name-hint" className="sr-only">
@@ -143,9 +143,9 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
           </p>
         </div>
 
-        {submitError && <p className="text-caption text-rose-600">{submitError}</p>}
+        {submitError && <p className="bg-caption text-(--error-text)">{submitError}</p>}
         {sharedWorkspaces.length > 0 && (
-          <ul className="list-disc pl-5 text-caption text-[var(--text-secondary)]" aria-label="Workspaces you still own">
+          <ul className="list-disc pl-5 bg-caption text-(--text-secondary)" aria-label="Workspaces you still own">
             {sharedWorkspaces.map((w) => (
               <li key={w.id}>
                 {w.name} ({w.otherMembers} other {w.otherMembers === 1 ? 'member' : 'members'})
@@ -154,7 +154,7 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
           </ul>
         )}
 
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-[var(--border-subtle)]">
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-(--border-subtle)">
           <Button type="button" variant="secondary" onClick={onClose} disabled={isDeleting}>
             Cancel
           </Button>

@@ -20,7 +20,7 @@ import { InviteMembersModal } from '@/components/team/InviteMembersModal';
 import { PageHeader, Card, Alert, Button } from '@/components/ui';
 import { Modal } from '@/components/ui/Modal';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import type { MemberListItem, PendingInvitation } from '@/types/team';
 import type { Role } from '@/types/workspace';
 

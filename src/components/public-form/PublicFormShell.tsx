@@ -263,17 +263,17 @@ export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellPr
       ? 'mt-6 flex flex-col gap-3'
       : 'mt-6 flex flex-col gap-5';
 
-  const cardMaxWidth = layout === 'two_column' ? 'max-w-[680px]' : layout === 'compact' ? 'max-w-[560px]' : 'max-w-[520px]';
+  const cardMaxWidth = layout === 'two_column' ? 'max-w-[680px]' : layout === 'compact' ? 'max-w-140' : 'max-w-130';
 
   return (
-    <div className={`bg-neutral-50 flex justify-center p-4 ${previewMode ? '' : 'min-h-screen'}`}>
-      <div className={`bg-white rounded-xl border border-neutral-200 shadow-card w-full overflow-hidden ${cardMaxWidth}`}>
+    <div className={`bg-(--bg-subtle) flex justify-center p-4 ${previewMode ? '' : 'min-h-screen'}`}>
+      <div className={`bg-(--surface-card) rounded-xl border border-(--border-default) shadow-(--shadow-sm) w-full overflow-hidden ${cardMaxWidth}`}>
         <FormBanner branding={schema.branding} />
         <form onSubmit={handleFormSubmit} noValidate className={schema.branding.logoUrl ? 'p-6 pt-8' : 'p-6'}>
           <FormProgress currentPage={currentPageIndex + 1} totalPages={totalPages} />
 
-          <h1 className="text-display text-neutral-900">{currentPage?.title ?? schema.title}</h1>
-          {currentPage?.description && <p className="text-body text-neutral-500 mt-1">{currentPage.description}</p>}
+          <h1 className="bg-h3 text-(--text-primary)">{currentPage?.title ?? schema.title}</h1>
+          {currentPage?.description && <p className="bg-body text-(--text-muted) mt-1">{currentPage.description}</p>}
 
           {/* Honeypot: real respondents never see or reach this; a bot's scripted fill-everything
               behavior does, and that value is passed through to the backend as-is (Requirement 6.5). */}
@@ -337,13 +337,13 @@ export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellPr
           </div>
 
           {submitError && (
-            <p role="alert" className="text-caption text-error font-semibold mt-4">
+            <p role="alert" className="bg-caption text-(--error-text) font-semibold mt-4">
               {submitError}
             </p>
           )}
 
           {previewMode && previewSubmitted ? (
-            <p className="mt-6 text-body-sm text-center text-neutral-500 font-medium">
+            <p className="mt-6 bg-body-sm text-center text-(--text-muted) font-medium">
               This is a preview — nothing was submitted.
             </p>
           ) : (
