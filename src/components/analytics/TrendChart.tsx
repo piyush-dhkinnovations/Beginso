@@ -18,13 +18,25 @@ export function mapTrendSeries(points: AnalyticsTrendPoint[]): AnalyticsTrendPoi
   }));
 }
 
-function formatBucketLabel(bucketStart: string, bucket: 'day' | 'week'): string {
-  const label = new Date(bucketStart).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    timeZone: 'UTC',
-  });
-  return bucket === 'week' ? `Wk of ${label}` : label;
+// The backend's bucket keys are plain strings, not ISO timestamps: days are "2026-04-06" and weeks are
+// ISO weeks "2026-W15" (`new Date("2026-W15")` is Invalid Date). A week is labelled by its Monday.
+function parseBucket(bucketStart: string): Date | null {
+  const week = /^(\d{4})-W(\d{2})$/.exec(bucketStart);
+  if (week) {
+    const jan4 = new Date(Date.UTC(Number(week[1]), 0, 4));
+    const monday = Date.UTC(Number(week[1]), 0, 4 - ((jan4.getUTCDay() + 6) % 7));
+    return new Date(monday + (Number(week[2]) - 1) * 7 * 86_400_000);
+  }
+  const d = new Date(bucketStart);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export function formatBucketLabel(bucketStart: string, _bucket: 'day' | 'week'): string {
+  const d = parseBucket(bucketStart);
+  if (!d) return bucketStart;
+  const label = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  // Chart axis labels stay short ("6 Apr") so they never collide; the week is spelled out for screen readers.
+  return label;
 }
 
 interface TrendChartProps {
@@ -87,7 +99,7 @@ export function TrendChart({ data, isLoading, isError = false, onRetry, isAllTim
         ariaLabel="Response trend over time"
       />
       <table className="sr-only">
-        <caption>Responses per {data?.bucket === 'week' ? 'week' : 'day'}</caption>
+        <caption>Responses per {data?.bucket === 'week' ? 'week (labelled by the Monday it starts)' : 'day'}</caption>
         <thead>
           <tr>
             <th>Period</th>

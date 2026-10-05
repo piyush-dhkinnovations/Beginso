@@ -45,7 +45,7 @@ describe('WorkspaceActivityPage', () => {
     mockList.mockResolvedValue(events(3));
     renderPage();
 
-    expect(await screen.findByText('Actor 0')).toBeInTheDocument();
+    expect(await screen.findByText('Actor 0', { selector: 'strong' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Activity' })).toBeInTheDocument();
     expect(mockList).toHaveBeenCalledWith('acme', 1, 20);
     expect(screen.queryByRole('button', { name: 'Next' })).not.toBeInTheDocument();
@@ -78,7 +78,7 @@ describe('WorkspaceActivityPage', () => {
 
     expect(await screen.findByText('We could not load activity.')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }));
-    expect(await screen.findByText('Actor 0')).toBeInTheDocument();
+    expect(await screen.findByText('Actor 0', { selector: 'strong' })).toBeInTheDocument();
   });
 
   it('offers Next only after a full page, and pages forward and back', async () => {
@@ -87,15 +87,15 @@ describe('WorkspaceActivityPage', () => {
     );
     renderPage();
 
-    await screen.findByText('Actor 0');
+    await screen.findByText('Actor 0', { selector: 'strong' });
     expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
 
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
-    expect(await screen.findByText('Actor 20')).toBeInTheDocument();
+    expect(await screen.findByText('Actor 20', { selector: 'strong' })).toBeInTheDocument();
     expect(mockList).toHaveBeenLastCalledWith('acme', 2, 20);
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
 
     await userEvent.click(screen.getByRole('button', { name: 'Previous' }));
-    expect(await screen.findByText('Actor 0')).toBeInTheDocument();
+    expect(await screen.findByText('Actor 0', { selector: 'strong' })).toBeInTheDocument();
   });
 });
