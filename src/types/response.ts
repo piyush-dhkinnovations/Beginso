@@ -66,6 +66,10 @@ export interface IResponse {
    * (matches the migration's own "existing = read" default, OQ-4) rather than falsely unread. */
   unread?: boolean;
   duplicateOfId?: string | null;
+  /** Sprint 13 (F15) — Backend contract to confirm (BE 0.2). Absent = not a test submission. */
+  isTest?: boolean;
+  /** Sprint 13 (A5.2) — set when the respondent edited after review. Backend contract to confirm (BE 0.12). */
+  editedAfterReviewAt?: string | null;
   /** Uncertain (design.md §13) — cuttable (B6, requirements.md §7.10). */
   score?: { average: number; count: number } | null;
   ipHash?: string;            // SHA-256(rawIP), never the raw IP — absent when the backend
@@ -87,6 +91,8 @@ export interface ResponseFilters {
   assigneeId?: string;
   unread?: boolean;
   duplicate?: boolean;
+  /** Sprint 13 (F15): include test submissions. Off by default — tests never count anywhere. */
+  includeTest?: boolean;
   from?: string;
   to?: string;
   q?: string;

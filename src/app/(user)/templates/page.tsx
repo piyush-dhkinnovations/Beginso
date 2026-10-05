@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { LayoutTemplate, Plus } from 'lucide-react';
 import { templatesService } from '@/services/templates';
+import { workspacesService } from '@/services/workspaces';
+import { templateKeys, workspaceKeys } from '@/lib/queryKeys';
 import { useToast } from '@/components/ui/Toast';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -17,11 +19,20 @@ import { TemplatePreviewModal } from '@/components/templates/TemplatePreviewModa
 import { CreateFormModal } from '@/components/form-builder/CreateFormModal';
 import { cn } from '@/lib/utils';
 import type { Template } from '@/types/form';
+import type { FormDestination } from '@/types/workspace';
 
 type SortKey = 'relevant' | 'name' | 'fields';
 
-export default function TemplatesPage() {
+// Sprint 13 (B6.1–B6.3). One page for both contexts, like FormsPage: `scope` is 'personal' (Beginso templates
+// only — A4.1) or a workspace slug (the workspace's OWN templates first, section hidden when empty, then
+// Beginso's). Never "My templates" — they belong to the workspace, same rule as forms.
+export interface TemplatesPageProps {
+  scope?: string;
+}
+
+export default function TemplatesPage({ scope = 'personal' }: TemplatesPageProps = {}) {
   const router = useRouter();
+  const isWorkspace = scope !== 'personal';
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState('All');
   const [search, setSearch] = useState('');
@@ -31,14 +42,26 @@ export default function TemplatesPage() {
   const [isBlankOpen, setIsBlankOpen] = useState(false);
 
   const { data: templates, isLoading, error } = useQuery({
-    queryKey: ['templates'],
-    queryFn: templatesService.getTemplates,
+    queryKey: templateKeys.list(scope),
+    queryFn: () => templatesService.getTemplates(scope),
   });
 
+  // The workspace's id (the use-template call wants an id, the URL carries a slug) and display name.
+  const { data: workspaces } = useQuery({
+    queryKey: workspaceKeys.list(),
+    queryFn: workspacesService.list,
+    enabled: isWorkspace,
+  });
+  const workspace = isWorkspace ? workspaces?.find((w) => w.slug === scope) : undefined;
+  const defaultDestination: FormDestination | undefined = workspace
+    ? { type: 'workspace', workspaceId: workspace.id }
+    : undefined;
+
   const useMutationHook = useMutation({
-    mutationFn: (templateId: string) => templatesService.useTemplate(templateId),
+    mutationFn: (templateId: string) =>
+      templatesService.useTemplate(templateId, isWorkspace ? workspace?.id ?? null : null),
     onMutate: (id) => setUsingId(id),
-    onSuccess: (data) => router.push(`/forms/${data._id}/edit`),
+    onSuccess: (data) => router.push(isWorkspace ? `/forms/${data._id}/edit?ws=${scope}` : `/forms/${data._id}/edit`),
     onError: () => {
       toast('Failed to create form from template. Please try again.', 'error');
       setUsingId(null);
@@ -59,6 +82,11 @@ export default function TemplatesPage() {
     return list;
   }, [templates, activeCategory, search, sort]);
 
+  // Two labelled sources. Search and category above already span both; only the grouping happens here.
+  const workspaceVisible = visible.filter((t) => t.source === 'workspace');
+  const builtInVisible = visible.filter((t) => t.source !== 'workspace');
+  const workspaceName = workspace?.name ?? 'Workspace';
+
   const hasTemplates = !!templates && templates.length > 0;
   // A lone last card in the 3-column grid goes wide, so the final row has no hole.
   const wideLast = visible.length > 2 && visible.length % 3 === 1;
@@ -67,7 +95,11 @@ export default function TemplatesPage() {
     <div className="flex flex-col gap-4 animate-fade-in">
       <PageHeader
         title="Templates"
-        description="Start from a pre-built template instead of a blank form."
+        description={
+          isWorkspace
+            ? 'Start from a template your team saved, or one of Beginso\'s.'
+            : 'Start from a pre-built template instead of a blank form.'
+        }
         actionsAlign="center"
         actions={
           // One slim row — copy on the left, the button on the right — so the header stays the height
@@ -168,17 +200,44 @@ export default function TemplatesPage() {
               }
             />
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {visible.map((template, index) => (
-                <TemplateCard
-                  key={`${template._id}-${index}`}
-                  template={template}
-                  onUse={(id) => useMutationHook.mutate(id)}
-                  onPreview={setPreviewing}
-                  isLoading={usingId === template._id}
-                  wide={wideLast && index === visible.length - 1}
-                />
-              ))}
+            <div className="flex flex-col gap-8">
+              {workspaceVisible.length > 0 && (
+                <section aria-labelledby="workspace-templates-heading" className="flex flex-col gap-3">
+                  <h2 id="workspace-templates-heading" className="bg-h5 font-semibold text-(--text-primary)">
+                    {workspaceName} templates
+                  </h2>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {workspaceVisible.map((template) => (
+                      <TemplateCard
+                        key={template._id}
+                        template={template}
+                        onUse={(id) => useMutationHook.mutate(id)}
+                        onPreview={setPreviewing}
+                        isLoading={usingId === template._id}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
+              {builtInVisible.length > 0 && (
+                <section aria-labelledby="beginso-templates-heading" className="flex flex-col gap-3">
+                  <h2 id="beginso-templates-heading" className="bg-h5 font-semibold text-(--text-primary)">
+                    Beginso templates
+                  </h2>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {builtInVisible.map((template, index) => (
+                      <TemplateCard
+                        key={`${template._id}-${index}`}
+                        template={template}
+                        onUse={(id) => useMutationHook.mutate(id)}
+                        onPreview={setPreviewing}
+                        isLoading={usingId === template._id}
+                        wide={workspaceVisible.length === 0 && wideLast && index === builtInVisible.length - 1}
+                      />
+                    ))}
+                  </div>
+                </section>
+              )}
             </div>
           )}
         </>
@@ -190,7 +249,7 @@ export default function TemplatesPage() {
         onUse={(id) => useMutationHook.mutate(id)}
         isLoading={previewing !== null && usingId === previewing._id}
       />
-      <CreateFormModal isOpen={isBlankOpen} onClose={() => setIsBlankOpen(false)} />
+      <CreateFormModal isOpen={isBlankOpen} onClose={() => setIsBlankOpen(false)} defaultDestination={defaultDestination} />
     </div>
   );
 }

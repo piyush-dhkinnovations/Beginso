@@ -67,11 +67,6 @@ export default function FormOverviewPage() {
     queryFn: () => eventsService.listFormEvents(formId, 1, FORM_ACTIVITY_PREVIEW_COUNT + 1),
   });
 
-  const responsesQuery = useQuery({
-    queryKey: responseKeys.list('personal', formId, { limit: RECENT_RESPONSES }),
-    queryFn: () => responsesService.getResponses({ formId, limit: RECENT_RESPONSES }),
-  });
-
   // Real bug found and fixed: `stats.responseCount` comes from GET /api/forms/:id's own
   // `responseCount` field (getFormOverview's fallback chain), which the backend does not keep in
   // sync with the actual Response collection — the "Recent responses" card right next to it
@@ -79,8 +74,6 @@ export default function FormOverviewPage() {
   // own getStats() already documents for the identical field: don't trust a denormalized count,
   // derive it from the real list endpoint's `total` instead. Overrides `stats.responseCount` with
   // it wherever it's loaded so the two cards on this page can never disagree.
-  const responseCount = responsesQuery.data?.total;
-
   const workspaceId = form?.workspaceId ?? null;
   const workspacesQuery = useQuery({
     queryKey: workspaceKeys.list(),
@@ -88,6 +81,15 @@ export default function FormOverviewPage() {
     enabled: workspaceId !== null,
   });
   const workspace = workspacesQuery.data?.find((w) => w.id === workspaceId);
+
+  // Workspace forms must be queried under their own slug; undefined until it resolves.
+  const scope = !form ? undefined : workspaceId === null ? 'personal' : workspace?.slug;
+  const responsesQuery = useQuery({
+    queryKey: responseKeys.list(scope ?? 'pending', formId, { limit: RECENT_RESPONSES }),
+    queryFn: () => responsesService.getResponses({ formId, limit: RECENT_RESPONSES }, scope),
+    enabled: !!scope,
+  });
+  const responseCount = responsesQuery.data?.total;
 
   if (overviewQuery.isLoading) {
     return (

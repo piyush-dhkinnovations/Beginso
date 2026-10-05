@@ -1,15 +1,21 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowLeft, CheckCircle2, Eye, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Eye, MoreVertical, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Menu, type MenuItem } from '@/components/ui/Menu';
+import { SaveIndicator } from './SaveIndicator';
 import type { FormStatus } from '@/types/form';
 
 export interface BuilderHeaderProps {
   formTitle: string;
+  dirty: boolean;
   isSaving: boolean;
-  saveState?: 'idle' | 'saving' | 'saved' | 'error';
+  saveFailed: boolean;
   savedAt: Date | null;
+  onRetrySave: () => void;
+  /** The caller may publish (Owner/Admin). Without it there is no Publish button — a convenience; the server enforces. */
+  canPublish: boolean;
   status: FormStatus;
   onTitleChange: (title: string) => void;
   onPreview: () => void;
@@ -21,9 +27,12 @@ export interface BuilderHeaderProps {
 
 export function BuilderHeader({
   formTitle,
+  dirty,
   isSaving,
-  saveState = 'idle',
+  saveFailed,
   savedAt,
+  onRetrySave,
+  canPublish,
   status,
   onTitleChange,
   onPreview,
@@ -54,15 +63,24 @@ export function BuilderHeader({
     }
   };
 
+  // Sprint 13 (CF2.12): the header works at phone width. Below md it wraps — title + actions on the
+  // first row, the save indicator on its own row — Preview is icon-only, and Close/Delete move into an
+  // overflow menu so nothing is squeezed off-screen or silently missing.
+  const overflowItems: MenuItem[] = [
+    ...(status === 'published' ? [{ id: 'close', label: 'Close form', onSelect: onClose }] : []),
+    { id: 'delete', label: 'Delete form', onSelect: onDelete, danger: true },
+  ];
+
   return (
-    <header className="flex items-center justify-between px-4 h-14 border-b bg-(--surface-card) shrink-0 shadow-(--shadow-sm)">
-      <div className="flex items-center gap-2 flex-1 max-w-[30%]">
+    <header className="flex flex-wrap items-center gap-x-2 gap-y-0 px-4 min-h-14 border-b bg-(--surface-card) shrink-0 shadow-(--shadow-sm)">
+      <div className="flex items-center gap-2 flex-1 min-w-0 md:max-w-[30%]">
         <Button
           onClick={onBack}
           variant="ghost"
           size="small"
           className="min-h-11 min-w-11 shrink-0 p-2"
           title="Back to Forms"
+          aria-label="Back to Forms"
         >
           <ArrowLeft size={16} />
         </Button>
@@ -72,30 +90,23 @@ export function BuilderHeader({
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          className="w-full bg-h5 font-bold text-(--text-primary) bg-transparent border-b-2 border-transparent focus:border-(--border-strong) focus:outline-none px-1 py-0.5 rounded transition-colors"
+          className="w-full min-w-0 bg-h5 font-bold text-(--text-primary) bg-transparent border-b-2 border-transparent focus:border-(--border-strong) focus:outline-none px-1 py-0.5 rounded transition-colors"
           placeholder="Untitled Form"
           aria-label="Form name"
         />
       </div>
 
-      <div className="flex items-center gap-4 flex-1 justify-end">
-        <div className="bg-body-sm select-none">
-          {isSaving || saveState === 'saving' ? (
-            <span className="text-(--text-muted) font-medium animate-pulse">Saving…</span>
-          ) : saveState === 'saved' ? (
-            <span className="text-(--success-text) font-medium">
-              Saved{savedAt ? ` at ${savedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ' ✓'}
-            </span>
-          ) : saveState === 'error' ? (
-            <span className="text-(--error-text) font-medium font-mono">⚠ Save failed</span>
-          ) : null}
-        </div>
+      {/* One SaveIndicator instance (one live region): its own row below md, inline from md up. */}
+      <div className="order-last w-full pb-1 md:order-none md:ml-auto md:w-auto md:pb-0">
+        <SaveIndicator dirty={dirty} saving={isSaving} error={saveFailed} savedAt={savedAt} onRetry={onRetrySave} />
+      </div>
 
+      <div className="flex items-center gap-1 md:gap-4 shrink-0">
         <Button
           onClick={onDelete}
           variant="ghost"
           size="small"
-          className="h-11 w-11 shrink-0 p-0 text-(--error-text) hover:bg-(--error-surface) hover:text-(--error-text)"
+          className="hidden md:inline-flex h-11 w-11 shrink-0 p-0 text-(--error-text) hover:bg-(--error-surface) hover:text-(--error-text)"
           title="Delete form"
           aria-label="Delete form"
         >
@@ -107,27 +118,42 @@ export function BuilderHeader({
           onClick={onPreview}
           variant="ghost"
           size="small"
-          className="flex items-center gap-1.5 px-3"
+          className="flex min-h-11 min-w-11 items-center gap-1.5 px-3"
+          aria-label="Preview"
         >
           <Eye size={16} />
-          <span>Preview</span>
+          <span className="hidden md:inline">Preview</span>
         </Button>
 
         {status === 'published' ? (
           <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1.5 text-(--success-text) font-semibold bg-body-sm px-2">
+            <span className="hidden md:flex items-center gap-1.5 text-(--success-text) font-semibold bg-body-sm px-2">
               <CheckCircle2 size={15} />
               Published
             </span>
-            <Button variant="secondary" size="small" onClick={onClose}>
+            {canPublish && (
+              <Button variant="secondary" size="small" onClick={onPublish} className="min-h-11">
+                Manage
+              </Button>
+            )}
+            <Button variant="secondary" size="small" onClick={onClose} className="hidden md:inline-flex">
               Close form
             </Button>
           </div>
-        ) : (
-          <Button variant="primary" size="small" onClick={onPublish}>
+        ) : canPublish ? (
+          <Button variant="primary" size="small" onClick={onPublish} className="min-h-11">
             {status === 'closed' ? 'Re-publish' : 'Publish'}
           </Button>
-        )}
+        ) : null}
+
+        <div className="md:hidden">
+          <Menu
+            align="end"
+            triggerLabel="More form actions"
+            trigger={<MoreVertical size={18} aria-hidden="true" />}
+            items={overflowItems}
+          />
+        </div>
       </div>
     </header>
   );

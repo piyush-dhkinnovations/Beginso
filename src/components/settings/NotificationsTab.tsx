@@ -23,7 +23,7 @@ export function NotificationsTab() {
 
   const { data: workspace, isLoading, isError, refetch } = useQuery({
     queryKey: settingsKeys.workspace(),
-    queryFn: settingsService.getWorkspace,
+    queryFn: () => settingsService.getWorkspace(),
   });
 
   // Correctness Property 2: after any sequence of flips (including failed ones), the displayed

@@ -28,16 +28,18 @@ import { BuilderHeader } from '@/components/form-builder/BuilderHeader';
 import { BuilderTabs, BuilderTab } from '@/components/form-builder/BuilderTabs';
 import { useToast } from '@/components/ui/Toast';
 import { Canvas, CANVAS_ID } from '@/components/form-builder/Canvas';
-import { PagesPanel } from '@/components/form-builder/PagesPanel';
+import { PagesPanel, PageSwitcher } from '@/components/form-builder/PagesPanel';
 import { Toolbox, FIELD_TYPE_CONFIG } from '@/components/form-builder/Toolbox';
-import { BrandingPanel } from '@/components/form-builder/BrandingPanel';
 import { SettingsPanel } from '@/components/form-builder/SettingsPanel';
-import { SharePanel } from '@/components/form-builder/SharePanel';
+import { AddFieldSheet } from '@/components/form-builder/AddFieldSheet';
+import { BrandingTabContent } from '@/components/form-builder/BrandingTabContent';
+import { MobileBuildBar } from '@/components/form-builder/MobileBuildBar';
 import { PublishModal } from '@/components/form-builder/PublishModal';
 import { CloseFormModal } from '@/components/form-builder/CloseFormModal';
 import { LeaveBuilderModal } from '@/components/form-builder/LeaveBuilderModal';
 import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
-import type { FieldType, Form, FormBranding, FormField, FormPage, FormSettings } from '@/types/form';
+import { canSeeShare, canPublishForm } from '@/lib/roles';
+import type { FieldType, Form, FormBranding, FormField, FormPage, FormSettings, FormStatus } from '@/types/form';
 
 // Shared by handleDragOver (visual indicator) and handleDragEnd (actual insert)
 // so the two never disagree about which side of the hovered card the drag is on.
@@ -49,7 +51,7 @@ function isDroppingBelow(active: Active, over: Over | null): boolean {
   );
 }
 
-const VALID_TABS: BuilderTab[] = ['build', 'branding', 'settings', 'share'];
+const VALID_TABS: BuilderTab[] = ['build', 'branding', 'settings'];
 
 // Single source of truth for the PATCH payload shape — the debounced autosave, the
 // unmount flush, the publish-click flush, and the leave-guard flush all call this
@@ -84,6 +86,10 @@ export default function BuilderPageShell() {
     setActiveTabState(tab);
     router.replace(`/forms/${id}/edit?tab=${tab}`, { scroll: false });
   };
+  // Old deep links to the removed Share tab land on the Share & Embed page.
+  useEffect(() => {
+    if (searchParams.get('tab') === 'share') router.replace(`/forms/${id}/share`);
+  }, [searchParams, router, id]);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -93,6 +99,9 @@ export default function BuilderPageShell() {
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [pendingNavUrl, setPendingNavUrl] = useState<string | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  // Sprint 13 (CF2.12): touch-width builder UI — bottom-sheet toolbox and Reorder mode.
+  const [showAddSheet, setShowAddSheet] = useState(false);
+  const [isReordering, setIsReordering] = useState(false);
 
   const formId = useBuilderStore((state) => state.formId);
   const formTitle = useBuilderStore((state) => state.formTitle);
@@ -153,6 +162,8 @@ export default function BuilderPageShell() {
     ? workspaces.find((ws) => ws.id === form.workspaceId)?.slug
     : undefined;
   const formsListHref = formWorkspaceSlug ? `/w/${formWorkspaceSlug}/forms` : '/forms';
+  // Personal form → the caller is its owner; workspace form → their membership role (unknown = no link).
+  const formRole = form?.workspaceId ? workspaces.find((ws) => ws.id === form.workspaceId)?.role : 'owner';
 
   // Init builderStore state when query returns data. Guarded to run once per
   // form id — not on every query-cache update. Publish/close success handlers
@@ -261,41 +272,23 @@ export default function BuilderPageShell() {
 
   // ─── Publish flow ─────────────────────────────────────────────────────────────
 
-  const publishMutation = useMutation({
-    mutationFn: () => formsService.publishForm(formId!),
-    onSuccess: (data) => {
-      setStatus('published', data.slug);
-      // Update the query cache so navigating away and back serves the correct status/slug immediately
+  // The publish pre-flight / live state own their mutations (PublishModal.tsx). The page only keeps the
+  // builder store and the ['form', id] cache in step with every status or link change they report — publish,
+  // unpublish, undo and "Generate new link" all land here.
+  const handleStatusChange = useCallback(
+    (nextStatus: FormStatus, nextSlug?: string) => {
+      setStatus(nextStatus, nextSlug);
       queryClient.setQueryData<Form>(['form', formId], (oldData) =>
-        oldData ? { ...oldData, status: 'published', slug: data.slug } : oldData
+        oldData ? { ...oldData, status: nextStatus, ...(nextSlug ? { slug: nextSlug } : {}) } : oldData
       );
-      setShowPublishModal(false);
-      setActiveTab('share');
-      toast('Form published successfully!', 'success');
+      queryClient.invalidateQueries({ queryKey: ['forms'] });
     },
-    onError: () => {
-      toast('Failed to publish form. Please try again.', 'error');
-    },
-  });
+    [setStatus, queryClient, formId]
+  );
 
-  // Validate before opening the publish confirm modal
+  // Opens the publish dialog. Readiness is the SERVER's (the old client-side duplicates are gone), so the only
+  // work here is flushing a pending autosave first — the published snapshot must be current.
   const handlePublishClick = useCallback(async () => {
-    const visibleFields = fields.filter((f) => !f.deleted);
-    if (visibleFields.length === 0) {
-      toast('Add at least one field before publishing.', 'error');
-      return;
-    }
-    const hasEmptyOptions = visibleFields.some(
-      (f) =>
-        (f.type === 'dropdown' || f.type === 'multiple_choice' || f.type === 'checkbox') &&
-        (!f.options || f.options.length === 0)
-    );
-    if (hasEmptyOptions) {
-      toast('All choice fields must have at least one option before publishing.', 'error');
-      return;
-    }
-
-    // If dirty, flush save first so the published snapshot is current
     if (dirty && formId && formId !== 'undefined') {
       try {
         setSaveState('saving');
@@ -310,9 +303,35 @@ export default function BuilderPageShell() {
     }
 
     setShowPublishModal(true);
-  }, [fields, dirty, formId, formTitle, pages, branding, settings, markSaved, toast]);
+  }, [dirty, formId, fields, formTitle, pages, branding, settings, markSaved, toast]);
 
-  // Flush any pending autosave first so the new tab shows current edits, not a stale snapshot
+  // "Change" on a pre-flight row → Settings; "Fix in editor" → the offending field on the Build tab.
+  const handleChangeSetting = useCallback(() => {
+    setShowPublishModal(false);
+    setActiveTab('settings');
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setActiveTab is a plain closure over router/id
+  }, []);
+  const handleFixField = useCallback(
+    (fieldId?: string) => {
+      setShowPublishModal(false);
+      setActiveTab('build');
+      if (!fieldId) return;
+      const target = useBuilderStore.getState().fields.find((f) => f.fieldId === fieldId);
+      if (target) setActivePageId(target.pageId);
+      setActiveFieldId(fieldId);
+      requestAnimationFrame(() =>
+        document.querySelector(`[data-field-id="${fieldId}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      );
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setActiveTab is a plain closure over router/id
+    [setActivePageId, setActiveFieldId]
+  );
+
+  // Preview opens in the SAME tab (requirements.md 3.1) so "Back to editor" has somewhere to return
+  // to. The save is flushed first and a failed save blocks navigation — leaving would otherwise lose
+  // the unsaved edits (the old new-tab version could shrug a failure off; this one cannot). The
+  // cached ['form', id] is dropped so both Preview and the returning editor refetch the autosaved
+  // copy instead of the stale GET the init effect above warns about.
   const handlePreview = useCallback(async () => {
     if (dirty && formId && formId !== 'undefined') {
       try {
@@ -322,11 +341,13 @@ export default function BuilderPageShell() {
         setSaveState('saved');
       } catch {
         setSaveState('error');
-        // Preview will just open with the last successfully saved state — not worth blocking on
+        toast('Could not save your changes, so Preview was not opened. Please try again.', 'error');
+        return;
       }
     }
-    window.open(`/forms/${id}/preview`, '_blank');
-  }, [dirty, formId, fields, formTitle, pages, branding, settings, markSaved, id]);
+    queryClient.removeQueries({ queryKey: ['form', id] });
+    router.push(`/forms/${id}/preview`);
+  }, [dirty, formId, fields, formTitle, pages, branding, settings, markSaved, id, queryClient, router, toast]);
 
   // ─── Close form flow ──────────────────────────────────────────────────────────
 
@@ -351,7 +372,9 @@ export default function BuilderPageShell() {
     mutationFn: () => formsService.deleteForm(formId!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['forms'] });
-      toast('Form deleted successfully', 'success');
+      queryClient.invalidateQueries({ queryKey: ['trash'] });
+      // Delete means Trash since Sprint 13 (CF5.5): reversible for 30 days.
+      toast('Moved to Trash — you can restore it for 30 days', 'success');
       router.push(formsListHref);
     },
     onError: () => {
@@ -391,26 +414,22 @@ export default function BuilderPageShell() {
     }
   }, [router, formsListHref]);
 
-  // "Save and leave" in the leave-guard modal
-  const handleSaveAndLeave = useCallback(async () => {
+  // Retry after a failed autosave (SaveIndicator). A failed save leaves `dirty` true, so the leave
+  // guard already treats it as unsaved; this just re-runs the same save immediately.
+  const handleRetrySave = useCallback(async () => {
     const current = saveStateRef.current;
-    if (current.dirty && current.formId && current.formId !== 'undefined') {
-      try {
-        setSaveState('saving');
-        await saveFormSnapshot(current.formId, current);
-        markSaved();
-        setSaveState('saved');
-      } catch {
-        setSaveState('error');
-        toast('Could not save. Please try again.', 'error');
-        return;
-      }
+    if (!current.formId || current.formId === 'undefined') return;
+    try {
+      setSaveState('saving');
+      await saveFormSnapshot(current.formId, current);
+      markSaved();
+      setSaveState('saved');
+      setSavedAt(new Date());
+    } catch {
+      setSaveState('error');
+      toast('Could not save. Please try again.', 'error');
     }
-    const dest = pendingNavUrl ?? formsListHref;
-    setPendingNavUrl(null);
-    setShowLeaveModal(false);
-    router.push(dest);
-  }, [pendingNavUrl, markSaved, toast, router, formsListHref]);
+  }, [markSaved, toast]);
 
   const handleLeaveWithoutSaving = useCallback(() => {
     const dest = pendingNavUrl ?? formsListHref;
@@ -532,6 +551,29 @@ export default function BuilderPageShell() {
     ? FIELD_TYPE_CONFIG.find((c) => c.type === activeDragField.type)
     : null;
 
+  // Add-field sheet: append to the active page, expand the new card and scroll it into view
+  // (addField itself does not select the field it creates).
+  const handleAddFromSheet = (type: FieldType) => {
+    addField(type);
+    const state = useBuilderStore.getState();
+    const pageId = state.activePageId ?? state.pages[0]?.id;
+    const added = state.fields
+      .filter((f) => !f.deleted && f.pageId === pageId)
+      .sort((a, b) => a.order - b.order)
+      .pop();
+    if (!added) return;
+    setActiveFieldId(added.fieldId);
+    requestAnimationFrame(() =>
+      document.querySelector(`[data-field-id="${added.fieldId}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    );
+  };
+
+  const toggleReorder = () => {
+    setIsReordering((on) => !on);
+    setActiveFieldId(null); // the inline editor is hidden in Reorder mode; don't leave a field "selected"
+  };
+  const activePageFieldCount = fields.filter((f) => !f.deleted && f.pageId === activePageId).length;
+
   // Non-deleted field count per page, for the Pages panel's badges
   const pageFieldCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -547,17 +589,8 @@ export default function BuilderPageShell() {
 
   return (
     <>
-      {/* -mx-4 md:-mx-8 xl:-mx-12 -mt-6 md:-mt-8 -mb-16 cancels AppShell's responsive content padding; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar */}
-      <div className="flex max-[520px]:flex items-center justify-center h-[calc(100vh-56px)] -mx-4 md:-mx-8 xl:-mx-12 -mt-6 md:-mt-8 -mb-16 min-[521px]:hidden bg-(--bg-subtle) px-6">
-        <div className="text-center bg-(--surface-card) p-8 rounded-xl shadow-(--shadow-sm) border border-(--border-default) max-w-sm">
-          <p className="text-(--text-secondary) font-semibold bg-body-lg">
-            For the best experience, use a desktop or laptop to build forms.
-          </p>
-        </div>
-      </div>
-
       {/* -mx-4 md:-mx-8 xl:-mx-12 -mt-6 md:-mt-8 -mb-16 cancels AppShell's responsive content padding; calc offsets the fixed 56px TopNav — both needed so this fills the viewport exactly instead of overflowing it and forcing a page-level scrollbar. Canvas keeps its own internal overflow-y-auto below. */}
-      <div className="hidden min-[521px]:flex flex-col h-[calc(100vh-56px)] -mx-4 md:-mx-8 xl:-mx-12 -mt-6 md:-mt-8 -mb-16 overflow-hidden bg-(--bg-subtle)">
+      <div className="flex flex-col h-[calc(100dvh-56px)] -mx-4 md:-mx-8 xl:-mx-12 -mt-6 md:-mt-8 -mb-16 overflow-hidden bg-(--bg-subtle)">
         {isLoading ? (
           /* Loading Skeleton */
           <div className="flex flex-col h-full w-full">
@@ -577,13 +610,16 @@ export default function BuilderPageShell() {
           <>
             <BuilderHeader
               formTitle={formTitle}
+              dirty={dirty}
               isSaving={saveState === 'saving'}
-              saveState={saveState}
+              saveFailed={saveState === 'error'}
               savedAt={savedAt}
+              onRetrySave={handleRetrySave}
               status={status}
               onTitleChange={setFormTitle}
               onPreview={handlePreview}
               onBack={handleBack}
+              canPublish={canPublishForm(formRole)}
               onPublish={handlePublishClick}
               onClose={() => setShowCloseModal(true)}
               onDelete={() => setShowDeleteModal(true)}
@@ -596,6 +632,7 @@ export default function BuilderPageShell() {
               canRedo={canRedo}
               onUndo={undo}
               onRedo={redo}
+              shareHref={canSeeShare(formRole) ? `/forms/${id}/share` : undefined}
             />
             
             <div className="flex flex-1 overflow-hidden">
@@ -616,6 +653,8 @@ export default function BuilderPageShell() {
                     onAddPage={addPage}
                     onDeletePage={deletePage}
                   />
+                  <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
+                  <PageSwitcher pages={pages} activePageId={activePageId} onSelectPage={setActivePageId} />
                   <Canvas
                     fields={fields}
                     activePageId={activePageId}
@@ -637,7 +676,15 @@ export default function BuilderPageShell() {
                     dragOverFieldId={dragOverInfo?.fieldId ?? null}
                     dragOverPosition={dragOverInfo?.position ?? null}
                     isToolboxOver={isToolboxOver}
+                    isReordering={isReordering}
                   />
+                  <MobileBuildBar
+                    isReordering={isReordering}
+                    canReorder={activePageFieldCount > 1}
+                    onAddField={() => setShowAddSheet(true)}
+                    onToggleReorder={toggleReorder}
+                  />
+                  </div>
                   <DragOverlay dropAnimation={dropAnimation}>
                     {activeDragConfig ? (
                       <div className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-(--surface-card) border border-(--border-focus) shadow-(--shadow-lg) opacity-90 min-h-11 cursor-grabbing pointer-events-none">
@@ -665,33 +712,43 @@ export default function BuilderPageShell() {
                 </DndContext>
               ) : activeTab === 'branding' ? (
                 <div className="flex-1 overflow-y-auto p-6">
-                  <BrandingPanel branding={branding} formTitle={formTitle} onUpdate={setBranding} />
+                  <BrandingTabContent
+                    formId={formId ?? undefined}
+                    formTitle={formTitle}
+                    branding={branding}
+                    settings={settings}
+                    fieldCount={fields.filter((f) => !f.deleted).length}
+                    isPublic={status === 'published' && settings.accessMode !== 'login'}
+                    onBrandingUpdate={setBranding}
+                    onLayoutChange={(layout) => setSettings({ layout })}
+                  />
                 </div>
               ) : activeTab === 'settings' ? (
                 <div className="flex-1 overflow-y-auto p-6">
                   <SettingsPanel settings={settings} status={status} slug={slug} onUpdate={setSettings} />
                 </div>
-              ) : (
-                <div className="flex-1 overflow-y-auto p-6">
-                  <SharePanel
-                    status={status}
-                    slug={slug}
-                    formTitle={formTitle}
-                    onPublish={handlePublishClick}
-                  />
-                </div>
-              )}
+              ) : null}
             </div>
           </>
         )}
       </div>
 
+      <AddFieldSheet isOpen={showAddSheet} onClose={() => setShowAddSheet(false)} onAdd={handleAddFromSheet} />
+
       {/* ── Lifecycle Modals ── */}
       <PublishModal
         isOpen={showPublishModal}
         onClose={() => setShowPublishModal(false)}
-        onConfirm={() => publishMutation.mutate()}
-        isPending={publishMutation.isPending}
+        formId={formId ?? ''}
+        formTitle={formTitle}
+        status={status}
+        slug={slug}
+        settings={settings}
+        scope={formWorkspaceSlug ?? 'personal'}
+        canPublish={canPublishForm(formRole)}
+        onStatusChange={handleStatusChange}
+        onChangeSetting={handleChangeSetting}
+        onFixField={handleFixField}
       />
 
       <CloseFormModal
@@ -703,10 +760,9 @@ export default function BuilderPageShell() {
 
       <LeaveBuilderModal
         isOpen={showLeaveModal}
-        onSaveAndLeave={handleSaveAndLeave}
-        onLeaveWithoutSaving={handleLeaveWithoutSaving}
+        formTitle={formTitle}
+        onDiscard={handleLeaveWithoutSaving}
         onStay={handleStay}
-        isSaving={saveState === 'saving'}
       />
 
       <DeleteFormModal

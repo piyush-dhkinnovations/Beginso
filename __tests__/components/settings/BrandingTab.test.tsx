@@ -83,7 +83,7 @@ describe('BrandingTab', () => {
 
     fireEvent.click(await screen.findByText('Trigger update'));
 
-    await waitFor(() => expect(mockUpdateWorkspace).toHaveBeenCalledWith({ branding: { primaryColor: '#123456' } }));
+    await waitFor(() => expect(mockUpdateWorkspace).toHaveBeenCalledWith({ branding: { primaryColor: '#123456' } }, undefined));
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Branding defaults updated.', 'success'));
   });
 

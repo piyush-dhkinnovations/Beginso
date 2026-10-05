@@ -113,7 +113,7 @@ export const settingsKeys = {
   // notificationPreferences lives on the workspace document (confirmed live 18 Aug 2026) — no
   // dedicated query key; NotificationsTab reads/writes via this same key WorkspaceTab/BrandingTab
   // already share.
-  workspace: () => [...settingsKeys.all, 'workspace'] as const,
+  workspace: (scope?: string) => [...settingsKeys.all, 'workspace', ...(scope ? [scope] : [])] as const,
   sessions: () => [...settingsKeys.all, 'sessions'] as const,
 };
 
@@ -132,7 +132,7 @@ export const workspaceKeys = {
   detail: (id: string) => [...workspaceKeys.all, 'detail', id] as const,
   // The context discriminator is a key segment, not a filter param, so switching context can
   // never serve another context's cached rows even transiently (requirements.md §7.10).
-  forms: (context: FormsContext, params?: { search?: string; status?: string; page?: number; limit?: number }) =>
+  forms: (context: FormsContext, params?: { search?: string; status?: string; page?: number; limit?: number; archived?: string }) =>
     context.type === 'personal'
       ? (['forms', 'personal', 'list', params] as const)
       : (['forms', 'workspace', context.workspaceId, 'list', params] as const),
@@ -181,4 +181,28 @@ export const auditKeys = {
 export const sharedKeys = {
   all: ['shared-with-me'] as const,
   list: () => [...sharedKeys.all, 'list'] as const,
+};
+
+// Sprint 13 (builder-publish-respondent), design.md §10. Readiness is by formId (globally unique,
+// bucket (b) above). Trash and templates are workspace-scoped, so `scope` (a workspace slug or the
+// literal 'personal') is a key segment. respondentKeys.link takes a hash, never the raw token.
+export const readinessKeys = {
+  form: (formId: string) => ['form-readiness', formId] as const,
+};
+
+export const trashKeys = {
+  all: (scope: string) => ['trash', scope] as const,
+  list: (scope: string, type: 'all' | 'form' | 'response', page = 1) =>
+    [...trashKeys.all(scope), 'list', type, page] as const,
+};
+
+export const templateKeys = {
+  all: (scope: string) => ['templates', scope] as const,
+  list: (scope: string) => [...templateKeys.all(scope), 'list'] as const,
+};
+
+export const respondentKeys = {
+  mine: () => ['my-submissions'] as const,
+  detail: (id: string) => ['my-submissions', 'detail', id] as const,
+  link: (tokenHash: string) => ['respond-link', tokenHash] as const,
 };

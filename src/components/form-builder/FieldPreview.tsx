@@ -9,12 +9,12 @@ import type { FormField } from '@/types/form';
 // (placeholder text, options, etc). Purely decorative — no inputs, no state.
 
 const inputPreviewClass =
-  'h-[34px] rounded-md border border-(--border-default) bg-(--bg-subtle) flex items-center gap-2 px-3 bg-body-sm text-(--text-muted) truncate';
+  'h-8.5 rounded-md border border-(--border-default) bg-(--bg-subtle) flex items-center gap-2 px-3 bg-body-sm text-(--text-muted) truncate';
 
 function OptionMarker({ shape }: { shape: 'round' | 'square' }) {
   return (
     <span
-      className={`w-[15px] h-[15px] border-[1.5px] border-(--border-strong) shrink-0 ${
+      className={`size-3.75 border-[1.5px] border-(--border-strong) shrink-0 ${
         shape === 'round' ? 'rounded-full' : 'rounded'
       }`}
     />
@@ -34,21 +34,21 @@ export function FieldPreview({ field }: { field: FormField }) {
 
     case 'long_text':
       return (
-        <div className="min-h-[52px] rounded-md border border-(--border-default) bg-(--bg-subtle) px-3 py-2 bg-body-sm text-(--text-muted)">
+        <div className="min-h-13 rounded-md border border-(--border-default) bg-(--bg-subtle) px-3 py-2 bg-body-sm text-(--text-muted)">
           {field.placeholder || 'Long answer text'}
         </div>
       );
 
     case 'number':
       return (
-        <div className={`${inputPreviewClass} max-w-[180px]`}>
+        <div className={`${inputPreviewClass} max-w-45`}>
           {field.placeholder || '0'}
         </div>
       );
 
     case 'date':
       return (
-        <div className={`${inputPreviewClass} max-w-[180px]`}>
+        <div className={`${inputPreviewClass} max-w-45`}>
           <Calendar size={14} className="text-(--text-disabled) shrink-0" />
           mm / dd / yyyy
         </div>
@@ -76,7 +76,7 @@ export function FieldPreview({ field }: { field: FormField }) {
             </div>
           ))}
           {remaining > 0 && (
-            <span className="bg-caption text-(--text-muted) pl-[23px]">+ {remaining} more</span>
+            <span className="bg-caption text-(--text-muted) pl-5.75">+ {remaining} more</span>
           )}
         </div>
       );

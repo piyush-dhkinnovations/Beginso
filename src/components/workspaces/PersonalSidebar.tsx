@@ -2,13 +2,14 @@
 
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Home, FileText, LayoutTemplate, Table2, PieChart, Download, Settings, Plus, Share2 } from 'lucide-react';
+import { Home, FileText, LayoutTemplate, Table2, PieChart, Download, Settings, Plus, Share2, Trash2, ClipboardList } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { useBuilderStore } from '@/store/builderStore';
 import { dashboardService } from '@/services/dashboard';
 import { formsService } from '@/services/forms';
-import { dashboardKeys, workspaceKeys } from '@/lib/queryKeys';
+import { respondentService } from '@/services/respondent';
+import { dashboardKeys, respondentKeys, workspaceKeys } from '@/lib/queryKeys';
 
 export interface PersonalSidebarProps {
   collapsed?: boolean;
@@ -69,6 +70,16 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
     }
   };
 
+  // My Submissions only appears once there is something to show (A5.1). Failure hides the item rather than
+  // surfacing an error in the nav.
+  const { data: mySubmissions } = useQuery({
+    queryKey: respondentKeys.mine(),
+    queryFn: respondentService.mine,
+    retry: false,
+    staleTime: 5 * 60_000,
+  });
+  const hasSubmissions = (mySubmissions?.length ?? 0) > 0;
+
   const isResponsesActive =
     pathname.startsWith('/responses') || /^\/forms\/[^/]+\/responses(\/|$)/.test(pathname);
   const isAnalyticsActive =
@@ -85,6 +96,10 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
             { label: 'My Forms', href: '/forms', icon: FileText, active: pathname.startsWith('/forms') && !isInBuilder, onClick: guard('/forms') },
             { label: 'Shared with me', href: '/shared', icon: Share2, active: pathname.startsWith('/shared'), onClick: guard('/shared') },
             { label: 'Templates', href: '/templates', icon: LayoutTemplate, active: pathname.startsWith('/templates'), onClick: guard('/templates') },
+            // Sprint 13 (A5.1): only once the user has actually submitted something while signed in.
+            ...(hasSubmissions || pathname.startsWith('/my-submissions')
+              ? [{ label: 'My Submissions', href: '/my-submissions', icon: ClipboardList, active: pathname.startsWith('/my-submissions'), onClick: guard('/my-submissions') }]
+              : []),
             // Responses/Analytics/Reports have nothing to show until a form exists — hidden
             // rather than left to render their own all-zero/empty state, same reasoning as the
             // dashboard's stat cards. Still shown while loading (hasForms defaults true) and if
@@ -99,6 +114,7 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
             ...(hasForms || pathname.startsWith('/reports')
               ? [{ label: 'Reports', href: '/reports', icon: Download, active: pathname.startsWith('/reports'), onClick: guard('/reports') }]
               : []),
+            { label: 'Trash', href: '/trash', icon: Trash2, active: pathname.startsWith('/trash'), onClick: guard('/trash') },
             { label: 'Settings', href: '/settings', icon: Settings, active: pathname.startsWith('/settings'), onClick: guard('/settings') },
           ],
         },

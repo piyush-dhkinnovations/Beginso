@@ -20,6 +20,7 @@ import { WorkspaceSummaryCards } from './WorkspaceSummaryCards';
 import { Select } from '@/components/ui/Select';
 import { useAnalyticsTrend } from '@/hooks/useAnalyticsTrend';
 import { formsService } from '@/services/forms';
+import { useFormScope } from '@/hooks/useFormScope';
 import { analyticsService } from '@/services/analytics';
 import { analyticsKeys } from '@/lib/queryKeys';
 import { resolveEffectiveDateRange, resolveTrendBucket, resolvePreviousDateRange } from '@/lib/dateRange';
@@ -37,6 +38,7 @@ interface AnalyticsViewProps {
 
 export function AnalyticsView({ formId }: AnalyticsViewProps) {
   const router = useRouter();
+  const formScope = useFormScope(formId ?? '');
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -70,20 +72,20 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
 
   const overviewQuery = useQuery({
     queryKey: analyticsKeys.overview(formId as string, range),
-    queryFn: () => analyticsService.getOverview({ formId, from, to, timezone }),
-    enabled: !!formId,
+    queryFn: () => analyticsService.getOverview({ formId, from, to, timezone }, formScope),
+    enabled: !!formId && !!formScope,
   });
 
   const trendsQuery = useQuery({
     queryKey: analyticsKeys.trends(formId as string, range, bucket),
-    queryFn: () => analyticsService.getTrends({ formId, from, to, timezone, bucket }),
-    enabled: !!formId,
+    queryFn: () => analyticsService.getTrends({ formId, from, to, timezone, bucket }, formScope),
+    enabled: !!formId && !!formScope,
   });
 
   const questionsQuery = useQuery({
     queryKey: analyticsKeys.questions(formId as string, range),
-    queryFn: () => analyticsService.getQuestions({ formId, from, to, timezone }),
-    enabled: !!formId,
+    queryFn: () => analyticsService.getQuestions({ formId, from, to, timezone }, formScope),
+    enabled: !!formId && !!formScope,
   });
 
   const formsSummaryQuery = useQuery({

@@ -52,8 +52,8 @@ export function DeleteFormModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isBulk ? `Delete ${count} form${count === 1 ? '' : 's'}?` : 'Delete form?'}
-      description="This action cannot be undone. All responses will be permanently deleted."
+      title={isBulk ? `Move ${count} form${count === 1 ? '' : 's'} to Trash?` : 'Move form to Trash?'}
+      description="It stays in Trash for 30 days and can be restored. Its responses go with it and come back with it. After 30 days it is deleted permanently."
     >
       <div className="flex flex-col gap-4">
         {!isBulk && (
@@ -87,7 +87,7 @@ export function DeleteFormModal({
             disabled={!canDelete}
             className="bg-(--error) text-(--text-on-brand) hover:bg-(--danger-hover) focus:ring-(--error) disabled:bg-(--error-border) disabled:border-(--error-border)"
           >
-            {isBulk ? `Delete ${count} form${count === 1 ? '' : 's'}` : 'Delete permanently'}
+            {isBulk ? `Move ${count} form${count === 1 ? '' : 's'} to Trash` : 'Move to Trash'}
           </Button>
         </div>
       </div>

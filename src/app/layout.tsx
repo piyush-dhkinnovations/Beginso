@@ -49,7 +49,9 @@ export const metadata: Metadata = {
 // reloading into light). Until a real theme toggle exists to write it, system preference is the
 // only signal that can be trusted — reinstate the cookie priority alongside that toggle's write
 // side, not before.
-const THEME_INIT_SCRIPT = `(function(){try{if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();`;
+// Sprint 13 (CF2.11): public pages (/f/*, /r/*) and the preview iframe document (?embed=1) never take
+// the OS/admin theme — they are styled by the form's own theme (see FormThemeScope).
+const THEME_INIT_SCRIPT = `(function(){try{var p=location.pathname;if(/^[/](f|r)([/]|$)/.test(p)||(/^[/]forms[/][^/]+[/]preview$/.test(p)&&/[?&]embed=1/.test(location.search)))return;if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();`;
 
 export default function RootLayout({
   children,

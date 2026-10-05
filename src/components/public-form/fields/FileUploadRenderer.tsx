@@ -116,7 +116,7 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
             if (file) handleFile(file);
           }}
           className={cn(
-            'flex flex-col items-center justify-center gap-1 w-full min-h-[120px] rounded-md border-2 border-dashed border-(--border-default) text-center px-4 py-6 cursor-pointer transition-colors',
+            'flex flex-col items-center justify-center gap-1 w-full min-h-30 rounded-md border-2 border-dashed border-(--border-default) text-center px-4 py-6 cursor-pointer transition-colors',
             'hover:border-(--border-strong)',
             disabled && 'opacity-60 cursor-not-allowed pointer-events-none'
           )}

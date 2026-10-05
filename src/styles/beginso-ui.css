@@ -1452,6 +1452,16 @@ body {
 }
 @keyframes bg-drawer-in { from { transform: translateX(100%); } }
 
+/* Bottom sheet (Sprint 13, CF2.12): same drawer, anchored to the bottom edge. */
+.bg-drawer.bg-drawer-bottom {
+  top: auto; left: 0; right: 0; bottom: 0;
+  width: auto; max-height: 85dvh;
+  border-left: 0; border-top: 1px solid var(--border-default);
+  border-radius: var(--bg-radius-lg) var(--bg-radius-lg) 0 0;
+  animation-name: bg-drawer-up;
+}
+@keyframes bg-drawer-up { from { transform: translateY(100%); } }
+
 /* ---- Dropdown menu ----------------------------------------------------- */
 .bg-menu {
   min-width: 200px;

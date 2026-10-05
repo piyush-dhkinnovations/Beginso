@@ -15,6 +15,19 @@ const ACTION_PHRASES: Record<string, string> = {
   'member.removed': 'removed a member from',
   'session.revoked': 'revoked a session on',
   'export.created': 'exported responses from',
+  'form.unpublish': 'unpublished',
+  'form.regenerate_link': 'generated a new link for',
+  'form.archive': 'archived',
+  'form.unarchive': 'unarchived',
+  'form.trash': 'moved to Trash',
+  'form.restore': 'restored',
+  'form.purge': 'permanently deleted',
+  'response.restore': 'restored a response on',
+  'response.purge': 'permanently deleted a response on',
+  'response.edit_after_review': 'edited their submission after review on',
+  'response.clear_edited_after_review': 'marked a respondent edit as reviewed on',
+  'template.publish': 'published a template from',
+  'template.remove': 'removed a template',
 };
 
 export function describeEventAction(action: string): string {

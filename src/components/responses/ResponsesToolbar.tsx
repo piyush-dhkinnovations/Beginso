@@ -57,7 +57,7 @@ export function ResponsesToolbar({ search, filters, stages, members, total, onSe
     return () => document.removeEventListener('mousedown', handleClick);
   }, [isFilterOpen]);
 
-  const activeCount = [filters.stageId, filters.assigneeId, filters.unread, filters.duplicate].filter(Boolean).length;
+  const activeCount = [filters.stageId, filters.assigneeId, filters.unread, filters.duplicate, filters.includeTest].filter(Boolean).length;
 
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -149,6 +149,12 @@ export function ResponsesToolbar({ search, filters, stages, members, total, onSe
             <label htmlFor="responses-duplicate-filter" className="flex items-center justify-between gap-2 bg-body-sm text-(--text-secondary)">
               Show duplicates
               <Switch id="responses-duplicate-filter" checked={!!filters.duplicate} onChange={(checked) => onFilterChange({ duplicate: checked || undefined })} />
+            </label>
+
+            {/* Sprint 13 (F15): test submissions never count anywhere and are hidden by default; this only lets you see them. */}
+            <label htmlFor="responses-tests-filter" className="flex items-center justify-between gap-2 bg-body-sm text-(--text-secondary)">
+              Include test submissions
+              <Switch id="responses-tests-filter" checked={!!filters.includeTest} onChange={(checked) => onFilterChange({ includeTest: checked || undefined })} />
             </label>
           </div>
         )}

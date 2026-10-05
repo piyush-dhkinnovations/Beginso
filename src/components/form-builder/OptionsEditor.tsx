@@ -150,7 +150,7 @@ export function OptionsEditor({ fieldId, options, onUpdate }: OptionsEditorProps
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="max-h-[240px] overflow-y-auto overflow-x-hidden flex flex-col gap-2 pr-0.5">
+      <div className="max-h-60 overflow-y-auto overflow-x-hidden flex flex-col gap-2 pr-0.5">
         <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
           <SortableContext items={rows.map((r) => r.id)} strategy={verticalListSortingStrategy}>
             {rows.map((row, index) => (

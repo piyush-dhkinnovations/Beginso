@@ -40,6 +40,14 @@ const ALLOWED_API_ROOTS = new Set([
   // every saved-view call 404s through the BFF with "Backend path is not allowed" even once the
   // real backend route exists (design.md §4/§22, requirements.md §13's own "allowlist trap").
   'views',
+  // Sprint 13 (builder-publish-respondent, task 1.6) — new backend roots, same allowlist trap as
+  // 'views'/'invitations' above: 'trash' (CF5.5), 'my-submissions' (A5.1), 'respond' (the signed-link
+  // claim call, which needs the member session — view/edit/resend go direct, token-authenticated, and
+  // never touch this proxy), 'public' (Mode 3's authenticated submit-ticket, OQ-10).
+  'trash',
+  'my-submissions',
+  'respond',
+  'public',
   'workspaces',
 ]);
 

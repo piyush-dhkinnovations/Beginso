@@ -96,6 +96,12 @@ export function canManageMembers(role: Role | undefined): boolean {
   return role !== undefined && hasCapability(role, 'workspace:members');
 }
 
+// Workspace Settings page (/w/[slug]/settings): General + Branding are owner/admin only — same
+// role set as managing members. Tags/Stages/Scoring keep their own capability checks.
+export function canManageWorkspaceSettings(role: Role | undefined): boolean {
+  return canManageMembers(role);
+}
+
 export function canViewAudit(role: Role | undefined): boolean {
   return role !== undefined && hasCapability(role, 'workspace:audit');
 }
@@ -135,4 +141,43 @@ export function canManageScoring(role: Role | undefined): boolean {
 // `templates:*` entry at all, so nothing server-side actually gates this route by role either).
 export function canViewTemplates(role: Role | undefined): boolean {
   return role !== 'viewer' && role !== 'reviewer';
+}
+
+// Sprint 13 (builder-publish-respondent), design.md §11.3 — convenience mirrors of the server's
+// permission matrix, each reusing an existing capability row so RolesMatrix stays unchanged. None of
+// these is the authorization boundary: the backend's requirePermission() is. Callers on a *personal*
+// form pass 'owner' (the creator is always the owner of their own form).
+/** Publish, Unpublish, Generate new link — server: forms:publish. */
+export function canPublishForm(role: Role | undefined): boolean {
+  return role !== undefined && hasCapability(role, 'forms:publish');
+}
+
+/** Archive / Unarchive — Owner/Admin, same tier as publish. */
+export function canArchiveForm(role: Role | undefined): boolean {
+  return canPublishForm(role);
+}
+
+/** Form restore, permanent delete and Empty trash — Owner only, matches forms:delete. */
+export function canManageTrash(role: Role | undefined): boolean {
+  return canDeleteForm(role);
+}
+
+/** Restore a single response from Trash — Owner/Admin, matches responses:delete. */
+export function canRestoreResponse(role: Role | undefined): boolean {
+  return role !== undefined && hasCapability(role, 'responses:delete');
+}
+
+/** Publish a form to the workspace's templates — Editor and above (Reviewers cannot create forms). */
+export function canPublishTemplate(role: Role | undefined): boolean {
+  return role !== undefined && hasCapability(role, 'forms:create');
+}
+
+/** Remove a workspace template — Owner/Admin. */
+export function canRemoveTemplate(role: Role | undefined): boolean {
+  return role !== undefined && hasCapability(role, 'workspace:settings');
+}
+
+/** The Share & Embed page and nav item — hidden from Reviewers (wireframe 34). */
+export function canSeeShare(role: Role | undefined): boolean {
+  return role !== undefined && hasCapability(role, 'forms:edit');
 }

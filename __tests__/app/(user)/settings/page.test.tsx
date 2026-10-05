@@ -23,12 +23,14 @@ vi.mock('@/components/settings/BrandingTab', () => ({ BrandingTab: () => <div>br
 vi.mock('@/components/settings/NotificationsTab', () => ({ NotificationsTab: () => <div>notifications-body</div> }));
 vi.mock('@/components/settings/SecurityTab', () => ({ SecurityTab: () => <div>security-body</div> }));
 vi.mock('@/components/settings/SessionsTab', () => ({ SessionsTab: () => <div>sessions-body</div> }));
+vi.mock('@/components/settings/DataTab', () => ({ DataTab: () => <div>data-body</div> }));
+vi.mock('@/components/settings/LegacySettingsRedirect', () => ({
+  LEGACY_WORKSPACE_TABS: ['workspace', 'branding', 'tags', 'stages', 'scoring'],
+  LegacySettingsRedirect: ({ tab }: { tab: string }) => <div>redirect-{tab}</div>,
+}));
 vi.mock('@/components/settings/TagManager', () => ({ TagManager: () => <div>tags-body</div> }));
-vi.mock('@/hooks/useTagManagerScope', () => ({ useTagManagerScope: () => undefined }));
 vi.mock('@/components/settings/StageManager', () => ({ StageManager: () => <div>stages-body</div> }));
-vi.mock('@/hooks/useStageManagerScope', () => ({ useStageManagerScope: () => undefined }));
 vi.mock('@/components/scoring/CriteriaManager', () => ({ CriteriaManager: () => <div>scoring-body</div> }));
-vi.mock('@/hooks/useScoreCriteriaScope', () => ({ useScoreCriteriaScope: () => undefined }));
 
 describe('SettingsPage tab wiring', () => {
   beforeEach(() => {
@@ -80,13 +82,18 @@ describe('SettingsPage tab wiring', () => {
     expect(mockReplace).toHaveBeenCalledWith('/settings?tab=sessions', { scroll: false });
   });
 
-  // Sprint 12 (inbox-collaboration), task 2.5 — the Tags tab joins the same visitedTabs set as
-  // every other tab.
-  it('accepts ?tab=tags and shows the Tags tab as active', () => {
+  // Workspace-owned tabs moved to /w/[slug]/settings — old links redirect instead of rendering here.
+  it('redirects a legacy workspace tab (?tab=tags) instead of rendering it', () => {
     mockTab = 'tags';
     render(<SettingsPage />);
 
-    expect(screen.getByRole('tab', { name: 'Tags' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByText('tags-body')).toBeVisible();
+    expect(screen.getByText('redirect-tags')).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Tags' })).not.toBeInTheDocument();
+  });
+
+  it('shows only account tabs', () => {
+    render(<SettingsPage />);
+
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Profile', 'Notifications', 'Security', 'Sessions & Devices', 'Data & account']);
   });
 });

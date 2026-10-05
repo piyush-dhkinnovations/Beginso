@@ -1,4 +1,5 @@
 import axiosInstance from '@/lib/axios';
+import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import type {
   UserProfile,
   UpdateProfilePayload,
@@ -23,6 +24,9 @@ function unwrapEnvelope<T>(raw: unknown, namedKey: string): T {
   return raw as T;
 }
 
+// Trailing axios config args — empty when no scope, so unscoped calls keep their exact old shape.
+const scopeConfig = (scope?: string) => (scope ? [{ headers: workspaceHeaders(scope) }] : []);
+
 export const settingsService = {
   getProfile: (): Promise<UserProfile> =>
     axiosInstance.get('/api/users/me').then((r) => unwrapEnvelope<UserProfile>(r.data, 'user')),
@@ -35,14 +39,16 @@ export const settingsService = {
   notifyPasswordChanged: (): Promise<void> =>
     axiosInstance.post('/api/auth/password-changed').then(() => undefined),
 
-  getWorkspace: (): Promise<WorkspaceSettings> =>
-    axiosInstance.get('/api/workspaces/current').then((r) => unwrapEnvelope<WorkspaceSettings>(r.data, 'workspace')),
+  // `scope` (a workspace slug) names which workspace to read/write — set by the per-workspace
+  // Settings page. Omitted = the backend's default-workspace resolution, as before.
+  getWorkspace: (scope?: string): Promise<WorkspaceSettings> =>
+    axiosInstance.get('/api/workspaces/current', ...scopeConfig(scope)).then((r) => unwrapEnvelope<WorkspaceSettings>(r.data, 'workspace')),
 
   // Also carries notificationPreferences (Requirement 7) — confirmed live 18 Aug 2026 as a field
   // on the workspace document, not a separate endpoint. NotificationsTab calls this with
   // { notificationPreferences } the same way BrandingTab calls it with { branding }.
-  updateWorkspace: (payload: UpdateWorkspacePayload): Promise<WorkspaceSettings> =>
-    axiosInstance.patch('/api/workspaces/current', payload).then((r) => unwrapEnvelope<WorkspaceSettings>(r.data, 'workspace')),
+  updateWorkspace: (payload: UpdateWorkspacePayload, scope?: string): Promise<WorkspaceSettings> =>
+    axiosInstance.patch('/api/workspaces/current', payload, ...scopeConfig(scope)).then((r) => unwrapEnvelope<WorkspaceSettings>(r.data, 'workspace')),
 
   getSessions: (): Promise<{ sessions: SessionSummary[] }> =>
     axiosInstance.get('/api/auth/sessions').then((r) => r.data),

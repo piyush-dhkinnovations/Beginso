@@ -256,9 +256,9 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form Two' }));
       await userEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
 
-      expect(await screen.findByText('Delete 2 forms?')).toBeInTheDocument();
+      expect(await screen.findByText('Move 2 forms to Trash?')).toBeInTheDocument(); // Sprint 13: delete means Trash
       // No typed-title input in bulk mode — the confirm button is enabled immediately.
-      const confirmButton = screen.getByRole('button', { name: 'Delete 2 forms' });
+      const confirmButton = screen.getByRole('button', { name: 'Move 2 forms to Trash' });
       expect(confirmButton).toBeEnabled();
 
       await userEvent.click(confirmButton);
@@ -276,9 +276,9 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       await userEvent.dblClick(screen.getByText('Form One'));
       await userEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
 
-      expect(await screen.findByText('Delete 1 form?')).toBeInTheDocument();
+      expect(await screen.findByText('Move 1 form to Trash?')).toBeInTheDocument();
       expect(screen.queryByLabelText(/Type .* to confirm/)).not.toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Delete 1 form' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: 'Move 1 form to Trash' })).toBeEnabled();
     });
 
     it('switching tabs clears the current selection', async () => {
@@ -331,9 +331,9 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
       await userEvent.click(await screen.findByRole('menuitem', { name: /Delete/ }));
 
-      expect(await screen.findByText('Delete form?')).toBeInTheDocument();
+      expect(await screen.findByText('Move form to Trash?')).toBeInTheDocument();
       expect(screen.getByLabelText(/Type .* to confirm/)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Delete permanently' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Move to Trash' })).toBeDisabled();
     });
   });
 

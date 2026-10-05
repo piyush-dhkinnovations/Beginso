@@ -5,6 +5,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
+import { useState } from 'react';
 import { Layout } from 'lucide-react';
 import type { FormField, LogicRule } from '@/types/form';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -43,14 +44,14 @@ function DroppableCanvas({
     <main
       ref={setNodeRef}
       onClick={onBackgroundClick}
-      className={`flex-1 min-w-0 p-6 overflow-y-auto transition-colors duration-200 min-h-[500px] ${
+      className={`flex-1 min-w-0 p-3 md:p-6 overflow-y-auto overscroll-contain transition-colors duration-200 min-h-125 ${
         showOver ? 'bg-(--accent-soft)/50' : 'bg-(--bg-subtle)'
       }`}
     >
       {/* Widened from the design system's 440px baseline — with live field previews now
           rendered inline, 440px felt cramped. 560px gives more breathing room without
           spanning the full canvas width. */}
-      <div className="max-w-140 mx-auto min-h-[500px] flex flex-col justify-start">
+      <div className="max-w-140 mx-auto min-h-125 flex flex-col justify-start">
         {/* Title + description header — always visible, regardless of field count */}
         <CanvasFormHeader
           pageTitle={pageTitle}
@@ -104,6 +105,8 @@ interface CanvasProps {
   dragOverPosition?: 'above' | 'below' | null;
   /** Whether a toolbox item is currently being dragged over the canvas area */
   isToolboxOver?: boolean;
+  /** Sprint 13 (CF2.12) — Reorder mode on touch widths. */
+  isReordering?: boolean;
 }
 
 // ─── Main Canvas component ────────────────────────────────────────────────────
@@ -128,13 +131,34 @@ export function Canvas({
   dragOverFieldId = null,
   dragOverPosition = null,
   isToolboxOver = false,
+  isReordering = false,
 }: CanvasProps) {
+  // Screen-reader announcement of a Reorder-mode move (aria-live) — the new position is spoken, not
+  // only shown.
+  const [announcement, setAnnouncement] = useState('');
   // Only the active page's fields are ever shown on the canvas at once.
   const visibleFields = fields.filter((f) => !f.deleted && f.pageId === activePageId);
   const visibleFieldIds = visibleFields.map((f) => f.fieldId);
 
+  function moveBy(index: number, delta: -1 | 1) {
+    const target = visibleFields[index + delta];
+    const moved = visibleFields[index];
+    if (!target || !moved) return;
+    onFieldReorder(moved.fieldId, target.fieldId);
+    setAnnouncement(`Moved ${moved.label} to position ${index + delta + 1} of ${visibleFields.length}`);
+    // React moves the keyed node, which can drop focus — put it back on the button just used.
+    requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>(`[data-field-id="${moved.fieldId}"] [data-move="${delta < 0 ? 'up' : 'down'}"]`)
+        ?.focus();
+    });
+  }
+
   return (
     <div className="flex flex-1 w-full min-w-0" style={{ overflow: 'visible' }}>
+      <div aria-live="polite" className="sr-only">
+        {announcement}
+      </div>
       <DroppableCanvas
         isEmpty={visibleFields.length === 0}
         isOver={isToolboxOver}
@@ -164,12 +188,9 @@ export function Canvas({
                 onAddLogicRule={onAddLogicRule}
                 onUpdateLogicRule={onUpdateLogicRule}
                 onDeleteLogicRule={onDeleteLogicRule}
-                onMoveUp={index > 0 ? () => onFieldReorder(field.fieldId, visibleFields[index - 1].fieldId) : undefined}
-                onMoveDown={
-                  index < visibleFields.length - 1
-                    ? () => onFieldReorder(field.fieldId, visibleFields[index + 1].fieldId)
-                    : undefined
-                }
+                onMoveUp={index > 0 ? () => moveBy(index, -1) : undefined}
+                onMoveDown={index < visibleFields.length - 1 ? () => moveBy(index, 1) : undefined}
+                reorderMode={isReordering}
                 insertIndicator={dragOverFieldId === field.fieldId ? dragOverPosition : null}
               />
             ))}

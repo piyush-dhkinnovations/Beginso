@@ -158,6 +158,7 @@ export function UiGalleryContent() {
   const { toast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   const [checked, setChecked] = useState(true);
   const [page, setPage] = useState(3);
@@ -418,6 +419,10 @@ export function UiGalleryContent() {
               </div>
             </Modal>
             <Button variant="secondary" onClick={() => setDrawerOpen(true)}>Open drawer</Button>
+            <Button variant="secondary" onClick={() => setSheetOpen(true)}>Open bottom sheet</Button>
+            <Drawer isOpen={sheetOpen} onClose={() => setSheetOpen(false)} title="Add a field" placement="bottom">
+              <p className="bg-body-sm">Bottom sheet content goes here.</p>
+            </Drawer>
             <Drawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} title="Form settings">
               <p className="bg-body-sm">Drawer content goes here.</p>
             </Drawer>

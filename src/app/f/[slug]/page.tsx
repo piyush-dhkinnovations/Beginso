@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { publicFormService } from '@/services/publicForm';
 import { PublicFormShell } from '@/components/public-form/PublicFormShell';
 import { FormUnavailable } from '@/components/public-form/FormUnavailable';
+import { RetryButton } from '@/components/public-form/RetryButton';
 import { isPastCloseDate } from '@/lib/formAvailability';
 import { AlertCircle } from 'lucide-react';
 
@@ -52,12 +53,7 @@ export default async function PublicFormPage({ params }: Props) {
           <p className="mt-2 bg-body text-(--text-secondary)">
             The service is temporarily unavailable. Your form has not been removed or closed.
           </p>
-          <a
-            href={`/f/${encodeURIComponent(slug)}`}
-            className="bg-btn bg-btn-primary mt-6"
-          >
-            Try again
-          </a>
+          <RetryButton />
         </div>
       </main>
     );

@@ -109,7 +109,10 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
         />
       )}
       sidebar={(collapsed) =>
-        formWorkspace ? (
+        formWorkspace && formId ? (
+          // Same form-properties sidebar as a personal form; only the "back" target differs.
+          <FormSidebar formId={formId} form={form} collapsed={collapsed} backHref={`/w/${formWorkspace.slug}/forms`} backLabel={formWorkspace.name} />
+        ) : formWorkspace ? (
           <WorkspaceSidebar
             slug={formWorkspace.slug}
             currentLabel={formWorkspace.name}

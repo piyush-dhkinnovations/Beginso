@@ -4,11 +4,12 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink, LayoutDashboard, LayoutTemplate, Share2, PinOff, Archive, Search } from 'lucide-react';
+import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink, LayoutDashboard, LayoutTemplate, Share2, PinOff, Archive, ArchiveRestore, Search } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
-import { canDeleteForm } from '@/lib/roles';
+import { canDeleteForm, canArchiveForm, canPublishTemplate } from '@/lib/roles';
+import { PublishTemplateModal } from '@/components/templates/PublishTemplateModal';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/hooks/useAuth';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -84,6 +85,8 @@ const TAB_STATUS: Partial<Record<FormsManagerTab, FormStatus | 'all'>> = {
   recent: 'all',
   draft: 'draft',
   published: 'published',
+  // Sprint 13 (CF5.6): Archived is a real list now (`?archived=only`); every status shows there.
+  archived: 'all',
 };
 
 function formsQueryEnabled(tab: FormsManagerTab): boolean {
@@ -118,6 +121,8 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [formToDelete, setFormToDelete] = useState<Form | null>(null);
+  const [formToTemplate, setFormToTemplate] = useState<Form | null>(null);
+  const [archivingId, setArchivingId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<FormStatus | 'all'>('all');
   const [sort, setSort] = useState<SortKey>('updated');
@@ -170,6 +175,11 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
     ? callerWorkspaces?.find((w) => w.slug === context.workspaceId)?.role
     : undefined;
   const canDelete = context.type === 'personal' || canDeleteForm(currentRole);
+  // Archive is Owner/Admin (the same tier as publish); personal forms are always the caller's own. Publishing
+  // to templates is Editor and above and only exists for workspace forms — templates belong to a workspace.
+  const canArchive = context.type === 'personal' || canArchiveForm(currentRole);
+  const canMakeTemplate = context.type === 'workspace' && canPublishTemplate(currentRole);
+  const onArchivedTab = activeTab === 'archived';
 
   // Selection is page/filter-scoped, not global — switching tabs, filtering, searching, or
   // paging changes which rows are even on screen, so a selection made before that change would
@@ -186,7 +196,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
   const { data, isLoading, error } = useQuery({
     queryKey: workspaceKeys.forms(
       context,
-      { search: debouncedSearch, status, page, limit: pageSize }
+      { search: debouncedSearch, status, page, limit: pageSize, archived: onArchivedTab ? 'only' : undefined }
     ),
     queryFn: () =>
       formsService.getForms(
@@ -195,6 +205,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
           status: status === 'all' ? undefined : status,
           page,
           limit: pageSize,
+          archived: onArchivedTab ? 'only' : undefined,
         },
         context
       ),
@@ -226,13 +237,40 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
     onMutate: (id) => setDeletingId(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['forms'] });
+      queryClient.invalidateQueries({ queryKey: ['trash'] });
       if (data?.forms.length === 1 && page > 1) setPage((current) => current - 1);
-      toast('Form deleted successfully', 'success');
+      // Delete means Trash since Sprint 13 (CF5.5): reversible, so say where it went and how to get it back.
+      toast('Moved to Trash — you can restore it for 30 days', 'success', undefined, {
+        label: 'View Trash',
+        onClick: () => router.push(context.type === 'workspace' ? `/w/${context.workspaceId}/trash` : '/trash'),
+      });
     },
     onError: () => {
       toast('Failed to delete form. Please try again.', 'error');
     },
     onSettled: () => setDeletingId(null),
+  });
+
+  // Archive / Unarchive (Sprint 13, CF5.6). Archive keeps the form and its responses indefinitely and takes it
+  // out of the active list; the same call serves the row action and the bulk bar (sequential, like delete).
+  const archiveMutation = useMutation({
+    mutationFn: async ({ ids, archive }: { ids: string[]; archive: boolean }) => {
+      for (const id of ids) {
+        await (archive ? formsService.archiveForm(id) : formsService.unarchiveForm(id));
+      }
+    },
+    onMutate: ({ ids }) => setArchivingId(ids.length === 1 ? ids[0] : '*'),
+    onSuccess: (_d, { ids, archive }) => {
+      queryClient.invalidateQueries({ queryKey: ['forms'] });
+      setSelectedIds(new Set());
+      const n = ids.length;
+      toast(`${n} form${n === 1 ? '' : 's'} ${archive ? 'archived' : 'unarchived'}`, 'success', undefined, {
+        label: 'Undo',
+        onClick: () => archiveMutation.mutate({ ids, archive: !archive }),
+      });
+    },
+    onError: () => toast('Could not update the form. Please try again.', 'error'),
+    onSettled: () => setArchivingId(null),
   });
 
   const bulkDeleteMutation = useMutation({
@@ -245,8 +283,12 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
     },
     onSuccess: (_data, ids) => {
       queryClient.invalidateQueries({ queryKey: ['forms'] });
+      queryClient.invalidateQueries({ queryKey: ['trash'] });
       setSelectedIds(new Set());
-      toast(`${ids.length} form${ids.length === 1 ? '' : 's'} deleted`, 'success');
+      toast(`${ids.length} form${ids.length === 1 ? '' : 's'} moved to Trash`, 'success', undefined, {
+        label: 'View Trash',
+        onClick: () => router.push(context.type === 'workspace' ? `/w/${context.workspaceId}/trash` : '/trash'),
+      });
     },
     onError: () => {
       toast('Failed to delete the selected forms. Please try again.', 'error');
@@ -306,10 +348,27 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
         disabled: duplicatingId === formId,
         onSelect: () => duplicateMutation.mutate(formId),
       },
+      ...(canArchive
+        ? [{
+            id: 'archive',
+            label: archivingId === formId ? 'Updating…' : onArchivedTab ? 'Unarchive' : 'Archive',
+            icon: onArchivedTab ? <ArchiveRestore className="bg-icon" /> : <Archive className="bg-icon" />,
+            disabled: archivingId === formId,
+            onSelect: () => archiveMutation.mutate({ ids: [formId], archive: !onArchivedTab }),
+          }]
+        : []),
+      ...(canMakeTemplate
+        ? [{
+            id: 'publish-template',
+            label: 'Publish to templates',
+            icon: <LayoutTemplate className="bg-icon" />,
+            onSelect: () => setFormToTemplate(form),
+          }]
+        : []),
       ...(canDelete
         ? [{
             id: 'delete',
-            label: deletingId === formId ? 'Deleting…' : 'Delete',
+            label: deletingId === formId ? 'Moving to Trash…' : 'Delete',
             icon: <Trash2 className="bg-icon" />,
             disabled: deletingId === formId,
             danger: true,
@@ -428,7 +487,29 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
     },
   ];
 
-  const emptyFiltered = (
+  // Zero archived forms vs no matches are different screens (wireframe state rule). Archived forms are never
+  // "first run": the empty copy explains what Archive is for and points back to the active list.
+  const emptyArchived =
+    onArchivedTab && !search ? (
+      <EmptyState
+        icon={<Archive />}
+        title="No archived forms"
+        description="Archive a finished form to keep it and its responses without cluttering your list."
+        primaryAction={
+          <Button variant="primary" onClick={() => handleTabChange('recent')}>
+            Go to Forms
+          </Button>
+        }
+        secondaryAction={
+          <Button variant="secondary" onClick={() => setIsModalOpen(true)}>
+            <Plus size={16} className="mr-2" />
+            Create Form
+          </Button>
+        }
+      />
+    ) : null;
+
+  const emptyFiltered = emptyArchived ?? (
     <EmptyState
       illustration={search || status !== 'all' ? 'no-results' : 'empty-forms'}
       icon={<FileText />}
@@ -484,15 +565,11 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
         <>
           <FormsManagerTabs activeTab={activeTab} onChange={handleTabChange} />
 
-          {activeTab === 'pinned' || activeTab === 'archived' ? (
+          {activeTab === 'pinned' ? (
             <EmptyState
-              icon={activeTab === 'pinned' ? <PinOff /> : <Archive />}
+              icon={<PinOff />}
               title="Coming soon"
-              description={
-                activeTab === 'pinned'
-                  ? 'Pinning forms is not available yet.'
-                  : 'Archived forms will show up here once archiving ships.'
-              }
+              description="Pinning forms is not available yet."
             />
           ) : (
             <>
@@ -548,6 +625,13 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
                   count={selectedIds.size}
                   isDeleting={bulkDeleteMutation.isPending}
                   onDeleteSelected={() => setBulkDeleteConfirming(true)}
+                  onArchiveSelected={
+                    canArchive
+                      ? () => archiveMutation.mutate({ ids: [...selectedIds], archive: !onArchivedTab })
+                      : undefined
+                  }
+                  isArchiving={archiveMutation.isPending}
+                  archiveLabel={onArchivedTab ? 'Unarchive' : 'Archive'}
                 />
               )}
 
@@ -659,6 +743,14 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
           }
         }}
         isDeleting={deletingId !== null}
+      />
+
+      <PublishTemplateModal
+        isOpen={formToTemplate !== null}
+        onClose={() => setFormToTemplate(null)}
+        scope={context.type === 'workspace' ? context.workspaceId : ''}
+        formId={formToTemplate?._id ?? ''}
+        formTitle={formToTemplate?.title ?? ''}
       />
 
       <DeleteFormModal

@@ -14,15 +14,15 @@ import { BrandingPanel } from '@/components/form-builder/BrandingPanel';
 // a fully generic controlled component ({ branding, formTitle, onUpdate }), no Builder-specific
 // coupling. "New Form" as the preview's formTitle matches Requirement 6.2's wording exactly
 // ("how a new form's header would look").
-export function BrandingTab() {
+export function BrandingTab({ scope }: { scope?: string } = {}) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   // Shares the same query WorkspaceTab reads — one cache entry, so a name change on that tab and
   // a branding change here never race each other's cached copy (design.md §8).
   const { data: workspace, isLoading, isError, refetch } = useQuery({
-    queryKey: settingsKeys.workspace(),
-    queryFn: settingsService.getWorkspace,
+    queryKey: settingsKeys.workspace(scope),
+    queryFn: () => settingsService.getWorkspace(scope),
   });
 
   // Adjusts local state during render when the query first resolves, rather than in a
@@ -42,9 +42,9 @@ export function BrandingTab() {
   }
 
   const updateBrandingMutation = useMutation({
-    mutationFn: (next: FormBranding) => settingsService.updateWorkspace({ branding: next }),
+    mutationFn: (next: FormBranding) => settingsService.updateWorkspace({ branding: next }, scope),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: settingsKeys.workspace() });
+      queryClient.invalidateQueries({ queryKey: settingsKeys.workspace(scope) });
       toast('Branding defaults updated.', 'success');
     },
     onError: () => toast('Failed to update branding. Please try again.', 'error'),

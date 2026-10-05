@@ -76,6 +76,7 @@ export function parseInboxFiltersFromParams(
     assigneeId: params.get('assignee') ?? undefined,
     unread: params.get('unread') === '1' ? true : undefined,
     duplicate: params.get('duplicate') === '1' ? true : undefined,
+    includeTest: params.get('tests') === '1' ? true : undefined,
     from: params.get('from') ?? undefined,
     to: params.get('to') ?? undefined,
     q: params.get('q') ?? params.get('search') ?? undefined,
@@ -105,6 +106,7 @@ export function applyInboxFilterPatch(
   if ('assigneeId' in patch) set('assignee', patch.assigneeId);
   if ('unread' in patch) set('unread', patch.unread ? '1' : undefined);
   if ('duplicate' in patch) set('duplicate', patch.duplicate ? '1' : undefined);
+  if ('includeTest' in patch) set('tests', patch.includeTest ? '1' : undefined);
   if ('from' in patch) set('from', patch.from);
   if ('to' in patch) set('to', patch.to);
   if ('q' in patch) set('q', patch.q);

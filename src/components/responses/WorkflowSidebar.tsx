@@ -9,6 +9,7 @@ import { AssigneePicker } from './AssigneePicker';
 import { TagPicker } from './TagPicker';
 import { ActivityTimeline } from './ActivityTimeline';
 import { DuplicateCallout } from './DuplicateCallout';
+import { EditedAfterReviewCallout } from './EditedAfterReviewCallout';
 import { ScoreCard } from '@/components/scoring/ScoreCard';
 import { activityService } from '@/services/activity';
 import { useScoreCriteria } from '@/hooks/useScoreCriteria';
@@ -93,6 +94,15 @@ export function WorkflowSidebar({
 
   return (
     <aside className="flex w-full shrink-0 flex-col gap-4 lg:max-w-65">
+      {response.editedAfterReviewAt && (
+        <EditedAfterReviewCallout
+          responseId={response._id}
+          editedAt={response.editedAfterReviewAt}
+          scope={scope}
+          canAct={canCreateTag}
+        />
+      )}
+
       {response.duplicateOfId && onOpenOriginal && (
         <DuplicateCallout
           duplicateOfId={response.duplicateOfId}

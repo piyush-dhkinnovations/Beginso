@@ -66,7 +66,7 @@ test.describe('Public form — field validation', () => {
     await page.locator('form').getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.getByText('Step 2 of 2')).toBeVisible();
 
-    await page.locator('form').getByRole('button', { name: 'Submit', exact: true }).click();
+    await page.locator('form').getByRole('button', { name: 'Review answers', exact: true }).click();
     await expect(page.getByText('This field is required')).toBeVisible();
     await expect(page.getByText('Step 2 of 2')).toBeVisible(); // did not navigate away
   });

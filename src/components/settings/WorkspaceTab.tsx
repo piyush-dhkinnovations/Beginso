@@ -16,16 +16,18 @@ import { DangerZoneSection } from './DangerZoneSection';
 
 interface WorkspaceTabProps {
   onDirtyChange?: (isDirty: boolean) => void;
+  /** Workspace slug when rendered inside /w/[slug]/settings. Also hides the account-level Danger Zone. */
+  scope?: string;
 }
 
-export function WorkspaceTab({ onDirtyChange }: WorkspaceTabProps) {
+export function WorkspaceTab({ onDirtyChange, scope }: WorkspaceTabProps) {
   const { toast } = useToast();
   const { logout } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: workspace, isLoading, isError, error, refetch } = useQuery({
-    queryKey: settingsKeys.workspace(),
-    queryFn: settingsService.getWorkspace,
+    queryKey: settingsKeys.workspace(scope),
+    queryFn: () => settingsService.getWorkspace(scope),
   });
 
   // Confirmed live 18 Aug 2026 (backend commit a7a5185) — DELETE /api/workspaces/current now
@@ -65,7 +67,7 @@ export function WorkspaceTab({ onDirtyChange }: WorkspaceTabProps) {
   }, [isDirty]);
 
   const updateNameMutation = useMutation({
-    mutationFn: (name: string) => settingsService.updateWorkspace({ name }),
+    mutationFn: (name: string) => settingsService.updateWorkspace({ name }, scope),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: settingsKeys.workspace() });
       reset({ name: updated.name });
@@ -115,7 +117,9 @@ export function WorkspaceTab({ onDirtyChange }: WorkspaceTabProps) {
         </Button>
       </form>
 
-      <DangerZoneSection workspaceName={workspace.name} />
+      {/* Export/delete act on the signed-in account (DELETE /workspaces/current deletes the user
+          too), so they live in account settings' Data tab, not per-workspace settings. */}
+      {!scope && <DangerZoneSection workspaceName={workspace.name} />}
     </div>
   );
 }

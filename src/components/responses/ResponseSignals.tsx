@@ -16,6 +16,9 @@ export interface ResponseSignalsData {
   noteCount?: number;
   attachmentCount?: number;
   duplicateOfId?: string | null;
+  /** Sprint 13: a test submission (only present when the inbox opted in) and the respondent-edited flag. */
+  isTest?: boolean;
+  editedAfterReviewAt?: string | null;
 }
 
 export interface ResponseSignalsProps {
@@ -36,7 +39,7 @@ const MAX_VISIBLE_TAGS = 2;
  * task 3.5). Pure render — no fetching (design.md §7).
  */
 export function ResponseSignals({ response, density, className }: ResponseSignalsProps) {
-  const { unread, assignee, tags = [], noteCount = 0, attachmentCount = 0, duplicateOfId } = response;
+  const { unread, assignee, tags = [], noteCount = 0, attachmentCount = 0, duplicateOfId, isTest, editedAfterReviewAt } = response;
   const visibleTags = tags.slice(0, MAX_VISIBLE_TAGS);
   const overflowTags = tags.slice(MAX_VISIBLE_TAGS);
   const isCompact = density === 'compact';
@@ -60,6 +63,18 @@ export function ResponseSignals({ response, density, className }: ResponseSignal
       </span>
 
       {duplicateOfId && <DuplicateBadge />}
+
+      {/* Sprint 13: the same two signals in every view, because every view renders THIS component. Text, not colour alone. */}
+      {editedAfterReviewAt && (
+        <span className="shrink-0 rounded-full bg-(--warning-surface) px-2 bg-caption font-semibold text-(--warning-text)" title="The respondent edited this after it was reviewed">
+          Edited
+        </span>
+      )}
+      {isTest && (
+        <span className="shrink-0 rounded-full bg-(--bg-sunken) px-2 bg-caption font-semibold text-(--text-secondary)" title="A test submission - it never counts">
+          Test
+        </span>
+      )}
 
       {/* Assignee — requirements.md §7.2: "Unassigned renders a — with accessible name 'Unassigned'."
           `aria-label` names the assignee even at `compact` density, where the visible name is

@@ -14,7 +14,7 @@ describe('BulkActionBar', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('shows the selected count and only a Delete action — no Archive, since Form.status has no archived value', () => {
+  it('shows the selected count and only a Delete action when no archive handler is given (Archive is offered only to roles that can archive)', () => {
     render(<BulkActionBar count={3} isDeleting={false} onDeleteSelected={vi.fn()} />);
 
     expect(screen.getByText('3 selected')).toBeInTheDocument();

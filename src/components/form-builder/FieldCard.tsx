@@ -3,7 +3,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Trash2, Copy, GripVertical } from 'lucide-react';
+import { Trash2, Copy, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
 import type { FormField, LogicRule } from '@/types/form';
 import { FIELD_TYPE_CONFIG } from './Toolbox';
 import { FieldInlineEditor } from './FieldInlineEditor';
@@ -27,6 +27,8 @@ interface FieldCardProps {
   onMoveDown?: () => void;
   /** Shows a dashed drop-zone card above/below this card while a toolbox field is dragged over it */
   insertIndicator?: 'above' | 'below' | null;
+  /** Sprint 13 (CF2.12) — Reorder mode on touch widths: handle + Up/Down on every row, no inline editor. */
+  reorderMode?: boolean;
 }
 
 // ─── Dashed drop-zone card ────────────────────────────────────────────────────
@@ -56,6 +58,7 @@ export function FieldCard({
   onMoveUp,
   onMoveDown,
   insertIndicator = null,
+  reorderMode = false,
 }: FieldCardProps) {
   const {
     attributes,
@@ -76,7 +79,8 @@ export function FieldCard({
     transform: CSS.Transform.toString(transform),
     // Keep dnd-kit's smooth transition for reordering; disable it while actively dragging
     transition: isDragging ? 'none' : transition,
-    touchAction: 'none',
+    // No touch-action here: the card must not swallow vertical scrolling on a phone. Only the grip
+    // handle (below) opts out, so dragging starts from the handle and everything else scrolls.
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -96,12 +100,12 @@ export function FieldCard({
 
   // Collapse the inline editor while the card is being dragged so the sortable
   // placeholder doesn't leave an oversized gap in the list mid-drag.
-  const showInlinePanel = isActive && !isDragging;
+  const showInlinePanel = isActive && !isDragging && !reorderMode;
 
   return (
     // Outer wrapper keeps layout space and holds the drop-zone indicators.
     // It must NOT be the node that gets the dnd transform — only the inner card does.
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-1.5" data-field-id={field.fieldId}>
       {insertIndicator === 'above' && <DropZoneCard />}
 
       <div
@@ -134,7 +138,11 @@ export function FieldCard({
             {...listeners}
             {...attributes}
             onClick={(e) => e.stopPropagation()}
-            className="text-(--text-disabled) hover:text-(--text-secondary) cursor-grab active:cursor-grabbing p-1 -ml-1 rounded transition-colors shrink-0 min-w-11 min-h-11 flex items-center justify-center"
+            style={{ touchAction: 'none' }}
+            // Below 1024px fields are only draggable inside Reorder mode (requirements.md 4.3).
+            className={`text-(--text-disabled) hover:text-(--text-secondary) cursor-grab active:cursor-grabbing p-1 -ml-1 rounded transition-colors shrink-0 min-w-11 min-h-11 items-center justify-center ${
+              reorderMode ? 'flex' : 'hidden lg:flex'
+            }`}
           >
             <GripVertical size={16} />
           </div>
@@ -146,7 +154,7 @@ export function FieldCard({
           {/* Label row + live preview — both live in the same flex-1 column so the
               preview aligns under the label, not under the grip/icon. */}
           <div className="flex-1 min-w-0 flex flex-col gap-2">
-            <div className="flex items-center justify-between gap-2 min-h-[24px]">
+            <div className="flex items-center justify-between gap-2 min-h-6">
               <span className="bg-body font-medium text-(--text-primary) truncate">
                 {field.label}
                 {field.required && (
@@ -154,7 +162,43 @@ export function FieldCard({
                 )}
               </span>
 
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-all shrink-0">
+              {reorderMode ? (
+                <div className="flex items-center gap-1 shrink-0">
+                  {/* aria-disabled (not disabled) at the ends so focus is not lost when a row reaches the top/bottom. */}
+                  <button
+                    type="button"
+                    data-move="up"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onMoveUp?.();
+                    }}
+                    aria-disabled={!onMoveUp}
+                    aria-label={`Move ${field.label} up`}
+                    className={`flex min-h-11 min-w-11 items-center justify-center rounded-md border border-(--border-default) text-(--text-secondary) ${
+                      onMoveUp ? 'hover:bg-(--surface-hover)' : 'opacity-40'
+                    }`}
+                  >
+                    <ChevronUp size={18} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    data-move="down"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onMoveDown?.();
+                    }}
+                    aria-disabled={!onMoveDown}
+                    aria-label={`Move ${field.label} down`}
+                    className={`flex min-h-11 min-w-11 items-center justify-center rounded-md border border-(--border-default) text-(--text-secondary) ${
+                      onMoveDown ? 'hover:bg-(--surface-hover)' : 'opacity-40'
+                    }`}
+                  >
+                    <ChevronDown size={18} aria-hidden="true" />
+                  </button>
+                </div>
+              ) : (
+              // Hover-reveal on desktop; always visible below 1024px where there is no hover.
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 max-lg:opacity-100 transition-all shrink-0">
                 <button
                   type="button"
                   onClick={(e) => {
@@ -178,6 +222,7 @@ export function FieldCard({
                   <Trash2 size={16} />
                 </button>
               </div>
+              )}
             </div>
 
             {/* Live, non-interactive preview of what respondents will see */}

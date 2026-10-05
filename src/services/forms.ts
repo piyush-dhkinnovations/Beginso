@@ -1,6 +1,15 @@
 import axiosInstance from '@/lib/axios';
 import { unwrapEnvelope } from '@/lib/apiEnvelope';
-import type { Form, FormOverviewStats, CreateFormPayload, UpdateFormPayload } from '@/types/form';
+import type {
+  Form,
+  FormOverviewStats,
+  CreateFormPayload,
+  UpdateFormPayload,
+  Readiness,
+  PublishBody,
+  PublishResult,
+  TestSubmissionAnswer,
+} from '@/types/form';
 import type { FormDestination, FormsContext } from '@/types/workspace';
 
 export const formsService = {
@@ -35,7 +44,8 @@ export const formsService = {
   // endpoint. If a caller's default workspace still leaks into personal listings after this,
   // that confirms the override needs backend support, not a different frontend guess.
   getForms: (
-    params?: { search?: string; status?: string; page?: number; limit?: number },
+    // `archived` (Sprint 13, CF5.6): 'false' (default) hides archived forms, 'only' shows just them.
+    params?: { search?: string; status?: string; page?: number; limit?: number; archived?: 'true' | 'false' | 'only' },
     context?: FormsContext
   ) =>
     axiosInstance
@@ -96,16 +106,58 @@ export const formsService = {
   updateForm: (id: string, payload: UpdateFormPayload) =>
     axiosInstance.patch<Form>(`/api/forms/${id}`, payload).then(r => r.data),
 
+  // Sprint 13 (CF5.5) — BREAKING on the backend: this now moves the form to Trash (200 with `purgeAt`) instead
+  // of destroying it. Callers still only care that it worked; the result is the countdown for the toast.
   deleteForm: (id: string) =>
-    axiosInstance.delete(`/api/forms/${id}`).then(() => undefined),
+    axiosInstance
+      .delete<{ deletedAt?: string; purgeAt?: string }>(`/api/forms/${id}`)
+      .then((r) => ({ deletedAt: r.data?.deletedAt, purgeAt: r.data?.purgeAt })),
 
   duplicateForm: (id: string) =>
     axiosInstance.post<{ _id: string; title: string }>(`/api/forms/${id}/duplicate`).then(r => r.data),
 
-  publishForm: (id: string) =>
+  // Sprint 13 (CF6.5): optional body commits the pre-flight's access mode / closing date with the publish.
+  // The slug is REUSED on re-publish (CF5.3) — `slug` here is always the link that is live now.
+  publishForm: (id: string, body?: PublishBody): Promise<PublishResult> =>
     axiosInstance
-      .post<{ _id: string; status: 'published'; slug: string; publishedAt: string }>(`/api/forms/${id}/publish`)
-      .then(r => r.data),
+      .post<PublishResult & { publishedSlug?: string }>(`/api/forms/${id}/publish`, body ?? {})
+      .then((r) => ({ ...r.data, slug: r.data.slug ?? r.data.publishedSlug ?? '' })),
+
+  // Sprint 13 (CF2.5): the ONE readiness evaluation, shared with the server's own publish check.
+  getReadiness: (id: string): Promise<Readiness> =>
+    axiosInstance.get(`/api/forms/${id}/readiness`).then((r) => {
+      const body = (r.data ?? {}) as Partial<Readiness>;
+      const blocking = Array.isArray(body.blocking) ? body.blocking : [];
+      return {
+        ready: typeof body.ready === 'boolean' ? body.ready : blocking.length === 0,
+        blocking,
+        warnings: Array.isArray(body.warnings) ? body.warnings : [],
+      };
+    }),
+
+  // Back to draft, KEEPING the public link. Undo is simply publishForm again.
+  unpublishForm: (id: string) =>
+    axiosInstance
+      .post<{ _id: string; status: 'draft'; slug?: string; publishedSlug?: string }>(`/api/forms/${id}/unpublish`)
+      .then((r) => r.data),
+
+  // The one deliberate way to replace a public link; the old one stops working at once.
+  regenerateLink: (id: string) =>
+    axiosInstance
+      .post<{ _id: string; slug: string; publishedSlug?: string; previousSlugInvalidated?: boolean }>(
+        `/api/forms/${id}/regenerate-link`
+      )
+      .then((r) => ({ ...r.data, slug: r.data.slug ?? r.data.publishedSlug ?? '' })),
+
+  archiveForm: (id: string) =>
+    axiosInstance.post<{ _id: string; archivedAt: string }>(`/api/forms/${id}/archive`).then((r) => r.data),
+
+  unarchiveForm: (id: string) =>
+    axiosInstance.post<{ _id: string; archivedAt: null }>(`/api/forms/${id}/unarchive`).then((r) => r.data),
+
+  // Sprint 13 (CF2.6): a real submission through the real pipeline, flagged `isTest` — it counts nowhere.
+  sendTestSubmission: (id: string, answers: TestSubmissionAnswer[]) =>
+    axiosInstance.post<{ _id: string; isTest: true }>(`/api/forms/${id}/test-submissions`, { answers }).then((r) => r.data),
 
   closeForm: (id: string) =>
     axiosInstance.post<{ _id: string; status: 'closed' }>(`/api/forms/${id}/close`).then(r => r.data),

@@ -34,6 +34,13 @@ export function RespondentCell({ response }: { response: IResponse }) {
       <div className="flex min-w-0 flex-col">
         <span className="flex items-center gap-1.5">
           <span className="truncate font-medium text-(--text-primary)">{name}</span>
+          {/* Sprint 13: same two signals the Board and Calendar show (ResponseSignals), as text badges. */}
+          {response.editedAfterReviewAt && (
+            <span className="shrink-0 rounded-full bg-(--warning-surface) px-2 bg-caption font-semibold text-(--warning-text)">Edited</span>
+          )}
+          {response.isTest && (
+            <span className="shrink-0 rounded-full bg-(--bg-sunken) px-2 bg-caption font-semibold text-(--text-secondary)">Test</span>
+          )}
           {hasMeta && (
             <span className="flex shrink-0 items-center gap-1.5 bg-caption text-(--text-muted)">
               {noteCount > 0 && (

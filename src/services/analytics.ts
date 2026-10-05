@@ -115,19 +115,19 @@ function toFormsSummaryResult(raw: RawFormsSummaryEnvelope): AnalyticsFormsSumma
 // reasoning `ReportsView`'s own `formsService.getForms(..., { type: 'personal' })` already
 // established for this page family.
 export const analyticsService = {
-  getOverview: (params: GetAnalyticsParams): Promise<AnalyticsOverview> =>
+  getOverview: (params: GetAnalyticsParams, scope = 'personal'): Promise<AnalyticsOverview> =>
     axiosInstance
-      .get<RawOverviewEnvelope>('/api/analytics/overview', { params, headers: workspaceHeaders('personal') })
+      .get<RawOverviewEnvelope>('/api/analytics/overview', { params, headers: workspaceHeaders(scope) })
       .then((r) => toAnalyticsOverview(r.data)),
 
-  getTrends: (params: GetAnalyticsParams & { bucket: 'day' | 'week' }): Promise<AnalyticsTrendResult> =>
+  getTrends: (params: GetAnalyticsParams & { bucket: 'day' | 'week' }, scope = 'personal'): Promise<AnalyticsTrendResult> =>
     axiosInstance
-      .get<RawTrendsEnvelope>('/api/analytics/trends', { params, headers: workspaceHeaders('personal') })
+      .get<RawTrendsEnvelope>('/api/analytics/trends', { params, headers: workspaceHeaders(scope) })
       .then((r) => toAnalyticsTrendResult(r.data)),
 
-  getQuestions: (params: GetAnalyticsParams): Promise<{ questions: QuestionBreakdown[] }> =>
+  getQuestions: (params: GetAnalyticsParams, scope = 'personal'): Promise<{ questions: QuestionBreakdown[] }> =>
     axiosInstance
-      .get<RawQuestionsEnvelope>('/api/analytics/questions', { params, headers: workspaceHeaders('personal') })
+      .get<RawQuestionsEnvelope>('/api/analytics/questions', { params, headers: workspaceHeaders(scope) })
       .then((r) => toQuestionBreakdowns(r.data)),
 
   getFormsSummary: (params: { from?: string; to?: string; page?: number; limit?: number }): Promise<AnalyticsFormsSummaryResult> =>

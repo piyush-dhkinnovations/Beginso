@@ -3,6 +3,7 @@
  * fetch() only — no Axios, no auth headers, no cookies.
  */
 
+import axiosInstance from '@/lib/axios';
 import type { PublicFormSchema, SubmissionData } from '@/types/publicForm';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
@@ -44,6 +45,17 @@ export const publicFormService = {
   },
 
   /**
+   * Mode 3 only. Goes through the same-origin BFF (it needs the member session, which the browser never holds)
+   * and returns a short-lived, single-use ticket bound to this account AND this form. The browser then submits
+   * directly with it, so the backend's per-file upload limit applies, not the proxy's body ceiling.
+   */
+  async getSubmitTicket(slug: string): Promise<{ ticket: string; expiresInSeconds: number }> {
+    const r = await axiosInstance.post<{ ticket: string; expiresInSeconds?: number }>(`/api/public/${slug}/submit-ticket`);
+    if (!r.data?.ticket) throw new Error('Unexpected submit-ticket response');
+    return { ticket: r.data.ticket, expiresInSeconds: r.data.expiresInSeconds ?? 120 };
+  },
+
+  /**
    * Sends multipart/form-data: `data` (JSON), `_hp` (honeypot), one part per file field.
    * `honeypot` defaults to '' for real respondents — passed through as-is (not hardcoded)
    * so a bot that actually fills the hidden `_hp` input is still reported to the backend.
@@ -52,11 +64,15 @@ export const publicFormService = {
     slug: string,
     data: SubmissionData,
     files: Record<string, File>,
-    honeypot: string = ''
-  ): Promise<{ ok: boolean; status: number; message?: string }> {
+    honeypot: string = '',
+    // Mode 3 (login): the single-use ticket from getSubmitTicket() — sent as a form field so the direct
+    // multipart POST stays a simple request. The server takes the email from the ACCOUNT, never the body.
+    opts: { ticket?: string } = {}
+  ): Promise<{ ok: boolean; status: number; message?: string; code?: string }> {
     const formData = new FormData();
     formData.append('data', JSON.stringify(data));
     formData.append('_hp', honeypot);
+    if (opts.ticket) formData.append('ticket', opts.ticket);
     for (const [fieldId, file] of Object.entries(files)) {
       formData.append(fieldId, file);
     }
@@ -68,15 +84,17 @@ export const publicFormService = {
     });
 
     let message: string | undefined;
+    let code: string | undefined;
     if (!res.ok) {
       try {
         const body = await res.json();
         message = body?.error?.message ?? body?.message;
+        code = body?.error?.code; // EMAIL_REQUIRED (422) / LOGIN_REQUIRED (401) — stable, mapped by the shell
       } catch {
         // non-JSON error body — ignore
       }
     }
 
-    return { ok: res.ok, status: res.status, message };
+    return { ok: res.ok, status: res.status, message, code };
   },
 };

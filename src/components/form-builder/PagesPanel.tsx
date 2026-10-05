@@ -15,7 +15,7 @@ export interface PagesPanelProps {
 // Small, page-proportioned tile (roughly A4-ish portrait) — matches every tile
 // in the rail, whether it's a page number or the trailing "add" tile.
 const TILE_CLASS =
-  'w-14 h-[76px] rounded-lg border-2 shrink-0 flex items-center justify-center relative transition-colors';
+  'w-14 h-19 rounded-lg border-2 shrink-0 flex items-center justify-center relative transition-colors';
 
 // ─── Single page tile — click to switch, hover to delete ─────────────────────
 // Each page's own title/description is edited from the canvas header (visible
@@ -60,7 +60,7 @@ function PageTile({
         {number}
       </span>
 
-      {isActive && <span className="absolute left-2 right-2 bottom-1.5 h-[3px] rounded-full bg-(--action-primary-hover)" />}
+      {isActive && <span className="absolute left-2 right-2 bottom-1.5 h-0.75 rounded-full bg-(--action-primary-hover)" />}
 
       {canDelete && (
         <button
@@ -111,7 +111,7 @@ export function PagesPanel({
   onDeletePage,
 }: PagesPanelProps) {
   return (
-    <aside className="w-[92px] bg-(--bg-subtle) flex flex-col shrink-0 overflow-y-auto p-3 gap-3">
+    <aside className="hidden lg:flex w-23 bg-(--bg-subtle) flex-col shrink-0 overflow-y-auto p-3 gap-3">
       <h3 className="bg-body font-semibold font-bold text-(--text-primary) tracking-tight text-center">Pages</h3>
 
       <div className="flex flex-col items-center gap-3">
@@ -130,5 +130,41 @@ export function PagesPanel({
         <AddPageTile onAdd={onAddPage} />
       </div>
     </aside>
+  );
+}
+
+// ─── Compact page switcher (< 1024px) ───────────────────────────────────────
+// Sprint 13 (CF2.12, requirements.md 4.4). Below 1024px the Pages panel is gone, but editing the
+// fields WITHIN each page must still work, so pages stay selectable. Creating, deleting and
+// rearranging pages is multi-page structural editing — desktop-only, and said so rather than silently
+// missing.
+export function PageSwitcher({
+  pages,
+  activePageId,
+  onSelectPage,
+}: Pick<PagesPanelProps, 'pages' | 'activePageId' | 'onSelectPage'>) {
+  return (
+    <div className="lg:hidden flex flex-col gap-1 border-b bg-(--surface-card) px-3 py-2 shrink-0">
+      {pages.length > 1 && (
+        <div role="group" aria-label="Pages" className="flex gap-2 overflow-x-auto">
+          {pages.map((page, index) => (
+            <button
+              key={page.id}
+              type="button"
+              onClick={() => onSelectPage(page.id)}
+              aria-pressed={page.id === activePageId}
+              className={`min-h-11 min-w-11 shrink-0 rounded-md border px-3 bg-body-sm font-semibold ${
+                page.id === activePageId
+                  ? 'border-(--action-primary-hover) bg-(--accent-soft) text-(--accent-soft-text)'
+                  : 'border-(--border-default) text-(--text-secondary)'
+              }`}
+            >
+              Page {index + 1}
+            </button>
+          ))}
+        </div>
+      )}
+      <p className="bg-caption text-(--text-muted)">Page structure is edited on a larger screen.</p>
+    </div>
   );
 }

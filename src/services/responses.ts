@@ -140,6 +140,13 @@ export const responsesService = {
       .patch<UpdateResponseEnvelope>(`/api/responses/${id}`, payload, { headers: workspaceHeaders(scope) })
       .then((r) => r.data.response),
 
+  // Sprint 13 (A5.2): "Mark as reviewed" — clears the Edited-after-review flag.
+  clearEditedAfterReview: (id: string, scope?: string) =>
+    axiosInstance
+      .patch<{ cleared?: boolean }>(`/api/responses/${id}/edited-after-review`, { cleared: true }, { headers: workspaceHeaders(scope) })
+      .then((r) => ({ cleared: !!r.data?.cleared })),
+
+  // Note: since Sprint 13 the backend moves the response to Trash (still 204) instead of destroying it.
   deleteResponse: (id: string, scope?: string) =>
     axiosInstance.delete(`/api/responses/${id}`, { headers: workspaceHeaders(scope) }).then(() => undefined),
 

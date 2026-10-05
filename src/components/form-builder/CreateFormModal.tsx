@@ -57,7 +57,7 @@ export function CreateFormModal({ isOpen, onClose, defaultDestination }: CreateF
   // change to the create endpoint.
   const { data: workspace } = useQuery({
     queryKey: settingsKeys.workspace(),
-    queryFn: settingsService.getWorkspace,
+    queryFn: () => settingsService.getWorkspace(),
     // Real bug found and fixed: this query was missing the `enabled: isOpen` guard the sibling
     // query above already has, so it fired unconditionally the moment this always-mounted modal
     // rendered — on every Forms page load, for every account. For a brand-new account with zero

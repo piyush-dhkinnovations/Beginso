@@ -2,10 +2,19 @@
 
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Home, FileText, Inbox, Users, History, Shield } from 'lucide-react';
+import { Home, FileText, Inbox, Users, History, Shield, LayoutTemplate, Trash2, Settings } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
-import { canManageMembers, canViewAudit } from '@/lib/roles';
+import {
+  canManageMembers,
+  canManageScoring,
+  canManageStages,
+  canManageTags,
+  canManageWorkspaceSettings,
+  canRestoreResponse,
+  canViewAudit,
+  canViewTemplates,
+} from '@/lib/roles';
 import { responsesService } from '@/services/responses';
 import { responseKeys } from '@/lib/queryKeys';
 import type { Role } from '@/types/workspace';
@@ -57,12 +66,22 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }
     { label: 'Home', href: base, icon: Home },
     { label: 'Forms', href: `${base}/forms`, icon: FileText },
     { label: 'Inbox', href: `${base}/inbox`, icon: Inbox, count: stats?.unread },
+    // Sprint 13 (B6): templates live in the workspace now. Reviewers cannot create forms, so they get no
+    // Templates item (same rule canViewTemplates already encodes for the role-filtered nav).
+    ...(canViewTemplates(role) ? [{ label: 'Templates', href: `${base}/templates`, icon: LayoutTemplate }] : []),
     // Every role — seeing what happened in a workspace you belong to is not manager-only
     // (sprint-10 requirements.md §7.6). "Audit Log" is the role-gated counterpart (§7.7), failing
     // closed on an undefined role exactly like "Team".
     { label: 'Activity', href: `${base}/activity`, icon: History },
     ...(canManageMembers(role) ? [{ label: 'Team', href: `${base}/team`, icon: Users }] : []),
     ...(canViewAudit(role) ? [{ label: 'Audit Log', href: `${base}/audit`, icon: Shield }] : []),
+    // Any role that can manage at least one settings tab; same fail-closed-on-undefined rule.
+    ...(canManageWorkspaceSettings(role) || canManageTags(role) || canManageStages(role) || canManageScoring(role)
+      ? [{ label: 'Settings', href: `${base}/settings`, icon: Settings }]
+      : []),
+    // Sprint 13 (CF5.5): Trash is an Owner/Admin surface (the server returns 403 to everyone else); fails
+    // closed on an undefined role like Team and Audit Log.
+    ...(canRestoreResponse(role) ? [{ label: 'Trash', href: `${base}/trash`, icon: Trash2 }] : []),
   ];
 
   return (
