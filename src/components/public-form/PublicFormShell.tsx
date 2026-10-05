@@ -12,6 +12,7 @@ import { publicFormService } from '@/services/publicForm';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/formDraft';
 import { Button } from '@/components/ui/Button';
 import { normaliseLayout } from '@/lib/layoutPresets';
+import { brandButtonStyle, brandShowsProgress } from '@/lib/formTheme';
 import { LAYOUT_COMPONENTS, fieldsClassFor } from './layouts';
 import { FormProgress } from './FormProgress';
 import { ReviewStep } from './ReviewStep';
@@ -421,7 +422,8 @@ export function PublicFormShell({ schema, slug, previewMode, onTestSubmit }: Pub
       );
   }
 
-  const fieldsContainerClass = fieldsClassFor(layout);
+  const fieldsContainerClass = fieldsClassFor(layout, schema.branding.spacing);
+  const buttonTheme = brandButtonStyle(schema.branding);
   const LayoutFrame = LAYOUT_COMPONENTS[layout];
   const FieldsWrap = layout === 'card_stack' ? 'fieldset' : 'div';
 
@@ -507,7 +509,7 @@ export function PublicFormShell({ schema, slug, previewMode, onTestSubmit }: Pub
         <form onSubmit={handleFormSubmit} noValidate className={schema.branding.logoUrl ? 'p-6 pt-8' : 'p-6'}>
           {!showReview && (
             <>
-            {layout !== 'steps' && !isGuided && (
+            {layout !== 'steps' && !isGuided && brandShowsProgress(schema.branding) && (
               <FormProgress currentPage={currentPageIndex + 1} totalPages={totalPages} />
             )}
 
@@ -545,6 +547,7 @@ export function PublicFormShell({ schema, slug, previewMode, onTestSubmit }: Pub
               submitDisabled={submitDisabled}
               submitError={submitError}
               primaryColor={primaryColor}
+              buttonStyle={buttonTheme}
               previewSubmitted={previewMode && previewSubmitted}
               extra={accessExtra}
             />
@@ -582,7 +585,7 @@ export function PublicFormShell({ schema, slug, previewMode, onTestSubmit }: Pub
                       type={reviewEnabled ? 'button' : 'submit'}
                       onClick={reviewEnabled ? () => void handleReview() : undefined}
                       className="flex-1"
-                      style={{ backgroundColor: primaryColor }}
+                      style={buttonTheme}
                       isLoading={isSubmitting}
                       disabled={submitDisabled}
                       aria-label={isSubmitting ? 'Submitting your response...' : undefined}
@@ -590,7 +593,7 @@ export function PublicFormShell({ schema, slug, previewMode, onTestSubmit }: Pub
                       {reviewEnabled ? 'Review answers' : 'Submit'}
                     </Button>
                   ) : (
-                    <Button key="next" type="button" className="flex-1" style={{ backgroundColor: primaryColor }} onClick={handleNext}>
+                    <Button key="next" type="button" className="flex-1" style={buttonTheme} onClick={handleNext}>
                       Next
                     </Button>
                   )}

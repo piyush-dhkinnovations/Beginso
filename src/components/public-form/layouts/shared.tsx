@@ -30,8 +30,11 @@ export function Backdrop({ previewMode, children }: { previewMode?: boolean; chi
 }
 
 /** How the fields inside the form body are arranged for each preset. */
-export function fieldsClassFor(layout: LayoutPreset): string {
+export function fieldsClassFor(layout: LayoutPreset, spacing: PublicFormBranding['spacing'] = 'comfortable'): string {
+  // Sprint 13 (CF2.3): the owner's spacing choice sets the vertical rhythm between fields.
+  const gap = spacing === 'compact' ? 'gap-3' : spacing === 'spacious' ? 'gap-8' : 'gap-5';
+  const gapY = spacing === 'compact' ? 'gap-y-3' : spacing === 'spacious' ? 'gap-y-8' : 'gap-y-5';
   return layout === 'compact'
-    ? 'mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-5 gap-y-5' // two columns, forced to one below 768
-    : 'mt-6 flex flex-col gap-5';
+    ? `mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-5 ${gapY}` // two columns, forced to one below 768
+    : `mt-6 flex flex-col ${gap}`;
 }

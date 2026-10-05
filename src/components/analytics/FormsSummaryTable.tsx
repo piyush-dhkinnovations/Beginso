@@ -34,6 +34,8 @@ interface FormsSummaryTableProps {
   onRetry?: () => void;
   page: number;
   onPageChange: (page: number) => void;
+  /** Workspace slug on the Insights page, so drill-ins keep the workspace shell. Omitted = personal. */
+  workspaceSlug?: string;
 }
 
 // "Form performance": one row per form — tinted icon (colour from its title), status, responses,
@@ -41,6 +43,7 @@ interface FormsSummaryTableProps {
 // to that form's own analytics. Search filters the rows already loaded (the summary fetch covers
 // up to 100 forms per page).
 export function FormsSummaryTable({
+  workspaceSlug,
   data,
   previousForms,
   isLoading,
@@ -93,7 +96,7 @@ export function FormsSummaryTable({
         title="No forms yet"
         description="Create a form to start seeing its analytics here."
         actions={
-          <Link href="/forms">
+          <Link href={workspaceSlug ? `/w/${workspaceSlug}/forms` : '/forms'}>
             <Button variant="primary">
               <Plus size={16} className="mr-2" />
               Create Form
@@ -105,7 +108,8 @@ export function FormsSummaryTable({
   }
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
-  const goToForm = (formId: string) => router.push(`/forms/${formId}/analytics`);
+  const wsQuery = workspaceSlug ? `?ws=${workspaceSlug}` : '';
+  const goToForm = (formId: string) => router.push(`/forms/${formId}/analytics${wsQuery}`);
 
   const previousByFormId = new Map(previousForms?.map((f) => [f._id, f.totalResponses]));
   const changePercent = (form: AnalyticsFormSummary) => {
@@ -120,7 +124,7 @@ export function FormsSummaryTable({
       render: (form) => (
         <div className="flex min-w-0 items-center gap-3">
           <FormTile title={form.title} />
-          <Link href={`/forms/${form._id}/analytics`} className="bg-body-sm min-w-0 truncate font-semibold text-(--text-primary) hover:underline">
+          <Link href={`/forms/${form._id}/analytics${wsQuery}`} className="bg-body-sm min-w-0 truncate font-semibold text-(--text-primary) hover:underline">
             {form.title}
           </Link>
         </div>

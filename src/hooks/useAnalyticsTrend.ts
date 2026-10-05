@@ -17,6 +17,8 @@ export interface UseAnalyticsTrendParams {
   /** Forms to sum when the all-forms call has nothing (capped at MAX_FORMS). */
   formIds: string[];
   enabled: boolean;
+  /** 'personal' (default) or a workspace slug. */
+  scope?: string;
 }
 
 /**
@@ -28,13 +30,13 @@ export interface UseAnalyticsTrendParams {
  * `points` is undefined while loading or when neither source has data — callers fall back to a
  * non-trend visual; nothing is ever fabricated.
  */
-export function useAnalyticsTrend({ from, to, bucket, formIds, enabled }: UseAnalyticsTrendParams): { points: AnalyticsTrendPoint[] | undefined; isLoading: boolean } {
+export function useAnalyticsTrend({ from, to, bucket, formIds, enabled, scope = 'personal' }: UseAnalyticsTrendParams): { points: AnalyticsTrendPoint[] | undefined; isLoading: boolean } {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const range = { from, to };
 
   const all = useQuery({
-    queryKey: [...dashboardKeys.responseTrend(), 'all', from, to, bucket],
-    queryFn: () => analyticsService.getTrends({ ...range, timezone, bucket }),
+    queryKey: [...dashboardKeys.responseTrend(), 'all', scope, from, to, bucket],
+    queryFn: () => analyticsService.getTrends({ ...range, timezone, bucket }, scope),
     enabled,
     retry: false,
   });
@@ -44,10 +46,10 @@ export function useAnalyticsTrend({ from, to, bucket, formIds, enabled }: UseAna
   const needFallback = enabled && !all.isLoading && !allUsable && ids.length > 0;
 
   const perForm = useQuery({
-    queryKey: [...dashboardKeys.responseTrend(), 'per-form', from, to, bucket, ids.join(',')],
+    queryKey: [...dashboardKeys.responseTrend(), 'per-form', scope, from, to, bucket, ids.join(',')],
     queryFn: async (): Promise<AnalyticsTrendPoint[]> => {
       const results = await Promise.allSettled(
-        ids.map((formId) => analyticsService.getTrends({ ...range, formId, timezone, bucket })),
+        ids.map((formId) => analyticsService.getTrends({ ...range, formId, timezone, bucket }, scope)),
       );
       const byBucket = new Map<string, number>();
       for (const result of results) {

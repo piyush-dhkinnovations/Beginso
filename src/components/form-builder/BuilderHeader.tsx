@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowLeft, CheckCircle2, Eye, MoreVertical, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Eye, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { SaveIndicator } from './SaveIndicator';
@@ -64,8 +64,8 @@ export function BuilderHeader({
   };
 
   // Sprint 13 (CF2.12): the header works at phone width. Below md it wraps — title + actions on the
-  // first row, the save indicator on its own row — Preview is icon-only, and Close/Delete move into an
-  // overflow menu so nothing is squeezed off-screen or silently missing.
+  // first row, the save indicator on its own row — Preview is icon-only, and Close/Delete live in an
+  // overflow menu at every width so nothing is squeezed off-screen or silently missing.
   const overflowItems: MenuItem[] = [
     ...(status === 'published' ? [{ id: 'close', label: 'Close form', onSelect: onClose }] : []),
     { id: 'delete', label: 'Delete form', onSelect: onDelete, danger: true },
@@ -101,19 +101,7 @@ export function BuilderHeader({
         <SaveIndicator dirty={dirty} saving={isSaving} error={saveFailed} savedAt={savedAt} onRetry={onRetrySave} />
       </div>
 
-      <div className="flex items-center gap-1 md:gap-4 shrink-0">
-        <Button
-          onClick={onDelete}
-          variant="ghost"
-          size="small"
-          className="hidden md:inline-flex h-11 w-11 shrink-0 p-0 text-(--error-text) hover:bg-(--error-surface) hover:text-(--error-text)"
-          title="Delete form"
-          aria-label="Delete form"
-        >
-          <Trash2 size={16} />
-          <span className="sr-only">Delete</span>
-        </Button>
-
+      <div className="flex items-center gap-1 md:gap-2 shrink-0">
         <Button
           onClick={onPreview}
           variant="ghost"
@@ -126,34 +114,30 @@ export function BuilderHeader({
         </Button>
 
         {status === 'published' ? (
-          <div className="flex items-center gap-2">
-            <span className="hidden md:flex items-center gap-1.5 text-(--success-text) font-semibold bg-body-sm px-2">
-              <CheckCircle2 size={15} />
+          canPublish ? (
+            <Button variant="secondary" size="small" onClick={onPublish} className="min-h-11 gap-1.5" title="Manage publishing">
+              <CheckCircle2 size={15} className="text-(--success-text)" aria-hidden="true" />
+              Published
+            </Button>
+          ) : (
+            <span className="flex items-center gap-1.5 text-(--success-text) font-semibold bg-body-sm px-2">
+              <CheckCircle2 size={15} aria-hidden="true" />
               Published
             </span>
-            {canPublish && (
-              <Button variant="secondary" size="small" onClick={onPublish} className="min-h-11">
-                Manage
-              </Button>
-            )}
-            <Button variant="secondary" size="small" onClick={onClose} className="hidden md:inline-flex">
-              Close form
-            </Button>
-          </div>
+          )
         ) : canPublish ? (
           <Button variant="primary" size="small" onClick={onPublish} className="min-h-11">
             {status === 'closed' ? 'Re-publish' : 'Publish'}
           </Button>
         ) : null}
 
-        <div className="md:hidden">
-          <Menu
-            align="end"
-            triggerLabel="More form actions"
-            trigger={<MoreVertical size={18} aria-hidden="true" />}
-            items={overflowItems}
-          />
-        </div>
+        {/* Rare and destructive actions live here, at every width, instead of as header buttons. */}
+        <Menu
+          align="end"
+          triggerLabel="More form actions"
+          trigger={<MoreVertical size={18} aria-hidden="true" />}
+          items={overflowItems}
+        />
       </div>
     </header>
   );

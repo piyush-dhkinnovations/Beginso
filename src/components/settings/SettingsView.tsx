@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Modal } from '@/components/ui/Modal';
@@ -65,14 +65,29 @@ export function SettingsView({ title, description, tabs, scope, labels }: Settin
     setVisitedTabs(new Set(visitedTabs).add(activeTab));
   }
 
-  function setTabDirty(tab: SettingsTab, isDirty: boolean) {
+  // Stable identity + no-op when nothing changed. Children report dirty state from a useEffect that depends on
+  // this callback, so a new function (or a new Set) on every render re-fires the effect forever.
+  const setTabDirty = useCallback((tab: SettingsTab, isDirty: boolean) => {
     setDirtyTabs((prev) => {
+      if (prev.has(tab) === isDirty) return prev;
       const next = new Set(prev);
       if (isDirty) next.add(tab);
       else next.delete(tab);
       return next;
     });
-  }
+  }, []);
+
+  const dirtyHandlers = useMemo(
+    () => ({
+      profile: (d: boolean) => setTabDirty('profile', d),
+      workspace: (d: boolean) => setTabDirty('workspace', d),
+      branding: (d: boolean) => setTabDirty('branding', d),
+      tags: (d: boolean) => setTabDirty('tags', d),
+      stages: (d: boolean) => setTabDirty('stages', d),
+      scoring: (d: boolean) => setTabDirty('scoring', d),
+    }),
+    [setTabDirty]
+  );
 
   function navigateToTab(tab: SettingsTab) {
     router.replace(`${pathname}?tab=${tab}`, { scroll: false });
@@ -99,20 +114,20 @@ export function SettingsView({ title, description, tabs, scope, labels }: Settin
           the same max-w-4xl BrandingPanel already applies to itself internally, not left
           unbounded — otherwise its own `mx-auto` has extra room to center it away from the left
           edge that every other tab's content starts flush against. */}
-      <div className={activeTab === 'branding' ? 'max-w-4xl' : activeTab === 'tags' || activeTab === 'stages' || activeTab === 'scoring' ? '' : 'max-w-160'}>
+      <div className={activeTab === 'branding' || activeTab === 'tags' || activeTab === 'stages' || activeTab === 'scoring' ? '' : 'max-w-160'}>
         {visitedTabs.has('profile') && (
           <div className={activeTab === 'profile' ? '' : 'hidden'}>
-            <ProfileTab onDirtyChange={(isDirty) => setTabDirty('profile', isDirty)} />
+            <ProfileTab onDirtyChange={dirtyHandlers.profile} />
           </div>
         )}
         {visitedTabs.has('workspace') && (
           <div className={activeTab === 'workspace' ? '' : 'hidden'}>
-            <WorkspaceTab scope={scope} onDirtyChange={(isDirty) => setTabDirty('workspace', isDirty)} />
+            <WorkspaceTab scope={scope} onDirtyChange={dirtyHandlers.workspace} />
           </div>
         )}
         {visitedTabs.has('branding') && (
           <div className={activeTab === 'branding' ? '' : 'hidden'}>
-            <BrandingTab scope={scope} />
+            <BrandingTab scope={scope} onDirtyChange={dirtyHandlers.branding} />
           </div>
         )}
         {visitedTabs.has('notifications') && (
@@ -137,17 +152,17 @@ export function SettingsView({ title, description, tabs, scope, labels }: Settin
         )}
         {visitedTabs.has('tags') && (
           <div className={activeTab === 'tags' ? '' : 'hidden'}>
-            <TagManager scope={scope} onDirtyChange={(isDirty) => setTabDirty('tags', isDirty)} />
+            <TagManager scope={scope} onDirtyChange={dirtyHandlers.tags} />
           </div>
         )}
         {visitedTabs.has('stages') && (
           <div className={activeTab === 'stages' ? '' : 'hidden'}>
-            <StageManager scope={scope} onDirtyChange={(isDirty) => setTabDirty('stages', isDirty)} />
+            <StageManager scope={scope} onDirtyChange={dirtyHandlers.stages} />
           </div>
         )}
         {visitedTabs.has('scoring') && (
           <div className={activeTab === 'scoring' ? '' : 'hidden'}>
-            <CriteriaManager scope={scope} onDirtyChange={(isDirty) => setTabDirty('scoring', isDirty)} />
+            <CriteriaManager scope={scope} onDirtyChange={dirtyHandlers.scoring} />
           </div>
         )}
       </div>

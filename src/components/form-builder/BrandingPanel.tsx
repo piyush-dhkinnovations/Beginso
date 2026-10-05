@@ -2,10 +2,13 @@
 
 import { useId, useRef, useState } from 'react';
 import { Loader2, Plus, Upload, X } from 'lucide-react';
-import type { FormBranding } from '@/types/form';
+import type { ButtonRadius, ButtonStyle, CoverPosition, FormBranding, FormSpacing } from '@/types/form';
+import { Select } from '@/components/ui/Select';
+import { Switch } from '@/components/ui/Switch';
 import { uploadService } from '@/services/upload';
 import { useToast } from '@/components/ui/Toast';
 import { BrandingLivePreview } from './BrandingLivePreview';
+import { ImageCropModal } from './ImageCropModal';
 import { PanelCard } from './PanelCard';
 
 const PRESET_COLORS = ['#1D4ED8', '#0F172A', '#16A34A', '#DC2626', '#9333EA'];
@@ -15,16 +18,22 @@ const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gi
 
 // ─── Image upload zone (shared by Logo + Cover Image sections) ────────────────
 
-function ImageUploadZone({
+export function ImageUploadZone({
   label,
   imageUrl,
   aspect,
+  hint,
+  compact,
   onUpload,
   onRemove,
 }: {
   label: string;
   imageUrl?: string;
   aspect: 'square' | 'banner';
+  /** Small format hint under the call to action, e.g. "PNG, SVG (Max 1MB)". */
+  hint?: string;
+  /** Same fixed height for logo and cover (Settings layout) instead of a tall 16:9 banner. */
+  compact?: boolean;
   onUpload: (file: File) => Promise<void>;
   onRemove: () => void;
 }) {
@@ -33,18 +42,30 @@ function ImageUploadZone({
   const [isDragging, setIsDragging] = useState(false);
   const { toast } = useToast();
 
-  const handleFile = async (file: File | null | undefined) => {
-    if (!file) return;
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      toast('File type not supported. Use JPG, PNG, GIF, or WEBP.', 'error');
-      return;
-    }
+  // A picked image goes through the crop dialog first (so any part of it can be used); a GIF skips it because
+  // cropping would flatten its animation.
+  const [pendingCrop, setPendingCrop] = useState<File | null>(null);
+
+  const uploadNow = async (file: File) => {
     setIsUploading(true);
     try {
       await onUpload(file);
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handleFile = async (file: File | null | undefined) => {
+    if (!file) return;
+    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
+      toast('File type not supported. Use JPG, PNG, GIF, or WEBP.', 'error');
+      return;
+    }
+    if (file.type === 'image/gif') {
+      await uploadNow(file);
+      return;
+    }
+    setPendingCrop(file);
   };
 
   const hasImage = Boolean(imageUrl) && !isUploading;
@@ -65,7 +86,9 @@ function ImageUploadZone({
       // Design system "Dashed" pattern (wf-btn-dashed): 1.5px dashed neutral-400 border,
       // neutral-50 fill, darker dashed border on hover — reserved for upload zones.
       className={`relative flex flex-col items-center justify-center gap-1.5 border-[1.5px] border-dashed rounded-lg cursor-pointer overflow-hidden shrink-0 transition-colors ${
-        aspect === 'square' ? 'w-24 h-24' : 'w-full aspect-video'
+        compact
+          ? aspect === 'square' ? 'w-full max-w-56 h-36' : 'w-full h-36'
+          : aspect === 'square' ? 'w-24 h-24' : 'w-full aspect-video'
       } ${
         isDragging
           ? 'border-(--border-focus) bg-(--accent-soft)'
@@ -90,8 +113,9 @@ function ImageUploadZone({
         <>
           <Upload size={aspect === 'square' ? 16 : 20} className="text-(--text-disabled)" />
           <span className="bg-caption font-semibold text-(--text-muted) text-center px-2">
-            {aspect === 'square' ? 'Upload' : 'Click or drag to upload'}
+            {aspect === 'square' ? 'Upload logo' : 'Click or drag to upload'}
           </span>
+          {hint && <span className="bg-caption text-(--text-disabled) text-center px-2 whitespace-nowrap">{hint}</span>}
         </>
       )}
       {hasImage && (
@@ -107,6 +131,22 @@ function ImageUploadZone({
           <X size={12} />
         </button>
       )}
+      {/* The dialog is a React portal, but React events still bubble through the component tree — without this a click
+          or drag inside the crop dialog reached the upload box's onClick and opened the file picker. */}
+      <div className="contents" onClick={(e) => e.stopPropagation()} onDragOver={(e) => e.stopPropagation()} onDrop={(e) => e.stopPropagation()}>
+        <ImageCropModal
+          file={pendingCrop}
+          aspect={aspect === 'square' ? 1 : 16 / 5}
+          outputWidth={aspect === 'square' ? 512 : 1600}
+          mime={aspect === 'square' ? 'image/png' : 'image/jpeg'}
+          title={aspect === 'square' ? 'Crop your logo' : 'Crop your cover image'}
+          onCancel={() => setPendingCrop(null)}
+          onConfirm={(cropped) => {
+            setPendingCrop(null);
+            void uploadNow(cropped);
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -243,6 +283,69 @@ export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = tru
             {hexError && <p className="bg-caption text-(--error-text) font-semibold">{hexError}</p>}
           </PanelCard>
 
+          <PanelCard label="Buttons" description="How the Submit and Next buttons look to respondents.">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Select
+                id={`${uid}-button-style`}
+                label="Button style"
+                value={branding.buttonStyle ?? 'solid'}
+                onChange={(e) => onUpdate({ buttonStyle: e.target.value as ButtonStyle })}
+              >
+                <option value="solid">Solid</option>
+                <option value="outline">Outline</option>
+              </Select>
+              <Select
+                id={`${uid}-button-radius`}
+                label="Corner radius"
+                value={branding.buttonRadius ?? '8px'}
+                onChange={(e) => onUpdate({ buttonRadius: e.target.value as ButtonRadius })}
+              >
+                <option value="4px">Square (4px)</option>
+                <option value="8px">Rounded (8px)</option>
+                <option value="16px">Pill (16px)</option>
+              </Select>
+            </div>
+          </PanelCard>
+
+          <PanelCard label="Layout details" description="Spacing, progress and how the cover is cropped.">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Select
+                id={`${uid}-spacing`}
+                label="Form spacing"
+                value={branding.spacing ?? 'comfortable'}
+                onChange={(e) => onUpdate({ spacing: e.target.value as FormSpacing })}
+              >
+                <option value="compact">Compact</option>
+                <option value="comfortable">Comfortable</option>
+                <option value="spacious">Spacious</option>
+              </Select>
+              <Select
+                id={`${uid}-cover-position`}
+                label="Cover position"
+                value={branding.coverPosition ?? 'center'}
+                onChange={(e) => onUpdate({ coverPosition: e.target.value as CoverPosition })}
+                disabled={!branding.coverImageUrl}
+              >
+                <option value="center">Center</option>
+                <option value="top">Top</option>
+                <option value="bottom">Bottom</option>
+              </Select>
+            </div>
+            {!branding.coverImageUrl && <p className="bg-caption text-(--text-muted)">Upload a cover image to choose where it is cropped.</p>}
+            <div className="flex items-center justify-between gap-3">
+              <label htmlFor={`${uid}-progress`} className="bg-body-sm font-medium text-(--text-secondary)">
+                Show progress indicator
+                <span className="block bg-caption font-normal text-(--text-muted)">The step bar on multi-page forms.</span>
+              </label>
+              <Switch id={`${uid}-progress`} checked={branding.showProgress !== false} onChange={(v) => onUpdate({ showProgress: v })} />
+            </div>
+            <div>
+              <p className="bg-body-sm font-medium text-(--text-secondary)">Font</p>
+              <p className="bg-body text-(--text-primary)">DM Sans</p>
+              <p className="bg-caption text-(--text-muted)">The product font is fixed so every form stays consistent and readable.</p>
+            </div>
+          </PanelCard>
+
           <PanelCard label="Logo" description="Square image, at least 256×256px. PNG or SVG with transparent background works best.">
             <ImageUploadZone
               label="Logo"
@@ -266,12 +369,16 @@ export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = tru
 
         <div className="branding-panel-preview w-full flex flex-col gap-2">
           <span className="bg-overline text-(--text-muted)">Preview</span>
-          <BrandingLivePreview
-            primaryColor={primaryColor}
-            logoUrl={branding.logoUrl}
-            coverImageUrl={branding.coverImageUrl}
-            formTitle={formTitle}
-          />
+          <BrandingLivePreview branding={branding} formTitle={formTitle} />
+          <button
+            type="button"
+            onClick={() =>
+              onUpdate({ buttonStyle: undefined, buttonRadius: undefined, coverPosition: undefined, showProgress: undefined, spacing: undefined })
+            }
+            className="self-start min-h-11 bg-body-sm text-(--text-muted) underline underline-offset-2 hover:text-(--text-secondary)"
+          >
+            Reset style options
+          </button>
         </div>
       </div>
     </div>

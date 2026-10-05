@@ -97,8 +97,9 @@ export const analyticsKeys = {
     [...analyticsKeys.all, 'trends', formId, range, bucket] as const,
   questions: (formId: string, range: AnalyticsRangeParams) =>
     [...analyticsKeys.all, 'questions', formId, range] as const,
-  formsSummary: (range: AnalyticsRangeParams, page: number) =>
-    [...analyticsKeys.all, 'forms', range, page] as const,
+  // `scope` is a key segment (workspace slug or 'personal'), so switching workspaces never serves another's rows.
+  formsSummary: (range: AnalyticsRangeParams, page: number, scope = 'personal') =>
+    [...analyticsKeys.all, 'forms', scope, range, page] as const,
 };
 
 export const reportKeys = {

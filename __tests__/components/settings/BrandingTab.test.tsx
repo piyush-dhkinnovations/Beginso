@@ -29,9 +29,9 @@ vi.mock('@/components/ui/Toast', () => ({
 // BrandingPanel has its own dedicated coverage in the Builder's test suite — mocked here so
 // BrandingTab's test stays focused on its own data-loading/save wiring, not the color
 // picker/upload-zone UI.
-vi.mock('@/components/form-builder/BrandingPanel', () => ({
-  BrandingPanel: ({ branding, formTitle, onUpdate }: { branding: { primaryColor?: string }; formTitle: string; onUpdate: (u: object) => void }) => (
-    <div data-testid="branding-panel" data-form-title={formTitle} data-primary-color={branding.primaryColor ?? ''}>
+vi.mock('@/components/settings/WorkspaceBrandingEditor', () => ({
+  WorkspaceBrandingEditor: ({ branding, onChange: onUpdate }: { branding: { primaryColor?: string }; onChange: (u: object) => void }) => (
+    <div data-testid="branding-panel" data-primary-color={branding.primaryColor ?? ''}>
       <button onClick={() => onUpdate({ primaryColor: '#123456' })}>Trigger update</button>
     </div>
   ),
@@ -55,19 +55,18 @@ describe('BrandingTab', () => {
     mockToast.mockReset();
   });
 
-  it('loads workspace branding and passes it to BrandingPanel with a "New Form" preview title', async () => {
+  it('loads workspace branding and passes it to the editor', async () => {
     mockGetWorkspace.mockResolvedValue({ id: 'w1', name: 'Acme', logoUrl: null, branding: { primaryColor: '#1D4ED8' }, createdAt: '' });
     renderTab();
 
     const panel = await screen.findByTestId('branding-panel');
-    expect(panel).toHaveAttribute('data-form-title', 'New Form');
     expect(panel).toHaveAttribute('data-primary-color', '#1D4ED8');
   });
 
   it('shows the "new forms only" helper text', async () => {
     mockGetWorkspace.mockResolvedValue({ id: 'w1', name: 'Acme', logoUrl: null, branding: {}, createdAt: '' });
     renderTab();
-    expect(await screen.findByText('These defaults apply to new forms only — existing forms keep their own branding.')).toBeInTheDocument();
+    expect(await screen.findByText('These settings apply to new forms only — existing forms keep their own branding.')).toBeInTheDocument();
   });
 
   it('shows an inline error with retry when branding fails to load', async () => {
@@ -76,15 +75,33 @@ describe('BrandingTab', () => {
     expect(await screen.findByRole('alert')).toBeInTheDocument();
   });
 
-  it('saves an update immediately and shows a success toast', async () => {
+  it('edits are a draft: nothing is saved until Save changes, and Cancel discards them', async () => {
+    mockGetWorkspace.mockResolvedValue({ id: 'w1', name: 'Acme', logoUrl: null, branding: { primaryColor: '#1D4ED8' }, createdAt: '' });
+    renderTab();
+
+    expect(await screen.findByRole('button', { name: 'Save changes' })).toBeDisabled();
+    fireEvent.click(await screen.findByText('Trigger update'));
+    expect(screen.getByTestId('branding-panel')).toHaveAttribute('data-primary-color', '#123456');
+    expect(mockUpdateWorkspace).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByTestId('branding-panel')).toHaveAttribute('data-primary-color', '#1D4ED8');
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+  });
+
+  it('Save changes sends the full branding (cleared keys as null) and shows a success toast', async () => {
     mockGetWorkspace.mockResolvedValue({ id: 'w1', name: 'Acme', logoUrl: null, branding: {}, createdAt: '' });
     mockUpdateWorkspace.mockResolvedValue({ id: 'w1', name: 'Acme', logoUrl: null, branding: { primaryColor: '#123456' }, createdAt: '' });
     renderTab();
 
     fireEvent.click(await screen.findByText('Trigger update'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
-    await waitFor(() => expect(mockUpdateWorkspace).toHaveBeenCalledWith({ branding: { primaryColor: '#123456' } }, undefined));
-    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Branding defaults updated.', 'success'));
+    await waitFor(() => expect(mockUpdateWorkspace).toHaveBeenCalledTimes(1));
+    const [{ branding }] = mockUpdateWorkspace.mock.calls[0];
+    expect(branding.primaryColor).toBe('#123456');
+    expect(branding.logoUrl).toBeNull();
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Branding defaults saved.', 'success'));
   });
 
   it('shows a failure toast when the save fails', async () => {
@@ -93,8 +110,9 @@ describe('BrandingTab', () => {
     renderTab();
 
     fireEvent.click(await screen.findByText('Trigger update'));
+    fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
-    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Failed to update branding. Please try again.', 'error'));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Failed to save branding. Please try again.', 'error'));
   });
 
   // sprint-11-v2a-hardening 1.4 — token pass regression: no raw neutral/white class left in source.

@@ -331,7 +331,7 @@ function LiveState({ onClose, formId, slug, canPublish, onStatusChange }: Publis
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Link href={`/forms/${formId}/share`}>
+        <Link href={`/forms/${formId}/edit?tab=share`} onClick={onClose}>
           <Button type="button" variant="secondary" className="w-full min-h-11">
             <Share2 size={16} className="mr-1.5" aria-hidden="true" />
             Share &amp; embed

@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 
 import { createPortal } from 'react-dom';
-import { X } from 'lucide-react';
+import { ArrowRight, Info, X, Zap } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
@@ -36,6 +36,7 @@ export function LayoutGallery({ formId, currentLayout, fieldCount, isPublic, onU
   const [device, setDevice] = useState<PreviewDevice>('desktop');
   const current = normaliseLayout(currentLayout);
   const nudge = layoutRecommendation(fieldCount);
+  const recommendedId: LayoutPreset | null = fieldCount === 0 ? null : fieldCount <= 5 ? 'classic' : 'steps';
 
   const use = (preset: LayoutPreset) => {
     onUse(preset);
@@ -46,7 +47,7 @@ export function LayoutGallery({ formId, currentLayout, fieldCount, isPublic, onU
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-prose">
-          <span className="bg-caption font-semibold uppercase tracking-wide text-(--text-muted)">Step 1 of 2 — Branding</span>
+          <span className="bg-caption font-semibold uppercase tracking-wide text-(--text-muted)">Step 1 of 2</span>
           <h2 className="bg-h4 font-bold text-(--text-primary)">Choose a layout</h2>
           <p className="bg-body text-(--text-muted) mt-1">
             Pick a starting point instead of building the look by hand. You can fine-tune colours, fonts and spacing
@@ -54,23 +55,42 @@ export function LayoutGallery({ formId, currentLayout, fieldCount, isPublic, onU
           </p>
         </div>
         {/* Step 2 is desktop-only (CF2.12a), so there is nothing to skip to below 1024px. */}
-        <Button type="button" variant="secondary" onClick={onSkip} className="hidden lg:inline-flex border-dashed">
+        <Button type="button" variant="secondary" onClick={onSkip} className="hidden min-h-11 gap-2 lg:inline-flex">
           Skip — customise manually
+          <ArrowRight size={16} aria-hidden="true" />
         </Button>
       </div>
 
       {nudge && (
-        <Alert variant="info">
-          Your form currently has <strong>{fieldCount} {fieldCount === 1 ? 'field' : 'fields'}</strong>. {nudge}
-        </Alert>
+        <div className="grid gap-4 rounded-xl border border-(--info-border) bg-(--info-surface) p-4 md:grid-cols-[1fr_auto] md:items-center">
+          <div className="flex items-center gap-3">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-(--surface-card) text-(--action-primary)">
+              <Info size={20} aria-hidden="true" />
+            </span>
+            <div>
+              <p className="bg-body font-semibold text-(--text-primary)">
+                Your form currently has {fieldCount} {fieldCount === 1 ? 'field' : 'fields'}
+              </p>
+              <p className="bg-body-sm text-(--text-secondary)">{nudge}</p>
+            </div>
+          </div>
+          <div className="hidden items-center gap-3 border-l border-(--info-border) pl-4 md:flex">
+            <Zap size={18} className="shrink-0 text-(--action-primary)" aria-hidden="true" />
+            <div>
+              <p className="bg-body-sm font-semibold text-(--text-primary)">Not sure?</p>
+              <p className="bg-caption text-(--text-muted)">You can always change the layout later without losing any data.</p>
+            </div>
+          </div>
+        </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {LAYOUT_PRESETS.map((preset) => (
           <LayoutPresetCard
             key={preset.id}
             preset={preset}
             selected={preset.id === current}
+            recommended={preset.id === recommendedId}
             canPreview={!!formId}
             onPreview={() => setPreviewing(preset)}
             onUse={() => use(preset.id)}
@@ -137,20 +157,22 @@ function FullScreenPreview({
             {preset.tagline} • best for {preset.best}
           </p>
         </div>
-        <div className="hidden md:block">
-          <DeviceToggle device={device} onChange={onDeviceChange} />
+        <div className="flex items-center gap-3">
+          <div className="hidden md:block">
+            <DeviceToggle device={device} onChange={onDeviceChange} />
+          </div>
+          <Button type="button" variant="ghost" size="small" onClick={onClose} aria-label="Close preview" className="min-h-11 min-w-11">
+            <X size={18} />
+          </Button>
         </div>
-        <Button type="button" variant="ghost" size="small" onClick={onClose} aria-label="Close preview" className="min-h-11 min-w-11">
-          <X size={18} />
-        </Button>
       </header>
 
-      <div className="flex-1 min-h-0 flex justify-center p-2 md:p-4">
+      <div className="flex-1 min-h-0 flex justify-center px-2 pt-2 pb-1 md:px-4 md:pt-3">
         <PreviewFrame formId={formId ?? ''} device={device} layout={preset.id} title={`${preset.name} layout preview`} />
       </div>
 
-      <footer className="shrink-0 border-t bg-(--surface-card) px-4 py-3 flex flex-col gap-3">
-        <dl className="hidden md:grid grid-cols-3 gap-4">
+      <footer className="shrink-0 border-t bg-(--surface-card) px-4 py-2.5 flex flex-col gap-2">
+        <dl className="hidden lg:grid grid-cols-3 gap-6">
           {[
             ['Mobile behaviour', preset.mobile],
             ['Accessibility', preset.a11y],
@@ -167,8 +189,8 @@ function FullScreenPreview({
             {preset.watch}
           </Alert>
         )}
-        <div className="flex items-center justify-between gap-3">
-          <p className="bg-caption text-(--text-muted)">Preview uses your last saved version of the form.</p>
+        <div className="flex items-center justify-between gap-3 sm:justify-between max-sm:justify-end">
+          <p className="hidden sm:block bg-caption text-(--text-muted)">Preview uses your last saved version of the form.</p>
           <div className="flex gap-3">
             <Button type="button" variant="secondary" onClick={onClose}>
               Back to layouts

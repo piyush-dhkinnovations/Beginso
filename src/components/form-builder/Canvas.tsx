@@ -51,7 +51,7 @@ function DroppableCanvas({
       {/* Widened from the design system's 440px baseline — with live field previews now
           rendered inline, 440px felt cramped. 560px gives more breathing room without
           spanning the full canvas width. */}
-      <div className="max-w-140 mx-auto min-h-125 flex flex-col justify-start">
+      <div className="max-w-4xl mx-auto min-h-125 flex flex-col justify-start">
         {/* Title + description header — always visible, regardless of field count */}
         <CanvasFormHeader
           pageTitle={pageTitle}

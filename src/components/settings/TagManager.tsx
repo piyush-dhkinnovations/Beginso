@@ -124,9 +124,9 @@ export function TagManager({ scope, onDirtyChange }: TagManagerProps) {
 
   return (
     // 640px form column (CLAUDE.md/design.md §15 — the narrow-column exception for settings forms).
-    <div className="flex flex-col gap-6 max-w-160">
+    <div className="flex flex-col gap-6">
       <form
-        className="flex flex-wrap items-end gap-3"
+        className="flex flex-wrap items-start gap-3 max-w-160"
         onSubmit={createForm.handleSubmit((values) => createMutation.mutate(values))}
       >
         <Input
@@ -141,7 +141,7 @@ export function TagManager({ scope, onDirtyChange }: TagManagerProps) {
             <option key={token} value={token}>{token}</option>
           ))}
         </Select>
-        <Button type="submit" isLoading={createMutation.isPending}>Add tag</Button>
+        <Button type="submit" className="mt-6.5" isLoading={createMutation.isPending}>Add tag</Button>
       </form>
 
       {isLoading ? (
@@ -254,7 +254,9 @@ function RenameRow({
         if (name.trim()) onSave(name.trim());
       }}
     >
-      <Input id={`rename-${tag.id}`} aria-label="Tag name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+      <div className="w-full min-w-40 max-w-72">
+        <Input id={`rename-${tag.id}`} aria-label="Tag name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+      </div>
       <Button type="submit" size="small" isLoading={isSaving}>Save</Button>
       <Button type="button" variant="ghost" size="small" onClick={onCancel}>Cancel</Button>
     </form>

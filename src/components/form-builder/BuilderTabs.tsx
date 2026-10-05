@@ -1,12 +1,11 @@
 'use client';
 
-import Link from 'next/link';
-import { ArrowUpRight, ChevronRight, Undo2, Redo2 } from 'lucide-react';
+import { ChevronRight, Undo2, Redo2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 
-// Sprint 13 (CF6.1): the Share tab is gone — distribution lives on /forms/[id]/share (wireframe 34).
-export type BuilderTab = 'build' | 'branding' | 'settings';
+// Share & Embed is the fourth tab, after Settings (CF2.1). It is hidden for roles that cannot see it.
+export type BuilderTab = 'build' | 'branding' | 'settings' | 'share';
 
 interface BuilderTabsProps {
   activeTab: BuilderTab;
@@ -15,17 +14,18 @@ interface BuilderTabsProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
-  /** Link-out to the Share & Embed page (wireframe: "Share & Embed ↗"). Omitted for roles that cannot see it. */
-  shareHref?: string;
+  /** Whether the Share tab is shown (Reviewers do not see it). */
+  showShare?: boolean;
 }
 
 const TABS: { id: BuilderTab; label: string }[] = [
   { id: 'build', label: 'Build' },
   { id: 'branding', label: 'Branding' },
   { id: 'settings', label: 'Settings' },
+  { id: 'share', label: 'Share' },
 ];
 
-export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onRedo, shareHref }: BuilderTabsProps) {
+export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onRedo, showShare = true }: BuilderTabsProps) {
   return (
     <nav className="flex items-center justify-between border-b bg-(--surface-card) shrink-0 shadow-(--shadow-sm)" aria-label="Form Builder Tabs">
       {/* Real role="tablist"/role="tab"/aria-selected semantics — confirmed missing during Sprint
@@ -33,7 +33,7 @@ export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onR
           here, since this component lacked them), fixed here per that sprint's Friday
           accessibility-pass task. */}
       <div className="flex flex-wrap items-center" role="tablist" aria-label="Form Builder sections">
-        {TABS.map((tab, index) => {
+        {TABS.filter((t) => showShare || t.id !== 'share').map((tab, index, list) => {
           const isActive = activeTab === tab.id;
           return (
             <div key={tab.id} className="flex items-center">
@@ -51,7 +51,7 @@ export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onR
               >
                 {tab.label}
               </button>
-              {index < TABS.length - 1 && (
+              {index < list.length - 1 && (
                 <ChevronRight size={14} className="text-(--text-disabled) shrink-0" aria-hidden="true" />
               )}
             </div>
@@ -60,14 +60,6 @@ export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onR
       </div>
 
       <div className="flex items-center gap-1 pr-3 shrink-0">
-        {shareHref && (
-          <Link
-            href={shareHref}
-            className="flex min-h-11 items-center gap-1 px-2 bg-body-sm font-semibold text-(--text-muted) hover:text-(--text-primary)"
-          >
-            Share &amp; Embed <ArrowUpRight size={12} aria-hidden="true" />
-          </Link>
-        )}
         <Button
           onClick={onUndo}
           disabled={!canUndo}

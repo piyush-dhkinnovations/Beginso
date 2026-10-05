@@ -2,13 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, FileText, LayoutDashboard, Table2, PieChart, Pencil, Settings, Share2 } from 'lucide-react';
+import { ArrowLeft, FileText, LayoutDashboard, Table2, PieChart, Pencil, Settings } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { useBuilderStore } from '@/store/builderStore';
-import { workspacesService } from '@/services/workspaces';
-import { workspaceKeys } from '@/lib/queryKeys';
-import { canSeeShare } from '@/lib/roles';
 import type { Form } from '@/types/form';
 
 export interface FormSidebarProps {
@@ -40,15 +36,6 @@ export function FormSidebar({ formId, form, collapsed = false, backHref = '/form
   const dirty = useBuilderStore((state) => state.dirty);
   const setPendingLeaveUrl = useBuilderStore((state) => state.setPendingLeaveUrl);
   const base = `/forms/${formId}`;
-  // Share & Embed is hidden from Reviewers (wireframe 34). Personal form → owner; workspace form → the
-  // membership role, shared with the rest of the shell through the same cached list.
-  const { data: workspaces } = useQuery({
-    queryKey: workspaceKeys.list(),
-    queryFn: () => workspacesService.list(),
-    enabled: !!form?.workspaceId,
-    staleTime: 5 * 60_000,
-  });
-  const role = form?.workspaceId ? workspaces?.find((w) => w.id === form.workspaceId)?.role : 'owner';
   const onEditPage = pathname === `${base}/edit`;
   const tab = searchParams.get('tab');
   const onSettingsTab = onEditPage && tab === 'settings';
@@ -122,7 +109,6 @@ export function FormSidebar({ formId, form, collapsed = false, backHref = '/form
             { label: 'Overview', href: `${base}/overview`, icon: LayoutDashboard, active: isActive('/overview'), onClick: guard(`${base}/overview`) },
             { label: 'Responses', href: `${base}/responses`, icon: Table2, active: isActive('/responses'), onClick: guard(`${base}/responses`) },
             { label: 'Analytics', href: `${base}/analytics`, icon: PieChart, active: isActive('/analytics'), onClick: guard(`${base}/analytics`) },
-            ...(canSeeShare(role) ? [{ label: 'Share & embed', href: `${base}/share`, icon: Share2, active: isActive('/share'), onClick: guard(`${base}/share`) }] : []),
             { label: 'Edit form', href: `${base}/edit`, icon: Pencil, active: onEditPage && !onSettingsTab, onClick: guard(`${base}/edit`) },
             { label: 'Settings', href: `${base}/edit?tab=settings`, icon: Settings, active: onSettingsTab, onClick: guard(`${base}/edit?tab=settings`) },
           ],

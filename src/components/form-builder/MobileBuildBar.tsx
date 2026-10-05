@@ -15,7 +15,7 @@ export interface MobileBuildBarProps {
 
 export function MobileBuildBar({ isReordering, canReorder, onAddField, onToggleReorder }: MobileBuildBarProps) {
   return (
-    <div className="lg:hidden flex shrink-0 gap-3 border-t bg-(--surface-card) p-3 shadow-(--shadow-sm)">
+    <div className="md:hidden flex shrink-0 gap-3 border-t bg-(--surface-card) p-3 shadow-(--shadow-sm)">
       <Button type="button" className="flex-1" onClick={onAddField} disabled={isReordering}>
         <Plus size={16} aria-hidden="true" /> Add field
       </Button>

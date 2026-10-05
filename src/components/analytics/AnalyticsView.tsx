@@ -34,9 +34,14 @@ const FORMS_SUMMARY_LIMIT = 100;
 interface AnalyticsViewProps {
   /** Undefined for the workspace-wide view reached from the sidebar's "Analytics" link. */
   formId?: string;
+  /** Workspace-wide view only: 'personal' (default) or a workspace slug — the Insights page passes its own. */
+  scope?: string;
+  /** Page title; the workspace Insights page says "Insights". */
+  title?: string;
 }
 
-export function AnalyticsView({ formId }: AnalyticsViewProps) {
+export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' }: AnalyticsViewProps) {
+  const isWorkspaceScope = scope !== 'personal';
   const router = useRouter();
   const formScope = useFormScope(formId ?? '');
   const pathname = usePathname();
@@ -89,8 +94,8 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
   });
 
   const formsSummaryQuery = useQuery({
-    queryKey: analyticsKeys.formsSummary(range, page),
-    queryFn: () => analyticsService.getFormsSummary({ from, to, page, limit: FORMS_SUMMARY_LIMIT }),
+    queryKey: analyticsKeys.formsSummary(range, page, scope),
+    queryFn: () => analyticsService.getFormsSummary({ from, to, page, limit: FORMS_SUMMARY_LIMIT }, scope),
     enabled: !formId,
   });
 
@@ -102,8 +107,8 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
   const hasPreviousRange = !!previousRange.from && !!previousRange.to;
 
   const previousFormsSummaryQuery = useQuery({
-    queryKey: analyticsKeys.formsSummary(previousRange, 1),
-    queryFn: () => analyticsService.getFormsSummary({ from: previousRange.from, to: previousRange.to, page: 1, limit: FORMS_SUMMARY_LIMIT }),
+    queryKey: analyticsKeys.formsSummary(previousRange, 1, scope),
+    queryFn: () => analyticsService.getFormsSummary({ from: previousRange.from, to: previousRange.to, page: 1, limit: FORMS_SUMMARY_LIMIT }, scope),
     enabled: !formId && hasPreviousRange,
   });
 
@@ -141,6 +146,7 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
     bucket,
     formIds: currentForms.map((f) => f._id),
     enabled: !formId && formsSummaryQuery.isSuccess && currentForms.length > 0,
+    scope,
   });
   const statusCounts = {
     published: currentForms.filter((f) => f.status === 'published').length,
@@ -183,7 +189,7 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
       <PageHeader
-        title="Analytics"
+        title={title}
         description={formId ? `Analytics · ${form?.title ?? ''}` : 'See how every form in your workspace is performing.'}
         actionsAlign="center"
         actions={isFirstRun ? undefined : <DateRangeFilter part="range" />}
@@ -201,7 +207,7 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
           }
           actions={
             formId ? undefined : (
-              <Button variant="primary" onClick={() => router.push('/forms')}>
+              <Button variant="primary" onClick={() => router.push(isWorkspaceScope ? `/w/${scope}/forms` : '/forms')}>
                 Go to Forms
               </Button>
             )
@@ -217,7 +223,7 @@ export function AnalyticsView({ formId }: AnalyticsViewProps) {
               id="analytics-jump-form"
               aria-label="Open a form's analytics"
               value=""
-              onChange={(e) => e.target.value && router.push(`/forms/${e.target.value}/analytics`)}
+              onChange={(e) => e.target.value && router.push(`/forms/${e.target.value}/analytics${isWorkspaceScope ? `?ws=${scope}` : ''}`)}
             >
               <option value="">All forms</option>
               {currentForms.map((f) => (

@@ -130,8 +130,9 @@ export const analyticsService = {
       .get<RawQuestionsEnvelope>('/api/analytics/questions', { params, headers: workspaceHeaders(scope) })
       .then((r) => toQuestionBreakdowns(r.data)),
 
-  getFormsSummary: (params: { from?: string; to?: string; page?: number; limit?: number }): Promise<AnalyticsFormsSummaryResult> =>
+  // Sprint 13+: `scope` is 'personal' (default, the old behaviour) or a workspace slug for the Insights page.
+  getFormsSummary: (params: { from?: string; to?: string; page?: number; limit?: number }, scope = 'personal'): Promise<AnalyticsFormsSummaryResult> =>
     axiosInstance
-      .get<RawFormsSummaryEnvelope>('/api/analytics/forms', { params, headers: workspaceHeaders('personal') })
+      .get<RawFormsSummaryEnvelope>('/api/analytics/forms', { params, headers: workspaceHeaders(scope) })
       .then((r) => toFormsSummaryResult(r.data)),
 };

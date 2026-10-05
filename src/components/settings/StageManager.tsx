@@ -142,7 +142,7 @@ export function StageManager({ scope, onDirtyChange }: StageManagerProps) {
               aria-label={`Move ${stage.name} up`}
               disabled={index === 0 || reorderMutation.isPending}
               onClick={() => move(index, -1)}
-              className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-primary) disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex min-h-9 min-w-9 items-center justify-center rounded-md text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-primary) disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ArrowUp size={14} />
             </button>
@@ -151,7 +151,7 @@ export function StageManager({ scope, onDirtyChange }: StageManagerProps) {
               aria-label={`Move ${stage.name} down`}
               disabled={index === orderedStages.length - 1 || reorderMutation.isPending}
               onClick={() => move(index, 1)}
-              className="flex min-h-11 min-w-11 items-center justify-center rounded-md text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-primary) disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex min-h-9 min-w-9 items-center justify-center rounded-md text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-primary) disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ArrowDown size={14} />
             </button>
@@ -210,9 +210,9 @@ export function StageManager({ scope, onDirtyChange }: StageManagerProps) {
 
   return (
     // 640px form column (CLAUDE.md's settings-form narrow-column allowance).
-    <div className="flex flex-col gap-6 max-w-160">
+    <div className="flex flex-col gap-6">
       <form
-        className="flex flex-wrap items-end gap-3"
+        className="flex flex-wrap items-start gap-3 max-w-160"
         onSubmit={createForm.handleSubmit((values) => createMutation.mutate(values))}
       >
         <Input
@@ -232,10 +232,11 @@ export function StageManager({ scope, onDirtyChange }: StageManagerProps) {
             <option key={category} value={category}>{CATEGORY_LABELS[category]}</option>
           ))}
         </Select>
-        <Button type="submit" isLoading={createMutation.isPending}>Add stage</Button>
+        <Button type="submit" className="mt-6.5" isLoading={createMutation.isPending}>Add stage</Button>
       </form>
 
       <Table
+        className="bg-table-compact"
         columns={columns}
         rows={orderedStages}
         rowKey={(stage) => stage.id}
@@ -307,7 +308,9 @@ function RenameRow({
         if (name.trim()) onSave(name.trim());
       }}
     >
-      <Input id={`rename-stage-${stage.id}`} aria-label="Stage name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+      <div className="w-full min-w-40 max-w-72">
+        <Input id={`rename-stage-${stage.id}`} aria-label="Stage name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+      </div>
       <Button type="submit" size="small" isLoading={isSaving}>Save</Button>
       <Button type="button" variant="ghost" size="small" onClick={onCancel}>Cancel</Button>
     </form>

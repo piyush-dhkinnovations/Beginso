@@ -12,6 +12,11 @@ export interface PublicFormBranding {
   primaryColor?: string;
   logoUrl?: string;
   coverImageUrl?: string;
+  buttonStyle?: 'solid' | 'outline';
+  buttonRadius?: '4px' | '8px' | '16px';
+  coverPosition?: 'center' | 'top' | 'bottom';
+  showProgress?: boolean;
+  spacing?: 'compact' | 'comfortable' | 'spacious';
 }
 
 /** Shape returned by GET /api/public/:slug — user-only fields omitted. */

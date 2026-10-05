@@ -34,6 +34,7 @@ import { SettingsPanel } from '@/components/form-builder/SettingsPanel';
 import { AddFieldSheet } from '@/components/form-builder/AddFieldSheet';
 import { BrandingTabContent } from '@/components/form-builder/BrandingTabContent';
 import { MobileBuildBar } from '@/components/form-builder/MobileBuildBar';
+import { ShareView } from '@/components/form-builder/ShareView';
 import { PublishModal } from '@/components/form-builder/PublishModal';
 import { CloseFormModal } from '@/components/form-builder/CloseFormModal';
 import { LeaveBuilderModal } from '@/components/form-builder/LeaveBuilderModal';
@@ -51,7 +52,7 @@ function isDroppingBelow(active: Active, over: Over | null): boolean {
   );
 }
 
-const VALID_TABS: BuilderTab[] = ['build', 'branding', 'settings'];
+const VALID_TABS: BuilderTab[] = ['build', 'branding', 'settings', 'share'];
 
 // Single source of truth for the PATCH payload shape — the debounced autosave, the
 // unmount flush, the publish-click flush, and the leave-guard flush all call this
@@ -76,20 +77,14 @@ export default function BuilderPageShell() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Active tab lives in the URL (?tab=logic) so it survives a page reload instead
-  // of always resetting to Build.
+  // The URL is the single source of truth for the active tab (?tab=settings), so the form sidebar's
+  // Settings link, deep links, reload and the tab bar all agree. State copied from the URL once at mount
+  // ignored in-page navigation (the sidebar link changed the URL but not the tab).
   const tabFromUrl = searchParams.get('tab') as BuilderTab | null;
-  const [activeTab, setActiveTabState] = useState<BuilderTab>(
-    tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'build'
-  );
+  const activeTab: BuilderTab = tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'build';
   const setActiveTab = (tab: BuilderTab) => {
-    setActiveTabState(tab);
     router.replace(`/forms/${id}/edit?tab=${tab}`, { scroll: false });
   };
-  // Old deep links to the removed Share tab land on the Share & Embed page.
-  useEffect(() => {
-    if (searchParams.get('tab') === 'share') router.replace(`/forms/${id}/share`);
-  }, [searchParams, router, id]);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -632,7 +627,7 @@ export default function BuilderPageShell() {
               canRedo={canRedo}
               onUndo={undo}
               onRedo={redo}
-              shareHref={canSeeShare(formRole) ? `/forms/${id}/share` : undefined}
+              showShare={canSeeShare(formRole)}
             />
             
             <div className="flex flex-1 overflow-hidden">
@@ -726,6 +721,10 @@ export default function BuilderPageShell() {
               ) : activeTab === 'settings' ? (
                 <div className="flex-1 overflow-y-auto p-6">
                   <SettingsPanel settings={settings} status={status} slug={slug} onUpdate={setSettings} />
+                </div>
+              ) : activeTab === 'share' && canSeeShare(formRole) && formId ? (
+                <div className="flex-1 overflow-y-auto p-6">
+                  <ShareView formId={formId} embedded onOpenPublish={handlePublishClick} />
                 </div>
               ) : null}
             </div>

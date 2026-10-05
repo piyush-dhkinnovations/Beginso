@@ -92,10 +92,21 @@ export interface LogicRule {
   targetFieldId: string; // must never equal condition.fieldId
 }
 
+// Sprint 13 (CF2.3). A curated set of theme choices, not a free-form editor. Absent = the default.
+export type ButtonStyle = 'solid' | 'outline';
+export type ButtonRadius = '4px' | '8px' | '16px';
+export type CoverPosition = 'center' | 'top' | 'bottom';
+export type FormSpacing = 'compact' | 'comfortable' | 'spacious';
+
 export interface FormBranding {
   primaryColor?: string;   // hex color — overrides workspace default when set
   logoUrl?: string;
   coverImageUrl?: string;
+  buttonStyle?: ButtonStyle;     // default 'solid'
+  buttonRadius?: ButtonRadius;   // default '8px'
+  coverPosition?: CoverPosition; // default 'center'
+  showProgress?: boolean;        // default true — the multi-page progress indicator
+  spacing?: FormSpacing;         // default 'comfortable'
 }
 
 // Sprint 13 (builder-publish-respondent), design.md §13. Six presets replace the three V1 layout

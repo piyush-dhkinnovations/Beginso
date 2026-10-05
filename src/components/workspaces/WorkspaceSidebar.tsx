@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Home, FileText, Inbox, Users, History, Shield, LayoutTemplate, Trash2, Settings } from 'lucide-react';
+import { Home, FileText, Inbox, BarChart3, Users, History, Shield, LayoutTemplate, Trash2, Settings } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import {
@@ -66,6 +66,8 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }
     { label: 'Home', href: base, icon: Home },
     { label: 'Forms', href: `${base}/forms`, icon: FileText },
     { label: 'Inbox', href: `${base}/inbox`, icon: Inbox, count: stats?.unread },
+    // Insights (plan nav: Home · Inbox · Insights). Every role that can read the workspace can read analytics.
+    { label: 'Insights', href: `${base}/insights`, icon: BarChart3 },
     // Sprint 13 (B6): templates live in the workspace now. Reviewers cannot create forms, so they get no
     // Templates item (same rule canViewTemplates already encodes for the role-filtered nav).
     ...(canViewTemplates(role) ? [{ label: 'Templates', href: `${base}/templates`, icon: LayoutTemplate }] : []),

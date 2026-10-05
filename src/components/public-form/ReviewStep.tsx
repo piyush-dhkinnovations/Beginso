@@ -33,6 +33,8 @@ export interface ReviewStepProps {
   submitDisabled: boolean;
   submitError: string | null;
   primaryColor: string;
+  /** The owner's button theme (style + radius) — same helper the live preview uses. */
+  buttonStyle?: React.CSSProperties;
   /** Preview mode: shows the "nothing was submitted" note instead of the buttons after Submit. */
   previewSubmitted?: boolean;
   /** Extra content above the buttons — the Mode 2 email step / Mode 3 "responding as" line live here. */
@@ -61,7 +63,7 @@ export function ReviewStep({
   isSubmitting,
   submitDisabled,
   submitError,
-  primaryColor,
+  buttonStyle,
   previewSubmitted,
   extra,
 }: ReviewStepProps) {
@@ -187,7 +189,7 @@ export function ReviewStep({
           <Button
             type="button"
             className="flex-1"
-            style={{ backgroundColor: primaryColor }}
+            style={buttonStyle}
             onClick={onSubmit}
             isLoading={isSubmitting}
             disabled={submitDisabled || editingId !== null}

@@ -377,7 +377,11 @@
    covered by Tailwind's Preflight.
    ========================================================================== */
 
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  /* Reserve the scrollbar's width always, so pages with and without a scrollbar lay out identically. */
+  scrollbar-gutter: stable;
+}
 
 body {
   font: var(--text-body);

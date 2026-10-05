@@ -7,7 +7,7 @@ import { Tabs } from '@/components/ui/Tabs';
 export type PreviewDevice = 'desktop' | 'tablet' | 'mobile';
 
 export const DEVICE_WIDTH: Record<PreviewDevice, number> = {
-  desktop: 1024,
+  desktop: 1280,
   tablet: 768,
   mobile: 375,
 };
