@@ -11,7 +11,8 @@ import { dashboardKeys, workspaceKeys } from '@/lib/queryKeys';
 import { formatRelativeTime } from '@/lib/formatters';
 import { StatisticsCards } from '@/components/dashboard/StatisticsCards';
 import { RecentActivitySection } from '@/components/dashboard/RecentActivitySection';
-import { ActionCard, Card, ChartCard, EmptyState, PageHeader, ProgressBars, Skeleton, StatusBadge } from '@/components/ui';
+import { toSegments } from '@/lib/chartSegments';
+import { ActionCard, Card, BarsChart, ChartCard, EmptyState, PageHeader, Skeleton, StatusBadge } from '@/components/ui';
 import type { FormStatus } from '@/types/form';
 
 const STATUS_VARIANT: Record<FormStatus, 'draft' | 'published' | 'closed'> = {
@@ -200,12 +201,16 @@ export default function DashboardPage() {
 
               {formsData.forms.some((f) => f.responseCount > 0) && (
                 <ChartCard title="Responses by form">
-                  <ProgressBars
-                    items={[...formsData.forms]
-                      .filter((f) => f.responseCount > 0)
-                      .sort((a, b) => b.responseCount - a.responseCount)
-                      .slice(0, 5)
-                      .map((f) => ({ label: f.title, value: f.responseCount }))}
+                  <BarsChart
+                    horizontal
+                    ariaLabel="Responses by form"
+                    data={toSegments(
+                      [...formsData.forms]
+                        .filter((f) => f.responseCount > 0)
+                        .sort((a, b) => b.responseCount - a.responseCount)
+                        .slice(0, 5)
+                        .map((f) => ({ key: f._id, label: f.title, value: f.responseCount })),
+                    )}
                   />
                 </ChartCard>
               )}

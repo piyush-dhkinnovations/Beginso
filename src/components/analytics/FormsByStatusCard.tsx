@@ -1,7 +1,8 @@
 'use client';
 
 import { PieChart } from 'lucide-react';
-import { CHART_COLOR, ChartCard, DonutWithLegend } from '@/components/ui/charts';
+import { ChartCard, PieChart as DonutChart } from '@/components/ui/charts';
+import { toSegments } from '@/lib/chartSegments';
 import { EmptyState } from '@/components/ui/EmptyState';
 
 export interface FormsByStatusCardProps {
@@ -12,9 +13,9 @@ export interface FormsByStatusCardProps {
 // Donut of forms by status with counts and shares (Published / Draft / Closed).
 export function FormsByStatusCard({ counts, isLoading }: FormsByStatusCardProps) {
   const segments = [
-    { label: 'Published', value: counts.published, color: CHART_COLOR.primary },
-    { label: 'Draft', value: counts.draft, color: CHART_COLOR.soft },
-    { label: 'Closed', value: counts.closed, color: CHART_COLOR.warning },
+    { label: 'Published', value: counts.published },
+    { label: 'Draft', value: counts.draft },
+    { label: 'Closed', value: counts.closed },
   ].filter((s) => s.value > 0);
   return (
     <ChartCard title="Forms by status">
@@ -23,7 +24,7 @@ export function FormsByStatusCard({ counts, isLoading }: FormsByStatusCardProps)
       ) : segments.length === 0 ? (
         <EmptyState icon={<PieChart />} title="No forms yet" />
       ) : (
-        <DonutWithLegend segments={segments} size={140} percent />
+        <DonutChart donut data={toSegments(segments)} ariaLabel="Forms by status" centreLabel={String(counts.published + counts.draft + counts.closed)} />
       )}
     </ChartCard>
   );

@@ -102,7 +102,7 @@ export function ResponsesTable({
     { key: 'email', header: 'Email', render: (r) => detectRespondentIdentity(r.answers).email ?? '—' },
     { key: 'tags', header: 'Tags', render: (r) => <TagsCell tags={r.tags} /> },
     { key: 'assignee', header: 'Assignee', render: (r) => <AssigneeCell response={r} /> },
-    { key: 'stage', header: 'Stage', render: (r) => <StageBadge stage={r.stage} /> },
+    { key: 'stage', header: 'Stage', render: (r) => <StageBadge stage={r.stage} status={r.status} /> },
     { key: 'submitted', header: 'Submitted', render: (r) => <SubmittedCell response={r} /> },
     {
       key: 'actions',

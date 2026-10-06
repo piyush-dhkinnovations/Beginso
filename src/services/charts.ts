@@ -16,7 +16,18 @@ interface Range {
   to?: string;
 }
 
-const LEGACY_TYPE: Record<string, ChartType> = { donut: 'donut', bar: 'bar', line: 'line' };
+// Backend names differ from the UI's: hbar / stat / (date) bar vs horizontal_bar / average / bar_time.
+const LEGACY_TYPE: Record<string, ChartType> = { donut: 'donut', bar: 'bar', line: 'line', hbar: 'horizontal_bar', stat: 'average' };
+const WIRE_TYPE: Partial<Record<ChartType, string>> = { horizontal_bar: 'hbar', average: 'stat', bar_time: 'bar' };
+
+// UI definition -> backend body: `type` is `chartType`, option sort 'original' is 'order'.
+function toWire<T extends Partial<ChartDefinition>>(def: T): Record<string, unknown> {
+  const { type, options, ...rest } = def;
+  const body: Record<string, unknown> = { ...rest };
+  if (type) body.chartType = WIRE_TYPE[type] ?? type;
+  if (options) body.options = { ...options, sort: options.sort === 'original' ? 'order' : options.sort };
+  return body;
+}
 const SIZES = new Set<ChartSize>(['small', 'medium', 'large']);
 
 function toChart(raw: unknown): SavedChart {
@@ -33,7 +44,7 @@ function toChart(raw: unknown): SavedChart {
     options: {
       valueMode: opts.valueMode === 'percent' ? 'percent' : 'count',
       legend: opts.legend !== false,
-      sort: opts.sort === 'value' ? 'value' : 'original',
+      sort: opts.sort === 'value' ? 'value' : 'original', // backend 'order' -> UI 'original'
     },
     visibility: (c.visibility === 'workspace' ? 'workspace' : 'private') as ChartVisibility,
     position: Number(c.position ?? c.order ?? 0) || 0,
@@ -66,12 +77,21 @@ export const chartsService = {
 
   create: (formId: string, definition: ChartDefinition & { position?: number }, scope?: string): Promise<SavedChart> =>
     axiosInstance
-      .post(`/api/forms/${formId}/charts`, definition, { headers: workspaceHeaders(scope) })
+      .post(`/api/forms/${formId}/charts`, toWire(definition), { headers: workspaceHeaders(scope) })
       .then((r) => toChart(unwrapEnvelope<unknown>(r.data, 'chart'))),
 
   update: (formId: string, chartId: string, patch: Partial<ChartDefinition> & { position?: number }, scope?: string): Promise<SavedChart> =>
     axiosInstance
-      .patch(`/api/forms/${formId}/charts/${chartId}`, patch, { headers: workspaceHeaders(scope) })
+      .patch(`/api/forms/${formId}/charts/${chartId}`, toWire(patch), { headers: workspaceHeaders(scope) })
+      .then((r) => toChart(unwrapEnvelope<unknown>(r.data, 'chart'))),
+
+  /** Own chart ids in the new order (one request, atomic). */
+  reorder: (formId: string, ids: string[], scope?: string): Promise<void> =>
+    axiosInstance.put(`/api/forms/${formId}/charts/order`, { ids }, { headers: workspaceHeaders(scope) }).then(() => undefined),
+
+  duplicate: (formId: string, chartId: string, scope?: string): Promise<SavedChart> =>
+    axiosInstance
+      .post(`/api/forms/${formId}/charts/${chartId}/duplicate`, {}, { headers: workspaceHeaders(scope) })
       .then((r) => toChart(unwrapEnvelope<unknown>(r.data, 'chart'))),
 
   remove: (formId: string, chartId: string, scope?: string): Promise<void> =>

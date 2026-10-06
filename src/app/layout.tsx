@@ -1,3 +1,4 @@
+import { ThemeInitScript } from '@/components/providers/ThemeInitScript';
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, DM_Sans } from "next/font/google";
 import "./globals.css";
@@ -51,7 +52,7 @@ export const metadata: Metadata = {
 // side, not before.
 // Sprint 13 (CF2.11): public pages (/f/*, /r/*) and the preview iframe document (?embed=1) never take
 // the OS/admin theme — they are styled by the form's own theme (see FormThemeScope).
-const THEME_INIT_SCRIPT = `(function(){try{var p=location.pathname;if(/^[/](f|r)([/]|$)/.test(p)||(/^[/]forms[/][^/]+[/]preview$/.test(p)&&/[?&]embed=1/.test(location.search)))return;if(window.matchMedia('(prefers-color-scheme: dark)').matches){document.documentElement.setAttribute('data-theme','dark');}}catch(e){}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{function skip(){var p=location.pathname;return /^[/](f|r)([/]|$)/.test(p)||(/^[/]forms[/][^/]+[/]preview$/.test(p)&&/[?&]embed=1/.test(location.search));}var m=window.matchMedia('(prefers-color-scheme: dark)');function apply(){if(skip())return;if(m.matches){document.documentElement.setAttribute('data-theme','dark');}else{document.documentElement.removeAttribute('data-theme');}}apply();if(m.addEventListener){m.addEventListener('change',apply);}else if(m.addListener){m.addListener(apply);}}catch(e){}})();`;
 
 export default function RootLayout({
   children,
@@ -83,7 +84,7 @@ export default function RootLayout({
             silence a dev-only "script tag" console warning — traced separately to an unrelated
             hydration mismatch, not this script — but that trade sacrificed correctness for a
             cosmetic dev warning, so it's reverted.) */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <ThemeInitScript code={THEME_INIT_SCRIPT} />
         <QueryProvider>
           <AuthProvider>
             <ToastProvider>{children}</ToastProvider>

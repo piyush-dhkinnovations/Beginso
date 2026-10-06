@@ -59,6 +59,7 @@ export default function MySubmissionsPage() {
         </Alert>
       ) : !query.isLoading && rows.length === 0 ? (
         <EmptyState
+          illustration="empty-inbox"
           icon={<ClipboardList />}
           title="You have not submitted anything yet"
           description="Forms you fill out while signed in will show up here."
@@ -71,7 +72,6 @@ export default function MySubmissionsPage() {
       ) : (
         <Table columns={columns} rows={rows} rowKey={(s) => s.id} isLoading={query.isLoading} />
       )}
-      <Alert variant="info">Your submissions are linked to your account only when you claim them from a signed email link.</Alert>
     </div>
   );
 }

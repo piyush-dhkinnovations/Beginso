@@ -55,7 +55,7 @@ function SortableChart({ chart, children }: { chart: SavedChart; children: (hand
   return (
     <div
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1, zIndex: isDragging ? 5 : undefined }}
+      style={{ transform: CSS.Translate.toString(transform), transition, opacity: isDragging ? 0.6 : 1, zIndex: isDragging ? 5 : undefined }}
       className={`${SPAN[chart.size]} min-w-0`}
     >
       {children(
@@ -145,7 +145,7 @@ export function CustomChartsSection({ form, formId, scope, range, addOpen, onAdd
   });
 
   const duplicateMutation = useMutation({
-    mutationFn: (chart: SavedChart) => chartsService.create(formId, { ...definitionOf(chart), title: `${chart.title} (copy)`, visibility: 'private', position: nextPosition }, scope),
+    mutationFn: (chart: SavedChart) => chartsService.duplicate(formId, chart._id, scope),
     onSuccess: () => {
       refresh();
       toast('Chart duplicated.', 'success');
@@ -188,7 +188,7 @@ export function CustomChartsSection({ form, formId, scope, range, addOpen, onAdd
   });
 
   const reorderMutation = useMutation({
-    mutationFn: (moves: { id: string; position: number }[]) => Promise.all(moves.map((m) => chartsService.update(formId, m.id, { position: m.position }, scope))),
+    mutationFn: (ids: string[]) => chartsService.reorder(formId, ids, scope),
     // Rolled back by the caller (it holds the snapshot); here only the message and a refetch.
     onError: onError('Could not save the new order.'),
     onSettled: refresh,
@@ -202,10 +202,9 @@ export function CustomChartsSection({ form, formId, scope, range, addOpen, onAdd
     const to = mine.findIndex((c) => c._id === over.id);
     if (from < 0 || to < 0) return;
     const next = arrayMove(mine, from, to).map((c, i) => ({ id: c._id, position: i }));
-    const moves = next.filter((n) => mine.find((c) => c._id === n.id)?.position !== n.position);
     const byId = new Map(next.map((n) => [n.id, n.position]));
     void optimistic((old) => old.map((c) => (byId.has(c._id) ? { ...c, position: byId.get(c._id)! } : c))).then((ctx) =>
-      reorderMutation.mutate(moves, { onError: () => rollback(ctx) }),
+      reorderMutation.mutate(next.map((n) => n.id), { onError: () => rollback(ctx) }),
     );
   }
 

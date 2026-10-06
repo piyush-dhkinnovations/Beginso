@@ -1,5 +1,4 @@
 import { WorkspaceRoleGate } from '@/components/workspaces/WorkspaceRoleGate';
-import { canRestoreResponse } from '@/lib/roles';
 import { TrashView } from '@/components/trash/TrashView';
 
 interface Props {
@@ -10,7 +9,7 @@ interface Props {
 export default async function WorkspaceTrashPage({ params }: Props) {
   const { slug } = await params;
   return (
-    <WorkspaceRoleGate slug={slug} allow={canRestoreResponse} title="Trash">
+    <WorkspaceRoleGate slug={slug} allow="trash" title="Trash">
       <TrashView scope={slug} />
     </WorkspaceRoleGate>
   );

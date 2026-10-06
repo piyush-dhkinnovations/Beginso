@@ -18,8 +18,6 @@ export interface FormsManagerTabsProps {
 }
 
 // requirements.md §7.10 — Recent/Pinned/Draft/Published/Archived, ui/Tabs wrapper.
-// Pinned and Archived render placeholder content in the parent page rather than fabricating
-// pin/unpin persistence or an archive status the backend doesn't yet support (design.md §23).
 // "Shared with me" removed as a tab here — it's a full dedicated page at /shared (reachable from
 // the sidebar), and duplicating its query/empty-state/error handling inline in this tab was dead
 // weight now that the real page exists.

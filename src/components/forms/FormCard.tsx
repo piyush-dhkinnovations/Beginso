@@ -31,7 +31,7 @@ export function FormCard({ form, href, menu, maxResponses }: FormCardProps) {
     <Card padded={false} className="overflow-hidden">
       <div className="flex items-center justify-between px-4 pt-4">
         <FormTile title={form.title} />
-        {menu}
+        <div className="flex items-center gap-1">{menu}</div>
       </div>
       <div className="flex flex-1 flex-col gap-1 px-4 pt-3">
         <h3 className="min-w-0 bg-body font-semibold text-(--text-primary)">

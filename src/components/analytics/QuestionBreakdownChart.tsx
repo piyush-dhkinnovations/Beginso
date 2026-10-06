@@ -1,7 +1,8 @@
 'use client';
 
 import { Card } from '@/components/ui/Card';
-import { ProgressBars } from '@/components/ui/charts';
+import { BarsChart } from '@/components/ui/charts';
+import { toSegments } from '@/lib/chartSegments';
 import type { QuestionBreakdown, QuestionOption } from '@/types/analytics';
 
 export interface QuestionOptionWithPercentage extends QuestionOption {
@@ -47,7 +48,7 @@ export function QuestionBreakdownChart({ question }: QuestionBreakdownChartProps
         <p className="bg-body-sm text-(--text-muted)">No answers yet in this range.</p>
       ) : (
         <>
-          <ProgressBars items={sorted.map((o) => ({ label: o.option, value: o.count, display: `${o.count} (${o.percentage}%)` }))} />
+          <BarsChart horizontal data={toSegments(sorted.map((o) => ({ label: o.option, value: o.count })))} ariaLabel={`${question.label} — answer breakdown`} />
           <table className="sr-only">
             <caption>{question.label} — answer breakdown</caption>
             <thead>

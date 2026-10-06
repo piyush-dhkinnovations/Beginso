@@ -1,6 +1,7 @@
 'use client';
 
-import { CHART_COLOR, ChartCard, DonutWithLegend, ProgressBars } from '@/components/ui/charts';
+import { BarsChart, ChartCard, PieChart as DonutChart } from '@/components/ui/charts';
+import { toSegments } from '@/lib/chartSegments';
 
 export interface FormsOverviewChartsItem {
   title: string;
@@ -20,9 +21,9 @@ export function FormsOverviewCharts({ forms }: { forms: FormsOverviewChartsItem[
 
   const count = (status: FormsOverviewChartsItem['status']) => forms.filter((f) => f.status === status).length;
   const segments = [
-    { label: 'Published', value: count('published'), color: CHART_COLOR.primary },
-    { label: 'Draft', value: count('draft'), color: CHART_COLOR.soft },
-    { label: 'Closed', value: count('closed'), color: CHART_COLOR.warning },
+    { label: 'Published', value: count('published') },
+    { label: 'Draft', value: count('draft') },
+    { label: 'Closed', value: count('closed') },
   ].filter((s) => s.value > 0);
 
   const busiest = [...forms]
@@ -34,11 +35,11 @@ export function FormsOverviewCharts({ forms }: { forms: FormsOverviewChartsItem[
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       <ChartCard title="Forms by status">
-        <DonutWithLegend segments={segments} size={128} />
+        <DonutChart donut data={toSegments(segments)} ariaLabel="Forms by status" centreLabel={String(forms.length)} />
       </ChartCard>
       <ChartCard title="Responses by form">
         {busiest.length > 0 ? (
-          <ProgressBars items={busiest} />
+          <BarsChart horizontal data={toSegments(busiest)} ariaLabel="Responses by form" />
         ) : (
           <p className="bg-body-sm text-(--text-muted)">No responses yet — they will rank your forms here.</p>
         )}

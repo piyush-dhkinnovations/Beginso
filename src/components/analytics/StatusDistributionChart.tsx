@@ -4,12 +4,12 @@ import { PieChart as PieChartIcon } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { CHART_COLOR, Donut } from '@/components/ui/charts';
+import { PieChart as DonutChart, seriesColor } from '@/components/ui/charts';
+import { toSegments } from '@/lib/chartSegments';
 import { CATEGORY_LABELS, type StageCategory } from '@/types/stage';
 import type { AnalyticsOverview } from '@/types/analytics';
 
 const CHART_HEIGHT = 240;
-const DONUT_SIZE = 168;
 
 // Sprint 12 (inbox-collaboration), requirements.md §7.3 #3, design.md §2/§23 (OQ-11 default):
 // grouped by stage `category`, not the removed fixed `status` union — the three category buckets
@@ -17,12 +17,6 @@ const DONUT_SIZE = 168;
 // name, so a literal label here is not the banned "hardcoded status label" requirements.md §7.1
 // forbids; a workspace with five custom stages still yields a coherent three-bucket donut.
 const SEGMENT_ORDER: StageCategory[] = ['new', 'in_progress', 'completed'];
-
-const SEGMENT_COLORS: Record<StageCategory, string> = {
-  new: CHART_COLOR.primary,
-  in_progress: CHART_COLOR.warning,
-  completed: CHART_COLOR.success,
-};
 
 interface StatusDistributionChartProps {
   overview?: AnalyticsOverview;
@@ -80,22 +74,19 @@ export function StatusDistributionChart({ overview, isLoading, isError = false, 
     <Card>
       <h3 className="bg-h5 text-(--text-primary) font-bold mb-4">Status Distribution</h3>
       <div className="flex flex-col items-center gap-6">
-        <Donut
-          size={DONUT_SIZE}
-          centre={total.toLocaleString()}
-          sub="Total"
-          segments={SEGMENT_ORDER.map((category) => ({
-            label: CATEGORY_LABELS[category],
-            value: categoryCounts[category],
-            color: SEGMENT_COLORS[category],
-          }))}
+        <DonutChart
+          donut
+          legend={false}
+          centreLabel={total.toLocaleString()}
+          ariaLabel="Status distribution"
+          data={toSegments(SEGMENT_ORDER.map((category) => ({ key: category, label: CATEGORY_LABELS[category], value: categoryCounts[category] })))}
         />
 
         <div className="flex flex-col gap-2.5 w-full">
-          {SEGMENT_ORDER.map((category) => (
+          {SEGMENT_ORDER.map((category, ci) => (
             <div key={category} className="flex items-center justify-between gap-6">
               <span className="flex items-center gap-2">
-                <span aria-hidden="true" className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: SEGMENT_COLORS[category] }} />
+                <span aria-hidden="true" className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: seriesColor(ci) }} />
                 <span className="bg-body-sm font-medium text-(--text-secondary)">{CATEGORY_LABELS[category]}</span>
               </span>
               <span className="flex items-center gap-3">

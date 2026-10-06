@@ -48,7 +48,7 @@ export function ChartDrawer({ isOpen, onClose, editing, ...rest }: ChartDrawerPr
     <Drawer
       isOpen={isOpen}
       onClose={onClose}
-      width={420}
+      width={640}
       title={editing ? 'Edit chart' : 'Add chart'}
       description="A chart answers one question about your responses. Click any part of it to see who answered that way."
     >

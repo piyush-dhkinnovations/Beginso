@@ -155,7 +155,7 @@ export const workspaceKeys = {
   detail: (id: string) => [...workspaceKeys.all, 'detail', id] as const,
   // The context discriminator is a key segment, not a filter param, so switching context can
   // never serve another context's cached rows even transiently (requirements.md §7.10).
-  forms: (context: FormsContext, params?: { search?: string; status?: string; page?: number; limit?: number; archived?: string }) =>
+  forms: (context: FormsContext, params?: { search?: string; status?: string; page?: number; limit?: number; archived?: string; pinned?: boolean }) =>
     context.type === 'personal'
       ? (['forms', 'personal', 'list', params] as const)
       : (['forms', 'workspace', context.workspaceId, 'list', params] as const),

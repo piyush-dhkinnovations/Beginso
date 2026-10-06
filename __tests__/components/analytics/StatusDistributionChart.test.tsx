@@ -42,22 +42,21 @@ describe('StatusDistributionChart', () => {
     const dots = Array.from(document.querySelectorAll('span[aria-hidden="true"].rounded-full')) as HTMLElement[];
     expect(dots.map((d) => d.style.backgroundColor)).toEqual([
       'var(--action-primary)',
-      'var(--warning)',
+      'var(--info)',
       'var(--success)',
     ]);
     expect(screen.getAllByText('42').length).toBeGreaterThan(0);
     expect(screen.getAllByText('36').length).toBeGreaterThan(0);
     expect(screen.getAllByText('50').length).toBeGreaterThan(0);
 
-    expect(screen.getByText('128')).toBeInTheDocument();
-    expect(screen.getByText('Total')).toBeInTheDocument();
+    expect(screen.getAllByText('128').length).toBeGreaterThan(0);
   });
 
   it('comma-formats a large center total (e.g. "1,284")', () => {
     const overview = mockAnalyticsOverview({ totalResponses: 1284, categoryCounts: { new: 184, in_progress: 326, completed: 774 } });
     render(<StatusDistributionChart overview={overview} isLoading={false} />);
 
-    expect(screen.getByText('1,284')).toBeInTheDocument();
+    expect(screen.getAllByText('1,284').length).toBeGreaterThan(0);
   });
 
   it('renders a legend with status name, count, and percentage, plus a matching sr-only table', () => {

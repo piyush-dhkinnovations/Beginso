@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Home, FileText, Inbox, BarChart3, Users, History, Shield, LayoutTemplate, Trash2, Settings, KeyRound } from 'lucide-react';
+import { Home, FileText, Inbox, BarChart3, Users, History, Shield, LayoutTemplate, Trash2, Settings, Download } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import {
@@ -14,6 +14,7 @@ import {
   canRestoreResponse,
   canViewAudit,
   canViewTemplates,
+  canViewExports,
 } from '@/lib/roles';
 import { responsesService } from '@/services/responses';
 import { responseKeys } from '@/lib/queryKeys';
@@ -68,6 +69,8 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }
     { label: 'Inbox', href: `${base}/inbox`, icon: Inbox, count: stats?.unread },
     // Insights (plan nav: Home · Inbox · Insights). Every role that can read the workspace can read analytics.
     { label: 'Insights', href: `${base}/insights`, icon: BarChart3 },
+    // Exports (CSV / PDF jobs) - its own page, not a tab inside Insights.
+    ...(canViewExports(role) ? [{ label: 'Exports', href: `${base}/exports`, icon: Download }] : []),
     // Sprint 13 (B6): templates live in the workspace now. Reviewers cannot create forms, so they get no
     // Templates item (same rule canViewTemplates already encodes for the role-filtered nav).
     ...(canViewTemplates(role) ? [{ label: 'Templates', href: `${base}/templates`, icon: LayoutTemplate }] : []),
@@ -76,8 +79,6 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }
     // closed on an undefined role exactly like "Team".
     { label: 'Activity', href: `${base}/activity`, icon: History },
     ...(canManageMembers(role) ? [{ label: 'Team', href: `${base}/team`, icon: Users }] : []),
-    // Read-only reference, every role (requirements.md 7.6); Team (manager-only) used to be its only link.
-    { label: 'Roles', href: `${base}/roles`, icon: KeyRound },
     ...(canViewAudit(role) ? [{ label: 'Audit Log', href: `${base}/audit`, icon: Shield }] : []),
     // Any role that can manage at least one settings tab; same fail-closed-on-undefined rule.
     ...(canManageWorkspaceSettings(role) || canManageTags(role) || canManageStages(role) || canManageScoring(role)

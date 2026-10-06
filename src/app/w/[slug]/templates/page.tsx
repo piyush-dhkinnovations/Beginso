@@ -1,5 +1,4 @@
 import { WorkspaceRoleGate } from '@/components/workspaces/WorkspaceRoleGate';
-import { canViewTemplates } from '@/lib/roles';
 import TemplatesPage from '@/app/(user)/templates/page';
 
 interface Props {
@@ -11,7 +10,7 @@ interface Props {
 export default async function WorkspaceTemplatesPage({ params }: Props) {
   const { slug } = await params;
   return (
-    <WorkspaceRoleGate slug={slug} allow={canViewTemplates} title="Templates">
+    <WorkspaceRoleGate slug={slug} allow="templates" title="Templates">
       <TemplatesPage scope={slug} />
     </WorkspaceRoleGate>
   );

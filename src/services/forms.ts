@@ -46,7 +46,7 @@ export const formsService = {
   // that confirms the override needs backend support, not a different frontend guess.
   getForms: (
     // `archived` (Sprint 13, CF5.6): 'false' (default) hides archived forms, 'only' shows just them.
-    params?: { search?: string; status?: string; page?: number; limit?: number; archived?: 'true' | 'false' | 'only' },
+    params?: { search?: string; status?: string; page?: number; limit?: number; archived?: 'true' | 'false' | 'only'; pinned?: boolean },
     context?: FormsContext
   ) =>
     axiosInstance
@@ -57,7 +57,15 @@ export const formsService = {
         },
         headers: context?.type === 'workspace' ? { 'x-workspace-slug': context.workspaceId } : context?.type === 'personal' ? workspaceHeaders('personal') : undefined,
       })
-      .then((r) => {
+      .then((res) => {
+        // Pinning is per-user; the backend sends `pinned` on every row, but never trust a missing flag.
+        const r = {
+          ...res,
+          data: {
+            ...res.data,
+            forms: (res.data?.forms ?? []).map((f) => ({ ...f, pinned: f.pinned === true, pinnedAt: f.pinned === true ? f.pinnedAt ?? null : null })),
+          },
+        };
         // Defence kept: backend honours the explicit 'personal' header (requirePermission -> explicitPersonalContext), but this filter stays as a cheap safety net.
         // Real bug found and fixed: the comment above already flagged this as unconfirmed — now
         // confirmed live. A brand-new user whose "default workspace" (the backend's own
@@ -160,6 +168,13 @@ export const formsService = {
   // Sprint 13 (CF2.6): a real submission through the real pipeline, flagged `isTest` — it counts nowhere.
   sendTestSubmission: (id: string, answers: TestSubmissionAnswer[]) =>
     axiosInstance.post<{ _id: string; isTest: true }>(`/api/forms/${id}/test-submissions`, { answers }).then((r) => r.data),
+
+  // Pins are per-user private bookmarks; both calls are idempotent. Errors carry the backend code
+  // (PIN_LIMIT 400, 409 archived/trashed) for usePinForm to turn into a message.
+  pinForm: (id: string) =>
+    axiosInstance.put(`/api/forms/${id}/pin`).then((r) => unwrapEnvelope<{ pinned?: boolean; pinnedAt?: string }>(r.data, 'data')),
+
+  unpinForm: (id: string) => axiosInstance.delete(`/api/forms/${id}/pin`).then(() => undefined),
 
   closeForm: (id: string) =>
     axiosInstance.post<{ _id: string; status: 'closed' }>(`/api/forms/${id}/close`).then(r => r.data),

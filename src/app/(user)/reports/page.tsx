@@ -1,7 +1,7 @@
-import { redirect } from 'next/navigation';
+'use client';
 
-// Sprint 14 (requirements 1.1): Reports folded into Insights as the Exports tab. The route stays as
-// a redirect so old bookmarks and links keep working.
+import { ReportsView } from '@/components/reports/ReportsView';
+
 export default function ReportsPage() {
-  redirect('/analytics?tab=exports');
+  return <ReportsView />;
 }

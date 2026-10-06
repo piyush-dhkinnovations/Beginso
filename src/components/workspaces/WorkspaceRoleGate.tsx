@@ -5,7 +5,11 @@ import { Lock } from 'lucide-react';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
 import { PageHeader, EmptyState } from '@/components/ui';
-import type { Role } from '@/types/workspace';
+import { canRestoreResponse, canViewTemplates } from '@/lib/roles';
+
+// Server pages can't pass functions to a client component, so they name the rule instead.
+const RULES = { templates: canViewTemplates, trash: canRestoreResponse } as const;
+export type WorkspaceGateRule = keyof typeof RULES;
 
 // Page-level counterpart of the sidebar's role-filtered nav (same predicates from lib/roles.ts).
 // Convenience only: the server enforces. Renders nothing until the caller's role is known, then
@@ -18,13 +22,13 @@ export function WorkspaceRoleGate({
   children,
 }: {
   slug: string;
-  allow: (role: Role | undefined) => boolean;
+  allow: WorkspaceGateRule;
   title: string;
   children: React.ReactNode;
 }) {
   const { data, isError } = useQuery({ queryKey: workspaceKeys.list(), queryFn: workspacesService.list });
   if (!data && !isError) return null;
-  if (data && !allow(data.find((w) => w.slug === slug)?.role)) {
+  if (data && !RULES[allow](data.find((w) => w.slug === slug)?.role)) {
     return (
       <div className="flex flex-col gap-4">
         <PageHeader title={title} />

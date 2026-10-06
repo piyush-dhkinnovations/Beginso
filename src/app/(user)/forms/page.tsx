@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink, LayoutDashboard, LayoutTemplate, Share2, PinOff, Archive, ArchiveRestore, Search } from 'lucide-react';
+import { Plus, Copy, FileText, Table2, Trash2, Edit2, BarChart2, MoreVertical, FolderSymlink, LayoutDashboard, LayoutTemplate, Share2, Pin, PinOff, Archive, ArchiveRestore, Search } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
@@ -29,6 +29,8 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { PaginationControls } from '@/components/responses/PaginationControls';
+import { PinButton } from '@/components/forms/PinButton';
+import { usePinForm } from '@/hooks/usePinForm';
 import { FormsManagerTabs, type FormsManagerTab } from '@/components/forms/FormsManagerTabs';
 import { FormsViewToggle } from '@/components/forms/FormsViewToggle';
 import { FormTile } from '@/components/forms/FormTile';
@@ -79,10 +81,10 @@ const formatUpdated = (iso: string) => {
   return `${d.getDate()} ${month} ${d.getFullYear()}, ${time}`;
 };
 
-// Tabs backed by the existing status filter (requirements.md §7.10) — Pinned/Archived have no
-// backing data yet (design.md §23) and fire no forms query at all.
+// Tabs backed by the forms list query (requirements.md §7.10). Pinned adds `pinned=true` (per-user).
 const TAB_STATUS: Partial<Record<FormsManagerTab, FormStatus | 'all'>> = {
   recent: 'all',
+  pinned: 'all',
   draft: 'draft',
   published: 'published',
   // Sprint 13 (CF5.6): Archived is a real list now (`?archived=only`); every status shows there.
@@ -180,6 +182,8 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
   const canArchive = context.type === 'personal' || canArchiveForm(currentRole);
   const canMakeTemplate = context.type === 'workspace' && canPublishTemplate(currentRole);
   const onArchivedTab = activeTab === 'archived';
+  const onPinnedTab = activeTab === 'pinned';
+  const pinMutation = usePinForm();
 
   // Selection is page/filter-scoped, not global — switching tabs, filtering, searching, or
   // paging changes which rows are even on screen, so a selection made before that change would
@@ -193,10 +197,10 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
     if (tabStatus) setStatus(tabStatus);
   };
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: workspaceKeys.forms(
       context,
-      { search: debouncedSearch, status, page, limit: pageSize, archived: onArchivedTab ? 'only' : undefined }
+      { search: debouncedSearch, status, page, limit: pageSize, archived: onArchivedTab ? 'only' : undefined, pinned: onPinnedTab ? true : undefined }
     ),
     queryFn: () =>
       formsService.getForms(
@@ -206,6 +210,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
           page,
           limit: pageSize,
           archived: onArchivedTab ? 'only' : undefined,
+          pinned: onPinnedTab ? true : undefined,
         },
         context
       ),
@@ -296,7 +301,11 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
     onSettled: () => setBulkDeleteConfirming(false),
   });
 
-  const rows = useMemo(() => sortForms(data?.forms ?? [], sort), [data, sort]);
+  const rows = useMemo(
+    // Pinned keeps the server order (most recently pinned first); the sort select is hidden there.
+    () => (onPinnedTab ? (data?.forms ?? []) : sortForms(data?.forms ?? [], sort)),
+    [data, sort, onPinnedTab]
+  );
   const maxResponses = Math.max(0, ...rows.map((form) => form.responseCount));
   const allOnPageSelected = rows.length > 0 && rows.every((form) => selectedIds.has(form._id));
   const someOnPageSelected = rows.some((form) => selectedIds.has(form._id)) && !allOnPageSelected;
@@ -329,6 +338,12 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
         icon: <BarChart2 className="bg-icon" />,
         onSelect: () => router.push(formHref(`/forms/${formId}/analytics`, context)),
       },
+      ...(onArchivedTab ? [] : [{
+        id: 'pin',
+        label: form.pinned ? 'Unpin' : 'Pin to top',
+        icon: form.pinned ? <PinOff className="bg-icon" /> : <Pin className="bg-icon" />,
+        onSelect: () => pinMutation.mutate({ id: formId, pin: !form.pinned }),
+      }]),
       {
         id: 'move',
         label: 'Move',
@@ -377,6 +392,11 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
         : []),
     ];
   };
+
+  // Archived forms cannot be pinned (backend 409), so no pin affordance on that tab.
+  const pinButton = (form: Form) => onArchivedTab ? null : (
+    <PinButton title={form.title} pinned={!!form.pinned} onToggle={() => pinMutation.mutate({ id: form._id, pin: !form.pinned })} />
+  );
 
   const rowMenu = (form: Form) => (
     <Menu trigger={<MoreVertical className="bg-icon" />} triggerLabel="More Options" items={buildMenuItems(form)} align="end" />
@@ -481,6 +501,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
           >
             <Edit2 className="bg-icon" />
           </Link>
+          {pinButton(form)}
           {rowMenu(form)}
         </div>
       ),
@@ -509,7 +530,25 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
       />
     ) : null;
 
-  const emptyFiltered = emptyArchived ?? (
+  const emptyPinned = onPinnedTab ? (
+    search ? (
+      <EmptyState illustration="no-results" icon={<Search />} title="No matching pinned forms" description="Try changing your search." />
+    ) : (
+      <EmptyState
+        illustration="empty-forms"
+        icon={<Pin />}
+        title="No pinned forms yet"
+        description="Pin the forms you open most so they are always one click away."
+        primaryAction={
+          <Button variant="primary" onClick={() => handleTabChange('recent')}>
+            Go to Recent
+          </Button>
+        }
+      />
+    )
+  ) : null;
+
+  const emptyFiltered = emptyPinned ?? emptyArchived ?? (
     <EmptyState
       illustration={search || status !== 'all' ? 'no-results' : 'empty-forms'}
       icon={<FileText />}
@@ -565,13 +604,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
         <>
           <FormsManagerTabs activeTab={activeTab} onChange={handleTabChange} />
 
-          {activeTab === 'pinned' ? (
-            <EmptyState
-              icon={<PinOff />}
-              title="Coming soon"
-              description="Pinning forms is not available yet."
-            />
-          ) : (
+          {(
             <>
               <div className="flex flex-wrap items-center gap-3">
                 <div className="w-full sm:max-w-sm">
@@ -609,14 +642,14 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
                 )}
                 <div className="ml-auto flex items-center gap-3">
                   <FormsViewToggle value={view} onChange={setView} />
-                  <div className="w-44">
+                  {!onPinnedTab && <div className="w-44">
                     <Select id="forms-sort" aria-label="Sort forms" value={sort} onChange={(event) => setSort(event.target.value as SortKey)}>
                       <option value="updated">Latest updated</option>
                       <option value="oldest">Oldest updated</option>
                       <option value="name">Name (A–Z)</option>
                       <option value="responses">Most responses</option>
                     </Select>
-                  </div>
+                  </div>}
                 </div>
               </div>
 
@@ -636,7 +669,9 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
               )}
 
               {error ? (
-                <Alert variant="error" title="Failed to load forms. Please refresh." />
+                <Alert variant="error" title="Failed to load forms.">
+                  <Button variant="secondary" size="small" className="mt-2" onClick={() => refetch()}>Retry</Button>
+                </Alert>
               ) : view === 'list' ? (
                 <Table
                   columns={columns}
@@ -661,7 +696,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
                       key={form._id}
                       form={form}
                       href={formHref(`/forms/${form._id}/overview`, context)}
-                      menu={rowMenu(form)}
+                      menu={<>{pinButton(form)}{rowMenu(form)}</>}
                       maxResponses={maxResponses}
                     />
                   ))}

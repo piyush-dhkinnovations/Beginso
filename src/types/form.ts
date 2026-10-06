@@ -145,6 +145,9 @@ export interface Form {
   myRole?: import('./workspace').Role;
   archivedAt?: string | null; // Backend contract to confirm (BE 0.8) — set = archived, never expires
   deletedAt?: string | null;  // Backend contract to confirm (BE 0.8) — set = in Trash
+  /** Per-user private bookmark: true when the CALLER pinned this form. GET /api/forms normalises it to a boolean. */
+  pinned?: boolean;
+  pinnedAt?: string | null;
   // Sprint 14 (BE 0.4) - source template link; null/absent for forms not created from a template.
   templateId?: string | null;
   templateCategory?: string | null;

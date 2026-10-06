@@ -1,7 +1,8 @@
 'use client';
 
 import { BarChart3 } from 'lucide-react';
-import { BarChart, ChartCard } from '@/components/ui/charts';
+import { BarsChart, ChartCard } from '@/components/ui/charts';
+import { toSegments } from '@/lib/chartSegments';
 import { Select } from '@/components/ui/Select';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { AnalyticsTrendPoint } from '@/types/analytics';
@@ -44,7 +45,7 @@ export function ResponsesOverTimeCard({ points, isLoading, bucket, onBucketChang
         <EmptyState icon={<BarChart3 />} title="No trend yet" description="Daily responses will chart here once forms start receiving submissions in this range." />
       ) : (
         <>
-          <BarChart data={data} height={210} ariaLabel="Responses over time" />
+          <BarsChart data={toSegments(data)} height={210} ariaLabel="Responses over time" />
           <table className="sr-only">
             <caption>Responses per {bucket}</caption>
             <thead>

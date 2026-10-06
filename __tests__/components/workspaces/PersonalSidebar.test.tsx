@@ -73,10 +73,10 @@ describe('PersonalSidebar', () => {
     expect(screen.getByRole('button', { name: /Switch context, currently Personal/ })).toBeInTheDocument();
   });
 
-  it('renders Shared with me as a permanent item, scoped to /shared; My Submissions remains a deferred, tracked gap', () => {
+  it('renders Shared with me as a permanent item, and My Submissions as an always-visible item', () => {
     renderSidebar();
     expect(screen.getByRole('link', { name: 'Shared with me' })).toHaveAttribute('href', '/shared');
-    expect(screen.queryByText('My Submissions')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'My Submissions' })).toHaveAttribute('href', '/my-submissions');
   });
 
   it('marks Shared with me active on /shared', () => {

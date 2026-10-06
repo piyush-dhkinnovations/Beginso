@@ -12,6 +12,7 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import { DateRangeFilter } from './DateRangeFilter';
+import { FilterPopover } from './FilterPopover';
 import { AnalyticsStatCards } from './AnalyticsStatCards';
 import { TrendChart } from './TrendChart';
 import { StatusDistributionChart } from './StatusDistributionChart';
@@ -22,12 +23,10 @@ import { ResponsesOverTimeCard, type TrendBucket } from './ResponsesOverTimeCard
 import { WorkspaceSummaryCards } from './WorkspaceSummaryCards';
 import { Select } from '@/components/ui/Select';
 import { Checkbox } from '@/components/ui/Checkbox';
-import { InsightsTabs, useInsightsTab } from './InsightsTabs';
 import { TemplateDashboard } from './TemplateDashboard';
 import { CustomChartsSection } from './CustomChartsSection';
 import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
 import { canEditCharts } from '@/lib/roles';
-import { ReportsView } from '@/components/reports/ReportsView';
 import { useAnalyticsTrend } from '@/hooks/useAnalyticsTrend';
 import { formsService } from '@/services/forms';
 import { useFormScope } from '@/hooks/useFormScope';
@@ -69,8 +68,6 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
   // Sprint 14 (requirements 1.3): "Compare to previous period" - drives every delta line. Defaults on
   // (that is what the page already showed); off skips the previous-period queries entirely.
   const [compare, setCompare] = useState(true);
-  const { tab } = useInsightsTab(scope);
-  const showExports = !formId && tab === 'exports';
 
   const rawPage = Number(searchParams.get('page'));
   const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
@@ -113,7 +110,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
   const formsSummaryQuery = useQuery({
     queryKey: analyticsKeys.formsSummary(range, page, scope),
     queryFn: () => analyticsService.getFormsSummary({ from, to, page, limit: FORMS_SUMMARY_LIMIT }, scope),
-    enabled: !formId && !showExports,
+    enabled: !formId,
   });
 
   // "vs previous period" for the workspace summary cards and the table's Change column — no
@@ -133,7 +130,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
   const previousFormsSummaryQuery = useQuery({
     queryKey: analyticsKeys.formsSummary(previousRange, 1, scope),
     queryFn: () => analyticsService.getFormsSummary({ from: previousRange.from, to: previousRange.to, page: 1, limit: FORMS_SUMMARY_LIMIT }, scope),
-    enabled: !formId && hasPreviousRange && !showExports,
+    enabled: !formId && hasPreviousRange,
   });
 
   // design.md §17: "no forms yet" and "no responses in this range" are different states - the second
@@ -223,6 +220,39 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
     );
   }
 
+  const presetLabel = { '7d': 'Last 7 days', '30d': 'Last 30 days', '90d': 'Last 90 days', all: 'All time' }[preset as '7d' | '30d' | '90d' | 'all'] ?? 'Custom range';
+  const filterPopover = (
+    <FilterPopover summary={presetLabel}>
+      <div className="flex flex-col gap-2">
+        <span className="bg-overline text-(--text-muted)">Date range</span>
+        <DateRangeFilter part="presets" />
+        <DateRangeFilter part="range" />
+      </div>
+      <Checkbox
+        id="analytics-compare"
+        label="Compare to previous period"
+        checked={compare}
+        onChange={(e) => setCompare(e.target.checked)}
+        disabled={isAllTime}
+      />
+      {!formId && currentForms.length > 0 && (
+          <div className="w-48">
+            <Select
+              id="analytics-jump-form"
+              aria-label="Open a form's analytics"
+              value=""
+              onChange={(e) => e.target.value && router.push(`/forms/${e.target.value}/analytics${isWorkspaceScope ? `?ws=${scope}` : ''}`)}
+            >
+              <option value="">All forms</option>
+              {currentForms.map((f) => (
+                <option key={f._id} value={f._id}>{f.title}</option>
+              ))}
+            </Select>
+          </div>
+        )}
+    </FilterPopover>
+  );
+
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
       <PageHeader
@@ -230,9 +260,9 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
         description={formId ? `Analytics · ${form?.title ?? ''}` : 'See how every form in your workspace is performing.'}
         actionsAlign="center"
         actions={
-          isFirstRun || showExports ? undefined : (
+          isFirstRun ? undefined : (
             <div className="flex flex-wrap items-center gap-3">
-              <DateRangeFilter part="range" />
+              {filterPopover}
               {formId && canAddChart && (
                 <Button size="small" onClick={() => setAddChartOpen(true)}>
                   <Plus size={14} className="mr-1.5" aria-hidden="true" />
@@ -245,13 +275,8 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
       />
 
       <OfflineBanner />
-      {!formId && <InsightsTabs scope={scope} />}
 
-      {showExports ? (
-        <div role="tabpanel" id="tabpanel-exports" aria-labelledby="tab-exports" className="flex flex-col gap-4">
-          <ReportsView scope={scope} embedded />
-        </div>
-      ) : isFirstRun ? (
+      {isFirstRun ? (
         <EmptyState
           illustration="empty-reports"
           icon={<FileText />}
@@ -271,32 +296,6 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
         />
       ) : (
         <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <DateRangeFilter part="presets" />
-        <Checkbox
-          id="analytics-compare"
-          label="Compare to previous period"
-          checked={compare}
-          onChange={(e) => setCompare(e.target.checked)}
-          disabled={isAllTime}
-        />
-        {!formId && currentForms.length > 0 && (
-          <div className="w-48">
-            <Select
-              id="analytics-jump-form"
-              aria-label="Open a form's analytics"
-              value=""
-              onChange={(e) => e.target.value && router.push(`/forms/${e.target.value}/analytics${isWorkspaceScope ? `?ws=${scope}` : ''}`)}
-            >
-              <option value="">All forms</option>
-              {currentForms.map((f) => (
-                <option key={f._id} value={f._id}>{f.title}</option>
-              ))}
-            </Select>
-          </div>
-        )}
-      </div>
-
       {!formId && (
         <WorkspaceSummaryCards
           totalResponses={workspaceTotalResponses}

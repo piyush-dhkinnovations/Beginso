@@ -138,7 +138,8 @@ export const responsesService = {
   update: (id: string, payload: UpdateResponsePayload, scope?: string) =>
     axiosInstance
       .patch<UpdateResponseEnvelope>(`/api/responses/${id}`, payload, { headers: workspaceHeaders(scope) })
-      .then((r) => r.data.response),
+      // The mutation response carries the raw answers map (label AND field-id keys) - same clean-up as reads.
+      .then((r) => (r.data.response?.answers ? { ...r.data.response, answers: cleanAnswers(r.data.response.answers) } : r.data.response)),
 
   // Sprint 13 (A5.2): "Mark as reviewed" — clears the Edited-after-review flag.
   clearEditedAfterReview: (id: string, scope?: string) =>

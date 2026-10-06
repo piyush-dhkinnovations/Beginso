@@ -16,6 +16,8 @@ import { formatRelativeTime } from '@/lib/formatters';
 import { useToast } from '@/components/ui/Toast';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
+import { PinButton } from '@/components/forms/PinButton';
+import { usePinForm } from '@/hooks/usePinForm';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
@@ -45,6 +47,7 @@ function firstAnswer(response: IResponse): string {
 export default function FormOverviewPage() {
   const { id: formId } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const pinMutation = usePinForm();
   const [isAccessOpen, setIsAccessOpen] = useState(false);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
 
@@ -170,6 +173,7 @@ export default function FormOverviewPage() {
         }
         actions={
           <>
+            <PinButton title={form.title} pinned={!!form.pinned} onToggle={() => pinMutation.mutate({ id: formId, pin: !form.pinned })} />
             <Link href={`/forms/${formId}/preview`}>
               <Button variant="secondary">Preview</Button>
             </Link>

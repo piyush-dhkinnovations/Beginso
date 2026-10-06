@@ -7,7 +7,7 @@ export function useWidth(fallback = 480): [(node: HTMLElement | null) => void, n
   const [width, setWidth] = useState(fallback);
   const ref = useCallback((node: HTMLElement | null) => {
     if (!node) return;
-    const measure = () => setWidth(Math.max(Math.round(node.getBoundingClientRect().width), 160));
+    const measure = () => setWidth(Math.max(Math.round(node.clientWidth), 160));
     measure();
     if (typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(measure);

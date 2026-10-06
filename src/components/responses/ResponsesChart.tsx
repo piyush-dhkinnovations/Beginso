@@ -7,7 +7,8 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { BarChart, CHART_COLOR, DonutWithLegend } from '@/components/ui/charts';
+import { BarsChart, PieChart as DonutChart } from '@/components/ui/charts';
+import { toSegments } from '@/lib/chartSegments';
 import { fetchAllResponses } from '@/lib/fetchAllResponses';
 import { responseKeys } from '@/lib/queryKeys';
 import type { ResponseFilters, ResponseStats } from '@/types/response';
@@ -46,14 +47,6 @@ function dailyVolume(items: { submittedAt: string }[]): { date: string; count: n
   });
   return [...counts.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, count]) => ({ date, count }));
 }
-
-const STAGE_COLORS = [
-  CHART_COLOR.primary,
-  CHART_COLOR.success,
-  CHART_COLOR.warning,
-  CHART_COLOR.soft,
-  CHART_COLOR.error,
-];
 
 /**
  * Sprint 12 (inbox-collaboration), requirements.md §7.4 (4.1), design.md §6/§21 (task 3.4). Two
@@ -105,8 +98,8 @@ export function ResponsesChart({ scope, formId, filters, stats, statsLoading, st
           <EmptyState icon={<BarChart3 />} title="No responses in this range" description="Try a wider date range to see submission volume." />
         ) : (
           <>
-            <BarChart
-              data={volume.map((v) => ({ label: v.date.slice(5), value: v.count }))}
+            <BarsChart
+              data={toSegments(volume.map((v) => ({ key: v.date, label: v.date.slice(5), value: v.count })))}
               height={CHART_HEIGHT}
               ariaLabel="Daily submissions volume"
             />
@@ -150,8 +143,11 @@ export function ResponsesChart({ scope, formId, filters, stats, statsLoading, st
           <EmptyState icon={<PieChartIcon />} title="No responses yet" description="Responses will appear here once your form starts receiving submissions." />
         ) : (
           <>
-            <DonutWithLegend
-              segments={stats.byStage.map((s, i) => ({ label: s.name, value: s.count, color: STAGE_COLORS[i % STAGE_COLORS.length] }))}
+            <DonutChart
+              donut
+              data={toSegments(stats.byStage.map((s) => ({ key: s.stageId, label: s.name, value: s.count })))}
+              ariaLabel="Stage distribution"
+              centreLabel={String(total)}
             />
             <table className="sr-only">
               <caption>Stage distribution</caption>

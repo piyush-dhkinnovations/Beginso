@@ -51,7 +51,7 @@ describe('ResponsesChart', () => {
   it('renders both charts with their sr-only data-table alternative', async () => {
     renderChart();
 
-    await waitFor(() => expect(screen.getByRole('img', { name: 'Daily submissions volume' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('group', { name: 'Daily submissions volume' })).toBeInTheDocument());
 
     const tables = document.querySelectorAll('table.sr-only');
     expect(tables).toHaveLength(2);
@@ -69,6 +69,6 @@ describe('ResponsesChart', () => {
     renderChart({ stats: undefined, statsError: true, onRetryStats });
 
     expect(screen.getByText('Unable to load stage distribution')).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByRole('img', { name: 'Daily submissions volume' })).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('group', { name: 'Daily submissions volume' })).toBeInTheDocument());
   });
 });

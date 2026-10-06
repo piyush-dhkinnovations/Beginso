@@ -187,15 +187,17 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
     expect(screen.queryByRole('tab', { name: 'Shared with me' })).not.toBeInTheDocument();
   });
 
-  it('switching to the Pinned tab shows a placeholder and fires no extra forms query', async () => {
+  it('switching to the Pinned tab queries pinned=true and shows the pinned empty state', async () => {
     mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
     renderPage();
     await screen.findByText('Form One');
+    mockGetForms.mockClear();
+    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
 
     await userEvent.click(screen.getByRole('tab', { name: 'Pinned' }));
 
-    expect(await screen.findByText('Coming soon')).toBeInTheDocument();
-    expect(mockGetForms).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText('No pinned forms yet')).toBeInTheDocument();
+    expect(mockGetForms).toHaveBeenCalledWith(expect.objectContaining({ pinned: true }), WORKSPACE_CONTEXT);
   });
 
   it('switching to the Draft tab filters by status and resets the page', async () => {
