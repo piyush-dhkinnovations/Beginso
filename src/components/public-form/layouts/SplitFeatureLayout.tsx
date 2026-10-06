@@ -3,7 +3,7 @@ import { Backdrop, DEFAULT_PRIMARY, type LayoutFrameProps } from './shared';
 
 // Split Feature: brand panel beside the form. Below 768 the panel becomes a header above the form;
 // below 480 it is hidden entirely (the form title is already inside the form).
-export function SplitFeatureLayout({ branding, title, previewMode, children }: LayoutFrameProps) {
+export function SplitFeatureLayout({ branding, title, previewMode, hideCover, children }: LayoutFrameProps) {
   const { primaryColor = DEFAULT_PRIMARY, coverImageUrl, logoUrl } = branding;
   return (
     <Backdrop previewMode={previewMode}>
@@ -16,7 +16,7 @@ export function SplitFeatureLayout({ branding, title, previewMode, children }: L
           className="order-first relative flex flex-col justify-end gap-3 p-6 text-white md:order-1 md:col-span-2 md:min-h-96 max-[480px]:hidden"
           style={{ backgroundColor: primaryColor }}
         >
-          {coverImageUrl && (
+          {coverImageUrl && !hideCover && (
             <img src={coverImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />
           )}
           <div className="relative flex items-center gap-3">

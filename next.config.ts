@@ -78,6 +78,14 @@ const framePreviewHeaders = securityHeaders.map((h) =>
       : h
 );
 
+// Public form routes (/f/*) are the one place the product WANTS to be framed: that is what the embed feature is.
+// Any origin may frame them (customers' sites are unknowable), and only them: CSP frame-ancestors is widened and
+// X-Frame-Options (which cannot express "any origin") is dropped. The form posts nothing sensitive to its embedder
+// and reveals its own origin only through the handshake in components/public-form/EmbedBridge.
+const publicFormHeaders = securityHeaders
+  .filter((h) => h.key !== "X-Frame-Options")
+  .map((h) => (h.key === "Content-Security-Policy" ? { ...h, value: h.value.replace("frame-ancestors 'none'", "frame-ancestors *") } : h));
+
 const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   // Default bottom-left position sits directly on top of the mobile nav drawer, which also
@@ -93,7 +101,8 @@ const nextConfig: NextConfig = {
       // Sprint 13: the form preview and the layout gallery embed this same-origin route in an
       // <iframe> (components/preview/PreviewFrame). Same narrow carve-out, same reasoning.
       { source: "/forms/:id/preview", headers: framePreviewHeaders },
-      { source: "/((?!dev/ui/frame$)(?!forms/[^/]+/preview$)(?!r/).*)", headers: securityHeaders },
+      { source: "/f/:path*", headers: publicFormHeaders },
+      { source: "/((?!dev/ui/frame$)(?!forms/[^/]+/preview$)(?!r/)(?!f/).*)", headers: securityHeaders },
     ];
   },
 };

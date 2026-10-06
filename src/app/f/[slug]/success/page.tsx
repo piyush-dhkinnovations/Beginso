@@ -5,14 +5,19 @@ import Link from 'next/link';
 
 interface Props {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ title?: string; message?: string }>;
+  searchParams: Promise<{ title?: string; message?: string; embed?: string; theme?: string }>;
 }
 
 export const metadata: Metadata = { title: 'Thank you!' };
 
 export default async function SuccessPage({ params, searchParams }: Props) {
   const { slug } = await params;
-  const { title, message } = await searchParams;
+  const { title, message, embed, theme } = await searchParams;
+  // Keep the embed frame's options when starting over inside it.
+  const carried = new URLSearchParams();
+  if (embed === '1') carried.set('embed', '1');
+  if (theme === 'dark' || theme === 'auto') carried.set('theme', theme);
+  const again = carried.size ? `/f/${slug}?${carried.toString()}` : `/f/${slug}`;
   const formTitle = title ? decodeURIComponent(title) : null;
   const successMessage = message
     ? decodeURIComponent(message)
@@ -32,7 +37,7 @@ export default async function SuccessPage({ params, searchParams }: Props) {
           <p className="bg-body-sm text-(--text-disabled) mb-6">{formTitle}</p>
         )}
         <Link
-          href={`/f/${slug}`}
+          href={again}
           className="bg-body-sm text-(--text-link) hover:text-(--accent-soft-text) underline"
         >
           Submit another response

@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/Button';
 import { normaliseLayout } from '@/lib/layoutPresets';
 import { brandButtonStyle, brandShowsProgress } from '@/lib/formTheme';
 import { LAYOUT_COMPONENTS, fieldsClassFor } from './layouts';
+import { parseEmbedOptions, carryEmbedSearch } from '@/lib/embed/embedParams';
+import { resolvePrefill } from '@/lib/embed/prefill';
 import { FormProgress } from './FormProgress';
 import { ReviewStep } from './ReviewStep';
 import { EmailStep } from './EmailStep';
@@ -41,6 +43,8 @@ interface PublicFormShellProps {
    * normal Submit still submits nothing. Rejects with a message for a role that may not send one.
    */
   onTestSubmit?: (answers: Answer[]) => Promise<void>;
+  /** The request's query string (embed options: cover, progress, title, theme, prefill[...]). Read on the server, so SSR and hydration agree. */
+  search?: string;
 }
 
 // long_text/choice/file fields need room to wrap or list options — always full-width,
@@ -61,8 +65,10 @@ const RENDERER_MAP: Record<Exclude<FormField['type'], 'file_upload'>, ComponentT
   checkbox: CheckboxRenderer,
 };
 
-export function PublicFormShell({ schema, slug, previewMode, onTestSubmit }: PublicFormShellProps) {
+export function PublicFormShell({ schema, slug, previewMode: previewProp, onTestSubmit, search = '' }: PublicFormShellProps) {
   const router = useRouter();
+  const embedOpts = useMemo(() => parseEmbedOptions(search), [search]);
+  const previewMode = previewProp || embedOpts.preview;
   const sortedPages = useMemo(() => [...schema.pages].sort((a, b) => a.order - b.order), [schema.pages]);
   const layout = normaliseLayout(schema.settings.layout);
   const isGuided = layout === 'guided';
@@ -164,6 +170,14 @@ export function PublicFormShell({ schema, slug, previewMode, onTestSubmit }: Pub
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- restore-on-mount only, deliberately not re-run on every field change
   }, [slug]);
+
+  // Embed/link pre-fill (?prefill[key]=value): only fields that exist, never files, values validated per type, never
+  // submitted automatically. Runs after the draft restore so an explicit link wins over a stale draft.
+  useEffect(() => {
+    const values = resolvePrefill(schema.fields, embedOpts.prefill);
+    for (const [fieldId, value] of Object.entries(values)) methods.setValue(fieldId, value, { shouldDirty: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per mount/link, not on every field change
+  }, [slug, search]);
 
   // Save the draft after a short pause in typing — every keystroke would be wasteful.
   useEffect(() => {
@@ -292,7 +306,8 @@ export function PublicFormShell({ schema, slug, previewMode, onTestSubmit }: Pub
       if (result.ok) {
         submittedRef.current = true;
         clearDraft(slug);
-        const params = new URLSearchParams({ title: schema.title });
+        const params = new URLSearchParams(carryEmbedSearch(search));
+        params.set('title', schema.title);
         if (schema.settings.successMessage) params.set('message', schema.settings.successMessage);
         router.push(`/f/${slug}/success?${params.toString()}`);
         return;
@@ -430,8 +445,10 @@ export function PublicFormShell({ schema, slug, previewMode, onTestSubmit }: Pub
   const frameProps = {
     layout,
     branding: schema.branding,
-    title: schema.title,
+    title: embedOpts.hideTitle ? '' : schema.title,
     previewMode,
+    hideCover: !embedOpts.cover,
+    hideProgress: !embedOpts.progress,
     stepNames: sortedPages.map((p) => p.title ?? ''),
     currentPage: currentPageIndex,
     question: guidedQuestion,
@@ -509,11 +526,11 @@ export function PublicFormShell({ schema, slug, previewMode, onTestSubmit }: Pub
         <form onSubmit={handleFormSubmit} noValidate className={schema.branding.logoUrl ? 'p-6 pt-8' : 'p-6'}>
           {!showReview && (
             <>
-            {layout !== 'steps' && !isGuided && brandShowsProgress(schema.branding) && (
+            {layout !== 'steps' && !isGuided && brandShowsProgress(schema.branding) && embedOpts.progress && (
               <FormProgress currentPage={currentPageIndex + 1} totalPages={totalPages} />
             )}
 
-            <h1 className="bg-h3 text-(--text-primary)">{currentPage?.title ?? schema.title}</h1>
+            <h1 className={embedOpts.hideTitle ? 'sr-only' : 'bg-h3 text-(--text-primary)'}>{currentPage?.title ?? schema.title}</h1>
             {currentPage?.description && <p className="bg-body text-(--text-muted) mt-1">{currentPage.description}</p>}
 
             </>

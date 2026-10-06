@@ -9,6 +9,7 @@ import { AlertCircle } from 'lucide-react';
 
 interface Props {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export const viewport: Viewport = {
@@ -31,8 +32,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function PublicFormPage({ params }: Props) {
+export default async function PublicFormPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  // Embed options (cover, progress, title, theme, prefill[...]) travel in the query string; the shell parses them.
+  const query = new URLSearchParams();
+  for (const [k, v] of Object.entries(await searchParams)) for (const one of Array.isArray(v) ? v : v === undefined ? [] : [v]) query.append(k, one);
+  const search = query.toString();
   let result: Awaited<ReturnType<typeof publicFormService.getFormSchema>>;
   try {
     result = await publicFormService.getFormSchema(slug);
@@ -69,5 +74,5 @@ export default async function PublicFormPage({ params }: Props) {
     return <FormUnavailable userNote={schema ? schema.settings.successMessage : userNote} />;
   }
 
-  return <PublicFormShell schema={schema} slug={slug} />;
+  return <PublicFormShell schema={schema} slug={slug} search={search} />;
 }

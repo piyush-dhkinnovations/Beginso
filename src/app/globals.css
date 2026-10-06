@@ -416,3 +416,7 @@
 .brand-icon-dark { display: none; }
 [data-theme="dark"] .brand-icon-light { display: none; }
 [data-theme="dark"] .brand-icon-dark { display: inline-block; }
+
+/* Embedded public form (?embed=1): the page must size to its CONTENT so the embedder can auto-height it; a
+   full-viewport min-height would pin the frame at its current height and never let it shrink. Unlayered on purpose. */
+[data-form-theme][data-embed] .min-h-screen { min-height: 0; }

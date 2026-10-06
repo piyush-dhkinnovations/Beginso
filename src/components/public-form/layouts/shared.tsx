@@ -16,6 +16,10 @@ export interface LayoutFrameProps {
   currentPage: number;
   /** Guided only — question N of M across the whole form. */
   question?: { current: number; total: number };
+  /** Embed ?cover=0: no banner / cover image. */
+  hideCover?: boolean;
+  /** Embed ?progress=0: no step list / question counter. */
+  hideProgress?: boolean;
   children: ReactNode;
 }
 

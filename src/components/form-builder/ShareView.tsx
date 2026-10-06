@@ -19,14 +19,14 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import type { BreadcrumbItem } from '@/components/ui/Breadcrumb';
+import { EmbedStudio } from './embed/EmbedStudio';
 
 const STATUS_LABEL = { draft: 'Draft', published: 'Published', closed: 'Closed' } as const;
 
-// Sprint 13 (CF6.1). Share & Embed is the single home for ongoing distribution. It is the editor's fourth tab
-// (after Settings), per the feature list's CF2.1 — the earlier standalone page (wireframe 34) now redirects here. Publishing itself is owned by the publish flow, not
-// this page. Out of this sprint on purpose (OQ-8): editable embed parameters (CF6.2) and "Share as a
-// copy" (CF6.3), both of which the wireframe draws but no sprint plans — the embed snippet below is
-// the existing fixed one. "Generate new link" lands with the publish flow (needs BE 0.4).
+// Sprint 13 (CF6.1) + CF6.2a. Share & Embed is the single home for ongoing distribution. It is the editor's fourth tab
+// (after Settings), per the feature list's CF2.1 - the earlier standalone page (wireframe 34) now redirects here. Publishing itself is owned by the publish flow, not
+// this page. The embed builder (five methods, live snippet and preview) lives in ./embed; "Share as a copy" (CF6.3) is still not planned,
+// and "Generate new link" lands with the publish flow (needs BE 0.4).
 export interface ShareViewProps {
   formId: string;
   /** Inside the builder's Share tab: no page header/breadcrumb (the tab is the heading). */
@@ -60,7 +60,9 @@ export function ShareView({ formId, embedded = false, onOpenPublish }: ShareView
 
   const isLive = form?.status === 'published' && !!form.slug;
   const publicUrl = isLive ? `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/f/${form.slug}` : '';
-  const embedCode = `<iframe src="${publicUrl}" width="100%" height="600" frameborder="0" style="border:none;border-radius:8px;"></iframe>`;
+  // The embed snippet needs an ABSOLUTE origin (it is pasted into another site). Same env as the public link, with the
+  // page's own origin as the fallback so a missing env var never emits a relative address.
+  const appOrigin = (process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/$/, '');
 
   useEffect(() => {
     if (!publicUrl) return;
@@ -182,8 +184,8 @@ export function ShareView({ formId, embedded = false, onOpenPublish }: ShareView
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="flex flex-col gap-3">
+      <div className="flex flex-col gap-6">
+        <Card className="flex flex-col gap-3 lg:max-w-160">
           <h2 className="bg-h5 font-semibold">Public link</h2>
           <div className="flex items-end gap-2">
             <div className="min-w-0 flex-1">
@@ -227,16 +229,12 @@ export function ShareView({ formId, embedded = false, onOpenPublish }: ShareView
           )}
         </Card>
 
-        <Card className="flex flex-col gap-3">
-          <h2 className="bg-h5 font-semibold">Embed code</h2>
-          <p className="bg-body-sm text-(--text-muted)">Paste this into your website to embed the form.</p>
-          <pre className="rounded-md border-2 border-(--border-default) bg-(--bg-subtle) p-3 bg-body-sm font-mono overflow-x-auto whitespace-pre-wrap break-all">
-            {isLive ? embedCode : 'Publish the form to get its embed code.'}
-          </pre>
-          <Button type="button" variant="secondary" onClick={() => void copy(embedCode, 'Embed code copied.')} disabled={!isLive} className="self-start min-h-11">
-            <Copy size={16} aria-hidden="true" /> Copy embed code
-          </Button>
-        </Card>
+        <EmbedStudio
+          ctx={isLive ? { origin: appOrigin, slug: form.slug!, formTitle: form.title } : null}
+          fields={form.fields}
+          pages={form.pages}
+          onCopy={(text, message) => void copy(text, message)}
+        />
       </div>
     </div>
   );

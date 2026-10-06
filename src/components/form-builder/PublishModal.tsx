@@ -54,7 +54,7 @@ function ReviewRow({ label, value, onChange, changeLabel }: { label: string; val
     <div className="flex items-start justify-between gap-3 px-4 py-3">
       <div className="min-w-0">
         <p className="bg-caption text-(--text-muted)">{label}</p>
-        <div className="bg-body font-semibold text-(--text-primary) break-words">{value}</div>
+        <div className="bg-body font-semibold text-(--text-primary) wrap-break-word">{value}</div>
       </div>
       {onChange && (
         <Button type="button" variant="secondary" size="small" className="shrink-0 min-h-11" onClick={onChange} aria-label={changeLabel}>
