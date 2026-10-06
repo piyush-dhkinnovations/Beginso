@@ -141,6 +141,8 @@ export interface Form {
   createdAt: string;         // ISO 8601
   updatedAt: string;         // ISO 8601
   publishedAt?: string;      // ISO 8601
+  /** The caller's own role on this form (per-form grant, workspace role, or owner). Set by GET /api/forms/:id. */
+  myRole?: import('./workspace').Role;
   archivedAt?: string | null; // Backend contract to confirm (BE 0.8) — set = archived, never expires
   deletedAt?: string | null;  // Backend contract to confirm (BE 0.8) — set = in Trash
   // Sprint 14 (BE 0.4) - source template link; null/absent for forms not created from a template.

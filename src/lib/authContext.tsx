@@ -107,6 +107,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // session has been confirmed. Protected pages never need Firebase tokens.
         await signOut(auth).catch(() => { });
         dispatch({ type: 'LOGIN', payload: { user: data.user } });
+        // Session-restore half of the onboarding gate (login() has the other half). Only authenticated
+        // app routes are gated; /onboarding itself, auth pages, /f, /r, /invite stay untouched. `=== false`
+        // so an absent field (older accounts) counts as onboarded.
+        const path = window.location.pathname;
+        if (data.user.onboardingCompleted === false && path !== '/onboarding' && matchesRoute(path, PROTECTED_PATHS)) {
+          router.replace('/onboarding');
+        }
       } catch (error: unknown) {
         if (!['/verify-email', '/verification-code'].includes(window.location.pathname)) {
           await signOut(auth).catch(() => { });
@@ -148,14 +155,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error;
     }
     dispatch({ type: 'LOGIN', payload: { user: data.user } });
-    // Sprint 9 task 3.4: an internal `redirectTo` (e.g. back to an invite link, §7.5.1) is
-    // honored instead of the default destination. Design.md §9 describes this as never
-    // overriding an "existing onboarding-incomplete branch" — no such branch exists in this
-    // function today (onboardingCompleted is fetched above but nothing here has ever redirected
-    // on it; confirmed by reading this file and grepping the app for any /onboarding redirect).
-    // Not building that branch here — it's a pre-existing gap outside this task's scope, flagged
-    // separately rather than invented as a side effect of adding redirectTo.
-    const destination = redirectTo ?? '/dashboard';
+    // An explicit internal `redirectTo` (invite link, public-form return) always wins so those flows
+    // are never interrupted; otherwise an onboarding-incomplete user lands on /onboarding.
+    const destination = redirectTo ?? (data.user.onboardingCompleted === false ? '/onboarding' : '/dashboard');
     // Hard navigation, not router.push: proxy.ts gates protected routes on the HttpOnly session
     // cookie written by the same-origin BFF. A soft client-side transition
     // can reuse a Router Cache entry for the destination from before the cookie existed and

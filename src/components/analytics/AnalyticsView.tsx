@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, FileText, LockKeyhole } from 'lucide-react';
 import { isAxiosError } from 'axios';
+import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
@@ -226,6 +227,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
         actions={isFirstRun || showExports ? undefined : <DateRangeFilter part="range" />}
       />
 
+      <OfflineBanner />
       {!formId && <InsightsTabs scope={scope} />}
 
       {showExports ? (

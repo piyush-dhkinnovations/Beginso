@@ -39,7 +39,7 @@ import { PublishModal } from '@/components/form-builder/PublishModal';
 import { CloseFormModal } from '@/components/form-builder/CloseFormModal';
 import { LeaveBuilderModal } from '@/components/form-builder/LeaveBuilderModal';
 import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
-import { canSeeShare, canPublishForm } from '@/lib/roles';
+import { canSeeShare, canPublishForm, hasCapability } from '@/lib/roles';
 import type { FieldType, Form, FormBranding, FormField, FormPage, FormSettings, FormStatus } from '@/types/form';
 
 // Shared by handleDragOver (visual indicator) and handleDragEnd (actual insert)
@@ -158,7 +158,12 @@ export default function BuilderPageShell() {
     : undefined;
   const formsListHref = formWorkspaceSlug ? `/w/${formWorkspaceSlug}/forms` : '/forms';
   // Personal form → the caller is its owner; workspace form → their membership role (unknown = no link).
-  const formRole = form?.workspaceId ? workspaces.find((ws) => ws.id === form.workspaceId)?.role : 'owner';
+  const formRole = form?.myRole ?? (form?.workspaceId ? workspaces.find((ws) => ws.id === form.workspaceId)?.role : 'owner');
+
+  // A role that cannot edit has no business in the builder (the server rejects its writes anyway): send it to the read-only Overview.
+  useEffect(() => {
+    if (form?.myRole && !hasCapability(form.myRole, 'forms:edit')) router.replace(`/forms/${id}/overview`);
+  }, [form?.myRole, id, router]);
 
   // Init builderStore state when query returns data. Guarded to run once per
   // form id — not on every query-cache update. Publish/close success handlers
@@ -648,7 +653,7 @@ export default function BuilderPageShell() {
                     onAddPage={addPage}
                     onDeletePage={deletePage}
                   />
-                  <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
+                  <div className="flex flex-1 min-h-0 min-w-0 flex-col overflow-hidden">
                   <PageSwitcher pages={pages} activePageId={activePageId} onSelectPage={setActivePageId} />
                   <Canvas
                     fields={fields}

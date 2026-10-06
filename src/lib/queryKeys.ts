@@ -133,6 +133,7 @@ export const notificationKeys = {
   list: (scope: string, filter: 'all' | 'unread' | 'mentions') => [...notificationKeys.all, 'list', scope, filter] as const,
   lists: (scope: string) => [...notificationKeys.all, 'list', scope] as const,
   unread: (scope: string) => [...notificationKeys.all, 'unread', scope] as const,
+  unreadOfType: (scope: string, type: string) => [...notificationKeys.all, 'unread', scope, type] as const,
 };
 
 // Sprint 14 (B10) — context- and query-namespaced; removed wholesale on context/role change.

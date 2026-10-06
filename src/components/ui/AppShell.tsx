@@ -96,12 +96,15 @@ export function AppShell({
       )}
 
       <div className="flex flex-1">
-        {/* Sticky + self-start, not a second scroll container — the page itself scrolls (native,
-            edge-flush scrollbar), the sidebar just stays pinned in the viewport as it does.
+        {/* The page itself scrolls (native, edge-flush scrollbar); the sidebar is pinned to the
+            viewport with position:fixed inside a same-width spacer. It was `sticky`, which only
+            holds while the row is as tall as the scrollable area — any page whose scroll extent
+            outran the row (e.g. the Responses chart view) carried the sidebar up with it.
             overflow-y-auto is a safety net for a viewport too short for every nav item, not the
-            primary scroll mechanism. bg-topbar is 52px (beginso-ui.css §12). */}
-        <aside className="hidden md:flex flex-shrink-0 self-start sticky top-[52px] h-[calc(100vh-52px)] overflow-y-auto">
-          {sidebar(collapsed)}
+            primary scroll mechanism. bg-topbar is 52px and .bg-sidenav 220px / .bg-sidenav-rail
+            64px (beginso-ui.css §12) — keep the spacer widths in step with those. */}
+        <aside className={bx("hidden md:block shrink-0", collapsed ? "w-16" : "w-55")}>
+          <div className="fixed top-13 bottom-0 flex overflow-y-auto">{sidebar(collapsed)}</div>
         </aside>
         <main
           className={bx(

@@ -12,6 +12,7 @@ const PUBLIC_AUTH_PATHS = new Set([
   'api/auth/forgot-password',
   'api/auth/confirm-password-reset',
 ]);
+const UNSUBSCRIBE_PREFIX = 'api/public/notifications/unsubscribe/';
 const ALLOWED_API_ROOTS = new Set([
   // Sprint 14 (task 2.1) - GET /api/search lives under its own root. Same allowlist trap as every
   // root below: without this entry every search call 404s "Backend path is not allowed".
@@ -92,7 +93,9 @@ async function forward(request: NextRequest, pathParts: string[]): Promise<NextR
   const path = pathParts.join('/');
   const isSessionRequest = path === SESSION_PATH;
   const isLogoutRequest = path === LOGOUT_PATH;
-  const isPublicAuthRequest = PUBLIC_AUTH_PATHS.has(path);
+  // Sprint 14: the unsubscribe link in activity emails is opened signed-out, straight from a mail client.
+  const isPublicUnsubscribe = request.method === 'GET' && path.startsWith(UNSUBSCRIBE_PREFIX);
+  const isPublicAuthRequest = PUBLIC_AUTH_PATHS.has(path) || isPublicUnsubscribe;
   const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
   if (!isPublicAuthRequest && !sessionToken) {

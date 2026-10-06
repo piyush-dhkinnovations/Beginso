@@ -9,7 +9,8 @@ import { useBuilderStore } from '@/store/builderStore';
 import { dashboardService } from '@/services/dashboard';
 import { formsService } from '@/services/forms';
 import { respondentService } from '@/services/respondent';
-import { dashboardKeys, respondentKeys, workspaceKeys } from '@/lib/queryKeys';
+import { dashboardKeys, notificationKeys, respondentKeys, workspaceKeys } from '@/lib/queryKeys';
+import { notificationsService } from '@/services/notifications';
 
 export interface PersonalSidebarProps {
   collapsed?: boolean;
@@ -78,6 +79,14 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
     retry: false,
     staleTime: 5 * 60_000,
   });
+  // Blue count on "Shared with me" while someone's share is unseen (cleared when that page is opened).
+  const { data: sharedUnread = 0 } = useQuery({
+    queryKey: notificationKeys.unreadOfType('personal', 'form_shared'),
+    queryFn: () => notificationsService.unreadCount('personal', 'form_shared'),
+    retry: false,
+    refetchInterval: 45_000,
+    refetchOnWindowFocus: true,
+  });
   const hasSubmissions = (mySubmissions?.length ?? 0) > 0;
 
   const isResponsesActive =
@@ -94,7 +103,7 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
           items: [
             { label: 'Home', href: '/dashboard', icon: Home, active: pathname === '/dashboard', onClick: guard('/dashboard') },
             { label: 'My Forms', href: '/forms', icon: FileText, active: pathname.startsWith('/forms') && !isInBuilder, onClick: guard('/forms') },
-            { label: 'Shared with me', href: '/shared', icon: Share2, active: pathname.startsWith('/shared'), onClick: guard('/shared') },
+            { label: 'Shared with me', href: '/shared', icon: Share2, count: sharedUnread > 0 ? sharedUnread : undefined, active: pathname.startsWith('/shared'), onClick: guard('/shared') },
             { label: 'Templates', href: '/templates', icon: LayoutTemplate, active: pathname.startsWith('/templates'), onClick: guard('/templates') },
             // Sprint 13 (A5.1): only once the user has actually submitted something while signed in.
             ...(hasSubmissions || pathname.startsWith('/my-submissions')

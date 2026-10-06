@@ -9,7 +9,6 @@ import { formsService } from '@/services/forms';
 import { useResponseTrend } from '@/hooks/useResponseTrend';
 import { dashboardKeys, workspaceKeys } from '@/lib/queryKeys';
 import { formatRelativeTime } from '@/lib/formatters';
-import { Spinner } from '@/components/ui/Spinner';
 import { StatisticsCards } from '@/components/dashboard/StatisticsCards';
 import { RecentActivitySection } from '@/components/dashboard/RecentActivitySection';
 import { ActionCard, Card, ChartCard, EmptyState, PageHeader, ProgressBars, Skeleton, StatusBadge } from '@/components/ui';
@@ -68,7 +67,21 @@ export default function DashboardPage() {
   );
 
   if (authLoading) {
-    return <div className="flex justify-center py-16"><Spinner size="large" /></div>;
+    return (
+      <div className="flex flex-col gap-6" aria-busy="true">
+        <Skeleton variant="title" width="40%" height={32} />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} variant="block" width="100%" height={96} />
+          ))}
+        </div>
+        <Card className="flex flex-col gap-3">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} variant="text" width="100%" height={20} />
+          ))}
+        </Card>
+      </div>
+    );
   }
 
   // Real bug found and fixed: `analytics.totalForms` comes from GET /api/dashboard/analytics,

@@ -3,8 +3,10 @@
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { ArrowLeft, FileText, LayoutDashboard, Table2, PieChart, Pencil, Settings } from 'lucide-react';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { useBuilderStore } from '@/store/builderStore';
+import { hasCapability } from '@/lib/roles';
 import type { Form } from '@/types/form';
 
 export interface FormSidebarProps {
@@ -36,6 +38,9 @@ export function FormSidebar({ formId, form, collapsed = false, backHref = '/form
   const dirty = useBuilderStore((state) => state.dirty);
   const setPendingLeaveUrl = useBuilderStore((state) => state.setPendingLeaveUrl);
   const base = `/forms/${formId}`;
+  // Only roles that can edit see the builder pages (Reviewers get Overview, Responses, Analytics). A
+  // convenience: the server enforces it. Unknown role (still loading) shows them rather than flicker.
+  const canEdit = !form?.myRole || hasCapability(form.myRole, 'forms:edit');
   const onEditPage = pathname === `${base}/edit`;
   const tab = searchParams.get('tab');
   const onSettingsTab = onEditPage && tab === 'settings';
@@ -81,7 +86,7 @@ export function FormSidebar({ formId, form, collapsed = false, backHref = '/form
             <FileText size={18} aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <p className="truncate bg-body-sm font-semibold text-(--text-primary)">{form?.title ?? 'Loading…'}</p>
+            <p className="truncate bg-body-sm font-semibold text-(--text-primary)">{form?.title ?? <Skeleton variant="text" width={96} height={14} />}</p>
             {form?.status && (
               <p className="flex items-center gap-1.5 bg-caption text-(--text-muted) capitalize">
                 <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: statusDotColor }} aria-hidden="true" />
@@ -109,8 +114,8 @@ export function FormSidebar({ formId, form, collapsed = false, backHref = '/form
             { label: 'Overview', href: `${base}/overview`, icon: LayoutDashboard, active: isActive('/overview'), onClick: guard(`${base}/overview`) },
             { label: 'Responses', href: `${base}/responses`, icon: Table2, active: isActive('/responses'), onClick: guard(`${base}/responses`) },
             { label: 'Analytics', href: `${base}/analytics`, icon: PieChart, active: isActive('/analytics'), onClick: guard(`${base}/analytics`) },
-            { label: 'Edit form', href: `${base}/edit`, icon: Pencil, active: onEditPage && !onSettingsTab, onClick: guard(`${base}/edit`) },
-            { label: 'Settings', href: `${base}/edit?tab=settings`, icon: Settings, active: onSettingsTab, onClick: guard(`${base}/edit?tab=settings`) },
+            ...(canEdit ? [{ label: 'Edit form', href: `${base}/edit`, icon: Pencil, active: onEditPage && !onSettingsTab, onClick: guard(`${base}/edit`) }] : []),
+            ...(canEdit ? [{ label: 'Settings', href: `${base}/edit?tab=settings`, icon: Settings, active: onSettingsTab, onClick: guard(`${base}/edit?tab=settings`) }] : []),
           ],
         },
       ]}

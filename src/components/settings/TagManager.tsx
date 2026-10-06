@@ -13,6 +13,7 @@ import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Modal } from '@/components/ui/Modal';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { STAGE_COLOR_TOKENS } from '@/types/stage';
 import type { Tag } from '@/types/tag';
@@ -145,7 +146,11 @@ export function TagManager({ scope, onDirtyChange }: TagManagerProps) {
       </form>
 
       {isLoading ? (
-        <p className="bg-body-sm text-(--text-muted)">Loading tags…</p>
+        <div className="flex flex-col gap-2" aria-busy="true">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} variant="text" width="100%" height={36} />
+          ))}
+        </div>
       ) : !tags || tags.length === 0 ? (
         <p className="bg-body-sm text-(--text-muted)">No tags yet. Add one above.</p>
       ) : (

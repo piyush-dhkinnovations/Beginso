@@ -17,7 +17,8 @@ import { canManageMembers, canViewAudit } from '@/lib/roles';
 import { MemberTable } from '@/components/team/MemberTable';
 import { PendingInvitesTable } from '@/components/team/PendingInvitesTable';
 import { InviteMembersModal } from '@/components/team/InviteMembersModal';
-import { PageHeader, Card, Alert, Button } from '@/components/ui';
+import { Lock } from 'lucide-react';
+import { PageHeader, Card, Alert, Button, EmptyState } from '@/components/ui';
 import { Modal } from '@/components/ui/Modal';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useToast } from '@/components/ui/Toast';
@@ -131,6 +132,16 @@ export default function TeamPage() {
     },
     onError: () => toast('Failed to revoke invite. Please try again.', 'error'),
   });
+
+  // Fail-closed page gate (convenience only; the server enforces). Same pattern as Audit Log.
+  if (workspaces && !canManage) {
+    return (
+      <div className="flex flex-col gap-4">
+        <PageHeader title="Team & Members" />
+        <EmptyState illustration="no-access" icon={<Lock className="bg-icon" aria-hidden="true" />} title="You do not have access to manage this team." />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">

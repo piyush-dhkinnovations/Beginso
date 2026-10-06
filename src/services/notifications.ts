@@ -35,14 +35,14 @@ export const notificationsService = {
         return { items, nextCursor: typeof body?.nextCursor === 'string' ? body.nextCursor : null };
       }),
 
-  unreadCount: (scope: string): Promise<number> =>
+  unreadCount: (scope: string, type?: string): Promise<number> =>
     axiosInstance
-      .get('/api/notifications/unread-count', { headers: workspaceHeaders(scope) })
+      .get('/api/notifications/unread-count', { headers: workspaceHeaders(scope), params: type ? { type } : undefined })
       .then((r) => (typeof r.data?.count === 'number' ? r.data.count : 0)),
 
-  markAllRead: (scope: string): Promise<{ updated: number }> =>
+  markAllRead: (scope: string, type?: string): Promise<{ updated: number }> =>
     axiosInstance
-      .post('/api/notifications/read-all', undefined, { headers: workspaceHeaders(scope) })
+      .post('/api/notifications/read-all', undefined, { headers: workspaceHeaders(scope), params: type ? { type } : undefined })
       .then((r) => ({ updated: typeof r.data?.updated === 'number' ? r.data.updated : 0 })),
 
   markAsRead: (id: string): Promise<void> =>

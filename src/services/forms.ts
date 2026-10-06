@@ -1,4 +1,5 @@
 import axiosInstance from '@/lib/axios';
+import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import { unwrapEnvelope } from '@/lib/apiEnvelope';
 import type {
   Form,
@@ -54,9 +55,10 @@ export const formsService = {
           ...params,
           ...(context?.type === 'personal' ? { workspaceId: 'personal' } : {}),
         },
-        headers: context?.type === 'workspace' ? { 'x-workspace-slug': context.workspaceId } : undefined,
+        headers: context?.type === 'workspace' ? { 'x-workspace-slug': context.workspaceId } : context?.type === 'personal' ? workspaceHeaders('personal') : undefined,
       })
       .then((r) => {
+        // Defence kept: backend honours the explicit 'personal' header (requirePermission -> explicitPersonalContext), but this filter stays as a cheap safety net.
         // Real bug found and fixed: the comment above already flagged this as unconfirmed — now
         // confirmed live. A brand-new user whose "default workspace" (the backend's own
         // resolution-order fallback) is the workspace they just joined via invite accept sees

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
+import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SearchResultGroup } from './SearchResultGroup';
 import { SEARCH_MAX_CHARS, SEARCH_MIN_CHARS, useGlobalSearch } from '@/hooks/useGlobalSearch';
@@ -112,6 +113,7 @@ export function SearchResultsView({ scope }: SearchResultsViewProps) {
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
       <PageHeader title="Search" description={scopeNote} />
+      <OfflineBanner />
       <div>
         <Input
           ref={inputRef}

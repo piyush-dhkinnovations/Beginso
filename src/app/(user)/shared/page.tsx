@@ -1,9 +1,11 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { notificationsService } from '@/services/notifications';
+import { notificationKeys } from '@/lib/queryKeys';
 import { Calendar, FileText, Lock, MoreVertical, Search, Table2, Users, LayoutDashboard } from 'lucide-react';
 import { sharedService } from '@/services/shared';
 import { sharedKeys } from '@/lib/queryKeys';
@@ -40,6 +42,14 @@ const workspaceOf = (item: SharedFormItem) => item.workspaceName ?? PERSONAL;
 // grid. Both link a form to its responses — the nearest existing view for a grant-only viewer.
 export default function SharedWithMePage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  // Opening the page is "seeing" the shares: clear the sidebar count and the bell rows for them.
+  useEffect(() => {
+    notificationsService
+      .markAllRead('personal', 'form_shared')
+      .then(() => queryClient.invalidateQueries({ queryKey: notificationKeys.all }))
+      .catch(() => {});
+  }, [queryClient]);
   const [view, setView] = useFormsView();
   const [search, setSearch] = useState('');
   const [workspace, setWorkspace] = useState('all');

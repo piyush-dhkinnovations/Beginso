@@ -34,7 +34,10 @@ export async function proxy(request: NextRequest) {
 
   // A cookie's presence is not trusted: the backend must validate its JWT first.
   if (isProtected && !sessionIsValid) {
-    const response = NextResponse.redirect(new URL('/login', request.url));
+    // Keep the destination so login()/LoginForm can return the user here (sanitizeNextParam re-validates it there).
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('next', pathname + request.nextUrl.search);
+    const response = NextResponse.redirect(loginUrl);
     return token ? clearInvalidSession(response) : response;
   }
 
@@ -58,6 +61,9 @@ export const config = {
     '/onboarding/:path*',
     '/w/:path*',
     '/shared/:path*',
+    '/workspaces/:path*',
+    '/my-submissions/:path*',
+    '/trash/:path*',
     '/notifications/:path*',
     '/search/:path*',
     '/login',

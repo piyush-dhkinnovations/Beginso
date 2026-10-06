@@ -3,7 +3,7 @@
 // issues found along the way. Widened by Sprint 12 (inbox-collaboration) requirements.md §7.12
 // (B9.1 partial): the bell must render mention/assignment notifications, and any future unknown
 // `type` as a generic row, without crashing — a plain `string` fallback covers both.
-export type NotificationType = 'welcome' | 'password_reset' | 'form_activity' | 'mention' | 'assignment' | 'response_edited' | (string & {});
+export type NotificationType = 'welcome' | 'password_reset' | 'form_activity' | 'mention' | 'assignment' | 'response_edited' | 'form_shared' | (string & {});
 
 export interface AppNotification {
   id: string;

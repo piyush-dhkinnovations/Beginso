@@ -122,7 +122,7 @@ export default function FormOverviewPage() {
   // Owner-type breadcrumb (requirements.md §7.2). A form reached only through a per-form grant has
   // no matching workspace membership to name, so it falls back to Shared with me.
   const breadcrumb: BreadcrumbItem[] =
-    workspaceId === null
+    workspaceId === null && (form.myRole ?? 'owner') === 'owner'
       ? [{ label: 'My Forms', href: '/forms' }, { label: form.title }]
       : workspace
         ? [
@@ -135,7 +135,7 @@ export default function FormOverviewPage() {
   // Personal form: the caller owns it. Workspace form: their membership role, fail-closed while
   // unknown — Reviewer (or an unresolved role) sees Preview only (requirements.md §7.2). A
   // convenience only; the server enforces every one of these (CLAUDE.md).
-  const role = workspaceId === null ? 'owner' : workspace?.role;
+  const role = form.myRole ?? (workspaceId === null ? 'owner' : workspace?.role);
   const canEdit = role !== undefined && hasCapability(role, 'forms:edit');
 
   const grantCount = grantsQuery.data?.length;

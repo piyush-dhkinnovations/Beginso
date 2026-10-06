@@ -5,6 +5,7 @@ import type { AppNotification } from '@/types/notification';
 // `?responseId=` contract). Returns null for notifications with nowhere to go. `formId` and
 // `responseId` come from server data, never from a URL param.
 export function resolveNotificationTarget(notification: AppNotification, scope: string = 'personal'): string | null {
+  if (notification.type === 'form_shared') return '/shared';
   if (!notification.responseId) return null;
   const id = encodeURIComponent(notification.responseId);
   if (notification.formId) {

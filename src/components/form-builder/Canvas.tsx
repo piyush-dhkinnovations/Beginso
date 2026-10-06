@@ -155,7 +155,7 @@ export function Canvas({
   }
 
   return (
-    <div className="flex flex-1 w-full min-w-0" style={{ overflow: 'visible' }}>
+    <div className="flex flex-1 min-h-0 w-full min-w-0" style={{ overflow: 'visible' }}>
       <div aria-live="polite" className="sr-only">
         {announcement}
       </div>

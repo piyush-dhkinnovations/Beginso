@@ -1,3 +1,5 @@
+import { WorkspaceRoleGate } from '@/components/workspaces/WorkspaceRoleGate';
+import { canViewTemplates } from '@/lib/roles';
 import TemplatesPage from '@/app/(user)/templates/page';
 
 interface Props {
@@ -8,5 +10,9 @@ interface Props {
 // `scope` set to the workspace slug, the same way /w/[slug]/forms reuses FormsPage.
 export default async function WorkspaceTemplatesPage({ params }: Props) {
   const { slug } = await params;
-  return <TemplatesPage scope={slug} />;
+  return (
+    <WorkspaceRoleGate slug={slug} allow={canViewTemplates} title="Templates">
+      <TemplatesPage scope={slug} />
+    </WorkspaceRoleGate>
+  );
 }

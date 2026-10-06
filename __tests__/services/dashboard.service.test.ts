@@ -44,7 +44,7 @@ describe('dashboardService', () => {
 
     const result = await dashboardService.getAnalytics();
 
-    expect(mockGet).toHaveBeenCalledWith('/api/dashboard/analytics');
+    expect(mockGet).toHaveBeenCalledWith('/api/dashboard/analytics', { headers: { 'x-workspace-slug': 'personal' } });
     expect(result).toEqual({
       totalForms: 12,
       publishedForms: 8,

@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { formsService } from '@/services/forms';
 import { normaliseLayout } from '@/lib/layoutPresets';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { PublicFormShell } from '@/components/public-form/PublicFormShell';
 import { FormThemeScope } from '@/components/public-form/FormThemeScope';
 import { PreviewBar } from '@/components/preview/PreviewBar';
@@ -64,7 +65,12 @@ export default function FormPreviewPage() {
     <FormThemeScope>
       <div className="fixed inset-0 z-50 overflow-y-auto bg-(--bg-subtle)">
         {isLoading ? (
-          <div className="flex items-center justify-center h-full text-(--text-muted)">Loading preview…</div>
+          <div className="mx-auto flex max-w-160 flex-col gap-4 px-4 py-12" aria-busy="true">
+            <Skeleton variant="title" width="60%" height={32} />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} variant="block" width="100%" height={56} />
+            ))}
+          </div>
         ) : error || !form || !schema ? (
           <div className="flex items-center justify-center h-full text-(--error-text)">
             Could not load this form. Please go back and try again.

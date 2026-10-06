@@ -145,12 +145,12 @@ describe('TeamPage (/w/[slug]/team)', () => {
     expect(await screen.findByRole('button', { name: 'Leave workspace' })).toBeInTheDocument();
   });
 
-  it('a caller with role=viewer sees a read-only table', async () => {
+  it('a caller with role=viewer gets the no-access state, not the member table', async () => {
     mockList.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role: 'viewer' }]);
     mockListMembers.mockResolvedValue([ADMIN]);
     renderPage();
-    await screen.findByText('Priya Sharma');
-    expect(screen.queryByLabelText('Change role for Priya Sharma')).not.toBeInTheDocument();
+    await screen.findByText('You do not have access to manage this team.');
+    expect(screen.queryByText('Priya Sharma')).not.toBeInTheDocument();
   });
 
   it('changing a role calls teamService.updateMemberRole and invalidates the members query', async () => {
@@ -179,12 +179,12 @@ describe('TeamPage (/w/[slug]/team)', () => {
     expect(screen.getByRole('button', { name: 'Invite Members' })).toBeInTheDocument();
   });
 
-  it('a non-manager sees neither the Pending Invites card nor the Invite Members action', async () => {
+  it('a non-manager gets the no-access state: no Pending Invites card, no Invite Members action', async () => {
     mockList.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role: 'viewer' }]);
     mockListMembers.mockResolvedValue([ADMIN]);
     mockListPending.mockResolvedValue([INVITE]);
     renderPage();
-    await screen.findByText('Priya Sharma');
+    await screen.findByText('You do not have access to manage this team.');
     expect(screen.queryByText('new@example.com')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Invite Members' })).not.toBeInTheDocument();
   });
@@ -235,11 +235,12 @@ describe('TeamPage (/w/[slug]/team)', () => {
     expect(mockPush).toHaveBeenCalledWith('/w/acme/roles');
   });
 
-  it('a non-manager still sees the Roles & Permissions action', async () => {
+  it('a non-manager does not get the Roles & Permissions action here (reachable from the sidebar instead)', async () => {
     mockList.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role: 'viewer' }]);
     mockListMembers.mockResolvedValue([ADMIN]);
     renderPage();
-    expect(await screen.findByRole('button', { name: 'Roles & Permissions' })).toBeInTheDocument();
+    await screen.findByText('You do not have access to manage this team.');
+    expect(screen.queryByRole('button', { name: 'Roles & Permissions' })).not.toBeInTheDocument();
   });
 
   // Sprint 10, tasks.md 4.6 — the wireframe's "View Audit Log →" link, owner/admin only.
@@ -253,7 +254,7 @@ describe('TeamPage (/w/[slug]/team)', () => {
     mockList.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role }]);
     mockListMembers.mockResolvedValue([ADMIN]);
     renderPage();
-    await screen.findByText('Priya Sharma');
+    await screen.findByText('You do not have access to manage this team.');
     expect(screen.queryByRole('link', { name: 'View Audit Log →' })).not.toBeInTheDocument();
   });
 });

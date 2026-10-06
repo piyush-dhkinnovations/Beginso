@@ -1,4 +1,5 @@
 import axiosInstance from '@/lib/axios';
+import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import type { DashboardActivity, DashboardAnalytics } from '@/types/dashboard';
 
 interface DashboardAnalyticsEnvelope {
@@ -51,8 +52,9 @@ function parseAnalytics(value: unknown): DashboardAnalytics {
 }
 
 export const dashboardService = {
+  // Personal Home only: explicit 'personal' scope so the backend never falls back to the user's default workspace.
   getAnalytics: () =>
     axiosInstance
-      .get<DashboardAnalyticsEnvelope>('/api/dashboard/analytics')
+      .get<DashboardAnalyticsEnvelope>('/api/dashboard/analytics', { headers: workspaceHeaders('personal') })
       .then((response) => parseAnalytics(response.data.analytics)),
 };

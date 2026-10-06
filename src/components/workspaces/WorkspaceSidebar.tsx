@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Home, FileText, Inbox, BarChart3, Users, History, Shield, LayoutTemplate, Trash2, Settings } from 'lucide-react';
+import { Home, FileText, Inbox, BarChart3, Users, History, Shield, LayoutTemplate, Trash2, Settings, KeyRound } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import {
@@ -76,6 +76,8 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }
     // closed on an undefined role exactly like "Team".
     { label: 'Activity', href: `${base}/activity`, icon: History },
     ...(canManageMembers(role) ? [{ label: 'Team', href: `${base}/team`, icon: Users }] : []),
+    // Read-only reference, every role (requirements.md 7.6); Team (manager-only) used to be its only link.
+    { label: 'Roles', href: `${base}/roles`, icon: KeyRound },
     ...(canViewAudit(role) ? [{ label: 'Audit Log', href: `${base}/audit`, icon: Shield }] : []),
     // Any role that can manage at least one settings tab; same fail-closed-on-undefined rule.
     ...(canManageWorkspaceSettings(role) || canManageTags(role) || canManageStages(role) || canManageScoring(role)

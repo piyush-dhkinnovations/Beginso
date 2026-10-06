@@ -7,6 +7,7 @@ import { AlertCircle, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
@@ -98,6 +99,7 @@ export function NotificationsView({ scope }: NotificationsViewProps) {
           </Button>
         }
       />
+      <OfflineBanner />
       <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
 
       <Tabs tabs={TABS} activeId={filter} onChange={changeTab} ariaLabel="Notification filters" />
