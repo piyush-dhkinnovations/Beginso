@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Home, FileText, LayoutTemplate, Table2, PieChart, Download, Settings, Plus, Share2, Trash2, ClipboardList } from 'lucide-react';
+import { Home, FileText, LayoutTemplate, Table2, PieChart, Settings, Plus, Share2, Trash2, ClipboardList } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { useBuilderStore } from '@/store/builderStore';
@@ -100,7 +100,8 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
             ...(hasSubmissions || pathname.startsWith('/my-submissions')
               ? [{ label: 'My Submissions', href: '/my-submissions', icon: ClipboardList, active: pathname.startsWith('/my-submissions'), onClick: guard('/my-submissions') }]
               : []),
-            // Responses/Analytics/Reports have nothing to show until a form exists — hidden
+            // Sprint 14: Reports is no longer a sidebar item - it is the Exports tab inside Analytics.
+            // Responses/Analytics have nothing to show until a form exists — hidden
             // rather than left to render their own all-zero/empty state, same reasoning as the
             // dashboard's stat cards. Still shown while loading (hasForms defaults true) and if
             // the user is deep-linked onto one of them already, so an active page never vanishes
@@ -110,9 +111,6 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
               : []),
             ...(hasForms || isAnalyticsActive
               ? [{ label: 'Analytics', href: '/analytics', icon: PieChart, active: isAnalyticsActive, onClick: guard('/analytics') }]
-              : []),
-            ...(hasForms || pathname.startsWith('/reports')
-              ? [{ label: 'Reports', href: '/reports', icon: Download, active: pathname.startsWith('/reports'), onClick: guard('/reports') }]
               : []),
             { label: 'Trash', href: '/trash', icon: Trash2, active: pathname.startsWith('/trash'), onClick: guard('/trash') },
             { label: 'Settings', href: '/settings', icon: Settings, active: pathname.startsWith('/settings'), onClick: guard('/settings') },

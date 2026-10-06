@@ -18,14 +18,14 @@ export const ACTIVITY_CATEGORY_LABEL: Record<ActivityCategory, string> = {
 // One mapping from the backend's free-form `action` to a display category + icon. Unknown actions land
 // in "workspace" with a neutral icon — shown, never hidden (same stance as eventLabels).
 export function categoryOf(action: string): ActivityCategory {
-  if (action.startsWith('response.') || action.startsWith('export.')) return 'responses';
+  if (action.startsWith('response.') || action.startsWith('export.') || action.startsWith('report.')) return 'responses';
   if (action.startsWith('access.') || action.startsWith('member.') || action.startsWith('session.')) return 'access';
   if (action.startsWith('form.') || action.startsWith('template.')) return 'forms';
   return 'workspace';
 }
 
 function iconOf(action: string): LucideIcon {
-  if (action.startsWith('export.')) return Download;
+  if (action.startsWith('export.') || action.startsWith('report.')) return Download;
   if (action.startsWith('response.')) return Inbox;
   if (action.startsWith('session.')) return Shield;
   if (action.startsWith('access.') || action.startsWith('member.')) return Users;
@@ -116,7 +116,7 @@ export function ActivityFeed({ events, emptyTitle, emptyDescription }: ActivityF
                     </span>
                   </div>
                   <span className="bg-body min-w-0 flex-1 text-(--text-secondary)">
-                    <strong className="text-(--text-primary)">{event.actorName}</strong> {describeEventAction(event.action)}{' '}
+                    <strong className="text-(--text-primary)">{event.actorName}</strong> {describeEventAction(event.action, event.metadata)}{' '}
                     {linkable ? (
                       <Link href={`/forms/${event.targetId}/overview`} className="font-medium text-(--text-primary) underline decoration-(--border-strong) underline-offset-2 hover:decoration-current">
                         {target}

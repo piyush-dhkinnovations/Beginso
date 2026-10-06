@@ -3,7 +3,7 @@
  * Feature: sprint-8-workspaces-context, requirements.md §7.3 (corrected Day 3 against A1.1/A1.3)
  * Extended: PersonalSidebar now also carries the context switcher header (closing the gap where
  * Personal space had no discoverable path into a workspace) and the four still-live top-level
- * pages (Responses/Analytics/Reports/Settings) — see the component's own comment.
+ * pages (Responses/Analytics/Settings; Reports became Analytics' Exports tab in Sprint 14) — see the component's own comment.
  * Sprint 9 Day 5 (requirements.md §7.9): "Shared with me" is now a permanent item, closing the
  * gap this file's own comment previously named this sprint as fixing.
  */
@@ -61,7 +61,7 @@ describe('PersonalSidebar', () => {
 
   it('renders the real A1.1 personal nav set plus the still-live top-level pages', () => {
     renderSidebar();
-    ['Home', 'My Forms', 'Shared with me', 'Templates', 'Responses', 'Analytics', 'Reports', 'Settings', 'Create workspace'].forEach(
+    ['Home', 'My Forms', 'Shared with me', 'Templates', 'Responses', 'Analytics', 'Settings', 'Create workspace'].forEach(
       (label) => {
         expect(screen.getByText(label)).toBeInTheDocument();
       }
@@ -121,7 +121,7 @@ describe('PersonalSidebar', () => {
     expect(screen.getByRole('link', { name: /Create workspace/ })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('hides Responses/Analytics/Reports once analytics confirms zero forms, keeping the always-relevant items', async () => {
+  it('hides Responses/Analytics once analytics confirms zero forms, keeping the always-relevant items', async () => {
     renderSidebar();
     expect(await screen.findByText('My Forms')).toBeInTheDocument();
     expect(screen.queryByText('Responses')).not.toBeInTheDocument();
@@ -135,9 +135,10 @@ describe('PersonalSidebar', () => {
   it('keeps Responses visible once forms exist', async () => {
     mockGetForms.mockResolvedValue({ forms: [{ _id: 'f1' }], total: 3, page: 1, limit: 1 });
     renderSidebar();
-    expect(await screen.findByText('Reports')).toBeInTheDocument();
+    expect(await screen.findByText('Responses')).toBeInTheDocument();
     expect(screen.getByText('Analytics')).toBeInTheDocument();
-    expect(screen.getByText('Responses')).toBeInTheDocument();
+    // Sprint 14: Reports is the Exports tab inside Analytics, not a sidebar item, even with forms.
+    expect(screen.queryByText('Reports')).not.toBeInTheDocument();
   });
 
   it('trusts the filtered forms count over analytics when they disagree — the real bug: a brand-new invited user\'s analytics.totalForms leaked a workspace form, so the sidebar kept showing Responses/Analytics/Reports for an account with zero real personal forms', async () => {
@@ -166,7 +167,7 @@ describe('PersonalSidebar', () => {
   it('marks nothing active on an unrelated route', () => {
     mockPathname.mockReturnValue('/onboarding');
     renderSidebar();
-    ['Home', 'My Forms', 'Shared with me', 'Templates', 'Responses', 'Analytics', 'Reports', 'Settings', 'Create workspace'].forEach(
+    ['Home', 'My Forms', 'Shared with me', 'Templates', 'Responses', 'Analytics', 'Settings', 'Create workspace'].forEach(
       (label) => {
         expect(screen.getByRole('link', { name: new RegExp(label) })).not.toHaveAttribute('aria-current');
       }

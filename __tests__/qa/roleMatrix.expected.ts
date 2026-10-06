@@ -80,8 +80,8 @@ export const PERSONAL_NAV_MATRIX: ExpectedCell[] = [
     role: 'owner',
     ctx: 'personal',
     screen: 'PersonalSidebar',
-    visible: ['Home', 'My Forms', 'Shared with me', 'Templates', 'Responses', 'Analytics', 'Reports', 'Settings'],
-    hidden: [],
+    visible: ['Home', 'My Forms', 'Shared with me', 'Templates', 'Responses', 'Analytics', 'Settings'],
+    hidden: ['Reports'],
   },
 ];
 

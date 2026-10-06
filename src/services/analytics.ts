@@ -22,6 +22,11 @@ interface RawOverviewEnvelope {
     completed: number;
     in_progress: number;
     new: number;
+    // Sprint 14 (BE 0.2, Backend contract to confirm): views-based, nullable. Read defensively -
+    // a missing field stays undefined, never 0.
+    completionRate?: number | null;
+    reviewedRate?: number | null;
+    views?: number | null;
     // `statusDistribution` duplicates completed/in_progress/new with percentages — the flat
     // fields above are simpler to consume and this app computes its own percentages anyway.
   };
@@ -32,6 +37,12 @@ interface RawOverviewEnvelope {
 // per-stage rows) — only the frontend's field name changes, from `statusCounts` to
 // `categoryCounts`, to stop implying these are the removed `status` union rather than the stable
 // `category` grouping every custom stage still falls back to.
+// Sprint 14 (OQ-3): a rate is a finite number or null - a missing/invalid value is "not enough
+// data", never a fabricated 0.
+function toRate(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
 function toAnalyticsOverview(raw: RawOverviewEnvelope): AnalyticsOverview {
   return {
     totalResponses: raw.data.total,
@@ -40,6 +51,9 @@ function toAnalyticsOverview(raw: RawOverviewEnvelope): AnalyticsOverview {
       in_progress: raw.data.in_progress,
       completed: raw.data.completed,
     },
+    completionRate: toRate(raw.data.completionRate),
+    reviewedRate: toRate(raw.data.reviewedRate),
+    views: typeof raw.data.views === 'number' ? raw.data.views : null,
   };
 }
 
@@ -84,7 +98,10 @@ interface RawFormsSummaryEnvelope {
     title: string;
     status: AnalyticsFormSummary['status'];
     totalResponses: number;
-    completionRate: number;
+    completionRate?: number | null;
+    views?: number | null;
+    reviewedRate?: number | null;
+    templateCategory?: string | null;
   }[];
   total: number;
   page: number;
@@ -98,7 +115,10 @@ function toFormsSummaryResult(raw: RawFormsSummaryEnvelope): AnalyticsFormsSumma
       title: item.title,
       status: item.status,
       totalResponses: item.totalResponses,
-      completionRate: item.completionRate,
+      completionRate: toRate(item.completionRate),
+      views: typeof item.views === 'number' ? item.views : null,
+      reviewedRate: item.reviewedRate === undefined ? undefined : toRate(item.reviewedRate),
+      templateCategory: item.templateCategory ?? null,
     })),
     total: raw.total,
     page: raw.page,

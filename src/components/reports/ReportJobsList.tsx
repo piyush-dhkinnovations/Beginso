@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FileText, RefreshCw } from 'lucide-react';
+import { FileText, LockKeyhole, RefreshCw } from 'lucide-react';
+import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
@@ -23,18 +24,20 @@ interface ReportJobsListProps {
   /** formId -> form title, resolved from the forms list ReportsView already loads for its
    * dropdown — job objects only carry a raw `formId`, never a denormalized title. */
   formTitleById?: Map<string, string>;
+  /** 'personal' (default) or a workspace slug - Sprint 14, Exports lives inside Insights. */
+  scope?: string;
 }
 
-export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }: ReportJobsListProps) {
+export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), scope = 'personal' }: ReportJobsListProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [retryingJobId, setRetryingJobId] = useState<string | null>(null);
   const previousStatusesRef = useRef<Map<string, ReportStatus>>(new Map());
 
   const jobsQuery = useQuery({
-    queryKey: reportKeys.list(page),
+    queryKey: reportKeys.list(page, scope),
     queryFn: async () => {
-      const result = await reportsService.getReports({ page, limit: REPORTS_PAGE_LIMIT });
+      const result = await reportsService.getReports({ page, limit: REPORTS_PAGE_LIMIT }, scope);
       // Backfill formId/responseStatus/from/to from whatever this same query already had
       // cached for a given job — the real backend has been observed to sometimes omit these
       // once a job reaches a terminal status, even though they were present earlier for the
@@ -42,7 +45,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
       // own previous cache entry here (rather than a separate ref) also means this naturally
       // covers the optimistically-inserted job from createReportMutation/retryMutation, since
       // that's what's cached the moment before this poll's response arrives.
-      const previous = queryClient.getQueryData<PaginatedReportsResult>(reportKeys.list(page));
+      const previous = queryClient.getQueryData<PaginatedReportsResult>(reportKeys.list(page, scope));
       const previousById = new Map((previous?.data ?? []).filter((j) => j._id).map((j) => [j._id, j]));
       return {
         ...result,
@@ -66,7 +69,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
   });
 
   const retryMutation = useMutation({
-    mutationFn: (payload: CreateReportPayload) => reportsService.createReport(payload),
+    mutationFn: (payload: CreateReportPayload) => reportsService.createReport(payload, scope),
     onSuccess: (job, payload) => {
       // Same reasoning as ReportsView's createReportMutation — enrich from the request we know
       // we sent rather than trusting the POST response to echo every field (S5-04).
@@ -161,6 +164,16 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
             </div>
           ))}
         </div>
+      </Card>
+    );
+  }
+
+  // Sprint 14 (design.md §17 "Permission denied"): a 403 is a lock state with no Retry - retrying cannot help.
+  if (jobsQuery.isError && isAxiosError(jobsQuery.error) && jobsQuery.error.response?.status === 403) {
+    return (
+      <Card padded={false} className="gap-2 overflow-hidden pb-5">
+        {header}
+        <EmptyState icon={<LockKeyhole />} title="You can't view exports here" description="Ask an Owner or Admin if you need access to this workspace's exports." />
       </Card>
     );
   }

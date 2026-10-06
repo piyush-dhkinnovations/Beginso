@@ -1,8 +1,9 @@
 'use client';
 
-import { BarChart3, FileCheck2, MessageSquare, TrendingUp } from 'lucide-react';
+import { BarChart3, FileCheck2, MessageSquare } from 'lucide-react';
 import { StatCard, type StatChart } from '@/components/ui/StatCard';
 import { formatChangeLabel } from '@/lib/analyticsChange';
+import { CompletionRateCard } from './CompletionRateCard';
 
 export interface WorkspaceSummaryChanges {
   responses: number | null;
@@ -15,7 +16,8 @@ interface WorkspaceSummaryCardsProps {
   activeForms: number;
   totalForms: number;
   averageResponsesPerForm: number;
-  /** Mean completion across forms with responses, 0–100; null when there is nothing to average. */
+  /** Views-weighted completion across forms with counted views, 0-100; null (shown "—", never 0%)
+   * when no form has a counted view (Sprint 14, OQ-3). */
   completionRate: number | null;
   /** Change vs the previous equal-length period; null = no baseline worth comparing against. */
   changes: WorkspaceSummaryChanges;
@@ -59,7 +61,6 @@ export function WorkspaceSummaryCards({
   isLoading,
 }: WorkspaceSummaryCardsProps) {
   const skeleton = <span className="block h-8 w-16 animate-pulse rounded bg-(--border-default)" />;
-  const completion = completionRate === null ? null : Math.round(completionRate);
 
   const cards: Array<{
     label: string;
@@ -99,14 +100,6 @@ export function WorkspaceSummaryCards({
         bars([...perFormResponses].sort((a, b) => a - b)) ??
         ({ kind: 'progress', percent: Math.max(...perFormResponses, 0) > 0 ? Math.round((averageResponsesPerForm / Math.max(...perFormResponses)) * 100) : 0 } as StatChart),
     },
-    {
-      label: 'Completion Rate',
-      value: completion === null ? '—' : `${completion}%`,
-      icon: TrendingUp,
-      muted: completion === null || completion === 0,
-      delta: delta(changes.completion, periodLabel),
-      chart: { kind: 'ring', percent: completion ?? 0 },
-    },
   ];
 
   return (
@@ -126,6 +119,7 @@ export function WorkspaceSummaryCards({
           />
         );
       })}
+      <CompletionRateCard rate={completionRate} isLoading={isLoading} delta={delta(changes.completion, periodLabel)} subject="a form" />
     </div>
   );
 }

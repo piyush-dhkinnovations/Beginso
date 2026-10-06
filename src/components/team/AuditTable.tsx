@@ -57,7 +57,7 @@ export function AuditTable({ events, isLoading }: AuditTableProps) {
                   >
                     {event.actorName}
                   </th>
-                  <td>{describeEventAction(event.action)}</td>
+                  <td>{describeEventAction(event.action, event.metadata)}</td>
                   <td className={SECONDARY}>{displayTargetLabel(event.targetLabel)}</td>
                   {/* "Origin", not "IP" — this is a one-way hash (design.md's own "ipHash only,
                       never a raw address" rule), too long to read as a real IP and not one. Only

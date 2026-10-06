@@ -184,12 +184,15 @@ describe('ReportJobsList', () => {
     fireEvent.click((await screen.findAllByRole('button', { name: /Retry/ }))[0]);
 
     await waitFor(() =>
-      expect(mockCreateReport).toHaveBeenCalledWith({
-        format: 'csv',
-        formId: 'form-9',
-        from: '2026-07-01T00:00:00.000Z',
-        to: '2026-07-31T00:00:00.000Z',
-      })
+      expect(mockCreateReport).toHaveBeenCalledWith(
+        {
+          format: 'csv',
+          formId: 'form-9',
+          from: '2026-07-01T00:00:00.000Z',
+          to: '2026-07-31T00:00:00.000Z',
+        },
+        'personal'
+      )
     );
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Report generation started.', 'success'));
   });

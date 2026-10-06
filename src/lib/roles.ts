@@ -124,6 +124,17 @@ export function canManageTags(role: Role | undefined): boolean {
   return role !== undefined && hasCapability(role, 'tags:manage');
 }
 
+// Sprint 14 (tasks 3.6/3.6b) - convenience gates only; the server is the authority. Exports is
+// visible to every role (decision 8: a Reviewer can export - every export is logged), failing
+// closed only while the role is still unknown. Charts are created/edited with form edit rights (BE 0.3).
+export function canViewExports(role: Role | undefined): boolean {
+  return role !== undefined;
+}
+
+export function canEditCharts(role: Role | undefined): boolean {
+  return role !== undefined && hasCapability(role, 'forms:edit');
+}
+
 export function canManageScoring(role: Role | undefined): boolean {
   return role !== undefined && hasCapability(role, 'scoring:manage');
 }

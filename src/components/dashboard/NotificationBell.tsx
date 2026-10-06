@@ -2,47 +2,36 @@
 
 import { StateArt } from '@/components/illustrations/Illustration';
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { AtSign, Bell, FileText, KeyRound, PartyPopper, UserPlus } from 'lucide-react';
-import { notificationsService } from '@/services/notifications';
-import { notificationKeys } from '@/lib/queryKeys';
-import { formatRelativeTime } from '@/lib/formatters';
-import { cn } from '@/lib/utils';
+import { Bell } from 'lucide-react';
+import { NotificationRow } from '@/components/notifications/NotificationRow';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useNotificationActions } from '@/hooks/useNotificationActions';
+import { useUnreadCount } from '@/hooks/useUnreadCount';
+import { resolveNotificationTarget } from '@/lib/notificationTarget';
 import type { AppNotification } from '@/types/notification';
 
-// Sprint 12 (inbox-collaboration), requirements.md §7.12: "the bell renders mention and
-// assignment notifications without crashing on new type values ... an unknown type falls back to
-// a generic row." `NotificationType` widened to a non-exhaustive string, so this is a lookup with
-// a `Bell` fallback rather than a `Record` a new/unrecognised value could no longer fully key.
-const TYPE_ICON: Partial<Record<string, typeof Bell>> = {
-  welcome: PartyPopper,
-  password_reset: KeyRound,
-  form_activity: FileText,
-  mention: AtSign,
-  assignment: UserPlus,
-};
+// The bell is the quick view (latest 10); the full history lives on the Notifications page.
+const BELL_LIMIT = 10;
+
+export interface NotificationBellProps {
+  /** 'personal' (default) or the active workspace slug - the badge and list are per context (B9.3). */
+  scope?: string;
+}
 
 // Mirrors UserProfileDropdown's exact self-contained open/close + outside-click/Escape pattern,
-// right next to it in TopNav. Backend confirmed live 18 Aug 2026 — see
-// docs/backend-contract/api-reference.md §6.
-export function NotificationBell() {
+// right next to it in TopNav. Sprint 14 (B9.1/B9.2): the badge reads the shared unread-count query
+// (polled every 45 s on a visible tab); the list is fetched only while the dropdown is open.
+export function NotificationBell({ scope = 'personal' }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const queryClient = useQueryClient();
   const router = useRouter();
 
-  const { data: notifications = [] } = useQuery({
-    queryKey: notificationKeys.list(),
-    queryFn: notificationsService.getNotifications,
-  });
-
-  const markAsReadMutation = useMutation({
-    mutationFn: (id: string) => notificationsService.markAsRead(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: notificationKeys.list() }),
-  });
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const { data: unreadCount = 0 } = useUnreadCount(scope);
+  const listQuery = useNotifications(scope, 'all', { limit: BELL_LIMIT, enabled: isOpen });
+  const { markRead } = useNotificationActions(scope);
+  const notifications = listQuery.data?.pages[0]?.items ?? [];
 
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -64,20 +53,15 @@ export function NotificationBell() {
     };
   }, [isOpen]);
 
-  // Sprint 12 (inbox-collaboration), requirements.md §7.12/§9: mention/assignment notifications
-  // carry a `responseId` and route into the Inbox at that response — the same
-  // `?responseId=`-opens-the-drawer contract `ResponsesHubView`/`ResponseDrawer` already use.
-  // `formId` present but no workspace context (Sprint 14's page doesn't exist yet) falls back to
-  // the form-scoped responses route, matching `(user)/responses/[id]/page.tsx`'s own precedent.
+  // Routing is the shared helper the Notifications page also uses (task 1.4).
   function handleItemClick(notification: AppNotification) {
-    if (!notification.read) markAsReadMutation.mutate(notification.id);
+    if (!notification.read) markRead.mutate(notification.id);
     setIsOpen(false);
-    if (!notification.responseId) return;
-    const target = notification.formId
-      ? `/forms/${notification.formId}/responses?responseId=${notification.responseId}`
-      : `/responses?responseId=${notification.responseId}`;
-    router.push(target);
+    const target = resolveNotificationTarget(notification, scope);
+    if (target) router.push(target);
   }
+
+  const viewAllHref = scope === 'personal' ? '/notifications' : `/w/${scope}/notifications`;
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -85,7 +69,7 @@ export function NotificationBell() {
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         className="relative flex min-h-11 min-w-11 items-center justify-center rounded-lg text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-primary) transition-colors focus:outline-none focus:ring-2 focus:ring-(--border-focus)/20"
-        aria-label="View notifications"
+        aria-label={unreadCount > 0 ? `View notifications, ${unreadCount} unread` : 'View notifications'}
         aria-expanded={isOpen}
         aria-haspopup="menu"
       >
@@ -108,46 +92,47 @@ export function NotificationBell() {
             <p className="bg-body-sm font-semibold text-(--text-primary)">Notifications</p>
           </div>
 
-          {notifications.length === 0 ? (
+          {listQuery.isLoading ? (
+            <ul className="divide-y divide-(--border-default)" aria-busy="true" aria-label="Loading notifications">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <li key={i} className="flex animate-pulse items-start gap-3 px-4 py-3">
+                  <span className="h-8 w-8 shrink-0 rounded-full bg-(--bg-sunken)" />
+                  <span className="flex flex-1 flex-col gap-1.5">
+                    <span className="h-3.5 w-2/3 rounded bg-(--border-default)" />
+                    <span className="h-3 w-1/2 rounded bg-(--bg-sunken)" />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : listQuery.isError ? (
+            <div role="alert" className="flex flex-col items-center gap-2 px-4 py-6 text-center">
+              <p className="bg-body-sm text-(--text-muted)">We could not load your notifications.</p>
+              <button type="button" onClick={() => void listQuery.refetch()} className="bg-body-sm font-semibold text-(--action-primary) hover:underline">
+                Try again
+              </button>
+            </div>
+          ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center px-4 py-6 text-center">
               <StateArt name="notifications" size="sm" />
               <p className="bg-body-sm text-(--text-muted)">No notifications yet.</p>
             </div>
           ) : (
             <ul className="max-h-96 overflow-y-auto divide-y divide-(--border-default)">
-              {notifications.map((notification) => {
-                const Icon = TYPE_ICON[notification.type] ?? Bell;
-                return (
-                  <li key={notification.id}>
-                    <button
-                      type="button"
-                      onClick={() => handleItemClick(notification)}
-                      className={cn(
-                        'flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-(--surface-hover)',
-                        !notification.read && 'bg-(--accent-soft)/50'
-                      )}
-                    >
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-(--accent-soft) text-(--accent-soft-text)">
-                        <Icon size={16} aria-hidden="true" />
-                      </span>
-                      <span className="flex-1 min-w-0">
-                        <span className="flex items-center gap-1.5">
-                          <span className="bg-body-sm font-semibold text-(--text-primary)">{notification.title}</span>
-                          {!notification.read && (
-                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-(--action-primary)" aria-label="Unread" />
-                          )}
-                        </span>
-                        <span className="block bg-caption text-(--text-muted) mt-0.5">{notification.message}</span>
-                        <span className="block bg-caption text-(--text-muted) mt-1">
-                          {formatRelativeTime(notification.createdAt)}
-                        </span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
+              {notifications.map((notification) => (
+                <NotificationRow key={notification.id} notification={notification} onSelect={handleItemClick} compact />
+              ))}
             </ul>
           )}
+
+          <div className="border-t border-(--border-default) px-4 py-2.5 text-center">
+            <Link
+              href={viewAllHref}
+              onClick={() => setIsOpen(false)}
+              className="bg-body-sm font-semibold text-(--action-primary) hover:underline"
+            >
+              View all
+            </Link>
+          </div>
         </div>
       )}
     </div>

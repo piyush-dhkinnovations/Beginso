@@ -1,7 +1,7 @@
 /**
  * __tests__/components/analytics/AnalyticsStatCards.test.tsx
  * Feature: sprint-5-analytics-reports
- * Tests: AnalyticsStatCards — 4-card grid, skeleton, error+retry, zero-muted value
+ * Tests: AnalyticsStatCards — 5-card grid (the four counts plus Sprint 14's Completion rate), skeleton, error+retry, zero-muted value
  * Requirements: 2.1-2.4
  */
 
@@ -11,7 +11,7 @@ import { AnalyticsStatCards } from '@/components/analytics/AnalyticsStatCards';
 import { mockAnalyticsOverview } from '@/lib/mocks/analyticsMocks';
 
 describe('AnalyticsStatCards', () => {
-  it('renders 4 cards in Total/Completed/In Progress/New order with their values', () => {
+  it('renders the Total/Completed/In Progress/New cards with their values, plus the Completion rate card', () => {
     const overview = mockAnalyticsOverview({ totalResponses: 128, categoryCounts: { new: 42, in_progress: 36, completed: 50 } });
     render(<AnalyticsStatCards overview={overview} isLoading={false} />);
 
@@ -23,6 +23,19 @@ describe('AnalyticsStatCards', () => {
     expect(screen.getByText('36')).toBeInTheDocument();
     expect(screen.getByText('New')).toBeInTheDocument();
     expect(screen.getByText('42')).toBeInTheDocument();
+    expect(screen.getByText('Completion rate')).toBeInTheDocument();
+  });
+
+  // Sprint 14 (OQ-3): no counted views -> "—" with its explanation, never 0%.
+  it('shows "—" with "Not enough views yet" when the completion rate is null, and a percentage when it is not', () => {
+    const { rerender } = render(<AnalyticsStatCards overview={mockAnalyticsOverview({ completionRate: null })} isLoading={false} />);
+    expect(screen.getByText('Not enough views yet')).toBeInTheDocument();
+    expect(screen.queryByText('0%')).not.toBeInTheDocument();
+
+    rerender(<AnalyticsStatCards overview={mockAnalyticsOverview({ completionRate: 42 })} isLoading={false} />);
+    // The value and the ring's own label both read 42%.
+    expect(screen.getAllByText('42%').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('42% of people who open this form finish it')).toBeInTheDocument();
   });
 
   it('renders a zero value in muted text-(--text-muted) (theme-aware)', () => {
@@ -34,7 +47,7 @@ describe('AnalyticsStatCards', () => {
 
   it('shows a pulsing skeleton per card while loading', () => {
     const { container } = render(<AnalyticsStatCards isLoading />);
-    expect(container.querySelectorAll('.animate-pulse')).toHaveLength(4);
+    expect(container.querySelectorAll('.animate-pulse')).toHaveLength(5);
   });
 
   it('renders an inline error card with a retry action instead of the grid', () => {

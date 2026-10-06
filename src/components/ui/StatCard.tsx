@@ -47,6 +47,8 @@ export interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
   unit?: React.ReactNode;
   /** `note` is a small muted line under the figure, e.g. "vs previous 30 days". */
   delta?: { label: string; direction: "up" | "down" | "flat"; note?: string };
+  /** A plain muted helper line under the label (no delta), e.g. "42% of people who open this finish it". */
+  note?: React.ReactNode;
   /** Optional mini graph on the right: bars for a trend, a ring for a ratio. */
   chart?: StatChart;
   /** Extra classes for the value itself (e.g. a muted colour for a zero). */
@@ -65,6 +67,7 @@ export function StatCard({
   icon,
   unit,
   delta,
+  note,
   chart,
   valueClassName,
   horizontal,
@@ -80,6 +83,7 @@ export function StatCard({
         {unit && <span className="bg-stat-unit"> {unit}</span>}
       </span>
       <span className="bg-stat-label">{label}</span>
+      {note && <span className="bg-caption text-(--text-muted)">{note}</span>}
       {delta && (
         <>
           <span className={bx("bg-delta", `bg-delta-${delta.direction}`)}>{delta.label}</span>

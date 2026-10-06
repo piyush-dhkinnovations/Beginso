@@ -207,6 +207,7 @@ export function ShareView({ formId, embedded = false, onOpenPublish }: ShareView
           {isLive && (
             <>
               {qrDataUrl ? (
+                // Deliberately bg-white in every theme: a QR code needs a light quiet zone to scan, so this is not a dark-mode gap.
                 // eslint-disable-next-line @next/next/no-img-element -- client-generated data: URI, not a static asset
                 <img src={qrDataUrl} alt="QR code linking to the public form" width={200} height={200} className="rounded-md border border-(--border-default) bg-white p-1" />
               ) : (

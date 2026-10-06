@@ -58,6 +58,8 @@ export const config = {
     '/onboarding/:path*',
     '/w/:path*',
     '/shared/:path*',
+    '/notifications/:path*',
+    '/search/:path*',
     '/login',
     '/signup',
     '/verify-email',

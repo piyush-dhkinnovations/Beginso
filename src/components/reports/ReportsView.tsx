@@ -15,7 +15,14 @@ import { reportsService } from '@/services/reports';
 import { reportKeys } from '@/lib/queryKeys';
 import type { CreateReportPayload, PaginatedReportsResult, ReportFormat, ReportJob } from '@/types/report';
 
-export function ReportsView() {
+interface ReportsViewProps {
+  /** 'personal' (default) or a workspace slug - Sprint 14: Exports lives inside Insights in both contexts. */
+  scope?: string;
+  /** Rendered inside the Insights Exports tab: the page already has a PageHeader, so this skips its own. */
+  embedded?: boolean;
+}
+
+export function ReportsView({ scope = 'personal', embedded = false }: ReportsViewProps = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -38,13 +45,14 @@ export function ReportsView() {
   const [dateRange, setDateRange] = useState<{ from?: string; to?: string }>({});
 
   const { data: formsData } = useQuery({
-    queryKey: ['forms', 'list-for-reports'],
+    queryKey: ['forms', 'list-for-reports', scope],
     // Real bug found and fixed: unscoped, so this dropdown could silently include a caller's
     // workspace forms depending on their default-workspace resolution (src/services/forms.ts's
     // own comment has the full root-cause). This component only renders under (user)/reports
     // today (no /w/[slug]/reports route exists yet), so 'personal' is unconditionally correct —
     // revisit if/when Reports gets a workspace-scoped route.
-    queryFn: () => formsService.getForms({ limit: 100 }, { type: 'personal' }),
+    // Sprint 14: scoped to the active context - a workspace export only offers that workspace's forms.
+    queryFn: () => formsService.getForms({ limit: 100 }, scope === 'personal' ? { type: 'personal' } : { type: 'workspace', workspaceId: scope }),
   });
   const forms = useMemo(() => formsData?.forms ?? [], [formsData]);
   // The backend's job objects only carry `formId` (a raw ObjectId), never a denormalized
@@ -53,7 +61,7 @@ export function ReportsView() {
   const formTitleById = useMemo(() => new Map(forms.map((f) => [f._id, f.title])), [forms]);
 
   const createReportMutation = useMutation({
-    mutationFn: (payload: CreateReportPayload) => reportsService.createReport(payload),
+    mutationFn: (payload: CreateReportPayload) => reportsService.createReport(payload, scope),
     onSuccess: (job, payload) => {
       // The scope shown in the optimistic row comes from the request we just sent, not from
       // trusting the POST response to echo every field back — we already know for certain what
@@ -90,12 +98,14 @@ export function ReportsView() {
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
-      <PageHeader
-        title="Reports"
-        description="Export your form responses as a CSV or PDF file."
-        actionsAlign="center"
-        actions={<DateRangeFilter part="range" value={dateRange} onChange={setDateRange} />}
-      />
+      {embedded ? null : (
+        <PageHeader
+          title="Reports"
+          description="Export your form responses as a CSV or PDF file."
+          actionsAlign="center"
+          actions={<DateRangeFilter part="range" value={dateRange} onChange={setDateRange} />}
+        />
+      )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ReportFormatCard
@@ -124,6 +134,7 @@ export function ReportsView() {
           route"), rather than shipping a picker with no real stage data behind it. */}
       <div className="flex flex-wrap items-center gap-3">
         <DateRangeFilter part="presets" value={dateRange} onChange={setDateRange} />
+        {embedded && <DateRangeFilter part="range" value={dateRange} onChange={setDateRange} />}
         <div className="ml-auto w-52">
           <Select
             id="reports-form"
@@ -140,7 +151,7 @@ export function ReportsView() {
       </div>
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <ReportJobsList page={jobsPage} onPageChange={goToJobsPage} formTitleById={formTitleById} />
+        <ReportJobsList page={jobsPage} onPageChange={goToJobsPage} formTitleById={formTitleById} scope={scope} />
         <ReportsSidebar />
       </div>
     </div>

@@ -1,9 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { Lock } from 'lucide-react';
 import { SettingsView } from '@/components/settings/SettingsView';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
 import { canManageScoring, canManageStages, canManageTags, canManageWorkspaceSettings } from '@/lib/roles';
@@ -22,16 +20,13 @@ export default function WorkspaceSettingsPage() {
     ...(canManageTags(role) ? (['tags'] as const) : []),
     ...(canManageStages(role) ? (['stages'] as const) : []),
     ...(canManageScoring(role) ? (['scoring'] as const) : []),
+    'notifications', // every member has their own response-email preference
   ];
-
-  if (tabs.length === 0) {
-    return <EmptyState icon={<Lock className="bg-icon" aria-hidden="true" />} title="You do not have access to workspace settings." />;
-  }
 
   return (
     <SettingsView
       title="Workspace settings"
-      description="Manage this workspace's name, branding, tags, stages, and scoring."
+      description="Manage this workspace's name, branding, tags, stages, and scoring, and choose which response emails you get."
       tabs={tabs}
       scope={slug}
       labels={{ workspace: 'General' }}

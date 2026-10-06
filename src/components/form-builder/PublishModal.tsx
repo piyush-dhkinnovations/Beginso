@@ -11,8 +11,8 @@ import { Input } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { formsService } from '@/services/forms';
-import { settingsService } from '@/services/settings';
-import { readinessKeys, settingsKeys } from '@/lib/queryKeys';
+import { useMyNotificationPreference } from '@/hooks/useMyNotificationPreference';
+import { readinessKeys } from '@/lib/queryKeys';
 import { useWorkspaceTimezone } from '@/hooks/useWorkspaceTimezone';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import type { AccessMode, FormSettings, FormStatus, ReadinessIssue } from '@/types/form';
@@ -120,13 +120,8 @@ function Preflight({ onClose, formId, slug, settings, scope, canPublish, onStatu
     retry: false,
   });
 
-  // The viewer's own email setting for this workspace — read-only here; delivery ships with notifications.
-  const workspaceSettings = useQuery({
-    queryKey: settingsKeys.workspace(scope),
-    queryFn: () => settingsService.getWorkspace(scope === 'personal' ? undefined : scope),
-    retry: false,
-    staleTime: 60_000,
-  });
+  // The viewer's own Membership.notificationPreference (same cache as Settings > Notifications).
+  const myPref = useMyNotificationPreference(scope);
 
   const publish = useMutation({
     mutationFn: () =>
@@ -163,13 +158,18 @@ function Preflight({ onClose, formId, slug, settings, scope, canPublish, onStatu
   const closeText = settings.closeDate
     ? new Date(settings.closeDate).toLocaleString('en-GB', { timeZone: timezone, dateStyle: 'medium', timeStyle: 'short' })
     : 'No closing date';
-  const notifyText = workspaceSettings.data
-    ? workspaceSettings.data.notificationPreferences?.newResponseEmail
-      ? 'Email me on each response'
-      : 'No email notifications'
-    : workspaceSettings.isError
-      ? 'Unavailable'
-      : '…';
+  const notifyText =
+    scope === 'personal'
+      ? 'No email notifications on personal forms'
+      : myPref.preference
+        ? {
+            all: 'Email me on every response (no answers in the email)',
+            mine: 'Email me on responses assigned to me or on forms I created (no answers in the email)',
+            none: 'No response emails',
+          }[myPref.preference]
+        : myPref.isError
+          ? 'Unavailable'
+          : '…';
   const publicUrl = slug ? `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/f/${slug}` : null;
 
   const blocking = readiness.data?.blocking ?? [];
@@ -222,8 +222,8 @@ function Preflight({ onClose, formId, slug, settings, scope, canPublish, onStatu
               <>
                 {notifyText}
                 <span className="block bg-caption font-normal text-(--text-muted)">
-                  Email delivery arrives with notifications. Manage it in{' '}
-                  <Link href={scope === 'personal' ? '/settings' : `/w/${scope}/settings`} className="underline">
+                  Manage it in{' '}
+                  <Link href={scope === 'personal' ? '/settings' : `/w/${scope}/settings?tab=notifications`} className="underline">
                     Settings
                   </Link>
                   .

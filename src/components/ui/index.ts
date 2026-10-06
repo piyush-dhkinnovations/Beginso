@@ -18,6 +18,8 @@ export { Card } from './Card';
 export type { CardProps } from './Card';
 export { Checkbox } from './Checkbox';
 export type { CheckboxProps } from './Checkbox';
+export { CommandPalette } from './CommandPalette';
+export type { CommandPaletteProps, CommandPaletteGroup, CommandPaletteItem } from './CommandPalette';
 export { ContextSwitcher } from './ContextSwitcher';
 export type { ContextSwitcherProps, ContextSwitcherWorkspace, ContextSwitcherTarget } from './ContextSwitcher';
 export { Drawer } from './Drawer';

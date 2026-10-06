@@ -143,6 +143,9 @@ export interface Form {
   publishedAt?: string;      // ISO 8601
   archivedAt?: string | null; // Backend contract to confirm (BE 0.8) — set = archived, never expires
   deletedAt?: string | null;  // Backend contract to confirm (BE 0.8) — set = in Trash
+  // Sprint 14 (BE 0.4) - source template link; null/absent for forms not created from a template.
+  templateId?: string | null;
+  templateCategory?: string | null;
   // sprint-10-events-migration requirements.md §7.9 — Backend contract to confirm whether
   // GET /api/forms already returns owner identity for a workspace-form row; read defensively
   // (optional, may be absent). A personal form's owner is always the caller, so this is only

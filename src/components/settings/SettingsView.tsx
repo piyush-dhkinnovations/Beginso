@@ -132,7 +132,7 @@ export function SettingsView({ title, description, tabs, scope, labels }: Settin
         )}
         {visitedTabs.has('notifications') && (
           <div className={activeTab === 'notifications' ? '' : 'hidden'}>
-            <NotificationsTab />
+            <NotificationsTab scope={scope} />
           </div>
         )}
         {visitedTabs.has('security') && (

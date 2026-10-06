@@ -8,6 +8,7 @@ import { isAxiosError } from 'axios';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
+import { Alert } from '@/components/ui/Alert';
 import { DateRangeFilter } from './DateRangeFilter';
 import { AnalyticsStatCards } from './AnalyticsStatCards';
 import { TrendChart } from './TrendChart';
@@ -18,12 +19,17 @@ import { FormsByStatusCard } from './FormsByStatusCard';
 import { ResponsesOverTimeCard, type TrendBucket } from './ResponsesOverTimeCard';
 import { WorkspaceSummaryCards } from './WorkspaceSummaryCards';
 import { Select } from '@/components/ui/Select';
+import { Checkbox } from '@/components/ui/Checkbox';
+import { InsightsTabs, useInsightsTab } from './InsightsTabs';
+import { TemplateDashboard } from './TemplateDashboard';
+import { CustomChartsSection } from './CustomChartsSection';
+import { ReportsView } from '@/components/reports/ReportsView';
 import { useAnalyticsTrend } from '@/hooks/useAnalyticsTrend';
 import { formsService } from '@/services/forms';
 import { useFormScope } from '@/hooks/useFormScope';
 import { analyticsService } from '@/services/analytics';
 import { analyticsKeys } from '@/lib/queryKeys';
-import { resolveEffectiveDateRange, resolveTrendBucket, resolvePreviousDateRange } from '@/lib/dateRange';
+import { ALL_TIME_SENTINEL, resolveEffectiveDateRange, resolveTrendBucket, resolvePreviousDateRange } from '@/lib/dateRange';
 import { computeChangePercent } from '@/lib/analyticsChange';
 
 // ponytail: workspace-wide summary cards sum totalResponses across whatever page this fetches,
@@ -54,6 +60,11 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
   const bucket: TrendBucket = bucketOverride ?? defaultBucket;
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const range = { from, to };
+  // Sprint 14 (requirements 1.3): "Compare to previous period" - drives every delta line. Defaults on
+  // (that is what the page already showed); off skips the previous-period queries entirely.
+  const [compare, setCompare] = useState(true);
+  const { tab } = useInsightsTab(scope);
+  const showExports = !formId && tab === 'exports';
 
   const rawPage = Number(searchParams.get('page'));
   const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
@@ -96,7 +107,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
   const formsSummaryQuery = useQuery({
     queryKey: analyticsKeys.formsSummary(range, page, scope),
     queryFn: () => analyticsService.getFormsSummary({ from, to, page, limit: FORMS_SUMMARY_LIMIT }, scope),
-    enabled: !formId,
+    enabled: !formId && !showExports,
   });
 
   // "vs previous period" for the workspace summary cards and the table's Change column — no
@@ -104,13 +115,30 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
   // /api/analytics/forms endpoint a second time for the immediately preceding, equal-length
   // window. "All time" has no meaningful predecessor (Requirement-less UX call, not a spec item).
   const previousRange = resolvePreviousDateRange(from, to);
-  const hasPreviousRange = !!previousRange.from && !!previousRange.to;
+  const hasPreviousRange = compare && !!previousRange.from && !!previousRange.to;
+
+  // Per-form: the previous equal-length window's overview, for the stat-card deltas.
+  const previousOverviewQuery = useQuery({
+    queryKey: analyticsKeys.overview(formId as string, previousRange),
+    queryFn: () => analyticsService.getOverview({ formId, from: previousRange.from, to: previousRange.to, timezone }, formScope),
+    enabled: !!formId && !!formScope && hasPreviousRange,
+  });
 
   const previousFormsSummaryQuery = useQuery({
     queryKey: analyticsKeys.formsSummary(previousRange, 1, scope),
     queryFn: () => analyticsService.getFormsSummary({ from: previousRange.from, to: previousRange.to, page: 1, limit: FORMS_SUMMARY_LIMIT }, scope),
-    enabled: !formId && hasPreviousRange,
+    enabled: !formId && hasPreviousRange && !showExports,
   });
+
+  // design.md §17: "no forms yet" and "no responses in this range" are different states - the second
+  // keeps the page and offers to widen the range.
+  function widenRange() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('from', ALL_TIME_SENTINEL);
+    params.set('to', ALL_TIME_SENTINEL);
+    params.delete('page');
+    router.replace(`${pathname}?${params.toString()}`);
+  }
 
   const currentForms = formsSummaryQuery.data?.forms ?? [];
   const workspaceTotalResponses = currentForms.reduce((sum, f) => sum + f.totalResponses, 0);
@@ -124,9 +152,12 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
   // Workspace view extras: per-form previous-period baselines for every card's change, the daily
   // series behind the charts (see useAnalyticsTrend), and the figures the stat cards show.
   const previousForms = previousFormsSummaryQuery.data?.forms ?? [];
+  // Sprint 14 (OQ-3): views-weighted across forms that have a counted views-based rate. Forms
+  // with a null rate or no views are left out; if none qualify the result is null ("—"), never 0%.
   const meanCompletion = (list: typeof currentForms) => {
-    const withResponses = list.filter((f) => f.totalResponses > 0);
-    return withResponses.length > 0 ? withResponses.reduce((sum, f) => sum + f.completionRate, 0) / withResponses.length : null;
+    const counted = list.filter((f) => typeof f.completionRate === 'number' && (f.views ?? 0) > 0);
+    const totalViews = counted.reduce((sum, f) => sum + (f.views ?? 0), 0);
+    return totalViews > 0 ? counted.reduce((sum, f) => sum + (f.completionRate as number) * (f.views ?? 0), 0) / totalViews : null;
   };
   const workspaceCompletion = meanCompletion(currentForms);
   const previousCompletion = meanCompletion(previousForms);
@@ -192,10 +223,16 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
         title={title}
         description={formId ? `Analytics · ${form?.title ?? ''}` : 'See how every form in your workspace is performing.'}
         actionsAlign="center"
-        actions={isFirstRun ? undefined : <DateRangeFilter part="range" />}
+        actions={isFirstRun || showExports ? undefined : <DateRangeFilter part="range" />}
       />
 
-      {isFirstRun ? (
+      {!formId && <InsightsTabs scope={scope} />}
+
+      {showExports ? (
+        <div role="tabpanel" id="tabpanel-exports" aria-labelledby="tab-exports" className="flex flex-col gap-4">
+          <ReportsView scope={scope} embedded />
+        </div>
+      ) : isFirstRun ? (
         <EmptyState
           illustration="empty-reports"
           icon={<FileText />}
@@ -217,6 +254,13 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
         <>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <DateRangeFilter part="presets" />
+        <Checkbox
+          id="analytics-compare"
+          label="Compare to previous period"
+          checked={compare}
+          onChange={(e) => setCompare(e.target.checked)}
+          disabled={isAllTime}
+        />
         {!formId && currentForms.length > 0 && (
           <div className="w-48">
             <Select
@@ -250,41 +294,60 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
         />
       )}
 
+      {!formId && formsSummaryQuery.isSuccess && currentForms.length > 0 && workspaceTotalResponses === 0 && !isAllTime && (
+        <Alert variant="info" title="No responses in this range">
+          <Button variant="secondary" size="small" onClick={widenRange}>Widen the date range</Button>
+        </Alert>
+      )}
+
       {formId ? (
         <>
-          <AnalyticsStatCards
-            overview={overviewQuery.data}
-            isLoading={overviewQuery.isLoading}
-            isError={overviewQuery.isError}
-            onRetry={() => void overviewQuery.refetch()}
-            trend={trendsQuery.data?.points.map((point) => point.responses)}
+          <TemplateDashboard
+            templateCategory={form?.templateCategory}
+            cards={{
+              stats: (
+                <AnalyticsStatCards
+                  overview={overviewQuery.data}
+                  isLoading={overviewQuery.isLoading}
+                  isError={overviewQuery.isError}
+                  onRetry={() => void overviewQuery.refetch()}
+                  trend={trendsQuery.data?.points.map((point) => point.responses)}
+                  previousOverview={hasPreviousRange ? previousOverviewQuery.data : undefined}
+                  periodLabel={periodLabel}
+                />
+              ),
+              charts: (
+                <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-4">
+                  <TrendChart
+                    data={trendsQuery.data}
+                    isLoading={trendsQuery.isLoading}
+                    isError={trendsQuery.isError}
+                    onRetry={() => void trendsQuery.refetch()}
+                    isAllTime={isAllTime}
+                  />
+
+                  <StatusDistributionChart
+                    overview={overviewQuery.data}
+                    isLoading={overviewQuery.isLoading}
+                    isError={overviewQuery.isError}
+                    onRetry={() => void overviewQuery.refetch()}
+                    isAllTime={isAllTime}
+                  />
+                </div>
+              ),
+              questions: (
+                <QuestionBreakdownSection
+                  form={form}
+                  breakdown={questionsQuery.data?.questions}
+                  isLoading={questionsQuery.isLoading}
+                  isError={questionsQuery.isError}
+                  onRetry={() => void questionsQuery.refetch()}
+                />
+              ),
+            }}
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-4">
-            <TrendChart
-              data={trendsQuery.data}
-              isLoading={trendsQuery.isLoading}
-              isError={trendsQuery.isError}
-              onRetry={() => void trendsQuery.refetch()}
-              isAllTime={isAllTime}
-            />
-
-            <StatusDistributionChart
-              overview={overviewQuery.data}
-              isLoading={overviewQuery.isLoading}
-              isError={overviewQuery.isError}
-              onRetry={() => void overviewQuery.refetch()}
-              isAllTime={isAllTime}
-            />
-          </div>
-
-          <QuestionBreakdownSection
-            form={form}
-            breakdown={questionsQuery.data?.questions}
-            isLoading={questionsQuery.isLoading}
-            isError={questionsQuery.isError}
-            onRetry={() => void questionsQuery.refetch()}
-          />
+          {formScope && <CustomChartsSection form={form} formId={formId} scope={formScope} range={range} />}
         </>
       ) : (
         <>

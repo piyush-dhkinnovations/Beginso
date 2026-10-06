@@ -15,6 +15,10 @@ const ACTION_PHRASES: Record<string, string> = {
   'member.removed': 'removed a member from',
   'session.revoked': 'revoked a session on',
   'export.created': 'exported responses from',
+  // Sprint 14 (B5.3): the report queue's own events. The row count, when the event carries it, is
+  // appended by `describeEventDetail` - never assumed present.
+  'report.create': 'exported a',
+  'report.download': 'downloaded a',
   'form.unpublish': 'unpublished',
   'form.regenerate_link': 'generated a new link for',
   'form.archive': 'archived',
@@ -30,8 +34,16 @@ const ACTION_PHRASES: Record<string, string> = {
   'template.remove': 'removed a template',
 };
 
-export function describeEventAction(action: string): string {
-  return ACTION_PHRASES[action] ?? action.replace(/[._]/g, ' ');
+// `metadata` is optional - Sprint 14 (B5.3): report events read a row count from it, and only when it
+// is a real number ("exported 142 rows in a"). Anything else, or an unknown action, degrades to the
+// plain phrase / generic text; this never throws.
+export function describeEventAction(action: string, metadata?: Record<string, unknown> | null): string {
+  const phrase = ACTION_PHRASES[action] ?? action.replace(/[._]/g, ' ');
+  const rows = metadata?.rows;
+  if (action === 'report.create' && typeof rows === 'number' && Number.isFinite(rows)) {
+    return `exported ${rows.toLocaleString('en')} ${rows === 1 ? 'row' : 'rows'} in a`;
+  }
+  return phrase;
 }
 
 // Bug fix: response-related events write `label: String(id)` at the source (every `recordEvent`

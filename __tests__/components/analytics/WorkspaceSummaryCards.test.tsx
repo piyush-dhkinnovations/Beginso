@@ -43,7 +43,8 @@ describe('WorkspaceSummaryCards', () => {
     expect(screen.getByText('/ 6')).toBeInTheDocument();
     expect(screen.getByText('Avg. Responses / Form')).toBeInTheDocument();
     expect(screen.getByText('63.5')).toBeInTheDocument();
-    expect(screen.getByText('Completion Rate')).toBeInTheDocument();
+    // Sprint 14: the views-based Completion rate card (CompletionRateCard) replaced the old stage-based one.
+    expect(screen.getByText('Completion rate')).toBeInTheDocument();
     // The value and the ring's own label both read 78%.
     expect(screen.getAllByText('78%').length).toBeGreaterThanOrEqual(1);
   });
@@ -68,6 +69,8 @@ describe('WorkspaceSummaryCards', () => {
     // Total responses, active forms and the average all read zero.
     expect(screen.getAllByText('0').every((el) => el.className.includes('text-(--text-disabled)'))).toBe(true);
     expect(screen.getByText('0.0').className).toContain('text-(--text-disabled)');
-    expect(screen.getByText('—').className).toContain('text-(--text-disabled)');
+    // The null rate is "—" with a "Not enough views yet" explanation, in the muted token (never 0%).
+    expect(screen.getByText('Not enough views yet')).toBeInTheDocument();
+    expect(screen.getByText(/^—/).closest('.bg-stat-value')?.className).toContain('text-(--text-disabled)');
   });
 });

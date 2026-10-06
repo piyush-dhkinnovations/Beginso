@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
 import { Menu } from '@/components/ui/Menu';
+import { Tooltip } from '@/components/ui/Tooltip';
 import { ProgressBar } from '@/components/ui/charts';
 import { Table, type TableColumn } from '@/components/ui/Table';
 import { FormTile } from '@/components/forms/FormTile';
@@ -160,12 +161,21 @@ export function FormsSummaryTable({
     {
       key: 'completion',
       header: 'Completion Rate',
-      render: (form) => (
-        <div className="flex items-center gap-3">
-          <span className="w-10 bg-body-sm tabular-nums text-(--text-primary)">{Math.round(form.completionRate)}%</span>
-          <ProgressBar percent={form.completionRate} width={110} />
-        </div>
-      ),
+      // Sprint 14 (OQ-3): null = no counted views - "—" with a tooltip, never 0%.
+      render: (form) =>
+        form.completionRate === null || form.completionRate === undefined ? (
+          <Tooltip content="Not enough views yet">
+            <span tabIndex={0} className="bg-body-sm text-(--text-muted)">
+              {'—'}
+              <span className="sr-only">Not enough views yet</span>
+            </span>
+          </Tooltip>
+        ) : (
+          <div className="flex items-center gap-3">
+            <span className="w-10 bg-body-sm tabular-nums text-(--text-primary)">{Math.round(form.completionRate)}%</span>
+            <ProgressBar percent={form.completionRate} width={110} />
+          </div>
+        ),
     },
     {
       key: 'actions',

@@ -62,7 +62,15 @@ describe('analyticsService', () => {
       params: { formId: 'form-1', from: '2026-08-01', to: '2026-08-10' },
       headers: { 'x-workspace-slug': 'personal' },
     });
-    expect(result).toEqual({ totalResponses: 3, categoryCounts: { new: 3, in_progress: 0, completed: 0 } });
+    // Sprint 14 (OQ-3): `completionRate` is now the views-based figure, nullable - the old live value
+    // (here 0) is passed through as a number, and a missing `views` is null, never fabricated.
+    expect(result).toEqual({
+      totalResponses: 3,
+      categoryCounts: { new: 3, in_progress: 0, completed: 0 },
+      completionRate: 0,
+      reviewedRate: null,
+      views: null,
+    });
   });
 
   it('getTrends calls GET /api/analytics/trends with params and reads bucket out of dateRange', async () => {
@@ -145,11 +153,34 @@ describe('analyticsService', () => {
       headers: { 'x-workspace-slug': 'personal' },
     });
     expect(result).toEqual({
-      forms: [{ _id: '6a7ac7717b99397f828e235b', title: 'Event Registration', status: 'published', totalResponses: 3, completionRate: 82 }],
+      forms: [
+        { _id: '6a7ac7717b99397f828e235b', title: 'Event Registration', status: 'published', totalResponses: 3, completionRate: 82, views: null, templateCategory: null },
+      ],
       total: 1,
       page: 1,
       limit: 20,
     });
+  });
+
+  // Sprint 14 (OQ-3): a null/missing rate stays null - "not enough views" - and is never defaulted to 0.
+  it('getFormsSummary keeps a null completionRate null and reads views / reviewedRate / templateCategory', async () => {
+    mockGet.mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: [
+          { formId: 'f1', title: 'A', status: 'published', totalResponses: 4, completionRate: null, views: 0, reviewedRate: 50, templateCategory: 'HR' },
+          { formId: 'f2', title: 'B', status: 'draft', totalResponses: 0 },
+        ],
+        total: 2,
+        page: 1,
+        limit: 20,
+      },
+    });
+
+    const result = await analyticsService.getFormsSummary({ page: 1, limit: 20 });
+
+    expect(result.forms[0]).toMatchObject({ completionRate: null, views: 0, reviewedRate: 50, templateCategory: 'HR' });
+    expect(result.forms[1]).toMatchObject({ completionRate: null, views: null, templateCategory: null });
   });
 
   it('getFormsSummary maps an empty data array to an empty forms list', async () => {

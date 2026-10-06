@@ -51,7 +51,8 @@ describe('reportsService', () => {
 
     const result = await reportsService.createReport(payload);
 
-    expect(mockPost).toHaveBeenCalledWith('/api/reports', payload);
+    // Sprint 14: every report call names its context explicitly (Exports lives inside Insights).
+    expect(mockPost).toHaveBeenCalledWith('/api/reports', payload, { headers: { 'x-workspace-slug': 'personal' } });
     expect(result).toEqual({
       _id: '6a7d80670888f6136902d8d9',
       format: 'csv',
@@ -86,7 +87,7 @@ describe('reportsService', () => {
 
     const result = await reportsService.getReports({ page: 1, limit: 20 });
 
-    expect(mockGet).toHaveBeenCalledWith('/api/reports', { params: { page: 1, limit: 20 } });
+    expect(mockGet).toHaveBeenCalledWith('/api/reports', { params: { page: 1, limit: 20 }, headers: { 'x-workspace-slug': 'personal' } });
     expect(result.data[0]._id).toBe('r1');
     expect(result.data[0].errorMessage).toBe('Failed to generate report due to an internal processing error. Please try again.');
     expect(result.total).toBe(1);

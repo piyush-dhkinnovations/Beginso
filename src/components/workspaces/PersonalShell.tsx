@@ -12,6 +12,8 @@
 // self-contained dropdown triggers with no positioning dependency on the old fixed TopNav.
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import { SearchTrigger } from '@/components/search/SearchTrigger';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { AppShell, TopBar, Skeleton } from '@/components/ui';
@@ -24,6 +26,9 @@ import { Wordmark } from '@/components/landing/Wordmark';
 import { formsService } from '@/services/forms';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
+
+// Sprint 14 (task 6.3): the palette and its results code load after first paint, off the shell's critical path.
+const GlobalSearch = dynamic(() => import('@/components/search/GlobalSearch').then((m) => m.GlobalSearch), { ssr: false });
 
 export interface PersonalShellProps {
   initialCollapsed: boolean;
@@ -81,6 +86,10 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
   // personal, not a known workspace) — the window this shell used to fill with the wrong
   // sidebar. Once `form` resolves (confirming a personal form, `workspaceId: null`) or a
   // workspace match lands, this clears immediately.
+  // Sprint 14: a workspace form's detail routes render under this shell, so search and notifications
+  // follow the form's workspace, not 'personal'. While still resolving they stay personal.
+  const contextScope = formWorkspace?.slug ?? 'personal';
+
   const contextUnresolved = !!formId && !wsHint && !form && !formWorkspace;
 
   return (
@@ -102,8 +111,10 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
           }}
           actions={
             <div className="flex items-center gap-2">
-              <NotificationBell />
+              <SearchTrigger />
+              <NotificationBell scope={contextScope} />
               <UserProfileDropdown />
+              <GlobalSearch key={contextScope} scope={contextScope} />
             </div>
           }
         />

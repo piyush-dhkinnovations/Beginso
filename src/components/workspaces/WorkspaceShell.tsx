@@ -17,12 +17,17 @@
 // and WorkspaceShell owns the function values internally.
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import { SearchTrigger } from '@/components/search/SearchTrigger';
 import { AppShell, TopBar } from '@/components/ui';
 import { WorkspaceSidebar } from '@/components/workspaces/WorkspaceSidebar';
 import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown';
 import { Wordmark } from '@/components/landing/Wordmark';
 import type { Role } from '@/types/workspace';
+
+// Sprint 14 (task 6.3): the palette and its results code load after first paint, off the shell's critical path.
+const GlobalSearch = dynamic(() => import('@/components/search/GlobalSearch').then((m) => m.GlobalSearch), { ssr: false });
 
 export interface WorkspaceShellProps {
   slug: string;
@@ -54,8 +59,10 @@ export function WorkspaceShell({ slug, workspaceName, initialCollapsed, children
           }}
           actions={
             <div className="flex items-center gap-2">
-              <NotificationBell />
+              <SearchTrigger />
+              <NotificationBell scope={slug} />
               <UserProfileDropdown />
+              <GlobalSearch key={slug} scope={slug} />
             </div>
           }
         />

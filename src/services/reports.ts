@@ -1,4 +1,5 @@
 import axiosInstance from '@/lib/axios';
+import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import type { CreateReportPayload, ReportJob, GetReportsParams, PaginatedReportsResult } from '@/types/report';
 
 // Wire shape observed live 13 Aug 2026 for POST /api/reports: wrapped in
@@ -67,11 +68,15 @@ interface RawPaginatedReports {
 }
 
 export const reportsService = {
-  createReport: (payload: CreateReportPayload): Promise<ReportJob> =>
-    axiosInstance.post<RawCreateReportEnvelope>('/api/reports', payload).then((r) => toReportJob(r.data.report)),
+  // Sprint 14 (requirements 1.1): `scope` is 'personal' (default) or a workspace slug - Exports lives
+  // inside Insights in both contexts, so every call names its context explicitly.
+  createReport: (payload: CreateReportPayload, scope = 'personal'): Promise<ReportJob> =>
+    axiosInstance
+      .post<RawCreateReportEnvelope>('/api/reports', payload, { headers: workspaceHeaders(scope) })
+      .then((r) => toReportJob(r.data.report)),
 
-  getReports: (params: GetReportsParams): Promise<PaginatedReportsResult> =>
-    axiosInstance.get<RawPaginatedReports>('/api/reports', { params }).then((r) => ({
+  getReports: (params: GetReportsParams, scope = 'personal'): Promise<PaginatedReportsResult> =>
+    axiosInstance.get<RawPaginatedReports>('/api/reports', { params, headers: workspaceHeaders(scope) }).then((r) => ({
       total: typeof r.data.total === 'number' ? r.data.total : 0,
       page: typeof r.data.page === 'number' ? r.data.page : params.page ?? 1,
       limit: typeof r.data.limit === 'number' ? r.data.limit : params.limit ?? 20,

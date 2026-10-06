@@ -100,11 +100,17 @@ export const analyticsKeys = {
   // `scope` is a key segment (workspace slug or 'personal'), so switching workspaces never serves another's rows.
   formsSummary: (range: AnalyticsRangeParams, page: number, scope = 'personal') =>
     [...analyticsKeys.all, 'forms', scope, range, page] as const,
+  // Sprint 14 (B5.5 pt 2) — saved charts are per form (globally unique id); data is keyed by range.
+  charts: (formId: string) => [...analyticsKeys.all, 'charts', formId] as const,
+  chartData: (formId: string, chartId: string, range: AnalyticsRangeParams) =>
+    [...analyticsKeys.all, 'chart-data', formId, chartId, range] as const,
+  chartPreview: (formId: string, definition: object, range: AnalyticsRangeParams) =>
+    [...analyticsKeys.all, 'chart-preview', formId, definition, range] as const,
 };
 
 export const reportKeys = {
   all: ['reports'] as const,
-  list: (page: number) => [...reportKeys.all, 'list', page] as const,
+  list: (page: number, scope = 'personal') => [...reportKeys.all, 'list', scope, page] as const,
   detail: (id: string) => [...reportKeys.all, 'detail', id] as const,
 };
 
@@ -122,7 +128,17 @@ export const settingsKeys = {
 // Sprint 6) — this is the in-app notification bell/dropdown feed, a separate feature.
 export const notificationKeys = {
   all: ['notifications'] as const,
-  list: () => [...notificationKeys.all, 'list'] as const,
+  // Sprint 14 (design.md §10): context-namespaced — `scope` is a workspace slug or 'personal' — so
+  // switching context can never serve another context's rows or badge count.
+  list: (scope: string, filter: 'all' | 'unread' | 'mentions') => [...notificationKeys.all, 'list', scope, filter] as const,
+  lists: (scope: string) => [...notificationKeys.all, 'list', scope] as const,
+  unread: (scope: string) => [...notificationKeys.all, 'unread', scope] as const,
+};
+
+// Sprint 14 (B10) — context- and query-namespaced; removed wholesale on context/role change.
+export const searchKeys = {
+  all: ['search'] as const,
+  results: (scope: string, q: string) => [...searchKeys.all, scope, q] as const,
 };
 
 // Not to be confused with settingsKeys.workspace() — that's the V1 singular /workspaces/current

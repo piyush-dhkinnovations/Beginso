@@ -13,6 +13,9 @@ const PUBLIC_AUTH_PATHS = new Set([
   'api/auth/confirm-password-reset',
 ]);
 const ALLOWED_API_ROOTS = new Set([
+  // Sprint 14 (task 2.1) - GET /api/search lives under its own root. Same allowlist trap as every
+  // root below: without this entry every search call 404s "Backend path is not allowed".
+  'search',
   'auth',
   'analytics',
   'dashboard',

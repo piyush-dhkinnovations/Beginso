@@ -95,7 +95,8 @@ describe('ReportsView', () => {
 
     await waitFor(() =>
       expect(mockCreateReport).toHaveBeenCalledWith(
-        expect.objectContaining({ format: 'csv', formId: 'form-1' })
+        expect.objectContaining({ format: 'csv', formId: 'form-1' }),
+        'personal'
       )
     );
   });
