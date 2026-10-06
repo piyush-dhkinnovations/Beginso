@@ -12,6 +12,8 @@ export interface DrawerProps {
   description?: string;
   /** 'bottom' renders a bottom sheet (Sprint 13, CF2.12) — same focus trap and scroll lock. */
   placement?: "right" | "bottom";
+  /** Desktop width in px (default 480 via CSS). Always capped to the viewport, so phones get a full-screen sheet. */
+  width?: number;
   children: React.ReactNode;
 }
 
@@ -19,7 +21,7 @@ export interface DrawerProps {
 // self-positions (fixed, right:0) rather than relying on .bg-scrim's flex-centering the way
 // .bg-modal does, so the backdrop is a plain sibling, not a wrapping parent. Focus trap shared
 // with Modal via useFocusTrap; rendered via a portal for the same clipping reason.
-export function Drawer({ isOpen, onClose, title, description, placement = "right", children }: DrawerProps) {
+export function Drawer({ isOpen, onClose, title, description, placement = "right", width, children }: DrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
   useFocusTrap(isOpen, onClose, drawerRef);
 
@@ -33,6 +35,7 @@ export function Drawer({ isOpen, onClose, title, description, placement = "right
         aria-modal="true"
         aria-labelledby="drawer-title"
         ref={drawerRef}
+        style={width && placement === "right" ? { width: `min(${width}px, 100vw)` } : undefined}
         className={placement === "bottom" ? "bg-drawer bg-drawer-bottom" : "bg-drawer"}
       >
         <div className="bg-modal-head">

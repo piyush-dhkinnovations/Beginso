@@ -13,6 +13,10 @@ export function normalizeViewMode(raw: string | null): InboxViewMode {
   return raw && VIEW_MODES.has(raw as InboxViewMode) ? (raw as InboxViewMode) : 'table';
 }
 
+export function normalizeGranularity(raw: string | null): 'day' | 'week' | 'month' | undefined {
+  return raw === 'day' || raw === 'week' || raw === 'month' ? raw : undefined;
+}
+
 const STAGE_CATEGORIES = new Set<StageCategory>(['new', 'in_progress', 'completed']);
 
 export function normalizeStageCategory(raw: string | null): StageCategory | undefined {
@@ -80,6 +84,10 @@ export function parseInboxFiltersFromParams(
     from: params.get('from') ?? undefined,
     to: params.get('to') ?? undefined,
     q: params.get('q') ?? params.get('search') ?? undefined,
+    // Chart drill-down links (?field=<fieldId>&value=<answer or date bucket>&granularity=).
+    field: params.get('field') ?? undefined,
+    value: params.get('value') ?? undefined,
+    granularity: normalizeGranularity(params.get('granularity')),
   };
 
   return { filters, legacyStatusPending };
@@ -110,6 +118,9 @@ export function applyInboxFilterPatch(
   if ('from' in patch) set('from', patch.from);
   if ('to' in patch) set('to', patch.to);
   if ('q' in patch) set('q', patch.q);
+  if ('field' in patch) set('field', patch.field);
+  if ('value' in patch) set('value', patch.value);
+  if ('granularity' in patch) set('granularity', patch.granularity);
   if ('search' in patch) set('search', patch.search);
   if ('page' in patch) set('page', patch.page ? String(patch.page) : undefined);
   if ('view' in patch) set('view', patch.view && patch.view !== 'table' ? patch.view : undefined);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { ResponsesHubView } from '@/components/responses/ResponsesHubView';
 
 /**
@@ -12,5 +12,6 @@ import { ResponsesHubView } from '@/components/responses/ResponsesHubView';
  */
 export default function WorkspaceInboxPage() {
   const { slug } = useParams<{ slug: string }>();
-  return <ResponsesHubView scope={slug} />;
+  const formId = useSearchParams().get('formId') ?? undefined; // chart drill-down links name their form
+  return <ResponsesHubView scope={slug} formId={formId} />;
 }

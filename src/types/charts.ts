@@ -1,24 +1,39 @@
-// Sprint 14, design.md §13 / OQ-1 (decided: bar | donut | line; group by value | day | week).
-// Uncertain until BE 0.3 ships.
-export type ChartType = 'bar' | 'donut' | 'line';
-export type ChartGroupBy = 'value' | 'day' | 'week';
+// Custom charts (Sprint 14 rebuild). A chart is a QUESTION about the responses; its segments drill
+// down to the responses behind them. Backend contract to confirm (BE agent implementing in parallel):
+// persisted per form per user - field, type, size, title, options, position, visibility.
+export type ChartType = 'pie' | 'donut' | 'bar' | 'horizontal_bar' | 'line' | 'area' | 'bar_time' | 'average';
+export type ChartSize = 'small' | 'medium' | 'large';
+/** private = creator only (default); workspace = visible read-only to everyone with analytics access. */
+export type ChartVisibility = 'private' | 'workspace';
+export type DateGranularity = 'day' | 'week' | 'month';
 
-export interface SavedChart {
-  _id: string;
-  fieldId: string;
-  chartType: ChartType;
-  groupBy: ChartGroupBy;
-  order: number;
-  fieldMissing?: boolean;
+export interface ChartOptions {
+  valueMode: 'count' | 'percent';
+  legend: boolean;
+  sort: 'value' | 'original';
 }
 
 export interface ChartDefinition {
   fieldId: string;
-  chartType: ChartType;
-  groupBy: ChartGroupBy;
+  type: ChartType;
+  size: ChartSize;
+  title: string;
+  options: ChartOptions;
+  visibility: ChartVisibility;
 }
 
-export interface ChartSeries {
-  series: { label: string; value: number }[];
-  total: number;
+export interface SavedChart extends ChartDefinition {
+  _id: string;
+  position: number;
+  ownerId?: string;
+  ownerName?: string;
+  fieldMissing?: boolean;
+}
+
+/** One row of GET /api/forms/:formId/analytics/field/:fieldId. `value` is the raw answer (choice option,
+ * rating/number as text) or the date bucket ("2026-09-30" | "2026-W40" | "2026-09"). */
+export interface FieldBucket {
+  value: string;
+  count: number;
+  percentage: number;
 }

@@ -96,6 +96,12 @@ export interface ResponseFilters {
   from?: string;
   to?: string;
   q?: string;
+  /** Chart drill-down: responses whose answer to field `field` equals `value` (omitted value = "answered
+   * this field"). For a date field `value` is a bucket ("2026-09-30", "2026-W40", "2026-09") and
+   * `granularity` ("day"|"week"|"month") says which. The SERVER filters and paginates. */
+  field?: string;
+  value?: string;
+  granularity?: 'day' | 'week' | 'month';
 }
 
 export interface GetResponsesParams extends ResponseFilters {

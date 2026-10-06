@@ -100,12 +100,17 @@ export const analyticsKeys = {
   // `scope` is a key segment (workspace slug or 'personal'), so switching workspaces never serves another's rows.
   formsSummary: (range: AnalyticsRangeParams, page: number, scope = 'personal') =>
     [...analyticsKeys.all, 'forms', scope, range, page] as const,
-  // Sprint 14 (B5.5 pt 2) — saved charts are per form (globally unique id); data is keyed by range.
-  charts: (formId: string) => [...analyticsKeys.all, 'charts', formId] as const,
-  chartData: (formId: string, chartId: string, range: AnalyticsRangeParams) =>
-    [...analyticsKeys.all, 'chart-data', formId, chartId, range] as const,
-  chartPreview: (formId: string, definition: object, range: AnalyticsRangeParams) =>
-    [...analyticsKeys.all, 'chart-preview', formId, definition, range] as const,
+};
+
+// Custom charts: every key carries the workspace scope (slug or 'personal') so switching workspace
+// never serves another's charts, layout or distributions.
+export const chartKeys = {
+  all: ['charts'] as const,
+  list: (scope: string, formId: string) => [...chartKeys.all, scope, formId, 'list'] as const,
+  field: (scope: string, formId: string, fieldId: string, range: AnalyticsRangeParams, granularity?: string) =>
+    [...chartKeys.all, scope, formId, 'field', fieldId, range, granularity ?? null] as const,
+  drill: (scope: string, formId: string, fieldId: string, value: string | undefined, range: AnalyticsRangeParams, granularity?: string) =>
+    [...chartKeys.all, scope, formId, 'drill', fieldId, value ?? null, range, granularity ?? null] as const,
 };
 
 export const reportKeys = {

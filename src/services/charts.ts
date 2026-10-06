@@ -1,26 +1,60 @@
 import axiosInstance from '@/lib/axios';
 import { unwrapEnvelope } from '@/lib/apiEnvelope';
 import { workspaceHeaders } from '@/lib/workspaceHeaders';
-import type { ChartDefinition, ChartSeries, SavedChart } from '@/types/charts';
+import type { ChartDefinition, ChartOptions, ChartSize, ChartType, ChartVisibility, DateGranularity, FieldBucket, SavedChart } from '@/types/charts';
 
-// Sprint 14 (B5.5 pt 2, BE 0.3, design.md §11.2) - Backend contract to confirm. Unwrapped defensively.
+// Backend contract to confirm (the BE agent is implementing it in parallel; nothing is published in
+// shared/types yet). Everything is unwrapped defensively, and the legacy Sprint 14 names (`chartType`,
+// `order`) are accepted so a half-migrated backend still renders.
+//   GET    /api/forms/:formId/charts                      -> SavedChart[]  (own private + workspace-shared)
+//   POST   /api/forms/:formId/charts   ChartDefinition    -> SavedChart
+//   PATCH  /api/forms/:formId/charts/:id  Partial<ChartDefinition> & { position? } -> SavedChart
+//   DELETE /api/forms/:formId/charts/:id
+//   GET    /api/forms/:formId/analytics/field/:fieldId?from&to&granularity -> [{ value, count, percentage }]
 interface Range {
   from?: string;
   to?: string;
 }
 
+const LEGACY_TYPE: Record<string, ChartType> = { donut: 'donut', bar: 'bar', line: 'line' };
+const SIZES = new Set<ChartSize>(['small', 'medium', 'large']);
+
 function toChart(raw: unknown): SavedChart {
-  const c = raw as Record<string, unknown>;
-  return { ...(c as unknown as SavedChart), _id: String(c._id ?? c.id) };
+  const c = (raw ?? {}) as Record<string, unknown>;
+  const opts = (c.options ?? {}) as Partial<ChartOptions>;
+  const type = String(c.type ?? c.chartType ?? 'bar');
+  const owner = c.owner as { id?: unknown; name?: unknown } | undefined;
+  return {
+    _id: String(c._id ?? c.id),
+    fieldId: String(c.fieldId ?? c.field ?? ''),
+    type: (LEGACY_TYPE[type] ?? type) as ChartType,
+    size: SIZES.has(c.size as ChartSize) ? (c.size as ChartSize) : 'medium',
+    title: typeof c.title === 'string' ? c.title : '',
+    options: {
+      valueMode: opts.valueMode === 'percent' ? 'percent' : 'count',
+      legend: opts.legend !== false,
+      sort: opts.sort === 'value' ? 'value' : 'original',
+    },
+    visibility: (c.visibility === 'workspace' ? 'workspace' : 'private') as ChartVisibility,
+    position: Number(c.position ?? c.order ?? 0) || 0,
+    ownerId: c.ownerId != null ? String(c.ownerId) : owner?.id != null ? String(owner.id) : undefined,
+    ownerName: typeof c.ownerName === 'string' ? c.ownerName : typeof owner?.name === 'string' ? owner.name : undefined,
+    fieldMissing: c.fieldMissing === true,
+  };
 }
 
-function toSeries(raw: unknown): ChartSeries {
-  const body = unwrapEnvelope<{ series?: unknown; total?: unknown }>(raw, 'data') ?? {};
-  const series = Array.isArray(body.series) ? (body.series as { label: unknown; value: unknown }[]) : [];
-  return {
-    series: series.map((s) => ({ label: String(s.label), value: Number(s.value) || 0 })),
-    total: typeof body.total === 'number' ? body.total : series.reduce((sum, s) => sum + (Number(s.value) || 0), 0),
-  };
+function toBuckets(raw: unknown): FieldBucket[] {
+  let body: unknown = unwrapEnvelope<unknown>(raw, 'data');
+  if (!Array.isArray(body) && body && typeof body === 'object') {
+    const o = body as Record<string, unknown>;
+    body = o.buckets ?? o.values ?? o.series ?? o.distribution;
+  }
+  if (!Array.isArray(body)) return [];
+  return (body as Record<string, unknown>[]).map((b) => ({
+    value: String(b.value ?? b.label ?? ''),
+    count: Number(b.count ?? b.value_count) || 0,
+    percentage: Number(b.percentage) || 0,
+  }));
 }
 
 export const chartsService = {
@@ -30,12 +64,12 @@ export const chartsService = {
       return Array.isArray(charts) ? charts.map(toChart) : [];
     }),
 
-  create: (formId: string, definition: ChartDefinition, scope?: string): Promise<SavedChart> =>
+  create: (formId: string, definition: ChartDefinition & { position?: number }, scope?: string): Promise<SavedChart> =>
     axiosInstance
       .post(`/api/forms/${formId}/charts`, definition, { headers: workspaceHeaders(scope) })
       .then((r) => toChart(unwrapEnvelope<unknown>(r.data, 'chart'))),
 
-  update: (formId: string, chartId: string, patch: Partial<ChartDefinition> & { order?: number }, scope?: string): Promise<SavedChart> =>
+  update: (formId: string, chartId: string, patch: Partial<ChartDefinition> & { position?: number }, scope?: string): Promise<SavedChart> =>
     axiosInstance
       .patch(`/api/forms/${formId}/charts/${chartId}`, patch, { headers: workspaceHeaders(scope) })
       .then((r) => toChart(unwrapEnvelope<unknown>(r.data, 'chart'))),
@@ -43,13 +77,12 @@ export const chartsService = {
   remove: (formId: string, chartId: string, scope?: string): Promise<void> =>
     axiosInstance.delete(`/api/forms/${formId}/charts/${chartId}`, { headers: workspaceHeaders(scope) }).then(() => undefined),
 
-  data: (formId: string, chartId: string, range: Range, scope?: string): Promise<ChartSeries> =>
+  /** The one data source for every chart, the preview and the full-screen table. */
+  fieldDistribution: (formId: string, fieldId: string, range: Range, granularity: DateGranularity | undefined, scope?: string): Promise<FieldBucket[]> =>
     axiosInstance
-      .get(`/api/forms/${formId}/charts/${chartId}/data`, { params: range, headers: workspaceHeaders(scope) })
-      .then((r) => toSeries(r.data)),
-
-  preview: (formId: string, definition: ChartDefinition, range: Range, scope?: string): Promise<ChartSeries> =>
-    axiosInstance
-      .post(`/api/forms/${formId}/charts/preview`, { ...definition, ...range }, { headers: workspaceHeaders(scope) })
-      .then((r) => toSeries(r.data)),
+      .get(`/api/forms/${formId}/analytics/field/${encodeURIComponent(fieldId)}`, {
+        params: { ...range, granularity },
+        headers: workspaceHeaders(scope),
+      })
+      .then((r) => toBuckets(r.data)),
 };

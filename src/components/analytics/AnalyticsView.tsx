@@ -8,6 +8,7 @@ import { isAxiosError } from 'axios';
 import { OfflineBanner } from '@/components/ui/OfflineBanner';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import { DateRangeFilter } from './DateRangeFilter';
@@ -24,6 +25,8 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { InsightsTabs, useInsightsTab } from './InsightsTabs';
 import { TemplateDashboard } from './TemplateDashboard';
 import { CustomChartsSection } from './CustomChartsSection';
+import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
+import { canEditCharts } from '@/lib/roles';
 import { ReportsView } from '@/components/reports/ReportsView';
 import { useAnalyticsTrend } from '@/hooks/useAnalyticsTrend';
 import { formsService } from '@/services/forms';
@@ -51,6 +54,8 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
   const isWorkspaceScope = scope !== 'personal';
   const router = useRouter();
   const formScope = useFormScope(formId ?? '');
+  const [addChartOpen, setAddChartOpen] = useState(false);
+  const canAddChart = canEditCharts(useWorkspaceRole(formScope ?? 'personal'));
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -224,7 +229,19 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
         title={title}
         description={formId ? `Analytics · ${form?.title ?? ''}` : 'See how every form in your workspace is performing.'}
         actionsAlign="center"
-        actions={isFirstRun || showExports ? undefined : <DateRangeFilter part="range" />}
+        actions={
+          isFirstRun || showExports ? undefined : (
+            <div className="flex flex-wrap items-center gap-3">
+              <DateRangeFilter part="range" />
+              {formId && canAddChart && (
+                <Button size="small" onClick={() => setAddChartOpen(true)}>
+                  <Plus size={14} className="mr-1.5" aria-hidden="true" />
+                  Add chart
+                </Button>
+              )}
+            </div>
+          )
+        }
       />
 
       <OfflineBanner />
@@ -349,7 +366,17 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
             }}
           />
 
-          {formScope && <CustomChartsSection form={form} formId={formId} scope={formScope} range={range} />}
+          {formScope && (
+            <CustomChartsSection
+              form={form}
+              formId={formId}
+              scope={formScope}
+              range={range}
+              addOpen={addChartOpen}
+              onAddClose={() => setAddChartOpen(false)}
+              onAddRequest={() => setAddChartOpen(true)}
+            />
+          )}
         </>
       ) : (
         <>

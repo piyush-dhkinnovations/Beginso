@@ -1,113 +1,93 @@
 'use client';
 
-import { AlertCircle, LockKeyhole, Trash2 } from 'lucide-react';
-import { isAxiosError } from 'axios';
-import { useQuery } from '@tanstack/react-query';
+import type { ReactNode } from 'react';
+import { Check, Copy, Maximize2, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { BarChart, ChartCard, CHART_COLOR, DonutWithLegend, LineChart } from '@/components/ui/charts';
-import { chartsService } from '@/services/charts';
-import { analyticsKeys, type AnalyticsRangeParams } from '@/lib/queryKeys';
-import { CHART_GROUP_LABEL, CHART_TYPE_LABEL } from '@/lib/chartOptions';
-import type { ChartSeries, ChartType, SavedChart } from '@/types/charts';
-
-const DONUT_COLORS = [CHART_COLOR.primary, CHART_COLOR.success, CHART_COLOR.warning, CHART_COLOR.error, CHART_COLOR.soft];
-
-/** One renderer for a saved chart and for the modal's live preview. Every chart carries a
- * visually-hidden table of its series (requirements §11 - not colour or shape alone). */
-export function ChartSeriesView({ chartType, data, title }: { chartType: ChartType; data: ChartSeries; title: string }) {
-  const total = data.total;
-  return (
-    <>
-      {chartType === 'bar' && <BarChart data={data.series} ariaLabel={`${title}: bar chart, ${total} responses`} />}
-      {chartType === 'line' && <LineChart data={data.series} ariaLabel={`${title}: line chart, ${total} responses`} />}
-      {chartType === 'donut' && (
-        <DonutWithLegend
-          segments={data.series.map((s, i) => ({ label: s.label, value: s.value, color: DONUT_COLORS[i % DONUT_COLORS.length] }))}
-          size={140}
-          percent
-        />
-      )}
-      <table className="sr-only">
-        <caption>{title}</caption>
-        <thead>
-          <tr>
-            <th>Group</th>
-            <th>Responses</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.series.map((s) => (
-            <tr key={s.label}>
-              <td>{s.label}</td>
-              <td>{s.value}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
-  );
-}
+import { Card } from '@/components/ui/Card';
+import { Menu, type MenuItem } from '@/components/ui/Menu';
+import { ChartBody } from './ChartBody';
+import type { DrillTarget } from './ChartView';
+import { useFieldDistribution } from '@/hooks/useFieldDistribution';
+import { CHART_TYPE_LABEL, SIZE_LABEL, SIZES } from '@/lib/chartOptions';
+import type { AnalyticsRangeParams } from '@/lib/queryKeys';
+import type { ChartSize, SavedChart } from '@/types/charts';
+import type { FormField } from '@/types/form';
 
 interface CustomChartCardProps {
   formId: string;
   scope: string;
   chart: SavedChart;
-  /** Label of the field this chart summarises, resolved from the form (undefined = field gone). */
-  fieldLabel?: string;
+  /** The form field this chart summarises; undefined = the field was deleted. */
+  field?: FormField;
   range: AnalyticsRangeParams;
-  canEdit: boolean;
+  /** Own chart + an editing role: edit, resize, duplicate, remove, drag. Everyone else is read-only. */
+  canManage: boolean;
+  dragHandle?: ReactNode;
+  onSelect: (chart: SavedChart, target: DrillTarget) => void;
+  onEdit: (chart: SavedChart) => void;
+  onDuplicate: (chart: SavedChart) => void;
   onRemove: (chart: SavedChart) => void;
-  isRemoving?: boolean;
+  onResize: (chart: SavedChart, size: ChartSize) => void;
+  onFullScreen: (chart: SavedChart) => void;
 }
 
-// Sprint 14 (requirements 1.5, task 3.4). Each card owns its own data query, so one chart failing
-// shows its own error and never blanks the page (design.md §17 "Partial").
-export function CustomChartCard({ formId, scope, chart, fieldLabel, range, canEdit, onRemove, isRemoving }: CustomChartCardProps) {
-  const fieldGone = chart.fieldMissing === true;
-  const dataQuery = useQuery({
-    queryKey: analyticsKeys.chartData(formId, chart._id, range),
-    queryFn: () => chartsService.data(formId, chart._id, range, scope),
-    enabled: !fieldGone,
-  });
+// Each card owns its own data query, so one chart failing shows its own error and never blanks the page.
+export function CustomChartCard({ formId, scope, chart, field, range, canManage, dragHandle, onSelect, onEdit, onDuplicate, onRemove, onResize, onFullScreen }: CustomChartCardProps) {
+  const fieldGone = chart.fieldMissing === true || !field;
+  const query = useFieldDistribution({ scope, formId, field, range, enabled: !fieldGone });
+  const title = chart.title || field?.label || 'Chart';
 
-  const title = `${fieldLabel ?? 'Chart'} · ${CHART_TYPE_LABEL[chart.chartType]}, ${CHART_GROUP_LABEL[chart.groupBy].toLowerCase()}`;
-  const removeButton = canEdit ? (
-    <Button variant="ghost" size="small" onClick={() => onRemove(chart)} isLoading={isRemoving} aria-label={`Remove chart ${title}`}>
-      <Trash2 size={14} aria-hidden="true" />
-    </Button>
-  ) : undefined;
-
-  if (fieldGone) {
-    return (
-      <ChartCard title="Field removed" legend={removeButton}>
-        <p className="bg-body-sm text-(--text-muted)">This field no longer exists. Remove this chart to tidy up.</p>
-      </ChartCard>
-    );
-  }
-
-  const status = isAxiosError(dataQuery.error) ? dataQuery.error.response?.status : undefined;
-  const hasData = !!dataQuery.data && dataQuery.data.total > 0 && dataQuery.data.series.some((s) => s.value > 0);
+  const items: MenuItem[] = [
+    { id: 'fullscreen', label: 'Full screen', icon: <Maximize2 size={14} />, onSelect: () => onFullScreen(chart), disabled: fieldGone },
+    ...(canManage
+      ? ([
+          { id: 'edit', label: 'Edit', icon: <Pencil size={14} />, onSelect: () => onEdit(chart), disabled: fieldGone },
+          { id: 'duplicate', label: 'Duplicate', icon: <Copy size={14} />, onSelect: () => onDuplicate(chart), disabled: fieldGone },
+          ...SIZES.map((s) => ({
+            id: `size-${s}`,
+            label: `Size: ${SIZE_LABEL[s]}`,
+            icon: chart.size === s ? <Check size={14} /> : <span className="inline-block w-3.5" />,
+            onSelect: () => onResize(chart, s),
+          })),
+          { id: 'remove', label: 'Remove', icon: <Trash2 size={14} />, danger: true, onSelect: () => onRemove(chart) },
+        ] satisfies MenuItem[])
+      : []),
+  ];
 
   return (
-    <ChartCard title={title} legend={removeButton}>
-      {dataQuery.isLoading ? (
-        <div className="h-48 animate-pulse rounded-lg bg-(--bg-sunken)" aria-busy="true" aria-label="Loading chart" />
-      ) : dataQuery.isError ? (
-        status === 403 ? (
-          <EmptyState icon={<LockKeyhole />} title="No access" description="You don't have permission to view this chart." />
-        ) : (
-          <EmptyState
-            icon={<AlertCircle />}
-            title="Unable to load this chart"
-            actions={<Button variant="secondary" size="small" onClick={() => void dataQuery.refetch()}>Try again</Button>}
-          />
-        )
-      ) : !hasData ? (
-        <p className="bg-body-sm text-(--text-muted)">No answers yet in this range.</p>
+    <Card className="h-full gap-3" aria-label={title}>
+      <div className="flex items-center gap-2">
+        {dragHandle}
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate bg-body font-semibold text-(--text-primary)" title={title}>{fieldGone ? 'Question removed' : title}</h3>
+          <p className="truncate bg-caption text-(--text-muted)">
+            {fieldGone ? title : CHART_TYPE_LABEL[chart.type]}
+            {chart.visibility === 'workspace' && !canManage && chart.ownerName ? ` · shared by ${chart.ownerName}` : ''}
+          </p>
+        </div>
+        {chart.visibility === 'workspace' && canManage && <Badge variant="info">Shared</Badge>}
+        <Menu
+          align="end"
+          triggerLabel={`Chart options for ${title}`}
+          trigger={<MoreHorizontal size={18} aria-hidden="true" />}
+          items={items}
+        />
+      </div>
+
+      {fieldGone ? (
+        <div className="flex flex-col items-start gap-3">
+          <p className="bg-body-sm text-(--text-muted)">The question this chart summarised was deleted from the form. Remove the chart to tidy up.</p>
+          {canManage && (
+            <Button variant="secondary" size="small" onClick={() => onRemove(chart)}>
+              <Trash2 size={14} className="mr-1.5" aria-hidden="true" />
+              Remove
+            </Button>
+          )}
+        </div>
       ) : (
-        <ChartSeriesView chartType={chart.chartType} data={dataQuery.data} title={title} />
+        <ChartBody def={chart} field={field} query={query} onSelect={(t) => onSelect(chart, t)} />
       )}
-    </ChartCard>
+    </Card>
   );
 }

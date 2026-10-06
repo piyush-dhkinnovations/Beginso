@@ -4,3 +4,5 @@ export type { DonutSegment, RingProps } from "./Rings";
 export { BarChart, LineChart, ComboChart, ProgressBars } from "./Large";
 export type { ChartDatum } from "./Large";
 export { ChartCard, LegendDots } from "./ChartCard";
+export { PieChart, BarsChart, LineAreaChart, AverageStat, seriesColor } from "./Interactive";
+export type { ChartSegment, InteractiveChartProps } from "./Interactive";

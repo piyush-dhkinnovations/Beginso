@@ -39,6 +39,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { hasCapability } from '@/lib/roles';
 import { exportPayloadFromFilters, exportPayloadFromTarget } from '@/lib/reportExport';
+import { bucketLabel } from '@/lib/chartOptions';
 import type { InboxViewMode } from '@/lib/inboxFilters';
 import type { IResponse, BulkTarget } from '@/types/response';
 import type { SavedView } from '@/types/savedView';
@@ -337,7 +338,12 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   };
 
   const isDeleting = mutations.isBulkRunning || mutations.isSingleDeleting;
-  const hasActiveFilters = !!search || !!filters.stageId || !!filters.assigneeId || !!filters.unread;
+  const hasActiveFilters = !!search || !!filters.stageId || !!filters.assigneeId || !!filters.unread || !!filters.field;
+  // Chart drill-down chip: "Satisfaction: Very satisfied" (date buckets read as plain words).
+  const drillField = filters.field ? form?.fields.find((f) => f.fieldId === filters.field) : undefined;
+  const fieldChipLabel = filters.field
+    ? `${drillField?.label ?? 'Chart filter'}: ${filters.value === undefined ? 'answered' : drillField?.type === 'date' ? bucketLabel(filters.value) : filters.value}`
+    : undefined;
   // First run: no response exists yet and nothing is filtered — stats, search, view tabs and
   // filters would all be controls over zero rows, so only the empty state is shown.
   const isFirstRun = !isLoading && !!data && data.total === 0 && !hasActiveFilters && !activeViewId;
@@ -436,7 +442,10 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
       <ActiveFilterChips
         filters={filters}
         stages={stages}
-        onRemove={(key) => setFilters({ [key]: undefined }, { resetPage: true })}
+        fieldChipLabel={fieldChipLabel}
+        onRemove={(key) =>
+          setFilters(key === 'field' ? { field: undefined, value: undefined, granularity: undefined } : { [key]: undefined }, { resetPage: true })
+        }
         onClearAll={() => {
           clearSelection();
           clear();

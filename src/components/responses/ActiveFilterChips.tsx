@@ -7,6 +7,8 @@ export interface ActiveFilterChipsProps {
   stages: readonly StageRef[];
   onRemove: (key: keyof ResponseFilters) => void;
   onClearAll: () => void;
+  /** Chart drill-down chip text, e.g. "Satisfaction: Very satisfied" - resolved by the caller from the form. */
+  fieldChipLabel?: string;
 }
 
 /**
@@ -14,7 +16,7 @@ export interface ActiveFilterChipsProps {
  * chips + 'Clear all'." Reads the stage name from `stages` for the stage chip so it never shows a
  * raw id.
  */
-export function ActiveFilterChips({ filters, stages, onRemove, onClearAll }: ActiveFilterChipsProps) {
+export function ActiveFilterChips({ filters, stages, onRemove, onClearAll, fieldChipLabel }: ActiveFilterChipsProps) {
   const chips: { key: keyof ResponseFilters; label: string }[] = [];
 
   if (filters.stageId) {
@@ -31,6 +33,7 @@ export function ActiveFilterChips({ filters, stages, onRemove, onClearAll }: Act
   if (filters.unread) chips.push({ key: 'unread', label: 'Unread only' });
   if (filters.duplicate) chips.push({ key: 'duplicate', label: 'Duplicates only' });
   if (filters.from || filters.to) chips.push({ key: 'from', label: 'Date range' });
+  if (filters.field) chips.push({ key: 'field', label: fieldChipLabel ?? 'Chart filter' });
   if (filters.q) chips.push({ key: 'q', label: `Search: "${filters.q}"` });
 
   if (chips.length === 0) return null;
