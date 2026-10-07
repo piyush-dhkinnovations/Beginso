@@ -17,7 +17,7 @@ const MATRIX_ROLES: Role[] = ['owner', 'admin', 'member', 'viewer'];
 // exact "plain semantic <table> wrapped in ui/Table's scroll container" as the accepted shape.
 export function RolesMatrix() {
   return (
-    <div className="bg-table-wrap">
+    <div className="bg-table-wrap relative">
       <table className="bg-table">
         <thead>
           <tr>

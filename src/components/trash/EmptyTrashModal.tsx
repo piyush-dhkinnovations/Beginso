@@ -15,7 +15,7 @@ export interface EmptyTrashModalProps {
   onConfirm: () => void;
   isPending: boolean;
   title?: string;
-  /** What is about to be destroyed — shown in the warning line. */
+  /** What is about to be destroyed, with real counts where known — shown in the red panel. */
   detail?: string;
   confirmLabel?: string;
 }
@@ -26,7 +26,7 @@ export function EmptyTrashModal({
   onConfirm,
   isPending,
   title = 'Permanently delete',
-  detail = 'Forms, their responses, uploaded files and analytics history are destroyed immediately.',
+  detail = 'Forms, their responses, uploaded files and analytics history will be destroyed immediately.',
   confirmLabel = 'Delete permanently',
 }: EmptyTrashModalProps) {
   // Re-key on open so a previous attempt's text never carries over.
@@ -61,7 +61,7 @@ function Body({
         if (matches && !isPending) onConfirm();
       }}
     >
-      <div className="flex items-start gap-2 rounded-md border border-(--warning-border) bg-(--warning-surface) p-3 text-(--warning-text)">
+      <div className="flex items-start gap-2 rounded-md border border-(--error-border) bg-(--error-surface) p-3 text-(--error-text)">
         <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
         <p className="bg-body-sm">
           <strong>This cannot be undone.</strong> {detail}

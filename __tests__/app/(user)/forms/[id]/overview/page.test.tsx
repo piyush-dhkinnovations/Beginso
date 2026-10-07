@@ -3,7 +3,7 @@
  * Backend contracts BE 0.5/0.6/0.7 are unconfirmed; every service is mocked.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import FormOverviewPage from '@/app/(user)/forms/[id]/overview/page';
@@ -52,24 +52,21 @@ describe('FormOverviewPage', () => {
     mockWorkspaces.mockResolvedValue([]);
   });
 
-  it('renders the personal breadcrumb, title, stats and empty activity state', async () => {
+  it('renders the title, stats and empty activity state', async () => {
     renderPage();
 
-    expect(await screen.findByRole('heading', { name: 'Customer Survey' })).toBeInTheDocument();
-    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('My Forms');
+    expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument();
     expect(await screen.findByText('Just you')).toBeInTheDocument();
     expect(await screen.findByText('Nothing has happened here yet.')).toBeInTheDocument();
     expect(screen.getByLabelText('Completion rate not tracked yet')).toBeInTheDocument();
   });
 
-  it('a workspace form gets the workspace breadcrumb and Edit/Share actions for an editor', async () => {
+  it('a workspace form gets Edit/Share actions for an editor', async () => {
     mockOverview.mockResolvedValue({ form: form({ workspaceId: 'w1' }), stats: STATS });
     mockWorkspaces.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role: 'member' }]);
     renderPage();
 
-    await waitFor(() => expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('Acme'));
-    expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('Forms');
-    expect(screen.getByRole('button', { name: 'Edit form' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Edit form' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument();
     expect(await screen.findByText('Workspace team')).toBeInTheDocument();
   });
@@ -80,7 +77,6 @@ describe('FormOverviewPage', () => {
     renderPage();
 
     await screen.findByRole('button', { name: 'Preview' });
-    await waitFor(() => expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('Acme'));
     expect(screen.queryByRole('button', { name: 'Edit form' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Share' })).not.toBeInTheDocument();
   });
@@ -91,7 +87,6 @@ describe('FormOverviewPage', () => {
     renderPage();
 
     await screen.findByRole('button', { name: 'Preview' });
-    await waitFor(() => expect(screen.getByRole('navigation', { name: 'Breadcrumb' })).toHaveTextContent('Shared with me'));
     expect(screen.queryByRole('button', { name: 'Edit form' })).not.toBeInTheDocument();
   });
 
@@ -122,7 +117,7 @@ describe('FormOverviewPage', () => {
     renderPage();
 
     expect(await screen.findByText('Could not load activity.')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Customer Survey' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Overview' })).toBeInTheDocument();
   });
 
   it('shows a permission state on 403 (BE 0.7 — 403 on a just-created own form is an open backend bug)', async () => {
@@ -144,7 +139,7 @@ describe('FormOverviewPage', () => {
     renderPage();
 
     await userEvent.click(await screen.findByRole('button', { name: 'Retry' }));
-    expect(await screen.findByRole('heading', { name: 'Customer Survey' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument();
   });
 
   it('shows recent responses with a View inbox link', async () => {
@@ -155,6 +150,6 @@ describe('FormOverviewPage', () => {
     renderPage();
 
     expect(await screen.findByText('Ada')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'View inbox' })).toHaveAttribute('href', '/forms/f1/responses');
+    expect(screen.getByRole('link', { name: 'View inbox' })).toHaveAttribute('href', '/forms/f1/inbox');
   });
 });

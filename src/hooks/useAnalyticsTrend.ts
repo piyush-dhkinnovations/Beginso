@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { analyticsService } from '@/services/analytics';
 import { dashboardKeys } from '@/lib/queryKeys';
 import type { AnalyticsTrendPoint } from '@/types/analytics';
+import { browserTimezone } from '@/lib/calendarDates';
 
 const MAX_FORMS = 10;
 
@@ -22,28 +23,17 @@ export interface UseAnalyticsTrendParams {
 }
 
 /**
- * Responses per bucket across the caller's personal forms for a date range, oldest first.
- * Two real sources, best first:
- *  1. one `trends` call with no formId ("all forms in this scope" — needs backend confirmation);
- *  2. if that errors or is empty, the per-form `trends` calls the form Analytics page already relies
- *     on, summed by bucket (capped at MAX_FORMS forms so a page never fans out unboundedly).
- * `points` is undefined while loading or when neither source has data — callers fall back to a
- * non-trend visual; nothing is ever fabricated.
+ * Responses per bucket across a scope's forms for a date range, oldest first.
+ * GET /api/analytics/trends REQUIRES a formId (400 "Valid formId query parameter is required"
+ * without one - the cause of the 400s seen on Home / Analytics / Insights), so this sums the
+ * per-form `trends` calls, capped at MAX_FORMS forms so a page never fans out unboundedly.
+ * ponytail: capped sum; an all-forms aggregate endpoint is documented in api-reference.md.
+ * `points` is undefined while loading or when there is no data - nothing is ever fabricated.
  */
 export function useAnalyticsTrend({ from, to, bucket, formIds, enabled, scope = 'personal' }: UseAnalyticsTrendParams): { points: AnalyticsTrendPoint[] | undefined; isLoading: boolean } {
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const timezone = browserTimezone();
   const range = { from, to };
-
-  const all = useQuery({
-    queryKey: [...dashboardKeys.responseTrend(), 'all', scope, from, to, bucket],
-    queryFn: () => analyticsService.getTrends({ ...range, timezone, bucket }, scope),
-    enabled,
-    retry: false,
-  });
-
-  const allUsable = hasTrendData(all.data?.points);
   const ids = formIds.slice(0, MAX_FORMS);
-  const needFallback = enabled && !all.isLoading && !allUsable && ids.length > 0;
 
   const perForm = useQuery({
     queryKey: [...dashboardKeys.responseTrend(), 'per-form', scope, from, to, bucket, ids.join(',')],
@@ -62,14 +52,13 @@ export function useAnalyticsTrend({ from, to, bucket, formIds, enabled, scope = 
         .sort(([a], [b]) => a.localeCompare(b))
         .map(([bucketStart, responses]) => ({ bucketStart, responses }));
     },
-    enabled: needFallback,
-    retry: false,
+    enabled: enabled && ids.length > 0,
+    staleTime: 60_000,
   });
 
-  const points = allUsable ? all.data?.points : Array.isArray(perForm.data) ? perForm.data : undefined;
+  const points = Array.isArray(perForm.data) ? perForm.data : undefined;
   return {
     points: hasTrendData(points) ? points : undefined,
-    // Still working on an answer: the all-forms call is in flight, or its fallback is.
-    isLoading: enabled && (all.isLoading || (needFallback && perForm.isLoading)),
+    isLoading: enabled && ids.length > 0 && perForm.isLoading,
   };
 }

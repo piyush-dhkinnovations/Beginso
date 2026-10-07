@@ -1,5 +1,6 @@
 'use client';
 
+import { buildPublicFormUrl, publicFormSlug } from '@/lib/publicFormUrl';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -23,17 +24,14 @@ import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { StatusBadge } from '@/components/ui/StatusBadge';
 import { FormOverviewStats } from '@/components/forms/FormOverviewStats';
 import { FormActivityCard, FORM_ACTIVITY_PREVIEW_COUNT } from '@/components/forms/FormActivityCard';
 import { FormActivityDrawer } from '@/components/forms/FormActivityDrawer';
 import { FormAccessPanel } from '@/components/team/FormAccessPanel';
 import type { IResponse } from '@/types/response';
-import type { BreadcrumbItem } from '@/components/ui/Breadcrumb';
 
 const RECENT_RESPONSES = 5;
 
-const STATUS_LABEL = { draft: 'Draft', published: 'Published', closed: 'Closed' } as const;
 
 function firstAnswer(response: IResponse): string {
   const value = Object.values(response.answers)[0];
@@ -122,19 +120,6 @@ export default function FormOverviewPage() {
 
   const effectiveStats = { ...stats, responseCount: responseCount ?? stats.responseCount };
 
-  // Owner-type breadcrumb (requirements.md §7.2). A form reached only through a per-form grant has
-  // no matching workspace membership to name, so it falls back to Shared with me.
-  const breadcrumb: BreadcrumbItem[] =
-    workspaceId === null && (form.myRole ?? 'owner') === 'owner'
-      ? [{ label: 'My Forms', href: '/forms' }, { label: form.title }]
-      : workspace
-        ? [
-            { label: workspace.name, href: `/w/${workspace.slug}` },
-            { label: 'Forms', href: `/w/${workspace.slug}/forms` },
-            { label: form.title },
-          ]
-        : [{ label: 'Shared with me', href: '/shared' }, { label: form.title }];
-
   // Personal form: the caller owns it. Workspace form: their membership role, fail-closed while
   // unknown — Reviewer (or an unresolved role) sees Preview only (requirements.md §7.2). A
   // convenience only; the server enforces every one of these (CLAUDE.md).
@@ -157,20 +142,13 @@ export default function FormOverviewPage() {
   // correctly says "Publish your form first to get a shareable link." Gated on status too, so
   // the two surfaces agree.
   const publicUrl =
-    form.slug && form.status === 'published' ? `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/f/${form.slug}` : '';
+    form.status === 'published' ? buildPublicFormUrl(publicFormSlug(form)) : '';
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in">
       <PageHeader
-        breadcrumb={breadcrumb}
-        eyebrow="Form overview"
-        title={form.title}
-        description={
-          <span className="inline-flex items-center gap-2">
-            <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge>
-            {effectiveStats.responseCount} response{effectiveStats.responseCount === 1 ? '' : 's'}
-          </span>
-        }
+        title="Overview"
+        description={`${effectiveStats.responseCount} response${effectiveStats.responseCount === 1 ? '' : 's'}`}
         actions={
           <>
             <PinButton title={form.title} pinned={!!form.pinned} onToggle={() => pinMutation.mutate({ id: formId, pin: !form.pinned })} />
@@ -240,7 +218,7 @@ export default function FormOverviewPage() {
               <Link href={`/forms/${formId}/scores`} className="bg-body-sm">
                 Score comparison
               </Link>
-              <Link href={workspace?.slug ? `/forms/${formId}/responses?ws=${workspace.slug}` : `/forms/${formId}/responses`} className="bg-body-sm">
+              <Link href={workspace?.slug ? `/forms/${formId}/inbox?ws=${workspace.slug}` : `/forms/${formId}/inbox`} className="bg-body-sm">
                 View inbox
               </Link>
             </span>

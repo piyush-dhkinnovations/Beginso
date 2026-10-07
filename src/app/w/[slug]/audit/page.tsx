@@ -10,7 +10,7 @@ import { workspacesService } from '@/services/workspaces';
 import { auditKeys, teamKeys, workspaceKeys } from '@/lib/queryKeys';
 import { canViewAudit } from '@/lib/roles';
 import { PageHeader, Card, Alert, Button, EmptyState } from '@/components/ui';
-import { AuditFilters } from '@/components/team/AuditFilters';
+import { AuditFilters, AUDIT_RANGE_LABEL } from '@/components/team/AuditFilters';
 import { AuditTable } from '@/components/team/AuditTable';
 import type { AuditFilters as AuditFilterValues } from '@/types/event';
 
@@ -47,8 +47,16 @@ export default function AuditLogPage() {
     enabled: canView,
   });
 
+  const events = auditQuery.data ?? [];
   const header = (
-    <PageHeader title="Audit Log" description="A record of security-relevant actions across the workspace." />
+    <PageHeader
+      title="Audit Log"
+      description={
+        auditQuery.data && events.length > 0
+          ? [`${events.length}${events.length >= PAGE_SIZE ? '+' : ''} event${events.length === 1 ? '' : 's'} on this page`, AUDIT_RANGE_LABEL[range].toLowerCase()].join(' · ')
+          : undefined
+      }
+    />
   );
 
   const denied = (
@@ -89,7 +97,6 @@ export default function AuditLogPage() {
     );
   }
 
-  const events = auditQuery.data ?? [];
   const hasNext = events.length >= PAGE_SIZE;
   const filtersActive = actorId !== '' || range !== 'all';
   const actors = (membersQuery.data ?? []).map((m) => ({ id: m.userId, name: m.name }));
@@ -115,7 +122,7 @@ export default function AuditLogPage() {
         }}
       />}
 
-      <Card>
+      <div>
         {auditQuery.isError ? (
           <Alert variant="error" title="We could not load the audit log.">
             <Button variant="secondary" size="small" onClick={() => void auditQuery.refetch()}>
@@ -130,8 +137,19 @@ export default function AuditLogPage() {
           filtersActive ? (
             <EmptyState illustration="no-results"
               icon={<Shield className="bg-icon" aria-hidden="true" />}
-              title="No matching events."
-              description="Try a different actor or date range."
+              title={`No events ${[actorId && `from ${actors.find((a) => a.id === actorId)?.name ?? 'that actor'}`, range !== 'all' && `in the ${AUDIT_RANGE_LABEL[range].toLowerCase()}`].filter(Boolean).join(' ')}`}
+              actions={
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setActorId('');
+                    setRange('all');
+                    setPage(1);
+                  }}
+                >
+                  Clear filter
+                </Button>
+              }
             />
           ) : (
             <EmptyState illustration="team"
@@ -143,18 +161,18 @@ export default function AuditLogPage() {
         ) : (
           <div className="flex flex-col gap-4">
             <AuditTable events={events} />
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border-t border-(--border-subtle) pt-3">
               <Button variant="secondary" size="small" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
                 Previous
               </Button>
-              <span className="bg-caption">Page {page}</span>
+              <span className="bg-caption text-(--text-muted)">Page {page} · {events.length} events</span>
               <Button variant="secondary" size="small" disabled={!hasNext} onClick={() => setPage((p) => p + 1)}>
                 Next
               </Button>
             </div>
           </div>
         )}
-      </Card>
+      </div>
     </div>
   );
 }

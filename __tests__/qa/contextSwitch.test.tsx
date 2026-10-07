@@ -88,7 +88,7 @@ describe('Context switch — no stale panel bound to the previous context', () =
     );
 
     await screen.findByText('a Form');
-    await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Actions for/ }));
     await userEvent.click(await screen.findByRole('menuitem', { name: /Share access/ }));
     expect(await screen.findByRole('heading', { name: 'Share access to a Form' })).toBeInTheDocument();
     // FormAccessPanel is open, bound to workspace A's form.

@@ -81,7 +81,7 @@
 
   --text-primary:   var(--ink-900);
   --text-secondary: var(--neutral-600);
-  --text-muted:     var(--neutral-500);
+  --text-muted:     #5B6479; /* AA 4.5:1 on every light surface incl. --bg-sunken (was neutral-500, 3.85:1) */
   --text-disabled:  var(--neutral-400);
   --text-link:      var(--primary-600);
   --text-on-brand:  var(--neutral-0);
@@ -91,7 +91,7 @@
   --border-subtle:  var(--neutral-100);
   --border-focus:   var(--primary-500);
 
-  --action-primary:         var(--primary-500);
+  --action-primary:         #3C69CC; /* white label 5.14:1 (primary-500 was 4.44:1) */
   --action-primary-hover:   var(--primary-600);
   --action-primary-active:  var(--primary-700);
   --action-secondary:       var(--secondary-500);
@@ -301,7 +301,7 @@
   --border-strong:  #5E6979;
   --border-subtle:  #363E4B;
   --text-secondary: #C6D0DE;
-  --text-muted:     #9AA6B8;
+  --text-muted:     #A6B1C2;
   /* Dimmed cards are lighter, so disabled text must lift with them to clear 3:1. */
   --text-disabled:  #737F92;
   --accent-soft:      #313E5C;
@@ -1056,8 +1056,8 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .bg-delta .bg-icon { width: 14px; height: 14px; }
-.bg-delta-up { color: var(--success); }
-.bg-delta-down { color: var(--error); }
+.bg-delta-up { color: var(--success-text); }
+.bg-delta-down { color: var(--error-text); }
 .bg-delta-flat { color: var(--text-muted); }
 .bg-stat-foot small { font: var(--text-caption); color: var(--text-muted); }
 
@@ -1197,7 +1197,7 @@ body {
   background-color: var(--surface-card);
   border-right: 1px solid var(--border-default);
 }
-.bg-nav-group { font: 700 11px/16px var(--bg-font-sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: var(--space-3) var(--space-3) var(--space-1); }
+.bg-nav-group { font: 700 11px/16px var(--bg-font-sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-muted); padding: var(--space-1) var(--space-3); }
 .bg-nav-item {
   display: flex; align-items: center; gap: var(--space-3);
   height: var(--control-md);
@@ -1427,7 +1427,7 @@ body {
 }
 @keyframes bg-modal-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } }
 .bg-modal-lg { max-width: 720px; }
-.bg-modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); padding: var(--space-5) var(--space-5) 0; }
+.bg-modal-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-5) var(--space-5) 0; }
 .bg-modal-head h2 { font: 600 16px/24px var(--bg-font-sans); }
 .bg-modal-head p { font: var(--text-body-sm); color: var(--text-muted); margin-top: var(--space-1); }
 .bg-modal-body { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
@@ -1984,4 +1984,13 @@ body {
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* ---- Auth pages: 44px touch targets (WCAG 2.5.8 / mobile guidance). ------
+   Scoped to AuthCard so the app-wide 40px control ladder is untouched. Links
+   get a 44px hit area; font size stays the same. */
+.auth-touch .bg-input,
+.auth-touch .bg-btn { min-height: 44px; }
+.auth-touch a:not(.bg-btn) {
+  display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding-inline: 4px;
 }

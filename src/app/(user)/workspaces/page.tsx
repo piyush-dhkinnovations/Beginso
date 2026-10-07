@@ -39,7 +39,6 @@ export default function WorkspacesPage() {
       <PageHeader
         eyebrow="Account"
         title="All workspaces"
-        description="Switch context without losing your place."
         actions={
           <Button variant="primary" onClick={() => setIsModalOpen(true)}>
             <Plus size={16} className="mr-2" />

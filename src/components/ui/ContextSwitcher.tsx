@@ -9,6 +9,7 @@ export interface ContextSwitcherWorkspace {
   name: string;
   slug: string;
   role?: string;
+  memberCount?: number;
 }
 
 export type ContextSwitcherTarget =
@@ -17,6 +18,8 @@ export type ContextSwitcherTarget =
 
 export interface ContextSwitcherProps {
   currentLabel?: string;
+  /** Second line under the current name, e.g. "Owner · 3 members" or "Only you". */
+  currentMeta?: string;
   workspaces?: ContextSwitcherWorkspace[];
   /** When omitted, renders Sprint 7's original inert trigger (no dropdown) — preserves the
    * existing "safe with no props" behavior for any caller not yet ready to wire real data. */
@@ -32,12 +35,13 @@ export interface ContextSwitcherProps {
 // (requirements.md §7.2, §11) — Menu already does exactly this for row-action menus.
 export function ContextSwitcher({
   currentLabel = "Personal",
+  currentMeta,
   workspaces = [],
   onSelect,
   className,
   collapsed = false,
 }: ContextSwitcherProps) {
-  const triggerLabel = `Switch context, currently ${currentLabel}`;
+  const triggerLabel = `Switch context, currently ${currentLabel}${currentMeta ? `, ${currentMeta}` : ''}`;
   const isPersonal = currentLabel.toLowerCase() === "personal";
   const Icon = isPersonal ? User : Building2;
 
@@ -113,15 +117,17 @@ export function ContextSwitcher({
     <span className="flex items-center justify-between w-full min-w-0 gap-2">
       <span className="flex items-center min-w-0 gap-2.5">
         <Icon className="w-4 h-4 text-(--text-muted) shrink-0" aria-hidden="true" />
-        <span className="truncate font-medium text-(--text-primary) bg-body-sm">{currentLabel}</span>
-        {workspaces.length > 0 && <span className="bg-count shrink-0">{workspaces.length}</span>}
+        <span className="flex min-w-0 flex-col leading-tight">
+          <span className="truncate font-medium text-(--text-primary) bg-body-sm">{currentLabel}</span>
+          {currentMeta && <span className="truncate bg-caption font-normal text-(--text-muted)">{currentMeta}</span>}
+        </span>
       </span>
       <ChevronsUpDown className="w-3.5 h-3.5 text-(--text-muted) shrink-0 ml-auto" aria-hidden="true" />
     </span>
   );
 
   const triggerClassName = bx(
-    "bg-btn bg-btn-secondary w-full !justify-between px-3 h-10 rounded-lg text-left font-medium border border-(--border-default)/80 hover:bg-(--surface-hover) hover:border-(--border-strong) text-(--text-primary) transition-all shadow-xs",
+    "bg-btn bg-btn-secondary w-full !justify-between px-3 min-h-11 rounded-lg text-left font-medium border border-(--border-default)/80 hover:bg-(--surface-hover) hover:border-(--border-strong) text-(--text-primary) transition-all shadow-xs",
     className
   );
 

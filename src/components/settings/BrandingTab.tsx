@@ -6,6 +6,7 @@ import { Info } from 'lucide-react';
 import type { FormBranding } from '@/types/form';
 import { settingsService } from '@/services/settings';
 import { settingsKeys } from '@/lib/queryKeys';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { WorkspaceBrandingEditor } from './WorkspaceBrandingEditor';
@@ -54,7 +55,7 @@ export function BrandingTab({ scope, onDirtyChange }: { scope?: string; onDirtyC
       void queryClient.invalidateQueries({ queryKey: settingsKeys.workspace(scope) });
       toast('Branding defaults saved.', 'success');
     },
-    onError: () => toast('Failed to save branding. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'save branding', fallback: 'Failed to save branding. Please try again.' }), 'error'),
   });
 
   if (isLoading) {

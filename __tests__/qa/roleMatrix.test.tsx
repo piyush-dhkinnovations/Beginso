@@ -15,6 +15,8 @@ import { PersonalSidebar } from '@/components/workspaces/PersonalSidebar';
 import { WORKSPACE_NAV_MATRIX, PERSONAL_NAV_MATRIX } from './roleMatrix.expected';
 import type { Role } from '@/types/workspace';
 
+vi.mock('@/components/dashboard/UserProfileDropdown', () => ({ UserProfileDropdown: () => null }));
+
 vi.mock('next/navigation', () => ({
   usePathname: () => '/w/acme',
   useRouter: () => ({ push: vi.fn() }),

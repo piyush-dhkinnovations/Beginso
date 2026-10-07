@@ -26,7 +26,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Beginso",
+  title: { default: "Beginso", template: "%s · Beginso" },
   description: "Automated Beginso",
   icons: {
     icon: "/favicon.svg",

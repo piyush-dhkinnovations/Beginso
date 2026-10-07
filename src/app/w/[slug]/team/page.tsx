@@ -121,7 +121,7 @@ export default function TeamPage() {
   const resendMutation = useMutation({
     mutationFn: (invitation: PendingInvitation) => invitationsService.resend(slug, invitation.id),
     onSuccess: () => toast('Invite resent', 'success'),
-    onError: () => toast('Failed to resend invite. Please try again.', 'error'),
+    onError: (error) => toast(getFriendlyErrorMessage(error, { action: 'resend this invitation', fallback: 'Invitation was not resent. Please try again.' }), 'error'),
   });
 
   const revokeMutation = useMutation({
@@ -130,7 +130,7 @@ export default function TeamPage() {
       queryClient.invalidateQueries({ queryKey: teamKeys.invitations(slug) });
       toast('Invite revoked', 'success');
     },
-    onError: () => toast('Failed to revoke invite. Please try again.', 'error'),
+    onError: (error) => toast(getFriendlyErrorMessage(error, { action: 'revoke this invitation', fallback: 'Invitation was not revoked. Please try again.' }), 'error'),
   });
 
   // Fail-closed page gate (convenience only; the server enforces). Same pattern as Audit Log.
@@ -147,16 +147,25 @@ export default function TeamPage() {
     <div className="flex flex-col gap-4">
       <PageHeader
         title="Team & Members"
-        description="Manage who has access to this workspace."
+        description={
+          members
+            ? [
+                `${members.length} member${members.length === 1 ? '' : 's'}`,
+                canManage && invitations && `${invitations.length} pending invitation${invitations.length === 1 ? '' : 's'}`,
+              ]
+                .filter(Boolean)
+                .join(' · ')
+            : undefined
+        }
         actions={
           <>
             {/* Reachable by any member (requirements.md §7.6) — the matrix is a read-only
                 reference, not a manage action, so it isn't gated behind canManage. */}
-            <Button variant="secondary" onClick={() => router.push(`/w/${slug}/roles`)}>
+            <Button variant="ghost" onClick={() => router.push(`/w/${slug}/roles`)}>
               Roles & Permissions
             </Button>
             {currentWorkspace && !callerIsOwner && (
-              <Button variant="secondary" onClick={() => setIsLeaveOpen(true)}>
+              <Button variant="ghost" onClick={() => setIsLeaveOpen(true)}>
                 Leave workspace
               </Button>
             )}
@@ -170,6 +179,7 @@ export default function TeamPage() {
       />
 
       <Card>
+        <h2 className="mb-3 bg-h4 text-(--text-primary)">Members</h2>
         {membersError ? (
           <Alert variant="error" title="We could not load your team.">
             <Button variant="secondary" size="small" onClick={() => void refetchMembers()}>
@@ -208,6 +218,7 @@ export default function TeamPage() {
               isLoading={invitationsLoading}
               onResend={(invitation) => resendMutation.mutate(invitation)}
               onRevoke={(invitation) => revokeMutation.mutate(invitation)}
+              onInvite={() => setIsInviteModalOpen(true)}
             />
           )}
         </Card>

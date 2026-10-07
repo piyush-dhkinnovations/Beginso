@@ -43,14 +43,14 @@ export const WORKSPACE_NAV_MATRIX: ExpectedCell[] = [
     role: 'owner',
     ctx: 'workspace',
     screen: 'WorkspaceSidebar',
-    visible: [...WORKSPACE_NAV_BASE, 'Team', 'Audit Log'],
+    visible: [...WORKSPACE_NAV_BASE, 'Team', 'Audit log'],
     hidden: [],
   },
   {
     role: 'admin',
     ctx: 'workspace',
     screen: 'WorkspaceSidebar',
-    visible: [...WORKSPACE_NAV_BASE, 'Team', 'Audit Log'],
+    visible: [...WORKSPACE_NAV_BASE, 'Team', 'Audit log'],
     hidden: [],
   },
   {
@@ -58,14 +58,14 @@ export const WORKSPACE_NAV_MATRIX: ExpectedCell[] = [
     ctx: 'workspace',
     screen: 'WorkspaceSidebar',
     visible: WORKSPACE_NAV_BASE,
-    hidden: ['Team', 'Audit Log'],
+    hidden: ['Team', 'Audit log'],
   },
   {
     role: 'viewer',
     ctx: 'workspace',
     screen: 'WorkspaceSidebar',
     visible: WORKSPACE_NAV_BASE,
-    hidden: ['Team', 'Audit Log'],
+    hidden: ['Team', 'Audit log'],
   },
 ];
 
@@ -80,7 +80,7 @@ export const PERSONAL_NAV_MATRIX: ExpectedCell[] = [
     role: 'owner',
     ctx: 'personal',
     screen: 'PersonalSidebar',
-    visible: ['Home', 'My Forms', 'Shared with me', 'Templates', 'Responses', 'Analytics', 'Settings'],
+    visible: ['Home', 'Forms', 'Shared with me', 'Templates', 'Inbox', 'Insights', 'Settings'],
     hidden: ['Reports'],
   },
 ];

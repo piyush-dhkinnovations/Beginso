@@ -2,20 +2,37 @@
 
 export type Pt = readonly [number, number];
 
-/** Smooth SVG path through the points (Catmull-Rom → cubic Bézier). */
+/**
+ * Smooth SVG path through the points - monotone cubic (Fritsch-Carlson), so the curve never overshoots the
+ * data: between two equal values it is flat, and it never dips below the lowest / above the highest point.
+ */
 export function curve(p: Pt[]): string {
-  if (p.length === 0) return '';
+  const n = p.length;
+  if (n === 0) return '';
   let d = `M${p[0][0].toFixed(1)} ${p[0][1].toFixed(1)}`;
-  for (let i = 0; i < p.length - 1; i++) {
-    const p0 = p[i - 1] ?? p[i];
-    const p1 = p[i];
-    const p2 = p[i + 1];
-    const p3 = p[i + 2] ?? p2;
-    const c1x = p1[0] + (p2[0] - p0[0]) / 6;
-    const c1y = p1[1] + (p2[1] - p0[1]) / 6;
-    const c2x = p2[0] - (p3[0] - p1[0]) / 6;
-    const c2y = p2[1] - (p3[1] - p1[1]) / 6;
-    d += ` C${c1x.toFixed(1)} ${c1y.toFixed(1)} ${c2x.toFixed(1)} ${c2y.toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+  if (n === 1) return d;
+  const dx = p.slice(1).map((q, i) => q[0] - p[i][0]);
+  const sl = p.slice(1).map((q, i) => (dx[i] === 0 ? 0 : (q[1] - p[i][1]) / dx[i]));
+  const m: number[] = [sl[0]];
+  for (let i = 1; i < n - 1; i++) m.push(sl[i - 1] * sl[i] <= 0 ? 0 : (sl[i - 1] + sl[i]) / 2);
+  m.push(sl[n - 2]);
+  for (let i = 0; i < n - 1; i++) {
+    if (sl[i] === 0) {
+      m[i] = 0;
+      m[i + 1] = 0;
+      continue;
+    }
+    const a = m[i] / sl[i];
+    const b = m[i + 1] / sl[i];
+    const h = Math.hypot(a, b);
+    if (h > 3) {
+      m[i] = (3 * a * sl[i]) / h;
+      m[i + 1] = (3 * b * sl[i]) / h;
+    }
+  }
+  for (let i = 0; i < n - 1; i++) {
+    const t = dx[i] / 3;
+    d += ` C${(p[i][0] + t).toFixed(1)} ${(p[i][1] + m[i] * t).toFixed(1)} ${(p[i + 1][0] - t).toFixed(1)} ${(p[i + 1][1] - m[i + 1] * t).toFixed(1)} ${p[i + 1][0].toFixed(1)} ${p[i + 1][1].toFixed(1)}`;
   }
   return d;
 }

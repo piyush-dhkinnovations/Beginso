@@ -1,95 +1,48 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 
 export interface DeleteFormModalProps {
   isOpen: boolean;
-  /** Single-delete mode (default): pass the form's own title — the strict typed-confirmation
-   * stays required, unchanged from before. */
+  /** Single mode: the form's title, named in the sentence. */
   formTitle?: string;
-  /** Bulk-delete mode (sprint-10-events-migration, task 6.4): pass a count instead — typing
-   * every selected form's title isn't meaningful across a mixed selection, so bulk mode drops
-   * to a plain confirm button, matching the weight of every other bulk-destructive confirm
-   * already in this app (e.g. Team's revoke-invite modal has no typed input either). */
+  /** Single mode: real response count when known, so the sentence says what moves. */
+  responseCount?: number;
+  /** Bulk mode: pass a count instead of a title. */
   count?: number;
   onClose: () => void;
   onConfirm: () => void;
   isDeleting: boolean;
 }
 
-export function DeleteFormModal({
-  isOpen,
-  formTitle,
-  count,
-  onClose,
-  onConfirm,
-  isDeleting,
-}: DeleteFormModalProps) {
-  // Bulk mode is selected by which prop the caller passes, not by count's magnitude — a single
-  // form selected via a bulk-selection checkbox still goes through the lighter confirm (no typed
-  // title), since that's a deliberate checkbox selection, not the row menu's single-item
-  // "Delete" click. Real bug this guards: `count > 1` would fall through to single mode at
-  // count === 1 with no `formTitle` ever passed in that caller, permanently disabling confirm.
+// Moving to Trash is reversible (30 days, plus an Undo toast at the call site), so: one sentence, one
+// button, no type-to-confirm. Type-to-confirm is kept for irreversible actions only (EmptyTrashModal,
+// DeleteWorkspaceModal).
+export function DeleteFormModal({ isOpen, formTitle, responseCount, count, onClose, onConfirm, isDeleting }: DeleteFormModalProps) {
+  // Bulk mode is selected by which prop the caller passes, not by count's magnitude.
   const isBulk = typeof count === 'number';
-  const [typed, setTyped] = useState('');
-
-  // Reset whenever the modal opens — the component stays mounted across opens (the
-  // caller just toggles isOpen), and closing via onConfirm doesn't route through onClose,
-  // so relying only on a close-time reset left stale input from the previous form typed
-  // into the confirm field the next time this modal opened for a different form.
-  useEffect(() => {
-    if (isOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setTyped('');
-    }
-  }, [isOpen]);
-
-  const canDelete = isBulk || typed === formTitle;
+  const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+  const sentence = isBulk
+    ? `${plural(count, 'form')} and their responses move to Trash. You can restore them for 30 days.`
+    : typeof responseCount === 'number'
+      ? `${formTitle} and its ${plural(responseCount, 'response')} move to Trash. You can restore them for 30 days.`
+      : `${formTitle} and its responses move to Trash. You can restore them for 30 days.`;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isBulk ? `Move ${count} form${count === 1 ? '' : 's'} to Trash?` : 'Move form to Trash?'}
-      description="It stays in Trash for 30 days and can be restored. Its responses go with it and come back with it. After 30 days it is deleted permanently."
+      title={isBulk ? `Move ${plural(count, 'form')} to Trash?` : 'Move form to Trash?'}
+      description={sentence}
     >
-      <div className="flex flex-col gap-4">
-        {!isBulk && (
-          <div>
-            <label
-              htmlFor="delete-confirm-input"
-              className="block bg-body-sm text-(--text-secondary) mb-1.5"
-            >
-              Type <span className="font-semibold text-(--text-primary)">{formTitle}</span> to confirm
-            </label>
-            <input
-              id="delete-confirm-input"
-              type="text"
-              value={typed}
-              onChange={(e) => setTyped(e.target.value)}
-              placeholder={formTitle}
-              className="w-full border border-(--border-strong) rounded-md px-3 py-2 bg-body focus:outline-none focus:border-(--border-strong) focus:ring-2 focus:ring-(--border-default) transition-colors"
-              autoComplete="off"
-            />
-          </div>
-        )}
-
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-(--border-subtle)">
-          <Button type="button" variant="secondary" onClick={onClose} disabled={isDeleting}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={onConfirm}
-            isLoading={isDeleting}
-            disabled={!canDelete}
-            className="bg-(--error) text-(--text-on-brand) hover:bg-(--danger-hover) focus:ring-(--error) disabled:bg-(--error-border) disabled:border-(--error-border)"
-          >
-            {isBulk ? `Move ${count} form${count === 1 ? '' : 's'} to Trash` : 'Move to Trash'}
-          </Button>
-        </div>
+      <div className="flex items-center justify-end gap-3 pt-2 border-t border-(--border-subtle)">
+        <Button type="button" variant="secondary" onClick={onClose} disabled={isDeleting}>
+          Cancel
+        </Button>
+        <Button type="button" variant="destructive" onClick={onConfirm} isLoading={isDeleting}>
+          {isBulk ? `Move ${plural(count, 'form')} to Trash` : 'Move to Trash'}
+        </Button>
       </div>
     </Modal>
   );

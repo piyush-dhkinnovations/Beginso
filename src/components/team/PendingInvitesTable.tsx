@@ -5,6 +5,8 @@ import { Table, type TableColumn } from '@/components/ui/Table';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { MailPlus } from 'lucide-react';
 import { ROLE_LABELS } from '@/lib/roles';
 import type { PendingInvitation } from '@/types/team';
 
@@ -14,12 +16,14 @@ export interface PendingInvitesTableProps {
   isLoading?: boolean;
   onResend: (invitation: PendingInvitation) => void;
   onRevoke: (invitation: PendingInvitation) => void;
+  /** Offered from the empty state when the caller can invite. */
+  onInvite?: () => void;
 }
 
 // Presentational — same split as MemberTable (design.md §6/§7): no fetching, no mutation calls.
 // Resend/Revoke are hidden entirely (not just disabled) for a caller without manage permission
 // (requirements.md §7.3) — Revoke opens a focus-trapped confirmation modal, not window.confirm().
-export function PendingInvitesTable({ invitations, canManage, isLoading, onResend, onRevoke }: PendingInvitesTableProps) {
+export function PendingInvitesTable({ invitations, canManage, isLoading, onResend, onRevoke, onInvite }: PendingInvitesTableProps) {
   const [pendingRevoke, setPendingRevoke] = useState<PendingInvitation | null>(null);
 
   const columns: TableColumn<PendingInvitation>[] = [
@@ -62,11 +66,26 @@ export function PendingInvitesTable({ invitations, canManage, isLoading, onResen
 
   return (
     <>
-      {/* No zero-items empty state card here (requirements.md §7.3's own table is secondary to
-          Members) — an empty invitations list simply renders as a table with no rows, which
-          would read as a dashed full-width empty state competing with the Members card above it
-          if one were added (design.md §17). */}
-      <Table columns={columns} rows={invitations} rowKey={(i) => i.id} isLoading={isLoading} skeletonRows={2} />
+      <h2 className="mb-3 bg-h4 text-(--text-primary)">
+        Pending invitations
+        {!isLoading && <span className="ml-2 bg-body-sm font-normal text-(--text-muted)">{invitations.length}</span>}
+      </h2>
+      {!isLoading && invitations.length === 0 ? (
+        <EmptyState
+          icon={<MailPlus />}
+          title="No pending invitations"
+          description="People you invite appear here until they accept."
+          actions={
+            canManage && onInvite ? (
+              <Button variant="secondary" onClick={onInvite}>
+                Invite members
+              </Button>
+            ) : undefined
+          }
+        />
+      ) : (
+        <Table columns={columns} rows={invitations} rowKey={(i) => i.id} isLoading={isLoading} skeletonRows={2} />
+      )}
 
       <Modal
         isOpen={pendingRevoke !== null}

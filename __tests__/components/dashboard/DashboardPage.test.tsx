@@ -64,7 +64,7 @@ describe('DashboardPage analytics integration', () => {
     expect(screen.getByText('Lead intake')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'View response for Lead intake' })).toHaveAttribute(
       'href',
-      '/responses?responseId=response-1'
+      '/inbox?responseId=response-1'
     );
   });
 

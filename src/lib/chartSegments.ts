@@ -14,3 +14,7 @@ export function toSegments(rows: { key?: string; label: string; value: number }[
     };
   });
 }
+
+/** Minimum-data rule: below this many data points a trend line, delta or percentage ring says nothing true. */
+export const MIN_TREND_POINTS = 10;
+export const NOT_ENOUGH_DATA = 'Not enough data to show a trend yet.';

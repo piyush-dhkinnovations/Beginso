@@ -13,8 +13,8 @@ export const FORMAT_ICON: Record<ReportFormat, typeof FileSpreadsheet> = {
 // Colour per format — success (green) for the spreadsheet, error (red) for the PDF — as tokens
 // mixed into the surface, so they follow every theme.
 const FORMAT_TONE: Record<ReportFormat, { ink: string; label: string }> = {
-  csv: { ink: 'var(--success)', label: 'CSV' },
-  pdf: { ink: 'var(--error)', label: 'PDF' },
+  csv: { ink: 'var(--success-text)', label: 'CSV' },
+  pdf: { ink: 'var(--error-text)', label: 'PDF' },
 };
 
 interface ReportFormatCardProps {

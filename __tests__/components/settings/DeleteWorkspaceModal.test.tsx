@@ -29,6 +29,9 @@ vi.mock('@/services/settings', () => ({
   },
 }));
 
+vi.mock('@/services/forms', () => ({ formsService: { getForms: () => Promise.resolve({ forms: [], total: 22 }) } }));
+vi.mock('@/services/responses', () => ({ responsesService: { getStats: () => Promise.resolve({ total: 77 }) } }));
+
 const mockLogout = vi.fn();
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({ logout: mockLogout }),
@@ -57,7 +60,7 @@ describe('DeleteWorkspaceModal', () => {
   it('keeps Delete disabled with no password entered, even with an exact name match', () => {
     renderModal();
     fireEvent.change(screen.getByPlaceholderText('Acme Workspace'), { target: { value: 'Acme Workspace' } });
-    expect(screen.getByRole('button', { name: 'Delete permanently' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Delete account permanently' })).toBeDisabled();
   });
 
   it('keeps Delete disabled on a partial/incorrect name match even with a password entered', async () => {
@@ -67,7 +70,7 @@ describe('DeleteWorkspaceModal', () => {
     await user.type(screen.getByLabelText('Confirm your password'), 'mypassword');
     fireEvent.change(screen.getByPlaceholderText('Acme Workspace'), { target: { value: 'Acme Workspac' } });
 
-    expect(screen.getByRole('button', { name: 'Delete permanently' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Delete account permanently' })).toBeDisabled();
   });
 
   it('enables Delete only once both the password and exact name match are present', async () => {
@@ -77,7 +80,7 @@ describe('DeleteWorkspaceModal', () => {
     await user.type(screen.getByLabelText('Confirm your password'), 'mypassword');
     fireEvent.change(screen.getByPlaceholderText('Acme Workspace'), { target: { value: 'Acme Workspace' } });
 
-    expect(screen.getByRole('button', { name: 'Delete permanently' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Delete account permanently' })).not.toBeDisabled();
   });
 
   it('shows a field error on a wrong password and never calls deleteWorkspace or logout', async () => {
@@ -87,7 +90,7 @@ describe('DeleteWorkspaceModal', () => {
 
     await user.type(screen.getByLabelText('Confirm your password'), 'wrongpass');
     fireEvent.change(screen.getByPlaceholderText('Acme Workspace'), { target: { value: 'Acme Workspace' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Delete permanently' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete account permanently' }));
 
     expect(await screen.findByText('Current password is incorrect.')).toBeInTheDocument();
     expect(mockDeleteWorkspace).not.toHaveBeenCalled();
@@ -102,7 +105,7 @@ describe('DeleteWorkspaceModal', () => {
 
     await user.type(screen.getByLabelText('Confirm your password'), 'mypassword');
     fireEvent.change(screen.getByPlaceholderText('Acme Workspace'), { target: { value: 'Acme Workspace' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Delete permanently' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete account permanently' }));
 
     await waitFor(() => expect(mockSignIn).toHaveBeenCalledWith(expect.anything(), 'jordan@example.com', 'mypassword'));
     await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
@@ -119,7 +122,7 @@ describe('DeleteWorkspaceModal', () => {
 
     await user.type(screen.getByLabelText('Confirm your password'), 'mypassword');
     fireEvent.change(screen.getByPlaceholderText('Acme Workspace'), { target: { value: 'Acme Workspace' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Delete permanently' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete account permanently' }));
 
     await waitFor(() => expect(mockDeleteWorkspace).toHaveBeenCalled());
     expect(mockLogout).not.toHaveBeenCalled();

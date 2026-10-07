@@ -1,5 +1,6 @@
 'use client';
 
+import { buildPublicFormUrl } from '@/lib/publicFormUrl';
 import { useState } from 'react';
 import { Copy } from 'lucide-react';
 import type { FormSettings, FormStatus } from '@/types/form';
@@ -75,12 +76,12 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
   const closeDateEnabled = settings.closeDate !== undefined;
   const isPastDate = closeDateEnabled && new Date(settings.closeDate!) < new Date();
 
-  const publicUrl = slug ? `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/f/${slug}` : '';
+  const publicUrl = buildPublicFormUrl(slug) || '';
 
   return (
-    <div className="max-w-2xl mx-auto flex flex-col gap-6">
-      <div>
-        <h2 className="bg-h4 font-bold text-(--text-primary)">Settings</h2>
+    <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
+      <div className="xl:col-span-2">
+        <h2 className="bg-h4 font-bold text-(--text-primary)">Behaviour</h2>
         <p className="bg-body text-(--text-muted) mt-1">Control how respondents interact with this form.</p>
       </div>
 
@@ -128,6 +129,7 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
           <span className="bg-body-sm font-medium text-(--text-secondary)">Limit responses</span>
           <Switch
             id="response-limit-toggle"
+            aria-label="Limit responses"
             checked={limitEnabled}
             onChange={(v) => onUpdate({ responseLimit: v ? 1 : undefined, responseLimitEnabled: v })}
           />
@@ -149,6 +151,7 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
           <span className="bg-body-sm font-medium text-(--text-secondary)">Auto-close on a date</span>
           <Switch
             id="close-date-toggle"
+            aria-label="Auto-close on a date"
             checked={closeDateEnabled}
             onChange={(v) => onUpdate({ closeDate: v ? new Date().toISOString() : undefined })}
           />
@@ -175,6 +178,7 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
           <span className="bg-body-sm font-medium text-(--text-secondary)">Honeypot spam protection</span>
           <Switch
             id="honeypot-toggle"
+            aria-label="Honeypot spam protection"
             checked={settings.honeypotEnabled}
             onChange={(v) => onUpdate({ honeypotEnabled: v })}
           />

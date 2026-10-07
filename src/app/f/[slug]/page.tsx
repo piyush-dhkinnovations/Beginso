@@ -71,7 +71,7 @@ export default async function PublicFormPage({ params, searchParams }: Props) {
     // On the true-404 path, `schema` is null and `userNote` (if any) came from the
     // 404 response body. On the closeDate-detected-closed path, `schema` loaded fine —
     // its own settings.successMessage is the admin's custom message and takes priority.
-    return <FormUnavailable userNote={schema ? schema.settings.successMessage : userNote} />;
+    return <FormUnavailable userNote={schema ? schema.settings.successMessage : userNote} notFound={!schema && !userNote} />;
   }
 
   return <PublicFormShell schema={schema} slug={slug} search={search} />;

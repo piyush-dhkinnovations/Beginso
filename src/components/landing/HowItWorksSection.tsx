@@ -52,7 +52,7 @@ function TrackVisual() {
     <div className="h-35 flex flex-col justify-center gap-1.5 px-4">
       {rows.map((r) => (
         <div key={r.name} className="flex items-center gap-2 rounded-(--bg-radius-sm) border border-(--border-default) bg-(--surface-hover) px-2.5 py-2">
-          <Avatar name={r.name} size="xs" />
+          <Avatar name={r.name} alt="" size="xs" />
           <span className="flex-1 text-left bg-caption text-(--text-primary) truncate">{r.name}</span>
           <StatusBadge variant={r.status} className="bg-caption px-1.5 py-0 leading-none">
             {r.status === "new" ? "New" : r.status === "in_progress" ? "In progress" : "Completed"}

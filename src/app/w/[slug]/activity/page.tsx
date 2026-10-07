@@ -1,11 +1,13 @@
 'use client';
 
+import { keepPreviousInScope } from '@/lib/queryOptions';
 import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { eventsService } from '@/services/events';
 import { activityKeys } from '@/lib/queryKeys';
-import { PageHeader, Alert, Button, Skeleton, Select } from '@/components/ui';
+import { PageHeader, Alert, Button, Skeleton, FilterChips, FilterMenu, Toolbar } from '@/components/ui';
+import { formatRelativeTime } from '@/lib/formatters';
 import { ActivityFeed, ACTIVITY_CATEGORY_LABEL, categoryOf, type ActivityCategory } from '@/components/workspaces/ActivityFeed';
 
 const PAGE_SIZE = 20;
@@ -21,6 +23,7 @@ export default function WorkspaceActivityPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: activityKeys.list(slug, page),
     queryFn: () => eventsService.listWorkspaceActivity(slug, page, PAGE_SIZE),
+    placeholderData: keepPreviousInScope(activityKeys.list(slug, page)),
   });
 
   const [person, setPerson] = useState('');
@@ -37,9 +40,22 @@ export default function WorkspaceActivityPage() {
   );
   const filtered = !!person || !!category;
 
+  // Counts and facts cover the events on the loaded page only — the events contract has no total or server-side filter.
+  const loaded = data ?? [];
+  const categoryCount = (c: ActivityCategory) => loaded.filter((e) => categoryOf(e.action) === c).length;
+  const headerFacts = loaded.length
+    ? [
+        `${loaded.length} event${loaded.length === 1 ? '' : 's'} on this page`,
+        `${people.length} ${people.length === 1 ? 'person' : 'people'}`,
+        `latest ${formatRelativeTime(loaded[0].createdAt)}`,
+      ].join(' · ')
+    : undefined;
+  const filterName = [person && `from ${person}`, category && `in ${ACTIVITY_CATEGORY_LABEL[category]}`].filter(Boolean).join(' ');
+  const otherEvents = loaded.length - visible.length;
+
   return (
     <div className="flex flex-col gap-4">
-      <PageHeader title="Activity" description="What's been happening in this workspace." />
+      <PageHeader title="Activity" description={headerFacts} />
 
       <div className="flex flex-col gap-4">
         {isLoading ? (
@@ -56,35 +72,40 @@ export default function WorkspaceActivityPage() {
           </Alert>
         ) : (
           <>
-            {(data?.length ?? 0) > 0 && (
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="w-full sm:w-56">
-                  <Select id="activity-person" aria-label="Filter by person" value={person} onChange={(e) => setPerson(e.target.value)}>
-                    <option value="">Everyone</option>
-                    {people.map((p) => (
-                      <option key={p} value={p}>{p}</option>
-                    ))}
-                  </Select>
-                </div>
-                <div className="w-full sm:w-56">
-                  <Select id="activity-type" aria-label="Filter by type" value={category} onChange={(e) => setCategory(e.target.value as ActivityCategory | '')}>
-                    <option value="">All activity</option>
-                    {(Object.keys(ACTIVITY_CATEGORY_LABEL) as ActivityCategory[]).map((c) => (
-                      <option key={c} value={c}>{ACTIVITY_CATEGORY_LABEL[c]}</option>
-                    ))}
-                  </Select>
-                </div>
-                {filtered && (
-                  <Button variant="ghost" size="small" onClick={() => { setPerson(''); setCategory(''); }}>
-                    Clear filters
-                  </Button>
-                )}
-              </div>
+            {loaded.length > 0 && (
+              <>
+                <FilterChips
+                  ariaLabel="Filter activity by type (counts for this page)"
+                  activeId={category || 'all'}
+                  onChange={(id) => setCategory(id === 'all' ? '' : (id as ActivityCategory))}
+                  chips={[
+                    { id: 'all', label: 'All', count: loaded.length },
+                    ...(Object.keys(ACTIVITY_CATEGORY_LABEL) as ActivityCategory[]).map((c) => ({ id: c, label: ACTIVITY_CATEGORY_LABEL[c], count: categoryCount(c) })),
+                  ]}
+                />
+                <Toolbar>
+                  <FilterMenu
+                    label="Person"
+                    options={people.map((p) => ({ id: p, label: p }))}
+                    selectedIds={person ? [person] : []}
+                    clearLabel="Everyone"
+                    onSelect={setPerson}
+                    onClear={() => setPerson('')}
+                  />
+                </Toolbar>
+              </>
             )}
             <ActivityFeed
               events={visible}
-              emptyTitle={filtered ? 'No activity matches these filters.' : undefined}
-              emptyDescription={filtered ? 'Try a different person or type, or clear the filters.' : undefined}
+              emptyTitle={filtered ? `No activity ${filterName}` : undefined}
+              emptyDescription={filtered ? `There ${otherEvents === 1 ? 'is 1 other event' : `are ${otherEvents} other events`} on this page.` : undefined}
+              emptyActions={
+                filtered ? (
+                  <Button variant="secondary" onClick={() => { setPerson(''); setCategory(''); }}>
+                    Clear filter
+                  </Button>
+                ) : undefined
+              }
             />
             {(page > 1 || hasNext) && (
               <div className="flex items-center justify-between">

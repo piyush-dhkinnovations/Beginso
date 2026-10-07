@@ -115,7 +115,7 @@ export function ImageUploadZone({
           <span className="bg-caption font-semibold text-(--text-muted) text-center px-2">
             {aspect === 'square' ? 'Upload logo' : 'Click or drag to upload'}
           </span>
-          {hint && <span className="bg-caption text-(--text-disabled) text-center px-2 whitespace-nowrap">{hint}</span>}
+          {hint && <span className="bg-caption text-(--text-muted) text-center px-2 whitespace-nowrap">{hint}</span>}
         </>
       )}
       {hasImage && (

@@ -1,4 +1,5 @@
-import { Select } from '@/components/ui/Select';
+import { Toolbar } from '@/components/ui/Toolbar';
+import { FilterMenu } from '@/components/ui/FilterMenu';
 import type { AuditFilters as AuditFilterValues } from '@/types/event';
 
 export interface AuditActorOption {
@@ -6,42 +7,40 @@ export interface AuditActorOption {
   name: string;
 }
 
+type Range = NonNullable<AuditFilterValues['range']>;
+
+export const AUDIT_RANGE_LABEL: Record<Range, string> = { '7d': 'Last 7 days', '30d': 'Last 30 days', all: 'All time' };
+
 export interface AuditFiltersProps {
   actors: AuditActorOption[];
   actorId: string;
-  range: NonNullable<AuditFilterValues['range']>;
+  range: Range;
   onActorChange: (actorId: string) => void;
-  onRangeChange: (range: NonNullable<AuditFilterValues['range']>) => void;
+  onRangeChange: (range: Range) => void;
 }
 
-// requirements.md §7.7 / design.md §6, §15.3. Presentational and controlled — the page owns the
-// state. Visible <label>s (Select's own `label` prop), not placeholder-only (requirements §11);
-// stacks full-width below 768px per the wireframe note.
+// requirements.md §7.7 / design.md §6, §15.3. Presentational and controlled — the page owns the state.
+// Named Actor / Date buttons on one --bg-subtle bar; each shows its active value and closes after a selection.
 export function AuditFilters({ actors, actorId, range, onActorChange, onRangeChange }: AuditFiltersProps) {
   return (
-    <div className="flex flex-col gap-3 md:flex-row md:items-end">
-      <div className="w-full md:w-56">
-        <Select id="audit-actor" label="Actor" value={actorId} onChange={(e) => onActorChange(e.target.value)}>
-          <option value="">All actors</option>
-          {actors.map((actor) => (
-            <option key={actor.id} value={actor.id}>
-              {actor.name}
-            </option>
-          ))}
-        </Select>
-      </div>
-      <div className="w-full md:w-48">
-        <Select
-          id="audit-range"
-          label="Date range"
-          value={range}
-          onChange={(e) => onRangeChange(e.target.value as AuditFiltersProps['range'])}
-        >
-          <option value="7d">Last 7 Days</option>
-          <option value="30d">Last 30 Days</option>
-          <option value="all">All Time</option>
-        </Select>
-      </div>
-    </div>
+    <Toolbar>
+      <FilterMenu
+        label="Actor"
+        options={actors.map((a) => ({ id: a.id, label: a.name }))}
+        selectedIds={actorId ? [actorId] : []}
+        valueLabel={actors.find((a) => a.id === actorId)?.name}
+        clearLabel="All actors"
+        onSelect={onActorChange}
+        onClear={() => onActorChange('')}
+      />
+      <FilterMenu
+        label="Date"
+        options={(['7d', '30d'] as const).map((r) => ({ id: r, label: AUDIT_RANGE_LABEL[r] }))}
+        selectedIds={range === 'all' ? [] : [range]}
+        clearLabel={AUDIT_RANGE_LABEL.all}
+        onSelect={(id) => onRangeChange(id as Range)}
+        onClear={() => onRangeChange('all')}
+      />
+    </Toolbar>
   );
 }

@@ -6,6 +6,8 @@ import { isAxiosError } from 'axios';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Active,
+  closestCenter,
+  CollisionDetection,
   DndContext,
   DragEndEvent,
   DragOverEvent,
@@ -38,8 +40,11 @@ import { ShareView } from '@/components/form-builder/ShareView';
 import { PublishModal } from '@/components/form-builder/PublishModal';
 import { CloseFormModal } from '@/components/form-builder/CloseFormModal';
 import { LeaveBuilderModal } from '@/components/form-builder/LeaveBuilderModal';
+import { trashService } from '@/services/trash';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
-import { canSeeShare, canPublishForm, hasCapability } from '@/lib/roles';
+import { Breadcrumb, type BreadcrumbItem } from '@/components/ui/Breadcrumb';
+import { canSeeShare, canPublishForm, canDeleteForm, hasCapability } from '@/lib/roles';
 import type { FieldType, Form, FormBranding, FormField, FormPage, FormSettings, FormStatus } from '@/types/form';
 
 // Shared by handleDragOver (visual indicator) and handleDragEnd (actual insert)
@@ -51,6 +56,11 @@ function isDroppingBelow(active: Active, over: Over | null): boolean {
     active.rect.current.translated.top > over.rect.top + over.rect.height / 2
   );
 }
+
+// pointerWithin needs pointer coordinates, which a keyboard drag does not have: without this fallback
+// a keyboard reorder never finds a drop target and silently does nothing.
+const collisionDetection: CollisionDetection = (args) =>
+  args.pointerCoordinates ? pointerWithin(args) : closestCenter(args);
 
 const VALID_TABS: BuilderTab[] = ['build', 'branding', 'settings', 'share'];
 
@@ -157,8 +167,19 @@ export default function BuilderPageShell() {
     ? workspaces.find((ws) => ws.id === form.workspaceId)?.slug
     : undefined;
   const formsListHref = formWorkspaceSlug ? `/w/${formWorkspaceSlug}/forms` : '/forms';
+  // The header's back arrow returns to the form's own Overview (where the user came from), carrying the workspace hint.
+  const overviewHref = `/forms/${id}/overview${formWorkspaceSlug ? `?ws=${formWorkspaceSlug}` : ''}`;
   // Personal form → the caller is its owner; workspace form → their membership role (unknown = no link).
   const formRole = form?.myRole ?? (form?.workspaceId ? workspaces.find((ws) => ws.id === form.workspaceId)?.role : 'owner');
+
+  const formWorkspace = workspaces.find((ws) => ws.slug === formWorkspaceSlug);
+  const breadcrumb: BreadcrumbItem[] = [
+    formWorkspaceSlug
+      ? { label: formWorkspace?.name ?? 'Workspace', href: `/w/${formWorkspaceSlug}` }
+      : { label: 'Personal', href: '/dashboard' },
+    { label: 'Forms', href: formsListHref },
+    { label: formTitle || form?.title || 'Untitled form' },
+  ];
 
   // A role that cannot edit has no business in the builder (the server rejects its writes anyway): send it to the read-only Overview.
   useEffect(() => {
@@ -248,6 +269,48 @@ export default function BuilderPageShell() {
   useEffect(() => {
     saveStateRef.current = { dirty, fields, formTitle, pages, formId, branding, settings };
   }, [dirty, fields, formTitle, pages, formId, branding, settings]);
+
+  // Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z and Ctrl+Y go through the store's undo/redo. Skipped while typing so
+  // text inputs keep the browser's own text undo.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+      const el = e.target as HTMLElement | null;
+      if (el?.closest('input, textarea, select, [contenteditable="true"]')) return;
+      const k = e.key?.toLowerCase();
+      if (!k) return;
+      const store = useBuilderStore.getState();
+      if (k === 'z' && !e.shiftKey) store.undo();
+      else if ((k === 'z' && e.shiftKey) || k === 'y') store.redo();
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Flush unsaved edits when the tab is hidden or the page is going away (autosave is a 2s debounce, so
+  // the last edits would otherwise be lost). Same save path as autosave.
+  useEffect(() => {
+    const flush = () => {
+      const c = saveStateRef.current;
+      if (!c.dirty || !c.formId || c.formId === 'undefined') return;
+      const hasEmptyChoice = c.fields.some(
+        (f) => !f.deleted && (f.type === 'dropdown' || f.type === 'multiple_choice' || f.type === 'checkbox') && !f.options?.length
+      );
+      if (hasEmptyChoice) return;
+      saveFormSnapshot(c.formId, c).then(() => useBuilderStore.getState().markSaved()).catch(() => {});
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pagehide', flush);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pagehide', flush);
+    };
+  }, []);
 
   // Synchronous flush on unmount or tab close
   useEffect(() => {
@@ -374,11 +437,25 @@ export default function BuilderPageShell() {
       queryClient.invalidateQueries({ queryKey: ['forms'] });
       queryClient.invalidateQueries({ queryKey: ['trash'] });
       // Delete means Trash since Sprint 13 (CF5.5): reversible for 30 days.
-      toast('Moved to Trash — you can restore it for 30 days', 'success');
+      const id = formId!;
+      const scope = formWorkspaceSlug ?? 'personal';
+      toast(`"${formTitle}" moved to Trash`, 'success', undefined, {
+        label: 'Undo',
+        onClick: () => {
+          trashService
+            .restore(scope, 'form', id)
+            .then(() => {
+              queryClient.invalidateQueries({ queryKey: ['forms'] });
+              queryClient.invalidateQueries({ queryKey: ['trash'] });
+              toast(`"${formTitle}" restored`, 'success');
+            })
+            .catch((err) => toast(getFriendlyErrorMessage(err, { action: `restore "${formTitle}"` }), 'error'));
+        },
+      });
       router.push(formsListHref);
     },
-    onError: () => {
-      toast('Failed to delete form. Please try again.', 'error');
+    onError: (err) => {
+      toast(getFriendlyErrorMessage(err, { action: 'delete this form' }), 'error');
     },
   });
 
@@ -407,12 +484,12 @@ export default function BuilderPageShell() {
 
   const handleBack = useCallback(() => {
     if (dirtyRef.current) {
-      setPendingNavUrl(formsListHref);
+      setPendingNavUrl(overviewHref);
       setShowLeaveModal(true);
     } else {
-      router.push(formsListHref);
+      router.push(overviewHref);
     }
-  }, [router, formsListHref]);
+  }, [router, overviewHref]);
 
   // Retry after a failed autosave (SaveIndicator). A failed save leaves `dirty` true, so the leave
   // guard already treats it as unsaved; this just re-runs the same save immediately.
@@ -608,6 +685,7 @@ export default function BuilderPageShell() {
         ) : (
           /* Form Builder Content */
           <>
+            <Breadcrumb items={breadcrumb} className="shrink-0 border-b bg-(--surface-card) px-4 py-2" />
             <BuilderHeader
               formTitle={formTitle}
               dirty={dirty}
@@ -622,6 +700,7 @@ export default function BuilderPageShell() {
               canPublish={canPublishForm(formRole)}
               onPublish={handlePublishClick}
               onClose={() => setShowCloseModal(true)}
+              canDelete={canDeleteForm(formRole)}
               onDelete={() => setShowDeleteModal(true)}
             />
 
@@ -633,13 +712,14 @@ export default function BuilderPageShell() {
               onUndo={undo}
               onRedo={redo}
               showShare={canSeeShare(formRole)}
+              fieldCount={fields.filter((f) => !f.deleted).length}
             />
             
             <div className="flex flex-1 overflow-hidden">
               {activeTab === 'build' ? (
                 <DndContext
                   sensors={sensors}
-                  collisionDetection={pointerWithin}
+                  collisionDetection={collisionDetection}
                   onDragStart={handleDragStart}
                   onDragOver={handleDragOver}
                   onDragEnd={handleDragEnd}
@@ -772,6 +852,7 @@ export default function BuilderPageShell() {
       <DeleteFormModal
         isOpen={showDeleteModal}
         formTitle={formTitle}
+        responseCount={form?.responseCount}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={() => {
           deleteMutation.mutate();

@@ -1,5 +1,6 @@
 'use client';
 
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -52,7 +53,7 @@ export function ReportsView({ scope = 'personal', embedded = false }: ReportsVie
     // today (no /w/[slug]/reports route exists yet), so 'personal' is unconditionally correct —
     // revisit if/when Reports gets a workspace-scoped route.
     // Sprint 14: scoped to the active context - a workspace export only offers that workspace's forms.
-    queryFn: () => formsService.getForms({ limit: 100 }, scope === 'personal' ? { type: 'personal' } : { type: 'workspace', workspaceId: scope }),
+    queryFn: () => formsService.getAllForms(scope === 'personal' ? { type: 'personal' } : { type: 'workspace', workspaceId: scope }),
   });
   const forms = useMemo(() => formsData?.forms ?? [], [formsData]);
   // The backend's job objects only carry `formId` (a raw ObjectId), never a denormalized
@@ -78,7 +79,7 @@ export function ReportsView({ scope = 'personal', embedded = false }: ReportsVie
       );
       toast('Report generation started.', 'success');
     },
-    onError: () => toast('Failed to start report generation. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'export responses', fallback: 'Failed to start report generation. Please try again.' }), 'error'),
   });
 
   function handleGenerate(format: ReportFormat) {
@@ -100,8 +101,8 @@ export function ReportsView({ scope = 'personal', embedded = false }: ReportsVie
     <div className="flex flex-col gap-4 animate-fade-in">
       {embedded ? null : (
         <PageHeader
-          title="Reports"
-          description="Export your form responses as a CSV or PDF file."
+          title="Exports"
+          description={forms.length > 0 ? `${forms.length} form${forms.length === 1 ? '' : 's'} available to export · CSV and PDF` : undefined}
           actionsAlign="center"
           actions={<DateRangeFilter part="range" value={dateRange} onChange={setDateRange} />}
         />
@@ -152,7 +153,7 @@ export function ReportsView({ scope = 'personal', embedded = false }: ReportsVie
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         <ReportJobsList page={jobsPage} onPageChange={goToJobsPage} formTitleById={formTitleById} scope={scope} />
-        <ReportsSidebar />
+        <ReportsSidebar scope={scope} />
       </div>
     </div>
   );

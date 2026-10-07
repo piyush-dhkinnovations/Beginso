@@ -107,7 +107,7 @@ describe('NotificationsTab', () => {
       expect(mockUpdateWorkspace).toHaveBeenCalledWith({ notificationPreferences: { newResponseEmail: false } })
     );
     await waitFor(() => expect(switches[0]).toHaveAttribute('aria-checked', 'true'));
-    expect(mockToast).toHaveBeenCalledWith('Failed to update notification preference. Please try again.', 'error');
+    expect(mockToast).toHaveBeenCalledWith('"Email me when a form receives a new response" was not saved. Please try again.', 'error');
   });
 
   it('shows an inline error with retry when preferences fail to load', async () => {

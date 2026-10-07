@@ -3,7 +3,7 @@
  * Feature: sprint-6-settings
  * Tests: DangerZoneSection — export request flow, status-driven rendering (queued/processing
  * shows "preparing", completed shows Download, failed shows the safe error message + retry),
- * Delete Workspace opens DeleteWorkspaceModal
+ * Delete account opens DeleteWorkspaceModal
  * Requirements: 10.1-10.3
  */
 
@@ -46,7 +46,7 @@ function renderSection(props: Partial<React.ComponentProps<typeof DangerZoneSect
 }
 
 async function startExport() {
-  fireEvent.click(screen.getByRole('button', { name: 'Export Workspace Data' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Export your data' }));
   fireEvent.click(screen.getByRole('button', { name: 'Start export' }));
   await waitFor(() => expect(mockRequestWorkspaceExport).toHaveBeenCalled());
 }
@@ -102,7 +102,7 @@ describe('DangerZoneSection', () => {
     expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
 
-  it('"Try again" resets back to the Export Workspace Data entry point', async () => {
+  it('"Try again" resets back to the Export your data entry point', async () => {
     mockRequestWorkspaceExport.mockResolvedValue({ id: 'job-1', status: 'queued', expiresAt: '' });
     mockGetExportStatus.mockResolvedValue({ id: 'job-1', status: 'failed', expiresAt: '' });
     renderSection();
@@ -110,14 +110,14 @@ describe('DangerZoneSection', () => {
     await startExport();
     fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
 
-    expect(await screen.findByRole('button', { name: 'Export Workspace Data' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Export your data' })).toBeInTheDocument();
   });
 
-  it('opens DeleteWorkspaceModal when Delete Workspace is clicked', () => {
+  it('opens DeleteWorkspaceModal when Delete account is clicked', () => {
     renderSection();
 
     expect(screen.queryByTestId('delete-workspace-modal')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Delete Workspace' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete account' }));
     expect(screen.getByTestId('delete-workspace-modal')).toBeInTheDocument();
   });
 });

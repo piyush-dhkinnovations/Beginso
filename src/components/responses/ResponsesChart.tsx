@@ -10,6 +10,8 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { BarsChart, PieChart as DonutChart } from '@/components/ui/charts';
 import { toSegments } from '@/lib/chartSegments';
 import { fetchAllResponses } from '@/lib/fetchAllResponses';
+import { browserTimezone, localDateKey } from '@/lib/calendarDates';
+import { CATEGORY_LABELS, type StageCategory } from '@/types/stage';
 import { responseKeys } from '@/lib/queryKeys';
 import type { ResponseFilters, ResponseStats } from '@/types/response';
 
@@ -35,14 +37,13 @@ function defaultRange(filters: ResponseFilters): { from: string; to: string } {
   return { from: from.toISOString(), to: to.toISOString() };
 }
 
-// ponytail: buckets by the raw UTC calendar day (`submittedAt.slice(0, 10)`), not the
-// workspace-local day `ResponsesCalendar` computes via `localDateKey` — a trend overview doesn't
-// need the same per-response timezone precision as "which day does this belong to." Upgrade path
-// is `localDateKey` + a timezone prop, if that gap ever matters here.
-function dailyVolume(items: { submittedAt: string }[]): { date: string; count: number }[] {
+// Buckets by the viewer's local calendar day - the SAME timezone Insights sends to the analytics endpoints
+// (AnalyticsView's Intl timeZone). Bucketing by raw UTC (submittedAt.slice(0, 10)) put late-evening
+// responses on the next day and made this chart disagree with Insights.
+function dailyVolume(items: { submittedAt: string }[], timeZone: string): { date: string; count: number }[] {
   const counts = new Map<string, number>();
   items.forEach((item) => {
-    const key = item.submittedAt.slice(0, 10);
+    const key = localDateKey(item.submittedAt, timeZone);
     counts.set(key, (counts.get(key) ?? 0) + 1);
   });
   return [...counts.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, count]) => ({ date, count }));
@@ -74,8 +75,17 @@ export function ResponsesChart({ scope, formId, filters, stats, statsLoading, st
     queryFn: () => fetchAllResponses({ formId, ...filters, from: range.from, to: range.to }, scope),
   });
 
-  const volume = useMemo(() => dailyVolume(data ?? []), [data]);
+  const volume = useMemo(() => dailyVolume(data ?? [], browserTimezone()), [data]);
   const total = stats?.total ?? 0;
+  // The stats payload sometimes carries byStage empty/zeroed while byCategory is populated; fall back to the three
+  // categories rather than drawing an empty ring under a non-zero total.
+  const stageRows = useMemo(() => {
+    const rows = (stats?.byStage ?? []).filter((s) => s.count > 0).map((s) => ({ key: s.stageId, label: s.name, value: s.count }));
+    if (rows.length > 0) return rows;
+    return (Object.keys(CATEGORY_LABELS) as StageCategory[])
+      .map((c) => ({ key: c, label: CATEGORY_LABELS[c], value: stats?.byCategory?.[c] ?? 0 }))
+      .filter((r) => r.value > 0);
+  }, [stats]);
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -139,15 +149,15 @@ export function ResponsesChart({ scope, formId, filters, stats, statsLoading, st
               </Button>
             }
           />
-        ) : total === 0 || !stats ? (
+        ) : total === 0 || !stats || stageRows.length === 0 ? (
           <EmptyState icon={<PieChartIcon />} title="No responses yet" description="Responses will appear here once your form starts receiving submissions." />
         ) : (
           <>
             <DonutChart
               donut
-              data={toSegments(stats.byStage.map((s) => ({ key: s.stageId, label: s.name, value: s.count })))}
+              data={toSegments(stageRows)}
               ariaLabel="Stage distribution"
-              centreLabel={String(total)}
+              centreLabel="responses"
             />
             <table className="sr-only">
               <caption>Stage distribution</caption>
@@ -158,10 +168,10 @@ export function ResponsesChart({ scope, formId, filters, stats, statsLoading, st
                 </tr>
               </thead>
               <tbody>
-                {stats.byStage.map((s) => (
-                  <tr key={s.stageId}>
-                    <td>{s.name}</td>
-                    <td>{s.count}</td>
+                {stageRows.map((s) => (
+                  <tr key={s.key}>
+                    <td>{s.label}</td>
+                    <td>{s.value}</td>
                   </tr>
                 ))}
               </tbody>

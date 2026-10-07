@@ -1,0 +1,137 @@
+/* Dev-only prototype: Material-3 style cards (tonal surfaces, soft elevation, state layers, 12px shape)
+   drawn with the Beginso colour tokens and DM Sans. Scoped to this module - nothing global changes. */
+.root {
+  /* Tonal surfaces derived from the Beginso tokens, so light / dark / midnight / dimmed all follow. */
+  --m3-surface: var(--surface-card);
+  --m3-container-low: color-mix(in srgb, var(--action-primary) 3%, var(--surface-card));
+  --m3-container: color-mix(in srgb, var(--action-primary) 6%, var(--surface-card));
+  --m3-container-high: color-mix(in srgb, var(--action-primary) 10%, var(--surface-card));
+  --m3-primary-container: var(--accent-soft-hover);
+  --m3-on-primary-container: var(--accent-soft-text);
+  --m3-outline: color-mix(in srgb, var(--text-muted) 38%, transparent);
+  --m3-elev-1: 0 1px 2px rgba(4, 19, 71, 0.10), 0 1px 3px 1px rgba(4, 19, 71, 0.06);
+  --m3-elev-2: 0 1px 2px rgba(4, 19, 71, 0.10), 0 2px 6px 2px rgba(4, 19, 71, 0.08);
+  font-family: var(--bg-font-sans);
+  color: var(--text-primary);
+  background: var(--bg-page);
+  min-height: 100vh;
+  padding: 32px clamp(16px, 4vw, 48px) 80px;
+}
+
+/* ── type scale (Material roles, Beginso family) ── */
+.display { font: 400 40px/48px var(--bg-font-sans); letter-spacing: -0.01em; }
+.headline { font: 500 24px/32px var(--bg-font-sans); }
+.title { font: 500 16px/24px var(--bg-font-sans); letter-spacing: 0.01em; }
+.titleSm { font: 500 14px/20px var(--bg-font-sans); letter-spacing: 0.01em; }
+.body { font: 400 14px/20px var(--bg-font-sans); }
+.label { font: 500 12px/16px var(--bg-font-sans); letter-spacing: 0.04em; }
+.muted { color: var(--text-muted); }
+.secondary { color: var(--text-secondary); }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ── layout ── */
+.section { margin-top: 40px; }
+.sectionHead { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 12px; }
+.grid4 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.grid2 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+.grid3 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.split { display: grid; gap: 16px; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+@media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
+
+/* ── card shapes ── */
+.card { position: relative; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; overflow: hidden; }
+.elevated { background: var(--m3-container-low); box-shadow: var(--m3-elev-1); }
+.filled { background: var(--m3-container-high); }
+.outlined { background: var(--m3-surface); box-shadow: inset 0 0 0 1px var(--m3-outline); }
+.tonal { background: var(--m3-primary-container); color: var(--m3-on-primary-container); }
+.flush { padding: 0; gap: 0; }
+
+/* Interactive cards get a state layer instead of a colour swap. */
+.interactive { cursor: pointer; transition: box-shadow 150ms ease; text-align: left; border: 0; font: inherit; color: inherit; }
+.interactive::after { content: ""; position: absolute; inset: 0; background: currentColor; opacity: 0; transition: opacity 120ms ease; pointer-events: none; }
+.interactive:hover::after { opacity: 0.06; }
+.interactive:focus-visible { outline: 3px solid var(--border-focus); outline-offset: 2px; }
+.interactive:active::after { opacity: 0.1; }
+.elevated.interactive:hover { box-shadow: var(--m3-elev-2); }
+
+.cardHead { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 16px 8px; }
+.divider { height: 1px; background: var(--border-subtle); margin: 0 16px; }
+
+/* ── pieces ── */
+.iconTile { width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; flex: none; background: var(--m3-primary-container); color: var(--m3-on-primary-container); }
+.iconTile svg { width: 20px; height: 20px; }
+.iconBtn { width: 40px; height: 40px; border-radius: 50%; border: 0; background: transparent; color: var(--text-secondary); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; position: relative; }
+.iconBtn:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+.iconBtn:focus-visible { outline: 3px solid var(--border-focus); }
+.iconBtn svg { width: 20px; height: 20px; }
+
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: 8px; font: 500 12px/16px var(--bg-font-sans); letter-spacing: 0.02em; box-shadow: inset 0 0 0 1px var(--m3-outline); background: transparent; color: var(--text-secondary); white-space: nowrap; border: 0; }
+.chip svg { width: 14px; height: 14px; }
+button.chip { cursor: pointer; height: 32px; padding: 0 12px; }
+button.chip:hover { background: color-mix(in srgb, currentColor 8%, transparent); }
+.chipOn { background: var(--m3-primary-container); color: var(--m3-on-primary-container); box-shadow: none; }
+.chipOk { background: var(--success-surface); color: var(--success-text); box-shadow: none; }
+.chipWarn { background: var(--warning-surface); color: var(--warning-text); box-shadow: none; }
+.chipErr { background: var(--error-surface); color: var(--error-text); box-shadow: none; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 0 24px; border-radius: 20px; border: 0; font: 500 14px/20px var(--bg-font-sans); letter-spacing: 0.01em; cursor: pointer; position: relative; }
+.btn svg { width: 18px; height: 18px; }
+.btnFilled { background: var(--action-primary); color: var(--text-on-brand); }
+.btnFilled:hover { box-shadow: var(--m3-elev-1); background: var(--action-primary-hover); }
+.btnTonal { background: var(--m3-primary-container); color: var(--m3-on-primary-container); }
+.btnTonal:hover { box-shadow: var(--m3-elev-1); }
+.btnOutline { background: transparent; color: var(--action-primary); box-shadow: inset 0 0 0 1px var(--m3-outline); }
+.btnOutline:hover { background: color-mix(in srgb, var(--action-primary) 8%, transparent); }
+.btnText { background: transparent; color: var(--action-primary); padding: 0 12px; }
+.btnText:hover { background: color-mix(in srgb, var(--action-primary) 8%, transparent); }
+.btn:focus-visible { outline: 3px solid var(--border-focus); outline-offset: 2px; }
+
+.monogram { width: 32px; height: 32px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex: none; font: 500 13px/1 var(--bg-font-sans); color: #fff; }
+
+.row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 64px; position: relative; text-decoration: none; color: inherit; }
+.row + .row { box-shadow: inset 0 1px 0 var(--border-subtle); }
+.grow { flex: 1; min-width: 0; }
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* linear progress: 4px track, rounded, like M3 */
+.track { height: 6px; border-radius: 3px; background: var(--border-default); overflow: hidden; }
+.bar { height: 100%; border-radius: 2px; background: var(--action-primary); }
+.stack { display: flex; height: 12px; border-radius: 6px; overflow: hidden; gap: 2px; }
+.stack > span { min-width: 6px; }
+.legend { display: flex; flex-direction: column; gap: 8px; }
+.legend > div { display: flex; align-items: center; gap: 8px; }
+.swatch { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+
+.preview { height: 72px; display: flex; align-items: flex-end; padding: 12px 16px; color: #fff; }
+.tile { align-items: flex-start; gap: 8px; padding: 14px 16px; }
+.banner { flex-direction: row; align-items: flex-start; gap: 12px; }
+.banner svg.lead { width: 22px; height: 22px; flex: none; margin-top: 1px; }
+.segmented { display: inline-flex; border-radius: 20px; box-shadow: inset 0 0 0 1px var(--m3-outline); overflow: hidden; }
+.segmented button { height: 32px; padding: 0 14px; border: 0; background: transparent; color: var(--text-secondary); font: 500 13px/20px var(--bg-font-sans); cursor: pointer; }
+.segmented button + button { box-shadow: inset 1px 0 0 var(--m3-outline); }
+.segmented button[aria-pressed="true"] { background: var(--m3-primary-container); color: var(--m3-on-primary-container); }
+
+/* ── v2 pass: hierarchy instead of a uniform kit ── */
+.pageTitle { font: 500 28px/36px var(--bg-font-sans); letter-spacing: -0.005em; }
+/* The one memorable card: larger radius, the only real elevation on the page. */
+.hero { border-radius: 20px; padding: 24px; box-shadow: var(--m3-elev-2); background: var(--m3-container-low); gap: 20px; }
+.heroLine { font: 500 32px/40px var(--bg-font-sans); letter-spacing: -0.01em; max-width: 18ch; }
+.compact { border-radius: 8px; padding: 10px 12px; flex-direction: row; align-items: center; gap: 10px; }
+.groupLabel { font: 500 12px/16px var(--bg-font-sans); color: var(--text-muted); padding: 12px 16px 4px; }
+/* A form's own brand colour as a left edge: real data, and it says which form at a glance. */
+.edge { position: absolute; left: 0; top: 10px; bottom: 10px; width: 4px; border-radius: 0 4px 4px 0; }
+.meta { display: inline-flex; align-items: center; gap: 4px; font: 400 12px/16px var(--bg-font-sans); color: var(--text-muted); }
+.meta svg { width: 13px; height: 13px; }
+.metaRow { display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.bars { display: flex; align-items: flex-end; gap: 6px; height: 112px; }
+.bars > div { flex: 1; min-height: 4px; border-radius: 4px 4px 0 0; background: var(--m3-primary-container); transform-origin: bottom; animation: grow 600ms cubic-bezier(.2,.7,.2,1) both; }
+.bars > div.peak { background: var(--action-primary); }
+@keyframes grow { from { transform: scaleY(0); } }
+@media (prefers-reduced-motion: reduce) { .bars > div { animation: none; } }
+.axis { display: flex; justify-content: space-between; font: 400 12px/16px var(--bg-font-sans); color: var(--text-muted); margin-top: 6px; }
+.lead { display: grid; gap: 16px; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: stretch; }
+@media (max-width: 900px) { .lead { grid-template-columns: 1fr; } }
+.stackCol { display: flex; flex-direction: column; gap: 16px; }
+.limitRow { display: flex; flex-direction: column; gap: 6px; }
+.limitRow > div:first-child { display: flex; justify-content: space-between; }

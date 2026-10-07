@@ -18,6 +18,6 @@ export function drillHref(a: {
   if (a.granularity) p.set('granularity', a.granularity);
   if (a.from) p.set('from', a.from);
   if (a.to) p.set('to', a.to);
-  const base = a.scope === 'personal' ? '/responses' : `/w/${a.scope}/inbox`;
+  const base = a.scope === 'personal' ? '/inbox' : `/w/${a.scope}/inbox`;
   return `${base}?${p.toString()}`;
 }

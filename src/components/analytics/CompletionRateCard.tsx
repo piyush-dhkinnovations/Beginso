@@ -11,16 +11,18 @@ export interface CompletionRateCardProps {
   delta?: { label: string; direction: 'up' | 'down' | 'flat'; note?: string };
   /** Scope noun for the helper line: "this form" (default) or "a form". */
   subject?: string;
+  /** Too few data points to trust a ring or delta: show the figure only. */
+  sparse?: boolean;
 }
 
 // Sprint 14 (requirements 1.2, OQ-3): views-based completion rate. The helper line is the spec's
 // "X% of people who open this finish it"; a null rate is "—" with a "Not enough views yet" tooltip.
-export function CompletionRateCard({ rate, isLoading = false, delta, subject = 'this form' }: CompletionRateCardProps) {
+export function CompletionRateCard({ rate, isLoading = false, delta, subject = 'this form', sparse = false }: CompletionRateCardProps) {
   const hasRate = typeof rate === 'number' && Number.isFinite(rate);
   const percent = hasRate ? Math.max(0, Math.min(100, Math.round(rate))) : null;
 
   // No ring at all when there is no rate - an empty ring would read "0%", which is exactly what this must not say.
-  const chart: StatChart | undefined = percent === null ? undefined : { kind: 'ring', percent };
+  const chart: StatChart | undefined = percent === null || sparse ? undefined : { kind: 'ring', percent };
 
   return (
     <StatCard
@@ -41,8 +43,8 @@ export function CompletionRateCard({ rate, isLoading = false, delta, subject = '
         )
       }
       valueClassName={!isLoading && percent === null ? 'text-(--text-disabled)' : undefined}
-      note={!isLoading && percent !== null ? `${percent}% of people who open ${subject} finish it` : undefined}
-      delta={isLoading ? undefined : delta}
+      note={!isLoading && percent !== null && sparse ? 'Not enough data to show a trend yet.' : !isLoading && percent !== null ? `${percent}% of people who open ${subject} finish it` : undefined}
+      delta={isLoading || sparse ? undefined : delta}
       chart={isLoading ? undefined : chart}
     />
   );

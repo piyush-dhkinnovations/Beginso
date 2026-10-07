@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { tagSchema, type TagFormValues } from '@/lib/schemas/tag';
 import { tagsService } from '@/services/tags';
 import { tagKeys } from '@/lib/queryKeys';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useToast } from '@/components/ui/Toast';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -65,32 +66,33 @@ export function TagManager({ scope, onDirtyChange }: TagManagerProps) {
 
   const createMutation = useMutation({
     mutationFn: (values: TagFormValues) => tagsService.create(scope as string, values),
-    onSuccess: () => {
+    onSuccess: (_d, values) => {
       createForm.reset({ name: '', colour: 'neutral' });
       invalidate();
-      toast('Tag created.', 'success');
+      toast(`Tag "${values.name}" created.`, 'success');
     },
-    onError: () => toast('Failed to create tag. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'create tag', fallback: 'Failed to create tag. Please try again.' }), 'error'),
   });
 
   const renameMutation = useMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) => tagsService.update(scope as string, id, { name }),
-    onSuccess: () => {
+    onSuccess: (_d, { name }) => {
       setEditingId(null);
       invalidate();
-      toast('Tag renamed.', 'success');
+      toast(`Tag renamed to "${name}".`, 'success');
     },
-    onError: () => toast('Failed to rename tag. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'rename tag', fallback: 'Failed to rename tag. Please try again.' }), 'error'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => tagsService.remove(scope as string, id),
     onSuccess: () => {
+      const name = deleteTarget?.name;
       setDeleteTarget(null);
       invalidate();
-      toast('Tag deleted.', 'success');
+      toast(name ? `Tag "${name}" deleted.` : 'Tag deleted.', 'success');
     },
-    onError: () => toast('Failed to delete tag. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'delete tag', fallback: 'Failed to delete tag. Please try again.' }), 'error'),
   });
 
   const mergeMutation = useMutation({
@@ -101,7 +103,7 @@ export function TagManager({ scope, onDirtyChange }: TagManagerProps) {
       invalidate();
       toast('Tags merged.', 'success');
     },
-    onError: () => toast('Failed to merge tags. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'merge tags', fallback: 'Failed to merge tags. Please try again.' }), 'error'),
   });
 
   if (!scope) {
@@ -156,7 +158,7 @@ export function TagManager({ scope, onDirtyChange }: TagManagerProps) {
       ) : (
         <ul role="list" className="flex flex-col gap-2">
           {tags.map((tag) => (
-            <li key={tag.id} className="flex items-center gap-3 py-2 border-b border-(--border-subtle)">
+            <li key={tag.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2 border-b border-(--border-subtle)">
               {editingId === tag.id ? (
                 <RenameRow
                   tag={tag}

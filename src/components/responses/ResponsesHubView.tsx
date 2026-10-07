@@ -1,5 +1,7 @@
 'use client';
 
+import { keepPreviousInScope } from '@/lib/queryOptions';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useCallback, useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -10,16 +12,15 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { Tabs } from '@/components/ui/Tabs';
+import { ListFooter } from '@/components/ui/ListFooter';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ResponsesTable } from './ResponsesTable';
 import { ResponsesBoard } from './ResponsesBoard';
 import { ResponsesCalendar } from './ResponsesCalendar';
 import { ResponsesToolbar } from './ResponsesToolbar';
 import { ActiveFilterChips } from './ActiveFilterChips';
-import { PaginationControls } from './PaginationControls';
 import { BulkActionBar } from './BulkActionBar';
-import { ResponsesStatCards } from './ResponsesStatCards';
+import { ResponsesCountChips } from './ResponsesCountChips';
 import { ResponseDrawer } from './ResponseDrawer';
 import { SavedViewSelect } from './SavedViewSelect';
 import { SaveViewModal } from './SaveViewModal';
@@ -40,6 +41,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { hasCapability } from '@/lib/roles';
 import { exportPayloadFromFilters, exportPayloadFromTarget } from '@/lib/reportExport';
 import { bucketLabel } from '@/lib/chartOptions';
+import { formatRelativeTime } from '@/lib/formatters';
 import type { InboxViewMode } from '@/lib/inboxFilters';
 import type { IResponse, BulkTarget } from '@/types/response';
 import type { SavedView } from '@/types/savedView';
@@ -72,7 +74,7 @@ interface ConfirmDeleteState {
 }
 
 interface ResponsesHubViewProps {
-  /** Undefined for the all-forms view reached from the sidebar's "Responses" link. */
+  /** Undefined for the all-forms view reached from the sidebar's "Inbox" link. */
   formId?: string;
   /** Workspace slug, or 'personal' for the two existing personal-shell routes (OQ-1). Sprint 12's
    * workspace Inbox route (task 1.9) passes its slug; both existing (user)/responses routes keep
@@ -188,15 +190,15 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   function runExport(target: BulkTarget) {
     reportsService
       .createReport(exportPayloadFromTarget('csv', target))
-      .then(() => toast('Export started. Find it under Reports when it finishes.', 'success'))
-      .catch(() => toast('Failed to start the export. Please try again.', 'error'));
+      .then(() => toast('Export started. Find it under Exports when it finishes.', 'success'))
+      .catch((e) => toast(getFriendlyErrorMessage(e, { action: 'export responses', fallback: 'Failed to start the export. Please try again.' }), 'error'));
   }
 
   function exportCurrentFilter() {
     reportsService
       .createReport(exportPayloadFromFilters('csv', formId, filters))
-      .then(() => toast('Export started. Find it under Reports when it finishes.', 'success'))
-      .catch(() => toast('Failed to start the export. Please try again.', 'error'));
+      .then(() => toast('Export started. Find it under Exports when it finishes.', 'success'))
+      .catch((e) => toast(getFriendlyErrorMessage(e, { action: 'export responses', fallback: 'Failed to start the export. Please try again.' }), 'error'));
   }
 
   const replacePage = useCallback((nextPage: number) => setPage(nextPage), [setPage]);
@@ -243,6 +245,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   } = useQuery({
     queryKey: listKey,
     queryFn: () => responsesService.getResponses({ formId, ...filters, page, limit: pageLimit }, scope),
+    placeholderData: keepPreviousInScope(listKey),
     // Polling stays on the list only (design.md §10/§20); must not clear selection or open detail —
     // neither selection nor the drawer's responseId lives in this query, so a refetch can't touch them.
     refetchInterval: 30_000,
@@ -338,7 +341,8 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   };
 
   const isDeleting = mutations.isBulkRunning || mutations.isSingleDeleting;
-  const hasActiveFilters = !!search || !!filters.stageId || !!filters.assigneeId || !!filters.unread || !!filters.field;
+  const hasActiveFilters =
+    !!search || !!filters.stageId || !!filters.assigneeId || !!filters.unread || !!filters.field || !!filters.tagIds?.length || !!filters.from || !!filters.to || !!filters.duplicate;
   // Chart drill-down chip: "Satisfaction: Very satisfied" (date buckets read as plain words).
   const drillField = filters.field ? form?.fields.find((f) => f.fieldId === filters.field) : undefined;
   const fieldChipLabel = filters.field
@@ -348,19 +352,71 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   // filters would all be controls over zero rows, so only the empty state is shown.
   const isFirstRun = !isLoading && !!data && data.total === 0 && !hasActiveFilters && !activeViewId;
 
+  // Page facts: real counts from the stats endpoint; "last submitted" only when the unfiltered newest-first
+  // page is on screen (the list is submittedAt-desc, so its first row is the newest response).
+  const lastSubmitted = page === 1 && !hasActiveFilters ? responses[0]?.submittedAt : undefined;
+  const headerFacts = stats
+    ? [
+        `${stats.total} response${stats.total === 1 ? '' : 's'}`,
+        `${stats.unread} unread`,
+        `${stats.byCategory.new} new`,
+        lastSubmitted && `last submitted ${formatRelativeTime(lastSubmitted)}`,
+      ]
+        .filter(Boolean)
+        .join(' · ')
+    : undefined;
+  // Names what is filtering the list, for the no-results state.
+  const filterSummary = [
+    filters.stageId && `stage ${stages.find((s) => s.id === filters.stageId)?.name ?? 'unknown'}`,
+    filters.unread && 'unread',
+    filters.assigneeId && 'that assignee',
+    filters.tagIds?.length && 'that tag',
+    (filters.from || filters.to) && 'that date range',
+    search && `"${search}"`,
+    filters.field && (fieldChipLabel ?? 'that chart filter'),
+  ]
+    .filter(Boolean)
+    .join(' + ');
+
   return (
     // Keeping this container out of an animated opacity stacking context is important:
     // ResponseDrawer is position:fixed, and must be able to layer above the fixed TopNav.
     // AppShell owns page width (CLAUDE.md) — this component sets none of its own.
     <div className="flex flex-col gap-4">
       <PageHeader
-        title={scope !== 'personal' ? 'Inbox' : 'Responses'}
-        description={formId ? `Responses · ${form?.title ?? ''}` : 'Track, view, and organize submissions across every form.'}
+        title="Inbox"
+        description={headerFacts}
         actions={
-          canExport ? (
-            <Button variant="secondary" size="small" onClick={exportCurrentFilter}>
-              Export
-            </Button>
+          scope !== 'personal' || canExport ? (
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              {scope !== 'personal' && (
+                <>
+                  <SavedViewSelect
+                    views={views ?? []}
+                    currentUserId={user?.id ?? ''}
+                    activeViewId={activeViewId}
+                    stages={stages}
+                    tags={tags}
+                    members={members}
+                    role={role}
+                    onApply={applyView}
+                    onClearApplied={clearAppliedView}
+                    onRename={renameView}
+                    onDelete={deleteView}
+                  />
+                </>
+              )}
+              {canExport && (
+                <Button variant="secondary" size="small" onClick={exportCurrentFilter}>
+                  Export
+                </Button>
+              )}
+              {scope !== 'personal' && (
+                <Button variant="primary" size="small" onClick={() => setSaveViewOpen(true)}>
+                  Save view
+                </Button>
+              )}
+            </div>
           ) : undefined
         }
       />
@@ -385,18 +441,21 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         />
       ) : (
         <>
-      <ResponsesStatCards
-        stats={stats}
-        isLoading={statsLoading}
-        isError={isStatsError}
-        onRetry={() => void refetchStats()}
+      <ResponsesCountChips
+        stats={isStatsError ? undefined : stats}
+        stages={stages}
+        filters={filters}
+        onFilterChange={(patch) => {
+          clearSelection();
+          setFilters(patch, { resetPage: true });
+        }}
       />
 
       <ResponsesToolbar
         search={search}
         filters={filters}
-        stages={stages}
         members={scope === 'personal' ? undefined : members}
+        tags={scope === 'personal' ? undefined : tags}
         total={data?.total ?? 0}
         onSearchChange={(v) => {
           clearSelection();
@@ -406,38 +465,10 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
           clearSelection();
           setFilters(patch, { resetPage: true });
         }}
+        viewOptions={VIEW_TABS}
+        view={view}
+        onViewChange={(id) => setView(id as InboxViewMode)}
       />
-
-      <div className="flex items-center justify-between gap-3">
-        <Tabs
-          tabs={VIEW_TABS}
-          activeId={view}
-          onChange={(id) => setView(id as InboxViewMode)}
-          ariaLabel="Responses view"
-          className="flex-1"
-        />
-
-        {scope !== 'personal' && (
-          <div className="flex shrink-0 items-center gap-3">
-            <SavedViewSelect
-              views={views ?? []}
-              currentUserId={user?.id ?? ''}
-              activeViewId={activeViewId}
-              stages={stages}
-              tags={tags}
-              members={members}
-              role={role}
-              onApply={applyView}
-              onClearApplied={clearAppliedView}
-              onRename={renameView}
-              onDelete={deleteView}
-            />
-            <Button variant="secondary" size="small" onClick={() => setSaveViewOpen(true)}>
-              Save view
-            </Button>
-          </div>
-        )}
-      </div>
 
       <ActiveFilterChips
         filters={filters}
@@ -489,6 +520,8 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
               clearSelection();
               clear();
             }}
+            filterSummary={filterSummary}
+            otherCount={stats && data ? Math.max(0, stats.total - data.total) : undefined}
             onSelectAll={(checked) => {
               setSelectAllMatching(false);
               setSelectedIds(checked ? new Set(responses.map((r) => r._id)) : new Set());
@@ -505,9 +538,11 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
             onDeleteResponse={(id) => setConfirmDelete({ mode: 'single', target: { ids: [id] }, count: 1 })}
           />
 
-          <PaginationControls
+          <ListFooter
             page={page}
-            totalPages={data?.totalPages ?? 1}
+            pageSize={pageLimit}
+            total={data?.total ?? 0}
+            noun="response"
             onPageChange={(p) => {
               clearSelection();
               setPage(p);
@@ -605,7 +640,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
             scope,
             returnTo,
           });
-          router.push(`/responses/${response._id}?${fullPageParams.toString()}`);
+          router.push(`/inbox/${response._id}?${fullPageParams.toString()}`);
         }}
         onClose={closeResponse}
       />

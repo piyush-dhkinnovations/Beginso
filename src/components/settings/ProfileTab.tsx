@@ -10,7 +10,9 @@ import { settingsKeys } from '@/lib/queryKeys';
 import { useToast } from '@/components/ui/Toast';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { AvatarUploader } from './AvatarUploader';
+import { StickySaveBar, useSavedFlash } from './StickySaveBar';
 
 interface ProfileTabProps {
   onDirtyChange?: (isDirty: boolean) => void;
@@ -54,14 +56,16 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
     onDirtyChangeRef.current?.(isDirty);
   }, [isDirty]);
 
+  const [saved, flashSaved] = useSavedFlash();
   const updateNameMutation = useMutation({
     mutationFn: (name: string) => settingsService.updateProfile({ name }),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: settingsKeys.profile() });
       reset({ name: updated.name });
-      toast('Profile updated.', 'success');
+      flashSaved();
+      toast('Display name saved.', 'success');
     },
-    onError: () => toast('Failed to update profile. Please try again.', 'error'),
+    onError: (error) => toast(getFriendlyErrorMessage(error, { action: 'change your profile', fallback: 'Display name was not saved. Please try again.' }), 'error'),
   });
 
   if (isLoading) {
@@ -91,17 +95,17 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
         <Input id="profile-name" label="Display name" error={errors.name?.message} {...register('name')} />
 
         <Input id="profile-email" label="Email" value={profile.email} disabled readOnly />
-        <button
-          type="button"
-          onClick={() => toast("Changing your email isn't available yet.", 'info')}
-          className="self-start bg-body-sm text-(--text-link) hover:text-(--text-primary) -mt-2"
-        >
-          Change email
-        </button>
+        <p className="-mt-2 bg-caption text-(--text-muted)">
+          Your email is your sign-in and can&apos;t be changed here yet. To use a different address, contact support.
+        </p>
 
-        <Button type="submit" disabled={!isDirty} isLoading={isSubmitting || updateNameMutation.isPending} className="self-start">
-          Save changes
-        </Button>
+        <StickySaveBar
+          dirty={isDirty}
+          saving={isSubmitting || updateNameMutation.isPending}
+          saved={saved}
+          subject="Your profile"
+          onDiscard={() => reset()}
+        />
       </form>
     </div>
   );

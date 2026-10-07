@@ -110,7 +110,7 @@ export function FormsSummaryTable({
 
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 1;
   const wsQuery = workspaceSlug ? `?ws=${workspaceSlug}` : '';
-  const goToForm = (formId: string) => router.push(`/forms/${formId}/analytics${wsQuery}`);
+  const goToForm = (formId: string) => router.push(`/forms/${formId}/insights${wsQuery}`);
 
   const previousByFormId = new Map(previousForms?.map((f) => [f._id, f.totalResponses]));
   const changePercent = (form: AnalyticsFormSummary) => {
@@ -125,7 +125,7 @@ export function FormsSummaryTable({
       render: (form) => (
         <div className="flex min-w-0 items-center gap-3">
           <FormTile title={form.title} />
-          <Link href={`/forms/${form._id}/analytics${wsQuery}`} className="bg-body-sm min-w-0 truncate font-semibold text-(--text-primary) hover:underline">
+          <Link href={`/forms/${form._id}/insights${wsQuery}`} className="bg-body-sm min-w-0 truncate font-semibold text-(--text-primary) hover:underline">
             {form.title}
           </Link>
         </div>

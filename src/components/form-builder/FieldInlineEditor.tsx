@@ -185,24 +185,21 @@ function NumberRangeSection({
 }) {
   const [minStr, setMinStr] = useState(min?.toString() ?? '');
   const [maxStr, setMaxStr] = useState(max?.toString() ?? '');
-  const [error, setError] = useState<string | null>(null);
   const [prevFieldId, setPrevFieldId] = useState(fieldId);
 
   if (fieldId !== prevFieldId) {
     setMinStr(min?.toString() ?? '');
     setMaxStr(max?.toString() ?? '');
-    setError(null);
     setPrevFieldId(fieldId);
   }
 
+  const nextMin = minStr.trim() === '' ? undefined : Number(minStr);
+  const nextMax = maxStr.trim() === '' ? undefined : Number(maxStr);
+  // Live (not on blur): an inverted range makes the form impossible to submit, so it is flagged as typed and never saved.
+  const error = nextMin !== undefined && nextMax !== undefined && nextMin > nextMax ? 'Min cannot be greater than max. This range is not saved.' : null;
+
   const commit = () => {
-    const nextMin = minStr.trim() === '' ? undefined : Number(minStr);
-    const nextMax = maxStr.trim() === '' ? undefined : Number(maxStr);
-    if (nextMin !== undefined && nextMax !== undefined && nextMin >= nextMax) {
-      setError('Min must be less than max');
-      return;
-    }
-    setError(null);
+    if (error) return;
     onUpdate(fieldId, { min: nextMin, max: nextMax } as Partial<FormField>);
   };
 
@@ -228,7 +225,7 @@ function NumberRangeSection({
           onBlur={commit}
         />
       </div>
-      {error && <p className="bg-caption text-(--error-text) font-semibold">{error}</p>}
+      {error && <p role="alert" className="bg-caption text-(--error-text) font-semibold">{error}</p>}
     </PanelSection>
   );
 }

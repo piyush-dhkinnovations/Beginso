@@ -18,7 +18,7 @@ function pinErrorMessage(error: unknown, pin: boolean): string {
   if (status === 409) return 'Archived or deleted forms cannot be pinned.';
   if (status === 403) return "You don't have access to this form.";
   if (status === 404 && code === 'FORM_NOT_FOUND') return 'This form no longer exists.';
-  if (status === 404) return 'Pinning is not available on the server yet. Update the backend to the latest version.';
+  if (status === 404) return 'Could not pin this form. Please try again.';
   return `Could not ${pin ? 'pin' : 'unpin'} the form. Please try again.`;
 }
 

@@ -79,6 +79,11 @@ function threeForms() {
   ];
 }
 
+// Selection UI is hidden until a row is double-clicked; the double-click selects that row.
+async function selectByDoubleClick(title: string) {
+  await userEvent.dblClick(await screen.findByText(title));
+}
+
 describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () => {
   beforeEach(() => {
     mockGetForms.mockReset();
@@ -168,12 +173,11 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
     // `?ws=acme` hint carried so PersonalShell can paint the workspace sidebar on the next
     // page's first render instead of flashing Personal (real bug this fixed).
     expect(titleLink).toHaveAttribute('href', '/forms/f1/overview?ws=acme');
-    // The pencil icon button still goes straight to the editor.
-    expect(screen.getByRole('link', { name: 'Edit Form' })).toHaveAttribute('href', '/forms/f1/edit?ws=acme');
-
-    await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Actions for/ }));
     const items = await screen.findAllByRole('menuitem');
-    expect(items[0]).toHaveTextContent('Overview');
+    // Edit lives in the one row menu now (no separate pencil/pin buttons).
+    expect(items[0]).toHaveTextContent('Edit form');
+    expect(items[1]).toHaveTextContent('Overview');
   });
 
   it('renders every Forms Manager tab', async () => {
@@ -181,10 +185,14 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
     renderPage();
     await screen.findByText('Form One');
 
-    for (const name of ['Recent', 'Pinned', 'Draft', 'Published', 'Archived']) {
-      expect(screen.getByRole('tab', { name })).toBeInTheDocument();
+    for (const name of ['All', 'Published', 'Draft', 'Closed', 'Pinned', 'Archived']) {
+      expect(screen.getByRole('button', { name: new RegExp(`^${name}`) })).toBeInTheDocument();
     }
-    expect(screen.queryByRole('tab', { name: 'Shared with me' })).not.toBeInTheDocument();
+    // Counts are real: all three loaded forms are published.
+    expect(screen.getByRole('button', { name: 'All 3' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Published 3' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Draft 0' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Shared with me' })).not.toBeInTheDocument();
   });
 
   it('switching to the Pinned tab queries pinned=true and shows the pinned empty state', async () => {
@@ -194,7 +202,7 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
     mockGetForms.mockClear();
     mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
 
-    await userEvent.click(screen.getByRole('tab', { name: 'Pinned' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Pinned/ }));
 
     expect(await screen.findByText('No pinned forms yet')).toBeInTheDocument();
     expect(mockGetForms).toHaveBeenCalledWith(expect.objectContaining({ pinned: true }), WORKSPACE_CONTEXT);
@@ -207,9 +215,9 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
     mockGetForms.mockClear();
     mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
 
-    await userEvent.click(screen.getByRole('tab', { name: 'Draft' }));
+    await userEvent.click(screen.getByRole('button', { name: /^Draft/ }));
 
-    await screen.findByText('No matching forms');
+    await screen.findByText('No draft forms');
     expect(mockGetForms).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'draft', page: 1 }),
       WORKSPACE_CONTEXT
@@ -219,14 +227,14 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
   // sprint-10-events-migration, task 6.4.
   describe('bulk selection and delete (task 6.4)', () => {
     it('shows no bulk action bar until a row is selected, then shows the count', async () => {
-      // The checkbox column is always visible (Forms page redesign) — no double-click needed.
+      // The checkbox column is hidden until a row is double-clicked.
       mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
       renderPage();
       await screen.findByText('Form One');
 
       expect(screen.queryByText(/selected/)).not.toBeInTheDocument();
 
-      await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form One' }));
+      await selectByDoubleClick('Form One');
       expect(await screen.findByText('1 selected')).toBeInTheDocument();
 
       await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form Two' }));
@@ -238,8 +246,7 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
-      // Reveal the checkbox column first (double-click any row), then use "select all".
-      await userEvent.dblClick(screen.getByText('Form One'));
+      await selectByDoubleClick('Form One');
       await userEvent.click(screen.getByRole('checkbox', { name: 'Select all forms on this page' }));
 
       expect(await screen.findByText('3 selected')).toBeInTheDocument();
@@ -254,7 +261,7 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
-      await userEvent.dblClick(screen.getByText('Form One'));
+      await selectByDoubleClick('Form One');
       await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form Two' }));
       await userEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
 
@@ -275,7 +282,7 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
-      await userEvent.dblClick(screen.getByText('Form One'));
+      await selectByDoubleClick('Form One');
       await userEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
 
       expect(await screen.findByText('Move 1 form to Trash?')).toBeInTheDocument();
@@ -288,11 +295,11 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
-      await userEvent.dblClick(screen.getByText('Form One'));
+      await selectByDoubleClick('Form One');
       expect(await screen.findByText('1 selected')).toBeInTheDocument();
 
-      await userEvent.click(screen.getByRole('tab', { name: 'Draft' }));
-      await vi.waitFor(() => expect(screen.getByRole('tab', { name: 'Draft' })).toHaveAttribute('aria-selected', 'true'));
+      await userEvent.click(screen.getByRole('button', { name: /^Draft/ }));
+      await vi.waitFor(() => expect(screen.getByRole('button', { name: /^Draft/ })).toHaveAttribute('aria-pressed', 'true'));
 
       expect(screen.queryByText(/selected/)).not.toBeInTheDocument();
     });
@@ -301,16 +308,16 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
   // sprint-10-events-migration, task 6.5 — proves the ui/Table migration (6.2) plus adding the
   // select column (6.4) didn't disturb any existing row action's wiring.
   describe('row-action wiring unchanged after the ui/Table migration and select column (task 6.5)', () => {
-    it('View Responses and View Analytics still navigate to the same per-form URLs', async () => {
+    it('Open Inbox and Open Insights still navigate to the same per-form URLs', async () => {
       mockGetForms.mockResolvedValue({ forms: [threeForms()[0]], total: 1, page: 1, limit: 10 });
       renderPage();
       await screen.findByText('Form One');
 
-      await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
+      await userEvent.click(screen.getByRole('button', { name: /^Actions for/ }));
       const items = await screen.findAllByRole('menuitem');
       const labels = items.map((i) => i.textContent);
       expect(labels).toEqual(
-        expect.arrayContaining(['Overview', 'View Responses', 'View Analytics', 'Move', 'Share access', 'Duplicate', 'Delete'])
+        expect.arrayContaining(['Overview', 'Open Inbox', 'Open Insights', 'Move', 'Share access', 'Duplicate', 'Delete'])
       );
     });
 
@@ -319,23 +326,23 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
-      await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
+      await userEvent.click(screen.getByRole('button', { name: /^Actions for/ }));
       await userEvent.click(await screen.findByRole('menuitem', { name: /Duplicate/ }));
 
       await vi.waitFor(() => expect(mockDuplicateForm).toHaveBeenCalledWith('f1'));
     });
 
-    it('the row menu\'s single-item Delete still uses the strict typed-title confirmation, unaffected by bulk mode existing', async () => {
+    it('the row menu\'s single-item Delete is a one-click move to Trash (reversible, no typed confirmation)', async () => {
       mockGetForms.mockResolvedValue({ forms: [threeForms()[0]], total: 1, page: 1, limit: 10 });
       renderPage();
       await screen.findByText('Form One');
 
-      await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
+      await userEvent.click(screen.getByRole('button', { name: /^Actions for/ }));
       await userEvent.click(await screen.findByRole('menuitem', { name: /Delete/ }));
 
       expect(await screen.findByText('Move form to Trash?')).toBeInTheDocument();
-      expect(screen.getByLabelText(/Type .* to confirm/)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Move to Trash' })).toBeDisabled();
+      expect(screen.queryByLabelText(/Type .* to confirm/)).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Move to Trash' })).toBeEnabled();
     });
   });
 
@@ -352,7 +359,7 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       expect(screen.queryByLabelText('Select Form One')).not.toBeInTheDocument();
       expect(screen.queryByLabelText(/Select all forms/)).not.toBeInTheDocument();
 
-      await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
+      await userEvent.click(screen.getByRole('button', { name: /^Actions for/ }));
       expect(screen.queryByRole('menuitem', { name: /Delete/ })).not.toBeInTheDocument();
     });
 
@@ -362,11 +369,9 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
-      // Checkbox column is revealed by double-click, not shown at rest (see the bulk-selection
-      // describe block above) — proves the select column exists, just no longer always visible.
-      await userEvent.dblClick(screen.getByText('Form One'));
+      await selectByDoubleClick('Form One');
       expect(screen.getByLabelText('Select Form One')).toBeInTheDocument();
-      await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
+      await userEvent.click(screen.getByRole('button', { name: /^Actions for/ }));
       expect(await screen.findByRole('menuitem', { name: /Delete/ })).toBeInTheDocument();
     });
   });

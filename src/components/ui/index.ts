@@ -57,7 +57,14 @@ export type { StepperProps, StepperStep } from './Stepper';
 export { Switch } from './Switch';
 export type { SwitchProps } from './Switch';
 export { Table } from './Table';
-export type { TableColumn, TableProps } from './Table';
+export type { TableColumn, TableProps, TableSort } from './Table';
+export { FilterChips } from './FilterChips';
+export type { FilterChip, FilterChipsProps } from './FilterChips';
+export { FilterMenu } from './FilterMenu';
+export type { FilterMenuOption, FilterMenuProps } from './FilterMenu';
+export { ListFooter } from './ListFooter';
+export type { ListFooterProps } from './ListFooter';
+export { Toolbar } from './Toolbar';
 export { Tabs } from './Tabs';
 export type { TabItem, TabsProps } from './Tabs';
 export { Tag } from './Tag';
@@ -70,5 +77,8 @@ export { TopBar } from './TopBar';
 export type { TopBarProps } from './TopBar';
 export { Tooltip } from './Tooltip';
 export type { TooltipProps } from './Tooltip';
+
+export { Segmented } from './Segmented';
+export type { SegmentedOption, SegmentedProps } from './Segmented';
 
 export * from './charts';

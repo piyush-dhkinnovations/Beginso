@@ -14,9 +14,13 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { FormsOverviewCharts } from '@/components/analytics/FormsOverviewCharts';
-import { FileText, Files, MessageSquare, Plus, LayoutTemplate, FilePlus, Table, Settings, Download, Pin, BarChart2, Edit3, Share2 } from 'lucide-react';
+import { FileText, Files, MessageSquare, Plus, LayoutTemplate, FilePlus, Table, Settings, Download, Clock, BarChart2, Edit3, Share2 } from 'lucide-react';
 import { formsService } from '@/services/forms';
-import { workspaceKeys } from '@/lib/queryKeys';
+import { eventsService } from '@/services/events';
+import { activityKeys, workspaceKeys } from '@/lib/queryKeys';
+import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
+import { canManageWorkspaceSettings } from '@/lib/roles';
+import { ActivityFeed } from '@/components/workspaces/ActivityFeed';
 import { PageHeader, Button, EmptyState, StatCard, Card, Badge, Skeleton } from '@/components/ui';
 import { FormAccessPanel } from '@/components/team/FormAccessPanel';
 import type { Form } from '@/types/form';
@@ -29,15 +33,24 @@ export default function WorkspaceHomePage() {
 
   const context = { type: 'workspace' as const, workspaceId: slug };
   const [formToShare, setFormToShare] = useState<Form | null>(null);
+  const role = useWorkspaceRole(slug);
+
+  // Same feed as /w/[slug]/activity, first five events.
+  const activity = useQuery({
+    queryKey: [...activityKeys.all(slug), 'recent', 5],
+    queryFn: () => eventsService.listWorkspaceActivity(slug, 1, 5),
+    retry: false,
+  });
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: workspaceKeys.forms(context, { limit: 20 }),
+    queryKey: [...workspaceKeys.forms(context), 'all'],
     // Real bug found and fixed: context was computed above but never actually passed to
     // getForms(), so this page's "your forms" list silently showed every form the caller can
     // see across every context, not just this workspace's (src/services/forms.ts's own comment
     // has the full root-cause — requirePermission()'s workspace resolution falls back to the
     // caller's default workspace when nothing in the request says otherwise).
-    queryFn: () => formsService.getForms({ limit: 20 }, context),
+    queryFn: () => formsService.getAllForms(context),
+    staleTime: 60_000,
   });
 
   const forms = data?.forms ?? [];
@@ -80,8 +93,7 @@ export default function WorkspaceHomePage() {
     return (
       <div className="flex flex-col gap-4 w-full">
         <PageHeader
-          title="Workspace Home"
-          description="Create forms, track submissions, and check workspace activity."
+          title="Home"
         />
         <Card role="alert" className="flex items-center justify-between gap-4">
           <div>
@@ -99,8 +111,7 @@ export default function WorkspaceHomePage() {
   return (
     <div className="flex flex-col gap-4 w-full">
       <PageHeader
-        title="Workspace Home"
-        description="Create forms, track submissions, and check workspace activity."
+        title="Home"
         actions={
           <div className="flex items-center gap-2.5">
             <Link href={`/w/${slug}/forms`}>
@@ -141,7 +152,7 @@ export default function WorkspaceHomePage() {
         <div className="flex flex-col gap-5">
           {/* Stat cards grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard label="Total Forms" value={forms.length} icon={<FileText aria-hidden="true" />} />
+            <StatCard label="Total Forms" value={data?.total ?? forms.length} icon={<FileText aria-hidden="true" />} />
             <StatCard
               label="Total Responses"
               value={forms.reduce((s, f) => s + (f.responseCount ?? 0), 0)}
@@ -161,6 +172,7 @@ export default function WorkspaceHomePage() {
           </div>
 
           <FormsOverviewCharts
+            insightsHref={`/w/${slug}/insights`}
             forms={forms.map((f) => ({ title: f.title, status: f.status, responses: f.responseCount ?? 0 }))}
           />
 
@@ -168,33 +180,35 @@ export default function WorkspaceHomePage() {
           <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
             <span className="bg-body-sm font-semibold text-(--text-primary)">Quick Actions</span>
             <div className="flex flex-wrap gap-2">
-              <Link href={`/w/${slug}/responses`}>
+              <Link href={`/w/${slug}/inbox`}>
                 <Button variant="secondary" size="small">
                   <Table size={13} className="mr-1.5" />
-                  View Tables
+                  Open Inbox
                 </Button>
               </Link>
-              <Link href={`/w/${slug}/settings`}>
-                <Button variant="secondary" size="small">
-                  <Settings size={13} className="mr-1.5" />
-                  Branding
-                </Button>
-              </Link>
-              <Link href={`/w/${slug}/reports`}>
+              {canManageWorkspaceSettings(role) && (
+                <Link href={`/w/${slug}/settings?tab=branding`}>
+                  <Button variant="secondary" size="small">
+                    <Settings size={13} className="mr-1.5" />
+                    Branding
+                  </Button>
+                </Link>
+              )}
+              <Link href={`/w/${slug}/exports`}>
                 <Button variant="secondary" size="small">
                   <Download size={13} className="mr-1.5" />
-                  Download PDF
+                  Exports
                 </Button>
               </Link>
             </div>
           </Card>
 
-          {/* Two-column: Pinned Forms (left) + Recent Activity (right) */}
+          {/* Two-column: Recent forms (left) + Recent Activity (right). Not "Pinned": pinning a workspace form does not persist yet, so this is the most recent five. */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <Card className="flex flex-col gap-4">
               <div className="flex items-center gap-2 pb-2 border-b border-(--border-default)">
-                <Pin size={14} className="text-(--text-muted)" />
-                <h3 className="bg-body font-semibold text-(--text-primary)">Pinned Forms</h3>
+                <Clock size={14} className="text-(--text-muted)" />
+                <h3 className="bg-body font-semibold text-(--text-primary)">Recent forms</h3>
               </div>
               <div className="flex flex-col gap-3">
                 {forms.slice(0, 5).map((f) => (
@@ -204,11 +218,11 @@ export default function WorkspaceHomePage() {
                       <Badge>{f.status === 'published' ? `Active · ${f.responseCount} responses` : 'Draft'}</Badge>
                     </div>
                     <div className="flex items-center gap-3 bg-caption text-(--text-muted)">
-                      <Link href={`/forms/${f._id}/responses?ws=${slug}`} className="hover:text-(--text-primary) flex items-center gap-1">
-                        <Table size={12} /> Responses
+                      <Link href={`/forms/${f._id}/inbox?ws=${slug}`} className="hover:text-(--text-primary) flex items-center gap-1">
+                        <Table size={12} /> Inbox
                       </Link>
-                      <Link href={`/forms/${f._id}/analytics?ws=${slug}`} className="hover:text-(--text-primary) flex items-center gap-1">
-                        <BarChart2 size={12} /> Dashboard
+                      <Link href={`/forms/${f._id}/insights?ws=${slug}`} className="hover:text-(--text-primary) flex items-center gap-1">
+                        <BarChart2 size={12} /> Insights
                       </Link>
                       <Link href={`/forms/${f._id}/edit?ws=${slug}`} className="hover:text-(--text-primary) flex items-center gap-1">
                         <Edit3 size={12} /> Edit
@@ -235,7 +249,20 @@ export default function WorkspaceHomePage() {
               <div className="pb-2 border-b border-(--border-default)">
                 <h3 className="bg-body font-semibold text-(--text-primary)">Recent Activity</h3>
               </div>
-              <p className="bg-caption text-(--text-muted)">No recent activity in this workspace yet.</p>
+              {activity.isLoading ? (
+                <Skeleton variant="text" width="100%" height={44} />
+              ) : activity.isError ? (
+                <p className="bg-caption text-(--text-muted)">Recent activity could not be loaded.</p>
+              ) : (
+                <>
+                  <ActivityFeed events={activity.data ?? []} />
+                  {(activity.data?.length ?? 0) > 0 && (
+                    <Link href={`/w/${slug}/activity`} className="bg-body-sm font-semibold text-(--action-primary) hover:underline">
+                      View all activity
+                    </Link>
+                  )}
+                </>
+              )}
             </Card>
           </div>
         </div>

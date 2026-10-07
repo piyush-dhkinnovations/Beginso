@@ -3,7 +3,7 @@
  * Feature: sprint-8-workspaces-context, requirements.md §7.3 (corrected Day 3 against A1.1/A1.3)
  * Extended: PersonalSidebar now also carries the context switcher header (closing the gap where
  * Personal space had no discoverable path into a workspace) and the four still-live top-level
- * pages (Responses/Analytics/Settings; Reports became Analytics' Exports tab in Sprint 14) — see the component's own comment.
+ * pages (Inbox/Insights/Settings; Reports became Analytics' Exports tab in Sprint 14) — see the component's own comment.
  * Sprint 9 Day 5 (requirements.md §7.9): "Shared with me" is now a permanent item, closing the
  * gap this file's own comment previously named this sprint as fixing.
  */
@@ -12,6 +12,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PersonalSidebar } from '@/components/workspaces/PersonalSidebar';
+
+vi.mock('@/components/dashboard/UserProfileDropdown', () => ({ UserProfileDropdown: () => null }));
 
 const mockPathname = vi.fn();
 vi.mock('next/navigation', () => ({
@@ -61,7 +63,7 @@ describe('PersonalSidebar', () => {
 
   it('renders the real A1.1 personal nav set plus the still-live top-level pages', () => {
     renderSidebar();
-    ['Home', 'My Forms', 'Shared with me', 'Templates', 'Responses', 'Analytics', 'Settings', 'Create workspace'].forEach(
+    ['Home', 'Forms', 'Shared with me', 'Templates', 'Inbox', 'Insights', 'Settings', 'Create workspace'].forEach(
       (label) => {
         expect(screen.getByText(label)).toBeInTheDocument();
       }
@@ -91,10 +93,10 @@ describe('PersonalSidebar', () => {
     expect(screen.getByRole('link', { name: /Home/ })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('marks My Forms active on /forms and its subroutes', () => {
+  it('marks Forms active on /forms and its subroutes', () => {
     mockPathname.mockReturnValue('/forms/abc123');
     renderSidebar();
-    expect(screen.getByRole('link', { name: /My Forms/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /^Forms$/ })).toHaveAttribute('aria-current', 'page');
   });
 
   it('marks Templates active on /templates', () => {
@@ -109,10 +111,11 @@ describe('PersonalSidebar', () => {
     expect(screen.getByRole('link', { name: /Settings/ })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('marks Responses active on both /responses and a per-form /forms/:id/responses drill-in', () => {
-    mockPathname.mockReturnValue('/forms/abc123/responses');
+  it('marks Forms (not Inbox) active on a per-form /forms/:id/inbox page', () => {
+    mockPathname.mockReturnValue('/forms/abc123/inbox');
     renderSidebar();
-    expect(screen.getByRole('link', { name: /Responses/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /^Forms$/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /Inbox/ })).not.toHaveAttribute('aria-current', 'page');
   });
 
   it('marks Create workspace active on /workspaces', () => {
@@ -121,27 +124,27 @@ describe('PersonalSidebar', () => {
     expect(screen.getByRole('link', { name: /Create workspace/ })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('hides Responses/Analytics once analytics confirms zero forms, keeping the always-relevant items', async () => {
+  it('hides Inbox/Insights once analytics confirms zero forms, keeping the always-relevant items', async () => {
     renderSidebar();
-    expect(await screen.findByText('My Forms')).toBeInTheDocument();
-    expect(screen.queryByText('Responses')).not.toBeInTheDocument();
-    expect(screen.queryByText('Analytics')).not.toBeInTheDocument();
+    expect(await screen.findByText('Forms')).toBeInTheDocument();
+    expect(screen.queryByText('Inbox')).not.toBeInTheDocument();
+    expect(screen.queryByText('Insights')).not.toBeInTheDocument();
     expect(screen.queryByText('Reports')).not.toBeInTheDocument();
-    ['Home', 'My Forms', 'Shared with me', 'Templates', 'Settings', 'Create workspace'].forEach((label) => {
+    ['Home', 'Forms', 'Shared with me', 'Templates', 'Settings', 'Create workspace'].forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();
     });
   });
 
-  it('keeps Responses visible once forms exist', async () => {
+  it('keeps Inbox visible once forms exist', async () => {
     mockGetForms.mockResolvedValue({ forms: [{ _id: 'f1' }], total: 3, page: 1, limit: 1 });
     renderSidebar();
-    expect(await screen.findByText('Responses')).toBeInTheDocument();
-    expect(screen.getByText('Analytics')).toBeInTheDocument();
+    expect(await screen.findByText('Inbox')).toBeInTheDocument();
+    expect(screen.getByText('Insights')).toBeInTheDocument();
     // Sprint 14: Reports is the Exports tab inside Analytics, not a sidebar item, even with forms.
     expect(screen.queryByText('Reports')).not.toBeInTheDocument();
   });
 
-  it('trusts the filtered forms count over analytics when they disagree — the real bug: a brand-new invited user\'s analytics.totalForms leaked a workspace form, so the sidebar kept showing Responses/Analytics/Reports for an account with zero real personal forms', async () => {
+  it('trusts the filtered forms count over analytics when they disagree — the real bug: a brand-new invited user\'s analytics.totalForms leaked a workspace form, so the sidebar kept showing Inbox/Insights/Reports for an account with zero real personal forms', async () => {
     mockGetAnalytics.mockResolvedValue({
       totalForms: 1,
       publishedForms: 1,
@@ -151,23 +154,23 @@ describe('PersonalSidebar', () => {
     });
     mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 1 });
     renderSidebar();
-    expect(await screen.findByText('My Forms')).toBeInTheDocument();
-    expect(screen.queryByText('Responses')).not.toBeInTheDocument();
-    expect(screen.queryByText('Analytics')).not.toBeInTheDocument();
+    expect(await screen.findByText('Forms')).toBeInTheDocument();
+    expect(screen.queryByText('Inbox')).not.toBeInTheDocument();
+    expect(screen.queryByText('Insights')).not.toBeInTheDocument();
     expect(screen.queryByText('Reports')).not.toBeInTheDocument();
   });
 
-  it('keeps Responses visible when already deep-linked onto it, even with zero forms', async () => {
-    mockPathname.mockReturnValue('/responses');
+  it('keeps Inbox visible when already deep-linked onto it, even with zero forms', async () => {
+    mockPathname.mockReturnValue('/inbox');
     renderSidebar();
-    await screen.findByText('My Forms');
-    expect(screen.getByRole('link', { name: /Responses/ })).toHaveAttribute('aria-current', 'page');
+    await screen.findByText('Forms');
+    expect(screen.getByRole('link', { name: /Inbox/ })).toHaveAttribute('aria-current', 'page');
   });
 
   it('marks nothing active on an unrelated route', () => {
     mockPathname.mockReturnValue('/onboarding');
     renderSidebar();
-    ['Home', 'My Forms', 'Shared with me', 'Templates', 'Responses', 'Analytics', 'Settings', 'Create workspace'].forEach(
+    ['Home', 'Forms', 'Shared with me', 'Templates', 'Inbox', 'Insights', 'Settings', 'Create workspace'].forEach(
       (label) => {
         expect(screen.getByRole('link', { name: new RegExp(label) })).not.toHaveAttribute('aria-current');
       }

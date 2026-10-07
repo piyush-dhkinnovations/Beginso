@@ -131,7 +131,8 @@ export interface Form {
   title: string;             // user-facing name — Forms Manager, browser tab, BuilderHeader top bar
   description?: string;       // user-facing note — set once at creation, not builder-editable
   status: FormStatus;
-  slug?: string;             // nanoid(10) — generated on publish only
+  slug?: string;             // public short id once published (drafts carry a reserved, NOT-live slug)
+  publishedSlug?: string;    // server-assigned public short id - prefer via publicFormSlug()
   fields: FormField[];
   pages: FormPage[];         // always at least one page
   branding: FormBranding;

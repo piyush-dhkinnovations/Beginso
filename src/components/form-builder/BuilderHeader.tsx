@@ -22,6 +22,8 @@ export interface BuilderHeaderProps {
   onBack: () => void;
   onPublish: () => void;
   onClose: () => void;
+  /** The caller may delete (Owner only). Otherwise the action is not offered; the server enforces. */
+  canDelete: boolean;
   onDelete: () => void;
 }
 
@@ -39,6 +41,7 @@ export function BuilderHeader({
   onBack,
   onPublish,
   onClose,
+  canDelete,
   onDelete,
 }: BuilderHeaderProps) {
   const [title, setTitle] = useState(formTitle || '');
@@ -68,7 +71,7 @@ export function BuilderHeader({
   // overflow menu at every width so nothing is squeezed off-screen or silently missing.
   const overflowItems: MenuItem[] = [
     ...(status === 'published' ? [{ id: 'close', label: 'Close form', onSelect: onClose }] : []),
-    { id: 'delete', label: 'Delete form', onSelect: onDelete, danger: true },
+    ...(canDelete ? [{ id: 'delete', label: 'Delete form', onSelect: onDelete, danger: true }] : []),
   ];
 
   return (
@@ -132,12 +135,14 @@ export function BuilderHeader({
         ) : null}
 
         {/* Rare and destructive actions live here, at every width, instead of as header buttons. */}
+        {overflowItems.length > 0 && (
         <Menu
           align="end"
           triggerLabel="More form actions"
           trigger={<MoreVertical size={18} aria-hidden="true" />}
           items={overflowItems}
         />
+        )}
       </div>
     </header>
   );

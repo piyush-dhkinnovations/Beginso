@@ -112,10 +112,9 @@ function buildPairs(vars: Record<string, string>): Pair[] {
 // the general "muted text" neutral) — recoloring either is a design-system decision, not a
 // one-off swap, so they're recorded here (and in tasks.md's 3.6 entry) rather than silently
 // patched or left as a permanently-red, already-known test failure.
-const KNOWN_LIGHT_THEME_GAPS = new Set([
-  'text-muted on bg-page',
-  'text-on-brand on action-primary',
-]);
+// Both former near-misses were fixed at token level (--text-muted, --action-primary darkened); the set stays so a
+// future known gap has an obvious home.
+const KNOWN_LIGHT_THEME_GAPS = new Set<string>();
 
 describe.each([
   ['light', rootVars],

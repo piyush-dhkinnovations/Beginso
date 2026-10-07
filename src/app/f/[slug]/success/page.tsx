@@ -2,6 +2,9 @@ import { Illustration, hasIllustration } from '@/components/illustrations/Illust
 import type { Metadata } from 'next';
 import { CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { publicFormService } from '@/services/publicForm';
+import { FormUnavailable } from '@/components/public-form/FormUnavailable';
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -13,6 +16,11 @@ export const metadata: Metadata = { title: 'Thank you!' };
 export default async function SuccessPage({ params, searchParams }: Props) {
   const { slug } = await params;
   const { title, message, embed, theme } = await searchParams;
+  // PublicFormShell always sets ?title= when it routes here after a real submit. A bare visit (or a made-up slug) must
+  // not claim success. ponytail: best-effort, a hand-built URL with a title for a real slug still renders.
+  if (!title) redirect(`/f/${slug}`);
+  const exists = await publicFormService.getFormSchema(slug).then((r) => !!r.schema || !!r.userNote, () => true);
+  if (!exists) return <FormUnavailable notFound />;
   // Keep the embed frame's options when starting over inside it.
   const carried = new URLSearchParams();
   if (embed === '1') carried.set('embed', '1');

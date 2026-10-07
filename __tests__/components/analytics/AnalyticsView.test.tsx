@@ -82,7 +82,7 @@ describe('AnalyticsView', () => {
   it('renders the Auto-Dashboard branch (stat cards, trend, status, questions) when formId is set', async () => {
     renderView('form-1');
 
-    expect(await screen.findByText('Analytics · Customer Survey')).toBeInTheDocument();
+    expect(await screen.findByText('Insights · Customer Survey')).toBeInTheDocument();
     expect(screen.getByText('Total Responses')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText('Response Trend')).toBeInTheDocument());
     expect(screen.getByText('Status Distribution')).toBeInTheDocument();

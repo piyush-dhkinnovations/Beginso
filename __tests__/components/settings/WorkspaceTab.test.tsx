@@ -65,11 +65,11 @@ describe('WorkspaceTab', () => {
     expect(await screen.findByRole('alert')).toBeInTheDocument();
   });
 
-  it('disables Save while the name is unchanged', async () => {
+  it('shows no save bar while nothing is changed', async () => {
     mockGetWorkspace.mockResolvedValue({ id: 'w1', name: 'Acme Workspace', logoUrl: null, branding: {}, createdAt: '' });
     renderTab();
     await screen.findByDisplayValue('Acme Workspace');
-    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Save changes' })).not.toBeInTheDocument();
   });
 
   it('saves a changed name and shows a success toast', async () => {
@@ -81,8 +81,8 @@ describe('WorkspaceTab', () => {
     fireEvent.change(nameInput, { target: { value: 'New Name' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
-    await waitFor(() => expect(mockUpdateWorkspace).toHaveBeenCalledWith({ name: 'New Name' }, undefined));
-    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Workspace updated.', 'success'));
+    await waitFor(() => expect(mockUpdateWorkspace).toHaveBeenCalledWith({ name: 'New Name', description: '', timezone: 'UTC' }, undefined));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Workspace settings saved.', 'success'));
   });
 
   it('shows a failure toast when the save fails', async () => {
@@ -94,7 +94,7 @@ describe('WorkspaceTab', () => {
     fireEvent.change(nameInput, { target: { value: 'New Name' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
-    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Failed to update workspace. Please try again.', 'error'));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Workspace settings were not saved. Please try again.', 'error'));
   });
 
   it('shows an orphaned-account message with a Log out action on a 404 (workspace deleted, account still valid)', async () => {

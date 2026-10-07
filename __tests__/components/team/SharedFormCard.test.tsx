@@ -59,6 +59,6 @@ describe('SharedFormCard', () => {
 
   it('links to the form, opening it at the nearest existing view', () => {
     render(<SharedFormCard item={WORKSPACE_SHARE} />);
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/forms/f1/responses');
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/forms/f1/inbox');
   });
 });

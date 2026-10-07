@@ -93,6 +93,16 @@ const nextConfig: NextConfig = {
   devIndicators: {
     position: "bottom-right",
   },
+  // One vocabulary (Inbox / Insights / Exports): the old names stay reachable as permanent aliases.
+  // Query strings (?ws=, ?responseId=, ...) are carried over by Next.
+  async redirects() {
+    const renamed = { responses: "inbox", analytics: "insights", reports: "exports" } as const;
+    return Object.entries(renamed).flatMap(([from, to]) => [
+      { source: `/${from}/:path*`, destination: `/${to}/:path*`, permanent: true },
+      { source: `/w/:slug/${from}/:path*`, destination: `/w/:slug/${to}/:path*`, permanent: true },
+      ...(from === "reports" ? [] : [{ source: `/forms/:id/${from}`, destination: `/forms/:id/${to}`, permanent: true }]),
+    ]);
+  },
   async headers() {
     return [
       // Sprint 13 (A5.4): a signed-link URL must never leak through a referrer.

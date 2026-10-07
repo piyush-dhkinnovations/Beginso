@@ -1,5 +1,6 @@
 'use client';
 
+import { keepPreviousInScope } from '@/lib/queryOptions';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -13,8 +14,8 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
-import { Tabs } from '@/components/ui/Tabs';
-import { Pagination } from '@/components/ui/Pagination';
+import { FilterChips } from '@/components/ui/FilterChips';
+import { ListFooter } from '@/components/ui/ListFooter';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Card } from '@/components/ui/Card';
 import type { TrashItem, TrashItemType } from '@/types/trash';
@@ -31,11 +32,7 @@ const TABS = [
   { id: 'response', label: 'Responses' },
 ];
 
-const NO_ITEMS_COPY: Record<TypeTab, string> = {
-  all: 'Anything you delete lands here for 30 days before it goes for good.',
-  form: 'No deleted forms. A form you delete stays here for 30 days.',
-  response: 'No deleted responses. A response you delete stays here for 30 days.',
-};
+const TAB_NOUN: Record<TypeTab, string> = { all: 'items', form: 'forms', response: 'responses' };
 
 export function TrashView({ scope }: { scope: string }) {
   const { toast } = useToast();
@@ -51,8 +48,23 @@ export function TrashView({ scope }: { scope: string }) {
   const query = useQuery({
     queryKey: trashKeys.list(scope, tab, page),
     queryFn: () => trashService.list(scope, { type: typeParam, page, limit: 25 }),
+    placeholderData: keepPreviousInScope(trashKeys.list(scope, tab, page)),
     retry: false,
   });
+
+  // Chip counts: one `limit=1` request per type, reading only `total`.
+  const useCountQuery = (type: TypeTab) =>
+    useQuery({
+      queryKey: trashKeys.list(scope, type, 0),
+      queryFn: () => trashService.list(scope, { type: type === 'all' ? undefined : type, page: 1, limit: 1 }),
+      select: (r) => r.total,
+      retry: false,
+      staleTime: 30_000,
+    });
+  const allCount = useCountQuery('all').data;
+  const formCount = useCountQuery('form').data;
+  const responseCount = useCountQuery('response').data;
+  const counts: Record<TypeTab, number | undefined> = { all: allCount, form: formCount, response: responseCount };
 
   // Anything that comes back from (or leaves) Trash changes the lists it came from.
   const refreshAround = () => {
@@ -70,19 +82,19 @@ export function TrashView({ scope }: { scope: string }) {
       refreshAround();
     },
     // 409 FORM_IN_TRASH carries a sentence naming the form — show the server's words, not a generic one.
-    onError: (err) => toast(getFriendlyErrorMessage(err), 'error'),
+    onError: (err, item) => toast(getFriendlyErrorMessage(err, { action: `restore "${item.name}"` }), 'error'),
     onSettled: () => setPendingId(null),
   });
 
   const purge = useMutation({
     mutationFn: (item: TrashItem) => trashService.purge(scope, item.type, item.id),
     onMutate: (item) => setPendingId(item.id),
-    onSuccess: () => {
-      toast('Deleted permanently', 'success');
+    onSuccess: (_d, item) => {
+      toast(`"${item.name}" deleted permanently`, 'success');
       setPurgeTarget(null);
       refreshAround();
     },
-    onError: (err) => toast(getFriendlyErrorMessage(err), 'error'),
+    onError: (err, item) => toast(getFriendlyErrorMessage(err, { action: `permanently delete "${item.name}"` }), 'error'),
     onSettled: () => setPendingId(null),
   });
 
@@ -94,11 +106,10 @@ export function TrashView({ scope }: { scope: string }) {
       setPage(1);
       refreshAround();
     },
-    onError: (err) => toast(getFriendlyErrorMessage(err), 'error'),
+    onError: (err) => toast(getFriendlyErrorMessage(err, { action: 'empty the trash' }), 'error'),
   });
 
   const items = query.data?.items ?? [];
-  const totalPages = query.data ? Math.max(1, Math.ceil(query.data.total / query.data.limit)) : 1;
   const status = (query.error as { response?: { status?: number } } | null)?.response?.status;
   const canEmpty = items.some((i) => i.canPurge);
   const formsHref = isWorkspace ? `/w/${scope}/forms` : '/forms';
@@ -140,12 +151,25 @@ export function TrashView({ scope }: { scope: string }) {
       </Alert>
     );
   } else if (items.length === 0) {
-    body = (
+    const otherItems = tab !== 'all' && allCount ? allCount : 0;
+    body = tab !== 'all' && otherItems > 0 ? (
+      <EmptyState
+        illustration="no-results"
+        icon={<Trash2 className="bg-icon" aria-hidden="true" />}
+        title={`No deleted ${TAB_NOUN[tab]}`}
+        description={`There ${otherItems === 1 ? 'is 1 other item' : `are ${otherItems} other items`} in Trash.`}
+        actions={
+          <Button variant="secondary" onClick={() => { setTab('all'); setPage(1); }}>
+            Clear filter
+          </Button>
+        }
+      />
+    ) : (
       <EmptyState
         illustration="empty-forms"
         icon={<Trash2 className="bg-icon" aria-hidden="true" />}
         title="Trash is empty"
-        description={NO_ITEMS_COPY[tab]}
+        description="Anything you delete lands here for 30 days before it goes for good."
         primaryAction={
           <Link href={formsHref}>
             <Button>Back to Forms</Button>
@@ -167,7 +191,7 @@ export function TrashView({ scope }: { scope: string }) {
           onRestore={(item) => restore.mutate(item)}
           onDeleteNow={setPurgeTarget}
         />
-        <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        <ListFooter page={page} pageSize={query.data?.limit ?? 25} total={query.data?.total ?? 0} noun={tab === 'response' ? 'response' : tab === 'form' ? 'form' : 'item'} onPageChange={setPage} />
       </>
     );
   }
@@ -178,15 +202,17 @@ export function TrashView({ scope }: { scope: string }) {
         eyebrow={isWorkspace ? 'Workspace' : 'Personal space'}
         title="Trash"
         description={
-          <>
-            Deleted items stay here for 30 days, then are removed permanently. Responses inside a deleted form
-            come back with it.
-            {query.data && (
-              <span className="block mt-1">
-                Items in Trash still count toward your storage ({formatFileSize(query.data.storageBytes)}).
-              </span>
-            )}
-          </>
+          query.data && allCount !== undefined
+            ? [
+                `${allCount} ${allCount === 1 ? 'item' : 'items'}`,
+                formCount !== undefined && `${formCount} ${formCount === 1 ? 'form' : 'forms'}`,
+                responseCount !== undefined && `${responseCount} ${responseCount === 1 ? 'response' : 'responses'}`,
+                `${formatFileSize(query.data.storageBytes)} of storage`,
+                'removed permanently after 30 days',
+              ]
+                .filter(Boolean)
+                .join(' · ')
+            : undefined
         }
         actions={
           canEmpty && (
@@ -199,8 +225,8 @@ export function TrashView({ scope }: { scope: string }) {
       />
 
       {!(query.isError && status === 403) && (
-        <Tabs
-          tabs={TABS}
+        <FilterChips
+          chips={TABS.map((t) => ({ ...t, count: counts[t.id as TypeTab] }))}
           activeId={tab}
           onChange={(id) => {
             setTab(id as TypeTab);
@@ -220,8 +246,10 @@ export function TrashView({ scope }: { scope: string }) {
         title={`Permanently delete "${purgeTarget?.name ?? ''}"`}
         detail={
           purgeTarget?.type === 'form'
-            ? 'The form, its responses, uploaded files and analytics history are destroyed immediately.'
-            : 'The response and its uploaded files are destroyed immediately.'
+            ? typeof purgeTarget.responseCount === 'number'
+              ? `The form and its ${purgeTarget.responseCount} ${purgeTarget.responseCount === 1 ? 'response' : 'responses'}, uploaded files and analytics history will be destroyed immediately.`
+              : 'The form, its responses (count unavailable), uploaded files and analytics history will be destroyed immediately.'
+            : 'The response and its uploaded files will be destroyed immediately.'
         }
       />
       <EmptyTrashModal
@@ -230,6 +258,11 @@ export function TrashView({ scope }: { scope: string }) {
         onConfirm={() => emptyAll.mutate()}
         isPending={emptyAll.isPending}
         title="Empty trash"
+        detail={
+          tab === 'all' && query.data
+            ? `All ${query.data.total} ${query.data.total === 1 ? 'item' : 'items'} in Trash, with their responses, uploaded files and analytics history, will be destroyed immediately.`
+            : 'Everything in Trash, with its responses, uploaded files and analytics history, will be destroyed immediately. The exact count is only shown on the All tab.'
+        }
         confirmLabel="Empty trash"
       />
     </div>

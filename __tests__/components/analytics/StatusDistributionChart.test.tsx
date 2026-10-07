@@ -34,7 +34,7 @@ describe('StatusDistributionChart', () => {
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
-  it('renders exactly 3 segments with the status-dot design-token colors, and the center total', () => {
+  it('renders exactly 3 segments with the status-dot design-token colors, and a stacked bar (no donut centre total)', () => {
     const overview = mockAnalyticsOverview({ totalResponses: 128, categoryCounts: { new: 42, in_progress: 36, completed: 50 } });
     render(<StatusDistributionChart overview={overview} isLoading={false} />);
 
@@ -49,14 +49,15 @@ describe('StatusDistributionChart', () => {
     expect(screen.getAllByText('36').length).toBeGreaterThan(0);
     expect(screen.getAllByText('50').length).toBeGreaterThan(0);
 
-    expect(screen.getAllByText('128').length).toBeGreaterThan(0);
+    expect(screen.getByRole('img', { name: /42 new, 36 in progress, 50 completed/ })).toBeInTheDocument();
   });
 
-  it('comma-formats a large center total (e.g. "1,284")', () => {
+  it('comma-formats large legend counts (e.g. "1,284" not in a donut centre)', () => {
     const overview = mockAnalyticsOverview({ totalResponses: 1284, categoryCounts: { new: 184, in_progress: 326, completed: 774 } });
     render(<StatusDistributionChart overview={overview} isLoading={false} />);
 
-    expect(screen.getAllByText('1,284').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('774').length).toBeGreaterThan(0);
+    expect(screen.getByRole('img', { name: /774 completed/ })).toBeInTheDocument();
   });
 
   it('renders a legend with status name, count, and percentage, plus a matching sr-only table', () => {

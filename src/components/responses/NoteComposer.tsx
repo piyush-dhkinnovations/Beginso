@@ -122,6 +122,14 @@ export function NoteComposer({
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
+  // Grow with the text up to the textarea's max-height, shrink back after a send.
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [body]);
+
   const mentionedMembers = members.filter((m) => mentionIds.includes(m.userId));
 
   function insertEmoji(emoji: string) {
@@ -214,8 +222,16 @@ export function NoteComposer({
           className="max-h-32 flex-1 resize-none bg-transparent px-1 py-1.5 bg-body-sm text-(--text-primary) outline-none placeholder:text-(--text-muted)"
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !pickerOpen) {
-              e.preventDefault();
+            if (e.key !== 'Enter' || pickerOpen || e.nativeEvent.isComposing) return;
+            e.preventDefault();
+            if (e.ctrlKey || e.metaKey || e.shiftKey) {
+              // Ctrl/Cmd/Shift+Enter: a new line (browsers do not insert one for Ctrl/Cmd+Enter themselves).
+              const el = e.currentTarget;
+              const start = el.selectionStart;
+              const end = el.selectionEnd;
+              handleChange(`${body.slice(0, start)}\n${body.slice(end)}`);
+              requestAnimationFrame(() => el.setSelectionRange(start + 1, start + 1));
+            } else {
               handleSubmit();
             }
           }}

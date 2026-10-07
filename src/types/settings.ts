@@ -22,6 +22,9 @@ export interface UpdateProfilePayload {
 export interface WorkspaceSettings {
   id: string;
   name: string;
+  /** IANA timezone and free-text description exist on the workspace document (backend updateWorkspaceSchema accepts both). */
+  description?: string;
+  timezone?: string;
   logoUrl: string | null;
   branding: FormBranding; // { primaryColor?, logoUrl?, coverImageUrl? } — same shape a form's own branding uses
   // Confirmed live 18 Aug 2026 — notification preferences are NOT a separate resource/endpoint,
@@ -34,6 +37,8 @@ export interface WorkspaceSettings {
 
 export interface UpdateWorkspacePayload {
   name?: string;
+  description?: string | null;
+  timezone?: string;
   branding?: Partial<FormBranding>;
   notificationPreferences?: Partial<NotificationPreferences>;
 }

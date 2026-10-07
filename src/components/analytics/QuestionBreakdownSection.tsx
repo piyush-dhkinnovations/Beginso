@@ -23,6 +23,13 @@ interface QuestionBreakdownSectionProps {
 export function QuestionBreakdownSection({ form, breakdown, isLoading, isError = false, onRetry }: QuestionBreakdownSectionProps) {
   const choiceFields = (form?.fields ?? []).filter(isChoiceField);
 
+  // The form's own field label wins over whatever label the analytics payload carries (it can be the bare type name,
+  // e.g. two cards both titled "Multiple Choice"); if two questions still share a label, number them.
+  const labelOf = (field: FormField, i: number) => {
+    const base = field.label?.trim() || 'Untitled question';
+    return choiceFields.filter((f) => (f.label?.trim() || 'Untitled question') === base).length > 1 ? `${base} (question ${i + 1})` : base;
+  };
+
   // No empty section header when there's nothing to show it for (Requirement 6.5).
   if (choiceFields.length === 0) return null;
 
@@ -42,7 +49,7 @@ export function QuestionBreakdownSection({ form, breakdown, isLoading, isError =
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {choiceFields.map((field) =>
+          {choiceFields.map((field, i) =>
             isLoading ? (
               <Card key={field.fieldId}>
                 <div className="animate-pulse space-y-3" aria-busy="true" aria-label={`Loading ${field.label} breakdown`}>
@@ -53,10 +60,10 @@ export function QuestionBreakdownSection({ form, breakdown, isLoading, isError =
             ) : (
               <QuestionBreakdownChart
                 key={field.fieldId}
-                question={
-                  breakdown?.find((b) => b.fieldId === field.fieldId) ??
-                  { fieldId: field.fieldId, label: field.label, options: [] }
-                }
+                question={{
+                  ...(breakdown?.find((b) => b.fieldId === field.fieldId) ?? { fieldId: field.fieldId, options: [] }),
+                  label: labelOf(field, i),
+                }}
               />
             )
           )}

@@ -5,12 +5,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Home, FileText, Inbox, BarChart3, Users, History, Shield, LayoutTemplate, Trash2, Settings, Download } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
+import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown';
 import {
   canManageMembers,
-  canManageScoring,
-  canManageStages,
-  canManageTags,
-  canManageWorkspaceSettings,
   canRestoreResponse,
   canViewAudit,
   canViewTemplates,
@@ -18,6 +15,7 @@ import {
 } from '@/lib/roles';
 import { responsesService } from '@/services/responses';
 import { responseKeys } from '@/lib/queryKeys';
+import { useBuilderStore } from '@/store/builderStore';
 import type { Role } from '@/types/workspace';
 
 export interface WorkspaceSidebarProps {
@@ -29,6 +27,8 @@ export interface WorkspaceSidebarProps {
   // (GET /api/workspaces/:id doesn't return it yet). canManageMembers() fails closed on
   // undefined (Team stays hidden until the backend lands).
   role?: Role;
+  /** True on a form's own pages (/forms/:id/*), which live outside /w/[slug]: lights "Forms". */
+  formContext?: boolean;
 }
 
 // Workspace-context nav set (requirements.md §7.3). Same item vocabulary/icons as the legacy
@@ -42,8 +42,17 @@ export interface WorkspaceSidebarProps {
 // built. Rendered via ui/Sidebar's `header` slot rather than a separate wrapper element, so it
 // sits inside the same .bg-sidenav box as the nav items (matching the wireframe's single
 // continuous sidebar column) instead of a second bordered block stacked above it.
-export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }: WorkspaceSidebarProps) {
+export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role, formContext = false }: WorkspaceSidebarProps) {
   const pathname = usePathname();
+  const dirty = useBuilderStore((state) => state.dirty);
+  const setPendingLeaveUrl = useBuilderStore((state) => state.setPendingLeaveUrl);
+  // Same unsaved-changes guard PersonalSidebar enforces: this sidebar stays mounted around the builder.
+  const guard = (href: string) => (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (formContext && dirty && /\/edit$/.test(pathname)) {
+      event.preventDefault();
+      setPendingLeaveUrl(href);
+    }
+  };
   const base = `/w/${slug}`;
 
   // Sprint 12 (inbox-collaboration), task 1.9 — the unread count badge from the stats call
@@ -63,44 +72,54 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }
   // rendered. Hidden until each page actually ships — re-add the item as each one lands, rather
   // than linking ahead of the page that would make it real. `inbox/` now exists (task 1.9,
   // same-PR rule: the nav item lands with the page, never before).
-  const items = [
-    { label: 'Home', href: base, icon: Home },
-    { label: 'Forms', href: `${base}/forms`, icon: FileText },
-    { label: 'Inbox', href: `${base}/inbox`, icon: Inbox, count: stats?.unread },
-    // Insights (plan nav: Home · Inbox · Insights). Every role that can read the workspace can read analytics.
-    { label: 'Insights', href: `${base}/insights`, icon: BarChart3 },
-    // Exports (CSV / PDF jobs) - its own page, not a tab inside Insights.
-    ...(canViewExports(role) ? [{ label: 'Exports', href: `${base}/exports`, icon: Download }] : []),
-    // Sprint 13 (B6): templates live in the workspace now. Reviewers cannot create forms, so they get no
-    // Templates item (same rule canViewTemplates already encodes for the role-filtered nav).
-    ...(canViewTemplates(role) ? [{ label: 'Templates', href: `${base}/templates`, icon: LayoutTemplate }] : []),
-    // Every role — seeing what happened in a workspace you belong to is not manager-only
-    // (sprint-10 requirements.md §7.6). "Audit Log" is the role-gated counterpart (§7.7), failing
-    // closed on an undefined role exactly like "Team".
-    { label: 'Activity', href: `${base}/activity`, icon: History },
-    ...(canManageMembers(role) ? [{ label: 'Team', href: `${base}/team`, icon: Users }] : []),
-    ...(canViewAudit(role) ? [{ label: 'Audit Log', href: `${base}/audit`, icon: Shield }] : []),
-    // Any role that can manage at least one settings tab; same fail-closed-on-undefined rule.
-    ...(canManageWorkspaceSettings(role) || canManageTags(role) || canManageStages(role) || canManageScoring(role)
-      ? [{ label: 'Settings', href: `${base}/settings`, icon: Settings }]
-      : []),
-    // Sprint 13 (CF5.5): Trash is an Owner/Admin surface (the server returns 403 to everyone else); fails
-    // closed on an undefined role like Team and Audit Log.
-    ...(canRestoreResponse(role) ? [{ label: 'Trash', href: `${base}/trash`, icon: Trash2 }] : []),
+  const isActive = (href: string) =>
+    href === `${base}/forms` && formContext ? true : href === base ? pathname === base : pathname.startsWith(href);
+  const toItem = (item: { label: string; href: string; icon: React.ComponentType<{ className?: string }>; count?: number }) => ({
+    ...item,
+    active: isActive(item.href),
+    onClick: guard(item.href),
+  });
+
+  // Primary: the four daily destinations (every role that can read the workspace can read Insights).
+  const primary = [
+    toItem({ label: 'Home', href: base, icon: Home }),
+    toItem({ label: 'Forms', href: `${base}/forms`, icon: FileText }),
+    toItem({ label: 'Inbox', href: `${base}/inbox`, icon: Inbox, count: stats?.unread }),
+    toItem({ label: 'Insights', href: `${base}/insights`, icon: BarChart3 }),
+  ];
+
+  // Settings is visible to every role (members reach their own notification setting there; the page only lists
+  // the sections the role can use) and still fails closed while the role is unknown.
+  const settings = role ? [toItem({ label: 'Settings', href: `${base}/settings`, icon: Settings })] : [];
+  const adminOnly = [
+    ...(canManageMembers(role) ? [toItem({ label: 'Team', href: `${base}/team`, icon: Users })] : []),
+    ...(canViewAudit(role) ? [toItem({ label: 'Audit log', href: `${base}/audit`, icon: Shield })] : []),
+    // Trash is an Owner/Admin surface (the server returns 403 to everyone else).
+    ...(canRestoreResponse(role) ? [toItem({ label: 'Trash', href: `${base}/trash`, icon: Trash2 })] : []),
+  ];
+
+  const workspaceItems = [
+    // Reviewers cannot create forms, so they get no Templates item.
+    ...(canViewTemplates(role) ? [toItem({ label: 'Templates', href: `${base}/templates`, icon: LayoutTemplate })] : []),
+    ...(canViewExports(role) ? [toItem({ label: 'Exports', href: `${base}/exports`, icon: Download })] : []),
+    // Seeing what happened in a workspace you belong to is not manager-only.
+    toItem({ label: 'Activity', href: `${base}/activity`, icon: History }),
+    // With no admin items, Settings belongs with the rest of the workspace group instead of a lone "Admin" label.
+    ...(adminOnly.length === 0 ? settings : []),
+  ];
+
+  const groups = [
+    { items: primary },
+    { label: 'Workspace', items: workspaceItems },
+    ...(adminOnly.length > 0 ? [{ label: 'Admin', items: [...adminOnly.slice(0, 2), ...settings, ...adminOnly.slice(2)] }] : []),
   ];
 
   return (
     <Sidebar
       collapsed={collapsed}
       header={<WorkspaceContextSwitcher currentLabel={currentLabel} collapsed={collapsed} />}
-      groups={[
-        {
-          items: items.map((item) => ({
-            ...item,
-            active: item.href === base ? pathname === base : pathname.startsWith(item.href),
-          })),
-        },
-      ]}
+      groups={groups}
+      footer={<UserProfileDropdown variant="sidebar" collapsed={collapsed} />}
     />
   );
 }

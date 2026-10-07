@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Download, Loader2 } from 'lucide-react';
 import { settingsService } from '@/services/settings';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useToast } from '@/components/ui/Toast';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
@@ -33,8 +34,9 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
     onSuccess: (createdJob) => {
       setJobId(createdJob.id);
       setIsExportModalOpen(false);
+      toast("Export started. A download button appears here when it's ready.", 'success');
     },
-    onError: () => toast('Failed to start export. Please try again.', 'error'),
+    onError: (err) => toast(getFriendlyErrorMessage(err, { action: 'export this data', fallback: 'Export did not start. Please try again.' }), 'error'),
   });
 
   // Confirmed live 17 Aug 2026 (settingsService.getExportStatus) — same queued/processing-until-
@@ -66,7 +68,7 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
       link.remove();
       URL.revokeObjectURL(url);
     } catch {
-      toast('Failed to download export. Please try again.', 'error');
+      toast('Export download failed. Please try again.', 'error');
     } finally {
       setIsDownloading(false);
     }
@@ -77,14 +79,14 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
       <div>
         <p className="bg-body-sm font-semibold text-(--error-text)">Danger Zone</p>
         <p className="bg-caption text-(--error-text) mt-1">
-          Export or permanently delete this workspace. These actions affect all forms, responses,
-          and files in your workspace.
+          Export your data, or permanently delete your account. Deleting removes every form,
+          response and file you own, and your sign-in.
         </p>
       </div>
 
       <div className="flex flex-col gap-3">
         <div>
-          <p className="bg-body-sm font-semibold text-(--text-primary)">Export workspace data</p>
+          <p className="bg-body-sm font-semibold text-(--text-primary)">Export your data</p>
           {!jobId ? (
             <Button
               variant="secondary"
@@ -93,7 +95,7 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
               isLoading={requestExportMutation.isPending}
               onClick={() => setIsExportModalOpen(true)}
             >
-              Export Workspace Data
+              Export your data
             </Button>
           ) : status === 'completed' ? (
             <Button
@@ -122,14 +124,14 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
         </div>
 
         <div className="border-t border-(--error-border) pt-3">
-          <p className="bg-body-sm font-semibold text-(--text-primary)">Delete workspace</p>
+          <p className="bg-body-sm font-semibold text-(--text-primary)">Delete account and workspace</p>
           <Button
             variant="destructive"
             size="small"
             className="mt-2"
             onClick={() => setIsDeleteModalOpen(true)}
           >
-            Delete Workspace
+            Delete account
           </Button>
         </div>
       </div>
@@ -137,8 +139,8 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
       <Modal
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
-        title="Export workspace data?"
-        description="This prepares a downloadable archive of your workspace data. It may take a few minutes to prepare — this doesn't affect or remove anything in your workspace."
+        title="Export your data?"
+        description="This prepares a downloadable archive of your forms and responses. It may take a few minutes. Nothing is removed from your account."
       >
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-(--border-subtle)">
           <Button type="button" variant="secondary" onClick={() => setIsExportModalOpen(false)}>

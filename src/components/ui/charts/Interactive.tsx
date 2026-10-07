@@ -63,7 +63,8 @@ function useChartNav({ data, onSelect }: InteractiveChartProps) {
     return {
       'data-seg': i,
       role: interactive ? 'button' : 'img',
-      tabIndex: interactive ? (tab === i ? 0 : -1) : undefined,
+      // Read-only charts stay keyboard-inspectable too: focus moves between points and shows the tooltip.
+      tabIndex: tab === i ? 0 : -1,
       'aria-label': `${d.label}: ${d.count.toLocaleString()} (${d.text})${interactive ? ', show these responses' : ''}`,
       style: { ...FRAME, cursor: interactive ? 'pointer' : 'default', ...extraStyle } as CSSProperties,
       onMouseMove: (e: React.MouseEvent) => {

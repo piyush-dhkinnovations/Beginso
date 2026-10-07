@@ -19,7 +19,6 @@ import { useQuery } from '@tanstack/react-query';
 import { AppShell, TopBar, Skeleton } from '@/components/ui';
 import { PersonalSidebar } from '@/components/workspaces/PersonalSidebar';
 import { WorkspaceSidebar } from '@/components/workspaces/WorkspaceSidebar';
-import { FormSidebar } from '@/components/workspaces/FormSidebar';
 import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown';
 import { Wordmark } from '@/components/landing/Wordmark';
@@ -60,6 +59,7 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
   const searchParams = useSearchParams();
   const formId = FORM_DETAIL_ROUTE_RE.exec(pathname)?.[1];
   const wsHint = searchParams.get('ws');
+  const isBuilder = /^\/forms\/[^/]+\/edit\/?$/.test(pathname);
 
   const { data: form } = useQuery({
     queryKey: ['form', formId],
@@ -95,6 +95,8 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
   return (
     <AppShell
       initialCollapsed={initialCollapsed}
+      // The builder needs the width: its sidebar drops to the icon rail (still the same sidebar, never replaced).
+      forceCollapsed={isBuilder}
       topBar={(toggleCollapsed, toggleMobile) => (
         <TopBar
           brand={
@@ -120,15 +122,15 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
         />
       )}
       sidebar={(collapsed) =>
-        formWorkspace && formId ? (
-          // Same form-properties sidebar as a personal form; only the "back" target differs.
-          <FormSidebar formId={formId} form={form} collapsed={collapsed} backHref={`/w/${formWorkspace.slug}/forms`} backLabel={formWorkspace.name} />
-        ) : formWorkspace ? (
+        formWorkspace ? (
+          // A form's pages keep the workspace sidebar; the form's own nav is the horizontal sub-nav
+          // (forms/[id]/layout.tsx), never a replacement sidebar.
           <WorkspaceSidebar
             slug={formWorkspace.slug}
             currentLabel={formWorkspace.name}
             collapsed={collapsed}
             role={formWorkspace.role}
+            formContext={!!formId}
           />
         ) : contextUnresolved ? (
           // Not built from Sidebar/groups — that component always renders each item as a real
@@ -143,11 +145,6 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
               ))}
             </div>
           </nav>
-        ) : formId ? (
-          // Reaching here with formId set means contextUnresolved already cleared — `form` has
-          // resolved and `formWorkspace` didn't match it, so this is confirmed a personal form
-          // (workspaceId: null), not still loading. Form-specific sidebar, not the global one.
-          <FormSidebar formId={formId} form={form} collapsed={collapsed} />
         ) : (
           <PersonalSidebar collapsed={collapsed} />
         )

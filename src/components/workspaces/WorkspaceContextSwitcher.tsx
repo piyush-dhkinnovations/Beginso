@@ -23,6 +23,20 @@ export function WorkspaceContextSwitcher({ currentLabel = 'Personal', collapsed 
     queryFn: workspacesService.list,
   });
 
+  // The second line replaces the old unlabelled count badge: say who you are here and who else is.
+  const current = currentLabel === 'Personal' ? undefined : workspaces.find((w) => w.name === currentLabel);
+  const currentMeta =
+    currentLabel === 'Personal'
+      ? 'Only you'
+      : current
+        ? [
+            current.role ? current.role.charAt(0).toUpperCase() + current.role.slice(1) : null,
+            typeof current.memberCount === 'number' ? `${current.memberCount} ${current.memberCount === 1 ? 'member' : 'members'}` : null,
+          ]
+            .filter(Boolean)
+            .join(' · ') || undefined
+        : undefined;
+
   const handleSelect = (target: ContextSwitcherTarget) => {
     // Sprint 14 (task 3.14): search results are per context - drop them all on a switch so the palette
     // can never flash the previous context's rows. (Notification keys are context-namespaced, so the
@@ -38,6 +52,7 @@ export function WorkspaceContextSwitcher({ currentLabel = 'Personal', collapsed 
   return (
     <ContextSwitcher
       currentLabel={currentLabel}
+      currentMeta={currentMeta}
       workspaces={workspaces}
       onSelect={handleSelect}
       collapsed={collapsed}

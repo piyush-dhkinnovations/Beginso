@@ -192,3 +192,8 @@ export function canRemoveTemplate(role: Role | undefined): boolean {
 export function canSeeShare(role: Role | undefined): boolean {
   return role !== undefined && hasCapability(role, 'forms:edit');
 }
+
+/** Create Form buttons — Editor and above. Presentation only: POST /api/forms enforces forms:create. Hidden while the role is still loading. */
+export function canCreateForm(role: Role | undefined): boolean {
+  return role !== undefined && hasCapability(role, 'forms:create');
+}

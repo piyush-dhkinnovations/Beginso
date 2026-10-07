@@ -9,8 +9,8 @@ export function resolveSearchTarget(result: SearchResult, scope: string): string
       return `/forms/${encodeURIComponent(result.id)}/overview${ws}`;
     case 'responses': {
       const id = encodeURIComponent(result.id);
-      if (result.formId) return `/forms/${encodeURIComponent(result.formId)}/responses?responseId=${id}${scope !== 'personal' ? `&ws=${encodeURIComponent(scope)}` : ''}`;
-      return scope !== 'personal' ? `/w/${scope}/inbox?responseId=${id}` : `/responses?responseId=${id}`;
+      if (result.formId) return `/forms/${encodeURIComponent(result.formId)}/inbox?responseId=${id}${scope !== 'personal' ? `&ws=${encodeURIComponent(scope)}` : ''}`;
+      return scope !== 'personal' ? `/w/${scope}/inbox?responseId=${id}` : `/inbox?responseId=${id}`;
     }
     case 'members':
       return scope !== 'personal' ? `/w/${scope}/team` : '/dashboard';

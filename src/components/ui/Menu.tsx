@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { bx } from "@/lib/utils";
 
@@ -93,6 +93,20 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
     };
   }, [isOpen]);
 
+  // Keep the portaled menu inside the viewport: a start-aligned menu on a trigger near the right edge
+  // (or an end-aligned one near the left) otherwise runs off-screen on phones.
+  useLayoutEffect(() => {
+    const el = menuRef.current;
+    if (!isOpen || !el) return;
+    const r = el.getBoundingClientRect();
+    const margin = 8;
+    if (r.right > window.innerWidth - margin || r.left < margin) {
+      const left = Math.max(margin, Math.min(r.left, window.innerWidth - margin - r.width));
+      el.style.left = `${left}px`;
+      el.style.right = "auto";
+    }
+  }, [isOpen, position]);
+
   const close = () => {
     setIsOpen(false);
     triggerRef.current?.focus();
@@ -164,12 +178,15 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
         <div
           ref={menuRef}
           role="menu"
+          aria-label={triggerLabel}
           style={{
             position: "fixed",
             top: position.top,
             left: position.left,
             right: position.right,
             width: position.width,
+            maxHeight: "calc(100dvh - 16px)",
+            overflowY: "auto",
           }}
           className={bx(
             "bg-menu z-50",

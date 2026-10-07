@@ -75,27 +75,27 @@ describe('ProfileTab', () => {
     expect(screen.getByText('Unable to load your profile.')).toBeInTheDocument();
   });
 
-  it('disables Save while the name is unchanged (no-op guard)', async () => {
+  it('shows no save bar while the name is unchanged (no-op guard)', async () => {
     mockGetProfile.mockResolvedValue({ id: 'u1', name: 'Jordan Rivera', email: 'jordan@example.com', avatarUrl: null, emailVerified: true, createdAt: '', lastLoginAt: '' });
     renderTab();
 
     await screen.findByDisplayValue('Jordan Rivera');
-    expect(screen.getByRole('button', { name: 'Save changes' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Save changes' })).not.toBeInTheDocument();
   });
 
-  it('enables Save once the name changes, and saving shows a success toast', async () => {
+  it('shows the save bar once the name changes, and saving shows a success toast', async () => {
     mockGetProfile.mockResolvedValue({ id: 'u1', name: 'Jordan Rivera', email: 'jordan@example.com', avatarUrl: null, emailVerified: true, createdAt: '', lastLoginAt: '' });
     mockUpdateProfile.mockResolvedValue({ id: 'u1', name: 'Jordan R.', email: 'jordan@example.com', avatarUrl: null, emailVerified: true, createdAt: '', lastLoginAt: '' });
     renderTab();
 
     const nameInput = await screen.findByDisplayValue('Jordan Rivera');
     fireEvent.change(nameInput, { target: { value: 'Jordan R.' } });
-    expect(screen.getByRole('button', { name: 'Save changes' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeEnabled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await waitFor(() => expect(mockUpdateProfile).toHaveBeenCalledWith({ name: 'Jordan R.' }));
-    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Profile updated.', 'success'));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Display name saved.', 'success'));
   });
 
   it('rejects a name under 2 characters with a validation error, preserving the input', async () => {
@@ -120,7 +120,7 @@ describe('ProfileTab', () => {
     fireEvent.change(nameInput, { target: { value: 'New Name' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
-    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Failed to update profile. Please try again.', 'error'));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Display name was not saved. Please try again.', 'error'));
     expect(screen.getByDisplayValue('New Name')).toBeInTheDocument();
   });
 });

@@ -42,8 +42,8 @@ const NAV_ITEMS = [
 type Direction = "up" | "down" | "flat";
 const DELTA_ICON: Record<Direction, typeof ArrowUp> = { up: ArrowUp, down: ArrowDown, flat: Minus };
 const DELTA_COLOR: Record<Direction, string> = {
-  up: "var(--success)",
-  down: "var(--error)",
+  up: "var(--success-text)",
+  down: "var(--error-text)",
   flat: "var(--text-muted)",
 };
 
@@ -292,7 +292,7 @@ export default function ProductMockup() {
   const transform = startDeg > 0 ? `rotateX(${rotate}deg) translateY(${lift}px) scale(${scale})` : "none";
 
   return (
-    <div ref={ref} className="tilt-stage w-full flex justify-center">
+    <div ref={ref} aria-hidden="true" className="tilt-stage w-full flex justify-center">
       <div className="tilt-card relative w-full max-w-[1180px]" style={{ transform }}>
       <div className="rounded-(--bg-radius-md) border border-(--border-default) bg-(--surface-card) shadow-(--shadow-lg) overflow-hidden">
         {/* Browser chrome */}

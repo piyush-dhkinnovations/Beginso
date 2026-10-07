@@ -91,7 +91,6 @@ export function NotificationsView({ scope }: NotificationsViewProps) {
     <div className="flex flex-col gap-4 animate-fade-in">
       <PageHeader
         title="Notifications"
-        description={scope === 'personal' ? 'Everything happening across your forms.' : 'Everything happening across your workspace.'}
         actionsAlign="center"
         actions={
           <Button variant="ghost" onClick={handleMarkAll} isLoading={markAllRead.isPending} disabled={unreadCount === 0}>

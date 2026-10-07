@@ -12,6 +12,8 @@ import { Radio } from '@/components/ui/Radio';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { teamService } from '@/services/team';
 import { teamKeys } from '@/lib/queryKeys';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
+import { useSavedFlash } from './StickySaveBar';
 import { useMyNotificationPreference } from '@/hooks/useMyNotificationPreference';
 import type { MemberListItem } from '@/types/team';
 import type { NotificationPreference } from '../../../shared/types';
@@ -42,6 +44,7 @@ function ResponseEmailChoice({ scope }: { scope: string }) {
   const { user } = useAuth();
   const { isLoading, isError, refetch, preference } = useMyNotificationPreference(scope);
   const key = teamKeys.members(scope);
+  const [saved, flashSaved] = useSavedFlash();
 
   const mutation = useMutation({
     mutationFn: (next: NotificationPreference) => teamService.updateMyNotificationPreference(scope, next),
@@ -55,7 +58,11 @@ function ResponseEmailChoice({ scope }: { scope: string }) {
     },
     onError: (_e, _n, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(key, ctx.previous);
-      toast('Failed to update your response email setting. Please try again.', 'error');
+      toast(getFriendlyErrorMessage(_e, { action: 'change your response email setting', fallback: 'Your response email setting was not saved. Please try again.' }), 'error');
+    },
+    onSuccess: (_d, next) => {
+      flashSaved();
+      toast(`Response emails set to "${CHOICES.find((c) => c.value === next)?.label ?? next}".`, 'success');
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: key }),
   });
@@ -73,6 +80,7 @@ function ResponseEmailChoice({ scope }: { scope: string }) {
   return (
     <fieldset className="flex flex-col gap-2" aria-busy={mutation.isPending}>
       <legend className="bg-label">Email me about new responses</legend>
+      <p role="status" className="min-h-5 bg-caption text-(--success-text)">{saved ? 'Saved' : ''}</p>
       <p className="bg-caption text-(--text-muted)">
         New members get no response emails. Form creators get all. The email never includes answers, questions or attachments.
       </p>
@@ -103,6 +111,7 @@ export function NotificationsTab({ scope }: { scope?: string }) {
 function AccountNotifications() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [saved, flashSaved] = useSavedFlash();
 
   const { data: workspace, isLoading, isError, refetch } = useQuery({
     queryKey: settingsKeys.workspace(),
@@ -124,9 +133,13 @@ function AccountNotifications() {
         );
         return { previous };
       },
-      onError: (_err, _next, context) => {
+      onError: (err, _next, context) => {
         if (context?.previous) queryClient.setQueryData(settingsKeys.workspace(), context.previous);
-        toast('Failed to update notification preference. Please try again.', 'error');
+        toast(getFriendlyErrorMessage(err, { action: 'change notification settings', fallback: `"${ROWS.find((r) => r.key === key)?.label}" was not saved. Please try again.` }), 'error');
+      },
+      onSuccess: (_d, next) => {
+        flashSaved();
+        toast(`${ROWS.find((r) => r.key === key)?.label}: ${next ? 'on' : 'off'}.`, 'success');
       },
       onSettled: () => queryClient.invalidateQueries({ queryKey: settingsKeys.workspace() }),
     });
@@ -164,6 +177,7 @@ function AccountNotifications() {
 
   return (
     <div className="flex flex-col gap-1">
+      <p role="status" className="min-h-5 bg-caption text-(--success-text)">{saved ? 'Saved' : ''}</p>
       {ROWS.map(({ key, label, help }) => {
         const mutation = mutationByKey[key];
         const inputId = `notif-${key}`;

@@ -53,7 +53,7 @@ export default function BlogListPage() {
               onClick={() => setCategory(c)}
               aria-pressed={category === c}
               className={bx(
-                "min-h-[36px] rounded-full border px-4 bg-body-sm font-medium transition-colors",
+                "min-h-11 rounded-full border px-4 bg-body-sm font-medium transition-colors",
                 category === c
                   ? "border-(--border-focus) bg-(--accent-soft) text-(--accent-soft-text)"
                   : "border-(--border-default) bg-(--surface-card) text-(--text-secondary) hover:bg-(--surface-hover)"

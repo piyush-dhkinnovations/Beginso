@@ -106,6 +106,7 @@ export function SettingsView({ title, description, tabs, scope, labels }: Settin
     <div className="flex flex-col gap-4 animate-fade-in">
       <PageHeader title={title} description={description} />
 
+      <div className="flex flex-col gap-4 lg:flex-row lg:gap-10 lg:items-start">
       <SettingsTabs activeTab={activeTab} onChange={handleTabChange} dirtyTabs={dirtyTabs} visible={tabs} labels={labels} />
 
       {/* Branding gets its own wider column (BrandingPanel needs >=620px of container width to
@@ -114,7 +115,7 @@ export function SettingsView({ title, description, tabs, scope, labels }: Settin
           the same max-w-4xl BrandingPanel already applies to itself internally, not left
           unbounded — otherwise its own `mx-auto` has extra room to center it away from the left
           edge that every other tab's content starts flush against. */}
-      <div className={activeTab === 'branding' || activeTab === 'tags' || activeTab === 'stages' || activeTab === 'scoring' ? '' : 'max-w-160'}>
+      <div className={`min-w-0 flex-1 ${activeTab === 'branding' || activeTab === 'tags' || activeTab === 'stages' || activeTab === 'scoring' ? '' : 'max-w-160'}`}>
         {visitedTabs.has('profile') && (
           <div className={activeTab === 'profile' ? '' : 'hidden'}>
             <ProfileTab onDirtyChange={dirtyHandlers.profile} />
@@ -165,6 +166,7 @@ export function SettingsView({ title, description, tabs, scope, labels }: Settin
             <CriteriaManager scope={scope} onDirtyChange={dirtyHandlers.scoring} />
           </div>
         )}
+      </div>
       </div>
 
       <Modal

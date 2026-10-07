@@ -107,6 +107,8 @@ export interface ResponseFilters {
 export interface GetResponsesParams extends ResponseFilters {
   /** Omit to list responses across every form in the workspace (the "All Responses" view). */
   formId?: string;
+  /** Category filter (new | in_progress | completed). Sent for personal-shell stages, which have no Stage ids. */
+  status?: 'new' | 'in_progress' | 'completed';
   sort?: string;
   page?: number;
   limit?: number;

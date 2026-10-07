@@ -17,7 +17,7 @@ export function TopBar({ brand, actions, onMenuClick, className, ...props }: Top
           type="button"
           onClick={onMenuClick}
           aria-label="Open navigation menu"
-          className={bx("bg-btn", "bg-btn-ghost", "bg-btn-icon")}
+          className={bx("bg-btn", "bg-btn-ghost", "bg-btn-icon", "min-h-11 min-w-11")}
         >
           <Menu className="bg-icon" />
         </button>

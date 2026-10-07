@@ -42,7 +42,7 @@ export function GlobalSearch({ scope }: GlobalSearchProps) {
   // shortcut still works with focus in an ordinary input (requirements 2.1).
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key.toLowerCase() !== 'k' || !(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
+      if (e.key?.toLowerCase() !== 'k' || !(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
       if (e.target instanceof HTMLElement && e.target.closest('[contenteditable="true"]')) return;
       e.preventDefault();
       setOpen(true);

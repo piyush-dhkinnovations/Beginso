@@ -59,49 +59,48 @@ describe('ResponsesToolbar', () => {
     expect(onSearchChange).toHaveBeenCalledWith('');
   });
 
-  it('lists stages from data — never a hardcoded label — and fires onFilterChange with the stage id', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    const onFilterChange = vi.fn();
-    render(<ResponsesToolbar {...baseProps} onFilterChange={onFilterChange} />);
-
-    await user.click(screen.getByRole('button', { name: /filter/i }));
-    const select = screen.getByLabelText('Stage');
-    expect(screen.getByRole('option', { name: 'Screening' })).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'Offer' })).toBeInTheDocument();
-
-    await user.selectOptions(select, 's-completed');
-    expect(onFilterChange).toHaveBeenCalledWith({ stageId: 's-completed' });
-  });
-
-  it('hides the assignee filter when members is undefined (personal shell, OQ-9)', async () => {
-    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+  it('hides the Assignee button when members is undefined (personal shell, OQ-9)', () => {
     render(<ResponsesToolbar {...baseProps} members={undefined} />);
-    await user.click(screen.getByRole('button', { name: /filter/i }));
-    expect(screen.queryByLabelText('Assignee')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Assignee/ })).not.toBeInTheDocument();
   });
 
-  it('shows Unassigned and Me first in the assignee filter when members is given', async () => {
+  it('offers Me and Unassigned first in the Assignee menu, then closes after a selection', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(<ResponsesToolbar {...baseProps} members={[]} />);
-    await user.click(screen.getByRole('button', { name: /filter/i }));
-    const select = screen.getByLabelText('Assignee') as HTMLSelectElement;
-    const options = Array.from(select.options).map((o) => o.textContent);
-    expect(options.slice(0, 3)).toEqual(['Everyone', 'Unassigned', 'Me']);
+    const onFilterChange = vi.fn();
+    render(<ResponsesToolbar {...baseProps} members={[]} onFilterChange={onFilterChange} />);
+    await user.click(screen.getByRole('button', { name: 'Assignee' }));
+    const items = screen.getAllByRole('menuitem').map((i) => i.textContent);
+    expect(items.slice(0, 3)).toEqual(['Anyone', 'Me', 'Unassigned']);
+
+    await user.click(screen.getByRole('menuitem', { name: 'Unassigned' }));
+    expect(onFilterChange).toHaveBeenCalledWith({ assigneeId: 'unassigned' });
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
-  it('fires onFilterChange when the unread toggle changes', async () => {
+  it('shows the active value on the button', () => {
+    render(<ResponsesToolbar {...baseProps} members={[]} filters={{ assigneeId: 'me' }} />);
+    expect(screen.getByRole('button', { name: 'Assignee: Me' })).toBeInTheDocument();
+  });
+
+  it('shows the Tags button only when the workspace has tags, and filters by the picked tag', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const onFilterChange = vi.fn();
+    const { rerender } = render(<ResponsesToolbar {...baseProps} tags={[]} onFilterChange={onFilterChange} />);
+    expect(screen.queryByRole('button', { name: 'Tags' })).not.toBeInTheDocument();
+
+    rerender(<ResponsesToolbar {...baseProps} tags={[{ id: 't1', name: 'VIP', colour: 'primary' }]} onFilterChange={onFilterChange} />);
+    await user.click(screen.getByRole('button', { name: 'Tags' }));
+    await user.click(screen.getByRole('menuitem', { name: 'VIP' }));
+    expect(onFilterChange).toHaveBeenCalledWith({ tagIds: ['t1'] });
+  });
+
+  it('sets a date range from the Date menu', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     const onFilterChange = vi.fn();
     render(<ResponsesToolbar {...baseProps} onFilterChange={onFilterChange} />);
-
-    await user.click(screen.getByRole('button', { name: /filter/i }));
-    await user.click(screen.getByLabelText('Unread only'));
-    expect(onFilterChange).toHaveBeenCalledWith({ unread: true });
-  });
-
-  it('shows an active-filter count badge on the trigger when a filter is applied', () => {
-    render(<ResponsesToolbar {...baseProps} filters={{ unread: true, stageId: 's-new' }} />);
-    expect(screen.getByRole('button', { name: /filter/i })).toHaveTextContent('2');
+    await user.click(screen.getByRole('button', { name: 'Date' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Last 7 days' }));
+    expect(onFilterChange).toHaveBeenCalledWith({ from: expect.any(String), to: undefined });
   });
 
   it('renders the count label in singular and plural form', () => {

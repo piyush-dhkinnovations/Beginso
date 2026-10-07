@@ -4,8 +4,7 @@ import { PieChart as PieChartIcon } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { PieChart as DonutChart, seriesColor } from '@/components/ui/charts';
-import { toSegments } from '@/lib/chartSegments';
+import { seriesColor } from '@/components/ui/charts';
 import { CATEGORY_LABELS, type StageCategory } from '@/types/stage';
 import type { AnalyticsOverview } from '@/types/analytics';
 
@@ -73,14 +72,17 @@ export function StatusDistributionChart({ overview, isLoading, isError = false, 
   return (
     <Card>
       <h3 className="bg-h5 text-(--text-primary) font-bold mb-4">Status Distribution</h3>
-      <div className="flex flex-col items-center gap-6">
-        <DonutChart
-          donut
-          legend={false}
-          centreLabel={total.toLocaleString()}
-          ariaLabel="Status distribution"
-          data={toSegments(SEGMENT_ORDER.map((category) => ({ key: category, label: CATEGORY_LABELS[category], value: categoryCounts[category] })))}
-        />
+      <div className="flex flex-col items-center gap-5">
+        {/* Three categories: a stacked bar, not a donut that would print the total twice. */}
+        <div
+          role="img"
+          aria-label={`Status distribution: ${SEGMENT_ORDER.map((c) => `${categoryCounts[c]} ${CATEGORY_LABELS[c].toLowerCase()}`).join(', ')}`}
+          className="flex h-4 w-full gap-0.5 overflow-hidden rounded-full"
+        >
+          {SEGMENT_ORDER.map((category, ci) =>
+            categoryCounts[category] > 0 ? <span key={category} style={{ flexGrow: categoryCounts[category], backgroundColor: seriesColor(ci) }} /> : null,
+          )}
+        </div>
 
         <div className="flex flex-col gap-2.5 w-full">
           {SEGMENT_ORDER.map((category, ci) => (

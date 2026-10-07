@@ -111,7 +111,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
         <span className="bg-overline text-(--text-muted)">
           Conditional Logic
         </span>
-        <Switch id={`${field.fieldId}-logic-toggle`} checked={expanded} onChange={setExpanded} />
+        <Switch id={`${field.fieldId}-logic-toggle`} aria-label="Conditional logic" checked={expanded} onChange={setExpanded} />
       </div>
 
       {expanded && (

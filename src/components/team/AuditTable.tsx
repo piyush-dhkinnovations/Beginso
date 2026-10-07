@@ -9,14 +9,23 @@ export interface AuditTableProps {
 
 const SKELETON_ROWS = 5;
 
-// Target and IP drop out below 640px (wireframe `wf-mobile-hide`); the wrapper scrolls for anything
-// still too wide.
-const SECONDARY = 'hidden sm:table-cell';
-
 // requirements.md §7.7 / design.md §6, §16.3. Hand-rolled <table> in ui/Table's scroll-container
 // classes, not the generic `ui/Table` — that always applies .bg-table-stack (row-to-card below
-// 640px), and a security record must keep its column alignment (RolesMatrix's Sprint 9 precedent,
-// same reason). The actor cell is a row header so the row is announced by who did it.
+// 640px), and a security record must keep its column alignment (RolesMatrix's Sprint 9 precedent).
+// Action and target read as one sentence ("downloaded a csv report"), so they share a column; the
+// actor cell is the row header so the row is announced by who did it. The origin hash is not
+// human-readable, so it is not shown at all.
+function Monogram({ name }: { name: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      className="inline-flex h-7 w-7 flex-none items-center justify-center rounded-full bg-(--surface-active) bg-caption font-semibold text-(--accent-soft-text)"
+    >
+      {(name.trim()[0] ?? '?').toUpperCase()}
+    </span>
+  );
+}
+
 export function AuditTable({ events, isLoading }: AuditTableProps) {
   return (
     <div className="bg-table-wrap">
@@ -24,22 +33,18 @@ export function AuditTable({ events, isLoading }: AuditTableProps) {
         <thead>
           <tr>
             <th scope="col">Actor</th>
-            <th scope="col">Action</th>
-            <th scope="col" className={SECONDARY}>
-              Target
+            <th scope="col">Event</th>
+            <th scope="col" className="text-right">
+              When
             </th>
-            <th scope="col" className={SECONDARY}>
-              Origin
-            </th>
-            <th scope="col">Timestamp</th>
           </tr>
         </thead>
         <tbody>
           {isLoading
             ? Array.from({ length: SKELETON_ROWS }).map((_, i) => (
                 <tr key={i} aria-hidden="true">
-                  {[true, true, false, false, true].map((always, col) => (
-                    <td key={col} className={always ? undefined : SECONDARY}>
+                  {[0, 1, 2].map((col) => (
+                    <td key={col}>
                       <span className="bg-skeleton bg-skeleton-text" />
                     </td>
                   ))}
@@ -49,25 +54,22 @@ export function AuditTable({ events, isLoading }: AuditTableProps) {
                 <tr key={event.id}>
                   <th
                     scope="row"
-                    className="font-medium text-left normal-case text-(--text-secondary)"
+                    className="w-1/4 text-left normal-case"
                     style={{
                       backgroundColor: 'transparent',
                       borderBottom: i === events.length - 1 ? 0 : '1px solid var(--border-subtle)',
                     }}
                   >
-                    {event.actorName}
+                    <span className="flex items-center gap-2.5 font-medium text-(--text-primary)">
+                      <Monogram name={event.actorName} />
+                      <span className="truncate">{event.actorName}</span>
+                    </span>
                   </th>
-                  <td>{describeEventAction(event.action, event.metadata)}</td>
-                  <td className={SECONDARY}>{displayTargetLabel(event.targetLabel)}</td>
-                  {/* "Origin", not "IP" — this is a one-way hash (design.md's own "ipHash only,
-                      never a raw address" rule), too long to read as a real IP and not one. Only
-                      truncate genuinely long hash-length values — a real, short IP (however
-                      unlikely to appear given the hashing contract) stays fully visible, same as
-                      before. */}
-                  <td className={SECONDARY} title={event.ip && event.ip.length > 20 ? event.ip : undefined}>
-                    {event.ip ? (event.ip.length > 20 ? `${event.ip.slice(0, 10)}…` : event.ip) : '—'}
+                  <td className="text-(--text-secondary)">
+                    {describeEventAction(event.action, event.metadata)}{' '}
+                    {event.targetLabel && <strong className="font-semibold text-(--text-primary)">{displayTargetLabel(event.targetLabel)}</strong>}
                   </td>
-                  <td>{formatResponseDate(event.createdAt)}</td>
+                  <td className="whitespace-nowrap text-right tabular-nums text-(--text-muted)">{formatResponseDate(event.createdAt)}</td>
                 </tr>
               ))}
         </tbody>

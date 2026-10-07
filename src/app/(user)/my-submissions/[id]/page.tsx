@@ -24,7 +24,6 @@ export default function MySubmissionPage() {
       <PageHeader
         breadcrumb={[{ label: 'My Submissions', href: '/my-submissions' }, { label: query.data?.formName ?? 'Submission' }]}
         title={query.data?.formName ?? 'Submission'}
-        description="Your answers, as you submitted them."
       />
       {query.isLoading ? (
         <Skeleton variant="text" width="100%" height={160} />

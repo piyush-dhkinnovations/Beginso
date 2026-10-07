@@ -457,7 +457,8 @@ export function UiGalleryContent() {
 
         {/* ── App shell ───────────────────────────────────────────────────── */}
         <Section id="app-shell" title="App shell">
-          <div style={{ height: 300, overflow: "hidden", border: "1px solid var(--border-default)", borderRadius: "var(--bg-radius-lg)" }}>
+          {/* `transform` makes this box the containing block for AppShell's position:fixed sidebar, so the demo stays inside it instead of overlaying the whole page. */}
+          <div style={{ height: 300, overflow: "hidden", transform: "translateZ(0)", border: "1px solid var(--border-default)", borderRadius: "var(--bg-radius-lg)" }}>
             <AppShell
               topBar={(toggle) => (
                 <TopBar brand="Beginso" onMenuClick={toggle} actions={<ContextSwitcher currentLabel="Acme Inc" workspaces={[{ id: "1", name: "Acme Inc", slug: "acme" }]} />} />

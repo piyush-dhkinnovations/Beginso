@@ -1,5 +1,6 @@
 'use client';
 
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -77,7 +78,7 @@ export function FormAccessPanel({ formId, formTitle, isOpen, onClose }: FormAcce
       emailInputRef.current?.focus();
       toast('Access granted', 'success');
     },
-    onError: () => toast('Failed to grant access. Please try again.', 'error'),
+    onError: (error) => toast(getFriendlyErrorMessage(error, { action: 'change access to this form', fallback: 'Access was not granted. Please try again.' }), 'error'),
   });
 
   const revokeMutation = useMutation({
@@ -86,7 +87,7 @@ export function FormAccessPanel({ formId, formTitle, isOpen, onClose }: FormAcce
       queryClient.invalidateQueries({ queryKey: formAccessKeys.grants(formId) });
       toast('Access revoked', 'success');
     },
-    onError: () => toast('Failed to revoke access. Please try again.', 'error'),
+    onError: (error) => toast(getFriendlyErrorMessage(error, { action: 'change access to this form', fallback: 'Access was not revoked. Please try again.' }), 'error'),
   });
 
   const columns: TableColumn<FormAccessGrant>[] = [

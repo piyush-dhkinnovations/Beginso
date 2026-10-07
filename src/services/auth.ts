@@ -90,6 +90,12 @@ export const authService = {
     return data;
   },
 
+  /** Initial session check: resolves `{ user: null }` (HTTP 200) when signed out instead of a 401. */
+  async probeSession() {
+    const { data } = await axiosInstance.get('/api/auth/me', { headers: { 'x-auth-probe': '1' } });
+    return data;
+  },
+
   // Confirmed live 17 Aug 2026 per a direct backend report (commit a7a5185) — idempotent, also
   // triggers a "welcome" notification server-side. Called after the onboarding page's
   // workspace-name save succeeds; note PATCH /api/workspaces/current also sets this flag as a

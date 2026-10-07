@@ -131,9 +131,11 @@ export function LoginForm() {
 
   return (
     // eslint-disable-next-line react-hooks/refs
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full">
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4 w-full">
       <Input
         id="email"
+        type="email"
+        autoComplete="email"
         label="Email Address"
         placeholder="you@company.com"
         error={errors.email?.message}
@@ -143,6 +145,7 @@ export function LoginForm() {
 
       <Input
         id="password"
+        autoComplete="current-password"
         label="Password"
         type={showPassword ? 'text' : 'password'}
         placeholder="Password"
@@ -171,13 +174,11 @@ export function LoginForm() {
         Log In
       </Button>
 
-      <div className="relative my-2 flex items-center justify-center">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-(--border-default)"></div>
-        </div>
-        <span className="relative bg-(--surface-card) px-3 bg-body-sm text-(--text-muted) font-medium uppercase">
-          Or continue with
-        </span>
+      {/* Two rules either side of the label: no label background to clash with the card surface. */}
+      <div className="my-2 flex items-center gap-3" role="separator" aria-label="Or continue with">
+        <span className="h-px flex-1 bg-(--border-default)" />
+        <span className="bg-caption font-medium uppercase tracking-wider text-(--text-muted)">Or continue with</span>
+        <span className="h-px flex-1 bg-(--border-default)" />
       </div>
 
       <GoogleSignInButton

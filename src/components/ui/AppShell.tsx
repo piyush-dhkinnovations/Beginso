@@ -8,6 +8,8 @@ import { Wordmark } from "@/components/landing/Wordmark";
 
 export interface AppShellProps {
   initialCollapsed?: boolean;
+  /** Show the icon rail regardless of the user's saved preference (e.g. the form builder). Not persisted. */
+  forceCollapsed?: boolean;
   sidebar: (collapsed: boolean) => React.ReactNode;
   topBar: (toggleCollapsed: () => void, toggleMobile?: () => void) => React.ReactNode;
   children: React.ReactNode;
@@ -28,6 +30,7 @@ export interface AppShellProps {
 // Supports mobile off-canvas drawer with focus trap and backdrop (task 3.3).
 export function AppShell({
   initialCollapsed = false,
+  forceCollapsed = false,
   sidebar,
   topBar,
   children,
@@ -36,7 +39,11 @@ export function AppShell({
   mobileOpen: controlledMobileOpen,
   onMobileClose,
 }: AppShellProps) {
-  const [collapsed, setCollapsed] = useState(initialCollapsed);
+  const [preferCollapsed, setCollapsed] = useState(initialCollapsed);
+  // Where the rail is forced (the builder) the menu button still has to work: it opens the full sidebar for
+  // as long as the user wants it, without touching the saved preference.
+  const [forceExpanded, setForceExpanded] = useState(false);
+  const collapsed = forceCollapsed ? !forceExpanded : preferCollapsed;
   const [internalMobileOpen, setInternalMobileOpen] = useState(false);
   const mobileOpen = controlledMobileOpen ?? internalMobileOpen;
   const handleMobileClose = onMobileClose ?? (() => setInternalMobileOpen(false));
@@ -48,10 +55,10 @@ export function AppShell({
   // from the render-prop calls below (topBar/sidebar run during render) — the compiler's
   // immutability check otherwise flags document.cookie as a render-time side effect.
   useEffect(() => {
-    document.cookie = `sidebar_collapsed=${collapsed}; path=/; max-age=31536000; SameSite=Lax`;
-  }, [collapsed]);
+    document.cookie = `sidebar_collapsed=${preferCollapsed}; path=/; max-age=31536000; SameSite=Lax`;
+  }, [preferCollapsed]);
 
-  const toggleCollapsed = () => setCollapsed((prev) => !prev);
+  const toggleCollapsed = () => (forceCollapsed ? setForceExpanded((prev) => !prev) : setCollapsed((prev) => !prev));
   const toggleMobile = () => {
     if (controlledMobileOpen === undefined) {
       setInternalMobileOpen((prev) => !prev);

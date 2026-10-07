@@ -25,7 +25,7 @@ export const formatSharedDate = (iso: string) =>
 // id) when it didn't.
 export function SharedFormCard({ item }: SharedFormCardProps) {
   return (
-    <Link href={`/forms/${item.id}/responses`} className="block h-full no-underline">
+    <Link href={`/forms/${item.id}/inbox`} className="block h-full no-underline">
       <Card padded={false} className="h-full overflow-hidden transition-colors hover:border-(--border-strong)">
         <div className="flex items-start justify-between gap-3 px-4 pt-4">
           <FormTile title={item.title} />

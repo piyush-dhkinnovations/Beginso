@@ -14,10 +14,11 @@ describe('ContextSwitcher component', () => {
     expect(screen.getByRole('button', { name: /Personal/ })).toBeInTheDocument();
   });
 
-  it('shows the current label and workspace count when given one', () => {
-    render(<ContextSwitcher currentLabel="Acme Inc" workspaces={[{ id: '1', name: 'Acme Inc', slug: 'acme' }]} />);
+  it('shows the current label and its meta line (role and member count) instead of a bare count badge', () => {
+    render(<ContextSwitcher currentLabel="Acme Inc" currentMeta="Owner · 3 members" workspaces={[{ id: '1', name: 'Acme Inc', slug: 'acme' }]} />);
     expect(screen.getByText('Acme Inc')).toBeInTheDocument();
-    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.getByText('Owner · 3 members')).toBeInTheDocument();
+    expect(screen.queryByText('1')).not.toBeInTheDocument();
   });
 });
 

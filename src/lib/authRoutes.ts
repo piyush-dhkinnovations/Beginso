@@ -1,4 +1,4 @@
-export const PROTECTED_PATHS = ['/dashboard', '/forms', '/templates', '/responses', '/analytics', '/reports', '/settings', '/onboarding', '/w', '/shared', '/workspaces', '/my-submissions', '/trash', '/notifications', '/search'];
+export const PROTECTED_PATHS = ['/dashboard', '/forms', '/templates', '/inbox', '/insights', '/exports', '/responses', '/analytics', '/reports', '/settings', '/onboarding', '/w', '/shared', '/workspaces', '/my-submissions', '/trash', '/notifications', '/search'];
 export const AUTH_PATHS = ['/login', '/signup', '/verify-email', '/verification-code', '/forgot-password', '/reset-password'];
 
 export function matchesRoute(pathname: string, routes: readonly string[]): boolean {

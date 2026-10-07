@@ -1,3 +1,4 @@
+import { publicFormSlug } from '@/lib/publicFormUrl';
 import { create } from 'zustand';
 import type {
   Form,
@@ -157,7 +158,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
         // The GET /api/forms/:id endpoint may not return `slug` even when the form is published
         // (only POST /publish does). Preserve whatever slug the store already has for this same
         // form so the Share tab stays functional after navigating away and back.
-        slug: form.slug ?? (form.status === 'published' && state.formId === form._id ? state.slug : undefined),
+        slug: publicFormSlug(form) ?? (form.status === 'published' && state.formId === form._id ? state.slug : undefined),
         activeFieldId: null,
         dirty: false,
         undoStack: [],

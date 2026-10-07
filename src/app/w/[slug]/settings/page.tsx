@@ -26,7 +26,7 @@ export default function WorkspaceSettingsPage() {
   return (
     <SettingsView
       title="Workspace settings"
-      description="Manage this workspace's name, branding, tags, stages, and scoring, and choose which response emails you get."
+      description="Workspace details and response handling for people who manage it, plus your own response email setting."
       tabs={tabs}
       scope={slug}
       labels={{ workspace: 'General' }}

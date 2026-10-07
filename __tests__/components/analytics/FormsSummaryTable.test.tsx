@@ -76,11 +76,11 @@ describe('FormsSummaryTable', () => {
     const data = mockFormsSummary({ forms: [{ _id: 'form-9', title: 'Solo Form', status: 'published', totalResponses: 3, completionRate: 50 }] });
     render(<FormsSummaryTable data={data} isLoading={false} page={1} onPageChange={vi.fn()} />);
 
-    expect(screen.getByRole('link', { name: 'Solo Form' })).toHaveAttribute('href', '/forms/form-9/analytics');
+    expect(screen.getByRole('link', { name: 'Solo Form' })).toHaveAttribute('href', '/forms/form-9/insights');
 
     fireEvent.click(screen.getByRole('button', { name: 'More Options' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /View analytics/ }));
-    expect(mockPush).toHaveBeenCalledWith('/forms/form-9/analytics');
+    expect(mockPush).toHaveBeenCalledWith('/forms/form-9/insights');
   });
 
   it('filters the rows by the search box', () => {

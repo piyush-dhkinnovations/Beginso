@@ -8,16 +8,24 @@ import { Button } from '@/components/ui/Button';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { Input } from '@/components/ui/Input';
 import { authService } from '@/services/auth';
+import { loginSchema } from '@/lib/schemas/loginSchema';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldError, setFieldError] = useState<string | undefined>();
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    const parsed = loginSchema.shape.email.safeParse(email.trim());
+    if (!parsed.success) {
+      setFieldError(parsed.error.issues[0]?.message ?? 'Please enter a valid email address');
+      return;
+    }
+    setFieldError(undefined);
     setIsSubmitting(true);
     try {
       await authService.requestPasswordReset(email.trim());
@@ -55,14 +63,15 @@ export default function ForgotPasswordPage() {
       </div>
 
       {!sent && (
-        <form onSubmit={submit} className="flex w-full flex-col gap-4 text-left">
+        <form onSubmit={submit} noValidate className="flex w-full flex-col gap-4 text-left">
           <Input
             id="reset-email"
             type="email"
             label="Email address"
             placeholder="you@company.com"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => { setEmail(event.target.value); setFieldError(undefined); }}
+            error={fieldError}
             autoComplete="email"
             required
             disabled={isSubmitting}

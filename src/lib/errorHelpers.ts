@@ -1,13 +1,47 @@
+/** An error whose message was written for the user and is shown verbatim by getFriendlyErrorMessage. */
+export class UserFacingError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'UserFacingError';
+  }
+}
+
+export interface FriendlyErrorOptions {
+  /** What the user was doing, as a verb phrase: "delete this form". Makes 403/404 messages specific. */
+  action?: string;
+  /** Used instead of the generic sentence when nothing more specific is known. */
+  fallback?: string;
+}
+
 /**
- * Translates Firebase and network errors into user-friendly messages.
+ * HTTP-status -> sentence, the single place the toast layer gets 401/403/404/409/422/5xx wording
+ * from. 403 names what the user lacks ("You don't have permission to delete this form").
  */
-export function getFriendlyErrorMessage(error: unknown): string {
-  if (!error) return 'An unexpected error occurred. Please try again.';
+export function messageForStatus(status: number | undefined, { action, fallback }: FriendlyErrorOptions = {}): string | undefined {
+  if (!status) return undefined;
+  if (status === 401) return 'Your session has expired. Please sign in again.';
+  if (status === 403)
+    return action
+      ? `You don't have permission to ${action}. Ask a workspace owner or admin for access.`
+      : "You don't have permission to do that. Ask a workspace owner or admin for access.";
+  if (status === 404) return action ? `Couldn't ${action}: it no longer exists or was moved.` : 'That item no longer exists or was moved.';
+  if (status === 409) return 'This conflicts with a recent change (someone else may have just updated it). Refresh and try again.';
+  if (status === 400 || status === 422) return fallback ?? 'Some of the details are not valid. Check them and try again.';
+  if (status >= 500) return 'Something went wrong on our side. Please try again in a moment.';
+  return undefined;
+}
+
+/**
+ * Translates Firebase, backend and network errors into user-friendly messages.
+ */
+export function getFriendlyErrorMessage(error: unknown, options: FriendlyErrorOptions = {}): string {
+  if (!error) return options.fallback ?? 'An unexpected error occurred. Please try again.';
+  if (error instanceof UserFacingError) return error.message;
 
   const err = error as {
     message?: string;
     code?: string;
-    response?: { status?: number; data?: { error?: { message?: string; code?: string } } };
+    response?: { status?: number; data?: { message?: string; error?: { message?: string; code?: string } } };
   };
 
   // Backend error codes with a fixed, user-facing sentence (API_CONTRACT.md "Error codes"). Checked
@@ -18,6 +52,7 @@ export function getFriendlyErrorMessage(error: unknown): string {
     ADMIN_REQUIRES_OWNER: 'Only the workspace owner can change or remove an admin.',
     LAST_OWNER: 'You are the only owner. Transfer ownership to another member before leaving.',
     PAYLOAD_TOO_LARGE: 'That submission is too large. Please shorten your answers or remove large attachments.',
+    ALREADY_MEMBER: 'That person is already a member of this workspace.',
     INVITATION_ALREADY_PENDING: 'An invitation for this email is already pending. Try again in a moment.',
     REPORT_QUEUE_FULL: 'Several reports are already being prepared. Wait for one to finish, then try again.',
     OWNS_SHARED_WORKSPACES: 'You still own a workspace that other people belong to. Transfer ownership or remove them first.',
@@ -45,6 +80,16 @@ export function getFriendlyErrorMessage(error: unknown): string {
     }
     return apiMessage;
   }
+
+  // The backend sometimes sends only a top-level `message`. Safe to show for 4xx (written for users);
+  // 5xx text is never shown - it can be an internal error string.
+  const status = err.response?.status;
+  const topMessage = err.response?.data?.message;
+  if (status && status >= 400 && status < 500 && status !== 401 && status !== 403 && typeof topMessage === 'string' && topMessage.length < 200 && !/^[A-Z_]+$/.test(topMessage)) {
+    return topMessage;
+  }
+  const byStatus = messageForStatus(status, options);
+  if (byStatus) return byStatus;
 
   const message = err.message || '';
 
@@ -86,5 +131,5 @@ export function getFriendlyErrorMessage(error: unknown): string {
     return cleanMatch[1].replace('auth/', '').replace(/-/g, ' ');
   }
 
-  return message || 'An unexpected error occurred. Please try again.';
+  return options.fallback ?? (message || 'An unexpected error occurred. Please try again.');
 }

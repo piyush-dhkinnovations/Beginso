@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import { ArrowRight, BarChart3, Lightbulb } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
-import { Illustration } from '@/components/illustrations/Illustration';
 
 // Tips that describe how Reports actually behaves today (background generation, polling, expiry,
 // the CSV/PDF split) — deliberately no invented limits.
@@ -12,19 +11,16 @@ const TIPS = [
   'Generated files expire, so download the ones you need soon.',
 ];
 
-// Right-hand column of the Reports page: a nudge to Analytics and a short list of tips.
-export function ReportsSidebar() {
+// Right-hand column of the Exports page: a nudge to Insights and a short list of tips.
+export function ReportsSidebar({ scope = 'personal' }: { scope?: string }) {
   return (
     <div className="flex flex-col gap-4">
       <Card className="gap-3">
         <span aria-hidden="true" className="bg-stat-icon mb-0 h-7! w-7!"><BarChart3 /></span>
         <h2 className="bg-h5 font-bold text-(--text-primary)">Need more insights?</h2>
-        <p className="bg-body-sm text-(--text-muted)">Use analytics to understand your responses better with detailed charts and metrics.</p>
-        <div className="flex justify-center py-1">
-          <Illustration name="empty-reports" size="sm" />
-        </div>
-        <Link href="/analytics" className="bg-btn bg-btn-secondary w-full">
-          Go to Analytics
+        <p className="bg-body-sm text-(--text-muted)">Use Insights to understand your responses better with detailed charts and metrics.</p>
+        <Link href={scope === 'personal' ? '/insights' : `/w/${scope}/insights`} className="bg-btn bg-btn-secondary w-full">
+          Go to Insights
           <ArrowRight size={16} className="ml-2" aria-hidden="true" />
         </Link>
       </Card>

@@ -8,6 +8,7 @@ import { ArrowDown, ArrowUp } from 'lucide-react';
 import { criteriaSchema, type CriteriaFormValues } from '@/lib/schemas/criteria';
 import { scoresService } from '@/services/scores';
 import { scoreKeys } from '@/lib/queryKeys';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useToast } from '@/components/ui/Toast';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -57,22 +58,22 @@ export function CriteriaManager({ scope, onDirtyChange }: CriteriaManagerProps) 
 
   const createMutation = useMutation({
     mutationFn: (values: CriteriaFormValues) => scoresService.createCriterion(scope as string, values),
-    onSuccess: () => {
+    onSuccess: (_d, values) => {
       createForm.reset({ label: '' });
       invalidate();
-      toast('Criterion added.', 'success');
+      toast(`Criterion "${values.label}" added.`, 'success');
     },
-    onError: () => toast('Failed to add criterion. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'add criterion', fallback: 'Failed to add criterion. Please try again.' }), 'error'),
   });
 
   const renameMutation = useMutation({
     mutationFn: ({ id, label }: { id: string; label: string }) => scoresService.updateCriterion(scope as string, id, { label }),
-    onSuccess: () => {
+    onSuccess: (_d, { label }) => {
       setEditingId(null);
       invalidate();
-      toast('Criterion renamed.', 'success');
+      toast(`Criterion renamed to "${label}".`, 'success');
     },
-    onError: () => toast('Failed to rename criterion. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'rename criterion', fallback: 'Failed to rename criterion. Please try again.' }), 'error'),
   });
 
   const deleteMutation = useMutation({
@@ -81,13 +82,13 @@ export function CriteriaManager({ scope, onDirtyChange }: CriteriaManagerProps) 
       invalidate();
       toast('Criterion deleted.', 'success');
     },
-    onError: () => toast('Failed to delete criterion. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'delete criterion', fallback: 'Failed to delete criterion. Please try again.' }), 'error'),
   });
 
   const reorderMutation = useMutation({
     mutationFn: (orderedIds: string[]) => scoresService.reorderCriteria(scope as string, orderedIds),
     onSuccess: invalidate,
-    onError: () => toast('Failed to reorder criteria. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'reorder criteria', fallback: 'Failed to reorder criteria. Please try again.' }), 'error'),
   });
 
   function move(index: number, direction: -1 | 1) {

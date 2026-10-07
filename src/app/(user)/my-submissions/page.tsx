@@ -50,7 +50,7 @@ export default function MySubmissionsPage() {
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
-      <PageHeader eyebrow="Personal space" title="My Submissions" description="Track forms you filled out for other people." />
+      <PageHeader eyebrow="Personal space" title="My Submissions" />
       {query.isError ? (
         <Alert variant="error" title="We could not load your submissions.">
           <Button size="small" variant="secondary" onClick={() => void query.refetch()}>

@@ -7,7 +7,7 @@ export default function SignupPage() {
   return (
     <AuthCard className="w-full flex flex-col gap-6">
       <div className="flex flex-col gap-1.5 text-center">
-        <h2 className="bg-h5 text-(--text-primary)">Create an Account</h2>
+        <h1 className="bg-h5 text-(--text-primary)">Create an Account</h1>
         <p className="bg-body-sm text-(--text-muted)">
           Sign up to start setting up Beginso workflows
         </p>

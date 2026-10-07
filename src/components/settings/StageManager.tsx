@@ -8,6 +8,7 @@ import { ArrowDown, ArrowUp } from 'lucide-react';
 import { stageSchema, type StageFormValues } from '@/lib/schemas/stage';
 import { stagesService } from '@/services/stages';
 import { stageKeys } from '@/lib/queryKeys';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useToast } from '@/components/ui/Toast';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -63,40 +64,41 @@ export function StageManager({ scope, onDirtyChange }: StageManagerProps) {
 
   const createMutation = useMutation({
     mutationFn: (values: StageFormValues) => stagesService.create(scope as string, values),
-    onSuccess: () => {
+    onSuccess: (_d, values) => {
       createForm.reset({ name: '', colour: 'neutral', category: 'new' });
       invalidate();
-      toast('Stage created.', 'success');
+      toast(`Stage "${values.name}" created.`, 'success');
     },
-    onError: () => toast('Failed to create stage. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'create stage', fallback: 'Failed to create stage. Please try again.' }), 'error'),
   });
 
   const renameMutation = useMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) => stagesService.update(scope as string, id, { name }),
-    onSuccess: () => {
+    onSuccess: (_d, { name }) => {
       setEditingId(null);
       invalidate();
-      toast('Stage renamed.', 'success');
+      toast(`Stage renamed to "${name}".`, 'success');
     },
-    onError: () => toast('Failed to rename stage. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'rename stage', fallback: 'Failed to rename stage. Please try again.' }), 'error'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: ({ id, reassignTo: to }: { id: string; reassignTo?: string }) =>
       stagesService.remove(scope as string, id, to),
     onSuccess: () => {
+      const name = deleteTarget?.name;
       setDeleteTarget(null);
       setReassignTo('');
       invalidate();
-      toast('Stage deleted.', 'success');
+      toast(name ? `Stage "${name}" deleted.` : 'Stage deleted.', 'success');
     },
-    onError: () => toast('Failed to delete stage. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'delete stage', fallback: 'Failed to delete stage. Please try again.' }), 'error'),
   });
 
   const reorderMutation = useMutation({
     mutationFn: (orderedIds: string[]) => stagesService.reorder(scope as string, orderedIds),
     onSuccess: invalidate,
-    onError: () => toast('Failed to reorder stages. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'reorder stages', fallback: 'Failed to reorder stages. Please try again.' }), 'error'),
   });
 
   function move(index: number, direction: -1 | 1) {

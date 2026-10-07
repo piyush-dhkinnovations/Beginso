@@ -115,7 +115,8 @@ describe('TeamPage (/w/[slug]/team)', () => {
     mockListMembers.mockResolvedValue([ADMIN]);
     renderPage();
     expect(await screen.findByText('Team & Members')).toBeInTheDocument();
-    expect(screen.getByText('Manage who has access to this workspace.')).toBeInTheDocument();
+    // The subtitle states facts (counts), not a tagline.
+    expect(screen.getByText('1 member · 0 pending invitations')).toBeInTheDocument();
   });
 
   it('shows an error alert with retry when the members query fails', async () => {

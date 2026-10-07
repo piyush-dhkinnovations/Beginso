@@ -1,9 +1,10 @@
 'use client';
 
+import { buildPublicFormUrl } from '@/lib/publicFormUrl';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { CheckCircle2, Copy, ExternalLink, Lock, Share2 } from 'lucide-react';
+import { Copy, ExternalLink, Lock, Share2 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
@@ -170,7 +171,7 @@ function Preflight({ onClose, formId, slug, settings, scope, canPublish, onStatu
         : myPref.isError
           ? 'Unavailable'
           : '…';
-  const publicUrl = slug ? `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/f/${slug}` : null;
+  const publicUrl = buildPublicFormUrl(slug) || null;
 
   const blocking = readiness.data?.blocking ?? [];
   const warnings = readiness.data?.warnings ?? [];
@@ -268,7 +269,7 @@ function Preflight({ onClose, formId, slug, settings, scope, canPublish, onStatu
 function LiveState({ onClose, formId, slug, canPublish, onStatusChange }: PublishFlowProps) {
   const { toast } = useToast();
   const [confirmingNewLink, setConfirmingNewLink] = useState(false);
-  const publicUrl = slug ? `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/f/${slug}` : '';
+  const publicUrl = buildPublicFormUrl(slug) || '';
 
   const copy = async () => {
     try {
@@ -313,11 +314,9 @@ function LiveState({ onClose, formId, slug, canPublish, onStatusChange }: Publis
 
   return (
     <div className="flex flex-col gap-4">
-      <Alert variant="success">
-        <span className="inline-flex items-center gap-1.5">
-          <CheckCircle2 size={16} aria-hidden="true" />
-          Anyone with the link can now submit. The link stays the same every time you re-publish.
-        </span>
+      {/* The Alert draws its own status icon; a second one inside the text doubled it. */}
+      <Alert variant="success" title="Anyone with the link can now submit">
+        The link stays the same every time you re-publish.
       </Alert>
 
       <div className="flex items-end gap-2">
@@ -331,23 +330,20 @@ function LiveState({ onClose, formId, slug, canPublish, onStatusChange }: Publis
       </div>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Link href={`/forms/${formId}/edit?tab=share`} onClick={onClose}>
-          <Button type="button" variant="secondary" className="w-full min-h-11">
-            <Share2 size={16} className="mr-1.5" aria-hidden="true" />
-            Share &amp; embed
-          </Button>
+        {/* Real links styled as buttons - a <button> inside an <a> is invalid and double-focusable. */}
+        <Link href={`/forms/${formId}/edit?tab=share`} onClick={onClose} className="bg-btn bg-btn-secondary min-h-11 w-full">
+          <Share2 size={16} className="mr-1.5" aria-hidden="true" />
+          Share &amp; embed
         </Link>
-        <a href={publicUrl} target="_blank" rel="noopener noreferrer">
-          <Button type="button" variant="secondary" className="w-full min-h-11">
-            <ExternalLink size={16} className="mr-1.5" aria-hidden="true" />
-            View live form
-          </Button>
+        <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="bg-btn bg-btn-secondary min-h-11 w-full">
+          <ExternalLink size={16} className="mr-1.5" aria-hidden="true" />
+          View live form
         </a>
       </div>
 
       {canPublish && (
-        <div className="rounded-lg border border-(--border-default) p-3">
-          {confirmingNewLink ? (
+        confirmingNewLink ? (
+          <div className="rounded-lg border border-(--border-default) p-3">
             <div className="flex flex-col gap-3">
               <p className="bg-body-sm text-(--text-secondary)">
                 <strong>Generate a new link?</strong> Anything already shared with the old link — messages, QR codes, embeds — will stop working.
@@ -361,16 +357,19 @@ function LiveState({ onClose, formId, slug, canPublish, onStatusChange }: Publis
                 </Button>
               </div>
             </div>
-          ) : (
+          </div>
+        ) : (
+          <p className="bg-body-sm text-(--text-muted)">
+            Link leaked or shared by mistake?{' '}
             <button
               type="button"
               onClick={() => setConfirmingNewLink(true)}
-              className="min-h-11 bg-body-sm text-(--text-muted) hover:text-(--text-secondary) underline underline-offset-2"
+              className="min-h-11 font-medium text-(--text-secondary) underline underline-offset-2 hover:text-(--text-primary)"
             >
-              Generate new link…
+              Generate a new link
             </button>
-          )}
-        </div>
+          </p>
+        )
       )}
 
       <div className="flex items-center justify-end gap-3 pt-4 border-t border-(--border-subtle)">

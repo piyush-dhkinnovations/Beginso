@@ -58,7 +58,7 @@ export function FilterPopover({ summary, children }: FilterPopoverProps) {
         <div
           role="dialog"
           aria-label="Analytics filters"
-          className="absolute right-0 top-full z-30 mt-2 flex w-[min(92vw,420px)] flex-col gap-4 rounded-lg border border-(--border-default) bg-(--surface-card) p-4 shadow-(--shadow-lg)"
+          className="absolute left-0 top-full z-30 mt-2 flex max-h-[70dvh] w-[min(92vw,420px)] flex-col overflow-y-auto sm:left-auto sm:right-0 gap-4 rounded-lg border border-(--border-default) bg-(--surface-card) p-4 shadow-(--shadow-lg)"
         >
           {children}
         </div>

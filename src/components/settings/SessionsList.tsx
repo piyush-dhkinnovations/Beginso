@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { settingsService } from '@/services/settings';
 import { settingsKeys } from '@/lib/queryKeys';
 import type { SessionSummary } from '@/types/settings';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -33,7 +34,7 @@ export function SessionsList() {
       );
       toast('Session revoked.', 'success');
     },
-    onError: () => toast('Failed to revoke session. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'revoke session', fallback: 'Failed to revoke session. Please try again.' }), 'error'),
     onSettled: () => setPendingRevokeId(null),
   });
 

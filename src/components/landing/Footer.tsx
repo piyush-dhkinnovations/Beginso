@@ -54,10 +54,10 @@ export default function Footer() {
           {COLUMNS.map((column) => (
             <div key={column.title}>
               <div className="bg-body-sm font-semibold uppercase tracking-wide text-(--text-on-brand)/50 mb-4">{column.title}</div>
-              <ul className="space-y-3">
+              <ul>
                 {column.links.map((link) => (
                   <li key={link.label}>
-                    <a href={link.href} className="bg-body text-(--text-on-brand)/80 hover:text-(--text-on-brand) transition-colors">
+                    <a href={link.href} className="inline-flex min-h-11 items-center bg-body text-(--text-on-brand)/80 hover:text-(--text-on-brand) transition-colors">
                       {link.label}
                     </a>
                   </li>

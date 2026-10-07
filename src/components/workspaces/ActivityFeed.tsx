@@ -73,18 +73,21 @@ export interface ActivityFeedProps {
   /** Shown instead of the default empty state when a filter, not the workspace, is why the list is empty. */
   emptyTitle?: string;
   emptyDescription?: string;
+  /** e.g. a [Clear filter] button when a filter is why the list is empty. */
+  emptyActions?: React.ReactNode;
 }
 
 // requirements.md §7.6 / design.md §6. Grouped by day, avatar + category icon per row, repeats collapsed,
 // form targets link to the form. `targetLabel` is a snapshot taken at event time (design.md §11.2), so a
 // renamed or deleted form still reads correctly here.
-export function ActivityFeed({ events, emptyTitle, emptyDescription }: ActivityFeedProps) {
+export function ActivityFeed({ events, emptyTitle, emptyDescription, emptyActions }: ActivityFeedProps) {
   if (events.length === 0) {
     return (
       <EmptyState illustration="team"
         icon={<History className="bg-icon" aria-hidden="true" />}
         title={emptyTitle ?? 'Nothing has happened yet.'}
         description={emptyDescription ?? 'Activity across your workspace — forms, members, access — will show up here.'}
+        actions={emptyActions}
       />
     );
   }

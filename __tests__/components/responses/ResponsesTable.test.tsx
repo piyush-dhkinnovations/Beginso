@@ -79,7 +79,7 @@ describe('ResponsesTable', () => {
     );
     expect(screen.getByText('No responses match these filters')).toBeInTheDocument();
     expect(screen.queryByText('No responses yet')).not.toBeInTheDocument();
-    screen.getByText('Clear filters').click();
+    screen.getByText('Clear filter').click();
     expect(onClearFilters).toHaveBeenCalledOnce();
   });
 
@@ -96,10 +96,20 @@ describe('ResponsesTable', () => {
     expect(screen.getByText('Unknown stage')).toBeInTheDocument();
   });
 
-  it('select-all checkbox is not rendered until something is selected (double-click reveals it)', () => {
+  it('hides the select column until a row is selected, then shows select-all', () => {
     const responses = [makeResponse('r1'), makeResponse('r2')];
-    render(<ResponsesTable {...baseProps} responses={responses} isLoading={false} selectedIds={new Set()} />);
+    const { rerender } = render(<ResponsesTable {...baseProps} responses={responses} isLoading={false} selectedIds={new Set()} />);
     expect(screen.queryByLabelText('Select all responses on this page')).not.toBeInTheDocument();
+    rerender(<ResponsesTable {...baseProps} responses={responses} isLoading={false} selectedIds={new Set(['r1'])} />);
+    expect(screen.getByLabelText('Select all responses on this page')).toBeInTheDocument();
+  });
+
+  it('names the active filters and the number of other responses in the no-matches state', () => {
+    render(
+      <ResponsesTable {...baseProps} responses={[]} isLoading={false} selectedIds={new Set()} hasActiveFilters onClearFilters={vi.fn()} filterSummary="stage Completed" otherCount={61} />
+    );
+    expect(screen.getByText('No responses match stage Completed')).toBeInTheDocument();
+    expect(screen.getByText('There are 61 other responses.')).toBeInTheDocument();
   });
 
   it('master checkbox is checked when all rows are selected', () => {

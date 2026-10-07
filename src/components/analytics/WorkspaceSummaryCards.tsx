@@ -3,6 +3,7 @@
 import { BarChart3, FileCheck2, MessageSquare } from 'lucide-react';
 import { StatCard, type StatChart } from '@/components/ui/StatCard';
 import { formatChangeLabel } from '@/lib/analyticsChange';
+import { MIN_TREND_POINTS, NOT_ENOUGH_DATA } from '@/lib/chartSegments';
 import { CompletionRateCard } from './CompletionRateCard';
 
 export interface WorkspaceSummaryChanges {
@@ -60,6 +61,8 @@ export function WorkspaceSummaryCards({
   perFormResponses,
   isLoading,
 }: WorkspaceSummaryCardsProps) {
+  // Minimum-data rule: under ten responses, raw counts only - no bars, rings, progress or deltas.
+  const sparse = !isLoading && totalResponses < MIN_TREND_POINTS;
   const skeleton = <span className="block h-8 w-16 animate-pulse rounded bg-(--border-default)" />;
 
   const cards: Array<{
@@ -104,7 +107,7 @@ export function WorkspaceSummaryCards({
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      {cards.map((card) => {
+      {cards.map((card, ci) => {
         const Icon = card.icon;
         return (
           <StatCard
@@ -114,12 +117,13 @@ export function WorkspaceSummaryCards({
             value={isLoading ? skeleton : card.value}
             unit={isLoading ? undefined : card.unit}
             valueClassName={!isLoading && card.muted ? 'text-(--text-disabled)' : undefined}
-            delta={isLoading ? undefined : card.delta}
-            chart={isLoading ? undefined : card.chart}
+            note={sparse && ci === 0 ? NOT_ENOUGH_DATA : undefined}
+            delta={isLoading || sparse ? undefined : card.delta}
+            chart={isLoading || sparse ? undefined : card.chart}
           />
         );
       })}
-      <CompletionRateCard rate={completionRate} isLoading={isLoading} delta={delta(changes.completion, periodLabel)} subject="a form" />
+      <CompletionRateCard rate={completionRate} isLoading={isLoading} delta={sparse ? undefined : delta(changes.completion, periodLabel)} subject="a form" sparse={sparse} />
     </div>
   );
 }

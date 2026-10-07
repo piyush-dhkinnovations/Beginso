@@ -60,8 +60,8 @@ describe('AuditLogPage (/w/[slug]/audit)', () => {
 
     expect(await screen.findByRole('rowheader', { name: 'Actor 0' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Audit Log' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Actor')).toBeInTheDocument();
-    expect(screen.getByLabelText('Date range')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Actor' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Date' })).toBeInTheDocument();
     expect(mockAudit).toHaveBeenCalledWith('acme', expect.objectContaining({ range: 'all', page: 1, limit: 20 }));
   });
 
@@ -119,10 +119,12 @@ describe('AuditLogPage (/w/[slug]/audit)', () => {
     renderPage();
     await screen.findByRole('rowheader', { name: 'Actor 0' });
 
-    await userEvent.selectOptions(screen.getByLabelText('Date range'), '7d');
+    await userEvent.click(screen.getByRole('button', { name: 'Date' }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Last 7 days' }));
 
-    expect(await screen.findByText('No matching events.')).toBeInTheDocument();
-    expect(screen.getByText('Try a different actor or date range.')).toBeInTheDocument();
+    // The filtered-empty state names the filter and offers to clear it.
+    expect(await screen.findByText('No events in the last 7 days')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Clear filter' })).toBeInTheDocument();
     expect(screen.queryByText('No activity recorded yet.')).not.toBeInTheDocument();
   });
 
@@ -133,18 +135,20 @@ describe('AuditLogPage (/w/[slug]/audit)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Next' }));
     await screen.findByRole('rowheader', { name: 'Actor 20' });
 
-    await userEvent.selectOptions(screen.getByLabelText('Actor'), 'u1');
+    await userEvent.click(screen.getByRole('button', { name: 'Actor' }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Priya Sharma' }));
 
     await waitFor(() =>
       expect(mockAudit).toHaveBeenLastCalledWith('acme', expect.objectContaining({ actorId: 'u1', range: 'all', page: 1 }))
     );
   });
 
-  it('populates the actor dropdown from the team members', async () => {
+  it('populates the Actor menu from the team members', async () => {
     renderPage();
     await screen.findByRole('rowheader', { name: 'Actor 0' });
 
-    expect(await screen.findByRole('option', { name: 'Priya Sharma' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Actor' }));
+    expect(await screen.findByRole('menuitem', { name: 'Priya Sharma' })).toBeInTheDocument();
   });
 
   it('shows an error state with a Retry that refetches', async () => {

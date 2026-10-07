@@ -111,10 +111,19 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
+// The personal shell has no Stage documents: PERSONAL_DEFAULT_STAGES use the category slug as the
+// stage id. The backend rejects a non-ObjectId `stageId` with 400, so a slug is sent as `status`.
+const CATEGORY_SLUGS = new Set(['new', 'in_progress', 'completed']);
+function normalizeStageParam(params: GetResponsesParams): GetResponsesParams {
+  const { stageId, ...rest } = params;
+  if (stageId && CATEGORY_SLUGS.has(stageId)) return { ...rest, status: stageId as GetResponsesParams['status'] };
+  return params;
+}
+
 export const responsesService = {
   getResponses: (params: GetResponsesParams, scope?: string) =>
     axiosInstance
-      .get<ListEnvelope>('/api/responses', { params, headers: workspaceHeaders(scope) })
+      .get<ListEnvelope>('/api/responses', { params: normalizeStageParam(params), headers: workspaceHeaders(scope) })
       .then((r): PaginatedResponsesResult => {
         const { data, total, page, limit, totalPages } = r.data;
         // Same defensive-array guard `sharedService`/`formAccessService` already carry

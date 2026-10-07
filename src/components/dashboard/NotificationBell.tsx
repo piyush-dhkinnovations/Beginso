@@ -86,7 +86,7 @@ export function NotificationBell({ scope = 'personal' }: NotificationBellProps) 
         <div
           role="menu"
           aria-label="Notifications"
-          className="absolute right-0 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-md border border-(--border-default) shadow-(--shadow-lg) bg-(--surface-card) focus:outline-none z-50 animate-fade-in"
+          className="fixed inset-x-4 top-16 sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-80 rounded-md border border-(--border-default) shadow-(--shadow-lg) bg-(--surface-card) focus:outline-none z-50 animate-fade-in"
         >
           <div className="px-4 py-3 border-b border-(--border-default)">
             <p className="bg-body-sm font-semibold text-(--text-primary)">Notifications</p>

@@ -1,5 +1,6 @@
 'use client';
 
+import { keepPreviousInScope } from '@/lib/queryOptions';
 import { useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -24,7 +25,10 @@ import { WorkspaceSummaryCards } from './WorkspaceSummaryCards';
 import { Select } from '@/components/ui/Select';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { TemplateDashboard } from './TemplateDashboard';
-import { CustomChartsSection } from './CustomChartsSection';
+import dynamic from 'next/dynamic';
+
+// Pulls in dnd-kit; only form analytics (not the all-forms view) renders it.
+const CustomChartsSection = dynamic(() => import('./CustomChartsSection').then((m) => m.CustomChartsSection), { ssr: false });
 import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
 import { canEditCharts } from '@/lib/roles';
 import { useAnalyticsTrend } from '@/hooks/useAnalyticsTrend';
@@ -34,6 +38,7 @@ import { analyticsService } from '@/services/analytics';
 import { analyticsKeys } from '@/lib/queryKeys';
 import { ALL_TIME_SENTINEL, resolveEffectiveDateRange, resolveTrendBucket, resolvePreviousDateRange } from '@/lib/dateRange';
 import { computeChangePercent } from '@/lib/analyticsChange';
+import { browserTimezone } from '@/lib/calendarDates';
 
 // ponytail: workspace-wide summary cards sum totalResponses across whatever page this fetches,
 // not a dedicated backend aggregate — accurate as long as the workspace has <= this many forms.
@@ -41,7 +46,7 @@ import { computeChangePercent } from '@/lib/analyticsChange';
 const FORMS_SUMMARY_LIMIT = 100;
 
 interface AnalyticsViewProps {
-  /** Undefined for the workspace-wide view reached from the sidebar's "Analytics" link. */
+  /** Undefined for the workspace-wide view reached from the sidebar's "Insights" link. */
   formId?: string;
   /** Workspace-wide view only: 'personal' (default) or a workspace slug — the Insights page passes its own. */
   scope?: string;
@@ -49,7 +54,7 @@ interface AnalyticsViewProps {
   title?: string;
 }
 
-export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' }: AnalyticsViewProps) {
+export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }: AnalyticsViewProps) {
   const isWorkspaceScope = scope !== 'personal';
   const router = useRouter();
   const formScope = useFormScope(formId ?? '');
@@ -63,7 +68,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
   const defaultBucket = resolveTrendBucket(from, to);
   const [bucketOverride, setBucketOverride] = useState<TrendBucket | null>(null);
   const bucket: TrendBucket = bucketOverride ?? defaultBucket;
-  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const timezone = browserTimezone();
   const range = { from, to };
   // Sprint 14 (requirements 1.3): "Compare to previous period" - drives every delta line. Defaults on
   // (that is what the page already showed); off skips the previous-period queries entirely.
@@ -110,6 +115,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
   const formsSummaryQuery = useQuery({
     queryKey: analyticsKeys.formsSummary(range, page, scope),
     queryFn: () => analyticsService.getFormsSummary({ from, to, page, limit: FORMS_SUMMARY_LIMIT }, scope),
+    placeholderData: keepPreviousInScope(analyticsKeys.formsSummary(range, page, scope)),
     enabled: !formId,
   });
 
@@ -204,7 +210,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
         title={isAccessDenied ? 'Access denied' : isNotFound ? 'Form not found' : 'Unable to load form'}
         description={
           isAccessDenied
-            ? "You don't have permission to view this form's analytics."
+            ? "You don't have permission to view this form's insights."
             : isNotFound
               ? "This form doesn't exist or may have been deleted."
               : 'Something went wrong while loading this form.'
@@ -239,9 +245,9 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
           <div className="w-48">
             <Select
               id="analytics-jump-form"
-              aria-label="Open a form's analytics"
+              aria-label="Open a form's insights"
               value=""
-              onChange={(e) => e.target.value && router.push(`/forms/${e.target.value}/analytics${isWorkspaceScope ? `?ws=${scope}` : ''}`)}
+              onChange={(e) => e.target.value && router.push(`/forms/${e.target.value}/insights${isWorkspaceScope ? `?ws=${scope}` : ''}`)}
             >
               <option value="">All forms</option>
               {currentForms.map((f) => (
@@ -257,7 +263,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
     <div className="flex flex-col gap-4 animate-fade-in">
       <PageHeader
         title={title}
-        description={formId ? `Analytics · ${form?.title ?? ''}` : 'See how every form in your workspace is performing.'}
+        description={formId ? `Insights · ${form?.title ?? ''}` : 'See how every form in your workspace is performing.'}
         actionsAlign="center"
         actions={
           isFirstRun ? undefined : (
@@ -284,7 +290,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Analytics' 
           description={
             formId
               ? 'Responses will appear here once your form starts receiving submissions.'
-              : 'Create a form to start seeing its analytics here.'
+              : 'Create a form to start seeing its insights here.'
           }
           actions={
             formId ? undefined : (

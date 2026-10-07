@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Menu } from '@/components/ui/Menu';
 import { Table, type TableColumn } from '@/components/ui/Table';
+import { Toolbar } from '@/components/ui/Toolbar';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { FormTile } from '@/components/forms/FormTile';
@@ -96,7 +97,7 @@ export default function SharedWithMePage() {
       triggerLabel="More Options"
       align="end"
       items={[
-        { id: 'responses', label: 'View responses', icon: <Table2 className="bg-icon" />, onSelect: () => router.push(`/forms/${item.id}/responses`) },
+        { id: 'responses', label: 'View responses', icon: <Table2 className="bg-icon" />, onSelect: () => router.push(`/forms/${item.id}/inbox`) },
         { id: 'overview', label: 'Overview', icon: <LayoutDashboard className="bg-icon" />, onSelect: () => router.push(`/forms/${item.id}/overview`) },
       ]}
     />
@@ -110,7 +111,7 @@ export default function SharedWithMePage() {
         <div className="flex min-w-0 items-center gap-3">
           <FormTile title={item.title} />
           <div className="flex min-w-0 flex-col">
-            <Link href={`/forms/${item.id}/responses`} className="bg-body-sm truncate font-semibold text-(--text-primary) hover:underline">
+            <Link href={`/forms/${item.id}/inbox`} className="bg-body-sm truncate font-semibold text-(--text-primary) hover:underline">
               {item.title}
             </Link>
             <span className="bg-caption truncate text-(--text-muted)">
@@ -153,7 +154,7 @@ export default function SharedWithMePage() {
       <PageHeader
         eyebrow="Personal space"
         title="Shared with me"
-        description="Forms people shared directly with you."
+        description={all.length > 0 ? `${all.length} form${all.length === 1 ? '' : 's'} · from ${workspaces.length} ${workspaces.length === 1 ? 'workspace' : 'workspaces'}` : undefined}
       />
 
       {isLoading ? (
@@ -193,7 +194,7 @@ export default function SharedWithMePage() {
         />
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-3">
+          <Toolbar>
             <div className="w-full sm:max-w-xs">
               <Input
                 id="shared-search"
@@ -234,27 +235,27 @@ export default function SharedWithMePage() {
                 </Select>
               </div>
             </div>
-          </div>
+          </Toolbar>
 
           {filtered.length === 0 ? (
             <EmptyState
               illustration="no-results"
               icon={<FileText />}
-              title="No matching forms"
-              description="Try a different search term or clear a filter."
+              title="No shared forms match these filters"
+              description={all.length ? `There ${all.length === 1 ? 'is 1 shared form' : `are ${all.length} shared forms`} in total.` : undefined}
               actions={
                 hasFilters ? (
                   <Button
                     variant="secondary"
                     onClick={() => { setSearch(''); setWorkspace('all'); setOwner('all'); setRole('all'); resetPage(); }}
                   >
-                    Clear filters
+                    Clear filter
                   </Button>
                 ) : undefined
               }
             />
           ) : view === 'list' ? (
-            <Table columns={columns} rows={rows} rowKey={(item) => item.id} />
+            <Table columns={columns} rows={rows} rowKey={(item) => item.id} dense onRowClick={(item) => router.push(`/forms/${item.id}/inbox`)} />
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {rows.map((share) => (

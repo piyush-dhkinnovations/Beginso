@@ -9,6 +9,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WorkspaceSidebar } from '@/components/workspaces/WorkspaceSidebar';
 import type { Role } from '@/types/workspace';
 
+vi.mock('@/components/dashboard/UserProfileDropdown', () => ({ UserProfileDropdown: () => null }));
+
 const mockPathname = vi.fn();
 vi.mock('next/navigation', () => ({
   usePathname: () => mockPathname(),
@@ -101,12 +103,12 @@ describe('WorkspaceSidebar', () => {
   describe('Audit Log nav item (role-gated)', () => {
     it.each([undefined, 'viewer', 'member'] as const)('is hidden for role=%s', (role) => {
       renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc', role });
-      expect(screen.queryByRole('link', { name: 'Audit Log' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('link', { name: 'Audit log' })).not.toBeInTheDocument();
     });
 
     it.each(['owner', 'admin'] as const)('is visible for role=%s, scoped under the workspace slug', (role) => {
       renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc', role });
-      expect(screen.getByRole('link', { name: 'Audit Log' })).toHaveAttribute('href', '/w/acme/audit');
+      expect(screen.getByRole('link', { name: 'Audit log' })).toHaveAttribute('href', '/w/acme/audit');
     });
   });
 

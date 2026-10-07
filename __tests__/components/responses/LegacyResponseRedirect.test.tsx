@@ -3,7 +3,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import ResponseDetailPage from '@/app/(user)/responses/[id]/page';
+import ResponseDetailPage from '@/app/(user)/inbox/[id]/page';
 
 const mockPush = vi.fn();
 const mockBack = vi.fn();
@@ -49,7 +49,7 @@ function renderPage() {
   );
 }
 
-describe('/responses/[id] full-page view', () => {
+describe('/inbox/[id] full-page view', () => {
   beforeEach(() => {
     mockPush.mockReset();
     mockBack.mockReset();

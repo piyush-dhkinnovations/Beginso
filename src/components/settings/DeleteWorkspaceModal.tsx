@@ -6,6 +6,8 @@ import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { settingsService } from '@/services/settings';
 import { settingsKeys } from '@/lib/queryKeys';
+import { formsService } from '@/services/forms';
+import { responsesService } from '@/services/responses';
 import { useAuth } from '@/hooks/useAuth';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { Modal } from '@/components/ui/Modal';
@@ -39,6 +41,26 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
     enabled: isOpen,
   });
 
+  // Real counts for the red panel. Either call failing just means we say so, never guess a number.
+  const { data: counts, isError: countsFailed } = useQuery({
+    queryKey: ['delete-account-counts'],
+    queryFn: async () => {
+      const [forms, stats] = await Promise.all([
+        formsService.getForms({ limit: 1, archived: 'true' }, { type: 'personal' }),
+        responsesService.getStats(undefined, 'personal'),
+      ]);
+      return { forms: forms.total, responses: stats.total };
+    },
+    enabled: isOpen,
+    retry: false,
+  });
+  const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? '' : 's'}`;
+  const destroyed = counts
+    ? `${plural(counts.forms, 'form')} and ${plural(counts.responses, 'response')} will be destroyed, along with all uploaded files.`
+    : countsFailed
+      ? "We couldn't count what is in this account right now. Every form, response and file in it will be destroyed."
+      : 'Counting what will be destroyed…';
+
   useEffect(() => {
     if (isOpen) {
       // Resets whenever the modal opens — same accepted exception DeleteFormModal.tsx already
@@ -49,7 +71,6 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
       setTypedName('');
       setPasswordError(null);
       setSubmitError(null);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSharedWorkspaces([]);
     }
   }, [isOpen]);
@@ -108,10 +129,13 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Delete workspace?"
-      description="This permanently deletes your account, workspace, and all forms, responses, and files. You will not be able to sign back in with this account. This cannot be undone."
+      title="Delete account and workspace?"
     >
       <div className="flex flex-col gap-4 pt-2">
+        <div role="alert" className="rounded-md border border-(--error-border) bg-(--error-surface) p-3 text-(--error-text) bg-body-sm">
+          <p className="font-semibold">This cannot be undone.</p>
+          <p className="mt-1">{destroyed} You will not be able to sign back in with this account.</p>
+        </div>
         <Input
           id="delete-workspace-password"
           label="Confirm your password"
@@ -165,7 +189,7 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
             disabled={!canAttemptDelete}
             onClick={() => void handleDelete()}
           >
-            Delete permanently
+            Delete account permanently
           </Button>
         </div>
       </div>

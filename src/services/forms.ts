@@ -13,6 +13,33 @@ import type {
 } from '@/types/form';
 import type { FormDestination, FormsContext } from '@/types/workspace';
 
+// PATCH /api/forms/:id validates branding/settings strictly (zod `.optional()` rejects `null`, an empty
+// string where a hex is required, and out-of-enum values). Workspace default branding copied onto a new
+// form, and older stored forms, carry exactly those - the cause of the 400 right after create. Strip
+// them here so every save path (create follow-up, autosave, publish flush) sends a valid body.
+const HEX_RE = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+const BRANDING_ENUMS: Record<string, readonly string[]> = {
+  buttonStyle: ['solid', 'outline'],
+  buttonRadius: ['4px', '8px', '16px'],
+  coverPosition: ['center', 'top', 'bottom'],
+  spacing: ['compact', 'comfortable', 'spacious'],
+};
+const BRANDING_STRINGS = ['logoUrl', 'coverImageUrl'];
+
+export function sanitizeBranding(raw: Record<string, unknown> | undefined | null): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  if (!raw) return out;
+  if (typeof raw.primaryColor === 'string' && HEX_RE.test(raw.primaryColor.trim())) out.primaryColor = raw.primaryColor.trim();
+  for (const k of BRANDING_STRINGS) if (typeof raw[k] === 'string' && (raw[k] as string).trim()) out[k] = raw[k];
+  for (const [k, allowed] of Object.entries(BRANDING_ENUMS)) if (typeof raw[k] === 'string' && allowed.includes(raw[k] as string)) out[k] = raw[k];
+  if (typeof raw.showProgress === 'boolean') out.showProgress = raw.showProgress;
+  return out;
+}
+
+function dropNulls<T extends object>(obj: T): T {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== null)) as T;
+}
+
 export const formsService = {
   createForm: (payload: CreateFormPayload) =>
     axiosInstance.post<{ _id: string; title: string }>('/api/forms', payload).then(r => r.data),
@@ -83,6 +110,18 @@ export const formsService = {
           : { ...r.data, forms, total: Math.max(0, r.data.total - filteredOut) };
       }),
 
+  // The backend caps `limit` at 50 (silently), so "all forms" for stats/pickers means paging.
+  // ponytail: capped at 10 pages (500 forms); a real aggregate endpoint is documented in api-reference.md.
+  getAllForms: async (context?: FormsContext, params?: { status?: string }) => {
+    const PAGE = 50;
+    const first = await formsService.getForms({ ...params, page: 1, limit: PAGE }, context);
+    const pages = Math.min(Math.ceil(first.total / PAGE), 10);
+    const rest = await Promise.all(
+      Array.from({ length: Math.max(0, pages - 1) }, (_, i) => formsService.getForms({ ...params, page: i + 2, limit: PAGE }, context)),
+    );
+    return { ...first, forms: [first, ...rest].flatMap((r) => r.forms), limit: PAGE };
+  },
+
   getFormById: (id: string) =>
     axiosInstance.get<Form>(`/api/forms/${id}`).then(r => r.data),
 
@@ -114,7 +153,15 @@ export const formsService = {
     })),
 
   updateForm: (id: string, payload: UpdateFormPayload) =>
-    axiosInstance.patch<Form>(`/api/forms/${id}`, payload).then(r => r.data),
+    axiosInstance
+      .patch<Form>(`/api/forms/${id}`, {
+        ...payload,
+        // `pages: []` is rejected (min 1) - a just-created form has none until the builder seeds one.
+        ...(payload.pages && payload.pages.length === 0 ? { pages: undefined } : {}),
+        ...(payload.branding ? { branding: sanitizeBranding(payload.branding as Record<string, unknown>) } : {}),
+        ...(payload.settings ? { settings: dropNulls(payload.settings) } : {}),
+      })
+      .then((r) => r.data),
 
   // Sprint 13 (CF5.5) — BREAKING on the backend: this now moves the form to Trash (200 with `purgeAt`) instead
   // of destroying it. Callers still only care that it worked; the result is the countdown for the toast.
@@ -131,7 +178,7 @@ export const formsService = {
   publishForm: (id: string, body?: PublishBody): Promise<PublishResult> =>
     axiosInstance
       .post<PublishResult & { publishedSlug?: string }>(`/api/forms/${id}/publish`, body ?? {})
-      .then((r) => ({ ...r.data, slug: r.data.slug ?? r.data.publishedSlug ?? '' })),
+      .then((r) => ({ ...r.data, slug: r.data.publishedSlug ?? r.data.slug ?? '' })),
 
   // Sprint 13 (CF2.5): the ONE readiness evaluation, shared with the server's own publish check.
   getReadiness: (id: string): Promise<Readiness> =>
@@ -157,7 +204,7 @@ export const formsService = {
       .post<{ _id: string; slug: string; publishedSlug?: string; previousSlugInvalidated?: boolean }>(
         `/api/forms/${id}/regenerate-link`
       )
-      .then((r) => ({ ...r.data, slug: r.data.slug ?? r.data.publishedSlug ?? '' })),
+      .then((r) => ({ ...r.data, slug: r.data.publishedSlug ?? r.data.slug ?? '' })),
 
   archiveForm: (id: string) =>
     axiosInstance.post<{ _id: string; archivedAt: string }>(`/api/forms/${id}/archive`).then((r) => r.data),

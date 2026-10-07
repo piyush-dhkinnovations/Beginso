@@ -1,9 +1,9 @@
 'use client';
 
+import { buildPublicFormUrl, publicFormSlug, publicOrigin } from '@/lib/publicFormUrl';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { toDataURL } from 'qrcode';
 import { Copy, Download, ExternalLink, FileQuestion, Lock } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { workspacesService } from '@/services/workspaces';
@@ -58,16 +58,19 @@ export function ShareView({ formId, embedded = false, onOpenPublish }: ShareView
   // Personal form: the caller owns it. Workspace form: their membership role, fail-closed while unknown.
   const role = workspaceId === null ? 'owner' : workspace?.role;
 
-  const isLive = form?.status === 'published' && !!form.slug;
-  const publicUrl = isLive ? `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/f/${form.slug}` : '';
+  const liveSlug = form ? publicFormSlug(form) : undefined;
+  const isLive = form?.status === 'published' && !!liveSlug;
+  const publicUrl = isLive ? buildPublicFormUrl(liveSlug) : '';
   // The embed snippet needs an ABSOLUTE origin (it is pasted into another site). Same env as the public link, with the
   // page's own origin as the fallback so a missing env var never emits a relative address.
-  const appOrigin = (process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' ? window.location.origin : '')).replace(/\/$/, '');
+  const appOrigin = publicOrigin();
 
   useEffect(() => {
     if (!publicUrl) return;
     let cancelled = false;
-    toDataURL(publicUrl, { width: 200, margin: 1 })
+    // Loaded on demand: the QR encoder is only needed once the Share tab shows a live link.
+    import('qrcode')
+      .then(({ toDataURL }) => toDataURL(publicUrl, { width: 200, margin: 1 }))
       .then((url) => !cancelled && setQrDataUrl(url))
       .catch(() => !cancelled && setQrDataUrl(null));
     return () => {
@@ -136,7 +139,7 @@ export function ShareView({ formId, embedded = false, onOpenPublish }: ShareView
 
   const breadcrumb: BreadcrumbItem[] =
     workspaceId === null
-      ? [{ label: 'My Forms', href: '/forms' }, { label: form.title, href: `/forms/${formId}/overview` }, { label: 'Share & Embed' }]
+      ? [{ label: 'Forms', href: '/forms' }, { label: form.title, href: `/forms/${formId}/overview` }, { label: 'Share & Embed' }]
       : workspace
         ? [
             { label: workspace.name, href: `/w/${workspace.slug}` },
@@ -230,7 +233,7 @@ export function ShareView({ formId, embedded = false, onOpenPublish }: ShareView
         </Card>
 
         <EmbedStudio
-          ctx={isLive ? { origin: appOrigin, slug: form.slug!, formTitle: form.title } : null}
+          ctx={isLive ? { origin: appOrigin, slug: liveSlug!, formTitle: form.title } : null}
           fields={form.fields}
           pages={form.pages}
           onCopy={(text, message) => void copy(text, message)}

@@ -102,7 +102,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initAuth = async () => {
       dispatch({ type: 'SET_LOADING', payload: true });
       try {
-        const data = await authService.getMe();
+        const data = await authService.probeSession();
+        if (!data?.user) {
+          // Signed out: a normal result. No cleanup calls needed - there is no session to end.
+          dispatch({ type: 'LOGOUT' });
+          if (matchesRoute(window.location.pathname, PROTECTED_PATHS)) router.replace('/login');
+          return;
+        }
         // Clear any legacy Firebase LOCAL persistence after the HttpOnly backend
         // session has been confirmed. Protected pages never need Firebase tokens.
         await signOut(auth).catch(() => { });

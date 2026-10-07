@@ -27,6 +27,14 @@ describe('PendingInvitesTable', () => {
     expect(screen.getByLabelText('Revoke invite to colleague@example.com')).toBeInTheDocument();
   });
 
+  it('shows a heading and an empty state when there are no pending invitations', () => {
+    const onInvite = vi.fn();
+    render(<PendingInvitesTable invitations={[]} canManage onResend={noop} onRevoke={noop} onInvite={onInvite} />);
+    expect(screen.getByRole('heading', { name: /Pending invitations/ })).toBeInTheDocument();
+    expect(screen.getByText('No pending invitations')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Invite members' })).toBeInTheDocument();
+  });
+
   it('hides Resend and Revoke entirely for a non-manager, not just disables them', () => {
     render(<PendingInvitesTable invitations={[INVITE]} canManage={false} onResend={noop} onRevoke={noop} />);
     expect(screen.queryByLabelText(/^Resend invite/)).not.toBeInTheDocument();

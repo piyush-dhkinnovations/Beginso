@@ -22,7 +22,7 @@ export default function BlogSection() {
           </div>
           <Link
             href="/blog"
-            className="inline-flex items-center gap-1.5 bg-body-sm font-semibold text-(--text-link) hover:text-(--accent-soft-text) shrink-0"
+            className="inline-flex min-h-11 items-center gap-1.5 bg-body-sm font-semibold text-(--text-link) hover:text-(--accent-soft-text) shrink-0"
           >
             View all posts
             <ArrowRight size={16} />

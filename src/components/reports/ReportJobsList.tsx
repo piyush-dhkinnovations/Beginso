@@ -1,13 +1,16 @@
 'use client';
 
+import { keepPreviousInScope } from '@/lib/queryOptions';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FileText, LockKeyhole, RefreshCw } from 'lucide-react';
+import { LockKeyhole, RefreshCw } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { PaginationControls } from '@/components/responses/PaginationControls';
+import { ListFooter } from '@/components/ui/ListFooter';
+import { ExportMark } from '@/components/illustrations/ExportMark';
 import { useToast } from '@/components/ui/Toast';
 import { ReportJobRow } from './ReportJobRow';
 import { reportsService } from '@/services/reports';
@@ -36,6 +39,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
 
   const jobsQuery = useQuery({
     queryKey: reportKeys.list(page, scope),
+    placeholderData: keepPreviousInScope(reportKeys.list(page, scope)),
     queryFn: async () => {
       const result = await reportsService.getReports({ page, limit: REPORTS_PAGE_LIMIT }, scope);
       // Backfill formId/responseStatus/from/to from whatever this same query already had
@@ -84,7 +88,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
       );
       toast('Report generation started.', 'success');
     },
-    onError: () => toast('Failed to start report generation. Please try again.', 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'export responses', fallback: 'Failed to start report generation. Please try again.' }), 'error'),
     onSettled: () => setRetryingJobId(null),
   });
 
@@ -133,7 +137,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
   const header = (
     <div className="flex items-start justify-between gap-4 px-5 pt-5">
       <div>
-        <h2 className="bg-h5 font-bold text-(--text-primary)">Recent Reports</h2>
+        <h2 className="bg-h5 font-bold text-(--text-primary)">Recent exports</h2>
         <p className="bg-body-sm text-(--text-muted)">Your latest report generation history.</p>
       </div>
       <Button
@@ -197,16 +201,13 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
     return (
       <Card padded={false} className="gap-2 overflow-hidden pb-5">
         {header}
-        <EmptyState illustration="empty-reports" icon={<FileText />} title="No reports yet" description="Generate your first CSV or PDF export above." />
+        <EmptyState icon={<ExportMark />} title="No exports yet" description="Generate your first CSV or PDF export above." />
       </Card>
     );
   }
 
   const total = jobsQuery.data?.total ?? jobs.length;
   const limit = jobsQuery.data?.limit ?? REPORTS_PAGE_LIMIT;
-  const totalPages = Math.max(1, Math.ceil(total / limit));
-  const rangeStart = (page - 1) * limit + 1;
-  const rangeEnd = Math.min(page * limit, total);
 
   return (
     <Card padded={false} className="gap-4 overflow-hidden pb-5">
@@ -240,11 +241,8 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
         ))}
       </div>
 
-      <div className="flex flex-col gap-2 px-5 sm:flex-row sm:items-center sm:justify-between">
-        <p className="bg-caption text-(--text-muted)">
-          Showing {rangeStart} to {rangeEnd} of {total} report{total === 1 ? '' : 's'}
-        </p>
-        <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} />
+      <div className="px-5">
+        <ListFooter page={page} pageSize={limit} total={total} noun="export" onPageChange={onPageChange} />
       </div>
     </Card>
   );

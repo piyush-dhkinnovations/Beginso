@@ -61,11 +61,11 @@ describe('ReportJobsList', () => {
     expect(screen.getByText('Unable to load report jobs')).toBeInTheDocument();
   });
 
-  it('renders "No reports yet" when there are zero jobs', async () => {
+  it('renders "No exports yet" when there are zero jobs', async () => {
     mockGetReports.mockResolvedValue({ data: [], total: 0, page: 1, limit: 20, totalPages: 0 });
     renderList();
 
-    expect(await screen.findByText('No reports yet')).toBeInTheDocument();
+    expect(await screen.findByText('No exports yet')).toBeInTheDocument();
   });
 
   it('renders one row per job, newest first as returned by the backend', async () => {

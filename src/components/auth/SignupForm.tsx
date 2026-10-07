@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import { signupSchema, SignupFormValues } from '@/lib/schemas/signupSchema';
 import { authService } from '@/services/auth';
@@ -110,7 +111,7 @@ export function SignupForm() {
       onClick={toggleConfirmPasswordVisibility}
       
       className="text-(--text-muted) hover:text-(--text-primary) focus:outline-none flex items-center justify-center min-w-11 min-h-11"
-      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+      aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
     >
       {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
     </button>
@@ -119,9 +120,10 @@ export function SignupForm() {
   const isUiLoading = isSubmitting || isGoogleLoading;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4 w-full">
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4 w-full">
       <Input
         id="name"
+        autoComplete="name"
         label="Full Name"
         placeholder="Jane Cooper"
         error={errors.name?.message}
@@ -131,6 +133,8 @@ export function SignupForm() {
 
       <Input
         id="email"
+        type="email"
+        autoComplete="email"
         label="Email Address"
         placeholder="you@company.com"
         error={errors.email?.message}
@@ -140,6 +144,7 @@ export function SignupForm() {
 
       <Input
         id="password"
+        autoComplete="new-password"
         label="Password"
         type={showPassword ? 'text' : 'password'}
         placeholder="At least 8 characters"
@@ -151,6 +156,7 @@ export function SignupForm() {
 
       <Input
         id="confirmPassword"
+        autoComplete="new-password"
         label="Confirm Password"
         type={showConfirmPassword ? 'text' : 'password'}
         placeholder="Re-enter your password"
@@ -179,13 +185,11 @@ export function SignupForm() {
         Sign Up
       </Button>
 
-      <div className="relative my-2 flex items-center justify-center">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-(--border-default)"></div>
-        </div>
-        <span className="relative bg-(--surface-card) px-3 bg-body-sm text-(--text-muted) font-medium uppercase">
-          Or continue with
-        </span>
+      {/* Two rules either side of the label: no label background to clash with the card surface. */}
+      <div className="my-2 flex items-center gap-3" role="separator" aria-label="Or continue with">
+        <span className="h-px flex-1 bg-(--border-default)" />
+        <span className="bg-caption font-medium uppercase tracking-wider text-(--text-muted)">Or continue with</span>
+        <span className="h-px flex-1 bg-(--border-default)" />
       </div>
 
       <GoogleSignInButton
@@ -194,6 +198,18 @@ export function SignupForm() {
         disabled={isUiLoading}
         label="Sign up with Google"
       />
+
+      <p className="text-center bg-caption text-(--text-muted)">
+        By creating an account you agree to our{' '}
+        <Link href="/terms" target="_blank" rel="noopener" className="font-medium text-(--accent-soft-text) underline underline-offset-2">
+          Terms of Use
+        </Link>{' '}
+        and{' '}
+        <Link href="/privacy" target="_blank" rel="noopener" className="font-medium text-(--accent-soft-text) underline underline-offset-2">
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </form>
   );
 }

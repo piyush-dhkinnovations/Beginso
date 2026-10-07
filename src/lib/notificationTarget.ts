@@ -6,11 +6,16 @@ import type { AppNotification } from '@/types/notification';
 // `responseId` come from server data, never from a URL param.
 export function resolveNotificationTarget(notification: AppNotification, scope: string = 'personal'): string | null {
   if (notification.type === 'form_shared') return '/shared';
-  if (!notification.responseId) return null;
+  if (notification.type === 'welcome') return scope !== 'personal' ? `/w/${encodeURIComponent(scope)}` : '/dashboard';
+  const wsQuery = scope !== 'personal' ? `ws=${encodeURIComponent(scope)}` : '';
+  // Form activity with no specific response: that form's Inbox.
+  if (!notification.responseId) {
+    return notification.formId ? `/forms/${encodeURIComponent(notification.formId)}/inbox${wsQuery && `?${wsQuery}`}` : null;
+  }
   const id = encodeURIComponent(notification.responseId);
   if (notification.formId) {
     const form = encodeURIComponent(notification.formId);
-    return `/forms/${form}/responses?responseId=${id}${scope !== 'personal' ? `&ws=${encodeURIComponent(scope)}` : ''}`;
+    return `/forms/${form}/inbox?responseId=${id}${scope !== 'personal' ? `&ws=${encodeURIComponent(scope)}` : ''}`;
   }
-  return scope !== 'personal' ? `/w/${scope}/inbox?responseId=${id}` : `/responses?responseId=${id}`;
+  return scope !== 'personal' ? `/w/${scope}/inbox?responseId=${id}` : `/inbox?responseId=${id}`;
 }

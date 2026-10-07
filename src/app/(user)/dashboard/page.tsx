@@ -40,7 +40,7 @@ const HOW_IT_WORKS = [
 // (split graphs where the data supports one), then two columns — "Your forms" on the left, quick
 // actions and recent activity on the right. All cards share the Tinted surface (.bg-card).
 export default function DashboardPage() {
-  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
+  const { isLoading: authLoading, isAuthenticated } = useAuth();
 
   const { data: analytics, isLoading: analyticsLoading, isError, refetch } = useQuery({
     queryKey: dashboardKeys.analytics(),
@@ -112,8 +112,7 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         eyebrow="Personal space"
-        title={user?.name ? `Welcome back, ${user.name}` : 'Welcome back'}
-        description="Your forms and activity, outside a workspace."
+        title="Home"
         actions={
           <Link href="/forms" className="bg-btn bg-btn-primary shrink-0">
             <Plus size={16} className="mr-2" />
@@ -235,16 +234,6 @@ export default function DashboardPage() {
             </div>
           </div>
         </>
-      )}
-
-      {formsLoaded && hasForms && (
-        <RecentActivitySection
-          hasForms={hasForms}
-          activities={analytics?.recentActivity}
-          isLoading={analyticsLoading}
-          isError={isError}
-          onRetry={() => void refetch()}
-        />
       )}
     </div>
   );

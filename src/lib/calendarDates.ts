@@ -45,3 +45,18 @@ export function monthGridKeys(year: number, month: number): string[] {
   }
   return keys;
 }
+
+// Intl still reports a few legacy IANA names that the analytics validator rejects (400 on /analytics/trends).
+const LEGACY_TIMEZONES: Record<string, string> = {
+  'Asia/Calcutta': 'Asia/Kolkata',
+  'Asia/Katmandu': 'Asia/Kathmandu',
+  'Asia/Saigon': 'Asia/Ho_Chi_Minh',
+  'Asia/Rangoon': 'Asia/Yangon',
+  'Europe/Kiev': 'Europe/Kyiv',
+};
+
+/** The browser's IANA timezone, with legacy aliases mapped to their canonical names. */
+export function browserTimezone(): string {
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return LEGACY_TIMEZONES[tz] ?? tz;
+}

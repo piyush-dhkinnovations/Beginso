@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { LineAreaChart } from '@/components/ui/charts';
-import { toSegments } from '@/lib/chartSegments';
+import { MIN_TREND_POINTS, NOT_ENOUGH_DATA, toSegments } from '@/lib/chartSegments';
 import type { AnalyticsTrendPoint, AnalyticsTrendResult } from '@/types/analytics';
 
 const CHART_HEIGHT = 280;
@@ -90,6 +90,19 @@ export function TrendChart({ data, isLoading, isError = false, onRetry, isAllTim
   }
 
   const mapped = mapTrendSeries(points);
+  const totalResponses = mapped.reduce((sum, p) => sum + p.responses, 0);
+
+  // Minimum-data rule: a line through fewer than ten responses implies a trend that is not there.
+  if (totalResponses < MIN_TREND_POINTS) {
+    return (
+      <Card>
+        <h3 className="bg-h5 text-(--text-primary) font-bold mb-4">Response Trend</h3>
+        <p className="text-4xl font-bold tabular-nums text-(--text-primary)">{totalResponses}</p>
+        <p className="bg-body-sm text-(--text-muted) mt-1">{totalResponses === 1 ? 'response' : 'responses'} in this range</p>
+        <p className="bg-body-sm text-(--text-muted) mt-3">{NOT_ENOUGH_DATA}</p>
+      </Card>
+    );
+  }
 
   return (
     <Card>

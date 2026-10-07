@@ -107,6 +107,12 @@ async function forward(request: NextRequest, pathParts: string[]): Promise<NextR
   const isPublicDataRequest = PUBLIC_DATA_PATHS.has(path);
   const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
+  // Session probe (AuthProvider on every page load): "nobody is signed in" is a normal answer, not an
+  // error - answering 200 keeps a 401 from being logged to the console on every public page.
+  if (path === 'api/auth/me' && !sessionToken && request.headers.get('x-auth-probe') === '1') {
+    return NextResponse.json({ success: true, user: null }, { headers: { 'cache-control': 'no-store' } });
+  }
+
   if (!isPublicAuthRequest && !isPublicDataRequest && !sessionToken) {
     return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
   }

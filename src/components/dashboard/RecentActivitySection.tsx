@@ -60,7 +60,7 @@ export function RecentActivitySection({
           {activities.map((activity) => (
             <li key={activity.id}>
               <Link
-                href={`/responses?responseId=${encodeURIComponent(activity.responseId)}`}
+                href={`/inbox?responseId=${encodeURIComponent(activity.responseId)}`}
                 className="group flex min-h-16 items-center gap-3 rounded-md px-2 py-3 transition-colors hover:bg-(--surface-hover) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--border-focus)"
                 aria-label={`View response for ${activity.form.title}`}
               >

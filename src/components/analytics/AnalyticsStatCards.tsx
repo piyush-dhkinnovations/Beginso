@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { StatCard, type StatChart } from '@/components/ui/StatCard';
 import { CompletionRateCard } from './CompletionRateCard';
 import { computeChangePercent, formatChangeLabel } from '@/lib/analyticsChange';
+import { MIN_TREND_POINTS, NOT_ENOUGH_DATA } from '@/lib/chartSegments';
 import type { AnalyticsOverview } from '@/types/analytics';
 
 // These three labels are the fixed category enum (Sprint 12 requirements §7.3), not a
@@ -48,8 +49,10 @@ export function AnalyticsStatCards({ overview, isLoading, isError = false, onRet
   }
 
   const total = overview?.totalResponses ?? 0;
+  // Minimum-data rule: under ten responses no ring, trend line or delta - just the raw counts and one note.
+  const sparse = !isLoading && total < MIN_TREND_POINTS;
   const share = (n: number): StatChart | undefined =>
-    total > 0 ? { kind: 'ring', percent: Math.round((n / total) * 100) } : undefined;
+    total >= MIN_TREND_POINTS ? { kind: 'ring', percent: Math.round((n / total) * 100) } : undefined;
   const counts = overview?.categoryCounts;
 
   const previousCounts = previousOverview?.categoryCounts;
@@ -58,13 +61,15 @@ export function AnalyticsStatCards({ overview, isLoading, isError = false, onRet
       label: 'Total Responses',
       value: total,
       icon: Inbox,
-      chart: trend && trend.length > 1 && trend.some((v) => v > 0) ? { kind: 'line', values: trend } : undefined,
+      chart: !sparse && trend && trend.length > 1 && trend.some((v) => v > 0) ? { kind: 'line', values: trend } : undefined,
       delta: delta(total, previousOverview?.totalResponses, periodLabel),
     },
     { label: 'Completed', value: counts?.completed ?? 0, icon: CheckCircle2, chart: share(counts?.completed ?? 0), delta: delta(counts?.completed ?? 0, previousCounts?.completed, periodLabel) },
     { label: 'In Progress', value: counts?.in_progress ?? 0, icon: Clock, chart: share(counts?.in_progress ?? 0), delta: delta(counts?.in_progress ?? 0, previousCounts?.in_progress, periodLabel) },
     { label: 'New', value: counts?.new ?? 0, icon: Sparkles, chart: share(counts?.new ?? 0), delta: delta(counts?.new ?? 0, previousCounts?.new, periodLabel) },
   ];
+
+  const cardsView = sparse ? cards.map((c) => ({ ...c, chart: undefined, delta: undefined })) : cards;
 
   // Completion rate is views-based (OQ-3) - its delta is a change in points, only when both periods have one.
   const rate = overview?.completionRate;
@@ -80,7 +85,7 @@ export function AnalyticsStatCards({ overview, isLoading, isError = false, onRet
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-      {cards.map((card) => {
+      {cardsView.map((card, ci) => {
         const Icon = card.icon;
         return (
           <StatCard
@@ -89,12 +94,13 @@ export function AnalyticsStatCards({ overview, isLoading, isError = false, onRet
             icon={<Icon aria-hidden="true" />}
             value={isLoading ? <span className="block h-8 w-16 animate-pulse rounded bg-skeleton" /> : card.value}
             valueClassName={isLoading ? undefined : mutedZero(card.value)}
+            note={sparse && ci === 0 ? NOT_ENOUGH_DATA : undefined}
             delta={isLoading ? undefined : card.delta}
             chart={isLoading ? undefined : card.chart}
           />
         );
       })}
-      <CompletionRateCard rate={rate} isLoading={isLoading} delta={rateDelta} />
+      <CompletionRateCard rate={rate} isLoading={isLoading} delta={sparse ? undefined : rateDelta} sparse={sparse} />
     </div>
   );
 }

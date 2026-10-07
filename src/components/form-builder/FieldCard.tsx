@@ -73,6 +73,7 @@ export function FieldCard({
   });
 
   const config = FIELD_TYPE_CONFIG.find((cfg) => cfg.type === field.type);
+  const optionCount = 'options' in field && Array.isArray(field.options) ? field.options.length : 0;
   const Icon = config ? config.icon : null;
 
   const style: React.CSSProperties = {
@@ -139,6 +140,7 @@ export function FieldCard({
             {...attributes}
             onClick={(e) => e.stopPropagation()}
             style={{ touchAction: 'none' }}
+            aria-label={`Reorder ${field.label}. Press Space, then arrow keys, then Space.`}
             // Below 1024px fields are only draggable inside Reorder mode (requirements.md 4.3).
             className={`text-(--text-disabled) hover:text-(--text-secondary) cursor-grab active:cursor-grabbing p-1 -ml-1 rounded transition-colors shrink-0 min-w-11 min-h-11 items-center justify-center ${
               reorderMode ? 'flex' : 'hidden lg:flex'
@@ -157,9 +159,6 @@ export function FieldCard({
             <div className="flex items-center justify-between gap-2 min-h-6">
               <span className="bg-body font-medium text-(--text-primary) truncate">
                 {field.label}
-                {field.required && (
-                  <span className="text-(--error) ml-1" title="Required">*</span>
-                )}
               </span>
 
               {reorderMode ? (
@@ -224,6 +223,12 @@ export function FieldCard({
               </div>
               )}
             </div>
+
+            <p className="bg-caption text-(--text-muted) -mt-1">
+              {config?.label ?? field.type}
+              {optionCount > 0 && ` · ${optionCount} option${optionCount === 1 ? '' : 's'}`}
+              {field.required && <span className="font-medium text-(--error-text)"> · Required</span>}
+            </p>
 
             {/* Live, non-interactive preview of what respondents will see */}
             <FieldPreview field={field} />

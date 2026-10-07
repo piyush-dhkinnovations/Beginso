@@ -28,7 +28,7 @@ describe('RecentActivitySection component', () => {
     expect(screen.getByText('Customer Feedback')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'View response for Customer Feedback' })).toHaveAttribute(
       'href',
-      '/responses?responseId=response-1'
+      '/inbox?responseId=response-1'
     );
     expect(document.querySelector('time')).toHaveAttribute('datetime', '2026-08-07T12:15:30.000Z');
   });

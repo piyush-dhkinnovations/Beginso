@@ -1,40 +1,83 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { ListFilter, X } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
-import { Switch } from '@/components/ui/Switch';
+import { Toolbar } from '@/components/ui/Toolbar';
+import { FilterMenu } from '@/components/ui/FilterMenu';
+import { Segmented } from '@/components/ui/Segmented';
 import { useDebounce } from '@/hooks/useDebounce';
-import { cn } from '@/lib/utils';
 import type { ResponseFilters } from '@/types/response';
 import type { StageRef } from '@/types/stage';
 import type { MemberListItem } from '@/types/team';
+import type { Tag } from '@/types/tag';
 
 interface ResponsesToolbarProps {
   search: string;
   filters: ResponseFilters;
-  stages: readonly StageRef[];
+  stages?: readonly StageRef[];
   /** Undefined/empty for the personal shell — the assignee filter is hidden there (OQ-9). */
   members?: MemberListItem[];
+  /** Workspace tag library; undefined/empty hides the Tags button. */
+  tags?: Tag[];
   total: number;
   onSearchChange: (v: string) => void;
   onFilterChange: (patch: Partial<ResponseFilters>) => void;
+  /** View switcher (Table · Board · Calendar · Chart) lives on this bar when provided. */
+  viewOptions?: { id: string; label: string }[];
+  view?: string;
+  onViewChange?: (id: string) => void;
+}
+
+const DATE_PRESETS = [
+  { id: 'today', label: 'Today', days: 0 },
+  { id: '7d', label: 'Last 7 days', days: 7 },
+  { id: '30d', label: 'Last 30 days', days: 30 },
+];
+
+function startOfDaysAgo(days: number): Date {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - days);
+  return d;
+}
+
+const dayKey = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+const shortDate = (d: Date) => `${d.getDate()} ${d.toLocaleString('en-US', { month: 'short' })}`;
+
+/** The text shown on the Date button when a range is active: a preset name when `from` matches one, otherwise the dates. */
+function dateValueLabel(filters: ResponseFilters): string | undefined {
+  const from = filters.from ? new Date(filters.from) : undefined;
+  const to = filters.to ? new Date(filters.to) : undefined;
+  if (!from && !to) return undefined;
+  if (from && !to) {
+    const preset = DATE_PRESETS.find((p) => dayKey(startOfDaysAgo(p.days)) === dayKey(from));
+    if (preset) return preset.label;
+    return `Since ${shortDate(from)}`;
+  }
+  if (from && to) return `${shortDate(from)} – ${shortDate(to)}`;
+  return `Until ${shortDate(to as Date)}`;
 }
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.2 (2.2). Rebuilt on `components/ui/` —
- * the stage filter now comes from workspace data (`stages` prop), never a hardcoded union
- * (requirements.md §7.1's own rule: "renders the stage's name ... from data, never a hardcoded
- * label"). Tag filter and "Save view" are Phase 2 (task 2.2/2.6) — not built here.
+ * One --bg-subtle bar: search, named Tags / Assignee / Date / Show filter buttons (each shows its active
+ * value and closes after a selection), and the view switcher. Stage and Unread are the count chips above it.
  */
-export function ResponsesToolbar({ search, filters, stages, members, total, onSearchChange, onFilterChange }: ResponsesToolbarProps) {
+export function ResponsesToolbar({
+  search,
+  filters,
+  members,
+  tags,
+  total,
+  onSearchChange,
+  onFilterChange,
+  viewOptions,
+  view,
+  onViewChange,
+}: ResponsesToolbarProps) {
   const [inputValue, setInputValue] = useState(search);
   const [syncedSearch, setSyncedSearch] = useState(search);
   const debounced = useDebounce(inputValue, 300);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const filterRef = useRef<HTMLDivElement>(null);
 
   // External URL change (e.g. a "Clear search" link elsewhere) — adjust state during
   // render rather than in an effect, per https://react.dev/learn/you-might-not-need-an-effect.
@@ -48,23 +91,22 @@ export function ResponsesToolbar({ search, filters, stages, members, total, onSe
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debounced]);
 
-  useEffect(() => {
-    if (!isFilterOpen) return;
-    function handleClick(e: MouseEvent) {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node)) setIsFilterOpen(false);
-    }
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [isFilterOpen]);
-
-  const activeCount = [filters.stageId, filters.assigneeId, filters.unread, filters.duplicate, filters.includeTest].filter(Boolean).length;
+  const tagIds = filters.tagIds ?? [];
+  const assignee = filters.assigneeId;
+  const assigneeOptions = [
+    { id: 'me', label: 'Me' },
+    { id: 'unassigned', label: 'Unassigned' },
+    ...(members ?? []).map((m) => ({ id: m.membershipId, label: m.name })),
+  ];
+  const showSelected = [filters.duplicate && 'duplicate', filters.includeTest && 'tests'].filter(Boolean) as string[];
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <div className="flex-1 min-w-50 max-w-sm">
+    <Toolbar>
+      <div className="min-w-50 max-w-sm flex-1">
         <Input
           id="responses-search"
           placeholder="Search responses…"
+          aria-label="Search responses"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           rightSlot={
@@ -85,84 +127,63 @@ export function ResponsesToolbar({ search, filters, stages, members, total, onSe
         />
       </div>
 
-      {/* Sprint 12 close-out: Stage/Assignee/Unread/Duplicate consolidated into one popover —
-          four separate controls on the toolbar read as clutter at rest. */}
-      <div ref={filterRef} className="relative">
-        <Button
-          type="button"
-          variant="secondary"
-          size="small"
-          aria-haspopup="dialog"
-          aria-expanded={isFilterOpen}
-          onClick={() => setIsFilterOpen((v) => !v)}
-          className={cn('gap-1.5', isFilterOpen && 'bg-(--surface-hover)')}
-        >
-          <ListFilter size={15} aria-hidden="true" />
-          Filter
-          {activeCount > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-(--action-primary) px-1 bg-caption font-medium text-(--text-on-brand)">
-              {activeCount}
-            </span>
-          )}
-        </Button>
+      {tags && tags.length > 0 && (
+        <FilterMenu
+          label="Tags"
+          options={tags.map((t) => ({ id: t.id, label: t.name }))}
+          selectedIds={tagIds}
+          valueLabel={tagIds.length > 1 ? `${tagIds.length} tags` : undefined}
+          onSelect={(id) => onFilterChange({ tagIds: [id] })}
+          onClear={() => onFilterChange({ tagIds: undefined })}
+        />
+      )}
 
-        {isFilterOpen && (
-          <div role="dialog" aria-label="Filter responses" className="bg-popover absolute left-0 z-20 mt-1 flex w-70 flex-col gap-4">
-            <div>
-              <label htmlFor="responses-stage-filter" className="mb-1 block bg-caption font-medium text-(--text-muted)">Stage</label>
-              <Select
-                id="responses-stage-filter"
-                value={filters.stageId ?? 'all'}
-                onChange={(e) => onFilterChange({ stageId: e.target.value === 'all' ? undefined : e.target.value })}
-              >
-                <option value="all">All Stages</option>
-                {stages.map((s) => (
-                  <option key={s.id} value={s.id}>{s.name}</option>
-                ))}
-              </Select>
-            </div>
+      {members !== undefined && (
+        <FilterMenu
+          label="Assignee"
+          options={assigneeOptions}
+          selectedIds={assignee ? [assignee] : []}
+          valueLabel={assignee ? (assigneeOptions.find((o) => o.id === assignee)?.label ?? 'Unknown member') : undefined}
+          clearLabel="Anyone"
+          onSelect={(id) => onFilterChange({ assigneeId: id })}
+          onClear={() => onFilterChange({ assigneeId: undefined })}
+        />
+      )}
 
-            {members !== undefined && (
-              <div>
-                <label htmlFor="responses-assignee-filter" className="mb-1 block bg-caption font-medium text-(--text-muted)">Assignee</label>
-                <Select
-                  id="responses-assignee-filter"
-                  value={filters.assigneeId ?? 'all'}
-                  onChange={(e) => onFilterChange({ assigneeId: e.target.value === 'all' ? undefined : e.target.value })}
-                >
-                  <option value="all">Everyone</option>
-                  <option value="unassigned">Unassigned</option>
-                  <option value="me">Me</option>
-                  {members.map((m) => (
-                    <option key={m.membershipId} value={m.membershipId}>{m.name}</option>
-                  ))}
-                </Select>
-              </div>
-            )}
+      <FilterMenu
+        label="Date"
+        options={DATE_PRESETS.map((p) => ({ id: p.id, label: p.label }))}
+        selectedIds={filters.from || filters.to ? ['active'] : []}
+        valueLabel={dateValueLabel(filters)}
+        clearLabel="Any time"
+        onSelect={(id) => {
+          const preset = DATE_PRESETS.find((p) => p.id === id);
+          if (preset) onFilterChange({ from: startOfDaysAgo(preset.days).toISOString(), to: undefined });
+        }}
+        onClear={() => onFilterChange({ from: undefined, to: undefined })}
+      />
 
-            <label htmlFor="responses-unread-filter" className="flex items-center justify-between gap-2 bg-body-sm text-(--text-secondary)">
-              Unread only
-              <Switch id="responses-unread-filter" checked={!!filters.unread} onChange={(checked) => onFilterChange({ unread: checked || undefined })} />
-            </label>
+      {/* Duplicates are only flagged by default (nothing auto-hidden); test submissions never count anywhere and are
+          hidden by default — these only change what is shown. */}
+      <FilterMenu
+        label="Show"
+        options={[
+          { id: 'duplicate', label: 'Duplicates only' },
+          { id: 'tests', label: 'Include test submissions' },
+        ]}
+        selectedIds={showSelected}
+        valueLabel={showSelected.length > 1 ? `${showSelected.length} options` : undefined}
+        clearLabel="Default"
+        onSelect={(id) =>
+          id === 'duplicate' ? onFilterChange({ duplicate: !filters.duplicate || undefined }) : onFilterChange({ includeTest: !filters.includeTest || undefined })
+        }
+        onClear={() => onFilterChange({ duplicate: undefined, includeTest: undefined })}
+      />
 
-            {/* Sprint 12, task 5.5: nothing is auto-hidden by default — duplicates only get flagged. */}
-            <label htmlFor="responses-duplicate-filter" className="flex items-center justify-between gap-2 bg-body-sm text-(--text-secondary)">
-              Show duplicates
-              <Switch id="responses-duplicate-filter" checked={!!filters.duplicate} onChange={(checked) => onFilterChange({ duplicate: checked || undefined })} />
-            </label>
-
-            {/* Sprint 13 (F15): test submissions never count anywhere and are hidden by default; this only lets you see them. */}
-            <label htmlFor="responses-tests-filter" className="flex items-center justify-between gap-2 bg-body-sm text-(--text-secondary)">
-              Include test submissions
-              <Switch id="responses-tests-filter" checked={!!filters.includeTest} onChange={(checked) => onFilterChange({ includeTest: checked || undefined })} />
-            </label>
-          </div>
-        )}
-      </div>
-
-      <span className="bg-body-sm text-(--text-muted) whitespace-nowrap ml-auto">
+      <span className="ml-auto whitespace-nowrap bg-body-sm text-(--text-muted)">
         {total} response{total === 1 ? '' : 's'}
       </span>
-    </div>
+      {viewOptions && view && onViewChange && <Segmented options={viewOptions} value={view} onChange={onViewChange} ariaLabel="Responses view" />}
+    </Toolbar>
   );
 }

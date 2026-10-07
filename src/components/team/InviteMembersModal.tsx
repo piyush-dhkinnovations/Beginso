@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { invitationsService } from '@/services/invitations';
 import { teamKeys } from '@/lib/queryKeys';
 import { inviteMembersSchema, type InviteMembersValues } from '@/lib/schemas/inviteMembersSchema';
@@ -49,12 +50,14 @@ export function InviteMembersModal({ workspaceId, isOpen, onClose }: InviteMembe
       const emails = data.emails.split(',').map((email) => email.trim()).filter(Boolean);
       return invitationsService.send(workspaceId, emails, data.role);
     },
-    onSuccess: () => {
+    onSuccess: (_d, data) => {
       queryClient.invalidateQueries({ queryKey: teamKeys.invitations(workspaceId) });
+      const n = data.emails.split(',').map((e) => e.trim()).filter(Boolean).length;
+      toast(n === 1 ? `Invitation sent to ${data.emails.trim()}.` : `${n} invitations sent.`, 'success');
       onClose();
     },
-    onError: () => {
-      toast('Failed to send invites. Please try again.', 'error');
+    onError: (error) => {
+      toast(getFriendlyErrorMessage(error, { action: 'invite people to this workspace', fallback: 'Invitations were not sent. Please try again.' }), 'error');
     },
   });
 

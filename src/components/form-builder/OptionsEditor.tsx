@@ -27,16 +27,20 @@ interface Row {
 function OptionRow({
   row,
   disabled,
+  duplicate,
   inputRef,
   onChange,
   onCommit,
+  onEnter,
   onDelete,
 }: {
   row: Row;
   disabled: boolean;
+  duplicate: boolean;
   inputRef: (el: HTMLInputElement | null) => void;
   onChange: (value: string) => void;
   onCommit: () => void;
+  onEnter: () => void;
   onDelete: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -70,10 +74,12 @@ function OptionRow({
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();
-            (e.target as HTMLInputElement).blur();
+            onEnter();
           }
         }}
-        className="flex-1 min-w-0 rounded-md border-2 border-(--border-default) px-2.5 min-h-11 bg-body-sm bg-(--surface-card) outline-none focus:border-(--border-strong)"
+        aria-invalid={duplicate || undefined}
+        title={duplicate ? 'Duplicate option' : undefined}
+        className={`flex-1 min-w-0 rounded-md border-2 ${duplicate ? 'border-(--warning-text)' : 'border-(--border-default)'} px-2.5 min-h-11 bg-body-sm bg-(--surface-card) outline-none focus:border-(--border-strong)`}
       />
       <button
         type="button"
@@ -148,6 +154,11 @@ export function OptionsEditor({ fieldId, options, onUpdate }: OptionsEditorProps
     commit(arrayMove(rows, oldIndex, newIndex));
   };
 
+  const norm = (v: string) => v.trim().toLowerCase();
+  const isDuplicate = (i: number) =>
+    norm(rows[i].value) !== '' && rows.some((r, j) => j !== i && norm(r.value) === norm(rows[i].value));
+  const hasDuplicates = rows.some((_, i) => isDuplicate(i));
+
   return (
     <div className="flex flex-col gap-2">
       <div className="max-h-60 overflow-y-auto overflow-x-hidden flex flex-col gap-2 pr-0.5">
@@ -158,6 +169,7 @@ export function OptionsEditor({ fieldId, options, onUpdate }: OptionsEditorProps
                 key={row.id}
                 row={row}
                 disabled={rows.length <= 1}
+                duplicate={isDuplicate(index)}
                 inputRef={(el) => {
                   inputRefs.current[index] = el;
                 }}
@@ -165,12 +177,18 @@ export function OptionsEditor({ fieldId, options, onUpdate }: OptionsEditorProps
                   setRows((prev) => prev.map((r, i) => (i === index ? { ...r, value } : r)))
                 }
                 onCommit={() => commit(rows)}
+                onEnter={() => (index === rows.length - 1 ? handleAdd() : inputRefs.current[index + 1]?.focus())}
                 onDelete={() => handleDelete(index)}
               />
             ))}
           </SortableContext>
         </DndContext>
       </div>
+      {hasDuplicates && (
+        <p role="alert" className="bg-caption font-semibold text-(--warning-text)">
+          Some options have the same label. Respondents and reports cannot tell them apart.
+        </p>
+      )}
       <button
         type="button"
         onClick={handleAdd}

@@ -49,8 +49,9 @@ export function Sidebar({ groups, collapsed = false, header, footer, className, 
       )}
       {groups.map((group, gi) => (
         <React.Fragment key={group.label ?? `group-${gi}`}>
+          {/* A rule between every pair of groups makes the partition visible; the label then names the group below it. */}
+          {gi > 0 && <div role="separator" className="my-2 w-full border-t border-(--border-default)" />}
           {group.label && <div className="bg-nav-group">{group.label}</div>}
-          {gi > 0 && !group.label && <div className="border-t border-(--border-default)/50 my-1.5 pt-1.5" />}
           {group.items.map((item) => {
             const Icon = item.icon;
             return (
@@ -69,7 +70,7 @@ export function Sidebar({ groups, collapsed = false, header, footer, className, 
           })}
         </React.Fragment>
       ))}
-      {footer && <div className="mt-auto">{footer}</div>}
+      {footer && <div className="mt-auto border-t border-(--border-default) pt-2">{footer}</div>}
     </nav>
   );
 }

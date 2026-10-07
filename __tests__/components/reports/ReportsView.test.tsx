@@ -22,7 +22,7 @@ vi.mock('next/navigation', () => ({
 
 const mockGetForms = vi.fn();
 vi.mock('@/services/forms', () => ({
-  formsService: { getForms: (...args: unknown[]) => mockGetForms(...args) },
+  formsService: { getForms: (...args: unknown[]) => mockGetForms(...args), getAllForms: (...args: unknown[]) => mockGetForms(...args) },
 }));
 
 const mockCreateReport = vi.fn();

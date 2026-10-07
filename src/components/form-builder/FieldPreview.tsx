@@ -1,6 +1,6 @@
 'use client';
 
-import { Calendar, ChevronDown, Upload } from 'lucide-react';
+import { Calendar, Upload } from 'lucide-react';
 import type { FormField } from '@/types/form';
 
 // ─── Live, non-interactive preview of a field's public-form appearance ────────
@@ -28,7 +28,8 @@ export function FieldPreview({ field }: { field: FormField }) {
     case 'phone':
       return (
         <div className={`${inputPreviewClass} max-w-80`}>
-          {field.placeholder || 'Short answer text'}
+          {field.placeholder ||
+            (field.type === 'email' ? 'name@example.com' : field.type === 'phone' ? '+1 555 000 0000' : 'Short answer text')}
         </div>
       );
 
@@ -50,15 +51,14 @@ export function FieldPreview({ field }: { field: FormField }) {
       return (
         <div className={`${inputPreviewClass} max-w-45`}>
           <Calendar size={14} className="text-(--text-disabled) shrink-0" />
-          mm / dd / yyyy
+          dd-mm-yyyy
         </div>
       );
 
     case 'dropdown':
       return (
         <div className={`${inputPreviewClass} max-w-80 justify-between`}>
-          <span className="truncate">Select an option</span>
-          <ChevronDown size={14} className="text-(--text-disabled) shrink-0" />
+          <span className="truncate">Select an option ▾</span>
         </div>
       );
 

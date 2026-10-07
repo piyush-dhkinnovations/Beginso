@@ -64,7 +64,7 @@ export default function ResponseDetailPage() {
       const returnToPath = returnTo.slice(0, returnTo.indexOf('?') === -1 ? undefined : returnTo.indexOf('?'));
       params.set('returnTo', `${returnToPath}?${nextReturnToParams.toString()}`);
     }
-    return `/responses/${responseId}?${params.toString()}`;
+    return `/inbox/${responseId}?${params.toString()}`;
   }
 
   async function navigate(direction: 'previous' | 'next') {
@@ -88,7 +88,7 @@ export default function ResponseDetailPage() {
     .map((field) => field.label);
 
   // Bug fix: the fallback (and the safe-url check below) never accounted for the workspace-scoped
-  // Inbox route (`/w/[slug]/inbox`) — only `/responses` (personal) and `/forms/[id]/responses`.
+  // Inbox route (`/w/[slug]/inbox`) — only `/inbox` (personal) and `/forms/[id]/inbox`.
   // Expanding a workspace response and then collapsing/closing it fell back to the *personal*
   // Responses page regardless of which workspace the response actually belonged to, which then
   // correctly failed to load it (it was never there) and showed "Unable to load responses" — the
@@ -96,11 +96,11 @@ export default function ResponseDetailPage() {
   const fallbackDrawerUrl = scope !== 'personal'
     ? `/w/${scope}/inbox?responseId=${id}`
     : formId
-    ? `/forms/${formId}/responses?responseId=${id}`
-    : `/responses?responseId=${id}`;
+    ? `/forms/${formId}/inbox?responseId=${id}`
+    : `/inbox?responseId=${id}`;
   const isSafeDrawerUrl = !!returnTo
     && (
-      returnTo.startsWith('/responses?')
+      returnTo.startsWith('/inbox?')
       || /^\/forms\/[^/]+\/responses\?/.test(returnTo)
       || /^\/w\/[^/]+\/inbox\?/.test(returnTo)
     )

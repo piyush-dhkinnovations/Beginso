@@ -7,11 +7,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { settingsService } from '@/services/settings';
 import { settingsKeys } from '@/lib/queryKeys';
 
-import { ChevronDown, LogOut, Settings } from 'lucide-react';
+import { ChevronsUpDown, FileText, LogOut, Settings, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 
-export function UserProfileDropdown() {
+export interface UserProfileDropdownProps {
+  /** `avatar`: just the photo/initials (top bar). `sidebar`: avatar + name + email, pinned to the sidebar's bottom edge. */
+  variant?: 'avatar' | 'sidebar';
+  /** Sidebar variant only: the icon rail shows the avatar alone. */
+  collapsed?: boolean;
+}
+
+export function UserProfileDropdown({ variant = 'avatar', collapsed = false }: UserProfileDropdownProps = {}) {
+  const inSidebar = variant === 'sidebar';
+  const showText = inSidebar && !collapsed;
   const { user, logout, isLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -48,7 +57,16 @@ export function UserProfileDropdown() {
     };
   }, [isOpen]);
 
-  const toggleDropdown = () => setIsOpen((prev) => !prev);
+  // In the sidebar the menu is `fixed`, placed from the trigger's rect: the sidebar scrolls (overflow clips
+  // absolute children) and the collapsed rail is only 64px wide, so a menu sized to the sidebar got squashed.
+  const [anchor, setAnchor] = useState<{ left: number; bottom: number } | null>(null);
+  const toggleDropdown = () => {
+    if (inSidebar && !isOpen && dropdownRef.current) {
+      const r = dropdownRef.current.getBoundingClientRect();
+      setAnchor({ left: r.left, bottom: window.innerHeight - r.top + 8 });
+    }
+    setIsOpen((prev) => !prev);
+  };
 
   const getInitials = (name?: string) => {
     if (!name) return 'U';
@@ -69,9 +87,13 @@ export function UserProfileDropdown() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={toggleDropdown}
-        className="flex min-h-11 items-center gap-2 p-1.5 rounded-lg hover:bg-(--surface-hover) transition-colors focus:outline-none focus:ring-2 focus:ring-(--border-focus)/20"
+        className={cn(
+          'flex min-h-11 items-center gap-2 p-1.5 rounded-lg hover:bg-(--surface-hover) transition-colors focus:outline-none focus:ring-2 focus:ring-(--border-focus)/20',
+          showText && 'w-full',
+        )}
         aria-expanded={isOpen}
         aria-haspopup="menu"
+        aria-label={user?.name ? `Account menu for ${user.name}` : 'Account menu'}
 
       >
         {/* Avatar — real photo if uploaded, initials fallback, or skeleton ring while loading */}
@@ -86,32 +108,40 @@ export function UserProfileDropdown() {
           )}
         </div>
         
-        {!isLoading && user && (
-          <div className="hidden sm:flex flex-col text-left">
-            <span className="bg-body-sm font-semibold text-(--text-primary) leading-none">
+        {showText && !isLoading && user && (
+          <div className="flex min-w-0 flex-1 flex-col text-left">
+            <span className="truncate bg-body-sm font-semibold text-(--text-primary) leading-tight">
               {user.name}
             </span>
             {user.email && (
-              <span className="bg-caption text-(--text-muted) leading-none mt-0.5">
+              <span className="truncate bg-caption text-(--text-muted) leading-tight mt-0.5">
                 {user.email}
               </span>
             )}
           </div>
         )}
-        {isLoading && (
-          <div className="hidden sm:flex flex-col gap-1">
+        {showText && isLoading && (
+          <div className="flex flex-col gap-1">
             <div className="w-20 h-2.5 rounded bg-(--surface-hover) animate-pulse" />
             <div className="w-28 h-2 rounded bg-(--surface-hover) animate-pulse" />
           </div>
         )}
 
-        <ChevronDown size={16} className={cn("text-(--text-muted) transition-transform duration-200", isOpen && "rotate-180")} />
+        {showText && (
+          <ChevronsUpDown size={14} className="ml-auto shrink-0 text-(--text-muted)" aria-hidden="true" />
+        )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 rounded-md border border-(--border-default) shadow-(--shadow-lg) bg-(--surface-card) divide-y divide-(--border-default) focus:outline-none z-50 animate-fade-in">
+        <div className={cn(
+          'rounded-md border border-(--border-default) shadow-(--shadow-lg) bg-(--surface-card) divide-y divide-(--border-default) focus:outline-none z-50 animate-fade-in',
+          // In the sidebar the menu is exactly as wide as the sidebar's own padding box, so the overflow clip never cuts it.
+          inSidebar ? 'fixed w-60' : 'absolute right-0 mt-2 w-56',
+        )}
+          style={inSidebar && anchor ? { left: anchor.left, bottom: anchor.bottom } : undefined}
+        >
           {user && (
-            <div className="px-4 py-3 sm:hidden">
+            <div className="px-4 py-3">
               <p className="bg-body-sm font-semibold text-(--text-primary) truncate">{user.name}</p>
               {user.email && (
                 <p className="bg-caption text-(--text-muted) truncate">{user.email}</p>
@@ -127,6 +157,29 @@ export function UserProfileDropdown() {
             >
               <Settings size={16} className="text-(--text-muted)" />
               <span>Account Settings</span>
+            </Link>
+          </div>
+
+          <div className="py-1">
+            <Link
+              href="/terms"
+              target="_blank"
+              rel="noopener"
+              onClick={() => setIsOpen(false)}
+              className="flex min-h-11 items-center gap-2 px-4 py-2 bg-body-sm text-(--text-primary) hover:bg-(--surface-hover) transition-colors"
+            >
+              <FileText size={16} className="text-(--text-muted)" />
+              <span>Terms of Use</span>
+            </Link>
+            <Link
+              href="/privacy"
+              target="_blank"
+              rel="noopener"
+              onClick={() => setIsOpen(false)}
+              className="flex min-h-11 items-center gap-2 px-4 py-2 bg-body-sm text-(--text-primary) hover:bg-(--surface-hover) transition-colors"
+            >
+              <Shield size={16} className="text-(--text-muted)" />
+              <span>Privacy Policy</span>
             </Link>
           </div>
 

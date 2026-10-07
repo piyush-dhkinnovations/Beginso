@@ -25,17 +25,18 @@ export default function RespondLinkPage() {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Strip the token from the address bar so it is not left in history or screenshots; the ref keeps it.
-  useEffect(() => {
-    window.history.replaceState(null, '', '/r');
-  }, []);
-
   const query = useQuery({
     queryKey: ['respond-link'],
     queryFn: () => respondentService.getLink(tokenRef.current),
     retry: false,
     refetchOnWindowFocus: false,
   });
+
+  // Strip a VALID token from the address bar so it is not left in history or screenshots; the ref keeps it. An invalid
+  // or failed link keeps its token in the URL so the visitor can see/fix a typo and reload.
+  useEffect(() => {
+    if (query.data && query.data.view.state !== 'invalid') window.history.replaceState(null, '', '/r');
+  }, [query.data]);
 
   const claim = useMutation({
     mutationFn: () => respondentService.claim(tokenRef.current),

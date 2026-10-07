@@ -1,5 +1,7 @@
 import { ReportsView } from '@/components/reports/ReportsView';
 
+export const metadata = { title: 'Exports' };
+
 interface Props {
   params: Promise<{ slug: string }>;
 }
