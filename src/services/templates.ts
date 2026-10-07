@@ -21,6 +21,24 @@ export const templatesService = {
       return templates as Template[];
     }),
 
+  // Sprint 13 (B6.4): publish a form to the workspace's templates (Editor and above). A snapshot — fields,
+  // logic, pages, settings and theme; never responses, notes, assignees, tags or the share link.
+  publishAsTemplate: (
+    scope: string,
+    payload: { formId: string; name?: string; description?: string }
+  ): Promise<{ _id: string; name: string }> =>
+    axiosInstance
+      .post('/api/templates', payload, { headers: workspaceHeaders(scope) })
+      .then((r) => {
+        const data = (r.data?.data ?? r.data) as { _id?: string; name?: string };
+        if (!data?._id) throw new Error('Unexpected POST /api/templates response shape');
+        return { _id: data._id, name: data.name ?? payload.name ?? '' };
+      }),
+
+  // Owner/Admin only; built-in templates cannot be removed.
+  removeTemplate: (id: string, scope: string) =>
+    axiosInstance.delete(`/api/templates/${id}`, { headers: workspaceHeaders(scope) }).then(() => undefined),
+
   // Public, unauthenticated variant for the /discover-templates gallery — see
   // docs/backend-contract/api-reference.md §2. Same dual/triple-shape handling as getTemplates()
   // since the backend documents the identical envelope for this route.
