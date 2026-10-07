@@ -11,6 +11,7 @@ import { Wordmark } from "./Wordmark";
 const NAV_LINKS = [
   { name: "Features", href: "#features" },
   { name: "How it works", href: "#how-it-works" },
+  { name: "Templates", href: "/discover-templates" },
   { name: "Blog", href: "/blog" },
 ];
 

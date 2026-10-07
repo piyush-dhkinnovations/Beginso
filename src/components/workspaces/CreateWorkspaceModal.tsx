@@ -12,16 +12,22 @@ import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import type { Workspace } from '@/types/workspace';
 
 export interface CreateWorkspaceModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** When provided, called with the newly created workspace instead of the default
+   * `router.push('/w/{slug}')` navigation — for a caller (e.g. the template-apply destination
+   * picker, .kiro/specs/public-template-gallery) that wants to continue its own flow with the new
+   * workspace rather than navigate away from the page it's on. */
+  onCreated?: (workspace: Workspace) => void;
 }
 
 // Name-only create flow (requirements.md §7.5) — slug generated server-side, timezone defaulted,
 // matching BE 1.1's confirmed contract (design.md §13). Mirrors CreateFormModal's exact
 // react-hook-form + zod + ui/Modal shape rather than inventing a new pattern.
-export function CreateWorkspaceModal({ isOpen, onClose }: CreateWorkspaceModalProps) {
+export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorkspaceModalProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -48,7 +54,11 @@ export function CreateWorkspaceModal({ isOpen, onClose }: CreateWorkspaceModalPr
     onSuccess: (workspace) => {
       queryClient.invalidateQueries({ queryKey: workspaceKeys.list() });
       onClose();
-      router.push(`/w/${workspace.slug}`);
+      if (onCreated) {
+        onCreated(workspace);
+      } else {
+        router.push(`/w/${workspace.slug}`);
+      }
     },
     onError: () => {
       toast('Failed to create workspace. Please try again.', 'error');

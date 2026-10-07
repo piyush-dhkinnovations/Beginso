@@ -236,6 +236,16 @@ export default function DashboardPage() {
           </div>
         </>
       )}
+
+      {formsLoaded && hasForms && (
+        <RecentActivitySection
+          hasForms={hasForms}
+          activities={analytics?.recentActivity}
+          isLoading={analyticsLoading}
+          isError={isError}
+          onRetry={() => void refetch()}
+        />
+      )}
     </div>
   );
 }

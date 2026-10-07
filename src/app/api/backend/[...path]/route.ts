@@ -12,7 +12,17 @@ const PUBLIC_AUTH_PATHS = new Set([
   'api/auth/forgot-password',
   'api/auth/confirm-password-reset',
 ]);
-const UNSUBSCRIBE_PREFIX = 'api/public/notifications/unsubscribe/';
+// Distinct from PUBLIC_AUTH_PATHS above (which is specifically the unauthenticated steps of the
+// auth flow itself, e.g. signup/login/verification). This set is for otherwise-ordinary backend
+// data routes that are deliberately public — e.g. the /discover-templates gallery calling
+// GET /api/templates/public for logged-out visitors. Every route through this proxy required a
+// session until this one; found the hard way when the public gallery's real request 401'd here
+// before ever reaching the backend, even though the backend route itself needs no auth
+// (.kiro/specs/public-template-gallery/). Add future public-but-non-auth routes here, not to
+// PUBLIC_AUTH_PATHS, so the two sets keep meaning what their names say.
+const PUBLIC_DATA_PATHS = new Set([
+  'api/templates/public',
+]);
 const ALLOWED_API_ROOTS = new Set([
   // Sprint 14 (task 2.1) - GET /api/search lives under its own root. Same allowlist trap as every
   // root below: without this entry every search call 404s "Backend path is not allowed".
@@ -93,12 +103,11 @@ async function forward(request: NextRequest, pathParts: string[]): Promise<NextR
   const path = pathParts.join('/');
   const isSessionRequest = path === SESSION_PATH;
   const isLogoutRequest = path === LOGOUT_PATH;
-  // Sprint 14: the unsubscribe link in activity emails is opened signed-out, straight from a mail client.
-  const isPublicUnsubscribe = request.method === 'GET' && path.startsWith(UNSUBSCRIBE_PREFIX);
-  const isPublicAuthRequest = PUBLIC_AUTH_PATHS.has(path) || isPublicUnsubscribe;
+  const isPublicAuthRequest = PUBLIC_AUTH_PATHS.has(path);
+  const isPublicDataRequest = PUBLIC_DATA_PATHS.has(path);
   const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
-  if (!isPublicAuthRequest && !sessionToken) {
+  if (!isPublicAuthRequest && !isPublicDataRequest && !sessionToken) {
     return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
   }
 
