@@ -6,6 +6,9 @@ export interface TableColumn<T> {
   header: React.ReactNode;
   render: (row: T) => React.ReactNode;
   align?: "left" | "right";
+  /** Extra class on this column's th/td — e.g. collapsing a column to zero width when it has
+   * nothing to show right now, rather than just hiding its content and leaving the gap behind. */
+  className?: string;
 }
 
 export interface TableProps<T> {
@@ -17,6 +20,7 @@ export interface TableProps<T> {
   emptyState?: React.ReactNode;
   className?: string;
   stickyFirstColumn?: boolean;
+  onRowDoubleClick?: (row: T) => void;
 }
 
 // beginso-ui.css classes — see src/styles/beginso-ui.css §11 TABLE. `emptyState`/loading rows
@@ -37,14 +41,15 @@ export function Table<T>({
   emptyState,
   className,
   stickyFirstColumn,
+  onRowDoubleClick,
 }: TableProps<T>) {
   return (
     <div className="bg-table-wrap">
       <table className={bx("bg-table", "bg-table-stack", stickyFirstColumn && "bg-table-sticky", className)}>
         <thead>
-          <tr>
+          <tr className="group">
             {columns.map((col) => (
-              <th key={col.key} className={bx(col.align === "right" && "bg-num")}>
+              <th key={col.key} className={bx(col.align === "right" && "bg-num", col.className)}>
                 {col.header}
               </th>
             ))}
@@ -67,12 +72,16 @@ export function Table<T>({
             </tr>
           ) : (
             rows.map((row) => (
-              <tr key={rowKey(row)}>
+              <tr
+                key={rowKey(row)}
+                className="group"
+                onDoubleClick={onRowDoubleClick ? () => onRowDoubleClick(row) : undefined}
+              >
                 {columns.map((col) => (
                   <td
                     key={col.key}
                     data-label={typeof col.header === "string" ? col.header : undefined}
-                    className={bx(col.align === "right" && "bg-num")}
+                    className={bx(col.align === "right" && "bg-num", col.className)}
                   >
                     {col.render(row)}
                   </td>

@@ -13,7 +13,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, LayoutTemplate, FilePlus, Table, Settings, Download, Pin, BarChart2, Edit3, Share2 } from 'lucide-react';
+import { FormsOverviewCharts } from '@/components/analytics/FormsOverviewCharts';
+import { FileText, Files, MessageSquare, Plus, LayoutTemplate, FilePlus, Table, Settings, Download, Pin, BarChart2, Edit3, Share2 } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { workspaceKeys } from '@/lib/queryKeys';
 import { PageHeader, Button, EmptyState, StatCard, Card, Badge, Skeleton } from '@/components/ui';
@@ -60,7 +61,7 @@ export default function WorkspaceHomePage() {
         </div>
         <Card className="flex flex-col gap-3">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-3 py-2 border-b border-[var(--border-default)] last:border-0">
+            <div key={i} className="flex items-center gap-3 py-2 border-b border-(--border-default) last:border-0">
               <Skeleton variant="circle" width="36px" height="36px" />
               <div className="flex flex-col gap-1.5 flex-1">
                 <Skeleton variant="text" width="45%" />
@@ -84,8 +85,8 @@ export default function WorkspaceHomePage() {
         />
         <Card role="alert" className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-body-sm font-semibold text-[var(--text-primary)]">Unable to load workspace data</p>
-            <p className="mt-1 text-caption text-[var(--text-muted)]">Please try again.</p>
+            <p className="bg-body-sm font-semibold text-(--text-primary)">Unable to load workspace data</p>
+            <p className="mt-1 bg-caption text-(--text-muted)">Please try again.</p>
           </div>
           <Button variant="secondary" size="small" onClick={() => void refetch()}>
             Try again
@@ -120,8 +121,8 @@ export default function WorkspaceHomePage() {
 
       {isEmpty ? (
         // ── Empty state (B2.4 — just-created workspace) ──────────────────────
-        <EmptyState
-          icon={<FilePlus className="bg-icon text-[var(--text-muted)]" size={32} aria-hidden="true" />}
+        <EmptyState illustration="onboarding"
+          icon={<FilePlus className="bg-icon text-(--text-muted)" size={32} aria-hidden="true" />}
           title="Welcome to your workspace!"
           description="Create your first interactive web form or start from one of our professional, pre-built templates to get started."
           primaryAction={
@@ -140,14 +141,32 @@ export default function WorkspaceHomePage() {
         <div className="flex flex-col gap-5">
           {/* Stat cards grid */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard label="Total Forms" value={forms.length} />
-            <StatCard label="Total Responses" value={forms.reduce((s, f) => s + (f.responseCount ?? 0), 0)} />
-            <StatCard label="Active Forms" value={forms.filter((f) => f.status === 'published').length} />
+            <StatCard label="Total Forms" value={forms.length} icon={<FileText aria-hidden="true" />} />
+            <StatCard
+              label="Total Responses"
+              value={forms.reduce((s, f) => s + (f.responseCount ?? 0), 0)}
+              icon={<MessageSquare aria-hidden="true" />}
+            />
+            <StatCard
+              label="Active Forms"
+              value={forms.filter((f) => f.status === 'published').length}
+              unit={forms.length > 0 ? `/ ${forms.length}` : undefined}
+              icon={<Files aria-hidden="true" />}
+              chart={
+                forms.length > 0
+                  ? { kind: 'ring', percent: Math.round((forms.filter((f) => f.status === 'published').length / forms.length) * 100) }
+                  : undefined
+              }
+            />
           </div>
+
+          <FormsOverviewCharts
+            forms={forms.map((f) => ({ title: f.title, status: f.status, responses: f.responseCount ?? 0 }))}
+          />
 
           {/* Quick actions strip */}
           <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
-            <span className="text-body-sm font-semibold text-[var(--text-primary)]">Quick Actions</span>
+            <span className="bg-body-sm font-semibold text-(--text-primary)">Quick Actions</span>
             <div className="flex flex-wrap gap-2">
               <Link href={`/w/${slug}/responses`}>
                 <Button variant="secondary" size="small">
@@ -173,25 +192,25 @@ export default function WorkspaceHomePage() {
           {/* Two-column: Pinned Forms (left) + Recent Activity (right) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <Card className="flex flex-col gap-4">
-              <div className="flex items-center gap-2 pb-2 border-b border-[var(--border-default)]">
-                <Pin size={14} className="text-[var(--text-muted)]" />
-                <h3 className="text-body font-semibold text-[var(--text-primary)]">Pinned Forms</h3>
+              <div className="flex items-center gap-2 pb-2 border-b border-(--border-default)">
+                <Pin size={14} className="text-(--text-muted)" />
+                <h3 className="bg-body font-semibold text-(--text-primary)">Pinned Forms</h3>
               </div>
               <div className="flex flex-col gap-3">
                 {forms.slice(0, 5).map((f) => (
-                  <div key={f._id} className="flex flex-col gap-1.5 pb-3 border-b border-[var(--border-default)] last:border-0">
+                  <div key={f._id} className="flex flex-col gap-1.5 pb-3 border-b border-(--border-default) last:border-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-body-sm font-semibold text-[var(--text-primary)]">{f.title}</span>
+                      <span className="bg-body-sm font-semibold text-(--text-primary)">{f.title}</span>
                       <Badge>{f.status === 'published' ? `Active · ${f.responseCount} responses` : 'Draft'}</Badge>
                     </div>
-                    <div className="flex items-center gap-3 text-caption text-[var(--text-muted)]">
-                      <Link href={`/forms/${f._id}/responses?ws=${slug}`} className="hover:text-[var(--text-primary)] flex items-center gap-1">
+                    <div className="flex items-center gap-3 bg-caption text-(--text-muted)">
+                      <Link href={`/forms/${f._id}/responses?ws=${slug}`} className="hover:text-(--text-primary) flex items-center gap-1">
                         <Table size={12} /> Responses
                       </Link>
-                      <Link href={`/forms/${f._id}/analytics?ws=${slug}`} className="hover:text-[var(--text-primary)] flex items-center gap-1">
+                      <Link href={`/forms/${f._id}/analytics?ws=${slug}`} className="hover:text-(--text-primary) flex items-center gap-1">
                         <BarChart2 size={12} /> Dashboard
                       </Link>
-                      <Link href={`/forms/${f._id}/edit?ws=${slug}`} className="hover:text-[var(--text-primary)] flex items-center gap-1">
+                      <Link href={`/forms/${f._id}/edit?ws=${slug}`} className="hover:text-(--text-primary) flex items-center gap-1">
                         <Edit3 size={12} /> Edit
                       </Link>
                       {/* Real bug found and fixed: this linked to /w/[slug]/share, a route that
@@ -202,7 +221,7 @@ export default function WorkspaceHomePage() {
                       <button
                         type="button"
                         onClick={() => setFormToShare(f)}
-                        className="hover:text-[var(--text-primary)] flex items-center gap-1"
+                        className="hover:text-(--text-primary) flex items-center gap-1"
                       >
                         <Share2 size={12} /> Share
                       </button>
@@ -213,10 +232,10 @@ export default function WorkspaceHomePage() {
             </Card>
 
             <Card className="flex flex-col gap-4">
-              <div className="pb-2 border-b border-[var(--border-default)]">
-                <h3 className="text-body font-semibold text-[var(--text-primary)]">Recent Activity</h3>
+              <div className="pb-2 border-b border-(--border-default)">
+                <h3 className="bg-body font-semibold text-(--text-primary)">Recent Activity</h3>
               </div>
-              <p className="text-caption text-[var(--text-muted)]">No recent activity in this workspace yet.</p>
+              <p className="bg-caption text-(--text-muted)">No recent activity in this workspace yet.</p>
             </Card>
           </div>
         </div>

@@ -1,83 +1,102 @@
-'use client';
+import { Avatar } from '@/components/ui/Avatar';
+import { Tag } from '@/components/ui/Tag';
+import { Tooltip } from '@/components/ui/Tooltip';
+import { MessageSquare, Paperclip } from 'lucide-react';
+import { formatResponseDate, detectRespondentIdentity } from '@/lib/formatters';
+import type { IResponse, ResponseTag } from '@/types/response';
 
-import { Eye, Trash2 } from 'lucide-react';
-import { StatusBadge } from '@/components/ui/StatusBadge';
-import { Button } from '@/components/ui/Button';
-import { formatResponseDate, buildAnswerPreview, detectRespondentIdentity } from '@/lib/formatters';
-import { STATUS_LABELS, type IResponse } from '@/types/response';
+/**
+ * Sprint 12 (inbox-collaboration), requirements.md §7.2 (2.1). Cell-building helpers for
+ * `ResponsesTable`'s `ui/Table` columns — a bare `<tr>` component no longer fits `ui/Table`'s
+ * render-function column API, so this file's job shifted from "one full row" to "the cells that
+ * carry response-specific logic," reused by both the Respondent and Tags/Assignee columns.
+ */
 
-interface ResponseRowProps {
-  response: IResponse;
-  isSelected: boolean;
-  onSelect: (checked: boolean) => void;
-  onView: () => void;
-  onDelete: () => void;
-}
-
-export function ResponseRow({ response, isSelected, onSelect, onView, onDelete }: ResponseRowProps) {
+export function RespondentCell({ response }: { response: IResponse }) {
   const identity = detectRespondentIdentity(response.answers);
-  const hasIdentity = !!(identity.label || identity.email);
-  const initial = (identity.label ?? identity.email ?? '?').charAt(0).toUpperCase();
+  const name = identity.label ?? identity.email ?? 'Anonymous';
+  const noteCount = response.noteCount ?? 0;
+  const attachmentCount = response.attachmentCount ?? 0;
+  const hasMeta = noteCount > 0 || attachmentCount > 0;
+  // Second line is the email only, never other form answers — and only when it isn't already
+  // the name shown above it (a form with no separate name field falls back to email as `name`).
+  const secondLine = identity.label ? identity.email : undefined;
 
   return (
-    <tr onClick={onView} className="hover:bg-neutral-50 cursor-pointer border-b border-neutral-100 last:border-0">
-      <td className="responses-secondary-column w-12 px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
-        <label className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center">
-          <input
-            type="checkbox"
-            checked={isSelected}
-            onChange={(e) => onSelect(e.target.checked)}
-            aria-label={`Select response from ${formatResponseDate(response.submittedAt)}`}
-            className="w-4 h-4"
-          />
-        </label>
-      </td>
-      <td className="px-4 py-3 text-body-sm text-neutral-600 whitespace-nowrap">
-        <span className="responses-desktop-only">{formatResponseDate(response.submittedAt)}</span>
-        <span className="responses-mobile-only min-w-0 flex-col">
-          <span className="max-w-36 truncate font-medium text-neutral-800">
-            {identity.label ?? identity.email ?? 'Anonymous'}
-          </span>
-          <span className="text-caption text-neutral-500">{formatResponseDate(response.submittedAt)}</span>
-        </span>
-      </td>
-      <td className="px-4 py-3">
-        <StatusBadge variant={response.status}>{STATUS_LABELS[response.status]}</StatusBadge>
-      </td>
-      <td className="responses-secondary-column px-4 py-3 text-body-sm text-neutral-500 truncate max-w-[300px]">
-        <div className="flex items-center gap-2 min-w-0">
-          {hasIdentity && (
-            <span
-              aria-hidden="true"
-              className="w-6 h-6 shrink-0 rounded-full bg-brand-100 text-brand-700 text-caption font-semibold flex items-center justify-center"
-            >
-              {initial}
+    <div className="flex min-w-0 items-center gap-2.5">
+      <span
+        aria-hidden="true"
+        className="h-2 w-2 shrink-0 rounded-full"
+        style={{ backgroundColor: response.unread ? 'var(--action-primary)' : 'transparent' }}
+      />
+      <span className="sr-only">{response.unread ? 'Unread. ' : ''}</span>
+      <Avatar size="sm" name={name} alt="" />
+      <div className="flex min-w-0 flex-col">
+        <span className="flex items-center gap-1.5">
+          <span className="truncate font-medium text-(--text-primary)">{name}</span>
+          {/* Sprint 13: same two signals the Board and Calendar show (ResponseSignals), as text badges. */}
+          {response.editedAfterReviewAt && (
+            <span className="shrink-0 rounded-full bg-(--warning-surface) px-2 bg-caption font-semibold text-(--warning-text)">Edited</span>
+          )}
+          {response.isTest && (
+            <span className="shrink-0 rounded-full bg-(--bg-sunken) px-2 bg-caption font-semibold text-(--text-secondary)">Test</span>
+          )}
+          {hasMeta && (
+            <span className="flex shrink-0 items-center gap-1.5 bg-caption text-(--text-muted)">
+              {noteCount > 0 && (
+                <span className="inline-flex items-center gap-1" aria-label={`${noteCount} note${noteCount === 1 ? '' : 's'}`}>
+                  <MessageSquare size={14} aria-hidden="true" />
+                  {noteCount}
+                </span>
+              )}
+              {attachmentCount > 0 && (
+                <span className="inline-flex items-center gap-1" aria-label={`${attachmentCount} attachment${attachmentCount === 1 ? '' : 's'}`}>
+                  <Paperclip size={14} aria-hidden="true" />
+                  {attachmentCount}
+                </span>
+              )}
             </span>
           )}
-          <div className="min-w-0 flex flex-col">
-            {hasIdentity && (
-              <span className="text-neutral-700 font-medium truncate">{identity.label ?? identity.email}</span>
-            )}
-            <span className="truncate">{buildAnswerPreview(response.answers)}</span>
-          </div>
-        </div>
-      </td>
-      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-end gap-1">
-          <Button variant="ghost" size="small" aria-label="View response" onClick={onView} className="w-11 h-11 p-0">
-            <Eye size={16} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="small"
-            aria-label="Delete response"
-            onClick={onDelete}
-            className="w-11 h-11 p-0 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-          >
-            <Trash2 size={16} />
-          </Button>
-        </div>
-      </td>
-    </tr>
+        </span>
+        {secondLine && <span className="truncate bg-caption text-(--text-muted)">{secondLine}</span>}
+      </div>
+    </div>
   );
+}
+
+const MAX_VISIBLE_TAGS = 2;
+
+export function TagsCell({ tags }: { tags: ResponseTag[] | undefined }) {
+  if (!tags || tags.length === 0) return <span className="text-(--text-muted)">—</span>;
+  const visible = tags.slice(0, MAX_VISIBLE_TAGS);
+  const overflow = tags.slice(MAX_VISIBLE_TAGS);
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {visible.map((tag) => <Tag key={tag.id}>{tag.name}</Tag>)}
+      {overflow.length > 0 && (
+        <Tooltip content={overflow.map((t) => t.name).join(', ')}>
+          <Tag>+{overflow.length}</Tag>
+        </Tooltip>
+      )}
+    </div>
+  );
+}
+
+export function AssigneeCell({ response }: { response: IResponse }) {
+  if (!response.assignee) {
+    return <span aria-label="Unassigned" className="text-(--text-muted)">—</span>;
+  }
+  return (
+    <div className="flex items-center gap-1.5">
+      <Avatar size="xs" name={response.assignee.name} src={response.assignee.avatarUrl ?? undefined} alt="" />
+      <span className="truncate bg-body-sm text-(--text-secondary)">
+        {response.assignee.name}
+        {response.assignee.removed && <span className="text-(--text-muted)"> · no longer has access</span>}
+      </span>
+    </div>
+  );
+}
+
+export function SubmittedCell({ response }: { response: IResponse }) {
+  return <span className="whitespace-nowrap bg-body-sm text-(--text-secondary)">{formatResponseDate(response.submittedAt)}</span>;
 }

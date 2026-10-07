@@ -8,7 +8,7 @@ import { isAxiosError } from 'axios';
 import { workspaceNameSchema, type WorkspaceNameFormValues } from '@/lib/schemas/settingsSchemas';
 import { settingsService } from '@/services/settings';
 import { settingsKeys } from '@/lib/queryKeys';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
@@ -16,16 +16,18 @@ import { DangerZoneSection } from './DangerZoneSection';
 
 interface WorkspaceTabProps {
   onDirtyChange?: (isDirty: boolean) => void;
+  /** Workspace slug when rendered inside /w/[slug]/settings. Also hides the account-level Danger Zone. */
+  scope?: string;
 }
 
-export function WorkspaceTab({ onDirtyChange }: WorkspaceTabProps) {
+export function WorkspaceTab({ onDirtyChange, scope }: WorkspaceTabProps) {
   const { toast } = useToast();
   const { logout } = useAuth();
   const queryClient = useQueryClient();
 
   const { data: workspace, isLoading, isError, error, refetch } = useQuery({
-    queryKey: settingsKeys.workspace(),
-    queryFn: settingsService.getWorkspace,
+    queryKey: settingsKeys.workspace(scope),
+    queryFn: () => settingsService.getWorkspace(scope),
   });
 
   // Confirmed live 18 Aug 2026 (backend commit a7a5185) — DELETE /api/workspaces/current now
@@ -65,7 +67,7 @@ export function WorkspaceTab({ onDirtyChange }: WorkspaceTabProps) {
   }, [isDirty]);
 
   const updateNameMutation = useMutation({
-    mutationFn: (name: string) => settingsService.updateWorkspace({ name }),
+    mutationFn: (name: string) => settingsService.updateWorkspace({ name }, scope),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: settingsKeys.workspace() });
       reset({ name: updated.name });
@@ -77,15 +79,15 @@ export function WorkspaceTab({ onDirtyChange }: WorkspaceTabProps) {
   if (isLoading) {
     return (
       <div className="flex flex-col gap-4 animate-pulse">
-        <div className="h-10 bg-[var(--border-default)] rounded w-full" />
+        <div className="h-10 bg-(--border-default) rounded w-full" />
       </div>
     );
   }
 
   if (isOrphanedAccount) {
     return (
-      <div role="alert" className="flex flex-col gap-3 rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
-        <p className="text-body-sm text-[var(--text-primary)]">
+      <div role="alert" className="flex flex-col gap-3 rounded-lg border border-(--border-default) bg-(--surface-card) p-4">
+        <p className="bg-body-sm text-(--text-primary)">
           This account no longer has an active workspace, so there&apos;s nothing to manage here.
           You&apos;ll need to sign out and create a new account to continue.
         </p>
@@ -98,8 +100,8 @@ export function WorkspaceTab({ onDirtyChange }: WorkspaceTabProps) {
 
   if (isError || !workspace) {
     return (
-      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-[var(--border-default)] bg-[var(--surface-card)] p-4">
-        <p className="text-body-sm text-[var(--text-primary)]">Unable to load your workspace.</p>
+      <div role="alert" className="flex items-center justify-between gap-4 rounded-lg border border-(--border-default) bg-(--surface-card) p-4">
+        <p className="bg-body-sm text-(--text-primary)">Unable to load your workspace.</p>
         <Button variant="secondary" size="small" onClick={() => refetch()}>Try again</Button>
       </div>
     );
@@ -115,7 +117,9 @@ export function WorkspaceTab({ onDirtyChange }: WorkspaceTabProps) {
         </Button>
       </form>
 
-      <DangerZoneSection workspaceName={workspace.name} />
+      {/* Export/delete act on the signed-in account (DELETE /workspaces/current deletes the user
+          too), so they live in account settings' Data tab, not per-workspace settings. */}
+      {!scope && <DangerZoneSection workspaceName={workspace.name} />}
     </div>
   );
 }

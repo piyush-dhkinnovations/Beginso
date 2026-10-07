@@ -46,7 +46,7 @@ describe('WorkspaceSidebar', () => {
   // Removed until each page actually ships.
   it('does not render links to pages that do not exist yet under /w/[slug]', () => {
     renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc', role: 'owner' });
-    ['Templates', 'Responses', 'Analytics', 'Reports', 'Settings'].forEach((label) => {
+    ['Responses', 'Analytics', 'Reports'].forEach((label) => {
       expect(screen.queryByRole('link', { name: label })).not.toBeInTheDocument();
     });
   });

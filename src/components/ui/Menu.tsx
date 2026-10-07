@@ -71,7 +71,8 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
   }, [isOpen]);
 
   useEffect(() => {
-    if (isOpen) itemRefs.current[activeIndex]?.focus();
+    // preventScroll: focusing an item that sits below the fold must not scroll the page, which would close the menu.
+    if (isOpen) itemRefs.current[activeIndex]?.focus({ preventScroll: true });
   }, [isOpen, activeIndex]);
 
   // The dropdown is portaled to document.body and positioned with `fixed` coordinates (see
@@ -107,12 +108,15 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
     setActiveIndex(enabledIndexes[0] ?? 0);
     const rect = triggerRef.current?.getBoundingClientRect();
     if (rect) {
+      // Flip above the trigger when the menu would run off the bottom of the viewport.
+      const estimatedHeight = items.length * 36 + 12;
+      const top = rect.bottom + 6 + estimatedHeight > window.innerHeight ? Math.max(8, rect.top - 6 - estimatedHeight) : rect.bottom + 6;
       setPosition(
         isFullWidth
-          ? { top: rect.bottom + 6, left: rect.left, width: rect.width }
+          ? { top, left: rect.left, width: rect.width }
           : align === "end"
-          ? { top: rect.bottom + 6, right: window.innerWidth - rect.right }
-          : { top: rect.bottom + 6, left: rect.left }
+          ? { top, right: window.innerWidth - rect.right }
+          : { top, left: rect.left }
       );
     }
     setIsOpen(true);

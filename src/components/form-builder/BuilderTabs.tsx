@@ -4,6 +4,7 @@ import { ChevronRight, Undo2, Redo2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 
+// Share & Embed is the fourth tab, after Settings (CF2.1). It is hidden for roles that cannot see it.
 export type BuilderTab = 'build' | 'branding' | 'settings' | 'share';
 
 interface BuilderTabsProps {
@@ -13,6 +14,8 @@ interface BuilderTabsProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
+  /** Whether the Share tab is shown (Reviewers do not see it). */
+  showShare?: boolean;
 }
 
 const TABS: { id: BuilderTab; label: string }[] = [
@@ -22,15 +25,15 @@ const TABS: { id: BuilderTab; label: string }[] = [
   { id: 'share', label: 'Share' },
 ];
 
-export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onRedo }: BuilderTabsProps) {
+export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onRedo, showShare = true }: BuilderTabsProps) {
   return (
-    <nav className="flex items-center justify-between border-b bg-white shrink-0 shadow-sm" aria-label="Form Builder Tabs">
+    <nav className="flex items-center justify-between border-b bg-(--surface-card) shrink-0 shadow-(--shadow-sm)" aria-label="Form Builder Tabs">
       {/* Real role="tablist"/role="tab"/aria-selected semantics — confirmed missing during Sprint
           6 (SettingsTabs.tsx was built with its own correct semantics rather than copied from
           here, since this component lacked them), fixed here per that sprint's Friday
           accessibility-pass task. */}
       <div className="flex flex-wrap items-center" role="tablist" aria-label="Form Builder sections">
-        {TABS.map((tab, index) => {
+        {TABS.filter((t) => showShare || t.id !== 'share').map((tab, index, list) => {
           const isActive = activeTab === tab.id;
           return (
             <div key={tab.id} className="flex items-center">
@@ -40,16 +43,16 @@ export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onR
                 aria-selected={isActive}
                 onClick={() => onChange(tab.id)}
                 className={cn(
-                  'px-6 py-3 text-body font-semibold transition-all border-b-2 focus:outline-none min-h-[44px] min-w-[60px]',
+                  'px-3 md:px-6 py-3 bg-body font-semibold transition-all border-b-2 focus:outline-none min-h-11 min-w-15',
                   isActive
-                    ? 'border-brand-700 text-brand-700'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-800 hover:border-neutral-200'
+                    ? 'border-(--action-primary-hover) text-(--accent-soft-text)'
+                    : 'border-transparent text-(--text-muted) hover:text-(--text-primary) hover:border-(--border-default)'
                 )}
               >
                 {tab.label}
               </button>
-              {index < TABS.length - 1 && (
-                <ChevronRight size={14} className="text-neutral-300 shrink-0" aria-hidden="true" />
+              {index < list.length - 1 && (
+                <ChevronRight size={14} className="text-(--text-disabled) shrink-0" aria-hidden="true" />
               )}
             </div>
           );

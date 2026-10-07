@@ -1,0 +1,92 @@
+'use client';
+
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { StageBadge } from './StageBadge';
+import { BoardCard } from './BoardCard';
+import { responsesService } from '@/services/responses';
+import { responseKeys } from '@/lib/queryKeys';
+import type { ResponseFilters } from '@/types/response';
+import type { StageRef } from '@/types/stage';
+
+const COLUMN_PAGE_LIMIT = 20;
+const SKELETON_CARDS = 3;
+
+export interface BoardColumnProps {
+  scope: string;
+  formId?: string;
+  /** The active Inbox filters (search/tag/assignee/unread/...) — `stageId` is always overridden
+   * to this column's own stage below, so a global stage filter selected on the Table's toolbar
+   * has no effect on Board (every column still renders; that's the point of a board). */
+  filters: ResponseFilters;
+  stage: StageRef;
+  stages: readonly StageRef[];
+  canAct: boolean;
+  onViewResponse: (id: string) => void;
+  onChangeStage: (responseId: string, stageId: string) => void;
+}
+
+/**
+ * Sprint 12 (inbox-collaboration), requirements.md §7.4 (4.1), design.md §20 (task 3.2): "each
+ * column paginates independently" — a `useInfiniteQuery` per column (not one combined list query)
+ * so a column with more than a page of responses gets a "Load more" instead of silently
+ * truncating.
+ */
+export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onViewResponse, onChangeStage }: BoardColumnProps) {
+  const queryKey = [...responseKeys.list(scope, formId, { ...filters, stageId: stage.id }), 'board'];
+
+  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
+    queryKey,
+    queryFn: ({ pageParam }) =>
+      responsesService.getResponses({ formId, ...filters, stageId: stage.id, page: pageParam, limit: COLUMN_PAGE_LIMIT }, scope),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => (lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined),
+  });
+
+  const responses = data?.pages.flatMap((p) => p.data) ?? [];
+  const total = data?.pages[0]?.total ?? 0;
+
+  return (
+    <div className="board-column flex w-72 shrink-0 snap-start flex-col gap-2" role="listitem" aria-label={`${stage.name} column`}>
+      <div className="flex items-center justify-between gap-2 px-1">
+        <StageBadge stage={stage} />
+        <span className="bg-caption text-(--text-muted)" aria-label={`${total} response${total === 1 ? '' : 's'}`}>
+          {total}
+        </span>
+      </div>
+
+      <div className="flex min-h-16 flex-col gap-2" aria-busy={isLoading || undefined}>
+        {isLoading &&
+          Array.from({ length: SKELETON_CARDS }).map((_, i) => (
+            <Skeleton key={i} variant="block" height={92} className="rounded-lg" />
+          ))}
+
+        {isError && (
+          <div className="flex flex-col items-center gap-2 rounded-lg border border-dashed border-(--border-default) p-3 text-center">
+            <AlertCircle size={16} className="text-(--text-muted)" aria-hidden="true" />
+            <p className="bg-body-sm text-(--text-muted)">Couldn&apos;t load this column.</p>
+            <Button variant="secondary" size="small" onClick={() => void refetch()}>
+              Retry
+            </Button>
+          </div>
+        )}
+
+        {!isLoading && !isError && responses.length === 0 && (
+          <p className="px-1 py-4 text-center bg-body-sm text-(--text-muted)">No responses in {stage.name}</p>
+        )}
+
+        {responses.map((r) => (
+          <BoardCard key={r._id} response={r} stages={stages} canAct={canAct} onView={onViewResponse} onChangeStage={onChangeStage} />
+        ))}
+
+        {hasNextPage && (
+          <Button variant="ghost" size="small" isLoading={isFetchingNextPage} onClick={() => void fetchNextPage()}>
+            Load more
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -63,12 +63,12 @@ function DraggableToolboxItem({ config, onAdd }: DraggableItemProps) {
       {...attributes}
       onClick={() => onAdd?.(type)}
       title={label}
-      className={`flex items-center justify-center min-[881px]:justify-start gap-3 px-3 py-2.5 rounded-md bg-white border border-neutral-200 cursor-grab active:cursor-grabbing hover:bg-neutral-50 hover:border-neutral-300 transition-colors select-none shadow-sm min-h-[44px] ${
-        isDragging ? 'opacity-50 border-brand-500 ring-1 ring-brand-500/20' : ''
+      className={`flex items-center justify-center lg:justify-start gap-3 px-0 lg:px-3 py-2.5 rounded-md bg-(--surface-card) border border-(--border-default) cursor-grab active:cursor-grabbing hover:bg-(--surface-hover) hover:border-(--border-strong) transition-colors select-none shadow-(--shadow-sm) min-h-11 ${
+        isDragging ? 'opacity-50 border-(--border-focus) ring-1 ring-(--border-focus)/20' : ''
       }`}
     >
-      <Icon size={16} className="text-neutral-500 shrink-0" />
-      <span className="hidden min-[881px]:inline text-body font-medium text-neutral-700">{label}</span>
+      <Icon size={16} className="text-(--text-muted) shrink-0" />
+      <span className="hidden lg:inline bg-body font-medium text-(--text-secondary)">{label}</span>
     </div>
   );
 }
@@ -79,12 +79,12 @@ export interface ToolboxProps {
 
 export function Toolbox({ onAdd }: ToolboxProps) {
   return (
-    // Icon-only below 881px (design system's tablet/desktop boundary) so the
-    // toolbox doesn't crowd the canvas; full labelled list returns on desktop.
-    <aside className="w-[64px] min-[881px]:w-[280px] flex flex-col gap-4 p-2 min-[881px]:p-4 border-r bg-white overflow-y-auto shrink-0 shadow-sm">
-      <div className="hidden min-[881px]:block">
-        <h3 className="text-heading-3 font-bold text-neutral-800 tracking-tight">Field Types</h3>
-        <p className="text-body-sm text-neutral-500 mt-1">
+    // Sprint 13 (CF2.12): the rail is full width from 1024px and icon-only on tablet (768-1023px). On phones the toolbox is the
+    // AddFieldSheet bottom sheet, opened from the build bar under the canvas.
+    <aside className="hidden md:flex w-16 lg:w-70 flex-col gap-4 p-2 lg:p-4 border-r bg-(--surface-card) overflow-y-auto shrink-0 shadow-(--shadow-sm)">
+      <div className="hidden lg:block">
+        <h3 className="bg-body font-semibold font-bold text-(--text-primary) tracking-tight">Field Types</h3>
+        <p className="bg-body-sm text-(--text-muted) mt-1">
           Drag and drop fields onto the canvas to customize your form.
         </p>
       </div>

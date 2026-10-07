@@ -45,13 +45,13 @@ test.describe('Public form — multi-page navigation', () => {
     expect(submitCalled).toBe(false);
   });
 
-  test('the last page shows Submit, not Next', async ({ page }) => {
+  test('the last page shows Review answers, not Next (multi-page forms review before submit)', async ({ page }) => {
     await page.goto('/f/mock-valid');
     await fillPage1(page);
     await page.locator('form').getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.getByText('Step 2 of 2')).toBeVisible();
 
-    await expect(page.locator('form').getByRole('button', { name: 'Submit', exact: true })).toBeVisible();
+    await expect(page.locator('form').getByRole('button', { name: 'Review answers', exact: true })).toBeVisible();
     await expect(page.locator('form').getByRole('button', { name: 'Next', exact: true })).toHaveCount(0);
   });
 });

@@ -163,4 +163,24 @@ describe('AuditLogPage (/w/[slug]/audit)', () => {
     expect(screen.getByRole('button', { name: 'Next' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
   });
+
+  // Sprint 11 5.3: computed accessibility for the denied/error states, not just that the right
+  // words appear on screen.
+  it('the error state is announced via role="alert", not just visible text', async () => {
+    mockAudit.mockRejectedValue({ response: { status: 500 } });
+    renderPage();
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent('We could not load the audit log.');
+  });
+
+  it('a member/viewer without access sees the denied state with no Retry — a dead-end action must not be offered', async () => {
+    mockWorkspaces.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role: 'viewer' }]);
+    renderPage();
+
+    expect(await screen.findByText('You do not have access to the audit log.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Retry' })).not.toBeInTheDocument();
+    // and no privileged call was ever made for a role that cannot see this data
+    expect(mockAudit).not.toHaveBeenCalled();
+  });
 });

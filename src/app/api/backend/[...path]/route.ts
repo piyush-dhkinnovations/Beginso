@@ -24,6 +24,9 @@ const PUBLIC_DATA_PATHS = new Set([
   'api/templates/public',
 ]);
 const ALLOWED_API_ROOTS = new Set([
+  // Sprint 14 (task 2.1) - GET /api/search lives under its own root. Same allowlist trap as every
+  // root below: without this entry every search call 404s "Backend path is not allowed".
+  'search',
   'auth',
   'analytics',
   'dashboard',
@@ -45,6 +48,20 @@ const ALLOWED_API_ROOTS = new Set([
   'templates',
   'upload',
   'users',
+  // Sprint 12 (inbox-collaboration, task 1.9) — GET/POST/PATCH/DELETE /api/views (saved views,
+  // B7.1) live under their own root, not /workspaces or /responses — same allowlist trap this
+  // file already documents twice above for 'invitations'/'shared-with-me': without this entry
+  // every saved-view call 404s through the BFF with "Backend path is not allowed" even once the
+  // real backend route exists (design.md §4/§22, requirements.md §13's own "allowlist trap").
+  'views',
+  // Sprint 13 (builder-publish-respondent, task 1.6) — new backend roots, same allowlist trap as
+  // 'views'/'invitations' above: 'trash' (CF5.5), 'my-submissions' (A5.1), 'respond' (the signed-link
+  // claim call, which needs the member session — view/edit/resend go direct, token-authenticated, and
+  // never touch this proxy), 'public' (Mode 3's authenticated submit-ticket, OQ-10).
+  'trash',
+  'my-submissions',
+  'respond',
+  'public',
   'workspaces',
 ]);
 
@@ -138,6 +155,11 @@ async function forward(request: NextRequest, pathParts: string[]): Promise<NextR
   const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip');
   const clientUserAgent = request.headers.get('user-agent');
   if (clientIp) headers.set('x-client-ip', clientIp);
+  // The backend only believes x-client-ip when this shared secret comes with it (anyone can send
+  // the header). Same value as PROXY_SHARED_SECRET on the backend; unset here = backend uses the
+  // proxy's own address for rate limits and login location.
+  const proxySecret = process.env.BACKEND_PROXY_SECRET;
+  if (proxySecret) headers.set('x-proxy-secret', proxySecret);
   if (clientUserAgent) headers.set('x-client-user-agent', clientUserAgent);
 
   const hasBody = !['GET', 'HEAD'].includes(request.method);

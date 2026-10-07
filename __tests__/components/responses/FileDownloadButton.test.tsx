@@ -14,7 +14,7 @@ import userEvent from '@testing-library/user-event';
 import { FileDownloadButton } from '@/components/responses/FileDownloadButton';
 
 const mockToast = vi.fn();
-vi.mock('@/components/common/Toast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 

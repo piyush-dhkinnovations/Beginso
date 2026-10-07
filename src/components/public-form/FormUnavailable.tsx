@@ -1,3 +1,4 @@
+import { StateArt } from '@/components/illustrations/Illustration';
 import { Lock } from 'lucide-react';
 
 interface FormUnavailableProps {
@@ -11,17 +12,17 @@ interface FormUnavailableProps {
  */
 export function FormUnavailable({ userNote }: FormUnavailableProps) {
   return (
-    <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl border border-neutral-200 shadow-card p-8 max-w-[520px] w-full text-center">
-        <Lock size={48} className="text-neutral-400 mx-auto mb-4" />
-        <h1 className="text-heading-1 text-neutral-900 mb-2">
+    <div className="min-h-screen bg-(--bg-subtle) flex items-center justify-center p-4">
+      <div className="bg-(--surface-card) rounded-xl border border-(--border-default) shadow-(--shadow-sm) p-8 max-w-130 w-full text-center">
+        <StateArt name="form-closed" fallback={<Lock size={48} className="text-(--text-disabled) mx-auto mb-4" />} />
+        <h1 className="bg-h4 text-(--text-primary) mb-2">
           This form is not currently accepting responses.
         </h1>
-        <p className="text-body text-neutral-500">
+        <p className="bg-body text-(--text-muted)">
           If you believe this is an error, please contact the form owner.
         </p>
         {userNote && (
-          <p className="text-body-sm text-neutral-400 mt-4">{userNote}</p>
+          <p className="bg-body-sm text-(--text-disabled) mt-4">{userNote}</p>
         )}
       </div>
     </div>

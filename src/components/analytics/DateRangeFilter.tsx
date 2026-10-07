@@ -1,6 +1,7 @@
 'use client';
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { ArrowRight, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   ALL_TIME_SENTINEL,
@@ -29,6 +30,9 @@ interface DateRangeFilterProps {
    * `updateParams` pattern the Responses Hub uses. */
   value?: DateRangeValue;
   onChange?: (range: DateRangeValue) => void;
+  /** Render only part of the control so a page can place them apart — the preset chips below the
+   * title, the custom range at the right of it. Default: both together. */
+  part?: 'all' | 'presets' | 'range';
 }
 
 function toUtcStartOfDayIso(dateStr: string): string {
@@ -39,7 +43,7 @@ function toUtcEndOfDayIso(dateStr: string): string {
   return `${dateStr}T23:59:59.999Z`;
 }
 
-export function DateRangeFilter({ value, onChange }: DateRangeFilterProps) {
+export function DateRangeFilter({ value, onChange, part = 'all' }: DateRangeFilterProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -82,43 +86,48 @@ export function DateRangeFilter({ value, onChange }: DateRangeFilterProps) {
 
   return (
     <div className="flex flex-wrap items-center gap-3">
-      <div role="group" aria-label="Date range" className="flex flex-wrap gap-2">
-        {PRESETS.map((p) => (
-          <button
-            key={p.value}
-            type="button"
-            aria-pressed={preset === p.value}
-            onClick={() => selectPreset(p.value)}
-            className={cn(
-              'px-3 min-h-11 rounded-full text-xs font-semibold whitespace-nowrap transition-colors',
-              preset === p.value
-                ? 'bg-brand-700 text-white'
-                : 'bg-white border border-neutral-200 text-neutral-600 hover:bg-neutral-50'
-            )}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
+      {part !== 'range' && (
+        <div role="group" aria-label="Date range" className="flex flex-wrap gap-2">
+          {PRESETS.map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              aria-pressed={preset === p.value}
+              onClick={() => selectPreset(p.value)}
+              className={cn(
+                'px-4 min-h-10 rounded-full bg-body-sm font-semibold whitespace-nowrap transition-colors',
+                preset === p.value
+                  ? 'bg-(--action-primary) text-(--text-on-brand)'
+                  : 'bg-(--surface-card) border border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)'
+              )}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      )}
 
-      <div className="flex items-center gap-2">
-        <input
-          type="date"
-          aria-label="Custom range start date"
-          value={from ? from.slice(0, 10) : ''}
-          onChange={(e) => handleFromInputChange(e.target.value)}
-          className="h-[38px] min-h-11 rounded-md px-3 text-[13px] bg-white border-2 border-neutral-200 focus:border-neutral-500 outline-none transition-colors"
-        />
-        <span className="text-body-sm text-neutral-400">to</span>
-        <input
-          type="date"
-          aria-label="Custom range end date"
-          value={to ? to.slice(0, 10) : ''}
-          onChange={(e) => handleToInputChange(e.target.value)}
-          className="h-[38px] min-h-11 rounded-md px-3 text-[13px] bg-white border-2 border-neutral-200 focus:border-neutral-500 outline-none transition-colors"
-        />
-        {preset === 'custom' && <span className="text-caption font-semibold text-brand-700">Custom</span>}
-      </div>
+      {part !== 'presets' && (
+        <div className="inline-flex items-center gap-2 rounded-lg border border-(--border-default) bg-(--surface-card) px-3">
+          <Calendar size={16} className="text-(--text-muted)" aria-hidden="true" />
+          <input
+            type="date"
+            aria-label="Custom range start date"
+            value={from ? from.slice(0, 10) : ''}
+            onChange={(e) => handleFromInputChange(e.target.value)}
+            className="h-10 bg-transparent bg-body-sm text-(--text-primary) outline-none"
+          />
+          <ArrowRight size={14} className="text-(--text-disabled)" aria-label="to" />
+          <input
+            type="date"
+            aria-label="Custom range end date"
+            value={to ? to.slice(0, 10) : ''}
+            onChange={(e) => handleToInputChange(e.target.value)}
+            className="h-10 bg-transparent bg-body-sm text-(--text-primary) outline-none"
+          />
+          {preset === 'custom' && <span className="bg-caption font-semibold text-(--accent-soft-text)">Custom</span>}
+        </div>
+      )}
     </div>
   );
 }

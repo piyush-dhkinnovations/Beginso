@@ -1,21 +1,19 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Info } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { settingsService } from '@/services/settings';
 import { settingsKeys, workspaceKeys } from '@/lib/queryKeys';
 import { useWorkspaceList } from '@/hooks/useWorkspaceDestinations';
 import { createFormSchema, CreateFormValues } from '@/lib/schemas/formSchema';
 import { useBuilderStore } from '@/store/builderStore';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import type { FormDestination } from '@/types/workspace';
 
@@ -40,8 +38,8 @@ export function CreateFormModal({ isOpen, onClose, defaultDestination }: CreateF
   const titleInputRef = useRef<HTMLInputElement | null>(null);
   const defaultDestId =
     defaultDestination?.type === 'workspace' ? defaultDestination.workspaceId : 'personal';
-  const [userSelectedDestination, setUserSelectedDestination] = useState<string | null>(null);
-  const destination = userSelectedDestination ?? defaultDestId;
+  // No picker: the form is created where the user already is (Personal space or the current workspace).
+  const destination = defaultDestId;
 
   // Fetch workspaces to populate the destination selector
   const { data: workspaces = [] } = useWorkspaceList(isOpen);
@@ -53,7 +51,7 @@ export function CreateFormModal({ isOpen, onClose, defaultDestination }: CreateF
   // change to the create endpoint.
   const { data: workspace } = useQuery({
     queryKey: settingsKeys.workspace(),
-    queryFn: settingsService.getWorkspace,
+    queryFn: () => settingsService.getWorkspace(),
     // Real bug found and fixed: this query was missing the `enabled: isOpen` guard the sibling
     // query above already has, so it fired unconditionally the moment this always-mounted modal
     // rendered — on every Forms page load, for every account. For a brand-new account with zero
@@ -81,7 +79,6 @@ export function CreateFormModal({ isOpen, onClose, defaultDestination }: CreateF
   }, [isOpen, reset]);
 
   const handleClose = () => {
-    setUserSelectedDestination(null);
     onClose();
   };
 
@@ -188,34 +185,6 @@ export function CreateFormModal({ isOpen, onClose, defaultDestination }: CreateF
           error={errors.description?.message}
           {...register('description')}
         />
-
-        {/* Wireframe Screen 40: Destination picker — hidden if the user has 0 workspaces, and
-            also hidden when already inside a specific workspace's own Forms page: that context
-            is unambiguous (defaultDestination.type === 'workspace'), so asking "where should it
-            live?" only makes sense from Personal space, where a workspace could still be chosen. */}
-        {workspaces.length > 0 && defaultDestination?.type !== 'workspace' && (
-          <div className="flex flex-col gap-2">
-            <Select
-              id="create-form-destination-select"
-              label="Where should it live?"
-              value={destination}
-              onChange={(e) => setUserSelectedDestination(e.target.value)}
-            >
-              <option value="personal">Personal space</option>
-              {workspaces.map((ws) => (
-                <option key={ws.id} value={ws.id}>
-                  {ws.name}
-                </option>
-              ))}
-            </Select>
-            <p className="text-caption text-neutral-500 flex items-start gap-1.5">
-              <Info size={14} className="shrink-0 text-neutral-400 mt-0.5" />
-              <span>
-                Forms in <strong>Personal space</strong> are visible only to you. Forms in a workspace are visible to everyone in that workspace. You can move a form later.
-              </span>
-            </p>
-          </div>
-        )}
 
         <div className="flex items-center justify-end gap-3 pt-2">
           <Button

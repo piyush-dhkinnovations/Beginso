@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Download, Loader2 } from 'lucide-react';
 import { settingsService } from '@/services/settings';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { DeleteWorkspaceModal } from './DeleteWorkspaceModal';
@@ -73,10 +73,10 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-rose-200 bg-rose-50 p-4">
+    <div className="flex flex-col gap-4 rounded-lg border border-(--error-border) bg-(--error-surface) p-4">
       <div>
-        <p className="text-body-sm font-semibold text-rose-900">Danger Zone</p>
-        <p className="text-caption text-rose-700 mt-1">
+        <p className="bg-body-sm font-semibold text-(--error-text)">Danger Zone</p>
+        <p className="bg-caption text-(--error-text) mt-1">
           Export or permanently delete this workspace. These actions affect all forms, responses,
           and files in your workspace.
         </p>
@@ -84,7 +84,7 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
 
       <div className="flex flex-col gap-3">
         <div>
-          <p className="text-body-sm font-semibold text-[var(--text-primary)]">Export workspace data</p>
+          <p className="bg-body-sm font-semibold text-(--text-primary)">Export workspace data</p>
           {!jobId ? (
             <Button
               variant="secondary"
@@ -108,21 +108,21 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
             </Button>
           ) : status === 'failed' ? (
             <div className="mt-2 flex flex-wrap items-center gap-3">
-              <p className="text-caption text-rose-600">Something went wrong preparing your export.</p>
+              <p className="bg-caption text-(--error-text)">Something went wrong preparing your export.</p>
               <Button variant="secondary" size="small" onClick={() => setJobId(null)}>
                 Try again
               </Button>
             </div>
           ) : (
-            <span className="mt-2 inline-flex items-center gap-1.5 text-caption text-[var(--text-muted)]">
+            <span className="mt-2 inline-flex items-center gap-1.5 bg-caption text-(--text-muted)">
               <Loader2 size={14} className="animate-spin" aria-hidden="true" />
               Preparing your export…
             </span>
           )}
         </div>
 
-        <div className="border-t border-rose-200 pt-3">
-          <p className="text-body-sm font-semibold text-[var(--text-primary)]">Delete workspace</p>
+        <div className="border-t border-(--error-border) pt-3">
+          <p className="bg-body-sm font-semibold text-(--text-primary)">Delete workspace</p>
           <Button
             variant="destructive"
             size="small"
@@ -140,7 +140,7 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
         title="Export workspace data?"
         description="This prepares a downloadable archive of your workspace data. It may take a few minutes to prepare — this doesn't affect or remove anything in your workspace."
       >
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-[var(--border-subtle)]">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-(--border-subtle)">
           <Button type="button" variant="secondary" onClick={() => setIsExportModalOpen(false)}>
             Cancel
           </Button>

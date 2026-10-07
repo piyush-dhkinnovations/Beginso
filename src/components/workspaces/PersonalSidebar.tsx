@@ -2,13 +2,14 @@
 
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Home, FileText, LayoutTemplate, Table2, PieChart, Download, Settings, Plus, Share2 } from 'lucide-react';
+import { Home, FileText, LayoutTemplate, Table2, PieChart, Settings, Plus, Share2, Trash2, ClipboardList, Download } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { useBuilderStore } from '@/store/builderStore';
 import { dashboardService } from '@/services/dashboard';
 import { formsService } from '@/services/forms';
-import { dashboardKeys, workspaceKeys } from '@/lib/queryKeys';
+import { dashboardKeys, notificationKeys, workspaceKeys } from '@/lib/queryKeys';
+import { notificationsService } from '@/services/notifications';
 
 export interface PersonalSidebarProps {
   collapsed?: boolean;
@@ -69,6 +70,15 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
     }
   };
 
+  // Blue count on "Shared with me" while someone's share is unseen (cleared when that page is opened).
+  const { data: sharedUnread = 0 } = useQuery({
+    queryKey: notificationKeys.unreadOfType('personal', 'form_shared'),
+    queryFn: () => notificationsService.unreadCount('personal', 'form_shared'),
+    retry: false,
+    refetchInterval: 45_000,
+    refetchOnWindowFocus: true,
+  });
+
   const isResponsesActive =
     pathname.startsWith('/responses') || /^\/forms\/[^/]+\/responses(\/|$)/.test(pathname);
   const isAnalyticsActive =
@@ -83,9 +93,11 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
           items: [
             { label: 'Home', href: '/dashboard', icon: Home, active: pathname === '/dashboard', onClick: guard('/dashboard') },
             { label: 'My Forms', href: '/forms', icon: FileText, active: pathname.startsWith('/forms') && !isInBuilder, onClick: guard('/forms') },
-            { label: 'Shared with me', href: '/shared', icon: Share2, active: pathname.startsWith('/shared'), onClick: guard('/shared') },
+            { label: 'Shared with me', href: '/shared', icon: Share2, count: sharedUnread > 0 ? sharedUnread : undefined, active: pathname.startsWith('/shared'), onClick: guard('/shared') },
             { label: 'Templates', href: '/templates', icon: LayoutTemplate, active: pathname.startsWith('/templates'), onClick: guard('/templates') },
-            // Responses/Analytics/Reports have nothing to show until a form exists — hidden
+            // A5.1 / wireframe 31: always in the personal nav (an empty state explains it), not only once a submission exists.
+            { label: 'My Submissions', href: '/my-submissions', icon: ClipboardList, active: pathname.startsWith('/my-submissions'), onClick: guard('/my-submissions') },
+            // Responses/Analytics have nothing to show until a form exists — hidden
             // rather than left to render their own all-zero/empty state, same reasoning as the
             // dashboard's stat cards. Still shown while loading (hasForms defaults true) and if
             // the user is deep-linked onto one of them already, so an active page never vanishes
@@ -97,8 +109,9 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
               ? [{ label: 'Analytics', href: '/analytics', icon: PieChart, active: isAnalyticsActive, onClick: guard('/analytics') }]
               : []),
             ...(hasForms || pathname.startsWith('/reports')
-              ? [{ label: 'Reports', href: '/reports', icon: Download, active: pathname.startsWith('/reports'), onClick: guard('/reports') }]
+              ? [{ label: 'Exports', href: '/reports', icon: Download, active: pathname.startsWith('/reports'), onClick: guard('/reports') }]
               : []),
+            { label: 'Trash', href: '/trash', icon: Trash2, active: pathname.startsWith('/trash'), onClick: guard('/trash') },
             { label: 'Settings', href: '/settings', icon: Settings, active: pathname.startsWith('/settings'), onClick: guard('/settings') },
           ],
         },

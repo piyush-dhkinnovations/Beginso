@@ -3,9 +3,9 @@
 import { TrendingUp } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { EmptyState } from '@/components/common/EmptyState';
-import { EChartContainer } from '@/components/charts/EChartContainer';
-import { getBaseChartOption, CHART_COLORS, type EChartsOption } from '@/lib/chartTheme';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { LineAreaChart } from '@/components/ui/charts';
+import { toSegments } from '@/lib/chartSegments';
 import type { AnalyticsTrendPoint, AnalyticsTrendResult } from '@/types/analytics';
 
 const CHART_HEIGHT = 280;
@@ -19,36 +19,25 @@ export function mapTrendSeries(points: AnalyticsTrendPoint[]): AnalyticsTrendPoi
   }));
 }
 
-function formatBucketLabel(bucketStart: string, bucket: 'day' | 'week'): string {
-  const label = new Date(bucketStart).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    timeZone: 'UTC',
-  });
-  return bucket === 'week' ? `Wk of ${label}` : label;
+// The backend's bucket keys are plain strings, not ISO timestamps: days are "2026-04-06" and weeks are
+// ISO weeks "2026-W15" (`new Date("2026-W15")` is Invalid Date). A week is labelled by its Monday.
+function parseBucket(bucketStart: string): Date | null {
+  const week = /^(\d{4})-W(\d{2})$/.exec(bucketStart);
+  if (week) {
+    const jan4 = new Date(Date.UTC(Number(week[1]), 0, 4));
+    const monday = Date.UTC(Number(week[1]), 0, 4 - ((jan4.getUTCDay() + 6) % 7));
+    return new Date(monday + (Number(week[2]) - 1) * 7 * 86_400_000);
+  }
+  const d = new Date(bucketStart);
+  return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function buildTrendOption(result: AnalyticsTrendResult, points: AnalyticsTrendPoint[]): EChartsOption {
-  const base = getBaseChartOption();
-  return {
-    ...base,
-    grid: { left: 40, right: 16, top: 16, bottom: 32, containLabel: true },
-    xAxis: {
-      type: 'category',
-      data: points.map((p) => formatBucketLabel(p.bucketStart, result.bucket)),
-    },
-    yAxis: { type: 'value', minInterval: 1 },
-    tooltip: { ...base.tooltip, trigger: 'axis' },
-    series: [
-      {
-        type: 'line',
-        data: points.map((p) => p.responses),
-        color: CHART_COLORS.brand,
-        smooth: true,
-        areaStyle: { color: CHART_COLORS.brandLight },
-      },
-    ],
-  };
+export function formatBucketLabel(bucketStart: string, _bucket: 'day' | 'week'): string {
+  const d = parseBucket(bucketStart);
+  if (!d) return bucketStart;
+  const label = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+  // Chart axis labels stay short ("6 Apr") so they never collide; the week is spelled out for screen readers.
+  return label;
 }
 
 interface TrendChartProps {
@@ -65,7 +54,7 @@ export function TrendChart({ data, isLoading, isError = false, onRetry, isAllTim
   if (isLoading) {
     return (
       <Card>
-        <div className="animate-pulse rounded bg-neutral-100" style={{ height: CHART_HEIGHT }} />
+        <div className="animate-pulse rounded bg-(--bg-sunken)" style={{ height: CHART_HEIGHT }} />
       </Card>
     );
   }
@@ -74,8 +63,8 @@ export function TrendChart({ data, isLoading, isError = false, onRetry, isAllTim
     return (
       <Card role="alert" className="flex min-h-28 items-center justify-between gap-4">
         <div>
-          <p className="text-body-sm font-semibold text-neutral-900">Unable to load the response trend</p>
-          <p className="mt-1 text-caption text-neutral-500">The rest of the dashboard is still available.</p>
+          <p className="bg-body-sm font-semibold text-(--text-primary)">Unable to load the response trend</p>
+          <p className="mt-1 bg-caption text-(--text-muted)">The rest of the dashboard is still available.</p>
         </div>
         {onRetry && <Button variant="secondary" size="small" onClick={onRetry}>Try again</Button>}
       </Card>
@@ -89,8 +78,8 @@ export function TrendChart({ data, isLoading, isError = false, onRetry, isAllTim
       <Card>
         <EmptyState
           icon={<TrendingUp />}
-          heading={isAllTime ? 'No responses yet' : 'No responses in this range'}
-          body={
+          title={isAllTime ? 'No responses yet' : 'No responses in this range'}
+          description={
             isAllTime
               ? 'Responses will appear here once this form starts receiving submissions.'
               : 'Try a wider date range to see responses outside this window.'
@@ -104,10 +93,15 @@ export function TrendChart({ data, isLoading, isError = false, onRetry, isAllTim
 
   return (
     <Card>
-      <h3 className="text-heading-2 text-neutral-900 font-bold mb-4">Response Trend</h3>
-      <EChartContainer option={buildTrendOption(data as AnalyticsTrendResult, mapped)} height={CHART_HEIGHT} ariaLabel="Response trend over time" />
+      <h3 className="bg-h5 text-(--text-primary) font-bold mb-4">Response Trend</h3>
+      <LineAreaChart
+        area
+        data={toSegments(mapped.map((p) => ({ key: p.bucketStart, label: formatBucketLabel(p.bucketStart, data?.bucket ?? 'day'), value: p.responses })))}
+        height={CHART_HEIGHT}
+        ariaLabel="Response trend over time"
+      />
       <table className="sr-only">
-        <caption>Responses per {data?.bucket === 'week' ? 'week' : 'day'}</caption>
+        <caption>Responses per {data?.bucket === 'week' ? 'week (labelled by the Monday it starts)' : 'day'}</caption>
         <thead>
           <tr>
             <th>Period</th>

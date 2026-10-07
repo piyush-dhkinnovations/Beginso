@@ -43,14 +43,14 @@ export function Sidebar({ groups, collapsed = false, header, footer, className, 
       {...props}
     >
       {header && (
-        <div className={bx(collapsed ? "w-full flex justify-center mb-2 px-1" : "w-full mb-2.5 pb-2.5 border-b border-border-default/60")}>
+        <div className={bx(collapsed ? "w-full flex justify-center mb-2 px-1" : "w-full mb-2.5 pb-2.5 border-b border-(--border-default)/60")}>
           {header}
         </div>
       )}
       {groups.map((group, gi) => (
         <React.Fragment key={group.label ?? `group-${gi}`}>
           {group.label && <div className="bg-nav-group">{group.label}</div>}
-          {gi > 0 && !group.label && <div className="border-t border-border-default/50 my-1.5 pt-1.5" />}
+          {gi > 0 && !group.label && <div className="border-t border-(--border-default)/50 my-1.5 pt-1.5" />}
           {group.items.map((item) => {
             const Icon = item.icon;
             return (

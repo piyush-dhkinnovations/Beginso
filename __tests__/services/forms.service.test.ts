@@ -43,11 +43,11 @@ describe('formsService.getForms', () => {
     expect(config.params).toEqual({ limit: 10 });
   });
 
-  it('sends workspaceId=personal when scoped to personal space, no workspace header', async () => {
+  it('sends workspaceId=personal and the explicit personal header when scoped to personal space', async () => {
     await formsService.getForms({ limit: 10 }, { type: 'personal' });
 
     const [, config] = mockGet.mock.calls[0];
-    expect(config.headers).toBeUndefined();
+    expect(config.headers).toEqual({ 'x-workspace-slug': 'personal' });
     expect(config.params).toEqual({ limit: 10, workspaceId: 'personal' });
   });
 

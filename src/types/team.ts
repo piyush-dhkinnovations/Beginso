@@ -3,6 +3,7 @@
 // Owner is deliberately excluded from every grantable/assignable-role type below
 // (Exclude<Role, 'owner'>) since ownership only transfers, never gets "assigned" through
 // these flows (requirements.md §7.2, §7.4).
+import type { NotificationPreference } from '../../shared/types';
 import type { Role } from '@/types/workspace';
 
 export interface MemberListItem {
@@ -14,6 +15,8 @@ export interface MemberListItem {
   role: Role;
   isOwner: boolean;
   lastActiveAt: string | null;
+  /** Sprint 14 (OQ-2): this member's response-email preference. Absent on older backends. */
+  notificationPreference?: NotificationPreference;
 }
 
 // Corrected Day 2 against the real live response (Beginso-Report/backend_updates_for_frontend.md

@@ -12,12 +12,14 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { SettingsTabs } from '@/components/settings/SettingsTabs';
 
 describe('SettingsTabs', () => {
-  it('renders all 6 tabs, Sessions & Devices last', () => {
+  // Sprint 12 (inbox-collaboration), task 2.5/5.1/5.2: gains a 7th "Tags" tab, an 8th "Stages"
+  // tab, and a 9th "Scoring" tab (OQ-7 resolved 3 Oct 2026), last.
+  it('renders all 9 tabs, Scoring last', () => {
     render(<SettingsTabs activeTab="profile" onChange={vi.fn()} />);
     expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual([
-      'Profile', 'Workspace', 'Branding', 'Notifications', 'Security', 'Sessions & Devices',
+      'Profile', 'Workspace', 'Branding', 'Notifications', 'Security', 'Sessions & Devices', 'Tags', 'Stages', 'Scoring',
     ]);
-    ['Profile', 'Workspace', 'Branding', 'Notifications', 'Security', 'Sessions & Devices'].forEach((label) => {
+    ['Profile', 'Workspace', 'Branding', 'Notifications', 'Security', 'Sessions & Devices', 'Tags', 'Stages', 'Scoring'].forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();
     });
     expect(screen.queryByText('Billing & Integrations')).not.toBeInTheDocument();

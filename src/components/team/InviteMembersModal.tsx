@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { invitationsService } from '@/services/invitations';
 import { teamKeys } from '@/lib/queryKeys';
 import { inviteMembersSchema, type InviteMembersValues } from '@/lib/schemas/inviteMembersSchema';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';

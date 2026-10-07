@@ -19,7 +19,7 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/w/acme/forms',
 }));
 
-vi.mock('@/components/common/Toast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 
@@ -177,9 +177,9 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
   });
 
   it('renders every Forms Manager tab', async () => {
-    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
+    mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
     renderPage();
-    await screen.findByText('No forms yet');
+    await screen.findByText('Form One');
 
     for (const name of ['Recent', 'Pinned', 'Draft', 'Published', 'Archived']) {
       expect(screen.getByRole('tab', { name })).toBeInTheDocument();
@@ -187,22 +187,25 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
     expect(screen.queryByRole('tab', { name: 'Shared with me' })).not.toBeInTheDocument();
   });
 
-  it('switching to the Pinned tab shows a placeholder and fires no extra forms query', async () => {
-    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
+  it('switching to the Pinned tab queries pinned=true and shows the pinned empty state', async () => {
+    mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
     renderPage();
-    await screen.findByText('No forms yet');
+    await screen.findByText('Form One');
+    mockGetForms.mockClear();
+    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
 
     await userEvent.click(screen.getByRole('tab', { name: 'Pinned' }));
 
-    expect(await screen.findByText('Coming soon')).toBeInTheDocument();
-    expect(mockGetForms).toHaveBeenCalledTimes(1);
+    expect(await screen.findByText('No pinned forms yet')).toBeInTheDocument();
+    expect(mockGetForms).toHaveBeenCalledWith(expect.objectContaining({ pinned: true }), WORKSPACE_CONTEXT);
   });
 
   it('switching to the Draft tab filters by status and resets the page', async () => {
-    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
+    mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
     renderPage();
-    await screen.findByText('No forms yet');
+    await screen.findByText('Form One');
     mockGetForms.mockClear();
+    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 10 });
 
     await userEvent.click(screen.getByRole('tab', { name: 'Draft' }));
 
@@ -216,6 +219,7 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
   // sprint-10-events-migration, task 6.4.
   describe('bulk selection and delete (task 6.4)', () => {
     it('shows no bulk action bar until a row is selected, then shows the count', async () => {
+      // The checkbox column is always visible (Forms page redesign) — no double-click needed.
       mockGetForms.mockResolvedValue({ forms: threeForms(), total: 3, page: 1, limit: 10 });
       renderPage();
       await screen.findByText('Form One');
@@ -234,6 +238,8 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
+      // Reveal the checkbox column first (double-click any row), then use "select all".
+      await userEvent.dblClick(screen.getByText('Form One'));
       await userEvent.click(screen.getByRole('checkbox', { name: 'Select all forms on this page' }));
 
       expect(await screen.findByText('3 selected')).toBeInTheDocument();
@@ -248,13 +254,13 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
-      await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form One' }));
+      await userEvent.dblClick(screen.getByText('Form One'));
       await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form Two' }));
       await userEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
 
-      expect(await screen.findByText('Delete 2 forms?')).toBeInTheDocument();
+      expect(await screen.findByText('Move 2 forms to Trash?')).toBeInTheDocument(); // Sprint 13: delete means Trash
       // No typed-title input in bulk mode — the confirm button is enabled immediately.
-      const confirmButton = screen.getByRole('button', { name: 'Delete 2 forms' });
+      const confirmButton = screen.getByRole('button', { name: 'Move 2 forms to Trash' });
       expect(confirmButton).toBeEnabled();
 
       await userEvent.click(confirmButton);
@@ -269,12 +275,12 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
-      await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form One' }));
+      await userEvent.dblClick(screen.getByText('Form One'));
       await userEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
 
-      expect(await screen.findByText('Delete 1 form?')).toBeInTheDocument();
+      expect(await screen.findByText('Move 1 form to Trash?')).toBeInTheDocument();
       expect(screen.queryByLabelText(/Type .* to confirm/)).not.toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Delete 1 form' })).toBeEnabled();
+      expect(screen.getByRole('button', { name: 'Move 1 form to Trash' })).toBeEnabled();
     });
 
     it('switching tabs clears the current selection', async () => {
@@ -282,7 +288,7 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
-      await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form One' }));
+      await userEvent.dblClick(screen.getByText('Form One'));
       expect(await screen.findByText('1 selected')).toBeInTheDocument();
 
       await userEvent.click(screen.getByRole('tab', { name: 'Draft' }));
@@ -327,9 +333,9 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
       await userEvent.click(await screen.findByRole('menuitem', { name: /Delete/ }));
 
-      expect(await screen.findByText('Delete form?')).toBeInTheDocument();
+      expect(await screen.findByText('Move form to Trash?')).toBeInTheDocument();
       expect(screen.getByLabelText(/Type .* to confirm/)).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: 'Delete permanently' })).toBeDisabled();
+      expect(screen.getByRole('button', { name: 'Move to Trash' })).toBeDisabled();
     });
   });
 
@@ -356,6 +362,9 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       renderPage();
       await screen.findByText('Form One');
 
+      // Checkbox column is revealed by double-click, not shown at rest (see the bulk-selection
+      // describe block above) — proves the select column exists, just no longer always visible.
+      await userEvent.dblClick(screen.getByText('Form One'));
       expect(screen.getByLabelText('Select Form One')).toBeInTheDocument();
       await userEvent.click(screen.getByRole('button', { name: 'More Options' }));
       expect(await screen.findByRole('menuitem', { name: /Delete/ })).toBeInTheDocument();

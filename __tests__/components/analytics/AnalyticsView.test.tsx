@@ -37,11 +37,18 @@ vi.mock('@/services/analytics', () => ({
   },
 }));
 
+// Sprint 14: the per-form page now also renders "Your charts" (BE 0.3, not necessarily live) - an
+// empty saved-chart list keeps these tests about the built-ins.
+vi.mock('@/services/charts', () => ({
+  chartsService: { list: () => Promise.resolve([]) },
+}));
+
 vi.mock('@/components/charts/EChartContainer', () => ({
   EChartContainer: ({ ariaLabel }: { ariaLabel: string }) => <div role="img" aria-label={ariaLabel} />,
 }));
 
 import { AnalyticsView } from '@/components/analytics/AnalyticsView';
+import { ToastProvider } from '@/components/ui/Toast';
 
 const form = { _id: 'form-1', title: 'Customer Survey', fields: [] };
 const overview = { totalResponses: 10, statusCounts: { new: 4, in_progress: 3, completed: 3 } };
@@ -53,7 +60,9 @@ function renderView(formId?: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-      <AnalyticsView formId={formId} />
+      <ToastProvider>
+        <AnalyticsView formId={formId} />
+      </ToastProvider>
     </QueryClientProvider>
   );
 }
@@ -102,7 +111,10 @@ describe('AnalyticsView', () => {
     expect(screen.getByText('Total Responses')).toBeInTheDocument();
     expect(screen.getByText('Active Forms')).toBeInTheDocument();
     expect(screen.getByText('Avg. Responses / Form')).toBeInTheDocument();
-    expect(screen.getByText('Change vs Previous Period')).toBeInTheDocument();
+    // Also the table's column header, so more than one match.
+    expect(screen.getAllByText('Completion Rate').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('Forms by status')).toBeInTheDocument();
+    expect(screen.getByText('Form performance')).toBeInTheDocument();
   });
 
   it('shows "Access denied" for a 403 on the form query, without rendering any chart', async () => {

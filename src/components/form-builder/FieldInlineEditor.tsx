@@ -25,7 +25,7 @@ const ALLOWED_FILE_TYPE_LABELS = ['PDF', 'Word', 'Excel', 'Images', 'Video (MP4)
 export function PanelSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <span className="text-label text-neutral-500">
+      <span className="bg-overline text-(--text-muted)">
         {label}
       </span>
       {children}
@@ -156,7 +156,7 @@ function RequiredToggle({
       <div className="flex items-center justify-between py-1">
         <label
           htmlFor={`${uid}-required`}
-          className="text-body-sm font-medium text-neutral-700 cursor-pointer"
+          className="bg-body-sm font-medium text-(--text-secondary) cursor-pointer"
         >
           Required field
         </label>
@@ -228,7 +228,7 @@ function NumberRangeSection({
           onBlur={commit}
         />
       </div>
-      {error && <p className="text-caption text-error font-semibold">{error}</p>}
+      {error && <p className="bg-caption text-(--error-text) font-semibold">{error}</p>}
     </PanelSection>
   );
 }
@@ -367,19 +367,19 @@ export function FieldInlineEditor({ field, onUpdate, onUpdateOptions }: FieldInl
               {ALLOWED_FILE_TYPE_LABELS.map((label) => (
                 <span
                   key={label}
-                  className="text-caption font-medium text-neutral-600 bg-neutral-100 rounded px-2 py-1"
+                  className="bg-caption font-medium text-(--text-secondary) bg-(--bg-sunken) rounded px-2 py-1"
                 >
                   {label}
                 </span>
               ))}
             </div>
-            <p className="text-caption text-neutral-500 mt-1">
+            <p className="bg-caption text-(--text-muted) mt-1">
               Platform-enforced — cannot be changed.
             </p>
           </PanelSection>
 
           <PanelSection label="Max file size">
-            <p className="text-body-sm text-neutral-600">100 MB maximum file size</p>
+            <p className="bg-body-sm text-(--text-secondary)">100 MB maximum file size</p>
           </PanelSection>
         </>
       )}

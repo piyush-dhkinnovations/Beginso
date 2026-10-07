@@ -121,7 +121,7 @@ function useTiltStartDeg() {
 function Delta({ delta, dir }: { delta: string; dir: Direction }) {
   const Icon = DELTA_ICON[dir];
   return (
-    <span className="inline-flex items-center gap-1 text-[11px] font-semibold" style={{ color: DELTA_COLOR[dir] }}>
+    <span className="inline-flex items-center gap-1 bg-caption font-semibold" style={{ color: DELTA_COLOR[dir] }}>
       <Icon size={11} />
       {delta}
     </span>
@@ -132,9 +132,9 @@ function StatCards({ compact }: { compact?: boolean }) {
   return (
     <div className={`grid grid-cols-2 ${compact ? "" : "lg:grid-cols-4"} gap-3`}>
       {STATS.map((s) => (
-        <div key={s.label} className="rounded-[var(--bg-radius-sm)] border border-[var(--border-default)] bg-[var(--surface-hover)] px-3 py-2.5">
-          <div className="text-[10px] text-[var(--text-muted)] mb-1">{s.label}</div>
-          <div className="text-[20px] font-bold text-[var(--text-primary)] tabular-nums leading-none mb-1.5">{s.value}</div>
+        <div key={s.label} className="rounded-(--bg-radius-sm) border border-(--border-default) bg-(--surface-hover) px-3 py-2.5">
+          <div className="bg-caption text-(--text-muted) mb-1">{s.label}</div>
+          <div className="text-[20px] font-bold text-(--text-primary) tabular-nums leading-none mb-1.5">{s.value}</div>
           <Delta delta={s.delta} dir={s.dir} />
         </div>
       ))}
@@ -146,32 +146,32 @@ function TableRow({ row }: { row: Row }) {
   const person = personById(row.personId);
   const assignee = row.assigneeId ? personById(row.assigneeId) : undefined;
   return (
-    <div className="grid grid-cols-[20px_1.6fr_1.1fr_28px_100px_60px] items-center gap-3 px-3 py-2.5 border-b border-[var(--border-default)] last:border-b-0">
-      <span className="h-3.5 w-3.5 rounded-[3px] border border-[var(--border-strong)] shrink-0" />
+    <div className="grid grid-cols-[20px_1.6fr_1.1fr_28px_100px_60px] items-center gap-3 px-3 py-2.5 border-b border-(--border-default) last:border-b-0">
+      <span className="h-3.5 w-3.5 rounded-[3px] border border-(--border-strong) shrink-0" />
       <div className="flex items-center gap-2 min-w-0">
         <span className="relative shrink-0">
           <Avatar name={person.name} src={person.src} alt="" size="xs" />
-          {row.unread && <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-[var(--primary-500)]" />}
+          {row.unread && <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-(--action-primary)" />}
         </span>
         <div className="min-w-0">
-          <div className={`text-[12px] truncate ${row.unread ? "font-bold text-[var(--text-primary)]" : "font-medium text-[var(--text-primary)]"}`}>
+          <div className={`bg-body-sm truncate ${row.unread ? "font-bold text-(--text-primary)" : "font-medium text-(--text-primary)"}`}>
             {person.name}
           </div>
-          <div className="text-[10px] text-[var(--text-muted)] truncate">{row.email}</div>
+          <div className="bg-caption text-(--text-muted) truncate">{row.email}</div>
         </div>
       </div>
       <div className="flex items-center gap-1 flex-wrap min-w-0">
         {row.tags.map((t) => (
-          <Tag key={t} className="text-[9px] leading-none px-1.5 py-0.5">{t}</Tag>
+          <Tag key={t} className="bg-caption leading-none px-1.5 py-0.5">{t}</Tag>
         ))}
         {row.noteCount && (
-          <span className="inline-flex items-center gap-0.5 text-[9px] text-[var(--text-muted)]">
+          <span className="inline-flex items-center gap-0.5 bg-caption text-(--text-muted)">
             <MessageSquare size={10} />
             {row.noteCount}
           </span>
         )}
         {row.attachment && (
-          <span className="inline-flex items-center gap-0.5 text-[9px] text-[var(--text-muted)]">
+          <span className="inline-flex items-center gap-0.5 bg-caption text-(--text-muted)">
             <Paperclip size={10} />
             {row.attachment}
           </span>
@@ -180,20 +180,20 @@ function TableRow({ row }: { row: Row }) {
       {assignee ? (
         <Avatar name={assignee.name} src={assignee.src} alt="" size="xs" />
       ) : (
-        <span className="h-5 w-5 rounded-full border border-dashed border-[var(--border-strong)]" aria-hidden="true" />
+        <span className="h-5 w-5 rounded-full border border-dashed border-(--border-strong)" aria-hidden="true" />
       )}
-      <StatusBadge variant={row.status} className="text-[9px] px-1.5 py-0 leading-none w-fit">
+      <StatusBadge variant={row.status} className="bg-caption px-1.5 py-0 leading-none w-fit">
         {STATUS_LABEL[row.status]}
       </StatusBadge>
-      <span className="text-[10px] text-[var(--text-muted)] text-right">{row.date}</span>
+      <span className="bg-caption text-(--text-muted) text-right">{row.date}</span>
     </div>
   );
 }
 
 function InboxTable({ rows }: { rows: Row[] }) {
   return (
-    <div className="rounded-[var(--bg-radius-sm)] border border-[var(--border-default)] overflow-hidden">
-      <div className="grid grid-cols-[20px_1.6fr_1.1fr_28px_100px_60px] items-center gap-3 px-3 py-2 bg-[var(--surface-hover)] text-[9px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+    <div className="rounded-(--bg-radius-sm) border border-(--border-default) overflow-hidden">
+      <div className="grid grid-cols-[20px_1.6fr_1.1fr_28px_100px_60px] items-center gap-3 px-3 py-2 bg-(--surface-hover) bg-caption font-semibold uppercase tracking-wide text-(--text-muted)">
         <span />
         <span>Respondent</span>
         <span>Tags</span>
@@ -210,8 +210,8 @@ function InboxTable({ rows }: { rows: Row[] }) {
 
 function AreaChart() {
   return (
-    <div className="rounded-[var(--bg-radius-sm)] border border-[var(--border-default)] p-3">
-      <div className="text-[10px] font-semibold text-[var(--text-secondary)] mb-2">Responses over time</div>
+    <div className="rounded-(--bg-radius-sm) border border-(--border-default) p-3">
+      <div className="bg-caption font-semibold text-(--text-secondary) mb-2">Responses over time</div>
       <svg viewBox="0 0 300 60" className="w-full h-16" preserveAspectRatio="none" aria-hidden="true">
         <defs>
           <linearGradient id="mockup-area-fill" x1="0" y1="0" x2="0" y2="1">
@@ -223,7 +223,7 @@ function AreaChart() {
         <polyline points={AREA_POINTS} fill="none" stroke="var(--primary-500)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         <circle cx="300" cy="4" r="3" fill="var(--primary-500)" />
       </svg>
-      <div className="flex justify-between text-[9px] text-[var(--text-muted)] mt-1">
+      <div className="flex justify-between bg-caption text-(--text-muted) mt-1">
         <span>Jan</span>
         <span>Jun</span>
         <span>Dec</span>
@@ -234,18 +234,18 @@ function AreaChart() {
 
 function StatusDonut() {
   return (
-    <div className="rounded-[var(--bg-radius-sm)] border border-[var(--border-default)] p-3 flex items-center gap-4">
+    <div className="rounded-(--bg-radius-sm) border border-(--border-default) p-3 flex items-center gap-4">
       <div className="relative shrink-0">
         <svg viewBox="0 0 42 42" className="w-16 h-16" aria-hidden="true">
           <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="var(--border-default)" strokeWidth="6" />
           <circle cx="21" cy="21" r="15.9" fill="transparent" stroke="var(--primary-500)" strokeWidth="6" strokeDasharray="64 100" strokeDashoffset="25" transform="rotate(-90 21 21)" />
         </svg>
-        <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-[var(--text-primary)]">64%</span>
+        <span className="absolute inset-0 flex items-center justify-center bg-caption font-bold text-(--text-primary)">64%</span>
       </div>
       <div className="flex-1 space-y-1.5">
-        <div className="text-[10px] font-semibold text-[var(--text-secondary)] mb-1">By status</div>
+        <div className="bg-caption font-semibold text-(--text-secondary) mb-1">By status</div>
         {STATUS_LEGEND.map((r) => (
-          <div key={r.label} className="flex items-center gap-1.5 text-[10px] text-[var(--text-secondary)]">
+          <div key={r.label} className="flex items-center gap-1.5 bg-caption text-(--text-secondary)">
             <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: r.color }} />
             <span className="flex-1">{r.label}</span>
             <span className="tabular-nums font-medium">{r.pct}</span>
@@ -258,8 +258,8 @@ function StatusDonut() {
 
 function RecentActivity() {
   return (
-    <div className="rounded-[var(--bg-radius-sm)] border border-[var(--border-default)] p-3">
-      <div className="text-[10px] font-semibold text-[var(--text-secondary)] mb-2">Recent activity</div>
+    <div className="rounded-(--bg-radius-sm) border border-(--border-default) p-3">
+      <div className="bg-caption font-semibold text-(--text-secondary) mb-2">Recent activity</div>
       <div className="space-y-2.5">
         {ACTIVITY.map((a) => {
           const person = personById(a.personId);
@@ -267,10 +267,10 @@ function RecentActivity() {
             <div key={a.personId + a.time} className="flex items-start gap-2">
               <Avatar name={person.name} src={person.src} alt="" size="xs" />
               <div className="min-w-0 flex-1">
-                <div className="text-[10px] text-[var(--text-secondary)] leading-snug">
-                  <span className="font-semibold text-[var(--text-primary)]">{person.name}</span> {a.text}
+                <div className="bg-caption text-(--text-secondary) leading-snug">
+                  <span className="font-semibold text-(--text-primary)">{person.name}</span> {a.text}
                 </div>
-                <div className="text-[9px] text-[var(--text-muted)]">{a.time}</div>
+                <div className="bg-caption text-(--text-muted)">{a.time}</div>
               </div>
             </div>
           );
@@ -294,16 +294,16 @@ export default function ProductMockup() {
   return (
     <div ref={ref} className="tilt-stage w-full flex justify-center">
       <div className="tilt-card relative w-full max-w-[1180px]" style={{ transform }}>
-      <div className="rounded-[var(--bg-radius-md)] border border-[var(--border-default)] bg-[var(--surface-card)] shadow-[var(--shadow-lg)] overflow-hidden">
+      <div className="rounded-(--bg-radius-md) border border-(--border-default) bg-(--surface-card) shadow-(--shadow-lg) overflow-hidden">
         {/* Browser chrome */}
-        <div className="h-9 flex items-center gap-3 px-3 border-b border-[var(--border-default)] bg-[var(--surface-hover)]">
+        <div className="h-9 flex items-center gap-3 px-3 border-b border-(--border-default) bg-(--surface-hover)">
           <div className="flex gap-1.5">
             <span className="h-2.5 w-2.5 rounded-full bg-[#ED6A5E]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#F4BF4F]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#61C554]" />
           </div>
           <div className="flex-1 flex justify-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--surface-card)] border border-[var(--border-default)] px-3 py-1 text-[11px] text-[var(--text-muted)]">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-(--surface-card) border border-(--border-default) px-3 py-1 bg-caption text-(--text-muted)">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="https://storage.beginso.com/assets/logo-light.svg" alt="" height={12} width={12} style={{ height: 12, width: 12 }} aria-hidden="true" className="brand-icon-light" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -315,18 +315,18 @@ export default function ProductMockup() {
         </div>
 
         {/* App top bar */}
-        <div className="hidden md:flex h-14 items-center gap-4 px-4 border-b border-[var(--border-default)]">
+        <div className="hidden md:flex h-14 items-center gap-4 px-4 border-b border-(--border-default)">
           <span className="flex items-center gap-2 shrink-0">
             <Wordmark height={40} />
           </span>
-          <div className="flex-1 max-w-sm flex items-center gap-2 rounded-[var(--bg-radius-sm)] border border-[var(--border-default)] bg-[var(--surface-hover)] px-3 py-1.5">
-            <Search size={13} className="text-[var(--text-muted)] shrink-0" />
-            <span className="text-[11px] text-[var(--text-muted)] truncate">Search forms, responses, people</span>
+          <div className="flex-1 max-w-sm flex items-center gap-2 rounded-(--bg-radius-sm) border border-(--border-default) bg-(--surface-hover) px-3 py-1.5">
+            <Search size={13} className="text-(--text-muted) shrink-0" />
+            <span className="bg-caption text-(--text-muted) truncate">Search forms, responses, people</span>
           </div>
           <div className="ml-auto flex items-center gap-3">
             <span className="relative">
-              <Bell size={16} className="text-[var(--text-muted)]" />
-              <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-[var(--error)]" />
+              <Bell size={16} className="text-(--text-muted)" />
+              <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-(--error)" />
             </span>
             <Avatar name={ALEX.name} src={ALEX.src} alt="" size="sm" />
           </div>
@@ -334,12 +334,12 @@ export default function ProductMockup() {
 
         <div className="flex">
           {/* Left sidebar */}
-          <nav className="hidden lg:flex w-[220px] shrink-0 flex-col border-r border-[var(--border-default)] p-3">
-            <div className="flex items-center gap-2 rounded-[var(--bg-radius-sm)] px-2 py-2 mb-3 bg-[var(--surface-hover)]">
-              <Building2 size={16} className="text-[var(--text-secondary)] shrink-0" />
+          <nav className="hidden lg:flex w-55 shrink-0 flex-col border-r border-(--border-default) p-3">
+            <div className="flex items-center gap-2 rounded-(--bg-radius-sm) px-2 py-2 mb-3 bg-(--surface-hover)">
+              <Building2 size={16} className="text-(--text-secondary) shrink-0" />
               <div className="min-w-0">
-                <div className="text-[12px] font-semibold text-[var(--text-primary)] truncate">Acme Corp</div>
-                <div className="text-[10px] text-[var(--text-muted)]">Owner</div>
+                <div className="bg-body-sm font-semibold text-(--text-primary) truncate">Acme Corp</div>
+                <div className="bg-caption text-(--text-muted)">Owner</div>
               </div>
             </div>
 
@@ -347,22 +347,22 @@ export default function ProductMockup() {
               {NAV_ITEMS.map(({ icon: Icon, label, badge, active }) => (
                 <div
                   key={label}
-                  className={`flex items-center gap-2 rounded-[var(--bg-radius-sm)] px-2 py-1.5 text-[12px] ${
-                    active ? "bg-[var(--accent-soft)] text-[var(--accent-soft-text)] font-semibold" : "text-[var(--text-secondary)]"
+                  className={`flex items-center gap-2 rounded-(--bg-radius-sm) px-2 py-1.5 bg-body-sm ${
+                    active ? "bg-(--accent-soft) text-(--accent-soft-text) font-semibold" : "text-(--text-secondary)"
                   }`}
                 >
-                  <Icon size={14} className={`shrink-0 ${active ? "text-[var(--primary-600)]" : ""}`} />
+                  <Icon size={14} className={`shrink-0 ${active ? "text-(--text-link)" : ""}`} />
                   <span className="flex-1 truncate">{label}</span>
-                  {badge && <span className="text-[10px] font-semibold text-[var(--primary-600)]">{badge}</span>}
+                  {badge && <span className="bg-caption font-semibold text-(--text-link)">{badge}</span>}
                 </div>
               ))}
             </div>
 
-            <div className="flex items-center gap-2 rounded-[var(--bg-radius-sm)] px-2 py-2 border-t border-[var(--border-default)] pt-3">
+            <div className="flex items-center gap-2 rounded-(--bg-radius-sm) px-2 py-2 border-t border-(--border-default) pt-3">
               <Avatar name={ALEX.name} src={ALEX.src} alt="" size="xs" />
               <div className="min-w-0">
-                <div className="text-[11px] font-medium text-[var(--text-primary)] truncate">Alex Rivera</div>
-                <div className="text-[9px] text-[var(--text-muted)]">Account</div>
+                <div className="bg-caption font-medium text-(--text-primary) truncate">Alex Rivera</div>
+                <div className="bg-caption text-(--text-muted)">Account</div>
               </div>
             </div>
           </nav>
@@ -372,25 +372,25 @@ export default function ProductMockup() {
             {/* Page header */}
             <div className="hidden md:flex items-center gap-3">
               <div className="min-w-0">
-                <div className="flex items-center gap-1 text-[10px] text-[var(--text-muted)] mb-1">
+                <div className="flex items-center gap-1 bg-caption text-(--text-muted) mb-1">
                   <span>Acme Corp</span>
                   <ChevronRight size={10} />
                   <span className="truncate">Customer feedback survey</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <h3 className="text-[16px] font-bold text-[var(--text-primary)]">Inbox</h3>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--success-surface)] px-2 py-0.5 text-[9px] font-semibold text-[var(--success-text)]">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--success)]" />
+                  <h3 className="text-[16px] font-bold text-(--text-primary)">Inbox</h3>
+                  <span className="inline-flex items-center gap-1 rounded-full bg-(--success-surface) px-2 py-0.5 bg-caption font-semibold text-(--success-text)">
+                    <span className="h-1.5 w-1.5 rounded-full bg-(--success)" />
                     Live
                   </span>
                 </div>
               </div>
               <div className="ml-auto flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 rounded-[var(--bg-radius-sm)] border border-[var(--border-default)] px-2.5 py-1.5 text-[11px] font-medium text-[var(--text-secondary)]">
+                <span className="inline-flex items-center gap-1 rounded-(--bg-radius-sm) border border-(--border-default) px-2.5 py-1.5 bg-caption font-medium text-(--text-secondary)">
                   <Download size={12} />
                   Export
                 </span>
-                <span className="inline-flex items-center gap-1 rounded-[var(--bg-radius-sm)] bg-[var(--action-primary)] px-2.5 py-1.5 text-[11px] font-medium text-white">
+                <span className="inline-flex items-center gap-1 rounded-(--bg-radius-sm) bg-(--action-primary) px-2.5 py-1.5 bg-caption font-medium text-(--text-on-brand)">
                   <Share2 size={12} />
                   Share
                 </span>
@@ -410,11 +410,11 @@ export default function ProductMockup() {
               </div>
             </div>
 
-            <div className="hidden md:flex items-center justify-between text-[10px] text-[var(--text-muted)]">
+            <div className="hidden md:flex items-center justify-between bg-caption text-(--text-muted)">
               <span>Showing 1-8 of 384</span>
               <div className="flex items-center gap-1">
-                <span className="rounded-[var(--bg-radius-sm)] border border-[var(--border-default)] px-2 py-1">Prev</span>
-                <span className="rounded-[var(--bg-radius-sm)] border border-[var(--border-default)] px-2 py-1">Next</span>
+                <span className="rounded-(--bg-radius-sm) border border-(--border-default) px-2 py-1">Prev</span>
+                <span className="rounded-(--bg-radius-sm) border border-(--border-default) px-2 py-1">Next</span>
               </div>
             </div>
 
@@ -430,10 +430,10 @@ export default function ProductMockup() {
           <div
             key={i}
             aria-hidden="true"
-            className={`hidden md:flex absolute h-12 w-12 items-center justify-center rounded-[var(--bg-radius-md)] border border-[var(--border-default)] bg-[var(--surface-card)] shadow-[var(--shadow-md)] ${className}`}
+            className={`hidden md:flex absolute h-12 w-12 items-center justify-center rounded-(--bg-radius-md) border border-(--border-default) bg-(--surface-card) shadow-(--shadow-md) ${className}`}
             style={{ transform: `translateZ(${z}px)` }}
           >
-            <Icon size={20} className="text-[var(--primary-500)]" />
+            <Icon size={20} className="text-(--action-primary)" />
           </div>
         ))}
       </div>

@@ -12,17 +12,23 @@
 // self-contained dropdown triggers with no positioning dependency on the old fixed TopNav.
 
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import { SearchTrigger } from '@/components/search/SearchTrigger';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { AppShell, TopBar, Skeleton } from '@/components/ui';
 import { PersonalSidebar } from '@/components/workspaces/PersonalSidebar';
 import { WorkspaceSidebar } from '@/components/workspaces/WorkspaceSidebar';
+import { FormSidebar } from '@/components/workspaces/FormSidebar';
 import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown';
 import { Wordmark } from '@/components/landing/Wordmark';
 import { formsService } from '@/services/forms';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
+
+// Sprint 14 (task 6.3): the palette and its results code load after first paint, off the shell's critical path.
+const GlobalSearch = dynamic(() => import('@/components/search/GlobalSearch').then((m) => m.GlobalSearch), { ssr: false });
 
 export interface PersonalShellProps {
   initialCollapsed: boolean;
@@ -80,6 +86,10 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
   // personal, not a known workspace) — the window this shell used to fill with the wrong
   // sidebar. Once `form` resolves (confirming a personal form, `workspaceId: null`) or a
   // workspace match lands, this clears immediately.
+  // Sprint 14: a workspace form's detail routes render under this shell, so search and notifications
+  // follow the form's workspace, not 'personal'. While still resolving they stay personal.
+  const contextScope = formWorkspace?.slug ?? 'personal';
+
   const contextUnresolved = !!formId && !wsHint && !form && !formWorkspace;
 
   return (
@@ -101,14 +111,19 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
           }}
           actions={
             <div className="flex items-center gap-2">
-              <NotificationBell />
+              <SearchTrigger />
+              <NotificationBell scope={contextScope} />
               <UserProfileDropdown />
+              <GlobalSearch key={contextScope} scope={contextScope} />
             </div>
           }
         />
       )}
       sidebar={(collapsed) =>
-        formWorkspace ? (
+        formWorkspace && formId ? (
+          // Same form-properties sidebar as a personal form; only the "back" target differs.
+          <FormSidebar formId={formId} form={form} collapsed={collapsed} backHref={`/w/${formWorkspace.slug}/forms`} backLabel={formWorkspace.name} />
+        ) : formWorkspace ? (
           <WorkspaceSidebar
             slug={formWorkspace.slug}
             currentLabel={formWorkspace.name}
@@ -119,7 +134,7 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
           // Not built from Sidebar/groups — that component always renders each item as a real
           // <Link>, which isn't right for placeholder rows with nowhere to go yet.
           <nav className={collapsed ? 'bg-sidenav bg-sidenav-rail' : 'bg-sidenav'} aria-label="Loading navigation">
-            <div className={collapsed ? 'w-full flex justify-center mb-2 px-1' : 'w-full mb-2.5 pb-2.5 border-b border-border-default/60'}>
+            <div className={collapsed ? 'w-full flex justify-center mb-2 px-1' : 'w-full mb-2.5 pb-2.5 border-b border-(--border-default)/60'}>
               <Skeleton variant="text" width={collapsed ? 32 : '70%'} height={32} />
             </div>
             <div className="flex flex-col gap-3 px-1 pt-1">
@@ -128,6 +143,11 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
               ))}
             </div>
           </nav>
+        ) : formId ? (
+          // Reaching here with formId set means contextUnresolved already cleared — `form` has
+          // resolved and `formWorkspace` didn't match it, so this is confirmed a personal form
+          // (workspaceId: null), not still loading. Form-specific sidebar, not the global one.
+          <FormSidebar formId={formId} form={form} collapsed={collapsed} />
         ) : (
           <PersonalSidebar collapsed={collapsed} />
         )

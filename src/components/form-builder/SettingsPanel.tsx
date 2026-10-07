@@ -4,51 +4,12 @@ import { useState } from 'react';
 import { Copy } from 'lucide-react';
 import type { FormSettings, FormStatus } from '@/types/form';
 import { Input } from '@/components/ui/Input';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Switch } from '@/components/ui/Switch';
+import { Select } from '@/components/ui/Select';
+import { Alert } from '@/components/ui/Alert';
+import type { AccessMode } from '@/types/form';
 import { PanelCard } from './PanelCard';
-
-const LAYOUT_OPTIONS: { value: NonNullable<FormSettings['layout']>; label: string }[] = [
-  { value: 'single_column', label: 'Single Column' },
-  { value: 'two_column', label: 'Two Column' },
-  { value: 'compact', label: 'Compact' },
-];
-
-// Small non-interactive shape preview per layout option — no new icon asset needed.
-function LayoutPreview({ value }: { value: NonNullable<FormSettings['layout']> }) {
-  if (value === 'two_column') {
-    return (
-      <div className="flex flex-col gap-1 w-full">
-        {[0, 1, 2].map((row) => (
-          <div key={row} className="flex gap-1">
-            <div className="h-2 flex-1 rounded-sm bg-neutral-300" />
-            <div className="h-2 flex-1 rounded-sm bg-neutral-300" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-  if (value === 'compact') {
-    // Label-left rows — distinct from Single Column's label-above stack.
-    return (
-      <div className="flex flex-col gap-1 w-full">
-        {[0, 1, 2].map((row) => (
-          <div key={row} className="flex items-center gap-1">
-            <div className="h-1.5 w-3 rounded-sm bg-neutral-400" />
-            <div className="h-1.5 flex-1 rounded-sm bg-neutral-300" />
-          </div>
-        ))}
-      </div>
-    );
-  }
-  return (
-    <div className="flex flex-col gap-1.5 w-full">
-      {[0, 1, 2].map((row) => (
-        <div key={row} className="h-2 w-full rounded-sm bg-neutral-300" />
-      ))}
-    </div>
-  );
-}
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');
@@ -115,42 +76,13 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
   const isPastDate = closeDateEnabled && new Date(settings.closeDate!) < new Date();
 
   const publicUrl = slug ? `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/f/${slug}` : '';
-  const activeLayout = settings.layout ?? 'single_column';
 
   return (
     <div className="max-w-2xl mx-auto flex flex-col gap-6">
       <div>
-        <h2 className="text-heading-1 font-bold text-neutral-900">Settings</h2>
-        <p className="text-body text-neutral-500 mt-1">Control how respondents interact with this form.</p>
+        <h2 className="bg-h4 font-bold text-(--text-primary)">Settings</h2>
+        <p className="bg-body text-(--text-muted) mt-1">Control how respondents interact with this form.</p>
       </div>
-
-      <PanelCard label="Form layout" description="Choose how fields are arranged when respondents view this form.">
-        <div className="grid grid-cols-3 gap-3">
-          {LAYOUT_OPTIONS.map((option) => {
-            const isSelected = activeLayout === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => onUpdate({ layout: option.value })}
-                aria-pressed={isSelected}
-                className={`relative flex flex-col items-center gap-3 rounded-lg border-2 p-3 min-h-[44px] transition-colors ${
-                  isSelected
-                    ? 'border-brand-700 bg-brand-50 ring-2 ring-brand-700/10'
-                    : 'border-neutral-200 bg-white hover:border-neutral-300'
-                }`}
-              >
-                <div className="w-full h-10 flex items-center justify-center bg-neutral-100 rounded-md px-2">
-                  <LayoutPreview value={option.value} />
-                </div>
-                <span className={`text-body-sm font-medium ${isSelected ? 'text-brand-700' : 'text-neutral-700'}`}>
-                  {option.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </PanelCard>
 
       <PanelCard label="Success message" description="Shown to respondents after they submit.">
         <textarea
@@ -160,14 +92,40 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
           onBlur={() => onUpdate({ successMessage: message })}
           placeholder="Thank you for your response!"
           rows={3}
-          className="w-full rounded-md border-2 border-neutral-200 px-3 py-2 text-[13px] bg-white outline-none focus:border-neutral-500 resize-none"
+          className="w-full rounded-md border-2 border-(--border-default) px-3 py-2 bg-body-sm bg-(--surface-card) outline-none focus:border-(--border-strong) resize-none"
         />
-        <p className="text-caption text-neutral-500 text-right">{message.length}/500</p>
+        <p className="bg-caption text-(--text-muted) text-right">{message.length}/500</p>
+      </PanelCard>
+
+      {/* Sprint 13 (D1.1, requirements.md 7.1). Plain-language access mode. A form with no stored value is
+          Mode 1 (open) — that is what every pre-V2 form is. The new-form default is the backend's call
+          (OQ-9); this control only reads and writes `settings.accessMode`. */}
+      <PanelCard label="Who can respond" description="Choose who is allowed to submit this form.">
+        <Select
+          id="access-mode"
+          label="Who can respond"
+          value={settings.accessMode ?? 'open'}
+          onChange={(e) => onUpdate({ accessMode: e.target.value as AccessMode })}
+        >
+          <option value="open">Anyone with the link — no email, no tracking</option>
+          <option value="tracked">Anyone with the link — ask for their email so they can view and correct their answers</option>
+          <option value="login">Only people signed in to Beginso</option>
+        </Select>
+        {settings.accessMode === 'tracked' && (
+          <p className="bg-caption text-(--text-muted)">
+            Respondents get an email link to view or correct their submission. The email never contains their answers.
+          </p>
+        )}
+        {settings.accessMode === 'login' && (
+          <Alert variant="warning" title="Requiring login reduces completions">
+            People without an account have to sign up first. Use this for internal forms, not public ones.
+          </Alert>
+        )}
       </PanelCard>
 
       <PanelCard label="Response limit" description="Automatically stop accepting responses after a set number.">
         <div className="flex items-center justify-between">
-          <span className="text-body-sm font-medium text-neutral-700">Limit responses</span>
+          <span className="bg-body-sm font-medium text-(--text-secondary)">Limit responses</span>
           <Switch
             id="response-limit-toggle"
             checked={limitEnabled}
@@ -188,7 +146,7 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
 
       <PanelCard label="Close date" description="Automatically close the form at a set date and time.">
         <div className="flex items-center justify-between">
-          <span className="text-body-sm font-medium text-neutral-700">Auto-close on a date</span>
+          <span className="bg-body-sm font-medium text-(--text-secondary)">Auto-close on a date</span>
           <Switch
             id="close-date-toggle"
             checked={closeDateEnabled}
@@ -203,7 +161,7 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
           onChange={(e) => onUpdate({ closeDate: e.target.value ? localInputToIso(e.target.value) : undefined })}
         />
         {isPastDate && (
-          <p className="text-caption text-warning font-semibold">
+          <p className="bg-caption text-(--warning-text) font-semibold">
             This date is in the past — the form will be immediately closed on publish.
           </p>
         )}
@@ -214,7 +172,7 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
         description="A hidden field is added to the form. Bots that fill it are silently rejected."
       >
         <div className="flex items-center justify-between">
-          <span className="text-body-sm font-medium text-neutral-700">Honeypot spam protection</span>
+          <span className="bg-body-sm font-medium text-(--text-secondary)">Honeypot spam protection</span>
           <Switch
             id="honeypot-toggle"
             checked={settings.honeypotEnabled}
@@ -233,7 +191,7 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
                 navigator.clipboard.writeText(publicUrl);
                 toast('Link copied to clipboard.', 'success');
               }}
-              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md p-2 text-neutral-400 hover:bg-brand-50 hover:text-brand-700"
+              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md p-2 text-(--text-disabled) hover:bg-(--accent-soft) hover:text-(--accent-soft-text)"
               aria-label="Copy public URL"
             >
               <Copy size={16} />

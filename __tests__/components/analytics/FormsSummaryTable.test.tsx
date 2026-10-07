@@ -72,13 +72,30 @@ describe('FormsSummaryTable', () => {
     expect(screen.getByText('↓ 20.0%')).toBeInTheDocument();
   });
 
-  it('navigates to the form\'s Auto-Dashboard when a row is clicked', () => {
+  it('links each form title to its own analytics, and offers the same from the row menu', () => {
     const data = mockFormsSummary({ forms: [{ _id: 'form-9', title: 'Solo Form', status: 'published', totalResponses: 3, completionRate: 50 }] });
     render(<FormsSummaryTable data={data} isLoading={false} page={1} onPageChange={vi.fn()} />);
 
-    fireEvent.click(screen.getAllByText('Solo Form')[0]);
+    expect(screen.getByRole('link', { name: 'Solo Form' })).toHaveAttribute('href', '/forms/form-9/analytics');
 
+    fireEvent.click(screen.getByRole('button', { name: 'More Options' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: /View analytics/ }));
     expect(mockPush).toHaveBeenCalledWith('/forms/form-9/analytics');
+  });
+
+  it('filters the rows by the search box', () => {
+    const data = mockFormsSummary({
+      forms: [
+        { _id: 'a', title: 'Alpha Survey', status: 'published', totalResponses: 3, completionRate: 50 },
+        { _id: 'b', title: 'Beta Poll', status: 'published', totalResponses: 4, completionRate: 60 },
+      ],
+    });
+    render(<FormsSummaryTable data={data} isLoading={false} page={1} onPageChange={vi.fn()} />);
+
+    fireEvent.change(screen.getByLabelText('Search forms'), { target: { value: 'beta' } });
+
+    expect(screen.queryByText('Alpha Survey')).not.toBeInTheDocument();
+    expect(screen.getByText('Beta Poll')).toBeInTheDocument();
   });
 
   it('renders pagination controls and forwards page changes', () => {

@@ -4,8 +4,8 @@ import { useState } from 'react';
 import { isAxiosError } from 'axios';
 import { Archive, Download, Eye, File, FileText, Film, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
-import { useToast } from '@/components/common/Toast';
+import { Spinner } from '@/components/ui/Spinner';
+import { useToast } from '@/components/ui/Toast';
 import { responsesService } from '@/services/responses';
 import { formatFileSize } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
@@ -29,7 +29,7 @@ const DOCUMENT_MIME_TYPES = new Set([
 ]);
 
 function renderFileIcon(mimeType: string) {
-  const className = 'text-neutral-400 shrink-0';
+  const className = 'text-(--text-disabled) shrink-0';
   if (mimeType.startsWith('image/')) return <ImageIcon size={20} className={className} />;
   if (mimeType === 'video/mp4') return <Film size={20} className={className} />;
   if (mimeType === 'application/zip') return <Archive size={20} className={className} />;
@@ -109,10 +109,10 @@ export function FileDownloadButton({
       title={unavailable ? 'File no longer available' : undefined}
     >
       {renderFileIcon(mimeType)}
-      <span className="text-body-sm font-medium text-neutral-700 break-words min-w-0 flex-1" title={originalName}>
+      <span className="bg-body-sm font-medium text-(--text-secondary) wrap-break-word min-w-0 flex-1" title={originalName}>
         {originalName}
       </span>
-      <span className="text-caption text-neutral-400 shrink-0">{formatFileSize(size)}</span>
+      <span className="bg-caption text-(--text-disabled) shrink-0">{formatFileSize(size)}</span>
       <div className="flex items-center gap-1 ml-auto">
         <Button
           variant="ghost"
@@ -123,7 +123,7 @@ export function FileDownloadButton({
           disabled={unavailable || loadingAction !== null}
           className="w-11 h-11 p-0"
         >
-          {loadingAction === 'preview' ? <LoadingSpinner variant="inline" /> : <Eye size={16} />}
+          {loadingAction === 'preview' ? <Spinner /> : <Eye size={16} />}
         </Button>
         <Button
           variant="ghost"
@@ -134,7 +134,7 @@ export function FileDownloadButton({
           disabled={unavailable || loadingAction !== null}
           className="w-11 h-11 p-0"
         >
-          {loadingAction === 'download' ? <LoadingSpinner variant="inline" /> : <Download size={16} />}
+          {loadingAction === 'download' ? <Spinner /> : <Download size={16} />}
         </Button>
       </div>
     </div>

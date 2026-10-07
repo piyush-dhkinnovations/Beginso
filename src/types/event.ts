@@ -13,6 +13,9 @@ export interface WorkspaceEventItem {
   // §11.2's contract has no IP field. Optional and shown as-is — the Sprint 11 security audit
   // requires "no raw IPs", so whatever the backend sends here should already be masked/hashed.
   ip?: string | null;
+  // Sprint 14 (B5.3): free-form per action - e.g. `rows` (row count) and `format` on report.create /
+  // report.download. Read defensively; never assume a key is present.
+  metadata?: Record<string, unknown> | null;
 }
 
 export interface AuditFilters {

@@ -36,7 +36,7 @@ vi.mock('@/hooks/useAuth', () => ({
 }));
 
 const mockToast = vi.fn();
-vi.mock('@/components/common/Toast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 

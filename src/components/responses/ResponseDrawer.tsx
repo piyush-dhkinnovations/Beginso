@@ -10,30 +10,45 @@ import {
   LockKeyhole,
   Maximize2,
   Minimize2,
-  ShieldCheck,
   Trash2,
   X,
 } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { AnswerBlock } from './AnswerBlock';
-import { MetadataSidebar } from './MetadataSidebar';
-import { StatusDropdown } from './StatusDropdown';
-import { UploadedFilesPreview } from './UploadedFilesPreview';
+import { StageBadge } from './StageBadge';
+import { NotesPanel } from './NotesPanel';
+import { WorkflowSidebar } from './WorkflowSidebar';
 import { responsesService } from '@/services/responses';
+import { formAccessService } from '@/services/formAccess';
+import { notesService } from '@/services/notes';
+import { FormAccessPanel } from '@/components/team/FormAccessPanel';
 import { formsService } from '@/services/forms';
-import { responseKeys } from '@/lib/queryKeys';
+import { tagsService } from '@/services/tags';
+import { reportsService } from '@/services/reports';
+import { useInboxMutations } from '@/hooks/useInboxMutations';
+import { useMembers } from '@/hooks/useMembers';
+import { useTags } from '@/hooks/useTags';
+import { useAuth } from '@/hooks/useAuth';
+import { formAccessKeys, noteKeys, responseKeys, workspaceKeys } from '@/lib/queryKeys';
 import { detectRespondentIdentity, shortId } from '@/lib/formatters';
+import { exportPayloadFromTarget } from '@/lib/reportExport';
+import { hasCapability } from '@/lib/roles';
 import { cn } from '@/lib/utils';
-import type { PaginatedResponsesResult, ResponseDetail, ResponseStatus } from '@/types/response';
+import { workspacesService } from '@/services/workspaces';
+import type { ResponseDetail } from '@/types/response';
+import type { StageRef } from '@/types/stage';
 
 interface ResponseDrawerProps {
   responseId: string | null;
   /** Undefined on the all-forms view — invalidations target the workspace-wide 'all' cache key. */
   formId?: string;
+  /** Workspace slug, or 'personal' (OQ-1). */
+  scope?: string;
+  stages?: readonly StageRef[];
   formTitle?: string;
   fileFieldLabels?: string[];
   displayMode?: 'drawer' | 'page';
@@ -46,16 +61,20 @@ interface ResponseDrawerProps {
   onExpand?: (response: ResponseDetail) => void;
   collapseHref?: string;
   onClose: () => void;
+  /** Navigates to another response by id — wired to the duplicate callout's "view original" link
+   * (task 5.5). Optional: a caller with no cross-response navigation (e.g. the standalone
+   * `/responses/[id]` page) simply doesn't render the callout's link as clickable-elsewhere. */
+  onOpenResponse?: (id: string) => void;
 }
 
 function DrawerSkeleton() {
   return (
     <div className="flex flex-col gap-4 p-4" aria-busy="true">
-      <div className="h-64 bg-neutral-100 border border-neutral-200 rounded-lg animate-pulse" />
+      <div className="h-40 bg-(--bg-subtle) border border-(--border-default) rounded-lg animate-pulse" />
       {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="flex flex-col gap-2 p-4 bg-white border border-neutral-200 rounded-lg">
-          <div className="h-4 w-32 bg-neutral-100 rounded animate-pulse" />
-          <div className="h-4 w-full max-w-sm bg-neutral-100 rounded animate-pulse" />
+        <div key={i} className="flex flex-col gap-2 p-4 bg-(--surface-card) border border-(--border-default) rounded-lg">
+          <div className="h-4 w-32 bg-(--bg-subtle) rounded animate-pulse" />
+          <div className="h-4 w-full max-w-sm bg-(--bg-subtle) rounded animate-pulse" />
         </div>
       ))}
     </div>
@@ -91,12 +110,12 @@ function DrawerErrorState({
 
   return (
     <div role="alert" className="flex min-h-64 flex-col items-center justify-center gap-3 p-6 text-center">
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-error">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-(--error-surface) text-(--error-text)">
         <Icon size={24} aria-hidden="true" />
       </span>
       <div className="space-y-1">
-        <h3 className="text-heading-3 font-semibold text-neutral-900">{heading}</h3>
-        <p className="max-w-sm text-body-sm text-neutral-600">{body}</p>
+        <h3 className="bg-body font-semibold font-semibold text-(--text-primary)">{heading}</h3>
+        <p className="max-w-[42ch] bg-body-sm text-(--text-muted)">{body}</p>
       </div>
       <div className="flex items-center gap-2 pt-1">
         <Button variant="secondary" size="small" onClick={onClose}>
@@ -115,6 +134,8 @@ function DrawerErrorState({
 export function ResponseDrawer({
   responseId,
   formId,
+  scope = 'personal',
+  stages = [],
   formTitle,
   fileFieldLabels = [],
   displayMode = 'drawer',
@@ -127,11 +148,31 @@ export function ResponseDrawer({
   onExpand,
   collapseHref,
   onClose,
+  onOpenResponse,
 }: ResponseDrawerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const drawerRef = useRef<HTMLDivElement>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const { user } = useAuth();
+  const mutations = useInboxMutations({ scope, formId });
+  const { data: members = [] } = useMembers(scope === 'personal' ? undefined : scope);
+  const { data: tags = [] } = useTags(scope === 'personal' ? undefined : scope);
+
+  // Same "resolve by slug from the already-cached workspace list" pattern useWorkspaceRole uses —
+  // cheap (staleTime 5 min, shared cache key), and the notes panel's privacy sentence is the only
+  // thing here that needs a display name, not a role.
+  const { data: workspaces } = useQuery({
+    queryKey: workspaceKeys.list(),
+    queryFn: () => workspacesService.list(),
+    enabled: scope !== 'personal',
+    staleTime: 5 * 60_000,
+  });
+  const workspaceName = scope === 'personal' ? 'your workspace' : (workspaces?.find((w) => w.slug === scope)?.name ?? 'this workspace');
+  const role = scope === 'personal' ? 'owner' : workspaces?.find((w) => w.slug === scope)?.role;
+  const canDeleteAnyNote = role !== undefined && hasCapability(role, 'responses:delete');
+  const canCreateTag = role !== undefined && hasCapability(role, 'responses:act');
 
   // Locks the page behind the drawer while it's open — without this, the drawer's own content
   // and the Responses table underneath both scroll independently (two visible scrollbars,
@@ -190,10 +231,36 @@ export function ResponseDrawer({
   }, [displayMode, responseId, onClose]);
 
   const { data: response, error: responseError, isError, isFetching, isLoading, refetch } = useQuery({
-    queryKey: responseKeys.detail(responseId ?? ''),
-    queryFn: () => responsesService.getResponseById(responseId as string),
+    queryKey: responseKeys.detail(scope, responseId ?? ''),
+    queryFn: () => responsesService.getResponseById(responseId as string, scope),
     enabled: !!responseId,
   });
+
+  // Collaboration (internal notes, assignee, activity) only means something when more than one
+  // person is involved. Always on in a workspace; in a personal space only once the form is shared
+  // with someone (a grant), or if notes already exist (never hide data, e.g. a form that was shared
+  // and later unshared). While that is still being worked out the sections stay hidden rather than
+  // flashing in and out, and a failed lookup fails open (shown) so nothing is hidden by mistake.
+  const isPersonal = scope === 'personal';
+  const grantFormId = formId ?? response?.formId;
+  const grantsQuery = useQuery({
+    queryKey: formAccessKeys.grants(grantFormId ?? ''),
+    queryFn: () => formAccessService.listGrants(grantFormId as string),
+    enabled: isPersonal && !!grantFormId && !!responseId,
+    retry: false,
+  });
+  const personalNotesQuery = useQuery({
+    queryKey: noteKeys.list(scope, responseId ?? ''),
+    queryFn: () => notesService.list(responseId as string, scope),
+    enabled: isPersonal && !!responseId,
+    retry: false,
+  });
+  const showCollaboration =
+    !isPersonal ||
+    grantsQuery.isError ||
+    (grantsQuery.data?.length ?? 0) > 0 ||
+    (personalNotesQuery.data?.length ?? 0) > 0;
+  const collaborationSettled = !isPersonal || grantsQuery.isSuccess || grantsQuery.isError;
 
   const { data: responseForm } = useQuery({
     queryKey: ['form', response?.formId],
@@ -208,55 +275,20 @@ export function ResponseDrawer({
         .sort((a, b) => a.order - b.order)
         .map((field) => field.label);
 
-  const statusMutation = useMutation({
-    mutationFn: (status: ResponseStatus) => responsesService.updateStatus(responseId as string, status),
-    onMutate: async (status) => {
-      const detailKey = responseKeys.detail(responseId as string);
-      await queryClient.cancelQueries({ queryKey: detailKey });
-      const previousDetail = queryClient.getQueryData<ResponseDetail>(detailKey);
-      queryClient.setQueryData<ResponseDetail>(detailKey, (old) => (old ? { ...old, status } : old));
-
-      // Also patch every cached responses-list query for this form, so the table behind
-      // the drawer reflects the change immediately, not just after invalidation refetches.
-      // responseKeys.all(formId) is a prefix of the stats key too (['responses', formId, 'stats']),
-      // so setQueriesData's fuzzy match also hits the stats cache — whose shape has no `data`
-      // array. Guard on that shape rather than assuming every match is a paginated list, or the
-      // stats entry throws here and the whole mutation aborts before mutationFn ever runs.
-      const listKey = responseKeys.all(formId);
-      await queryClient.cancelQueries({ queryKey: listKey });
-      const previousLists = queryClient.getQueriesData({ queryKey: listKey });
-      queryClient.setQueriesData<PaginatedResponsesResult>({ queryKey: listKey }, (old) =>
-        old && Array.isArray(old.data)
-          ? { ...old, data: old.data.map((r) => (r._id === responseId ? { ...r, status } : r)) }
-          : old
-      );
-
-      return { previousDetail, previousLists };
-    },
-    onError: (err, _status, context) => {
-      queryClient.setQueryData(responseKeys.detail(responseId as string), context?.previousDetail);
-      context?.previousLists?.forEach(([key, data]) => queryClient.setQueryData(key, data));
-
-      // Surface the backend's actual reason (e.g. 422 "Validation failed") instead of a
-      // blanket message — the generic text alone gave no way to tell an expired-session 401,
-      // a validation 422, or a genuine server 500 apart, either for the user or in the console.
-      const serverMessage = isAxiosError(err) ? (err.response?.data as { message?: string } | undefined)?.message : undefined;
-      if (isAxiosError(err)) {
-        console.error('Status update failed:', err.response?.status, err.response?.data ?? err.message);
-      }
-      toast(serverMessage ?? 'Failed to update status. Please try again.', 'error');
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: responseKeys.detail(responseId as string) });
-      // ['responses', formId] is a prefix of the stats key ['responses', formId, 'stats'],
-      // so this one invalidation already covers both the list and stats queries — invalidating
-      // stats separately here fired its 3-request refetch a second time on every status change.
-      queryClient.invalidateQueries({ queryKey: responseKeys.all(formId) });
-    },
-  });
+  // Opening a response marks it read for the caller via an explicit request (design.md §11.2:
+  // "GET never mutates") — never as a side effect of the detail fetch above. Runs once per
+  // responseId, and only when the response is actually known unread (an absent `unread` field
+  // defaults to "already read", matching IResponse's own documented convention).
+  const markedReadRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!response || markedReadRef.current === response._id) return;
+    markedReadRef.current = response._id;
+    if (response.unread) mutations.markRead(response._id, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [response?._id, response?.unread]);
 
   const deleteMutation = useMutation({
-    mutationFn: () => responsesService.deleteResponse(responseId as string),
+    mutationFn: () => responsesService.deleteResponse(responseId as string, scope),
     onSuccess: () => {
       toast('Response deleted.', 'success');
       onClose();
@@ -264,9 +296,28 @@ export function ResponseDrawer({
     onError: () => toast('Failed to delete response. Please try again.', 'error'),
     onSettled: () => {
       setConfirmDeleteOpen(false);
-      queryClient.invalidateQueries({ queryKey: responseKeys.all(formId) });
+      queryClient.invalidateQueries({ queryKey: responseKeys.all(scope, formId) });
     },
   });
+
+  const createTagMutation = useMutation({
+    mutationFn: (name: string) => tagsService.create(scope, { name, colour: 'neutral' }),
+    onSuccess: (tag) => {
+      if (response) mutations.updateTags(response._id, [...(response.tags ?? []).map((t) => t.id), tag.id]);
+    },
+    onError: () => toast('Failed to create tag. Please try again.', 'error'),
+  });
+
+  function downloadResponse() {
+    if (!response) return;
+    // Response-level "Download" — single-response export through the export path, without notes
+    // (requirements.md §9.3/B4.16); reuses the same `exportPayloadFromTarget` the Inbox's own
+    // Export/BulkActionBar already build from, rather than a bespoke download call.
+    reportsService
+      .createReport(exportPayloadFromTarget('csv', { ids: [response._id] }))
+      .then(() => toast('Download started. Find it under Reports when it finishes.', 'success'))
+      .catch(() => toast('Failed to start the download. Please try again.', 'error'));
+  }
 
   if (!responseId) return null;
 
@@ -279,8 +330,11 @@ export function ResponseDrawer({
       role={displayMode === 'drawer' ? 'presentation' : undefined}
       className={cn(
         displayMode === 'drawer'
-          ? 'fixed inset-0 z-50 flex justify-end bg-black/40 animate-fade-in'
-          : 'mx-auto flex min-h-[calc(100vh-104px)] w-full max-w-6xl animate-fade-in'
+          ? 'bg-scrim justify-end p-0'
+          // Bug fix, Sprint 12 close-out: this set its own max-w-6xl cap, directly against
+          // CLAUDE.md's "pages never set their own width" rule (AppShell already owns that) —
+          // the full-page view read as a slightly-wider card, not an actual full-screen view.
+          : 'flex min-h-[calc(100vh-104px)] w-full animate-fade-in'
       )}
       onClick={(e) => {
         if (displayMode === 'drawer' && e.target === e.currentTarget) onClose();
@@ -292,40 +346,49 @@ export function ResponseDrawer({
         aria-labelledby="drawer-title"
         ref={drawerRef}
         className={cn(
-          'relative flex w-full flex-col overflow-hidden border border-neutral-200 bg-white',
+          'relative flex w-full flex-col overflow-hidden border border-(--border-default) bg-(--surface-card)',
           displayMode === 'drawer'
-            ? 'h-full border-y-0 border-r-0 shadow-2xl animate-slide-in-right sm:max-w-[min(1180px,calc(100vw-32px))]'
-            : 'min-h-full rounded-lg shadow-card'
+            ? 'h-full border-y-0 border-r-0 shadow-(--shadow-lg) animate-slide-in-right sm:max-w-[min(1180px,calc(100vw-32px))]'
+            : 'min-h-full rounded-lg shadow-(--shadow-sm)'
         )}
       >
-        <header className="flex shrink-0 items-center justify-between gap-4 border-b border-neutral-200 px-4 py-3 sm:px-6">
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-(--border-default) px-4 py-3 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
+            {/* Full-screen sheet with a back chevron below 768px (requirements.md §9.1) — the
+                close/back control is the same handler either way, only the icon changes. */}
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Back"
+              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-primary) max-md:flex md:hidden"
+            >
+              <ChevronLeft size={18} />
+            </button>
             {response && hasIdentity && (
               <span
                 aria-hidden="true"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-100 text-body-sm font-semibold text-brand-700"
+                className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full bg-(--accent-soft-hover) bg-body-sm font-semibold text-(--accent-soft-text) sm:flex"
               >
                 {initial}
               </span>
             )}
             <div className="min-w-0">
-              <h2 id="drawer-title" className="truncate text-heading-2 text-neutral-900">Response Details</h2>
+              <div className="flex items-center gap-2">
+                <h2 id="drawer-title" className="truncate bg-h5 text-(--text-primary)">
+                  {response ? (identity.label ?? identity.email ?? `Response #${response.reference ?? shortId(response._id)}`) : 'Response Details'}
+                </h2>
+                {response && <StageBadge stage={response.stage} status={response.status} />}
+              </div>
               {response && (
-                <p className="flex min-w-0 items-center gap-1 truncate text-body-sm text-neutral-500">
-                  <span className="truncate">{formTitle ?? responseForm?.title ?? identity.label ?? identity.email ?? `Response #${shortId(response._id)}`}</span>
+                <p className="flex min-w-0 items-center gap-1 truncate bg-body-sm text-(--text-muted)">
+                  <span className="truncate">{formTitle ?? responseForm?.title ?? ''}</span>
                   {identity.email && identity.label ? ` · ${identity.email}` : ''}
                 </p>
               )}
+              {/* "Edited after review" indicator — Sprint 13 (A5.2), space reserved, not built. */}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            {response && (
-              <StatusDropdown
-                currentStatus={response.status}
-                onChange={(status) => statusMutation.mutate(status)}
-                disabled={statusMutation.isPending}
-              />
-            )}
+          <div className="flex shrink-0 items-center gap-1.5">
             {position !== undefined && totalResponses !== undefined && (
               <div className="flex items-center gap-1">
                 <Button
@@ -339,7 +402,7 @@ export function ResponseDrawer({
                   <ChevronLeft size={14} aria-hidden="true" />
                   <span className="hidden xl:inline">Previous</span>
                 </Button>
-                <span className="hidden min-w-16 px-1 text-center text-body-sm text-neutral-500 md:inline">
+                <span className="hidden min-w-16 px-1 text-center bg-body-sm text-(--text-muted) md:inline">
                   {position} of {totalResponses}
                 </span>
                 <Button
@@ -355,12 +418,24 @@ export function ResponseDrawer({
                 </Button>
               </div>
             )}
+            {response && (
+              <>
+                <Button variant="ghost" size="small" onClick={downloadResponse} aria-label="Download response" className="gap-1.5">
+                  <Download size={15} aria-hidden="true" />
+                  <span className="hidden lg:inline">Download</span>
+                </Button>
+                <Button variant="ghost" size="small" onClick={() => setConfirmDeleteOpen(true)} aria-label="Delete response" className="gap-1.5 text-(--error-text)">
+                  <Trash2 size={15} aria-hidden="true" />
+                  <span className="hidden lg:inline">Delete</span>
+                </Button>
+              </>
+            )}
             {displayMode === 'drawer' && onExpand && (
               <button
                 type="button"
                 onClick={() => response && onExpand(response)}
                 aria-label="Open response in full page"
-                className="flex min-h-11 min-w-11 items-center justify-center rounded-md border border-neutral-200 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-800"
+                className="flex min-h-11 min-w-11 items-center justify-center rounded-md border border-(--border-default) text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-primary)"
               >
                 <Maximize2 size={17} aria-hidden="true" />
               </button>
@@ -369,7 +444,7 @@ export function ResponseDrawer({
               <a
                 href={collapseHref}
                 aria-label="Return to response drawer"
-                className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+                className="hidden min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-primary) md:flex"
               >
                 <Minimize2 size={18} />
               </a>
@@ -378,7 +453,7 @@ export function ResponseDrawer({
                 type="button"
                 onClick={onClose}
                 aria-label="Close"
-                className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+                className="hidden min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-primary) md:flex"
               >
                 <X size={18} />
               </button>
@@ -397,68 +472,78 @@ export function ResponseDrawer({
               onClose={onClose}
             />
           ) : (
-            <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-              <section className="flex min-w-0 flex-col gap-4 rounded-lg border border-neutral-200 bg-white p-4">
-                <div>
-                  <h3 className="text-heading-3 text-neutral-800">Submission Overview</h3>
-                  <p className="mt-0.5 text-body-xs text-neutral-400">Uploaded files and submission information</p>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <span className="text-label text-neutral-500">Uploaded files</span>
-                  <UploadedFilesPreview responseId={response._id} files={response.responseFiles} />
-                </div>
-                <MetadataSidebar response={response} />
-              </section>
+            <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+              {/* Main column: notes above the answers (wireframe screen 12 order). */}
+              <div className="flex min-w-0 flex-col gap-4">
+                {showCollaboration && (
+                  <NotesPanel
+                    responseId={response._id}
+                    scope={scope}
+                    workspaceName={workspaceName}
+                    currentUserId={user?.id ?? ''}
+                    canDeleteAny={canDeleteAnyNote}
+                  />
+                )}
 
-              <section className="min-w-0 rounded-lg border border-neutral-200 bg-white p-4">
-                <div className="mb-3">
-                  <h3 className="text-heading-3 text-neutral-800">Submitted Answers</h3>
-                  <p className="mt-0.5 text-body-xs text-neutral-400">All answers provided with this response</p>
-                </div>
-                <div className="flex flex-col rounded-lg border border-neutral-200 px-4">
-                  {Object.keys(response.answers).length === 0 && response.responseFiles.length === 0 ? (
-                    <p className="py-6 text-center text-body-sm text-neutral-500">No submitted answers.</p>
-                  ) : (
-                    Object.entries(response.answers).map(([label, value]) => (
-                      <AnswerBlock key={label} label={label} value={value} />
-                    ))
-                  )}
-                  {response.responseFiles.map((file, index) => (
-                    <div key={file.id} className="flex items-center justify-between gap-4 border-b border-neutral-100 py-2.5 last:border-0">
-                      <span className="shrink-0 text-body-sm text-neutral-500">
-                        {resolvedFileFieldLabels[index] ?? (response.responseFiles.length === 1 ? 'Uploaded file' : `Uploaded file ${index + 1}`)}
-                      </span>
-                      <span className="flex min-w-0 items-center gap-2 text-right text-body-sm font-medium text-neutral-800">
-                        <FileText size={14} className="shrink-0 text-neutral-400" aria-hidden="true" />
-                        <span className="truncate" title={file.name}>{file.name}</span>
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </section>
+                <section className="min-w-0 rounded-lg border border-(--border-default) bg-(--surface-card) p-4">
+                  <div className="mb-3">
+                    <h3 className="bg-body font-semibold text-(--text-primary)">Submitted Answers</h3>
+                    <p className="mt-0.5 bg-caption text-(--text-muted)">All answers provided with this response</p>
+                  </div>
+                  <div className="flex flex-col rounded-lg border border-(--border-default) px-4">
+                    {Object.keys(response.answers).length === 0 && response.responseFiles.length === 0 ? (
+                      <p className="py-6 text-center bg-body-sm text-(--text-muted)">No submitted answers.</p>
+                    ) : (
+                      Object.entries(response.answers).map(([label, value]) => (
+                        <AnswerBlock key={label} label={label} value={value} />
+                      ))
+                    )}
+                    {response.responseFiles.map((file, index) => (
+                      <div key={file.id} className="flex items-center justify-between gap-4 border-b border-(--border-default) py-2.5 last:border-0">
+                        <span className="shrink-0 bg-body-sm text-(--text-muted)">
+                          {resolvedFileFieldLabels[index] ?? (response.responseFiles.length === 1 ? 'Uploaded file' : `Uploaded file ${index + 1}`)}
+                        </span>
+                        <span className="flex min-w-0 items-center gap-2 text-right bg-body-sm font-medium text-(--text-primary)">
+                          <FileText size={14} className="shrink-0 text-(--text-muted)" aria-hidden="true" />
+                          <span className="truncate" title={file.name}>{file.name}</span>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </div>
+
+              <WorkflowSidebar
+                response={response}
+                scope={scope}
+                stages={stages}
+                tags={tags}
+                members={members}
+                collaboration={showCollaboration}
+                onShare={isPersonal && collaborationSettled && !showCollaboration && grantFormId ? () => setShareOpen(true) : undefined}
+                canCreateTag={canCreateTag}
+                canScore={canCreateTag}
+                isUpdating={mutations.isUpdating}
+                onOpenOriginal={onOpenResponse}
+                onStageChange={(stageId) => mutations.updateStage(response._id, stageId)}
+                onAssigneeChange={(assigneeId) => mutations.updateAssignee(response._id, assigneeId)}
+                onTagAdd={(tagId) => mutations.updateTags(response._id, [...(response.tags ?? []).map((t) => t.id), tagId])}
+                onTagRemove={(tagId) => mutations.updateTags(response._id, (response.tags ?? []).map((t) => t.id).filter((id) => id !== tagId))}
+                onTagCreate={(name) => createTagMutation.mutate(name)}
+              />
             </div>
           )}
         </div>
-
-        {response && (
-          <div className="flex shrink-0 flex-col gap-3 border-t border-neutral-200 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <div className="flex items-center gap-2">
-              <Button onClick={() => undefined} className="gap-2">
-                <Download size={16} aria-hidden="true" />
-                Download Response
-              </Button>
-              <Button variant="ghost" size="small" className="gap-1.5 text-error" onClick={() => setConfirmDeleteOpen(true)}>
-                <Trash2 size={14} aria-hidden="true" />
-                Delete Response
-              </Button>
-            </div>
-            <div className="flex items-center gap-2 text-body-xs text-neutral-500">
-              <ShieldCheck size={14} className="shrink-0 text-neutral-400" aria-hidden="true" />
-              Only workspace admins can view this response.
-            </div>
-          </div>
-        )}
       </div>
+
+      {isPersonal && grantFormId && (
+        <FormAccessPanel
+          isOpen={shareOpen}
+          formId={grantFormId}
+          formTitle={formTitle ?? responseForm?.title ?? 'this form'}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
 
       <Modal
         isOpen={confirmDeleteOpen}
@@ -466,7 +551,7 @@ export function ResponseDrawer({
         title="Delete this response?"
         description="This will permanently delete the response and all uploaded files. This action cannot be undone."
       >
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-neutral-100">
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-(--border-default)">
           <Button variant="secondary" onClick={() => setConfirmDeleteOpen(false)} disabled={deleteMutation.isPending}>
             Cancel
           </Button>

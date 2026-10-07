@@ -52,17 +52,17 @@ export function DeleteFormModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isBulk ? `Delete ${count} form${count === 1 ? '' : 's'}?` : 'Delete form?'}
-      description="This action cannot be undone. All responses will be permanently deleted."
+      title={isBulk ? `Move ${count} form${count === 1 ? '' : 's'} to Trash?` : 'Move form to Trash?'}
+      description="It stays in Trash for 30 days and can be restored. Its responses go with it and come back with it. After 30 days it is deleted permanently."
     >
       <div className="flex flex-col gap-4">
         {!isBulk && (
           <div>
             <label
               htmlFor="delete-confirm-input"
-              className="block text-body-sm text-neutral-600 mb-1.5"
+              className="block bg-body-sm text-(--text-secondary) mb-1.5"
             >
-              Type <span className="font-semibold text-neutral-900">{formTitle}</span> to confirm
+              Type <span className="font-semibold text-(--text-primary)">{formTitle}</span> to confirm
             </label>
             <input
               id="delete-confirm-input"
@@ -70,13 +70,13 @@ export function DeleteFormModal({
               value={typed}
               onChange={(e) => setTyped(e.target.value)}
               placeholder={formTitle}
-              className="w-full border border-neutral-300 rounded-md px-3 py-2 text-body focus:outline-none focus:border-neutral-500 focus:ring-2 focus:ring-neutral-200 transition-colors"
+              className="w-full border border-(--border-strong) rounded-md px-3 py-2 bg-body focus:outline-none focus:border-(--border-strong) focus:ring-2 focus:ring-(--border-default) transition-colors"
               autoComplete="off"
             />
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-neutral-100">
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-(--border-subtle)">
           <Button type="button" variant="secondary" onClick={onClose} disabled={isDeleting}>
             Cancel
           </Button>
@@ -85,9 +85,9 @@ export function DeleteFormModal({
             onClick={onConfirm}
             isLoading={isDeleting}
             disabled={!canDelete}
-            className="bg-rose-600 text-white hover:bg-rose-700 focus:ring-rose-500 disabled:bg-rose-200 disabled:border-rose-200"
+            className="bg-(--error) text-(--text-on-brand) hover:bg-(--danger-hover) focus:ring-(--error) disabled:bg-(--error-border) disabled:border-(--error-border)"
           >
-            {isBulk ? `Delete ${count} form${count === 1 ? '' : 's'}` : 'Delete permanently'}
+            {isBulk ? `Move ${count} form${count === 1 ? '' : 's'} to Trash` : 'Move to Trash'}
           </Button>
         </div>
       </div>

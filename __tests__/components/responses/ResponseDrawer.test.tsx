@@ -1,8 +1,10 @@
 /**
  * __tests__/components/responses/ResponseDrawer.test.tsx
- * Feature: responses-drawer-redesign
- * Tests: ResponseDrawer — null when closed, fetches+renders when open, Escape/backdrop close,
- * dual-cache optimistic status patch, delete closes instead of navigating
+ * Feature: responses-drawer-redesign; migrated by sprint-12-inbox-collaboration task 1.3/1.8 to
+ * stages (`responsesService.update({ stageId })`, `responseKeys.*` scope segment) rather than the
+ * removed status union.
+ * Tests: null when closed, fetches+renders when open, Escape/backdrop close, dual-cache
+ * optimistic stage patch, delete closes instead of navigating
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -13,30 +15,71 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ResponseDrawer } from '@/components/responses/ResponseDrawer';
 import { responseKeys } from '@/lib/queryKeys';
 import type { ResponseDetail } from '@/types/response';
+import type { StageRef } from '@/types/stage';
 
 const mockToast = vi.fn();
-vi.mock('@/components/common/Toast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
+// Sprint 12 (inbox-collaboration), task 4.4: ResponseDrawer now renders NotesPanel and
+// WorkflowSidebar's ActivityTimeline unconditionally, both of which fetch on mount — mocked here
+// so this suite (which only exercises the drawer's own header/answers/delete/navigation behaviour)
+// doesn't make real network calls. useAuth is required unconditionally by NotesPanel's
+// `currentUserId` prop.
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: () => ({ user: { id: 'user-1', email: 'user@example.com' } }),
+}));
+vi.mock('@/services/notes', () => ({
+  notesService: {
+    list: vi.fn().mockResolvedValue([]),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+  },
+  MentionAccessError: class MentionAccessError extends Error {},
+}));
+vi.mock('@/services/activity', () => ({
+  activityService: { list: vi.fn().mockResolvedValue([]) },
+}));
+// Whether a personal form is shared with anyone decides if notes/assignee/activity show at all.
+const mockListGrants = vi.fn();
+vi.mock('@/services/formAccess', () => ({
+  formAccessService: { listGrants: (...args: unknown[]) => mockListGrants(...args), addGrant: vi.fn(), removeGrant: vi.fn() },
+}));
+
 const mockGetResponseById = vi.fn();
-const mockUpdateStatus = vi.fn();
+const mockUpdate = vi.fn();
 const mockDeleteResponse = vi.fn();
 const mockGetFileDownloadUrl = vi.fn();
 vi.mock('@/services/responses', () => ({
   responsesService: {
     getResponseById: (...args: unknown[]) => mockGetResponseById(...args),
-    updateStatus: (...args: unknown[]) => mockUpdateStatus(...args),
+    update: (...args: unknown[]) => mockUpdate(...args),
     deleteResponse: (...args: unknown[]) => mockDeleteResponse(...args),
     getFileDownloadUrl: (...args: unknown[]) => mockGetFileDownloadUrl(...args),
+    markRead: vi.fn().mockResolvedValue(undefined),
+    bulk: vi.fn(),
   },
 }));
+
+const STAGES: StageRef[] = [
+  { id: 's-new', name: 'New', colour: 'info', category: 'new' },
+  { id: 's-completed', name: 'Completed', colour: 'success', category: 'completed' },
+];
 
 const detail: ResponseDetail = {
   _id: 'resp-1',
   formId: 'form-1',
+  reference: '#1',
   answers: { 'Full Name': 'Priya Sharma', Email: 'priya@example.com' },
-  status: 'new',
+  stage: STAGES[0],
+  assignee: null,
+  tags: [],
+  noteCount: 0,
+  attachmentCount: 0,
+  unread: false,
+  duplicateOfId: null,
   ipHash: 'a1b2c3d4e5f60718',
   submittedAt: '2026-08-03T09:50:00.000Z',
   createdAt: '2026-08-03T09:50:00.000Z',
@@ -52,7 +95,7 @@ function renderDrawer(
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const utils = render(
     <QueryClientProvider client={queryClient}>
-      <ResponseDrawer responseId={responseId} formId="form-1" onClose={onClose} {...drawerProps} />
+      <ResponseDrawer responseId={responseId} formId="form-1" stages={STAGES} onClose={onClose} {...drawerProps} />
     </QueryClientProvider>
   );
   return { ...utils, queryClient, onClose };
@@ -62,8 +105,9 @@ describe('ResponseDrawer', () => {
   beforeEach(() => {
     mockToast.mockReset();
     mockGetResponseById.mockReset();
-    mockUpdateStatus.mockReset();
+    mockUpdate.mockReset();
     mockDeleteResponse.mockReset();
+    mockListGrants.mockReset().mockResolvedValue([]); // default: a personal form shared with nobody
   });
 
   it('renders nothing when responseId is null', () => {
@@ -99,7 +143,7 @@ describe('ResponseDrawer', () => {
     // once as the "Full Name" answer value below.
     expect(screen.getAllByText('Priya Sharma')).toHaveLength(2);
     expect(screen.getByText('Full Name')).toBeInTheDocument();
-    expect(mockGetResponseById).toHaveBeenCalledWith('resp-1');
+    expect(mockGetResponseById).toHaveBeenCalledWith('resp-1', 'personal');
   });
 
   it('shows an access-denied state instead of an endless skeleton on 403', async () => {
@@ -191,74 +235,74 @@ describe('ResponseDrawer', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it('optimistically patches both the detail and list caches on status change, then invalidates', async () => {
+  it('optimistically patches both the detail and list caches on stage change, then invalidates', async () => {
+    // Explicit workspace scope: a *real* Stage-id dropdown (this fixture's STAGES) only exists
+    // for a workspace — personal-shell responses use PERSONAL_DEFAULT_STAGES and send {status},
+    // not {stageId} (OQ-9's "fixed default stages", Sprint 12 close-out). This test is about the
+    // optimistic-cache-patch mechanism, not personal-vs-workspace stage semantics, so it exercises
+    // the workspace path explicitly rather than relying on the drawer's personal-shell default.
     mockGetResponseById.mockResolvedValue(detail);
-    mockUpdateStatus.mockResolvedValue({ _id: 'resp-1', status: 'completed', updatedAt: '2026-08-03T10:00:00.000Z' });
+    mockUpdate.mockResolvedValue({ ...detail, stage: STAGES[1] });
     const user = userEvent.setup();
-    const { queryClient } = renderDrawer('resp-1');
+    const { queryClient } = renderDrawer('resp-1', undefined, { scope: 'acme' });
     await screen.findByText('Submitted Answers');
 
-    queryClient.setQueryData(responseKeys.list('form-1', {}), {
-      data: [{ ...detail, status: 'new' }],
+    queryClient.setQueryData(responseKeys.list('acme', 'form-1', {}), {
+      data: [detail],
       total: 1,
       page: 1,
       limit: 50,
       totalPages: 1,
     });
 
-    await user.click(screen.getByRole('button', { name: 'Response status' }));
-    await user.click(screen.getByRole('option', { name: /Completed/ }));
+    await user.selectOptions(screen.getByLabelText('Stage'), 'Completed');
 
     await waitFor(() => {
-      expect(mockUpdateStatus).toHaveBeenCalledWith('resp-1', 'completed');
+      expect(mockUpdate).toHaveBeenCalledWith('resp-1', { stageId: 's-completed' }, 'acme');
     });
   });
 
-  it('status change still succeeds when a stats cache entry shares the same key prefix', async () => {
+  it('stage change still succeeds when a stats cache entry shares the same key prefix', async () => {
     // Feature: sprint-4-responses, regression — ResponseDrawer's optimistic update patches
-    // every cached query under ['responses', formId] via setQueriesData, which also fuzzy-matches
-    // the stats cache (['responses', formId, 'stats'], shape { total, new, in_progress, completed }
-    // — no `data` array). In real usage ResponsesHubView's stats query always populates this
-    // entry, so the drawer must not assume every match is a paginated list.
+    // every cached query under ['responses', scope, formId] via setQueriesData, which also
+    // fuzzy-matches the stats cache (['responses', scope, formId, 'stats'], shape
+    // { total, unread, byStage, byCategory } — no `data` array). In real usage
+    // ResponsesHubView's stats query always populates this entry, so the drawer must not assume
+    // every match is a paginated list. Explicit workspace scope — see the previous test's comment.
     mockGetResponseById.mockResolvedValue(detail);
-    mockUpdateStatus.mockResolvedValue({ _id: 'resp-1', status: 'completed', updatedAt: '2026-08-03T10:00:00.000Z' });
+    mockUpdate.mockResolvedValue({ ...detail, stage: STAGES[1] });
     const user = userEvent.setup();
-    const { queryClient } = renderDrawer('resp-1');
+    const { queryClient } = renderDrawer('resp-1', undefined, { scope: 'acme' });
     await screen.findByText('Submitted Answers');
 
-    queryClient.setQueryData(responseKeys.list('form-1', {}), {
-      data: [{ ...detail, status: 'new' }],
+    queryClient.setQueryData(responseKeys.list('acme', 'form-1', {}), {
+      data: [detail],
       total: 1,
       page: 1,
       limit: 50,
       totalPages: 1,
     });
-    queryClient.setQueryData(responseKeys.stats('form-1'), { total: 1, new: 1, in_progress: 0, completed: 0 });
+    queryClient.setQueryData(responseKeys.stats('acme', 'form-1'), {
+      total: 1,
+      unread: 0,
+      byStage: [],
+      byCategory: { new: 1, in_progress: 0, completed: 0 },
+    });
 
-    await user.click(screen.getByRole('button', { name: 'Response status' }));
-    await user.click(screen.getByRole('option', { name: /Completed/ }));
+    await user.selectOptions(screen.getByLabelText('Stage'), 'Completed');
 
     await waitFor(() => {
-      expect(mockUpdateStatus).toHaveBeenCalledWith('resp-1', 'completed');
+      expect(mockUpdate).toHaveBeenCalledWith('resp-1', { stageId: 's-completed' }, 'acme');
     });
     // The bug made onMutate throw before mutationFn ever ran, which always produced this
     // exact generic toast instead of a real success/error outcome — assert it's absent.
-    expect(mockToast).not.toHaveBeenCalledWith('Failed to update status. Please try again.', 'error');
+    expect(mockToast).not.toHaveBeenCalledWith('Failed to update stage. Please try again.', 'error');
   });
 
-  it('Escape closing the status menu does not also close the drawer', async () => {
-    mockGetResponseById.mockResolvedValue(detail);
-    const user = userEvent.setup();
-    const { onClose } = renderDrawer('resp-1');
-    await screen.findByText('Submitted Answers');
-
-    await user.click(screen.getByRole('button', { name: 'Response status' }));
-    expect(screen.getByRole('listbox')).toBeInTheDocument();
-
-    await user.keyboard('{Escape}');
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-    expect(onClose).not.toHaveBeenCalled();
-  });
+  // The dedicated "Escape closing the stage menu doesn't also close the drawer" case is retired:
+  // task 4.3 replaced the custom-listbox stage control (StatusDropdown, which owned its own
+  // Escape/stopPropagation) with WorkflowSidebar's native `ui/Select`, which has no open/close JS
+  // state to guard — Escape now behaves exactly like the "calls onClose on Escape" case above.
 
   it('shows uploaded files under their form field labels in Submitted Answers', async () => {
     mockGetResponseById.mockResolvedValue({
@@ -327,12 +371,55 @@ describe('ResponseDrawer', () => {
     const { onClose } = renderDrawer('resp-1');
     await screen.findByText('Submitted Answers');
 
-    await user.click(screen.getByRole('button', { name: 'Delete Response' }));
+    await user.click(screen.getByRole('button', { name: 'Delete response' }));
     await user.click(screen.getByRole('button', { name: 'Delete' }));
 
     await waitFor(() => {
       expect(onClose).toHaveBeenCalled();
     });
     expect(mockToast).toHaveBeenCalledWith('Response deleted.', 'success');
+  });
+
+  describe('collaboration sections (notes, assignee, activity)', () => {
+    it('hides them on a personal form that is shared with nobody, and offers to share it', async () => {
+      mockGetResponseById.mockResolvedValue(detail);
+      renderDrawer('resp-1');
+      await screen.findByText('Submitted Answers');
+
+      await waitFor(() => expect(screen.getByText('Working with others?')).toBeInTheDocument());
+      expect(screen.queryByText('Internal notes')).not.toBeInTheDocument();
+      expect(screen.queryByText('Assignee')).not.toBeInTheDocument();
+      expect(screen.queryByText('Activity')).not.toBeInTheDocument();
+      // Triage controls stay for everyone.
+      expect(screen.getByText('Stage')).toBeInTheDocument();
+      expect(screen.getByText('Tags')).toBeInTheDocument();
+    });
+
+    it('shows them on a personal form once it is shared with someone', async () => {
+      mockGetResponseById.mockResolvedValue(detail);
+      mockListGrants.mockResolvedValue([{ userId: 'u2', name: 'Sam', role: 'viewer' }]);
+      renderDrawer('resp-1');
+
+      expect(await screen.findByText('Internal notes')).toBeInTheDocument();
+      expect(screen.getByText('Assignee')).toBeInTheDocument();
+      expect(screen.getByText('Activity')).toBeInTheDocument();
+      expect(screen.queryByText('Working with others?')).not.toBeInTheDocument();
+    });
+
+    it('shows them if the share lookup fails, rather than hiding something by mistake', async () => {
+      mockGetResponseById.mockResolvedValue(detail);
+      mockListGrants.mockRejectedValue(new Error('403'));
+      renderDrawer('resp-1');
+
+      expect(await screen.findByText('Internal notes')).toBeInTheDocument();
+    });
+
+    it('always shows them in a workspace', async () => {
+      mockGetResponseById.mockResolvedValue(detail);
+      renderDrawer('resp-1', vi.fn(), { scope: 'acme' });
+
+      expect(await screen.findByText('Internal notes')).toBeInTheDocument();
+      expect(mockListGrants).not.toHaveBeenCalled();
+    });
   });
 });

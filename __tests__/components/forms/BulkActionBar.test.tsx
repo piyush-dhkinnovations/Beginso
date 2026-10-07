@@ -14,7 +14,7 @@ describe('BulkActionBar', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('shows the selected count and only a Delete action — no Archive, since Form.status has no archived value', () => {
+  it('shows the selected count and only a Delete action when no archive handler is given (Archive is offered only to roles that can archive)', () => {
     render(<BulkActionBar count={3} isDeleting={false} onDeleteSelected={vi.fn()} />);
 
     expect(screen.getByText('3 selected')).toBeInTheDocument();
@@ -35,5 +35,22 @@ describe('BulkActionBar', () => {
     render(<BulkActionBar count={2} isDeleting={true} onDeleteSelected={vi.fn()} />);
 
     expect(screen.getByRole('button', { name: /Delete selected/ })).toBeDisabled();
+  });
+
+  // Sprint 11 5.3: computed role, not JSX presence — role="status" gives an implicit
+  // aria-live="polite", so a change in selection count is announced without extra markup.
+  it('the bar is a status region, and the announced count updates on re-render', () => {
+    const { rerender } = render(<BulkActionBar count={3} isDeleting={false} onDeleteSelected={vi.fn()} />);
+    expect(screen.getByRole('status')).toHaveTextContent('3 selected');
+
+    rerender(<BulkActionBar count={7} isDeleting={false} onDeleteSelected={vi.fn()} />);
+    expect(screen.getByRole('status')).toHaveTextContent('7 selected');
+  });
+
+  it('the delete icon is hidden from assistive tech; the button keeps its accessible name from the visible text', () => {
+    render(<BulkActionBar count={2} isDeleting={false} onDeleteSelected={vi.fn()} />);
+    const button = screen.getByRole('button', { name: 'Delete selected' });
+    const icon = button.querySelector('svg');
+    expect(icon).toHaveAttribute('aria-hidden', 'true');
   });
 });

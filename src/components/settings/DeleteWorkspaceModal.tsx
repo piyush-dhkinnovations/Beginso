@@ -28,6 +28,8 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  // Set when the backend refuses with 409 OWNS_SHARED_WORKSPACES: workspaces other people still belong to.
+  const [sharedWorkspaces, setSharedWorkspaces] = useState<{ id: string; name: string; otherMembers: number }[]>([]);
 
   // Shares the cache ProfileTab/SecurityTab already populate — needed for signInWithEmailAndPassword
   // below, which requires an email even though this modal is reached from the Workspace tab.
@@ -47,6 +49,8 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
       setTypedName('');
       setPasswordError(null);
       setSubmitError(null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSharedWorkspaces([]);
     }
   }, [isOpen]);
 
@@ -64,6 +68,7 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
     if (!profile || !canAttemptDelete) return;
     setPasswordError(null);
     setSubmitError(null);
+    setSharedWorkspaces([]);
     setIsDeleting(true);
 
     let reauthToken: string;
@@ -85,6 +90,10 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
     try {
       await settingsService.deleteWorkspace({ reauthToken });
     } catch (error: unknown) {
+      const body = (error as { response?: { data?: { workspaces?: unknown } } })?.response?.data;
+      if (Array.isArray(body?.workspaces)) {
+        setSharedWorkspaces(body.workspaces as { id: string; name: string; otherMembers: number }[]);
+      }
       setSubmitError(getFriendlyErrorMessage(error));
       setIsDeleting(false);
       return;
@@ -115,8 +124,8 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
         />
 
         <div>
-          <label htmlFor="delete-workspace-name-input" className="block text-body-sm text-[var(--text-secondary)] mb-1.5">
-            Type <span className="font-semibold text-[var(--text-primary)]">{workspaceName}</span> to confirm
+          <label htmlFor="delete-workspace-name-input" className="block bg-body-sm text-(--text-secondary) mb-1.5">
+            Type <span className="font-semibold text-(--text-primary)">{workspaceName}</span> to confirm
           </label>
           <input
             id="delete-workspace-name-input"
@@ -126,7 +135,7 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
             placeholder={workspaceName}
             aria-describedby="delete-workspace-name-hint"
             disabled={isDeleting}
-            className="w-full bg-[var(--bg-page)] text-[var(--text-primary)] border border-[var(--border-strong)] rounded-md px-3 py-2 text-body focus:outline-none focus:border-[var(--border-focus)] focus:ring-2 focus:ring-[var(--border-default)] transition-colors"
+            className="w-full bg-(--bg-page) text-(--text-primary) border border-(--border-strong) rounded-md px-3 py-2 bg-body focus:outline-none focus:border-(--border-focus) focus:ring-2 focus:ring-(--border-default) transition-colors"
             autoComplete="off"
           />
           <p id="delete-workspace-name-hint" className="sr-only">
@@ -134,9 +143,18 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
           </p>
         </div>
 
-        {submitError && <p className="text-caption text-rose-600">{submitError}</p>}
+        {submitError && <p className="bg-caption text-(--error-text)">{submitError}</p>}
+        {sharedWorkspaces.length > 0 && (
+          <ul className="list-disc pl-5 bg-caption text-(--text-secondary)" aria-label="Workspaces you still own">
+            {sharedWorkspaces.map((w) => (
+              <li key={w.id}>
+                {w.name} ({w.otherMembers} other {w.otherMembers === 1 ? 'member' : 'members'})
+              </li>
+            ))}
+          </ul>
+        )}
 
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-[var(--border-subtle)]">
+        <div className="flex items-center justify-end gap-3 pt-2 border-t border-(--border-subtle)">
           <Button type="button" variant="secondary" onClick={onClose} disabled={isDeleting}>
             Cancel
           </Button>

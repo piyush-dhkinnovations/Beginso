@@ -14,7 +14,8 @@ describe('FormOverviewStats', () => {
 
     expect(screen.getByText('12')).toBeInTheDocument();
     expect(screen.getByText('+3 this week')).toBeInTheDocument();
-    expect(screen.getByText('62%')).toBeInTheDocument();
+    // The value and the ring's own label both read 62% — the card is meant to show it twice.
+    expect(screen.getAllByText('62%').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders "—" with an accessible explanation, never 0%, when completion rate is not tracked', () => {
@@ -44,5 +45,44 @@ describe('FormOverviewStats', () => {
 
     await userEvent.click(button);
     expect(onOpenAccess).toHaveBeenCalledTimes(1);
+  });
+
+  // Sprint 11 5.3: computed accessibility, not JSX presence — keyboard reachability asserted by
+  // actually tabbing and pressing a key, not by reading the source for a tabIndex prop.
+  it('the "who can see it" button is reachable by Tab and activates on Enter, not just click', async () => {
+    const onOpenAccess = vi.fn();
+    render(<FormOverviewStats stats={STATS} accessLabel="3 people" onOpenAccess={onOpenAccess} />);
+
+    await userEvent.tab();
+    const focusOrder: string[] = [];
+    let guard = 0;
+    while (document.activeElement && document.activeElement !== document.body && guard < 10) {
+      focusOrder.push(document.activeElement.getAttribute('aria-label') ?? document.activeElement.tagName);
+      await userEvent.tab();
+      guard++;
+    }
+    expect(focusOrder).toContain('View who has access: 3 people');
+
+    const button = screen.getByRole('button', { name: /View who has access/ });
+    button.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(onOpenAccess).toHaveBeenCalledTimes(1);
+  });
+
+  it('the untracked-completion-rate tooltip trigger is itself reachable by keyboard, with its own accessible name (not just visually labelled)', async () => {
+    render(
+      <FormOverviewStats stats={{ ...STATS, completionRate: null }} accessLabel="Just you" onOpenAccess={vi.fn()} />
+    );
+    const trigger = screen.getByLabelText('Completion rate not tracked yet');
+    expect(trigger).toHaveAttribute('tabindex', '0');
+    trigger.focus();
+    expect(document.activeElement).toBe(trigger);
+  });
+
+  it('decorative icons are hidden from assistive tech (aria-hidden), not announced as unlabeled images', () => {
+    render(<FormOverviewStats stats={STATS} accessLabel="3 people" onOpenAccess={vi.fn()} />);
+    const icons = document.querySelectorAll('svg');
+    expect(icons.length).toBeGreaterThan(0);
+    icons.forEach((icon) => expect(icon).toHaveAttribute('aria-hidden', 'true'));
   });
 });

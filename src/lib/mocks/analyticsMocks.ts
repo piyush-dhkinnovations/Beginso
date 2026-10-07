@@ -16,7 +16,7 @@ import type {
 export function mockAnalyticsOverview(overrides: Partial<AnalyticsOverview> = {}): AnalyticsOverview {
   return {
     totalResponses: 128,
-    statusCounts: { new: 42, in_progress: 36, completed: 50 },
+    categoryCounts: { new: 42, in_progress: 36, completed: 50 },
     ...overrides,
   };
 }

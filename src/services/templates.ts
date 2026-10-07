@@ -1,4 +1,5 @@
 import axiosInstance from '@/lib/axios';
+import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import type { Template } from '@/types/form';
 
 export const templatesService = {
@@ -7,8 +8,11 @@ export const templatesService = {
   // seen elsewhere in this backend. Accepts all three shapes and still throws on anything else so
   // a genuinely malformed response surfaces as a query error (handled by the Templates page)
   // instead of crashing with "x.map is not a function".
-  getTemplates: (): Promise<Template[]> =>
-    axiosInstance.get('/api/templates').then((r) => {
+  //
+  // Sprint 13 (B6.1): `scope` is a workspace slug or 'personal'. A workspace gets built-ins PLUS its own
+  // templates (each tagged `source`); personal context gets built-ins only.
+  getTemplates: (scope: string = 'personal'): Promise<Template[]> =>
+    axiosInstance.get('/api/templates', { headers: workspaceHeaders(scope) }).then((r) => {
       const body = r.data;
       const templates = Array.isArray(body) ? body : body?.templates ?? body?.data;
       if (!Array.isArray(templates)) {

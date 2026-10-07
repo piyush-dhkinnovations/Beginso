@@ -62,10 +62,10 @@ export function CanvasFormHeader({
   };
 
   return (
-    <div className="bg-white border border-neutral-200 rounded-lg shadow-card p-6 mb-4">
+    <div className="bg-(--surface-card) border border-(--border-default) rounded-lg shadow-(--shadow-sm) p-6 mb-4">
       <div className="flex items-center gap-2 mb-3">
-        <span className="w-2 h-2 rounded-full bg-success shrink-0" />
-        <span className="text-caption font-bold text-neutral-500 uppercase tracking-wider">
+        <span className="w-2 h-2 rounded-full bg-(--success) shrink-0" />
+        <span className="bg-caption font-bold text-(--text-muted) uppercase tracking-wider">
           {fieldCount} {fieldCount === 1 ? 'field' : 'fields'}
         </span>
       </div>
@@ -77,7 +77,7 @@ export function CanvasFormHeader({
         onKeyDown={blurOnEnter}
         placeholder="Untitled form"
         aria-label="Page title (shown to respondents)"
-        className="w-full text-display font-extrabold text-neutral-900 bg-transparent border-none outline-none placeholder:text-neutral-300"
+        className="w-full bg-h3 font-extrabold text-(--text-primary) bg-transparent border-none outline-none placeholder:text-(--text-disabled)"
       />
       <input
         type="text"
@@ -86,7 +86,7 @@ export function CanvasFormHeader({
         onBlur={commitDescription}
         onKeyDown={blurOnEnter}
         placeholder="Add a short description for respondents…"
-        className="w-full text-body text-neutral-500 bg-transparent border-none outline-none mt-1.5 placeholder:text-neutral-300"
+        className="w-full bg-body text-(--text-muted) bg-transparent border-none outline-none mt-1.5 placeholder:text-(--text-disabled)"
       />
     </div>
   );

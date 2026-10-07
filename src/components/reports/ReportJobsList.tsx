@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FileText, RefreshCw } from 'lucide-react';
+import { FileText, LockKeyhole, RefreshCw } from 'lucide-react';
+import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { EmptyState } from '@/components/common/EmptyState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { PaginationControls } from '@/components/responses/PaginationControls';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { ReportJobRow } from './ReportJobRow';
 import { reportsService } from '@/services/reports';
 import { reportKeys } from '@/lib/queryKeys';
@@ -22,18 +24,20 @@ interface ReportJobsListProps {
   /** formId -> form title, resolved from the forms list ReportsView already loads for its
    * dropdown — job objects only carry a raw `formId`, never a denormalized title. */
   formTitleById?: Map<string, string>;
+  /** 'personal' (default) or a workspace slug - Sprint 14, Exports lives inside Insights. */
+  scope?: string;
 }
 
-export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }: ReportJobsListProps) {
+export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), scope = 'personal' }: ReportJobsListProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [retryingJobId, setRetryingJobId] = useState<string | null>(null);
   const previousStatusesRef = useRef<Map<string, ReportStatus>>(new Map());
 
   const jobsQuery = useQuery({
-    queryKey: reportKeys.list(page),
+    queryKey: reportKeys.list(page, scope),
     queryFn: async () => {
-      const result = await reportsService.getReports({ page, limit: REPORTS_PAGE_LIMIT });
+      const result = await reportsService.getReports({ page, limit: REPORTS_PAGE_LIMIT }, scope);
       // Backfill formId/responseStatus/from/to from whatever this same query already had
       // cached for a given job — the real backend has been observed to sometimes omit these
       // once a job reaches a terminal status, even though they were present earlier for the
@@ -41,7 +45,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
       // own previous cache entry here (rather than a separate ref) also means this naturally
       // covers the optimistically-inserted job from createReportMutation/retryMutation, since
       // that's what's cached the moment before this poll's response arrives.
-      const previous = queryClient.getQueryData<PaginatedReportsResult>(reportKeys.list(page));
+      const previous = queryClient.getQueryData<PaginatedReportsResult>(reportKeys.list(page, scope));
       const previousById = new Map((previous?.data ?? []).filter((j) => j._id).map((j) => [j._id, j]));
       return {
         ...result,
@@ -65,14 +69,13 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
   });
 
   const retryMutation = useMutation({
-    mutationFn: (payload: CreateReportPayload) => reportsService.createReport(payload),
+    mutationFn: (payload: CreateReportPayload) => reportsService.createReport(payload, scope),
     onSuccess: (job, payload) => {
       // Same reasoning as ReportsView's createReportMutation — enrich from the request we know
       // we sent rather than trusting the POST response to echo every field (S5-04).
       const optimisticJob: ReportJob = {
         ...job,
         formId: job.formId ?? payload.formId,
-        responseStatus: job.responseStatus ?? payload.status,
         from: job.from ?? payload.from,
         to: job.to ?? payload.to,
       };
@@ -122,17 +125,16 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
     retryMutation.mutate({
       format: job.format,
       formId: job.formId,
-      status: job.responseStatus,
       from: job.from,
       to: job.to,
     });
   }
 
   const header = (
-    <div className="flex items-start justify-between gap-4">
+    <div className="flex items-start justify-between gap-4 px-5 pt-5">
       <div>
-        <h2 className="text-body font-semibold text-neutral-900">Generated Reports</h2>
-        <p className="text-caption text-neutral-500">Your recent report generation history.</p>
+        <h2 className="bg-h5 font-bold text-(--text-primary)">Recent Reports</h2>
+        <p className="bg-body-sm text-(--text-muted)">Your latest report generation history.</p>
       </div>
       <Button
         variant="ghost"
@@ -148,45 +150,55 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
 
   if (jobsQuery.isLoading) {
     return (
-      <div className="flex flex-col gap-4">
+      <Card padded={false} className="gap-4 overflow-hidden pb-5">
         {header}
-        <div className="bg-white border border-neutral-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="mx-5 overflow-hidden rounded-lg border border-(--border-default)">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-neutral-100 last:border-0 animate-pulse">
-              <div className="h-9 w-9 rounded-lg bg-neutral-100 shrink-0" />
+            <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-(--border-subtle) last:border-0 animate-pulse">
+              <div className="h-9 w-9 rounded-lg bg-(--bg-sunken) shrink-0" />
               <div className="flex flex-col flex-1 gap-1.5">
-                <div className="h-3.5 bg-neutral-200 rounded w-1/3" />
-                <div className="h-3 bg-neutral-100 rounded w-1/4" />
+                <div className="h-3.5 bg-(--border-default) rounded w-1/3" />
+                <div className="h-3 bg-(--bg-sunken) rounded w-1/4" />
               </div>
-              <div className="h-5 w-16 bg-neutral-200 rounded-full shrink-0" />
+              <div className="h-5 w-16 bg-(--border-default) rounded-full shrink-0" />
             </div>
           ))}
         </div>
-      </div>
+      </Card>
+    );
+  }
+
+  // Sprint 14 (design.md §17 "Permission denied"): a 403 is a lock state with no Retry - retrying cannot help.
+  if (jobsQuery.isError && isAxiosError(jobsQuery.error) && jobsQuery.error.response?.status === 403) {
+    return (
+      <Card padded={false} className="gap-2 overflow-hidden pb-5">
+        {header}
+        <EmptyState icon={<LockKeyhole />} title="You can't view exports here" description="Ask an Owner or Admin if you need access to this workspace's exports." />
+      </Card>
     );
   }
 
   if (jobsQuery.isError) {
     return (
-      <div className="flex flex-col gap-4">
+      <Card padded={false} className="gap-4 overflow-hidden pb-5">
         {header}
-        <div role="alert" className="flex min-h-28 items-center justify-between gap-4 rounded-lg border border-neutral-200 bg-white p-6">
+        <div role="alert" className="mx-5 flex min-h-28 items-center justify-between gap-4 rounded-lg border border-(--border-default) bg-(--surface-card) p-6">
           <div>
-            <p className="text-body-sm font-semibold text-neutral-900">Unable to load report jobs</p>
-            <p className="mt-1 text-caption text-neutral-500">Please try again.</p>
+            <p className="bg-body-sm font-semibold text-(--text-primary)">Unable to load report jobs</p>
+            <p className="mt-1 bg-caption text-(--text-muted)">Please try again.</p>
           </div>
           <Button variant="secondary" size="small" onClick={() => void jobsQuery.refetch()}>Try again</Button>
         </div>
-      </div>
+      </Card>
     );
   }
 
   if (jobs.length === 0) {
     return (
-      <div className="flex flex-col gap-4">
+      <Card padded={false} className="gap-2 overflow-hidden pb-5">
         {header}
-        <EmptyState icon={<FileText />} heading="No reports yet" body="Generate your first CSV or PDF export above." />
-      </div>
+        <EmptyState illustration="empty-reports" icon={<FileText />} title="No reports yet" description="Generate your first CSV or PDF export above." />
+      </Card>
     );
   }
 
@@ -197,16 +209,16 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
   const rangeEnd = Math.min(page * limit, total);
 
   return (
-    <div className="flex flex-col gap-4">
+    <Card padded={false} className="gap-4 overflow-hidden pb-5">
       {header}
 
-      <div className="hidden sm:block bg-white border border-neutral-200 rounded-xl overflow-x-auto shadow-sm">
+      <div className="hidden sm:block mx-5 overflow-x-auto rounded-lg border border-(--border-default)">
         <table className="w-full text-left">
           <thead>
-            <tr className="bg-neutral-50 border-b border-neutral-200 text-caption font-semibold text-neutral-500 uppercase tracking-wider">
-              <th className="px-4 py-2.5">Format</th>
-              <th className="px-4 py-2.5">Report</th>
-              <th className="px-4 py-2.5">Created</th>
+            <tr className="bg-(--bg-subtle) border-b border-(--border-default) bg-caption font-semibold text-(--text-muted) uppercase tracking-wider">
+              <th className="px-4 py-2.5">Form Title</th>
+              <th className="px-4 py-2.5">Type</th>
+              <th className="px-4 py-2.5">Generated On</th>
               <th className="px-4 py-2.5">Status</th>
               <th className="px-4 py-2.5 text-right">Action</th>
             </tr>
@@ -222,18 +234,18 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map() }
         </table>
       </div>
 
-      <div className="sm:hidden flex flex-col gap-3">
+      <div className="sm:hidden mx-5 flex flex-col gap-3">
         {jobs.map((job, index) => (
           <ReportJobRow key={job._id ?? index} job={job} onRetry={handleRetry} isRetrying={retryingJobId === job._id} formTitleById={formTitleById} variant="card" />
         ))}
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <p className="text-caption text-neutral-500">
+      <div className="flex flex-col gap-2 px-5 sm:flex-row sm:items-center sm:justify-between">
+        <p className="bg-caption text-(--text-muted)">
           Showing {rangeStart} to {rangeEnd} of {total} report{total === 1 ? '' : 's'}
         </p>
         <PaginationControls page={page} totalPages={totalPages} onPageChange={onPageChange} />
       </div>
-    </div>
+    </Card>
   );
 }

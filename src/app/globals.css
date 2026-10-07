@@ -22,9 +22,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
-  --font-mono: var(--font-jetbrains-mono), ui-monospace, "SF Mono", Consolas, monospace;
-  --font-heading: var(--font-inter);
+  --font-sans: var(--bg-font-sans);
+  --font-mono: var(--bg-font-mono);
+  --font-heading: var(--bg-font-sans);
   --color-ring: var(--ring);
   --color-border: var(--border);
   --radius-sm: calc(var(--radius) * 0.6);
@@ -34,53 +34,6 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
-
-  /* Brand Scale */
-  --color-brand-50: #EFF6FF;
-  --color-brand-100: #DBEAFE;
-  --color-brand-500: #3B82F6;
-  --color-brand-600: #2563EB;
-  --color-brand-700: #1D4ED8;
-  --color-brand-900: #1E3A5F;
-
-  /* Neutral Scale */
-  --color-neutral-white: #FFFFFF;
-  --color-neutral-50: #F8FAFC;
-  --color-neutral-100: #F1F5F9;
-  --color-neutral-200: #E2E8F0;
-  --color-neutral-400: #94A3B8;
-  --color-neutral-500: #64748B;
-  --color-neutral-600: #475569;
-  --color-neutral-800: #1E293B;
-  --color-neutral-900: #0F172A;
-
-  /* Semantic Scale */
-  --color-success: #22C55E;
-  --color-error: #EF4444;
-  --color-warning: #EAB308;
-
-  /* Status Badge Scale — 04-design-system.md §4.7. "Completed" intentionally
-     reuses the "active" tokens (the doc gives them the identical treatment). */
-  --color-status-active-bg: #F0FDF4;
-  --color-status-active-border: #86EFAC;
-  --color-status-active-text: #065F46;
-  --color-status-active-dot: #22C55E;
-  --color-status-new-bg: #EFF6FF;
-  --color-status-new-border: #93C5FD;
-  --color-status-new-text: #1E40AF;
-  --color-status-new-dot: #3B82F6;
-  --color-status-progress-bg: #FEFCE8;
-  --color-status-progress-border: #FDE047;
-  --color-status-progress-text: #92400E;
-  --color-status-progress-dot: #EAB308;
-  --color-status-draft-bg: #F8FAFC;
-  --color-status-draft-border: #CBD5E1;
-  --color-status-draft-text: #475569;
-  --color-status-draft-dot: #94A3B8;
-  --color-status-closed-bg: #FFF1F2;
-  --color-status-closed-border: #FECDD3;
-  --color-status-closed-text: #9F1239;
-  --color-status-closed-dot: #F43F5E;
 
   /* Custom animations */
   --animate-fade-up: fadeUp 0.4s ease-out both;
@@ -93,7 +46,7 @@
   --animate-sort-line: sortLineIn 0.1s ease-out both;
 
   /* Shadow tokens */
-  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06), 0 0 0 1px #E2E8F0;
+  --shadow-(--shadow-sm): 0 1px 3px rgba(15, 23, 42, 0.06), 0 0 0 1px #E2E8F0;
 
   @keyframes fadeUp {
     from {
@@ -176,54 +129,11 @@
   }
 }
 
-/* The authenticated shell responds to its available container width, not the viewport. */
-.dashboard-shell {
-  container-type: inline-size;
-}
-
-.dashboard-main-frame {
-  padding-top: 56px;
-}
-
-.dashboard-mobile-menu-btn {
-  display: none;
-}
-
-@container (min-width: 521px) and (max-width: 880px) {
-  .dashboard-desktop-sidebar,
-  .dashboard-sidebar-panel {
-    width: 56px !important;
-  }
-
-  .dashboard-sidebar-panel .sidebar-brand,
-  .dashboard-sidebar-panel .sidebar-label,
-  .dashboard-sidebar-panel .sidebar-collapse-control {
-    display: none;
-  }
-
-  .dashboard-content {
-    margin-left: 56px !important;
-  }
-}
-
-@container (max-width: 520px) {
-  .dashboard-desktop-sidebar {
-    display: none;
-  }
-
-  .dashboard-mobile-menu-btn {
-    display: flex;
-  }
-
-  .dashboard-content {
-    margin-left: 0 !important;
-    padding: 16px;
-  }
-
-  /* SettingsTabs: 5 tabs never fit ≤520px, so the strip always horizontally scrolls there — an
-     edge-to-edge cutoff (e.g. "Notifica...") reads as broken rather than scrollable. A right-edge
-     fade signals "more this way" without JS scroll-position tracking; scoped to this breakpoint
-     only, since at wider widths all tabs fit and nothing should ever be masked out. */
+/* SettingsTabs: 5 tabs never fit ≤520px, so the strip always horizontally scrolls there — an
+   edge-to-edge cutoff (e.g. "Notifica...") reads as broken rather than scrollable. A right-edge
+   fade signals "more this way" without JS scroll-position tracking; scoped to this breakpoint
+   only, since at wider widths all tabs fit and nothing should ever be masked out. */
+@media (max-width: 520px) {
   .settings-tabs-scroll {
     mask-image: linear-gradient(to right, black 88%, transparent 100%);
     -webkit-mask-image: linear-gradient(to right, black 88%, transparent 100%);
@@ -253,6 +163,22 @@
 
 .responses-table-container {
   container-type: inline-size;
+}
+
+/* Sprint 12 (inbox-collaboration), design.md §3/§6: ResponseSignals renders in three genuinely
+   different available widths at the same viewport size — a wide table cell, a narrow board
+   column, a stacked mobile card — so it needs a container query, not a media query, same
+   reasoning as .branding-panel-shell above. `density` (row/card/compact) is the primary driver,
+   passed explicitly by the parent view; this query only trims the assignee name once the
+   signals row itself is genuinely narrow, regardless of which density variant is active. */
+.response-signals {
+  container-type: inline-size;
+}
+
+@container (max-width: 160px) {
+  .response-signals-assignee-name {
+    display: none;
+  }
 }
 
 /* Forms Manager row: same icon/title/badge/actions elements, rearranged per breakpoint via named
@@ -358,92 +284,13 @@
   }
 }
 
-/* Typography Scale Utilities */
-@utility text-display {
-  font-size: 24px;
-  font-weight: 800;
-  line-height: 1.2;
-}
-@utility text-heading-1 {
-  font-size: 20px;
-  font-weight: 700;
-  line-height: 1.3;
-}
-@utility text-heading-2 {
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-@utility text-heading-3 {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.4;
-}
-@utility text-body-lg {
-  font-size: 14px;
-  font-weight: 400;
-  line-height: 1.6;
-}
-@utility text-body {
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.6;
-}
-@utility text-body-sm {
-  font-size: 12px;
-  font-weight: 400;
-  line-height: 1.5;
-}
-@utility text-label {
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.3;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-@utility text-caption {
-  font-size: 10px;
-  font-weight: 600;
-  line-height: 1.3;
-}
-@utility text-body-xs {
-  font-size: 11px;
-  font-weight: 400;
-  line-height: 1.4;
-}
-
-/* Mobile: the heading/display tier reads oversized on a narrow card (page titles, stat-card
-   numbers) — scaled down here so every component using these utilities shrinks consistently,
-   instead of hunting down each "big font" individually across the app. Deliberately @media, not
-   @container like the shell's layout rules — legibility should track the physical viewport, and
-   this needs to apply on public/auth pages too, which sit outside .dashboard-shell's containment
-   context and would never see a @container rule. Body-tier and smaller (13px and below) are left
-   alone — already compact by design; shrinking further risks illegibility. */
-@media (max-width: 520px) {
-  .text-display {
-    font-size: 19px;
-  }
-  .text-heading-1 {
-    font-size: 17px;
-  }
-  .text-heading-2 {
-    font-size: 15px;
-  }
-  .text-heading-3 {
-    font-size: 13px;
-  }
-  .text-body-lg {
-    font-size: 13px;
-  }
-}
-
 /* Thin scrollbar app-wide — the OS-default scrollbar in Chromium/Windows renders ~17px wide,
    heavy next to this UI's compact spacing (drawers, tables, dropdowns, etc). `*` is required
    because unlike `scrollbar-width`, `::-webkit-scrollbar` doesn't inherit from `html`/`body`. */
 @layer base {
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--color-neutral-200) transparent;
+    scrollbar-color: var(--border-default) transparent;
   }
   *::-webkit-scrollbar {
     width: 6px;
@@ -453,11 +300,11 @@
     background: transparent;
   }
   *::-webkit-scrollbar-thumb {
-    background-color: var(--color-neutral-200);
+    background-color: var(--border-default);
     border-radius: 9999px;
   }
   *::-webkit-scrollbar-thumb:hover {
-    background-color: var(--color-neutral-400);
+    background-color: var(--text-disabled);
   }
 }
 
@@ -569,3 +416,7 @@
 .brand-icon-dark { display: none; }
 [data-theme="dark"] .brand-icon-light { display: none; }
 [data-theme="dark"] .brand-icon-dark { display: inline-block; }
+
+/* Embedded public form (?embed=1): the page must size to its CONTENT so the embedder can auto-height it; a
+   full-viewport min-height would pin the frame at its current height and never let it shrink. Unlayered on purpose. */
+[data-form-theme][data-embed] .min-h-screen { min-height: 0; }

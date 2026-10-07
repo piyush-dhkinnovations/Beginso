@@ -19,7 +19,7 @@ vi.mock('@/services/settings', () => ({
 }));
 
 const mockToast = vi.fn();
-vi.mock('@/components/common/Toast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
@@ -81,7 +81,7 @@ describe('WorkspaceTab', () => {
     fireEvent.change(nameInput, { target: { value: 'New Name' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
-    await waitFor(() => expect(mockUpdateWorkspace).toHaveBeenCalledWith({ name: 'New Name' }));
+    await waitFor(() => expect(mockUpdateWorkspace).toHaveBeenCalledWith({ name: 'New Name' }, undefined));
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Workspace updated.', 'success'));
   });
 

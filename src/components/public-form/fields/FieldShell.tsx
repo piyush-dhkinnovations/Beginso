@@ -4,10 +4,10 @@ import type { FieldError } from 'react-hook-form';
 
 /** Base input classes shared by every text-like field renderer — mirrors src/components/ui/Input.tsx. */
 export const FIELD_INPUT_CLASSES =
-  'w-full min-h-[44px] rounded-md px-3 text-[13px] bg-white transition-colors duration-200 outline-none border-2 border-neutral-200 focus:border-neutral-500';
+  'w-full min-h-11 rounded-md px-3 bg-body-sm bg-(--surface-card) transition-colors duration-200 outline-none border-2 border-(--border-default) focus:border-(--border-strong)';
 
-export const FIELD_INPUT_ERROR_CLASSES = 'border-error focus:border-error';
-export const FIELD_INPUT_DISABLED_CLASSES = 'bg-neutral-100 opacity-60 cursor-not-allowed pointer-events-none';
+export const FIELD_INPUT_ERROR_CLASSES = 'border-(--error) focus:border-(--error)';
+export const FIELD_INPUT_DISABLED_CLASSES = 'bg-(--bg-sunken) opacity-60 cursor-not-allowed pointer-events-none';
 
 interface FieldShellProps {
   fieldId: string;
@@ -30,26 +30,26 @@ interface FieldShellProps {
 /** Shared label/helpText/error chrome around every field renderer's input (Requirement 4, shared rules 1–4). */
 export function FieldShell({ fieldId, label, required, helpText, error, inline, asGroup, children }: FieldShellProps) {
   const labelClassName = inline
-    ? 'text-body-sm font-semibold text-neutral-800 pt-2.5 shrink-0 w-28'
-    : 'text-heading-3 text-neutral-800';
+    ? 'bg-body-sm font-semibold text-(--text-primary) pt-2.5 shrink-0 w-28'
+    : 'bg-body font-semibold text-(--text-primary)';
   const labelEl = asGroup ? (
     <span id={`${fieldId}-label`} className={labelClassName}>
       {label}
-      {required && <span className="text-error"> *</span>}
+      {required && <span className="text-(--error-text)"> *</span>}
     </span>
   ) : (
     <label htmlFor={fieldId} className={labelClassName}>
       {label}
-      {required && <span className="text-error"> *</span>}
+      {required && <span className="text-(--error-text)"> *</span>}
     </label>
   );
 
   const rest = (
     <>
       {children}
-      {helpText && <p className="text-body-sm text-neutral-400">{helpText}</p>}
+      {helpText && <p className="bg-body-sm text-(--text-disabled)">{helpText}</p>}
       {error && (
-        <p role="alert" className="text-caption text-error font-semibold flex items-center gap-1">
+        <p role="alert" className="bg-caption text-(--error-text) font-semibold flex items-center gap-1">
           <AlertCircle size={10} className="shrink-0" />
           {error.message}
         </p>
@@ -77,7 +77,7 @@ export function FieldShell({ fieldId, label, required, helpText, error, inline, 
 /** Live `{current}/{max}` counter shared by ShortText and LongText (Requirements 4.8, 4.10). */
 export function CharCounter({ current, max }: { current: number; max: number }) {
   return (
-    <p className={`text-caption ${current >= max ? 'text-error' : 'text-neutral-400'}`}>
+    <p className={`bg-caption ${current >= max ? 'text-(--error-text)' : 'text-(--text-disabled)'}`}>
       {current}/{max}
     </p>
   );

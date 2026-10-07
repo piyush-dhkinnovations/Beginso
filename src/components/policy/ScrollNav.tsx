@@ -17,7 +17,7 @@ export function ScrollNav() {
         type="button"
         onClick={scrollToTop}
         aria-label="Scroll to top"
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--primary-500)] text-white shadow-[var(--shadow-md)] transition-colors hover:bg-[var(--primary-600)]"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-(--action-primary) text-(--text-on-brand) shadow-(--shadow-md) transition-colors hover:bg-(--action-primary-hover)"
       >
         <ChevronUp size={18} />
       </button>
@@ -25,7 +25,7 @@ export function ScrollNav() {
         type="button"
         onClick={scrollToBottom}
         aria-label="Scroll to bottom"
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--primary-500)] text-white shadow-[var(--shadow-md)] transition-colors hover:bg-[var(--primary-600)]"
+        className="flex h-10 w-10 items-center justify-center rounded-full bg-(--action-primary) text-(--text-on-brand) shadow-(--shadow-md) transition-colors hover:bg-(--action-primary-hover)"
       >
         <ChevronDown size={18} />
       </button>

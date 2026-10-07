@@ -35,7 +35,7 @@ vi.mock('@/services/reports', () => ({
 }));
 
 const mockToast = vi.fn();
-vi.mock('@/components/common/Toast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
@@ -73,7 +73,6 @@ describe('ReportsView', () => {
     await waitFor(() => expect(mockGetForms).toHaveBeenCalled());
 
     fireEvent.change(screen.getByLabelText('Form'), { target: { value: 'form-1' } });
-    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'completed' } });
 
     expect(mockCreateReport).not.toHaveBeenCalled();
   });
@@ -92,12 +91,12 @@ describe('ReportsView', () => {
     await waitFor(() => expect(mockGetForms).toHaveBeenCalled());
 
     fireEvent.change(screen.getByLabelText('Form'), { target: { value: 'form-1' } });
-    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'completed' } });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Generate' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /^Generate/ })[0]);
 
     await waitFor(() =>
       expect(mockCreateReport).toHaveBeenCalledWith(
-        expect.objectContaining({ format: 'csv', formId: 'form-1', status: 'completed' })
+        expect.objectContaining({ format: 'csv', formId: 'form-1' }),
+        'personal'
       )
     );
   });
@@ -117,7 +116,7 @@ describe('ReportsView', () => {
     await waitFor(() => expect(mockGetForms).toHaveBeenCalled());
     await waitFor(() => expect(mockGetReports).toHaveBeenCalled());
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Generate' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /^Generate/ })[0]);
 
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Report generation started.', 'success'));
     await waitFor(() =>
@@ -125,7 +124,7 @@ describe('ReportsView', () => {
     );
   });
 
-  it('enriches the optimistic job with the submitted formId/status/dates when the POST response omits them (S5-04)', async () => {
+  it('enriches the optimistic job with the submitted formId/dates when the POST response omits them (S5-04)', async () => {
     // Real backend gap: the create response has been observed not to echo back every scope
     // field — the optimistic row must still show the correct form immediately, from what was
     // actually submitted, not wait for the next poll to self-correct.
@@ -136,13 +135,11 @@ describe('ReportsView', () => {
     await waitFor(() => expect(mockGetReports).toHaveBeenCalled());
 
     fireEvent.change(screen.getByLabelText('Form'), { target: { value: 'form-1' } });
-    fireEvent.change(screen.getByLabelText('Status'), { target: { value: 'completed' } });
-    fireEvent.click(screen.getAllByRole('button', { name: 'Generate' })[0]);
+    fireEvent.click(screen.getAllByRole('button', { name: /^Generate/ })[0]);
 
     await waitFor(() => {
-      const cached = queryClient.getQueryData(reportKeys.list(1)) as { data: { formId?: string; responseStatus?: string }[] };
+      const cached = queryClient.getQueryData(reportKeys.list(1)) as { data: { formId?: string }[] };
       expect(cached.data[0].formId).toBe('form-1');
-      expect(cached.data[0].responseStatus).toBe('completed');
     });
   });
 
@@ -151,7 +148,7 @@ describe('ReportsView', () => {
     renderView();
     await waitFor(() => expect(mockGetForms).toHaveBeenCalled());
 
-    fireEvent.click(screen.getAllByRole('button', { name: 'Generate' })[1]);
+    fireEvent.click(screen.getAllByRole('button', { name: /^Generate/ })[1]);
 
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Failed to start report generation. Please try again.', 'error'));
   });
@@ -162,7 +159,7 @@ describe('ReportsView', () => {
     renderView();
     await waitFor(() => expect(mockGetForms).toHaveBeenCalled());
 
-    const buttons = screen.getAllByRole('button', { name: 'Generate' });
+    const buttons = screen.getAllByRole('button', { name: /^Generate/ });
     fireEvent.click(buttons[0]);
 
     await waitFor(() => expect(buttons[1]).toBeDisabled());

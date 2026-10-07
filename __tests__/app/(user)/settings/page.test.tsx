@@ -23,6 +23,14 @@ vi.mock('@/components/settings/BrandingTab', () => ({ BrandingTab: () => <div>br
 vi.mock('@/components/settings/NotificationsTab', () => ({ NotificationsTab: () => <div>notifications-body</div> }));
 vi.mock('@/components/settings/SecurityTab', () => ({ SecurityTab: () => <div>security-body</div> }));
 vi.mock('@/components/settings/SessionsTab', () => ({ SessionsTab: () => <div>sessions-body</div> }));
+vi.mock('@/components/settings/DataTab', () => ({ DataTab: () => <div>data-body</div> }));
+vi.mock('@/components/settings/LegacySettingsRedirect', () => ({
+  LEGACY_WORKSPACE_TABS: ['workspace', 'branding', 'tags', 'stages', 'scoring'],
+  LegacySettingsRedirect: ({ tab }: { tab: string }) => <div>redirect-{tab}</div>,
+}));
+vi.mock('@/components/settings/TagManager', () => ({ TagManager: () => <div>tags-body</div> }));
+vi.mock('@/components/settings/StageManager', () => ({ StageManager: () => <div>stages-body</div> }));
+vi.mock('@/components/scoring/CriteriaManager', () => ({ CriteriaManager: () => <div>scoring-body</div> }));
 
 describe('SettingsPage tab wiring', () => {
   beforeEach(() => {
@@ -72,5 +80,20 @@ describe('SettingsPage tab wiring', () => {
     screen.getByRole('tab', { name: 'Sessions & Devices' }).click();
 
     expect(mockReplace).toHaveBeenCalledWith('/settings?tab=sessions', { scroll: false });
+  });
+
+  // Workspace-owned tabs moved to /w/[slug]/settings — old links redirect instead of rendering here.
+  it('redirects a legacy workspace tab (?tab=tags) instead of rendering it', () => {
+    mockTab = 'tags';
+    render(<SettingsPage />);
+
+    expect(screen.getByText('redirect-tags')).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Tags' })).not.toBeInTheDocument();
+  });
+
+  it('shows only account tabs', () => {
+    render(<SettingsPage />);
+
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Profile', 'Notifications', 'Security', 'Sessions & Devices', 'Data & account']);
   });
 });

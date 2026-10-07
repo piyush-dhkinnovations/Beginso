@@ -95,14 +95,14 @@ function renderLinkified(text: string, keyPrefix: string): React.ReactNode[] {
     if (!part) return null;
     if (/^https?:\/\//.test(part)) {
       return (
-        <a key={`${keyPrefix}-${i}`} href={part} target="_blank" rel="noopener noreferrer" className="text-[var(--primary-600)] hover:underline">
+        <a key={`${keyPrefix}-${i}`} href={part} target="_blank" rel="noopener noreferrer" className="text-(--text-link) hover:underline">
           {part}
         </a>
       );
     }
     if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(part)) {
       return (
-        <a key={`${keyPrefix}-${i}`} href={`mailto:${part}`} className="text-[var(--primary-600)] hover:underline">
+        <a key={`${keyPrefix}-${i}`} href={`mailto:${part}`} className="text-(--text-link) hover:underline">
           {part}
         </a>
       );
@@ -117,7 +117,7 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
     const boldMatch = seg.match(/^\*\*([^*]+)\*\*$/);
     if (boldMatch) {
       return (
-        <strong key={`${keyPrefix}-b-${i}`} className="font-semibold text-[var(--text-primary)]">
+        <strong key={`${keyPrefix}-b-${i}`} className="font-semibold text-(--text-primary)">
           {renderLinkified(boldMatch[1], `${keyPrefix}-b-${i}`)}
         </strong>
       );
@@ -127,10 +127,10 @@ function renderInline(text: string, keyPrefix: string): React.ReactNode[] {
 }
 
 const HEADING_CLASS: Record<1 | 2 | 3 | 4, string> = {
-  1: "bg-h3 text-[var(--text-primary)] mt-12 mb-4 scroll-mt-28",
-  2: "bg-h4 text-[var(--text-primary)] mt-8 mb-3 scroll-mt-28",
-  3: "text-[15px] font-semibold text-[var(--text-primary)] mt-6 mb-2 scroll-mt-28",
-  4: "text-[14px] font-semibold text-[var(--text-secondary)] mt-5 mb-2 scroll-mt-28",
+  1: "bg-h3 text-(--text-primary) mt-12 mb-4 scroll-mt-28",
+  2: "bg-h4 text-(--text-primary) mt-8 mb-3 scroll-mt-28",
+  3: "bg-body-lg font-semibold text-(--text-primary) mt-6 mb-2 scroll-mt-28",
+  4: "bg-body font-semibold text-(--text-secondary) mt-5 mb-2 scroll-mt-28",
 };
 
 interface ContactRow {
@@ -155,7 +155,7 @@ export function PolicyMarkdown({ content }: { content: string }) {
           }
           case "paragraph":
             return (
-              <p key={key} className="bg-body text-[var(--text-secondary)] mb-4 leading-relaxed">
+              <p key={key} className="bg-body text-(--text-secondary) mb-4 leading-relaxed">
                 {renderInline(block.text, key)}
               </p>
             );
@@ -163,16 +163,16 @@ export function PolicyMarkdown({ content }: { content: string }) {
             return (
               <div
                 key={key}
-                className="mb-4 rounded-[var(--bg-radius-md)] border border-[var(--border-default)] bg-[var(--surface-hover)] px-4 py-3 text-[13px] font-medium leading-relaxed tracking-[0.01em] text-[var(--text-secondary)]"
+                className="mb-4 rounded-(--bg-radius-md) border border-(--border-default) bg-(--surface-hover) px-4 py-3 bg-body-sm font-medium leading-relaxed tracking-[0.01em] text-(--text-secondary)"
               >
                 {renderInline(block.text, key)}
               </div>
             );
           case "list":
             return (
-              <ul key={key} className="mb-4 list-disc space-y-1.5 pl-5 marker:text-[var(--text-muted)]">
+              <ul key={key} className="mb-4 list-disc space-y-1.5 pl-5 marker:text-(--text-muted)">
                 {block.items.map((item, j) => (
-                  <li key={`${key}-${j}`} className="bg-body text-[var(--text-secondary)] leading-relaxed">
+                  <li key={`${key}-${j}`} className="bg-body text-(--text-secondary) leading-relaxed">
                     {renderInline(item, `${key}-${j}`)}
                   </li>
                 ))}
@@ -181,7 +181,7 @@ export function PolicyMarkdown({ content }: { content: string }) {
           case "callout":
             return (
               <Alert key={key} variant="warning" title={block.title} className="mb-6">
-                {renderInline(block.text, key)}
+                <p>{renderInline(block.text, key)}</p>
               </Alert>
             );
           case "table": {

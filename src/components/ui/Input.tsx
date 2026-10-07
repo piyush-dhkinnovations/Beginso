@@ -6,12 +6,14 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   label?: string;
   error?: string;
   rightSlot?: React.ReactNode;
+  /** Decorative icon inside the left edge (e.g. a search glass). */
+  leftIcon?: React.ReactNode;
   id: string;
 }
 
 // beginso-ui.css classes — see src/styles/beginso-ui.css §6 FORM FIELDS.
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, disabled, type = "text", id, rightSlot, style, ...props }, ref) => {
+  ({ className, label, error, disabled, type = "text", id, rightSlot, leftIcon, style, ...props }, ref) => {
     return (
       <div className="bg-field">
         {label && (
@@ -37,9 +39,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             // padding for a *leading* icon (.bg-input-lead) this component doesn't have —
             // reset back to .bg-input's own default. An inline style is the only thing
             // guaranteed to win over that rule's specificity.
-            style={{ paddingLeft: "var(--space-3)", ...style }}
+            style={{ paddingLeft: leftIcon ? "var(--space-10)" : "var(--space-3)", ...style }}
             {...props}
           />
+          {leftIcon && (
+            <span className="bg-input-lead" aria-hidden="true">{leftIcon}</span>
+          )}
           {rightSlot && (
             // "is-action" restores pointer-events on the trailing slot — the base
             // .bg-input-trail rule sets pointer-events: none, since most trailing

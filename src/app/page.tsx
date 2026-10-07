@@ -11,7 +11,7 @@ import Footer from "@/components/landing/Footer";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[var(--bg-page)] selection:bg-[var(--primary-100)] selection:text-[var(--primary-900)]">
+    <main className="min-h-screen bg-(--bg-page) selection:bg-(--accent-soft-hover) selection:text-(--accent-soft-text)">
       <Navbar />
       <HeroSection />
       <LogoMarquee />

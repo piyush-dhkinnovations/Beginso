@@ -3,14 +3,16 @@
 import { useState } from 'react';
 import { Download, FileText, Info, Loader2, RotateCcw } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { Badge } from '@/components/ui/Badge';
+import { FormTile } from '@/components/forms/FormTile';
 import { Button } from '@/components/ui/Button';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { formatRelativeTime } from '@/lib/formatters';
 import { detectDateRangePreset } from '@/lib/dateRange';
 import { reportsService } from '@/services/reports';
 import { FORMAT_ICON } from './ReportFormatCard';
 import { REPORT_STATUS_LABELS, type ReportJob, type ReportStatus } from '@/types/report';
-import { STATUS_LABELS } from '@/types/response';
+import { CATEGORY_LABELS } from '@/types/stage';
 
 const STATUS_BADGE_VARIANT: Record<ReportStatus, 'new' | 'completed' | 'closed' | 'draft'> = {
   queued: 'new',
@@ -31,10 +33,18 @@ const PRESET_LABEL: Record<string, string> = {
 
 // Link-style action button shared by Download/Retry — a `ghost` Button keeps the 44px accessible
 // hit target the rest of the app relies on, just recolored to read as a text link.
-const ACTION_LINK_CLASS = 'text-brand-700 hover:text-brand-900 hover:bg-brand-50';
+const ACTION_LINK_CLASS = 'text-(--accent-soft-text) hover:text-(--accent-soft-text) hover:bg-(--accent-soft)';
 
 function formatShortDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+// "26 Sep 2026, 12:30" — day-first, three-letter month, 24-hour (the en-GB locale spells it "Sept").
+function formatGeneratedOn(iso: string): string {
+  const d = new Date(iso);
+  const month = d.toLocaleString('en-US', { month: 'short' });
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return `${d.getDate()} ${month} ${d.getFullYear()}, ${time}`;
 }
 
 // The backend never sends a denormalized `formTitle` — only the raw `formId` — so the display
@@ -49,7 +59,11 @@ function formLabel(job: ReportJob, formTitleById: Map<string, string>): string {
 // from/to happens to match "Last 30 days" etc. reads as a friendly label instead of raw dates.
 function scopeSubtitle(job: ReportJob): string {
   const parts: string[] = [];
-  if (job.responseStatus) parts.push(STATUS_LABELS[job.responseStatus]);
+  // `job.stage` (a name snapshot) wins; `responseStatus` is only read for a job created before
+  // this sprint (OQ-2's deprecated-status alias) — mapped through the same fixed category labels
+  // StatusDistributionChart.tsx uses, since it's still the removed union's literal value.
+  if (job.stage) parts.push(job.stage.name);
+  else if (job.responseStatus) parts.push(CATEGORY_LABELS[job.responseStatus]);
   if (job.from && job.to) {
     const preset = detectDateRangePreset(job.from, job.to);
     parts.push(preset === 'custom' ? `${formatShortDate(job.from)} – ${formatShortDate(job.to)}` : PRESET_LABEL[preset]);
@@ -123,41 +137,42 @@ export function ReportJobRow({ job, onRetry, isRetrying = false, formTitleById =
     // in this same row, and a second, identically-worded element would collide for anyone
     // querying by accessible name (screen reader or test alike).
     action = (
-      <Button variant="ghost" size="small" disabled title={EXPIRED_TOOLTIP} className="text-neutral-400">
+      <Button variant="ghost" size="small" disabled title={EXPIRED_TOOLTIP} className="text-(--text-disabled)">
         <Info size={14} className="mr-1.5" />
         Unavailable
       </Button>
     );
   } else if (job.status === 'processing') {
     action = (
-      <span className="inline-flex items-center gap-1.5 text-caption text-neutral-400">
+      <span className="inline-flex items-center gap-1.5 bg-caption text-(--text-disabled)">
         <Loader2 size={14} className="animate-spin" aria-hidden="true" />
         Preparing…
       </span>
     );
   } else {
-    action = <span className="text-caption text-neutral-400">—</span>;
+    action = <span className="bg-caption text-(--text-disabled)">—</span>;
   }
 
   const title = formLabel(job, formTitleById);
   const subtitle = scopeSubtitle(job);
   const created = formatRelativeTime(job.createdAt);
+  const generatedOn = formatGeneratedOn(job.createdAt);
   const formatText = FORMAT_SHORT_LABEL[job.format] ?? job.format;
 
   if (variant === 'card') {
     return (
-      <div className="flex flex-col gap-2 rounded-lg border border-neutral-200 bg-white p-4">
+      <div className="flex flex-col gap-2 rounded-lg border border-(--border-default) bg-(--surface-card) p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-body-sm font-semibold text-neutral-800 truncate">{title}</p>
-            <p className="text-caption text-neutral-500">{subtitle}</p>
+            <p className="bg-body-sm font-semibold text-(--text-primary) truncate">{title}</p>
+            <p className="bg-caption text-(--text-muted)">{subtitle}</p>
           </div>
           <StatusBadge variant={STATUS_BADGE_VARIANT[job.status]}>{REPORT_STATUS_LABELS[job.status]}</StatusBadge>
         </div>
-        {job.status === 'failed' && job.errorMessage && <p className="text-caption text-rose-600">{job.errorMessage}</p>}
+        {job.status === 'failed' && job.errorMessage && <p className="bg-caption text-(--error-text)">{job.errorMessage}</p>}
         <div className="flex items-center justify-between gap-2 pt-1">
-          <span className="inline-flex items-center gap-1.5 text-caption text-neutral-500">
-            <FormatIcon size={14} className="text-neutral-400" aria-hidden="true" />
+          <span className="inline-flex items-center gap-1.5 bg-caption text-(--text-muted)">
+            <FormatIcon size={14} className="text-(--text-disabled)" aria-hidden="true" />
             {formatText} · {created}
           </span>
           {action}
@@ -167,21 +182,23 @@ export function ReportJobRow({ job, onRetry, isRetrying = false, formTitleById =
   }
 
   return (
-    <tr className="border-b border-neutral-100 last:border-0">
+    <tr className="border-b border-(--border-subtle) last:border-0 transition-colors hover:bg-(--surface-hover)">
       <td className="px-4 py-3">
-        <span className="inline-flex items-center gap-2 text-body-sm text-neutral-700 whitespace-nowrap">
-          <FormatIcon size={16} className="text-neutral-400" aria-hidden="true" />
-          {formatText}
-        </span>
+        <div className="flex min-w-0 items-center gap-3">
+          <FormTile title={title} />
+          <div className="min-w-0">
+            <p className="bg-body-sm font-semibold text-(--text-primary) truncate max-w-70">{title}</p>
+            <p className="bg-caption text-(--text-muted) truncate max-w-70">{subtitle}</p>
+            {job.status === 'failed' && job.errorMessage && (
+              <p className="bg-caption text-(--error-text) truncate max-w-70">{job.errorMessage}</p>
+            )}
+          </div>
+        </div>
       </td>
       <td className="px-4 py-3">
-        <p className="text-body-sm font-semibold text-neutral-800 truncate max-w-[280px]">{title}</p>
-        <p className="text-caption text-neutral-500 truncate max-w-[280px]">{subtitle}</p>
-        {job.status === 'failed' && job.errorMessage && (
-          <p className="text-caption text-rose-600 truncate max-w-[280px]">{job.errorMessage}</p>
-        )}
+        <Badge variant={job.format === 'pdf' ? 'error' : 'success'} pill>{formatText}</Badge>
       </td>
-      <td className="px-4 py-3 text-body-sm text-neutral-500 whitespace-nowrap">{created}</td>
+      <td className="px-4 py-3 bg-body-sm text-(--text-secondary) whitespace-nowrap" title={created}>{generatedOn}</td>
       <td className="px-4 py-3">
         <StatusBadge variant={STATUS_BADGE_VARIANT[job.status]}>{REPORT_STATUS_LABELS[job.status]}</StatusBadge>
       </td>

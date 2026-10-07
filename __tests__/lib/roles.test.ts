@@ -5,13 +5,24 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { ROLE_LABELS, CAPABILITIES, hasCapability, canManageMembers, canDeleteForm, canViewTemplates, canViewAudit } from '@/lib/roles';
+import {
+  ROLE_LABELS,
+  CAPABILITIES,
+  hasCapability,
+  canManageMembers,
+  canDeleteForm,
+  canViewTemplates,
+  canViewAudit,
+  canActOnResponses,
+  canManageStages,
+  canManageTags,
+} from '@/lib/roles';
 import type { Role } from '@/types/workspace';
 
-const ALL_ROLES: Role[] = ['owner', 'admin', 'member', 'viewer'];
+const ALL_ROLES: Role[] = ['owner', 'admin', 'member', 'editor', 'viewer', 'reviewer'];
 
 describe('ROLE_LABELS', () => {
-  it('covers exactly the four wire Role values, nothing more or fewer', () => {
+  it('covers exactly the six wire Role values, nothing more or fewer', () => {
     const keys = Object.keys(ROLE_LABELS).sort();
     expect(keys).toEqual([...ALL_ROLES].sort());
   });
@@ -87,6 +98,50 @@ describe('canDeleteForm', () => {
 
   it('fails closed when the role is not yet known', () => {
     expect(canDeleteForm(undefined)).toBe(false);
+  });
+});
+
+// Sprint 12 (inbox-collaboration), requirements.md §14 — 4 roles × 3 new capabilities (task 1.2).
+// `member`/`viewer` are listed directly on CAPABILITIES; `editor`/`reviewer` are asserted here as
+// their automatic aliases (withAliases()) rather than listed a second time in roles.ts.
+describe('responses:act / canActOnResponses', () => {
+  it('is granted to every role, including reviewer (design.md §11.3)', () => {
+    for (const role of ALL_ROLES) {
+      expect(hasCapability(role, 'responses:act')).toBe(true);
+      expect(canActOnResponses(role)).toBe(true);
+    }
+  });
+
+  it('fails closed when the role is not yet known', () => {
+    expect(canActOnResponses(undefined)).toBe(false);
+  });
+});
+
+describe('stages:manage / canManageStages', () => {
+  it('is granted to owner/admin (and their aliases) only', () => {
+    expect(canManageStages('owner')).toBe(true);
+    expect(canManageStages('admin')).toBe(true);
+    expect(canManageStages('member')).toBe(false);
+    expect(canManageStages('editor')).toBe(false);
+    expect(canManageStages('viewer')).toBe(false);
+    expect(canManageStages('reviewer')).toBe(false);
+  });
+
+  it('fails closed when the role is not yet known', () => {
+    expect(canManageStages(undefined)).toBe(false);
+  });
+});
+
+describe('tags:manage / canManageTags', () => {
+  it('is granted to owner/admin only', () => {
+    expect(canManageTags('owner')).toBe(true);
+    expect(canManageTags('admin')).toBe(true);
+    expect(canManageTags('member')).toBe(false);
+    expect(canManageTags('viewer')).toBe(false);
+  });
+
+  it('fails closed when the role is not yet known', () => {
+    expect(canManageTags(undefined)).toBe(false);
   });
 });
 

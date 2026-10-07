@@ -36,7 +36,7 @@ export function RolesMatrix() {
                 <th
                   scope="colgroup"
                   colSpan={MATRIX_ROLES.length + 1}
-                  className="bg-[var(--bg-subtle)] text-[10px] font-bold uppercase tracking-wide text-[var(--text-muted)]"
+                  className="bg-(--bg-subtle) bg-caption font-bold uppercase tracking-wide text-(--text-muted)"
                 >
                   {group.group}
                 </th>
@@ -57,7 +57,7 @@ export function RolesMatrix() {
                       beside it stays white. */}
                   <th
                     scope="row"
-                    className="font-normal text-left normal-case text-[var(--text-secondary)]"
+                    className="font-normal text-left normal-case text-(--text-secondary)"
                     style={{
                       backgroundColor: 'transparent',
                       borderBottom: isLastRow ? 0 : '1px solid var(--border-subtle)',
@@ -70,9 +70,9 @@ export function RolesMatrix() {
                     return (
                       <td key={role} className="text-center">
                         {allowed ? (
-                          <Check size={14} className="inline text-[var(--text-primary)]" aria-hidden="true" />
+                          <Check size={14} className="inline text-(--text-primary)" aria-hidden="true" />
                         ) : (
-                          <Minus size={14} className="inline text-[var(--border-default)]" aria-hidden="true" />
+                          <Minus size={14} className="inline text-(--border-default)" aria-hidden="true" />
                         )}
                         <span className="sr-only">{allowed ? 'Allowed' : 'Not allowed'}</span>
                       </td>

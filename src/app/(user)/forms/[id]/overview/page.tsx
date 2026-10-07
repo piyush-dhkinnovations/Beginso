@@ -13,9 +13,11 @@ import { workspacesService } from '@/services/workspaces';
 import { formKeys, formAccessKeys, formEventKeys, responseKeys, workspaceKeys } from '@/lib/queryKeys';
 import { hasCapability } from '@/lib/roles';
 import { formatRelativeTime } from '@/lib/formatters';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
+import { PinButton } from '@/components/forms/PinButton';
+import { usePinForm } from '@/hooks/usePinForm';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
@@ -45,6 +47,7 @@ function firstAnswer(response: IResponse): string {
 export default function FormOverviewPage() {
   const { id: formId } = useParams<{ id: string }>();
   const { toast } = useToast();
+  const pinMutation = usePinForm();
   const [isAccessOpen, setIsAccessOpen] = useState(false);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
 
@@ -67,11 +70,6 @@ export default function FormOverviewPage() {
     queryFn: () => eventsService.listFormEvents(formId, 1, FORM_ACTIVITY_PREVIEW_COUNT + 1),
   });
 
-  const responsesQuery = useQuery({
-    queryKey: responseKeys.list(formId, { limit: RECENT_RESPONSES }),
-    queryFn: () => responsesService.getResponses({ formId, limit: RECENT_RESPONSES }),
-  });
-
   // Real bug found and fixed: `stats.responseCount` comes from GET /api/forms/:id's own
   // `responseCount` field (getFormOverview's fallback chain), which the backend does not keep in
   // sync with the actual Response collection — the "Recent responses" card right next to it
@@ -79,8 +77,6 @@ export default function FormOverviewPage() {
   // own getStats() already documents for the identical field: don't trust a denormalized count,
   // derive it from the real list endpoint's `total` instead. Overrides `stats.responseCount` with
   // it wherever it's loaded so the two cards on this page can never disagree.
-  const responseCount = responsesQuery.data?.total;
-
   const workspaceId = form?.workspaceId ?? null;
   const workspacesQuery = useQuery({
     queryKey: workspaceKeys.list(),
@@ -88,6 +84,15 @@ export default function FormOverviewPage() {
     enabled: workspaceId !== null,
   });
   const workspace = workspacesQuery.data?.find((w) => w.id === workspaceId);
+
+  // Workspace forms must be queried under their own slug; undefined until it resolves.
+  const scope = !form ? undefined : workspaceId === null ? 'personal' : workspace?.slug;
+  const responsesQuery = useQuery({
+    queryKey: responseKeys.list(scope ?? 'pending', formId, { limit: RECENT_RESPONSES }),
+    queryFn: () => responsesService.getResponses({ formId, limit: RECENT_RESPONSES }, scope),
+    enabled: !!scope,
+  });
+  const responseCount = responsesQuery.data?.total;
 
   if (overviewQuery.isLoading) {
     return (
@@ -101,10 +106,10 @@ export default function FormOverviewPage() {
   if (overviewQuery.isError || !form || !stats) {
     const status = (overviewQuery.error as { response?: { status?: number } } | null)?.response?.status;
     if (status === 403) {
-      return <EmptyState icon={<Lock className="bg-icon" aria-hidden="true" />} title="You do not have access to this form." />;
+      return <EmptyState illustration="no-access" icon={<Lock className="bg-icon" aria-hidden="true" />} title="You do not have access to this form." />;
     }
     if (status === 404) {
-      return <EmptyState icon={<FileQuestion className="bg-icon" aria-hidden="true" />} title="This form could not be found." />;
+      return <EmptyState illustration="not-found" icon={<FileQuestion className="bg-icon" aria-hidden="true" />} title="This form could not be found." />;
     }
     return (
       <Alert variant="error" title="We could not load this form.">
@@ -120,7 +125,7 @@ export default function FormOverviewPage() {
   // Owner-type breadcrumb (requirements.md §7.2). A form reached only through a per-form grant has
   // no matching workspace membership to name, so it falls back to Shared with me.
   const breadcrumb: BreadcrumbItem[] =
-    workspaceId === null
+    workspaceId === null && (form.myRole ?? 'owner') === 'owner'
       ? [{ label: 'My Forms', href: '/forms' }, { label: form.title }]
       : workspace
         ? [
@@ -133,7 +138,7 @@ export default function FormOverviewPage() {
   // Personal form: the caller owns it. Workspace form: their membership role, fail-closed while
   // unknown — Reviewer (or an unresolved role) sees Preview only (requirements.md §7.2). A
   // convenience only; the server enforces every one of these (CLAUDE.md).
-  const role = workspaceId === null ? 'owner' : workspace?.role;
+  const role = form.myRole ?? (workspaceId === null ? 'owner' : workspace?.role);
   const canEdit = role !== undefined && hasCapability(role, 'forms:edit');
 
   const grantCount = grantsQuery.data?.length;
@@ -168,6 +173,7 @@ export default function FormOverviewPage() {
         }
         actions={
           <>
+            <PinButton title={form.title} pinned={!!form.pinned} onToggle={() => pinMutation.mutate({ id: formId, pin: !form.pinned })} />
             <Link href={`/forms/${formId}/preview`}>
               <Button variant="secondary">Preview</Button>
             </Link>
@@ -188,45 +194,56 @@ export default function FormOverviewPage() {
 
       <FormOverviewStats stats={effectiveStats} accessLabel={accessLabel} onOpenAccess={() => setIsAccessOpen(true)} />
 
-      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
-        <Card className="flex flex-col gap-3">
-          <h2 className="bg-h4">Share link</h2>
-          {publicUrl ? (
-            <div className="flex items-center gap-2">
-              <Input
-                id="overview-public-url"
-                aria-label="Public link"
-                value={publicUrl}
-                readOnly
-                title={publicUrl}
-                className="font-mono"
-                style={{ textOverflow: 'ellipsis' }}
-                onFocus={(e) => e.currentTarget.select()}
-              />
-              <Button
-                variant="secondary"
-                aria-label="Copy link"
-                onClick={() => {
-                  void navigator.clipboard.writeText(publicUrl);
-                  toast('Link copied to clipboard.', 'success');
-                }}
-              >
-                <Copy size={16} aria-hidden="true" />
-              </Button>
-            </div>
-          ) : (
-            <p className="bg-body-sm" style={{ color: 'var(--text-muted)', margin: 0 }}>
-              This form is not published yet, so there is no public link.
-            </p>
-          )}
-        </Card>
+      {/* Bug fix: the share link sat in the same narrow auto-fit column as every other card
+          here, so a real URL (localhost:3000/f/<10-char id>, in monospace) truncated down to
+          "http://localhost:3000/f…" — almost nothing actually readable. Full-width, outside the
+          grid below, gives it the room an id-bearing URL genuinely needs, same as any normal
+          share-link UI. */}
+      <Card className="flex flex-col gap-3">
+        <h2 className="bg-h4">Share link</h2>
+        {publicUrl ? (
+          <div className="flex items-center gap-2">
+            <Input
+              id="overview-public-url"
+              aria-label="Public link"
+              value={publicUrl}
+              readOnly
+              title={publicUrl}
+              className="font-mono flex-1 min-w-0"
+              onFocus={(e) => e.currentTarget.select()}
+            />
+            <Button
+              variant="secondary"
+              aria-label="Copy link"
+              onClick={() => {
+                void navigator.clipboard.writeText(publicUrl);
+                toast('Link copied to clipboard.', 'success');
+              }}
+            >
+              <Copy size={16} aria-hidden="true" />
+            </Button>
+          </div>
+        ) : (
+          <p className="bg-body-sm" style={{ color: 'var(--text-muted)', margin: 0 }}>
+            This form is not published yet, so there is no public link.
+          </p>
+        )}
+      </Card>
 
+      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
         <Card className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
             <h2 className="bg-h4">Recent responses</h2>
-            <Link href={workspace?.slug ? `/forms/${formId}/responses?ws=${workspace.slug}` : `/forms/${formId}/responses`} className="bg-body-sm">
-              View inbox
-            </Link>
+            <span className="flex items-center gap-3">
+              {/* Sprint 12 (inbox-collaboration), task 5.2 — placement judgment call, no wireframe
+                  names a surface for this (see ScoreComparison's own comment). */}
+              <Link href={`/forms/${formId}/scores`} className="bg-body-sm">
+                Score comparison
+              </Link>
+              <Link href={workspace?.slug ? `/forms/${formId}/responses?ws=${workspace.slug}` : `/forms/${formId}/responses`} className="bg-body-sm">
+                View inbox
+              </Link>
+            </span>
           </div>
           {responsesQuery.isLoading ? (
             <Skeleton variant="text" width="100%" height={64} />

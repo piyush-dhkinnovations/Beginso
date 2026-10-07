@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { formsService } from '@/services/forms';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import type { FormDestination, FormsContext } from '@/types/workspace';
 
 export interface MoveFormModalProps {

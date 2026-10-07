@@ -92,11 +92,28 @@ export interface LogicRule {
   targetFieldId: string; // must never equal condition.fieldId
 }
 
+// Sprint 13 (CF2.3). A curated set of theme choices, not a free-form editor. Absent = the default.
+export type ButtonStyle = 'solid' | 'outline';
+export type ButtonRadius = '4px' | '8px' | '16px';
+export type CoverPosition = 'center' | 'top' | 'bottom';
+export type FormSpacing = 'compact' | 'comfortable' | 'spacious';
+
 export interface FormBranding {
   primaryColor?: string;   // hex color — overrides workspace default when set
   logoUrl?: string;
   coverImageUrl?: string;
+  buttonStyle?: ButtonStyle;     // default 'solid'
+  buttonRadius?: ButtonRadius;   // default '8px'
+  coverPosition?: CoverPosition; // default 'center'
+  showProgress?: boolean;        // default true — the multi-page progress indicator
+  spacing?: FormSpacing;         // default 'comfortable'
 }
+
+// Sprint 13 (builder-publish-respondent), design.md §13. Six presets replace the three V1 layout
+// modes; legacy values stay readable and are mapped by lib/layoutPresets.ts normaliseLayout().
+export type LayoutPreset = 'classic' | 'card_stack' | 'guided' | 'steps' | 'split_feature' | 'compact';
+export type LegacyLayout = 'single_column' | 'two_column' | 'compact';
+export type AccessMode = 'open' | 'tracked' | 'login';
 
 export interface FormSettings {
   honeypotEnabled: boolean;  // default: true
@@ -104,7 +121,8 @@ export interface FormSettings {
   responseLimit?: number;
   responseLimitEnabled?: boolean; // backend's actual enforcement flag — must be sent alongside responseLimit, it is NOT derived from responseLimit's presence
   closeDate?: string;        // ISO 8601 date string
-  layout?: 'single_column' | 'two_column' | 'compact'; // undefined treated as 'single_column'
+  layout?: LayoutPreset | LegacyLayout; // undefined treated as 'classic' — always read via normaliseLayout()
+  accessMode?: AccessMode;   // Backend contract to confirm (BE 0.6) — undefined treated as 'open'
 }
 
 export interface Form {
@@ -123,6 +141,16 @@ export interface Form {
   createdAt: string;         // ISO 8601
   updatedAt: string;         // ISO 8601
   publishedAt?: string;      // ISO 8601
+  /** The caller's own role on this form (per-form grant, workspace role, or owner). Set by GET /api/forms/:id. */
+  myRole?: import('./workspace').Role;
+  archivedAt?: string | null; // Backend contract to confirm (BE 0.8) — set = archived, never expires
+  deletedAt?: string | null;  // Backend contract to confirm (BE 0.8) — set = in Trash
+  /** Per-user private bookmark: true when the CALLER pinned this form. GET /api/forms normalises it to a boolean. */
+  pinned?: boolean;
+  pinnedAt?: string | null;
+  // Sprint 14 (BE 0.4) - source template link; null/absent for forms not created from a template.
+  templateId?: string | null;
+  templateCategory?: string | null;
   // sprint-10-events-migration requirements.md §7.9 — Backend contract to confirm whether
   // GET /api/forms already returns owner identity for a workspace-form row; read defensively
   // (optional, may be absent). A personal form's owner is always the caller, so this is only
@@ -142,6 +170,40 @@ export interface FormOverviewStats {
   responseCount: number;
   responseCountThisWeek: number | null;
   completionRate: number | null;
+}
+
+// ─── Publish readiness (Sprint 13, CF2.5) ─────────────────────────────────────
+// Backend contract to confirm (BE 0.4) — GET /api/forms/:formId/readiness.
+export interface ReadinessIssue {
+  code: string;
+  fieldId?: string;
+  message: string;
+}
+
+export interface Readiness {
+  ready: boolean;
+  blocking: ReadinessIssue[];
+  warnings: ReadinessIssue[];
+}
+
+// Sprint 13 (CF6.5) — POST /api/forms/:id/publish. The pre-flight commits its choices atomically.
+export interface PublishBody {
+  accessMode?: AccessMode;
+  closeDate?: string | null;
+}
+
+export interface PublishResult {
+  _id: string;
+  status: 'published';
+  slug: string;
+  publishedAt?: string;
+}
+
+// Sprint 13 (CF2.6) — one answer in a test submission. Same shape the public form sends.
+export interface TestSubmissionAnswer {
+  fieldId: string;
+  fieldLabel?: string;
+  value?: unknown;
 }
 
 // ─── API Payload Types ────────────────────────────────────────────────────────
@@ -189,6 +251,7 @@ export interface Template {
   fields: FormField[];
   settings: FormSettings;
   isActive: boolean;
+  source?: 'workspace' | 'beginso'; // Backend contract to confirm (BE 0.13) — absent = beginso
 }
 
 // ─── File Upload ──────────────────────────────────────────────────────────────

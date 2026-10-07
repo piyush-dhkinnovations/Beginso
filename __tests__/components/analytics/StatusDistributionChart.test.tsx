@@ -9,15 +9,8 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-vi.mock('@/components/charts/EChartContainer', () => ({
-  EChartContainer: ({ option, ariaLabel }: { option: unknown; ariaLabel: string }) => (
-    <div role="img" aria-label={ariaLabel} data-option={JSON.stringify(option)} />
-  ),
-}));
-
 import { StatusDistributionChart } from '@/components/analytics/StatusDistributionChart';
 import { mockAnalyticsOverview } from '@/lib/mocks/analyticsMocks';
-import { CHART_COLORS } from '@/lib/chartTheme';
 
 describe('StatusDistributionChart', () => {
   it('shows a pulsing skeleton block while loading', () => {
@@ -34,7 +27,7 @@ describe('StatusDistributionChart', () => {
   });
 
   it('does not render the donut when total responses is 0 — renders the shared empty state instead', () => {
-    const overview = mockAnalyticsOverview({ totalResponses: 0, statusCounts: { new: 0, in_progress: 0, completed: 0 } });
+    const overview = mockAnalyticsOverview({ totalResponses: 0, categoryCounts: { new: 0, in_progress: 0, completed: 0 } });
     render(<StatusDistributionChart overview={overview} isLoading={false} isAllTime />);
 
     expect(screen.getByText('No responses yet')).toBeInTheDocument();
@@ -42,33 +35,32 @@ describe('StatusDistributionChart', () => {
   });
 
   it('renders exactly 3 segments with the status-dot design-token colors, and the center total', () => {
-    const overview = mockAnalyticsOverview({ totalResponses: 128, statusCounts: { new: 42, in_progress: 36, completed: 50 } });
+    const overview = mockAnalyticsOverview({ totalResponses: 128, categoryCounts: { new: 42, in_progress: 36, completed: 50 } });
     render(<StatusDistributionChart overview={overview} isLoading={false} />);
 
-    const chart = screen.getByRole('img', { name: 'Response status distribution' });
-    const option = JSON.parse(chart.getAttribute('data-option') as string);
-    const segments = option.series[0].data;
-    expect(segments).toHaveLength(3);
-    expect(segments.map((s: { itemStyle: { color: string } }) => s.itemStyle.color)).toEqual([
-      CHART_COLORS.statusNew,
-      CHART_COLORS.statusProgress,
-      CHART_COLORS.statusCompleted,
+    // Legend rows carry the three category counts; each dot uses a design-token colour.
+    const dots = Array.from(document.querySelectorAll('span[aria-hidden="true"].rounded-full')) as HTMLElement[];
+    expect(dots.map((d) => d.style.backgroundColor)).toEqual([
+      'var(--action-primary)',
+      'var(--info)',
+      'var(--success)',
     ]);
-    expect(segments.map((s: { value: number }) => s.value)).toEqual([42, 36, 50]);
+    expect(screen.getAllByText('42').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('36').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('50').length).toBeGreaterThan(0);
 
-    expect(screen.getByText('128')).toBeInTheDocument();
-    expect(screen.getByText('Total')).toBeInTheDocument();
+    expect(screen.getAllByText('128').length).toBeGreaterThan(0);
   });
 
   it('comma-formats a large center total (e.g. "1,284")', () => {
-    const overview = mockAnalyticsOverview({ totalResponses: 1284, statusCounts: { new: 184, in_progress: 326, completed: 774 } });
+    const overview = mockAnalyticsOverview({ totalResponses: 1284, categoryCounts: { new: 184, in_progress: 326, completed: 774 } });
     render(<StatusDistributionChart overview={overview} isLoading={false} />);
 
-    expect(screen.getByText('1,284')).toBeInTheDocument();
+    expect(screen.getAllByText('1,284').length).toBeGreaterThan(0);
   });
 
   it('renders a legend with status name, count, and percentage, plus a matching sr-only table', () => {
-    const overview = mockAnalyticsOverview({ totalResponses: 10, statusCounts: { new: 5, in_progress: 3, completed: 2 } });
+    const overview = mockAnalyticsOverview({ totalResponses: 10, categoryCounts: { new: 5, in_progress: 3, completed: 2 } });
     render(<StatusDistributionChart overview={overview} isLoading={false} />);
 
     expect(screen.getAllByText('New').length).toBeGreaterThan(0);

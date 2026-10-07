@@ -1,4 +1,7 @@
+import { isAxiosError } from 'axios';
 import axiosInstance from '@/lib/axios';
+import { unwrapEnvelope } from '@/lib/apiEnvelope';
+import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import type {
   GetResponsesParams,
   PaginatedResponsesResult,
@@ -7,7 +10,8 @@ import type {
   ResponseAnswers,
   ResponseDetail,
   ResponseStats,
-  ResponseStatus,
+  BulkRequest,
+  BulkResult,
 } from '@/types/response';
 
 // Wire shapes from docs/backend-contract/api-reference.md §3 — every response is wrapped
@@ -24,14 +28,20 @@ interface DetailEnvelope {
   success: boolean;
   response: RawResponseDetail;
 }
-interface UpdateStatusEnvelope {
+interface UpdateResponseEnvelope {
   success: boolean;
   message: string;
-  response: Pick<IResponse, '_id' | 'status' | 'updatedAt'>;
+  response: IResponse;
 }
 interface FileUrlEnvelope {
   success: boolean;
   url: string;
+}
+// GET /api/responses/stats (design.md §11.2 — Extends). Keeps the legacy new/in_progress/
+// completed numeric keys as aliases during the deprecation window; this app reads `byStage`/
+// `byCategory` only.
+interface StatsEnvelope extends ResponseStats {
+  success: boolean;
 }
 
 // The backend sends each answer twice — once keyed by the field's raw internal id, once by its
@@ -72,10 +82,39 @@ function toResponseDetail(raw: RawResponseDetail): ResponseDetail {
   return { ...rest, answers: cleanAnswers(answers), responseFiles: response_files };
 }
 
+/** PATCH /api/responses/:id body (design.md §11.2 — Extends). `status` is only sent for a
+ * personal-shell response's stage change (OQ-9's "fixed default stages" — there is no real Stage
+ * document to reference by id there, only the status category); every workspace-scoped caller
+ * still sends `stageId`, never `status`. */
+export interface UpdateResponsePayload {
+  stageId?: string;
+  status?: 'new' | 'in_progress' | 'completed';
+  assigneeId?: string | null;
+  tagIds?: string[];
+}
+
+// POST /api/responses/bulk (design.md §11.2, task 2.2): "413 batch over cap (cap stated in
+// response)". Surfaced as a typed error rather than a generic axios failure so
+// `useInboxMutations`/`BulkActionBar` can show a specific message instead of the default
+// "failed to update" toast. `cap` is read defensively — the exact response shape for the cap is
+// itself "Backend contract to confirm".
+export class BulkBatchLimitError extends Error {
+  cap?: number;
+  constructor(cap?: number) {
+    super(cap ? `Bulk actions are limited to ${cap} responses at a time.` : 'Too many responses selected for one bulk action.');
+    this.name = 'BulkBatchLimitError';
+    this.cap = cap;
+  }
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 export const responsesService = {
-  getResponses: (params: GetResponsesParams) =>
+  getResponses: (params: GetResponsesParams, scope?: string) =>
     axiosInstance
-      .get<ListEnvelope>('/api/responses', { params })
+      .get<ListEnvelope>('/api/responses', { params, headers: workspaceHeaders(scope) })
       .then((r): PaginatedResponsesResult => {
         const { data, total, page, limit, totalPages } = r.data;
         // Same defensive-array guard `sharedService`/`formAccessService` already carry
@@ -91,16 +130,26 @@ export const responsesService = {
         };
       }),
 
-  getResponseById: (id: string) =>
-    axiosInstance.get<DetailEnvelope>(`/api/responses/${id}`).then((r) => toResponseDetail(r.data.response)),
-
-  updateStatus: (id: string, status: ResponseStatus) =>
+  getResponseById: (id: string, scope?: string) =>
     axiosInstance
-      .patch<UpdateStatusEnvelope>(`/api/responses/${id}`, { status })
-      .then((r) => r.data.response),
+      .get<DetailEnvelope>(`/api/responses/${id}`, { headers: workspaceHeaders(scope) })
+      .then((r) => toResponseDetail(r.data.response)),
 
-  deleteResponse: (id: string) =>
-    axiosInstance.delete(`/api/responses/${id}`).then(() => undefined),
+  update: (id: string, payload: UpdateResponsePayload, scope?: string) =>
+    axiosInstance
+      .patch<UpdateResponseEnvelope>(`/api/responses/${id}`, payload, { headers: workspaceHeaders(scope) })
+      // The mutation response carries the raw answers map (label AND field-id keys) - same clean-up as reads.
+      .then((r) => (r.data.response?.answers ? { ...r.data.response, answers: cleanAnswers(r.data.response.answers) } : r.data.response)),
+
+  // Sprint 13 (A5.2): "Mark as reviewed" — clears the Edited-after-review flag.
+  clearEditedAfterReview: (id: string, scope?: string) =>
+    axiosInstance
+      .patch<{ cleared?: boolean }>(`/api/responses/${id}/edited-after-review`, { cleared: true }, { headers: workspaceHeaders(scope) })
+      .then((r) => ({ cleared: !!r.data?.cleared })),
+
+  // Note: since Sprint 13 the backend moves the response to Trash (still 204) instead of destroying it.
+  deleteResponse: (id: string, scope?: string) =>
+    axiosInstance.delete(`/api/responses/${id}`, { headers: workspaceHeaders(scope) }).then(() => undefined),
 
   getFileDownloadUrl: (responseId: string, fileId: string) =>
     axiosInstance
@@ -126,20 +175,46 @@ export const responsesService = {
     return URL.createObjectURL(res.data);
   },
 
-  // GET /api/responses/stats is confirmed live (docs/backend-contract/api-reference.md §3), but
-  // this still computes counts client-side via three limit:1 list requests — swapping to the
-  // dedicated one-call endpoint is a known, not-yet-done frontend-only performance cleanup.
-  getStats: (formId?: string): Promise<ResponseStats> =>
-    Promise.all(
-      (['new', 'in_progress', 'completed'] as const).map((status) =>
-        axiosInstance
-          .get<ListEnvelope>('/api/responses', { params: { formId, status, limit: 1 } })
-          .then((r) => (typeof r.data.total === 'number' ? r.data.total : 0))
-      )
-    ).then(([newCount, inProgressCount, completedCount]) => ({
-      total: newCount + inProgressCount + completedCount,
-      new: newCount,
-      in_progress: inProgressCount,
-      completed: completedCount,
-    })),
+  // Sprint 12 (inbox-collaboration), task 2.2: one request per bulk action (B2.1) — never one per
+  // id. `previous` comes back only for a reversible action; defensively defaulted to `[]` like
+  // every other array field in this file (cleanAnswers' own precedent) since nothing here has
+  // been exercised against a live response yet.
+  bulk: (request: BulkRequest, scope?: string): Promise<BulkResult> =>
+    axiosInstance
+      .post('/api/responses/bulk', request, { headers: workspaceHeaders(scope) })
+      .then((r) => {
+        const raw = unwrapEnvelope<Partial<BulkResult>>(r.data, 'result');
+        return {
+          succeeded: Array.isArray(raw.succeeded) ? raw.succeeded : [],
+          failed: Array.isArray(raw.failed) ? raw.failed : [],
+          previous: Array.isArray(raw.previous) ? raw.previous : [],
+        };
+      })
+      .catch((err) => {
+        if (isAxiosError(err) && err.response?.status === 413) {
+          const data = err.response.data;
+          const cap = isPlainObject(data) && typeof data.cap === 'number' ? data.cap : undefined;
+          throw new BulkBatchLimitError(cap);
+        }
+        throw err;
+      }),
+
+  // POST /api/responses/:id/read · /unread (design.md §11.2): "idempotent; GET never mutates."
+  markRead: (id: string, read: boolean, scope?: string): Promise<void> =>
+    axiosInstance
+      .post(`/api/responses/${id}/${read ? 'read' : 'unread'}`, {}, { headers: workspaceHeaders(scope) })
+      .then(() => undefined),
+
+  // Sprint 12 (inbox-collaboration), task 1.3: replaces the old 3-request client-side computation
+  // with the confirmed-live single GET /api/responses/stats call (closes the known low-severity
+  // issue in PROJECT_STATUS.md), extended for stages (design.md §2/§11.2).
+  getStats: (formId?: string, scope?: string): Promise<ResponseStats> =>
+    axiosInstance
+      .get<StatsEnvelope>('/api/responses/stats', { params: { formId }, headers: workspaceHeaders(scope) })
+      .then((r): ResponseStats => ({
+        total: typeof r.data.total === 'number' ? r.data.total : 0,
+        unread: typeof r.data.unread === 'number' ? r.data.unread : 0,
+        byStage: Array.isArray(r.data.byStage) ? r.data.byStage : [],
+        byCategory: r.data.byCategory ?? { new: 0, in_progress: 0, completed: 0 },
+      })),
 };

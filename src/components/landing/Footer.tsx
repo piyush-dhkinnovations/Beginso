@@ -43,21 +43,21 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-[var(--ink-900)] py-16">
+    <footer className="bg-(--surface-inverse) py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10">
           <div>
             <Wordmark height={32} force="dark" />
-            <p className="text-[13px] text-white/60 mt-3">&copy; {currentYear} Beginso. All rights reserved.</p>
+            <p className="bg-body-sm text-(--text-on-brand)/60 mt-3">&copy; {currentYear} Beginso. All rights reserved.</p>
           </div>
 
           {COLUMNS.map((column) => (
             <div key={column.title}>
-              <div className="text-[12px] font-semibold uppercase tracking-wide text-white/50 mb-4">{column.title}</div>
+              <div className="bg-body-sm font-semibold uppercase tracking-wide text-(--text-on-brand)/50 mb-4">{column.title}</div>
               <ul className="space-y-3">
                 {column.links.map((link) => (
                   <li key={link.label}>
-                    <a href={link.href} className="text-[14px] text-white/80 hover:text-white transition-colors">
+                    <a href={link.href} className="bg-body text-(--text-on-brand)/80 hover:text-(--text-on-brand) transition-colors">
                       {link.label}
                     </a>
                   </li>

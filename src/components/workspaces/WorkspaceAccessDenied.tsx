@@ -13,7 +13,7 @@ import { EmptyState } from '@/components/ui';
 export function WorkspaceAccessDenied() {
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
-      <EmptyState
+      <EmptyState illustration="no-access"
         icon={<ShieldAlert className="bg-icon" aria-hidden="true" />}
         title="You don't have access to this workspace"
         description="Ask a member to invite you, or switch to a workspace you already belong to."

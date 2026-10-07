@@ -1,0 +1,13 @@
+import { chromium } from '@playwright/test';
+const b = await chromium.launch(); const c = await b.newContext({ viewport: { width: 1440, height: 900 } });
+await c.addCookies([{ name: 'beginso_session', value: 'x', url: 'http://localhost:3100' }]);
+const p = await c.newPage();
+await p.goto('http://localhost:3100/forms/f1/analytics'); await p.locator('#custom-charts-heading').waitFor({ timeout: 60000 }); await p.waitForTimeout(2500);
+const btn = p.getByRole('button', { name: /Chart options/ }).first();
+console.log('buttons', await p.getByRole('button', { name: /Chart options/ }).count());
+await btn.scrollIntoViewIfNeeded(); await p.waitForTimeout(1500); await btn.click(); await p.waitForTimeout(500);
+console.log('expanded', await btn.getAttribute('aria-expanded'));
+p.on('console', m=>console.log('C', m.text().slice(0,200)));
+console.log('menus', await p.getByRole('menu').count(), await p.locator('[role=menuitem]').allInnerTexts());
+await p.screenshot({ path: 'C:/Users/Xeon6/AppData/Local/Temp/claude/d--Beginso/bbee80af-be9c-494f-9172-b7431714cfa9/scratchpad/dbg.png' });
+await b.close();

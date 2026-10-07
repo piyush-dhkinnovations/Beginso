@@ -34,24 +34,24 @@ export default function FaqSection() {
   const { ref: headingRef, visible: headingVisible } = useReveal<HTMLDivElement>();
 
   return (
-    <section id="faq" className="py-14 md:py-[72px] lg:py-24 bg-[var(--bg-subtle)] border-t border-[var(--border-default)]">
+    <section id="faq" className="py-14 md:py-[72px] lg:py-24 bg-(--bg-subtle) border-t border-(--border-default)">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div ref={headingRef} className={`reveal ${headingVisible ? "is-visible" : ""} text-center mb-8 md:mb-12`}>
-          <div className="bg-overline text-[var(--primary-600)] mb-3">FAQ</div>
-          <h2 className="bg-h2 text-[var(--text-primary)]">Questions, answered</h2>
+          <div className="bg-overline text-(--text-link) mb-3">FAQ</div>
+          <h2 className="bg-h2 text-(--text-primary)">Questions, answered</h2>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {FAQS.map((faq) => (
             <details
               key={faq.q}
-              className="group rounded-[var(--bg-radius-md)] border border-[var(--border-default)] bg-[var(--surface-card)] p-5"
+              className="group rounded-(--bg-radius-md) border border-(--border-default) bg-(--surface-card) p-5"
             >
-              <summary className="flex items-center justify-between gap-4 cursor-pointer list-none bg-body font-semibold text-[var(--text-primary)]">
+              <summary className="flex items-center justify-between gap-4 cursor-pointer list-none bg-body font-semibold text-(--text-primary)">
                 {faq.q}
-                <ChevronDown size={18} className="shrink-0 text-[var(--text-muted)] transition-transform duration-200 group-open:rotate-180" />
+                <ChevronDown size={18} className="shrink-0 text-(--text-muted) transition-transform duration-200 group-open:rotate-180" />
               </summary>
-              <p className="bg-body-sm text-[var(--text-secondary)] mt-3">{faq.a}</p>
+              <p className="bg-body-sm text-(--text-secondary) mt-3">{faq.a}</p>
             </details>
           ))}
         </div>

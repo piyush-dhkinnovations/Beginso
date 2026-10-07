@@ -12,6 +12,11 @@ export interface PublicFormBranding {
   primaryColor?: string;
   logoUrl?: string;
   coverImageUrl?: string;
+  buttonStyle?: 'solid' | 'outline';
+  buttonRadius?: '4px' | '8px' | '16px';
+  coverPosition?: 'center' | 'top' | 'bottom';
+  showProgress?: boolean;
+  spacing?: 'compact' | 'comfortable' | 'spacious';
 }
 
 /** Shape returned by GET /api/public/:slug — user-only fields omitted. */
@@ -20,7 +25,7 @@ export interface PublicFormSchema {
   pages: FormPage[];
   fields: FormField[]; // all non-deleted fields across all pages, order preserved
   branding: PublicFormBranding;
-  settings: Pick<FormSettings, 'honeypotEnabled' | 'successMessage' | 'responseLimit' | 'closeDate' | 'layout'>;
+  settings: Pick<FormSettings, 'honeypotEnabled' | 'successMessage' | 'responseLimit' | 'closeDate' | 'layout' | 'accessMode'>;
 }
 
 // ─── Field Value Types ──────────────────────────────────────────────────────────
@@ -47,6 +52,8 @@ export interface Answer {
 /** The `data` part of the multipart/form-data submission. */
 export interface SubmissionData {
   answers: Answer[];
+  /** Mode 2 (tracked) only — the built-in "Your email" step, kept outside `answers` (OQ-4). Backend contract to confirm (BE 0.6). */
+  respondentEmail?: string;
 }
 
 // ─── Upload State ───────────────────────────────────────────────────────────────

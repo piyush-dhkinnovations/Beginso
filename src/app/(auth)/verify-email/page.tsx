@@ -1,5 +1,6 @@
 'use client';
 
+import { StateArt } from '@/components/illustrations/Illustration';
 import { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { MailCheck } from 'lucide-react';
@@ -7,7 +8,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { authService } from '@/services/auth';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
@@ -95,24 +96,30 @@ function VerifyEmailPageInner() {
 
   return (
     <AuthCard className="w-full p-8 flex flex-col items-center text-center gap-6">
-      <div className="w-12 h-12 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
-        <MailCheck aria-hidden="true" size={22} />
-      </div>
+      <StateArt
+        name="email-sent"
+        size="sm"
+        fallback={
+          <div className="w-12 h-12 rounded-full bg-(--accent-soft) flex items-center justify-center text-(--text-link)">
+            <MailCheck aria-hidden="true" size={22} />
+          </div>
+        }
+      />
       <div className="space-y-2">
-        <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Verify your email</h1>
-        <p className="text-body text-[var(--text-muted)]">
+        <h1 className="bg-h5 font-bold text-(--text-primary)">Verify your email</h1>
+        <p className="bg-body text-(--text-muted)">
           {email
             ? <>Enter the six-digit code sent to <strong>{email}</strong>.</>
             : 'Sign in again to request or complete email verification.'}
         </p>
         {email && (
-          <p className="text-body-sm text-[var(--text-muted)]">
+          <p className="bg-body-sm text-(--text-muted)">
             Open your verification email, select <strong>View verification code</strong>, then enter the six-digit code shown on the Beginso page.
           </p>
         )}
       </div>
 
-      {error && <p role="alert" className="w-full rounded-md border border-error/20 bg-red-50 p-3 text-body-sm font-semibold text-error">{error}</p>}
+      {error && <p role="alert" className="w-full rounded-md border border-(--error)/20 bg-(--error-surface) p-3 bg-body-sm font-semibold text-(--error-text)">{error}</p>}
 
       {email && (
         <div className="flex w-full flex-col gap-3">
@@ -137,7 +144,7 @@ function VerifyEmailPageInner() {
                 autoComplete={index === 0 ? 'one-time-code' : 'off'}
                 maxLength={1}
                 aria-label={`Verification code digit ${index + 1}`}
-                className="h-11 w-11 rounded-md border border-[var(--border-default)] bg-[var(--surface-card)] text-center text-heading-2 font-semibold text-[var(--text-primary)] outline-none transition-colors focus:border-brand-500 focus:ring-2 focus:ring-brand-100 disabled:bg-[var(--surface-hover)]"
+                className="h-11 w-11 rounded-md border border-(--border-default) bg-(--surface-card) text-center bg-h5 font-semibold text-(--text-primary) outline-none transition-colors focus:border-(--border-focus) focus:ring-2 focus:ring-(--accent-soft-hover) disabled:bg-(--surface-hover)"
               />
             ))}
           </fieldset>
@@ -159,7 +166,7 @@ function VerifyEmailPageInner() {
         </div>
       )}
 
-      <Link href="/login" className="inline-flex min-h-11 items-start font-semibold text-sm text-brand-700 hover:text-brand-900">
+      <Link href="/login" className="inline-flex min-h-11 items-start font-semibold bg-body-sm text-(--accent-soft-text) hover:text-(--accent-soft-text)">
         Back to login
       </Link>
     </AuthCard>

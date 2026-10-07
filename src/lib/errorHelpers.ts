@@ -4,7 +4,32 @@
 export function getFriendlyErrorMessage(error: unknown): string {
   if (!error) return 'An unexpected error occurred. Please try again.';
 
-  const err = error as { message?: string; code?: string; response?: { data?: { error?: { message?: string } } } };
+  const err = error as {
+    message?: string;
+    code?: string;
+    response?: { status?: number; data?: { error?: { message?: string; code?: string } } };
+  };
+
+  // Backend error codes with a fixed, user-facing sentence (API_CONTRACT.md "Error codes"). Checked
+  // before the raw backend message so the wording stays ours, and 429 works whatever its body says.
+  const apiCode = err.response?.data?.error?.code;
+  const codeMessages: Record<string, string> = {
+    RATE_LIMITED: 'You are doing that too often. Please wait a moment and try again.',
+    ADMIN_REQUIRES_OWNER: 'Only the workspace owner can change or remove an admin.',
+    LAST_OWNER: 'You are the only owner. Transfer ownership to another member before leaving.',
+    PAYLOAD_TOO_LARGE: 'That submission is too large. Please shorten your answers or remove large attachments.',
+    INVITATION_ALREADY_PENDING: 'An invitation for this email is already pending. Try again in a moment.',
+    REPORT_QUEUE_FULL: 'Several reports are already being prepared. Wait for one to finish, then try again.',
+    OWNS_SHARED_WORKSPACES: 'You still own a workspace that other people belong to. Transfer ownership or remove them first.',
+    REAUTH_REQUIRED: 'Please confirm your password to continue.',
+    REAUTH_INVALID: 'We could not confirm your password. Please try again.',
+    REAUTH_MISMATCH: 'That confirmation belongs to a different account.',
+    REAUTH_EXPIRED: 'Your password confirmation expired. Please try again.',
+    TOKEN_REVOKED: 'Your session was ended. Please sign in again.',
+  };
+  if (apiCode && codeMessages[apiCode]) return codeMessages[apiCode];
+  if (err.response?.status === 429) return codeMessages.RATE_LIMITED;
+  if (err.response?.status === 413) return codeMessages.PAYLOAD_TOO_LARGE;
 
   // Prioritize backend-provided API errors if they exist
   const apiMessage = err.response?.data?.error?.message;

@@ -17,7 +17,7 @@ export function GoogleSignInButton({
     <Button
       type="button"
       variant="secondary"
-      className="w-full flex items-center justify-center gap-2 min-h-[44px]"
+      className="w-full flex items-center justify-center gap-2 min-h-11"
       onClick={onClick}
       disabled={disabled || isLoading}
       isLoading={isLoading}

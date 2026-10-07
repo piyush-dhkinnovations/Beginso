@@ -10,6 +10,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import SharedWithMePage from '@/app/(user)/shared/page';
 import type { SharedFormItem } from '@/types/team';
 
+// The row menu navigates with useRouter (needs a mounted app router outside Next).
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
+
 const mockList = vi.fn();
 vi.mock('@/services/shared', () => ({
   sharedService: { list: (...args: unknown[]) => mockList(...args) },

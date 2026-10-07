@@ -60,15 +60,15 @@ export default function WorkspacesPage() {
       ) : isError ? (
         <Card role="alert" className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-body-sm font-semibold">Unable to load workspaces</p>
-            <p className="mt-1 text-caption text-[var(--text-muted)]">Please try again.</p>
+            <p className="bg-body-sm font-semibold">Unable to load workspaces</p>
+            <p className="mt-1 bg-caption text-(--text-muted)">Please try again.</p>
           </div>
           <Button variant="secondary" size="small" onClick={() => void refetch()}>
             Try again
           </Button>
         </Card>
       ) : !workspaces || workspaces.length === 0 ? (
-        <EmptyState
+        <EmptyState illustration="team"
           icon={<Building2 className="bg-icon" aria-hidden="true" />}
           title="Create your first workspace"
           description="A workspace is shared with your team — forms, responses and members all live inside it."
@@ -91,11 +91,11 @@ export default function WorkspacesPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 aria-label="Search workspaces"
-                className="bg-input w-full pl-9 pr-3 py-1.5 text-body-sm rounded-md border border-[var(--border-default)] focus:outline-none focus:ring-2 focus:ring-brand-500"
+                className="bg-input w-full pl-9 pr-3 py-1.5 bg-body-sm rounded-md border border-(--border-default) focus:outline-none focus:ring-2 focus:ring-(--border-focus)"
               />
               <Search
                 size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] pointer-events-none"
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-(--text-muted) pointer-events-none"
                 aria-hidden="true"
               />
             </div>
@@ -104,7 +104,7 @@ export default function WorkspacesPage() {
               aria-label="Sort workspaces"
               value={sort}
               onChange={(e) => setSort(e.target.value as 'name' | 'last-used')}
-              className="bg-input sm:w-40 py-1.5 px-3 text-body-sm rounded-md border border-[var(--border-default)] text-[var(--text-primary)] bg-[var(--surface-card)]"
+              className="bg-input sm:w-40 py-1.5 px-3 bg-body-sm rounded-md border border-(--border-default) text-(--text-primary) bg-(--surface-card)"
             >
               <option value="last-used">Last used</option>
               <option value="name">Name</option>
@@ -112,7 +112,7 @@ export default function WorkspacesPage() {
           </div>
 
           {filteredWorkspaces.length === 0 ? (
-            <EmptyState
+            <EmptyState illustration="no-results"
               icon={<Search className="bg-icon" aria-hidden="true" />}
               title="No workspaces found"
               description="No workspaces match your search term."
@@ -126,20 +126,20 @@ export default function WorkspacesPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredWorkspaces.map((workspace) => (
                 <Link key={workspace.id} href={`/w/${workspace.slug}`} className="block h-full no-underline">
-                  <Card className="flex flex-col justify-between gap-4 h-full transition-shadow hover:shadow-md border border-[var(--border-default)] hover:border-[var(--border-strong)]">
+                  <Card className="flex flex-col justify-between gap-4 h-full transition-shadow hover:shadow-(--shadow-hover) border border-(--border-default) hover:border-(--border-strong)">
                     <div className="flex flex-col gap-2">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-body font-semibold text-[var(--text-primary)]">{workspace.name}</h3>
+                        <h3 className="bg-body font-semibold text-(--text-primary)">{workspace.name}</h3>
                         <Badge>{ROLE_LABELS[workspace.role]}</Badge>
                       </div>
                       {typeof workspace.memberCount === 'number' && (
-                        <p className="text-caption text-[var(--text-muted)]">
+                        <p className="bg-caption text-(--text-muted)">
                           {workspace.memberCount} member{workspace.memberCount !== 1 ? 's' : ''}
                         </p>
                       )}
                     </div>
-                    <div className="flex justify-end pt-2 border-t border-[var(--border-default)]">
-                      <span className="bg-btn bg-btn-secondary bg-btn-sm inline-flex items-center gap-1 text-caption pointer-events-none">
+                    <div className="flex justify-end pt-2 border-t border-(--border-default)">
+                      <span className="bg-btn bg-btn-secondary bg-btn-sm inline-flex items-center gap-1 bg-caption pointer-events-none">
                         Open
                       </span>
                     </div>

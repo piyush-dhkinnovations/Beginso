@@ -78,9 +78,16 @@ export function shortId(id: string): string {
   return (id.length <= 6 ? id : id.slice(-6)).toUpperCase();
 }
 
-export function buildAnswerPreview(answers: ResponseAnswers, maxLength = 60): string {
+/**
+ * `exclude` drops answer values already shown elsewhere (the respondent name/email line built by
+ * `detectRespondentIdentity`) — otherwise a simple Name+Email form previews the exact same two
+ * values a second time, right under themselves.
+ */
+export function buildAnswerPreview(answers: ResponseAnswers, maxLength = 60, exclude: (string | undefined)[] = []): string {
+  const excluded = new Set(exclude.filter((v): v is string => !!v));
   const preview = Object.values(answers)
     .filter((value) => value !== null && value !== undefined && value !== '')
+    .filter((value) => !(typeof value === 'string' && excluded.has(value)))
     .slice(0, 2)
     .map((value) => (Array.isArray(value) ? value.join(', ') : String(value)))
     .join(' · ');

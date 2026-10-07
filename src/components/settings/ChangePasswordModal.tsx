@@ -7,7 +7,7 @@ import { auth } from '@/lib/firebase';
 import { changePasswordSchema, type ChangePasswordFormValues } from '@/lib/schemas/settingsSchemas';
 import { settingsService } from '@/services/settings';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
-import { useToast } from '@/components/common/Toast';
+import { useToast } from '@/components/ui/Toast';
 import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';

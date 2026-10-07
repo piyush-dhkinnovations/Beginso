@@ -31,6 +31,8 @@ Three skills live in `.claude/skills/`. Each is also a slash command.
 
 `/day` needs `Beginso-Report` open in the workspace to read the sprint plan's day rows. A multi-root workspace with both repos is the intended setup.
 
+**Standing decision (30 Sep 2026, from Sprint 12 Day 4 onward): do not write test files while building a feature.** Write and iterate on the implementation only. Every changed line of code used to also need its test file changed alongside it — for work that hasn't stabilized yet, that's a second edit (and a second review) on top of a first draft that's still moving, not verification. Tests come back as a **separate, later pass**, only once the feature's code is confirmed correct and stable (the owner has actually used it, not just "it type-checks") — request that pass explicitly when you want it, one feature/task at a time, not automatically bundled into every code change. Sprints 7–12 through Day 3 already have their test suites; those stay as they are, this does not apply retroactively. `npm test`/`type-check`/`lint`/`build` still get run as usual to verify *existing* tests aren't broken — this is about not authoring *new* test files mid-build, not about skipping verification of what's already there.
+
 ---
 
 ## Commands
@@ -78,6 +80,8 @@ Test files live under `__tests__/`, mirroring `src/`'s structure; the glob is `*
 ## V2 conventions — apply from Sprint 7 onward
 
 **Screens import from `components/ui/`, never a raw class name.** The V2 design system is a CSS library (`beginso-ui.css`, in `Beginso-Report/Beginso-Design-System/Beginso V2/`) wrapped by a `components/ui/` package built in Sprint 7. A screen that writes `class="bg-btn bg-btn-primary"` directly bypasses the wrapper and makes a later token change unsafe.
+
+**When a CSS variable has to appear in a class string anyway, use Tailwind v4's canonical `(--token)` syntax, never `[var(--token)]`.** Write `text-(--text-muted)`, `bg-(--surface-hover)`, `border-(--border-default)` — not `text-[var(--text-muted)]` etc. Same idea for arbitrary values in general: prefer the nearest scale token over a raw arbitrary value when one exists (`max-w-70` not `max-w-[280px]`, `leading-3.5` not `leading-[14px]`). The IDE's Tailwind IntelliSense flags every violation as `suggestCanonicalClasses` — treat that as a lint to fix, not a suggestion to ignore.
 
 **Every screen is built in both themes from the first commit.** Dark mode is a token swap — the default palette is Slate, with `midnight` and `dimmed` available via `data-dark`. Retro-fitting dark at the end means re-testing everything twice.
 

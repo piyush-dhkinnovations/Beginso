@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Upload, Check, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LoadingSpinner } from '@/components/common/LoadingSpinner';
+import { Spinner } from '@/components/ui/Spinner';
 import { validateFile } from '@/lib/validateFile';
 import type { FileUploadRendererProps, UploadState } from '@/types/publicForm';
 import { FieldShell } from './FieldShell';
@@ -116,33 +116,33 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
             if (file) handleFile(file);
           }}
           className={cn(
-            'flex flex-col items-center justify-center gap-1 w-full min-h-[120px] rounded-md border-2 border-dashed border-neutral-200 text-center px-4 py-6 cursor-pointer transition-colors',
-            'hover:border-neutral-400',
+            'flex flex-col items-center justify-center gap-1 w-full min-h-30 rounded-md border-2 border-dashed border-(--border-default) text-center px-4 py-6 cursor-pointer transition-colors',
+            'hover:border-(--border-strong)',
             disabled && 'opacity-60 cursor-not-allowed pointer-events-none'
           )}
         >
-          <Upload size={20} className="text-neutral-400" />
-          <p className="text-body-sm text-neutral-800">Click or drag and drop a file</p>
-          <p className="text-caption text-neutral-400">
+          <Upload size={20} className="text-(--text-disabled)" />
+          <p className="bg-body-sm text-(--text-primary)">Click or drag and drop a file</p>
+          <p className="bg-caption text-(--text-disabled)">
             PDF, Word, Excel, images, video (MP4), ZIP, plain text — up to 100 MB
           </p>
         </div>
       )}
 
       {state.status === 'uploading' && (
-        <div className="flex flex-col gap-2 w-full min-h-[44px] rounded-md border-2 border-neutral-200 px-3 py-2">
+        <div className="flex flex-col gap-2 w-full min-h-11 rounded-md border-2 border-(--border-default) px-3 py-2">
           <div className="flex items-center gap-2">
             {previewUrl && (
               // eslint-disable-next-line @next/next/no-img-element -- ephemeral blob: URL for a file the browser hasn't uploaded anywhere yet, not a static asset
-              <img src={previewUrl} alt="" className="h-8 w-8 shrink-0 rounded object-cover border border-neutral-200" />
+              <img src={previewUrl} alt="" className="h-8 w-8 shrink-0 rounded object-cover border border-(--border-default)" />
             )}
-            <LoadingSpinner variant="inline" />
-            <span className="text-body-sm text-neutral-800 truncate">{state.fileName}</span>
-            <span className="text-caption text-neutral-400 ml-auto">{state.progress ?? 0}%</span>
+            <Spinner />
+            <span className="bg-body-sm text-(--text-primary) truncate">{state.fileName}</span>
+            <span className="bg-caption text-(--text-disabled) ml-auto">{state.progress ?? 0}%</span>
           </div>
-          <div className="h-1 w-full bg-neutral-200 rounded-full overflow-hidden">
+          <div className="h-1 w-full bg-(--border-default) rounded-full overflow-hidden">
             <div
-              className="h-full bg-brand-600 rounded-full transition-all duration-150"
+              className="h-full bg-(--action-primary) rounded-full transition-all duration-150"
               style={{ width: `${state.progress ?? 0}%` }}
             />
           </div>
@@ -150,25 +150,25 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
       )}
 
       {state.status === 'uploaded' && (
-        <div className="flex items-center gap-2 w-full min-h-[44px] rounded-md border-2 border-neutral-200 px-3 py-2">
+        <div className="flex items-center gap-2 w-full min-h-11 rounded-md border-2 border-(--border-default) px-3 py-2">
           {previewUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- ephemeral blob: URL for a file the browser hasn't uploaded anywhere yet, not a static asset
-            <img src={previewUrl} alt="" className="h-10 w-10 shrink-0 rounded object-cover border border-neutral-200" />
+            <img src={previewUrl} alt="" className="h-10 w-10 shrink-0 rounded object-cover border border-(--border-default)" />
           ) : (
-            // Neutral, not text-success/Check-as-done — the real transfer hasn't
+            // Neutral, not text-(--success-text)/Check-as-done — the real transfer hasn't
             // happened yet (it's part of the final multipart submit), so this
             // state means "ready to submit", not "uploaded".
-            <Check size={16} className="text-neutral-400 shrink-0" />
+            <Check size={16} className="text-(--text-disabled) shrink-0" />
           )}
-          <span className="text-body-sm text-neutral-800 truncate">{state.fileName}</span>
-          <span className="text-caption text-neutral-400">
+          <span className="bg-body-sm text-(--text-primary) truncate">{state.fileName}</span>
+          <span className="bg-caption text-(--text-disabled)">
             Ready{state.fileSize !== undefined ? ` · ${formatFileSize(state.fileSize)}` : ''}
           </span>
           <button
             type="button"
             onClick={handleRemove}
             disabled={disabled}
-            className="ml-auto min-h-11 px-2 text-caption text-neutral-500 hover:text-neutral-800 underline"
+            className="ml-auto min-h-11 px-2 bg-caption text-(--text-muted) hover:text-(--text-primary) underline"
           >
             Remove
           </button>
@@ -176,15 +176,15 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
       )}
 
       {state.status === 'failed' && (
-        <div className="flex items-center gap-2 w-full min-h-[44px] rounded-md border-2 border-error px-3 py-2">
-          <AlertCircle size={16} className="text-error shrink-0" />
-          <span className="text-body-sm text-neutral-800 truncate">{state.fileName}</span>
-          <span className="text-caption text-error">{state.error}</span>
+        <div className="flex items-center gap-2 w-full min-h-11 rounded-md border-2 border-(--error) px-3 py-2">
+          <AlertCircle size={16} className="text-(--error-text) shrink-0" />
+          <span className="bg-body-sm text-(--text-primary) truncate">{state.fileName}</span>
+          <span className="bg-caption text-(--error-text)">{state.error}</span>
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={disabled}
-            className="ml-auto min-h-11 px-2 text-caption text-brand-600 hover:text-brand-700 underline"
+            className="ml-auto min-h-11 px-2 bg-caption text-(--text-link) hover:text-(--accent-soft-text) underline"
           >
             Retry
           </button>

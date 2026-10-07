@@ -5,14 +5,22 @@ import { useForm, type FieldError, type FieldErrors, type Resolver } from 'react
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import type { FormField } from '@/types/form';
-import type { PublicFormSchema, FieldValue, UploadState, FieldRendererProps } from '@/types/publicForm';
+import type { PublicFormSchema, FieldValue, UploadState, FieldRendererProps, Answer } from '@/types/publicForm';
 import { evaluateLogicRules, getVisiblePageFields, buildAnswers } from '@/lib/logicEngine';
 import { buildPublicFormSchema } from '@/lib/schemas/publicFormSchema';
 import { publicFormService } from '@/services/publicForm';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/formDraft';
 import { Button } from '@/components/ui/Button';
-import { FormBanner } from './FormBanner';
+import { normaliseLayout } from '@/lib/layoutPresets';
+import { brandButtonStyle, brandShowsProgress } from '@/lib/formTheme';
+import { LAYOUT_COMPONENTS, fieldsClassFor } from './layouts';
+import { parseEmbedOptions, carryEmbedSearch } from '@/lib/embed/embedParams';
+import { resolvePrefill } from '@/lib/embed/prefill';
 import { FormProgress } from './FormProgress';
+import { ReviewStep } from './ReviewStep';
+import { EmailStep } from './EmailStep';
+import { LoginGate } from './LoginGate';
+import { useAuth } from '@/hooks/useAuth';
 import { ShortTextRenderer } from './fields/ShortTextRenderer';
 import { LongTextRenderer } from './fields/LongTextRenderer';
 import { EmailRenderer } from './fields/EmailRenderer';
@@ -29,6 +37,14 @@ interface PublicFormShellProps {
   slug: string;
   /** User-only "see it as a respondent would" mode — disables the real submit network call. */
   previewMode?: boolean;
+  /**
+   * Preview only (Sprint 13, CF2.6). When given, a secondary "Send a test submission" button appears: it runs the
+   * form's own validation and hands the answers to this callback, which posts them as an `isTest` response. The
+   * normal Submit still submits nothing. Rejects with a message for a role that may not send one.
+   */
+  onTestSubmit?: (answers: Answer[]) => Promise<void>;
+  /** The request's query string (embed options: cover, progress, title, theme, prefill[...]). Read on the server, so SSR and hydration agree. */
+  search?: string;
 }
 
 // long_text/choice/file fields need room to wrap or list options — always full-width,
@@ -49,12 +65,27 @@ const RENDERER_MAP: Record<Exclude<FormField['type'], 'file_upload'>, ComponentT
   checkbox: CheckboxRenderer,
 };
 
-export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellProps) {
+export function PublicFormShell({ schema, slug, previewMode: previewProp, onTestSubmit, search = '' }: PublicFormShellProps) {
   const router = useRouter();
+  const embedOpts = useMemo(() => parseEmbedOptions(search), [search]);
+  const previewMode = previewProp || embedOpts.preview;
   const sortedPages = useMemo(() => [...schema.pages].sort((a, b) => a.order - b.order), [schema.pages]);
-  const layout = schema.settings.layout ?? 'single_column';
+  const layout = normaliseLayout(schema.settings.layout);
+  const isGuided = layout === 'guided';
 
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  // Guided only: which question of the current page is showing. Page-level draft persistence is
+  // unchanged; a restored draft resumes at the first question of its page.
+  const [questionIndex, setQuestionIndex] = useState(0);
+  // Review-before-submit (D1.2). The review screen replaces the page body; values stay in RHF.
+  const [showReview, setShowReview] = useState(false);
+  // Access modes (Sprint 13, D1.1). The mode is read from the schema; the SERVER enforces it independently.
+  //   tracked → a built-in "Your email" input outside the answers.   login → a signed-in account, via ticket.
+  const accessMode = schema.settings.accessMode ?? 'open';
+  const { user: authUser, isLoading: authLoading } = useAuth();
+  const [testState, setTestState] = useState<{ status: 'idle' | 'sending' | 'sent' | 'error'; message?: string }>({ status: 'idle' });
+  const [respondentEmail, setRespondentEmail] = useState('');
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewSubmitted, setPreviewSubmitted] = useState(false);
@@ -94,6 +125,22 @@ export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellPr
     hiddenFieldIdsRef.current = hiddenFieldIds;
   });
 
+  // Count this visit once per tab session so the completion rate on Form Overview has a denominator
+  // (the backend also counts one view per visitor per hour, so a reload cannot inflate it).
+  // Sprint 13 (F15, requirements.md 3.3): a preview is never a view — the owner opening Preview must
+  // not move the completion-rate denominator.
+  useEffect(() => {
+    if (previewMode) return;
+    try {
+      const key = `beginso:viewed:${slug}`;
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+    } catch {
+      // storage blocked (private mode): count it anyway, the backend de-duplicates
+    }
+    publicFormService.recordView(slug);
+  }, [slug, previewMode]);
+
   // Fields hidden by a logic rule are unmounted from RHF state so they're never submitted
   // and never contribute a required-validation error (Requirements 5.3, 5.5).
   useEffect(() => {
@@ -124,6 +171,14 @@ export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellPr
     // eslint-disable-next-line react-hooks/exhaustive-deps -- restore-on-mount only, deliberately not re-run on every field change
   }, [slug]);
 
+  // Embed/link pre-fill (?prefill[key]=value): only fields that exist, never files, values validated per type, never
+  // submitted automatically. Runs after the draft restore so an explicit link wins over a stale draft.
+  useEffect(() => {
+    const values = resolvePrefill(schema.fields, embedOpts.prefill);
+    for (const [fieldId, value] of Object.entries(values)) methods.setValue(fieldId, value, { shouldDirty: true });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once per mount/link, not on every field change
+  }, [slug, search]);
+
   // Save the draft after a short pause in typing — every keystroke would be wasteful.
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -145,8 +200,24 @@ export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellPr
   const isLastPage = currentPageIndex === totalPages - 1;
   const primaryColor = schema.branding.primaryColor ?? '#1D4ED8';
 
+  // Guided shows one question at a time; every other layout shows the whole page.
+  const shownFields = isGuided ? currentPageFields.slice(questionIndex, questionIndex + 1) : currentPageFields;
+  const isLastStep = isLastPage && (!isGuided || questionIndex >= currentPageFields.length - 1);
+  // Decision 18: on for 2+ page forms, off for single-page, and ALWAYS on for Guided (it hides earlier
+  // answers by design, so it owes the respondent a summary).
+  const reviewEnabled = totalPages >= 2 || isGuided;
+
+  // Guided progress: question N of M across every page, counting only fields currently visible.
+  const guidedQuestion = isGuided
+    ? (() => {
+        const perPage = sortedPages.map((p) => getVisiblePageFields(schema.fields, p.id, hiddenFieldIds).length);
+        const before = perPage.slice(0, currentPageIndex).reduce((sum, n) => sum + n, 0);
+        return { current: before + questionIndex + 1, total: perPage.reduce((sum, n) => sum + n, 0) };
+      })()
+    : undefined;
+
   async function handleNext() {
-    const fieldIds = currentPageFields.map((f) => f.fieldId);
+    const fieldIds = shownFields.map((f) => f.fieldId);
     const valid = await methods.trigger(fieldIds);
     if (!valid) {
       const firstErrorId = fieldIds.find((id) => methods.formState.errors[id]);
@@ -155,13 +226,38 @@ export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellPr
       }
       return;
     }
+    if (isGuided && questionIndex < currentPageFields.length - 1) {
+      setQuestionIndex((i) => i + 1);
+      return;
+    }
     setCurrentPageIndex((i) => i + 1);
+    setQuestionIndex(0);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function handleBack() {
+    if (isGuided && questionIndex > 0) {
+      setQuestionIndex((i) => i - 1);
+      return;
+    }
+    if (isGuided) {
+      // Land on the LAST question of the previous page.
+      const prev = sortedPages[currentPageIndex - 1];
+      const prevCount = prev ? getVisiblePageFields(schema.fields, prev.id, hiddenFieldIds).length : 0;
+      setQuestionIndex(Math.max(0, prevCount - 1));
+    }
     setCurrentPageIndex((i) => i - 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // Last step of a review-enabled form: validate EVERYTHING (the resolver covers every page), then show
+  // the review screen. Invalid → the existing onInvalid jumps back to the earliest page with an error.
+  async function handleReview() {
+    setSubmitError(null);
+    await methods.handleSubmit(() => {
+      setShowReview(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, onInvalid)();
   }
 
   async function onSubmit(values: Record<string, FieldValue>) {
@@ -172,26 +268,70 @@ export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellPr
       return;
     }
 
+    // Mode 2: the address is required and checked BEFORE anything is sent.
+    if (accessMode === 'tracked') {
+      const candidate = respondentEmail.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate)) {
+        setEmailError('Please enter a valid email address.');
+        return;
+      }
+      setEmailError(null);
+    }
+
     setIsSubmitting(true);
 
     try {
       const answers = buildAnswers(schema.fields, hiddenFieldIds, values);
       const honeypot = typeof values._hp === 'string' ? values._hp : '';
-      const result = await publicFormService.submitForm(slug, { answers }, files, honeypot);
+
+      // Mode 3: a one-shot ticket proves the signed-in account without the browser ever holding a session token.
+      let ticket: string | undefined;
+      if (accessMode === 'login') {
+        try {
+          ticket = (await publicFormService.getSubmitTicket(slug)).ticket;
+        } catch {
+          setSubmitError('We could not confirm your sign-in. Please sign in again and retry.');
+          return;
+        }
+      }
+
+      const result = await publicFormService.submitForm(
+        slug,
+        { answers, ...(accessMode === 'tracked' ? { respondentEmail: respondentEmail.trim() } : {}) },
+        files,
+        honeypot,
+        { ticket }
+      );
 
       if (result.ok) {
         submittedRef.current = true;
         clearDraft(slug);
-        const params = new URLSearchParams({ title: schema.title });
+        const params = new URLSearchParams(carryEmbedSearch(search));
+        params.set('title', schema.title);
         if (schema.settings.successMessage) params.set('message', schema.settings.successMessage);
         router.push(`/f/${slug}/success?${params.toString()}`);
         return;
       }
 
-      if (result.status === 429) {
+      if (result.code === 'EMAIL_REQUIRED') {
+        setEmailError(result.message ?? 'Please enter a valid email address.');
+        setSubmitError(null);
+      } else if (result.code === 'LOGIN_REQUIRED') {
+        setSubmitError('Your sign-in has expired. Please sign in again to submit.');
+      } else if (result.status === 429) {
         setSubmitError('Too many submissions from your connection. Please wait a minute and try again.');
-      } else if (result.status === 422 && result.message) {
+      } else if ((result.status === 422 || result.status === 400) && result.message) {
+        // Bug fix: a 400 used to always show one hardcoded "file too large / too many files"
+        // guess, discarding whatever specific message the backend actually sent — including for
+        // Multer errors that have nothing to do with file size at all (e.g. a field value too
+        // long). The backend's message now states the real limit for whichever check actually
+        // failed; show that instead of guessing.
         setSubmitError(result.message);
+      } else if (result.status === 413) {
+        setSubmitError('Your answers are too large. Please shorten them and try again.');
+      } else if (result.status === 400) {
+        // Fallback only for the rare case the backend sent a 400 with no message at all.
+        setSubmitError('An attachment is too large or there are too many files. Please check your files and try again.');
       } else {
         setSubmitError('Something went wrong. Please try again.');
       }
@@ -215,16 +355,31 @@ export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellPr
     if (erroredPageIndices.length === 0) return;
 
     const earliestPageIndex = Math.min(...erroredPageIndices);
-    if (earliestPageIndex < currentPageIndex) {
+    if (earliestPageIndex < currentPageIndex || showReview) {
+      setShowReview(false);
       setCurrentPageIndex(earliestPageIndex);
+      setQuestionIndex(0);
       setSubmitError('Please complete all required fields before submitting.');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
   function handleFormSubmit(e: React.FormEvent<HTMLFormElement>) {
-    if (!isLastPage) {
+    // Enter inside the review screen (e.g. in an inline editor) must never submit; the Submit button
+    // there is the only way to send.
+    if (showReview) {
       e.preventDefault();
+      return;
+    }
+    if (isLastStep && reviewEnabled) {
+      e.preventDefault();
+      void handleReview();
+      return;
+    }
+    if (!isLastStep) {
+      e.preventDefault();
+      // Guided: Enter on a question advances, like Next.
+      if (isGuided) void handleNext();
       return;
     }
     methods.handleSubmit(onSubmit, onInvalid)(e);
@@ -233,24 +388,153 @@ export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellPr
   const anyUploading = Object.values(uploadStates).some((s) => s.status === 'uploading');
   const submitDisabled = isSubmitting || anyUploading;
 
-  const fieldsContainerClass =
-    layout === 'two_column'
-      ? 'mt-6 grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-5'
-      : layout === 'compact'
-      ? 'mt-6 flex flex-col gap-3'
-      : 'mt-6 flex flex-col gap-5';
+  // One field, rendered exactly as the respondent filled it — used by the page body AND by the
+  // review screen's inline editor, so there is one renderer and one validation path.
+  function renderField(field: FormField) {
+      const fieldError = methods.formState.errors[field.fieldId] as FieldError | undefined;
+      const spanClass = layout === 'compact' && FULL_WIDTH_TYPES.has(field.type) ? 'md:col-span-2' : '';
 
-  const cardMaxWidth = layout === 'two_column' ? 'max-w-[680px]' : layout === 'compact' ? 'max-w-[560px]' : 'max-w-[520px]';
+      if (field.type === 'file_upload') {
+        return (
+          <div key={field.fieldId} className={spanClass}>
+            <FileUploadRenderer
+              field={field}
+              control={methods.control}
+              register={methods.register}
+              trigger={methods.trigger}
+              setValue={methods.setValue}
+              error={fieldError}
+              disabled={isSubmitting}
+              onFileChange={(file) =>
+                setFiles((prev) => {
+                  const next = { ...prev };
+                  if (file) next[field.fieldId] = file;
+                  else delete next[field.fieldId];
+                  return next;
+                })
+              }
+              onUploadStateChange={(state) =>
+                setUploadStates((prev) => ({ ...prev, [field.fieldId]: state }))
+              }
+            />
+          </div>
+        );
+      }
+
+      const Renderer = RENDERER_MAP[field.type];
+      return (
+        <div key={field.fieldId} className={spanClass}>
+          <Renderer
+            field={field}
+            control={methods.control}
+            register={methods.register}
+            trigger={methods.trigger}
+            setValue={methods.setValue}
+            error={fieldError}
+            disabled={isSubmitting}
+          />
+        </div>
+      );
+  }
+
+  const fieldsContainerClass = fieldsClassFor(layout, schema.branding.spacing);
+  const buttonTheme = brandButtonStyle(schema.branding);
+  const LayoutFrame = LAYOUT_COMPONENTS[layout];
+  const FieldsWrap = layout === 'card_stack' ? 'fieldset' : 'div';
+
+  const frameProps = {
+    layout,
+    branding: schema.branding,
+    title: embedOpts.hideTitle ? '' : schema.title,
+    previewMode,
+    hideCover: !embedOpts.cover,
+    hideProgress: !embedOpts.progress,
+    stepNames: sortedPages.map((p) => p.title ?? ''),
+    currentPage: currentPageIndex,
+    question: guidedQuestion,
+  };
+
+  // Mode 3: a visitor who is not signed in sees a sign-in gate INSTEAD of the form (the owner's preview is
+  // never gated). The server refuses an unauthenticated submission regardless.
+  if (accessMode === 'login' && !previewMode) {
+    if (authLoading) {
+      return (
+        <LayoutFrame {...frameProps}>
+          <p role="status" className="p-6 bg-body text-(--text-muted)">Checking your sign-in…</p>
+        </LayoutFrame>
+      );
+    }
+    if (!authUser) {
+      return (
+        <LayoutFrame {...frameProps}>
+          <LoginGate slug={slug} formTitle={schema.title} />
+        </LayoutFrame>
+      );
+    }
+  }
+
+  // Preview only: send the current answers through the real pipeline as an isTest response. Validation is the
+  // form's own (handleSubmit), so a test can never get past a rule a real submission could not.
+  async function sendTest(values: Record<string, FieldValue>) {
+    if (!onTestSubmit) return;
+    setTestState({ status: 'sending' });
+    try {
+      await onTestSubmit(buildAnswers(schema.fields, hiddenFieldIds, values));
+      setTestState({ status: 'sent' });
+    } catch (err) {
+      setTestState({ status: 'error', message: err instanceof Error ? err.message : 'Could not send the test submission.' });
+    }
+  }
+  const testControls =
+    previewMode && onTestSubmit ? (
+      <div className="flex flex-col gap-2 rounded-md border border-dashed border-(--border-strong) p-3">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => void methods.handleSubmit(sendTest, onInvalid)()}
+          isLoading={testState.status === 'sending'}
+        >
+          Send a test submission
+        </Button>
+        <p className="bg-caption text-(--text-muted)" role="status">
+          {testState.status === 'sent'
+            ? "Test submission recorded — it won't count anywhere."
+            : testState.status === 'error'
+              ? testState.message
+              : "Runs your form's real rules and saves a test response. It is never counted."}
+        </p>
+      </div>
+    ) : null;
+
+  // Shown above the submit buttons: the Mode 2 email step, or who a Mode 3 respondent is submitting as.
+  const accessExtra = (
+    <>
+      {accessMode === 'tracked' ? (
+      <EmailStep value={respondentEmail} onChange={setRespondentEmail} error={emailError} disabled={isSubmitting} />
+    ) : accessMode === 'login' && authUser ? (
+      <p className="bg-body-sm text-(--text-muted)">
+        Responding as <strong className="text-(--text-primary)">{authUser.email}</strong>
+      </p>
+    ) : null}
+      {testControls}
+    </>
+  );
+  const hasAccessExtra = accessMode === 'tracked' || (accessMode === 'login' && !!authUser) || !!testControls;
 
   return (
-    <div className={`bg-neutral-50 flex justify-center p-4 ${previewMode ? '' : 'min-h-screen'}`}>
-      <div className={`bg-white rounded-xl border border-neutral-200 shadow-card w-full overflow-hidden ${cardMaxWidth}`}>
-        <FormBanner branding={schema.branding} />
+    <LayoutFrame {...frameProps}>
         <form onSubmit={handleFormSubmit} noValidate className={schema.branding.logoUrl ? 'p-6 pt-8' : 'p-6'}>
-          <FormProgress currentPage={currentPageIndex + 1} totalPages={totalPages} />
+          {!showReview && (
+            <>
+            {layout !== 'steps' && !isGuided && brandShowsProgress(schema.branding) && embedOpts.progress && (
+              <FormProgress currentPage={currentPageIndex + 1} totalPages={totalPages} />
+            )}
 
-          <h1 className="text-display text-neutral-900">{currentPage?.title ?? schema.title}</h1>
-          {currentPage?.description && <p className="text-body text-neutral-500 mt-1">{currentPage.description}</p>}
+            <h1 className={embedOpts.hideTitle ? 'sr-only' : 'bg-h3 text-(--text-primary)'}>{currentPage?.title ?? schema.title}</h1>
+            {currentPage?.description && <p className="bg-body text-(--text-muted) mt-1">{currentPage.description}</p>}
+
+            </>
+          )}
 
           {/* Honeypot: real respondents never see or reach this; a bot's scripted fill-everything
               behavior does, and that value is passed through to the backend as-is (Requirement 6.5). */}
@@ -263,94 +547,78 @@ export function PublicFormShell({ schema, slug, previewMode }: PublicFormShellPr
             {...methods.register('_hp')}
           />
 
-          <div className={fieldsContainerClass}>
-            {currentPageFields.map((field) => {
-              const fieldError = methods.formState.errors[field.fieldId] as FieldError | undefined;
-              const spanClass = layout === 'two_column' && FULL_WIDTH_TYPES.has(field.type) ? 'sm:col-span-2' : '';
-
-              if (field.type === 'file_upload') {
-                return (
-                  <div key={field.fieldId} className={spanClass}>
-                    <FileUploadRenderer
-                      field={field}
-                      control={methods.control}
-                      register={methods.register}
-                      trigger={methods.trigger}
-                      setValue={methods.setValue}
-                      error={fieldError}
-                      disabled={isSubmitting}
-                      onFileChange={(file) =>
-                        setFiles((prev) => {
-                          const next = { ...prev };
-                          if (file) next[field.fieldId] = file;
-                          else delete next[field.fieldId];
-                          return next;
-                        })
-                      }
-                      onUploadStateChange={(state) =>
-                        setUploadStates((prev) => ({ ...prev, [field.fieldId]: state }))
-                      }
-                    />
-                  </div>
-                );
-              }
-
-              const Renderer = RENDERER_MAP[field.type];
-              return (
-                <div key={field.fieldId} className={spanClass}>
-                  <Renderer
-                    field={field}
-                    control={methods.control}
-                    register={methods.register}
-                    trigger={methods.trigger}
-                    setValue={methods.setValue}
-                    error={fieldError}
-                    disabled={isSubmitting}
-                    inline={layout === 'compact' && !FULL_WIDTH_TYPES.has(field.type)}
-                  />
-                </div>
-              );
-            })}
-          </div>
-
-          {submitError && (
-            <p role="alert" className="text-caption text-error font-semibold mt-4">
-              {submitError}
-            </p>
-          )}
-
-          {previewMode && previewSubmitted ? (
-            <p className="mt-6 text-body-sm text-center text-neutral-500 font-medium">
-              This is a preview — nothing was submitted.
-            </p>
+          {showReview ? (
+            <ReviewStep
+              formTitle={schema.title}
+              pages={sortedPages}
+              fields={schema.fields}
+              hiddenFieldIds={hiddenFieldIds}
+              values={watchedValues}
+              fileNames={Object.fromEntries(Object.entries(files).map(([id, f]) => [id, f.name]))}
+              renderField={renderField}
+              validateField={(id) => methods.trigger(id)}
+              restoreField={(id, value) => methods.setValue(id, value)}
+              onBack={() => setShowReview(false)}
+              onSubmit={() => void methods.handleSubmit(onSubmit, onInvalid)()}
+              isSubmitting={isSubmitting}
+              submitDisabled={submitDisabled}
+              submitError={submitError}
+              primaryColor={primaryColor}
+              buttonStyle={buttonTheme}
+              previewSubmitted={previewMode && previewSubmitted}
+              extra={accessExtra}
+            />
           ) : (
-            <div className="mt-6 flex gap-3">
-              {currentPageIndex > 0 && (
-                <Button key="back" type="button" variant="secondary" className="flex-1" onClick={handleBack} disabled={isSubmitting}>
-                  Back
-                </Button>
+            <>
+              {/* Card Stack: each page's group is a <fieldset> with a <legend> so screen readers announce it
+                  (wireframe a11y note). The legend is the page title already shown above, so it is sr-only. */}
+              <FieldsWrap className={layout === 'card_stack' ? `${fieldsContainerClass} min-w-0 border-0 p-0 mx-0 mb-0` : fieldsContainerClass}>
+                {layout === 'card_stack' && <legend className="sr-only">{currentPage?.title ?? schema.title}</legend>}
+                {shownFields.map((field) => renderField(field))}
+              </FieldsWrap>
+
+              {isLastStep && !reviewEnabled && hasAccessExtra && <div className="mt-6 flex flex-col gap-4">{accessExtra}</div>}
+
+              {submitError && (
+                <p role="alert" className="bg-caption text-(--error-text) font-semibold mt-4">
+                  {submitError}
+                </p>
               )}
-              {isLastPage ? (
-                <Button
-                  key="submit"
-                  type="submit"
-                  className="flex-1"
-                  style={{ backgroundColor: primaryColor }}
-                  isLoading={isSubmitting}
-                  disabled={submitDisabled}
-                  aria-label={isSubmitting ? 'Submitting your response...' : undefined}
-                >
-                  Submit
-                </Button>
+
+              {previewMode && previewSubmitted ? (
+                <p className="mt-6 bg-body-sm text-center text-(--text-muted) font-medium">
+                  This is a preview — nothing was submitted.
+                </p>
               ) : (
-                <Button key="next" type="button" className="flex-1" style={{ backgroundColor: primaryColor }} onClick={handleNext}>
-                  Next
-                </Button>
+                <div className="mt-6 flex gap-3">
+                  {(currentPageIndex > 0 || (isGuided && questionIndex > 0)) && (
+                    <Button key="back" type="button" variant="secondary" className="flex-1" onClick={handleBack} disabled={isSubmitting}>
+                      Back
+                    </Button>
+                  )}
+                  {isLastStep ? (
+                    <Button
+                      key="submit"
+                      type={reviewEnabled ? 'button' : 'submit'}
+                      onClick={reviewEnabled ? () => void handleReview() : undefined}
+                      className="flex-1"
+                      style={buttonTheme}
+                      isLoading={isSubmitting}
+                      disabled={submitDisabled}
+                      aria-label={isSubmitting ? 'Submitting your response...' : undefined}
+                    >
+                      {reviewEnabled ? 'Review answers' : 'Submit'}
+                    </Button>
+                  ) : (
+                    <Button key="next" type="button" className="flex-1" style={buttonTheme} onClick={handleNext}>
+                      Next
+                    </Button>
+                  )}
+                </div>
               )}
-            </div>
+            </>
           )}
         </form>
-      </div>
-    </div>
+    </LayoutFrame>
   );
 }

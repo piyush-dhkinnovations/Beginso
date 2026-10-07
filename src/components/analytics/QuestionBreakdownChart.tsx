@@ -1,11 +1,9 @@
 'use client';
 
 import { Card } from '@/components/ui/Card';
-import { EChartContainer } from '@/components/charts/EChartContainer';
-import { getBaseChartOption, CHART_COLORS, type EChartsOption } from '@/lib/chartTheme';
+import { BarsChart } from '@/components/ui/charts';
+import { toSegments } from '@/lib/chartSegments';
 import type { QuestionBreakdown, QuestionOption } from '@/types/analytics';
-
-const CHART_HEIGHT = 220;
 
 export interface QuestionOptionWithPercentage extends QuestionOption {
   percentage: number;
@@ -35,36 +33,6 @@ export function computeOptionPercentages(options: QuestionOption[]): QuestionOpt
   return options.map((o, i) => ({ ...o, percentage: rounded[i] }));
 }
 
-function buildBarOption(sorted: QuestionOptionWithPercentage[]): EChartsOption {
-  const base = getBaseChartOption();
-  return {
-    ...base,
-    grid: { left: 8, right: 72, top: 8, bottom: 8, containLabel: true },
-    xAxis: { type: 'value', minInterval: 1, show: false },
-    yAxis: {
-      type: 'category',
-      inverse: true,
-      data: sorted.map((o) => o.option),
-      axisLabel: { width: 100, overflow: 'truncate' },
-    },
-    series: [
-      {
-        type: 'bar',
-        data: sorted.map((o) => o.count),
-        color: CHART_COLORS.brand,
-        label: {
-          show: true,
-          position: 'right',
-          formatter: (params) => {
-            const item = sorted[params.dataIndex];
-            return item ? `${item.count} (${item.percentage}%)` : '';
-          },
-        },
-      },
-    ],
-  };
-}
-
 interface QuestionBreakdownChartProps {
   question: QuestionBreakdown;
 }
@@ -75,12 +43,12 @@ export function QuestionBreakdownChart({ question }: QuestionBreakdownChartProps
 
   return (
     <Card>
-      <h4 className="text-body font-semibold text-neutral-900 mb-3">{question.label}</h4>
+      <h4 className="bg-body font-semibold text-(--text-primary) mb-3">{question.label}</h4>
       {total === 0 ? (
-        <p className="text-body-sm text-neutral-500">No answers yet in this range.</p>
+        <p className="bg-body-sm text-(--text-muted)">No answers yet in this range.</p>
       ) : (
         <>
-          <EChartContainer option={buildBarOption(sorted)} height={CHART_HEIGHT} ariaLabel={`${question.label} answer breakdown`} />
+          <BarsChart horizontal data={toSegments(sorted.map((o) => ({ label: o.option, value: o.count })))} ariaLabel={`${question.label} — answer breakdown`} />
           <table className="sr-only">
             <caption>{question.label} — answer breakdown</caption>
             <thead>

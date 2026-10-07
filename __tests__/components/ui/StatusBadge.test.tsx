@@ -21,9 +21,9 @@ describe('StatusBadge component', () => {
     expect(screen.getByText(`${'a'.repeat(30)}...`)).toBeInTheDocument();
   });
 
-  it('applies the matching V1 status-color token classes', () => {
+  it('applies the matching theme-aware badge variant class', () => {
     render(<StatusBadge variant="closed">Closed</StatusBadge>);
     const el = screen.getByText('Closed');
-    expect(el.className).toMatch(/bg-status-closed-bg/);
+    expect(el.className).toMatch(/bg-badge-error/);
   });
 });

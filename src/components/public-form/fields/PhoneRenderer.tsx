@@ -6,7 +6,7 @@ export function PhoneRenderer({ field, register, error, disabled, inline }: Fiel
   return (
     <FieldShell fieldId={field.fieldId} label={field.label} required={field.required} helpText={field.helpText} error={error} inline={inline}>
       <div className="relative w-full">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-[13px] pointer-events-none">+</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-(--text-disabled) bg-body-sm pointer-events-none">+</span>
         <input
           type="tel"
           id={field.fieldId}

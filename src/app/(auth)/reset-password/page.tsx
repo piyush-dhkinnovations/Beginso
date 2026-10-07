@@ -1,5 +1,7 @@
 'use client';
 
+import { StateArt } from '@/components/illustrations/Illustration';
+import { Illustration, hasIllustration } from '@/components/illustrations/Illustration';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -78,7 +80,7 @@ export default function ResetPasswordPage() {
       type="button"
       onClick={toggle}
       aria-label={`${visible ? 'Hide' : 'Show'} ${label}`}
-      className="flex min-h-11 min-w-11 items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] focus:outline-none"
+      className="flex min-h-11 min-w-11 items-center justify-center text-(--text-muted) hover:text-(--text-primary) focus:outline-none"
     >
       {visible ? <EyeOff size={16} /> : <Eye size={16} />}
     </button>
@@ -87,8 +89,8 @@ export default function ResetPasswordPage() {
   if (resetState === 'checking') {
     return (
       <AuthCard className="flex w-full flex-col items-center gap-4 p-8 text-center" aria-busy="true">
-        <span className="h-10 w-10 animate-spin rounded-full border-2 border-brand-100 border-t-brand-600" />
-        <p className="text-body text-[var(--text-muted)]">Checking your password-reset link…</p>
+        <span className="h-10 w-10 animate-spin rounded-full border-2 border-(--accent-soft-hover) border-t-(--action-primary)" />
+        <p className="bg-body text-(--text-muted)">Checking your password-reset link…</p>
       </AuthCard>
     );
   }
@@ -96,14 +98,20 @@ export default function ResetPasswordPage() {
   if (resetState === 'invalid') {
     return (
       <AuthCard className="flex w-full flex-col items-center gap-5 p-8 text-center">
-        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-error">
-          <AlertCircle size={22} aria-hidden="true" />
-        </span>
+        <StateArt
+          name="link-expired"
+          size="sm"
+          fallback={
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-(--error-surface) text-(--error-text)">
+              <AlertCircle size={22} aria-hidden="true" />
+            </span>
+          }
+        />
         <div className="space-y-2">
-          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Reset link unavailable</h1>
-          <p className="text-body text-[var(--text-muted)]">This link is invalid, expired, or has already been used.</p>
+          <h1 className="bg-h5 font-bold text-(--text-primary)">Reset link unavailable</h1>
+          <p className="bg-body text-(--text-muted)">This link is invalid, expired, or has already been used.</p>
         </div>
-        <Link href="/forgot-password" className="inline-flex min-h-11 items-start font-semibold text-brand-700 hover:text-brand-900">
+        <Link href="/forgot-password" className="inline-flex min-h-11 items-start font-semibold text-(--accent-soft-text) hover:text-(--accent-soft-text)">
           Request a new reset link
         </Link>
       </AuthCard>
@@ -113,21 +121,25 @@ export default function ResetPasswordPage() {
   if (resetState === 'success') {
     return (
       <AuthCard className="flex w-full flex-col items-center gap-5 p-8 text-center">
-        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-green-50 text-success">
-          <CheckCircle2 size={22} aria-hidden="true" />
-        </span>
+        {hasIllustration('success') ? (
+          <Illustration name="success" size="sm" />
+        ) : (
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-(--success-surface) text-(--success-text)">
+            <CheckCircle2 size={22} aria-hidden="true" />
+          </span>
+        )}
         <div className="space-y-2">
-          <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Password updated</h1>
-          <p className="text-body text-[var(--text-muted)]">Your password was changed successfully. You can now log in.</p>
+          <h1 className="bg-h5 font-bold text-(--text-primary)">Password updated</h1>
+          <p className="bg-body text-(--text-muted)">Your password was changed successfully. You can now log in.</p>
         </div>
         {notificationWarning && (
-          <p role="alert" className="rounded-md border border-amber-200 bg-amber-50 p-3 text-body-sm text-amber-900">
+          <p role="alert" className="rounded-md border border-(--warning-border) bg-(--warning-surface) p-3 bg-body-sm text-(--warning-text)">
             {notificationWarning}
           </p>
         )}
         <Link
           href="/login"
-          className="inline-flex min-h-11 w-full items-center justify-center text-sm rounded-md bg-slate-700 px-4 text-[13px] font-semibold text-white transition-colors hover:bg-slate-900"
+          className="bg-btn bg-btn-primary w-full"
         >
           Back to login
         </Link>
@@ -137,34 +149,34 @@ export default function ResetPasswordPage() {
 
   return (
     <AuthCard className="flex w-full flex-col items-center gap-6 p-8 text-center">
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-50 text-brand-600">
+      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-(--accent-soft) text-(--text-link)">
         <KeyRound size={22} aria-hidden="true" />
       </span>
       <div className="space-y-2">
-        <h1 className="text-heading-2 font-bold text-[var(--text-primary)]">Create a new password</h1>
-        <p className="text-body text-[var(--text-muted)]">
+        <h1 className="bg-h5 font-bold text-(--text-primary)">Create a new password</h1>
+        <p className="bg-body text-(--text-muted)">
           Enter a new password for <strong>{email}</strong>.
         </p>
       </div>
 
       <form onSubmit={handleSubmit(submit)} className="flex w-full flex-col gap-4 text-left">
         <Input
-          id="new-password"
+          id="newPassword"
           label="New password"
           type={showPassword ? 'text' : 'password'}
           placeholder="At least 8 characters"
-          autoComplete="new-password"
+          autoComplete="newPassword"
           error={errors.password?.message}
           rightSlot={visibilityButton(showPassword, () => setShowPassword((value) => !value), 'new password')}
           disabled={isSubmitting}
           {...register('password', { onChange: () => setServerError(null) })}
         />
         <Input
-          id="confirm-new-password"
+          id="confirm-newPassword"
           label="Confirm new password"
           type={showConfirmPassword ? 'text' : 'password'}
           placeholder="Re-enter your new password"
-          autoComplete="new-password"
+          autoComplete="newPassword"
           error={errors.confirmPassword?.message}
           rightSlot={visibilityButton(
             showConfirmPassword,
@@ -176,7 +188,7 @@ export default function ResetPasswordPage() {
         />
 
         {serverError && (
-          <p role="alert" className="rounded-md border border-error/20 bg-red-50 p-3 text-body-sm font-semibold text-error">
+          <p role="alert" className="rounded-md border border-(--error)/20 bg-(--error-surface) p-3 bg-body-sm font-semibold text-(--error-text)">
             {serverError}
           </p>
         )}

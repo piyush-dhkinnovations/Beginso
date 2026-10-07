@@ -22,28 +22,28 @@ export default function HeroSection() {
         <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
           <div
             ref={trustPillRef}
-            className={`reveal ${trustPillVisible ? "is-visible" : ""} inline-flex items-center gap-3 rounded-full border border-[var(--border-default)] bg-[var(--surface-card)] pl-2 pr-4 py-1.5 mb-6`}
+            className={`reveal ${trustPillVisible ? "is-visible" : ""} inline-flex items-center gap-3 rounded-full border border-(--border-default) bg-(--surface-card) pl-2 pr-4 py-1.5 mb-6`}
             style={{ "--reveal-delay": "0ms" } as React.CSSProperties}
           >
             <AvatarStack people={TRUST_PILL_PEOPLE} max={3} size="xs" />
-            <span className="bg-caption text-[var(--text-secondary)] font-medium">
+            <span className="bg-caption text-(--text-secondary) font-medium">
               Built for teams who outgrew spreadsheets
             </span>
           </div>
 
           <h1
             ref={headlineRef}
-            className={`reveal ${headlineVisible ? "is-visible" : ""} text-[32px] md:text-[40px] lg:text-[56px] font-extrabold text-[var(--text-primary)] leading-[1.1] mb-6 max-w-[18ch] mx-auto [text-wrap:balance]`}
+            className={`reveal ${headlineVisible ? "is-visible" : ""} text-[32px] md:text-[40px] lg:text-[56px] font-extrabold text-(--text-primary) leading-[1.1] mb-6 max-w-[18ch] mx-auto [text-wrap:balance]`}
             style={{ "--reveal-delay": "80ms" } as React.CSSProperties}
           >
             Collecting the form is the easy part.
             <br />
-            <span className="text-[var(--primary-600)]">What happens next is the work.</span>
+            <span className="text-(--text-link)">What happens next is the work.</span>
           </h1>
 
           <p
             ref={sublineRef}
-            className={`reveal ${sublineVisible ? "is-visible" : ""} bg-body-lg text-[var(--text-secondary)] max-w-2xl mb-10`}
+            className={`reveal ${sublineVisible ? "is-visible" : ""} bg-body-lg text-(--text-secondary) max-w-2xl mb-10`}
             style={{ "--reveal-delay": "160ms" } as React.CSSProperties}
           >
             Beginso builds the form, publishes it, and turns every response into something you can
@@ -57,19 +57,19 @@ export default function HeroSection() {
             style={{ "--reveal-delay": "240ms" } as React.CSSProperties}
           >
             <Link href="/signup" className="w-full sm:w-auto">
-              <Button variant="primary" size="default" className="w-full sm:w-auto h-[44px] px-8">
+              <Button variant="primary" size="default" className="w-full sm:w-auto h-11 px-8">
                 Start free
               </Button>
             </Link>
             <a href="#how-it-works" className="w-full sm:w-auto">
-              <Button variant="ghost" size="default" className="w-full sm:w-auto h-[44px] px-8 gap-2">
+              <Button variant="ghost" size="default" className="w-full sm:w-auto h-11 px-8 gap-2">
                 <Play size={16} aria-hidden="true" />
                 See how it works
               </Button>
             </a>
           </div>
 
-          <p className="bg-caption text-[var(--text-muted)] mt-4">
+          <p className="bg-caption text-(--text-muted) mt-4">
             No credit card required · Free plan forever
           </p>
         </div>

@@ -30,20 +30,46 @@ describe('notificationsService', () => {
     mockPost.mockReset();
   });
 
-  it('getNotifications calls GET /api/notifications and returns the list', async () => {
+  it('list calls GET /api/notifications scoped by x-workspace-slug and returns a cursor page', async () => {
     const notifications = [
       { id: 'welcome-1', type: 'welcome', title: 'Welcome to Beginso!', message: '', createdAt: '', read: false },
     ];
-    mockGet.mockResolvedValueOnce({ data: { success: true, notifications } });
-    const result = await notificationsService.getNotifications();
-    expect(mockGet).toHaveBeenCalledWith('/api/notifications');
-    expect(result).toEqual(notifications);
+    mockGet.mockResolvedValueOnce({ data: { success: true, notifications, nextCursor: 'c2' } });
+    const result = await notificationsService.list({ scope: 'acme', filter: 'unread' });
+    expect(mockGet).toHaveBeenCalledWith('/api/notifications', {
+      headers: { 'x-workspace-slug': 'acme' },
+      params: { limit: 30, unread: true },
+    });
+    expect(result).toEqual({ items: notifications, nextCursor: 'c2' });
   });
 
-  it('getNotifications falls back to an empty list if the response has no notifications field', async () => {
+  it('list maps the Mentions tab to type=mention and passes the cursor', async () => {
+    mockGet.mockResolvedValueOnce({ data: { notifications: [] } });
+    await notificationsService.list({ scope: 'personal', filter: 'mentions', cursor: 'c2' });
+    expect(mockGet).toHaveBeenCalledWith('/api/notifications', {
+      headers: { 'x-workspace-slug': 'personal' },
+      params: { limit: 30, type: 'mention', cursor: 'c2' },
+    });
+  });
+
+  it('list falls back to an empty page if the response has no notifications field', async () => {
     mockGet.mockResolvedValueOnce({ data: { success: true } });
-    const result = await notificationsService.getNotifications();
-    expect(result).toEqual([]);
+    const result = await notificationsService.list({ scope: 'personal', filter: 'all' });
+    expect(result).toEqual({ items: [], nextCursor: null });
+  });
+
+  it('unreadCount reads { count } and defaults to 0 on a bad shape', async () => {
+    mockGet.mockResolvedValueOnce({ data: { count: 4 } });
+    expect(await notificationsService.unreadCount('acme')).toBe(4);
+    expect(mockGet).toHaveBeenCalledWith('/api/notifications/unread-count', { headers: { 'x-workspace-slug': 'acme' } });
+    mockGet.mockResolvedValueOnce({ data: {} });
+    expect(await notificationsService.unreadCount('acme')).toBe(0);
+  });
+
+  it('markAllRead calls POST /api/notifications/read-all in the active context', async () => {
+    mockPost.mockResolvedValueOnce({ data: { updated: 3 } });
+    expect(await notificationsService.markAllRead('acme')).toEqual({ updated: 3 });
+    expect(mockPost).toHaveBeenCalledWith('/api/notifications/read-all', undefined, { headers: { 'x-workspace-slug': 'acme' } });
   });
 
   it('markAsRead calls POST /api/notifications/:id/read', async () => {

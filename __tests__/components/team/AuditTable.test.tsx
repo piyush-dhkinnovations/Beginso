@@ -22,7 +22,7 @@ describe('AuditTable', () => {
   it('exposes the five real column headers through the scroll wrapper', () => {
     render(<AuditTable events={[EVENT]} />);
     const table = screen.getByRole('table');
-    ['Actor', 'Action', 'Target', 'IP', 'Timestamp'].forEach((name) => {
+    ['Actor', 'Action', 'Target', 'Origin', 'Timestamp'].forEach((name) => {
       expect(within(table).getByRole('columnheader', { name })).toHaveAttribute('scope', 'col');
     });
   });
@@ -47,7 +47,7 @@ describe('AuditTable', () => {
   it('hides Target and IP below the sm breakpoint via a responsive class, never a .wf- class', () => {
     render(<AuditTable events={[EVENT]} />);
 
-    for (const name of ['Target', 'IP']) {
+    for (const name of ['Target', 'Origin']) {
       const th = screen.getByRole('columnheader', { name });
       expect(th.className).toContain('hidden');
       expect(th.className).toContain('sm:table-cell');
@@ -62,11 +62,16 @@ describe('AuditTable', () => {
     expect(screen.getByRole('table').className).not.toContain('bg-table-stack');
   });
 
-  it('renders five skeleton rows while loading, not events', () => {
+  it('renders five skeleton rows while loading, not events, hidden from assistive tech', () => {
     const { container } = render(<AuditTable events={[EVENT]} isLoading />);
 
-    expect(container.querySelectorAll('tbody tr')).toHaveLength(5);
+    const rows = container.querySelectorAll('tbody tr');
+    expect(rows).toHaveLength(5);
     expect(screen.queryByText('Priya Sharma')).not.toBeInTheDocument();
+    // A screen reader must not announce five rows of empty skeleton cells.
+    rows.forEach((row) => expect(row).toHaveAttribute('aria-hidden', 'true'));
+    // And a keyboard user tabbing through the page hits nothing inside the loading table.
+    expect(within(container as unknown as HTMLElement).queryAllByRole('button')).toHaveLength(0);
   });
 
   // sprint-11-v2a-hardening 4.4 — the frontend cannot mask an IP reliably (design.md §19); the

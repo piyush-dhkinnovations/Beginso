@@ -10,7 +10,7 @@ import userEvent from '@testing-library/user-event';
 import fc from 'fast-check';
 import { FileDownloadButton } from '@/components/responses/FileDownloadButton';
 
-vi.mock('@/components/common/Toast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 

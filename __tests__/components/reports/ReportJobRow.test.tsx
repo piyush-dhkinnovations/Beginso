@@ -16,7 +16,7 @@ vi.mock('@/services/reports', () => ({
 }));
 
 const mockToast = vi.fn();
-vi.mock('@/components/common/Toast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
@@ -47,7 +47,8 @@ describe('ReportJobRow', () => {
 
     expect(screen.getByText('Event Registration')).toBeInTheDocument();
     expect(screen.getByText(/Completed · Jul 1, 2026 – Jul 31, 2026/)).toBeInTheDocument();
-    expect(screen.getByText('5 minutes ago')).toBeInTheDocument();
+    // The cell now shows the absolute date; the relative time is its tooltip.
+    expect(screen.getByTitle('5 minutes ago')).toBeInTheDocument();
 
     vi.useRealTimers();
   });

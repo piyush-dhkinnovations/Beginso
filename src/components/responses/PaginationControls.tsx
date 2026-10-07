@@ -24,7 +24,7 @@ export function PaginationControls({ page, totalPages, onPageChange }: Paginatio
         <ChevronLeft size={16} className="mr-1" />
         Previous
       </Button>
-      <span className="text-body-sm text-neutral-500">
+      <span className="bg-body-sm text-(--text-muted)">
         Page {page} of {totalPages}
       </span>
       <Button

@@ -1,21 +1,50 @@
 'use client';
 
-import { useParams } from 'next/navigation';
-import Link from 'next/link';
+import { useState } from 'react';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Eye } from 'lucide-react';
 import { formsService } from '@/services/forms';
+import { normaliseLayout } from '@/lib/layoutPresets';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { PublicFormShell } from '@/components/public-form/PublicFormShell';
+import { FormThemeScope } from '@/components/public-form/FormThemeScope';
+import { PreviewBar } from '@/components/preview/PreviewBar';
+import { PreviewFrame } from '@/components/preview/PreviewFrame';
+import type { PreviewDevice } from '@/components/preview/DeviceToggle';
 import type { PublicFormSchema } from '@/types/publicForm';
 
+// Two modes of one route (design.md §4):
+//  • default — admin chrome: PreviewBar + a same-origin iframe of this route in `?embed=1` mode.
+//  • `?embed=1` — just the respondent view, in the form's own light theme (FormThemeScope). Also
+//    used by the layout gallery, with `?layout=` to preview a preset before it is chosen.
+// Preview mode is a property of THIS route, not persisted state (requirements.md 3.2), so leaving
+// by any route clears it and /f/[slug] can never show the bar.
 export default function FormPreviewPage() {
   const { id } = useParams() as { id: string };
+  const searchParams = useSearchParams();
+  const embed = searchParams.get('embed') === '1';
+  const layoutOverride = searchParams.get('layout') ?? undefined;
+  const [device, setDevice] = useState<PreviewDevice>('desktop');
 
   const { data: form, isLoading, error } = useQuery({
     queryKey: ['form', id],
     queryFn: () => formsService.getFormById(id),
     retry: false,
+    enabled: embed,
   });
+
+  if (!embed) {
+    return (
+      // Fixed full-viewport overlay, independent of the user shell's <main> box model.
+      <div className="fixed inset-0 z-50 overflow-hidden flex flex-col bg-(--bg-subtle)">
+        <PreviewBar device={device} onDeviceChange={setDevice} backHref={`/forms/${id}/edit`} />
+        <div className="flex-1 min-h-0 flex justify-center p-2 md:p-4">
+          <PreviewFrame formId={id} device={device} title="Form preview" />
+        </div>
+      </div>
+    );
+  }
 
   const schema: PublicFormSchema | undefined = form && {
     title: form.title,
@@ -27,44 +56,40 @@ export default function FormPreviewPage() {
       successMessage: form.settings.successMessage,
       responseLimit: form.settings.responseLimit,
       closeDate: form.settings.closeDate,
-      layout: form.settings.layout,
+      layout: layoutOverride ? normaliseLayout(layoutOverride) : form.settings.layout,
+      accessMode: form.settings.accessMode,
     },
   };
 
   return (
-    // Fixed full-viewport overlay, independent of the user shell's <main> box model
-    // (padding/min-height/overflow-y-auto) — avoids relying on negative-margin math to
-    // exactly cancel it out, which is what produced the double-scrollbar bug.
-    <div className="fixed inset-0 z-50 overflow-hidden flex flex-col bg-neutral-50">
-      <div className="flex items-center justify-between h-11 px-4 bg-neutral-900 text-white shrink-0">
-        <span className="flex items-center gap-1.5 text-body-sm font-medium">
-          <Eye size={14} />
-          Preview — this is what respondents will see
-        </span>
-        <Link
-          href={`/forms/${id}/edit`}
-          className="flex min-h-11 items-center gap-1.5 px-2 text-body-sm font-medium text-neutral-300 transition-colors hover:text-white"
-        >
-          <ArrowLeft size={14} />
-          Close preview
-        </Link>
-      </div>
-
-      {/* The only scrollable region — PublicFormShell's own min-h-screen is suppressed via
-          previewMode so it doesn't force a second, independently-scrolling full-viewport box here. */}
-      <div className="flex-1 overflow-y-auto">
+    <FormThemeScope>
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-(--bg-subtle)">
         {isLoading ? (
-          <div className="flex items-center justify-center h-full text-body text-neutral-500">
-            Loading preview…
+          <div className="mx-auto flex max-w-160 flex-col gap-4 px-4 py-12" aria-busy="true">
+            <Skeleton variant="title" width="60%" height={32} />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} variant="block" width="100%" height={56} />
+            ))}
           </div>
         ) : error || !form || !schema ? (
-          <div className="flex items-center justify-center h-full text-body text-error">
+          <div className="flex items-center justify-center h-full text-(--error-text)">
             Could not load this form. Please go back and try again.
           </div>
         ) : (
-          <PublicFormShell schema={schema} slug={form.slug ?? form._id} previewMode />
+          <PublicFormShell
+            schema={schema}
+            slug={form.slug ?? form._id}
+            previewMode
+            onTestSubmit={async (answers) => {
+              try {
+                await formsService.sendTestSubmission(id, answers);
+              } catch (err) {
+                throw new Error(getFriendlyErrorMessage(err));
+              }
+            }}
+          />
         )}
       </div>
-    </div>
+    </FormThemeScope>
   );
 }

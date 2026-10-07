@@ -21,7 +21,7 @@ export function FormEventRows({ events }: { events: WorkspaceEventItem[] }) {
           style={{ borderBottom: '1px solid var(--border-subtle)' }}
         >
           <span className="bg-body-sm min-w-0">
-            <strong>{event.actorName}</strong> {describeEventAction(event.action)}{' '}
+            <strong>{event.actorName}</strong> {describeEventAction(event.action, event.metadata)}{' '}
             {event.targetType === 'form' ? 'this form' : event.targetLabel}
           </span>
           <time className="bg-caption shrink-0" dateTime={event.createdAt}>

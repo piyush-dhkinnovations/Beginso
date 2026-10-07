@@ -2,6 +2,7 @@ import axiosInstance from '@/lib/axios';
 import { unwrapEnvelope } from '@/lib/apiEnvelope';
 import type { MemberListItem } from '@/types/team';
 import type { Role } from '@/types/workspace';
+import type { NotificationPreference } from '../../shared/types';
 
 // Endpoints are not yet live (BE 0.1/BE 0.2, requirements.md §13 — Phase 0 of this sprint) —
 // built against design.md §11.2/§12's documented contract, same "build the frontend against a
@@ -14,6 +15,13 @@ export const teamService = {
       .get(`/api/workspaces/${workspaceId}/members`)
       .then((r) => unwrapEnvelope<MemberListItem[]>(r.data, 'members')),
 
+  // Sprint 14 (OQ-2): the caller's OWN response-email preference. PATCH /api/workspaces/:id/preferences
+  // (:id is an id or slug); returns { preferences: { notificationPreference, timezoneOverride } }.
+  updateMyNotificationPreference: (workspaceId: string, notificationPreference: NotificationPreference): Promise<NotificationPreference> =>
+    axiosInstance
+      .patch(`/api/workspaces/${workspaceId}/preferences`, { notificationPreference })
+      .then((r) => unwrapEnvelope<{ notificationPreference?: NotificationPreference }>(r.data, 'preferences').notificationPreference ?? notificationPreference),
+
   updateMemberRole: (workspaceId: string, membershipId: string, role: Role): Promise<void> =>
     axiosInstance
       .patch(`/api/workspaces/${workspaceId}/members/${membershipId}`, { role })
@@ -23,4 +31,12 @@ export const teamService = {
     axiosInstance
       .delete(`/api/workspaces/${workspaceId}/members/${membershipId}`)
       .then(() => undefined),
+
+  // Owner only. The target must already be a member; the caller becomes an admin.
+  transferOwnership: (workspaceId: string, userId: string): Promise<void> =>
+    axiosInstance.post(`/api/workspaces/${workspaceId}/transfer-ownership`, { userId }).then(() => undefined),
+
+  // Any member. The only owner is refused with LAST_OWNER (transfer ownership first).
+  leave: (workspaceId: string): Promise<void> =>
+    axiosInstance.post(`/api/workspaces/${workspaceId}/leave`).then(() => undefined),
 };

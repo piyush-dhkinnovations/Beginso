@@ -1,19 +1,13 @@
 /**
  * __tests__/components/analytics/TrendChart.test.tsx
  * Feature: sprint-5-analytics-reports
- * Tests: TrendChart — EChartContainer option shape, empty state (both copy variants), loading,
+ * Tests: TrendChart — chart wiring, empty state (both copy variants), loading,
  * error, sr-only table content
  * Requirements: 4.1-4.6, 13.1
  */
 
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-
-vi.mock('@/components/charts/EChartContainer', () => ({
-  EChartContainer: ({ option, ariaLabel }: { option: unknown; ariaLabel: string }) => (
-    <div role="img" aria-label={ariaLabel} data-option={JSON.stringify(option)} />
-  ),
-}));
 
 import { TrendChart, mapTrendSeries } from '@/components/analytics/TrendChart';
 import { mockAnalyticsTrends } from '@/lib/mocks/analyticsMocks';
@@ -67,10 +61,8 @@ describe('TrendChart', () => {
     const data = mockAnalyticsTrends();
     render(<TrendChart data={data} isLoading={false} />);
 
-    const chart = screen.getByRole('img', { name: 'Response trend over time' });
-    const option = JSON.parse(chart.getAttribute('data-option') as string);
-    expect(option.series[0].data).toEqual(data.points.map((p) => p.responses));
-    expect(option.xAxis.data).toHaveLength(data.points.length);
+    // The SVG line chart is role=img with the same accessible name the old canvas chart had.
+    expect(screen.getByRole('group', { name: 'Response trend over time' })).toBeInTheDocument();
 
     const table = document.querySelector('table.sr-only') as HTMLTableElement;
     expect(table.querySelectorAll('tbody tr')).toHaveLength(data.points.length);

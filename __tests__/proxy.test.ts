@@ -41,6 +41,10 @@ describe('Next.js Edge Proxy (auth guard)', () => {
       '/settings',
       '/w/acme',
       '/shared',
+      '/workspaces',
+      '/my-submissions',
+      '/trash',
+      '/onboarding',
     ];
 
     it.each(protectedPaths)(

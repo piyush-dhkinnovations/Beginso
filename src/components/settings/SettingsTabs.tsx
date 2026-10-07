@@ -2,13 +2,17 @@
 
 import { Tabs, type TabItem } from '@/components/ui/Tabs';
 
-export type SettingsTab = 'profile' | 'workspace' | 'branding' | 'notifications' | 'security' | 'sessions';
+export type SettingsTab = 'profile' | 'workspace' | 'branding' | 'notifications' | 'security' | 'sessions' | 'tags' | 'stages' | 'scoring' | 'data';
 
 interface SettingsTabsProps {
   activeTab: SettingsTab;
   onChange: (tab: SettingsTab) => void;
   /** Tabs with unsaved edits — renders a small dot next to the label (Requirement 12.2). */
   dirtyTabs?: Set<SettingsTab>;
+  /** Which tabs to show, in canonical order. Omitted = all (the Account/Workspace pages each pass their own subset). */
+  visible?: SettingsTab[];
+  /** Per-page label overrides, e.g. 'workspace' reads "General" inside a workspace. */
+  labels?: Partial<Record<SettingsTab, string>>;
 }
 
 const TABS: { id: SettingsTab; label: string }[] = [
@@ -19,21 +23,32 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: 'security', label: 'Security' },
   // sprint-10 requirements.md §7.12 — split out of Security, wireframe screen 18's exact label.
   { id: 'sessions', label: 'Sessions & Devices' },
+  // Sprint 12 (inbox-collaboration), requirements.md §7.7 (task 2.5). No wireframe — derived
+  // from RolesMatrix's list+edit pattern (design.md §15).
+  { id: 'tags', label: 'Tags' },
+  // Sprint 12 (inbox-collaboration), task 5.1. Same "no wireframe, derived from RolesMatrix's
+  // list+edit pattern" precedent as the Tags tab above.
+  { id: 'stages', label: 'Stages' },
+  // Sprint 12 (inbox-collaboration), OQ-7 resolved 3 Oct 2026 (task 5.2). Same "no wireframe,
+  // derived from StageManager's own list+edit pattern" precedent as the Stages tab above.
+  { id: 'scoring', label: 'Scoring' },
+  // Account-level export/delete — split out of the old Workspace tab.
+  { id: 'data', label: 'Data & account' },
 ];
 
 // Rebuilt on ui/Tabs (sprint-10 requirements.md §7.13) — the hand-rolled version hardcoded
 // text-neutral-*/border-neutral-* colours that never followed the theme. ui/Tabs also brings the
 // WAI-ARIA roving-tabindex/arrow-key behaviour this strip didn't have. `.settings-tabs-scroll`
 // stays: it is only the small-screen right-edge fade (globals.css), not a colour.
-export function SettingsTabs({ activeTab, onChange, dirtyTabs }: SettingsTabsProps) {
-  const tabs: TabItem[] = TABS.map((tab) => ({
+export function SettingsTabs({ activeTab, onChange, dirtyTabs, visible, labels }: SettingsTabsProps) {
+  const tabs: TabItem[] = TABS.filter((tab) => (visible ? visible.includes(tab.id) : tab.id !== 'data')).map((tab) => ({
     id: tab.id,
     label: (
       <>
-        {tab.label}
+        {labels?.[tab.id] ?? tab.label}
         {dirtyTabs?.has(tab.id) && (
           <span
-            className="h-1.5 w-1.5 rounded-full bg-[var(--action-primary)]"
+            className="h-1.5 w-1.5 rounded-full bg-(--action-primary)"
             aria-label="Unsaved changes"
           />
         )}

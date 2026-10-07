@@ -7,23 +7,22 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { DateRangeFilter } from '@/components/analytics/DateRangeFilter';
 import { ReportFormatCard } from './ReportFormatCard';
 import { ReportJobsList } from './ReportJobsList';
-import { useToast } from '@/components/common/Toast';
+import { ReportsSidebar } from './ReportsSidebar';
+import { Select } from '@/components/ui/Select';
+import { useToast } from '@/components/ui/Toast';
 import { formsService } from '@/services/forms';
 import { reportsService } from '@/services/reports';
 import { reportKeys } from '@/lib/queryKeys';
 import type { CreateReportPayload, PaginatedReportsResult, ReportFormat, ReportJob } from '@/types/report';
-import type { ResponseStatus } from '@/types/response';
 
-const STATUS_OPTIONS: { value: ResponseStatus | 'all'; label: string }[] = [
-  { value: 'all', label: 'All Statuses' },
-  { value: 'new', label: 'New' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'completed', label: 'Completed' },
-];
+interface ReportsViewProps {
+  /** 'personal' (default) or a workspace slug - Sprint 14: Exports lives inside Insights in both contexts. */
+  scope?: string;
+  /** Rendered inside the Insights Exports tab: the page already has a PageHeader, so this skips its own. */
+  embedded?: boolean;
+}
 
-const SELECT_CLASS = 'min-h-11 rounded-md border-2 border-neutral-200 bg-white px-3 text-body-sm outline-none focus:border-neutral-500';
-
-export function ReportsView() {
+export function ReportsView({ scope = 'personal', embedded = false }: ReportsViewProps = {}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -43,17 +42,17 @@ export function ReportsView() {
   // view, so none of these fire a request until "Generate" is clicked. `?formId=` only seeds the
   // initial selection on mount (Requirement 9.4), it doesn't keep the form select URL-bound.
   const [formId, setFormId] = useState<string | undefined>(searchParams.get('formId') ?? undefined);
-  const [status, setStatus] = useState<ResponseStatus | 'all'>('all');
   const [dateRange, setDateRange] = useState<{ from?: string; to?: string }>({});
 
   const { data: formsData } = useQuery({
-    queryKey: ['forms', 'list-for-reports'],
+    queryKey: ['forms', 'list-for-reports', scope],
     // Real bug found and fixed: unscoped, so this dropdown could silently include a caller's
     // workspace forms depending on their default-workspace resolution (src/services/forms.ts's
     // own comment has the full root-cause). This component only renders under (user)/reports
     // today (no /w/[slug]/reports route exists yet), so 'personal' is unconditionally correct —
     // revisit if/when Reports gets a workspace-scoped route.
-    queryFn: () => formsService.getForms({ limit: 100 }, { type: 'personal' }),
+    // Sprint 14: scoped to the active context - a workspace export only offers that workspace's forms.
+    queryFn: () => formsService.getForms({ limit: 100 }, scope === 'personal' ? { type: 'personal' } : { type: 'workspace', workspaceId: scope }),
   });
   const forms = useMemo(() => formsData?.forms ?? [], [formsData]);
   // The backend's job objects only carry `formId` (a raw ObjectId), never a denormalized
@@ -62,7 +61,7 @@ export function ReportsView() {
   const formTitleById = useMemo(() => new Map(forms.map((f) => [f._id, f.title])), [forms]);
 
   const createReportMutation = useMutation({
-    mutationFn: (payload: CreateReportPayload) => reportsService.createReport(payload),
+    mutationFn: (payload: CreateReportPayload) => reportsService.createReport(payload, scope),
     onSuccess: (job, payload) => {
       // The scope shown in the optimistic row comes from the request we just sent, not from
       // trusting the POST response to echo every field back — we already know for certain what
@@ -71,7 +70,6 @@ export function ReportsView() {
       const optimisticJob: ReportJob = {
         ...job,
         formId: job.formId ?? payload.formId,
-        responseStatus: job.responseStatus ?? payload.status,
         from: job.from ?? payload.from,
         to: job.to ?? payload.to,
       };
@@ -87,7 +85,6 @@ export function ReportsView() {
     createReportMutation.mutate({
       format,
       formId,
-      status: status === 'all' ? undefined : status,
       from: dateRange.from,
       to: dateRange.to,
     });
@@ -101,28 +98,16 @@ export function ReportsView() {
 
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
-      <PageHeader title="Reports" description="Export your form responses as a CSV or PDF file." />
+      {embedded ? null : (
+        <PageHeader
+          title="Reports"
+          description="Export your form responses as a CSV or PDF file."
+          actionsAlign="center"
+          actions={<DateRangeFilter part="range" value={dateRange} onChange={setDateRange} />}
+        />
+      )}
 
-      <div className="flex flex-col gap-4 rounded-lg border border-neutral-200 bg-white p-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <select aria-label="Form" value={formId ?? 'all'} onChange={(e) => setFormId(e.target.value === 'all' ? undefined : e.target.value)} className={SELECT_CLASS}>
-            <option value="all">All Forms</option>
-            {forms.map((f) => (
-              <option key={f._id} value={f._id}>{f.title}</option>
-            ))}
-          </select>
-
-          <select aria-label="Status" value={status} onChange={(e) => setStatus(e.target.value as ResponseStatus | 'all')} className={SELECT_CLASS}>
-            {STATUS_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </div>
-
-        <DateRangeFilter value={dateRange} onChange={setDateRange} />
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <ReportFormatCard
           format="csv"
           title="CSV Export"
@@ -141,7 +126,34 @@ export function ReportsView() {
         />
       </div>
 
-      <ReportJobsList page={jobsPage} onPageChange={goToJobsPage} formTitleById={formTitleById} />
+      {/* Sprint 12 (inbox-collaboration), requirements.md §7.3 #4: the status scope picker is
+          removed, not replaced with a stage picker — this view only renders under the personal
+          shell today (this file's own comment above), where stages are OQ-9's fixed defaults,
+          not a fetchable workspace list. A stage-scoped export picker lands once Reports gets a
+          workspace-scoped route (design.md §4's "revisit if/when Reports gets a workspace-scoped
+          route"), rather than shipping a picker with no real stage data behind it. */}
+      <div className="flex flex-wrap items-center gap-3">
+        <DateRangeFilter part="presets" value={dateRange} onChange={setDateRange} />
+        {embedded && <DateRangeFilter part="range" value={dateRange} onChange={setDateRange} />}
+        <div className="ml-auto w-52">
+          <Select
+            id="reports-form"
+            aria-label="Form"
+            value={formId ?? 'all'}
+            onChange={(e) => setFormId(e.target.value === 'all' ? undefined : e.target.value)}
+          >
+            <option value="all">All Forms</option>
+            {forms.map((f) => (
+              <option key={f._id} value={f._id}>{f.title}</option>
+            ))}
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <ReportJobsList page={jobsPage} onPageChange={goToJobsPage} formTitleById={formTitleById} scope={scope} />
+        <ReportsSidebar />
+      </div>
     </div>
   );
 }

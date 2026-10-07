@@ -21,7 +21,7 @@ vi.mock('@/services/settings', () => ({
 }));
 
 const mockToast = vi.fn();
-vi.mock('@/components/common/Toast', () => ({
+vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
