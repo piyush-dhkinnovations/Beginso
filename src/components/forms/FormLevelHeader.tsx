@@ -25,11 +25,11 @@ const STATUS_LABEL = { draft: 'Draft', published: 'Published', closed: 'Closed' 
 
 // Pages under /forms/:id that show this header. The builder renders the same FormHeader itself (it adds the
 // title field, save state and publish actions), and the preview is a full-viewport overlay with no header.
-const HEADER_ROUTE_RE = /^\/forms\/[^/]+\/(overview|inbox|insights|scores)\/?$/;
+const HEADER_ROUTE_RE = /^\/forms\/[^/]+\/(overview|scores)\/?$/;
 
 /**
  * The header for the form's read pages: icon, name, status, created/updated dates, Preview / Share /
- * Edit form / ⋮, and the tab bar (Overview · Responses · Insights · Edit · Settings). Edit and Share are shown
+ * Edit form / ⋮, and the tab bar (Overview · Edit · Settings). Edit and Share are shown
  * only to roles that can edit (presentation only; the server enforces).
  */
 export function FormLevelHeader() {
@@ -127,7 +127,7 @@ export function FormLevelHeader() {
             formId={formId}
             ws={ws}
             canEdit={canEdit}
-            active={/\/inbox\/?$/.test(pathname) ? 'responses' : pathname.endsWith('/insights') ? 'insights' : 'overview'}
+            active="overview"
           />
         }
       />

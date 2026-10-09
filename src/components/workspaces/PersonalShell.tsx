@@ -100,9 +100,9 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
 
   const contextUnresolved = !!formId && !wsHint && !form && !formWorkspace;
 
-  // The form's own pages are a focus view: no docked sidebar (the menu button still opens it as a drawer).
+  // The form's own pages (not its Responses / Summary pages, which belong to the Responses section) are a focus view: no docked sidebar (the menu button still opens it as a drawer).
   // The builder is included: it shows the same form sub-nav, so moving between a form's pages feels like one place.
-  const isFormFocus = /^\/forms\/[^/]+\/(overview|inbox|insights|scores|edit)\/?$/.test(pathname);
+  const isFormFocus = /^\/forms\/[^/]+\/(overview|scores|edit)\/?$/.test(pathname);
 
   // Feed "recent forms" in the sidebar: record once the form's real scope is known (never guess 'personal' while resolving).
   const recentScope = formWorkspace?.slug ?? (form && !form.workspaceId ? 'personal' : undefined);

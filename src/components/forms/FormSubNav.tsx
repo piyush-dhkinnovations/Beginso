@@ -2,10 +2,10 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { BarChart3, LayoutDashboard, PencilLine, Settings, Table2, type LucideIcon } from 'lucide-react';
+import { LayoutDashboard, PencilLine, Settings, type LucideIcon } from 'lucide-react';
 import { useBuilderStore } from '@/store/builderStore';
 
-export type FormSubNavKey = 'overview' | 'responses' | 'insights' | 'edit' | 'settings';
+export type FormSubNavKey = 'overview' | 'edit' | 'settings';
 
 interface FormSubNavProps {
   formId: string;
@@ -16,7 +16,7 @@ interface FormSubNavProps {
 }
 
 /**
- * The form's horizontal sub-nav (Overview · Responses · Insights · Edit · Settings), shared by the
+ * The form's horizontal sub-nav (Overview · Edit · Settings; Responses and Summary live under the sidebar's Responses), shared by the
  * form header and the builder so moving between them reads as one page. Leaving the builder with
  * unsaved changes goes through the builder's leave modal instead of navigating straight away.
  */
@@ -33,8 +33,6 @@ export function FormSubNav({ formId, ws, canEdit, active }: FormSubNavProps) {
   };
   const items: Array<{ key: FormSubNavKey; label: string; href: string; icon: LucideIcon }> = [
     { key: 'overview', label: 'Overview', href: href('/overview'), icon: LayoutDashboard },
-    { key: 'responses', label: 'Responses', href: href('/inbox'), icon: Table2 },
-    { key: 'insights', label: 'Insights', href: href('/insights'), icon: BarChart3 },
     ...(canEdit
       ? [
           { key: 'edit' as const, label: 'Edit', href: href('/edit'), icon: PencilLine },

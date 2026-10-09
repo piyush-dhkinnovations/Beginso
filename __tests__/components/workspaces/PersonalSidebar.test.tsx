@@ -63,7 +63,7 @@ describe('PersonalSidebar', () => {
 
   it('renders the real A1.1 personal nav set plus the still-live top-level pages', () => {
     renderSidebar();
-    ['Home', 'Forms', 'Shared with me', 'Templates', 'All responses', 'Insights', 'Settings', 'Create workspace'].forEach(
+    ['Home', 'Forms', 'Shared with me', 'Templates', 'Responses', 'Settings', 'Create workspace'].forEach(
       (label) => {
         expect(screen.getByText(label)).toBeInTheDocument();
       }
@@ -111,11 +111,11 @@ describe('PersonalSidebar', () => {
     expect(screen.getByRole('link', { name: /Settings/ })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('marks Forms (not Inbox) active on a per-form /forms/:id/inbox page', () => {
+  it('marks Responses (not Forms) active on a per-form /forms/:id/inbox page', () => {
     mockPathname.mockReturnValue('/forms/abc123/inbox');
     renderSidebar();
-    expect(screen.getByRole('link', { name: /^Forms$/ })).toHaveAttribute('aria-current', 'page');
-    expect(screen.getByRole('link', { name: /All responses/ })).not.toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /^Responses$/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /^Forms$/ })).not.toHaveAttribute('aria-current', 'page');
   });
 
   it('marks Create workspace active on /workspaces', () => {
@@ -124,22 +124,21 @@ describe('PersonalSidebar', () => {
     expect(screen.getByRole('link', { name: /Create workspace/ })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('hides Inbox/Insights once analytics confirms zero forms, keeping the always-relevant items', async () => {
+  it('hides Responses once analytics confirms zero forms, keeping the always-relevant items', async () => {
     renderSidebar();
     expect(await screen.findByText('Forms')).toBeInTheDocument();
-    expect(screen.queryByText('All responses')).not.toBeInTheDocument();
-    expect(screen.queryByText('Insights')).not.toBeInTheDocument();
+    expect(screen.queryByText('Responses')).not.toBeInTheDocument();
     expect(screen.queryByText('Reports')).not.toBeInTheDocument();
     ['Home', 'Forms', 'Shared with me', 'Templates', 'Settings', 'Create workspace'].forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();
     });
   });
 
-  it('keeps Inbox visible once forms exist', async () => {
+  it('keeps Responses visible once forms exist', async () => {
     mockGetForms.mockResolvedValue({ forms: [{ _id: 'f1' }], total: 3, page: 1, limit: 1 });
     renderSidebar();
-    expect(await screen.findByText('All responses')).toBeInTheDocument();
-    expect(screen.getByText('Insights')).toBeInTheDocument();
+    expect(await screen.findByText('Responses')).toBeInTheDocument();
+    expect(screen.queryByText('Insights')).not.toBeInTheDocument();
     // Sprint 14: Reports is the Exports tab inside Analytics, not a sidebar item, even with forms.
     expect(screen.queryByText('Reports')).not.toBeInTheDocument();
   });
@@ -155,22 +154,21 @@ describe('PersonalSidebar', () => {
     mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 1 });
     renderSidebar();
     expect(await screen.findByText('Forms')).toBeInTheDocument();
-    expect(screen.queryByText('All responses')).not.toBeInTheDocument();
-    expect(screen.queryByText('Insights')).not.toBeInTheDocument();
+    expect(screen.queryByText('Responses')).not.toBeInTheDocument();
     expect(screen.queryByText('Reports')).not.toBeInTheDocument();
   });
 
-  it('keeps Inbox visible when already deep-linked onto it, even with zero forms', async () => {
-    mockPathname.mockReturnValue('/inbox');
+  it('keeps Responses visible when already deep-linked onto it, even with zero forms', async () => {
+    mockPathname.mockReturnValue('/form-responses');
     renderSidebar();
     await screen.findByText('Forms');
-    expect(screen.getByRole('link', { name: /All responses/ })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /^Responses$/ })).toHaveAttribute('aria-current', 'page');
   });
 
   it('marks nothing active on an unrelated route', () => {
     mockPathname.mockReturnValue('/onboarding');
     renderSidebar();
-    ['Home', 'Forms', 'Shared with me', 'Templates', 'All responses', 'Insights', 'Settings', 'Create workspace'].forEach(
+    ['Home', 'Forms', 'Shared with me', 'Templates', 'Responses', 'Settings', 'Create workspace'].forEach(
       (label) => {
         expect(screen.getByRole('link', { name: new RegExp(label) })).not.toHaveAttribute('aria-current');
       }

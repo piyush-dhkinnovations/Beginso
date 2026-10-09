@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Home, FileText, Inbox, BarChart3, Users, History, Shield, LayoutTemplate, Trash2, Settings, Download } from 'lucide-react';
+import { Home, FileText, Inbox, Users, History, Shield, LayoutTemplate, Trash2, Settings, Download } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown';
@@ -16,7 +16,6 @@ import {
 import { responsesService } from '@/services/responses';
 import { responseKeys } from '@/lib/queryKeys';
 import { useBuilderStore } from '@/store/builderStore';
-import { useRecentForms } from '@/store/recentFormsStore';
 import type { Role } from '@/types/workspace';
 
 export interface WorkspaceSidebarProps {
@@ -55,7 +54,6 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role, 
     }
   };
   const base = `/w/${slug}`;
-  const recent = useRecentForms(slug);
 
   // Sprint 12 (inbox-collaboration), task 1.9 — the unread count badge from the stats call
   // (design.md §4: "wireframe shows a count badge; if that call fails, no badge, no error").
@@ -74,8 +72,18 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role, 
   // rendered. Hidden until each page actually ships — re-add the item as each one lands, rather
   // than linking ahead of the page that would make it real. `inbox/` now exists (task 1.9,
   // same-PR rule: the nav item lands with the page, never before).
+  // A form's own data pages (/forms/:id/inbox|insights) belong to Responses; its other pages light Forms.
+  const isFormDataRoute = /^\/forms\/[^/]+\/(inbox|insights)\/?$/.test(pathname);
   const isActive = (href: string) =>
-    href === `${base}/forms` && formContext ? true : href === base ? pathname === base : pathname.startsWith(href);
+    href === `${base}/forms`
+      ? formContext
+        ? !isFormDataRoute
+        : pathname.startsWith(href)
+      : href === `${base}/form-responses`
+        ? isFormDataRoute || new RegExp(`^${base}/(form-responses|inbox|insights)(/|$)`).test(pathname)
+        : href === base
+          ? pathname === base
+          : pathname.startsWith(href);
   const toItem = (item: { label: string; href: string; icon: React.ComponentType<{ className?: string }>; count?: number }) => ({
     ...item,
     active: isActive(item.href),
@@ -85,15 +93,8 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role, 
   // Primary: the four daily destinations (every role that can read the workspace can read Insights).
   const primary = [
     toItem({ label: 'Home', href: base, icon: Home }),
-    {
-      ...toItem({ label: 'Forms', href: `${base}/forms`, icon: FileText }),
-      subItems: recent.map((f) => {
-        const href = `/forms/${f.id}/overview?ws=${encodeURIComponent(slug)}`;
-        return { label: f.title, href, active: pathname.startsWith(`/forms/${f.id}`), onClick: guard(href) };
-      }),
-    },
-    toItem({ label: 'All responses', href: `${base}/inbox`, icon: Inbox, count: stats?.unread }),
-    toItem({ label: 'Insights', href: `${base}/insights`, icon: BarChart3 }),
+    toItem({ label: 'Forms', href: `${base}/forms`, icon: FileText }),
+    toItem({ label: 'Responses', href: `${base}/form-responses`, icon: Inbox, count: stats?.unread }),
   ];
 
   // Settings is visible to every role (members reach their own notification setting there; the page only lists

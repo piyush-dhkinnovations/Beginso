@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
+import { AlignLeft, AreaChart, BarChart3, CircleDot, LineChart, PieChart, Sigma, type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Checkbox } from '@/components/ui/Checkbox';
 import { Drawer } from '@/components/ui/Drawer';
 import { Input } from '@/components/ui/Input';
-import { Radio } from '@/components/ui/Radio';
+import { Segmented } from '@/components/ui/Segmented';
 import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
 import { ChartBody } from './ChartBody';
@@ -21,6 +21,7 @@ import {
   SIZE_LABEL,
   SIZES,
 } from '@/lib/chartOptions';
+import { bx } from '@/lib/utils';
 import type { AnalyticsRangeParams } from '@/lib/queryKeys';
 import type { ChartDefinition, ChartOptions, ChartSize, ChartType, ChartVisibility, SavedChart } from '@/types/charts';
 import type { FormField } from '@/types/form';
@@ -40,9 +41,9 @@ interface ChartDrawerProps {
   onSubmit: (definition: ChartDefinition) => void;
 }
 
-// Right-side slide-over (not a modal): live preview first, then field -> type -> size -> title -> options.
-// The dashboard stays visible behind it. Drawer unmounts its children when closed, so the form below starts
-// fresh on every open.
+// Right-side slide-over (not a modal): a compact pinned preview, then four numbered steps —
+// what to chart, chart type, size, display. The dashboard stays visible behind it. Drawer unmounts its
+// children when closed, so the form below starts fresh on every open.
 export function ChartDrawer({ isOpen, onClose, editing, ...rest }: ChartDrawerProps) {
   return (
     <Drawer
@@ -57,12 +58,58 @@ export function ChartDrawer({ isOpen, onClose, editing, ...rest }: ChartDrawerPr
   );
 }
 
+const TYPE_ICON: Record<ChartType, LucideIcon> = {
+  pie: PieChart,
+  donut: CircleDot,
+  bar: BarChart3,
+  horizontal_bar: AlignLeft,
+  line: LineChart,
+  area: AreaChart,
+  bar_time: BarChart3,
+  average: Sigma,
+};
+
 function SizePictogram({ size }: { size: ChartSize }) {
   const pct = size === 'small' ? 33.3 : size === 'medium' ? 50 : 100;
   return (
-    <span className="relative block h-5 w-full overflow-hidden rounded-sm border border-(--border-strong) bg-(--bg-subtle)" aria-hidden="true">
+    <span className="relative block h-4 w-full overflow-hidden rounded-sm border border-(--border-strong) bg-(--bg-subtle)" aria-hidden="true">
       <span className="absolute inset-y-0 left-0 bg-(--action-primary)" style={{ width: `${pct}%` }} />
     </span>
+  );
+}
+
+// A numbered step keeps a long form scannable instead of one undifferentiated column of controls.
+function Step({ n, title, hint, children }: { n: number; title: string; hint?: string; children: ReactNode }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <div>
+        <h3 className="flex items-center gap-2 bg-body font-semibold text-(--text-primary)">
+          <span className="inline-flex size-5 items-center justify-center rounded-full bg-(--action-primary) text-xs text-white" aria-hidden="true">
+            {n}
+          </span>
+          {title}
+        </h3>
+        {hint && <p className="bg-caption mt-0.5 pl-7 text-(--text-muted)">{hint}</p>}
+      </div>
+      <div className="flex flex-col gap-3 sm:pl-7">{children}</div>
+    </section>
+  );
+}
+
+// A selectable tile backed by a real (visually hidden) radio, so keyboard and screen-reader behaviour is unchanged.
+function Choice({ id, name, checked, onSelect, children, className }: { id: string; name: string; checked: boolean; onSelect: () => void; children: ReactNode; className?: string }) {
+  return (
+    <label
+      htmlFor={id}
+      className={bx(
+        'flex cursor-pointer flex-col items-center gap-1.5 rounded-xl border p-3 text-center transition-colors has-focus-visible:outline-2 has-focus-visible:outline-(--border-focus)',
+        checked ? 'border-(--action-primary) bg-(--accent-soft)' : 'border-(--border-default) hover:bg-(--surface-hover)',
+        className,
+      )}
+    >
+      <input id={id} type="radio" name={name} className="sr-only" checked={checked} onChange={onSelect} />
+      {children}
+    </label>
   );
 }
 
@@ -111,86 +158,108 @@ function ChartDrawerForm({ editing, onClose, formId, scope, fields, range, canSh
 
   return (
     <form
-      className="flex flex-col gap-5"
+      className="flex flex-col gap-6"
       noValidate
       onSubmit={(e) => {
         e.preventDefault();
         if (valid && field) onSubmit({ fieldId: field.fieldId, type, size, title: trimmed, options, visibility });
       }}
     >
-      <section aria-label="Live preview" className="md:sticky md:top-0 z-10 flex flex-col gap-2 rounded-lg border border-(--border-default) bg-(--surface-card) p-3 shadow-sm">
-        <p className="bg-overline text-(--text-muted)">Live preview</p>
-        <h3 className="bg-body font-semibold text-(--text-primary)">{def.title}</h3>
-        <div aria-live="polite">
-          <ChartBody def={def} field={field} query={preview} skeletonHeight={180} />
+      {/* The preview is a compact confirmation, not the page: capped width, pinned while the controls scroll. */}
+      <section aria-label="Live preview" className="z-10 flex flex-col gap-2 rounded-2xl border border-(--border-default) bg-(--bg-subtle) p-4 md:sticky md:top-0">
+        <div className="flex items-baseline justify-between gap-3">
+          <h3 className="min-w-0 truncate bg-body font-semibold text-(--text-primary)">{def.title}</h3>
+          <span className="bg-overline flex-none text-(--text-muted)">Live preview</span>
+        </div>
+        <div aria-live="polite" className="mx-auto w-full max-w-sm rounded-xl bg-(--surface-card) p-3">
+          <ChartBody def={def} field={field} query={preview} skeletonHeight={160} />
         </div>
       </section>
 
-      <Select id="chart-field" label="Field" value={fieldId} onChange={(e) => changeField(e.target.value)}>
-        {chartable.map((f) => (
-          <option key={f.fieldId} value={f.fieldId}>
-            {f.label} ({FIELD_TYPE_LABEL[f.type] ?? f.type})
-          </option>
-        ))}
-      </Select>
-
-      <fieldset className="flex flex-col gap-2">
-        <legend className="bg-label mb-1">Chart type</legend>
-        <div className="grid grid-cols-2 gap-2">
-          {types.map((t) => (
-            <Radio key={t} id={`chart-type-${t}`} name="chart-type" label={CHART_TYPE_LABEL[t]} checked={type === t} onChange={() => setType(t)} />
+      <Step n={1} title="What to chart">
+        <Select id="chart-field" label="Question" value={fieldId} onChange={(e) => changeField(e.target.value)}>
+          {chartable.map((f) => (
+            <option key={f.fieldId} value={f.fieldId}>
+              {f.label} ({FIELD_TYPE_LABEL[f.type] ?? f.type})
+            </option>
           ))}
-        </div>
-      </fieldset>
+        </Select>
+        <Input
+          id="chart-title"
+          label="Title"
+          value={title}
+          maxLength={80}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            setTitleTouched(true);
+          }}
+          error={trimmed.length === 0 ? 'Give the chart a title.' : undefined}
+        />
+      </Step>
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="bg-label mb-1">Size</legend>
-        <div className="grid grid-cols-3 gap-2">
-          {SIZES.map((s) => (
-            <label
-              key={s}
-              className="flex min-h-14 cursor-pointer flex-col gap-1.5 rounded-lg border border-(--border-default) p-2 has-checked:border-(--action-primary) has-checked:bg-(--accent-soft) has-focus-visible:outline-2 has-focus-visible:outline-(--border-focus)"
-            >
-              <input type="radio" name="chart-size" className="sr-only" checked={size === s} onChange={() => setSize(s)} />
-              <SizePictogram size={s} />
-              <span className="bg-caption font-semibold text-(--text-primary)">{SIZE_LABEL[s]}</span>
-              <span className="bg-caption text-(--text-muted)">{SIZE_FRACTION[s]}</span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
+      <Step n={2} title="Chart type" hint="Only the types that suit this question are shown.">
+        <fieldset className="m-0 border-0 p-0">
+          <legend className="sr-only">Chart type</legend>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {types.map((t) => {
+              const Icon = TYPE_ICON[t];
+              return (
+                <Choice key={t} id={`chart-type-${t}`} name="chart-type" checked={type === t} onSelect={() => setType(t)}>
+                  <Icon aria-hidden="true" className={bx('size-6', type === t ? 'text-(--action-primary)' : 'text-(--text-muted)')} />
+                  <span className="bg-body-sm font-medium text-(--text-primary)">{CHART_TYPE_LABEL[t]}</span>
+                </Choice>
+              );
+            })}
+          </div>
+        </fieldset>
+      </Step>
 
-      <Input
-        id="chart-title"
-        label="Title"
-        value={title}
-        maxLength={80}
-        onChange={(e) => {
-          setTitle(e.target.value);
-          setTitleTouched(true);
-        }}
-        error={trimmed.length === 0 ? 'Give the chart a title.' : undefined}
-      />
+      <Step n={3} title="Size on the dashboard">
+        <fieldset className="m-0 border-0 p-0">
+          <legend className="sr-only">Size</legend>
+          <div className="grid grid-cols-3 gap-2">
+            {SIZES.map((s) => (
+              <Choice key={s} id={`chart-size-${s}`} name="chart-size" checked={size === s} onSelect={() => setSize(s)} className="items-stretch text-left">
+                <SizePictogram size={s} />
+                <span className="bg-body-sm font-semibold text-(--text-primary)">{SIZE_LABEL[s]}</span>
+                <span className="bg-caption text-(--text-muted)">{SIZE_FRACTION[s]}</span>
+              </Choice>
+            ))}
+          </div>
+        </fieldset>
+      </Step>
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="bg-label mb-1">Options</legend>
-        <div role="radiogroup" aria-label="Show values as" className="flex flex-wrap gap-x-5 gap-y-1">
-          <Radio id="chart-value-count" name="chart-value" label="Show counts" checked={options.valueMode === 'count'} onChange={() => setOptions({ ...options, valueMode: 'count' })} />
-          <Radio id="chart-value-percent" name="chart-value" label="Show percentages" checked={options.valueMode === 'percent'} onChange={() => setOptions({ ...options, valueMode: 'percent' })} />
+      <Step n={4} title="Display">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <span className="bg-body-sm text-(--text-secondary)">Show values as</span>
+          <Segmented
+            ariaLabel="Show values as"
+            value={options.valueMode}
+            onChange={(v) => setOptions({ ...options, valueMode: v as ChartOptions['valueMode'] })}
+            options={[{ id: 'count', label: 'Counts' }, { id: 'percent', label: 'Percentages' }]}
+          />
         </div>
-        {kind === 'choice' && (
-          <Checkbox id="chart-legend" label="Show legend" checked={options.legend} onChange={(e) => setOptions({ ...options, legend: e.target.checked })} />
-        )}
         {kind !== 'date' && (
-          <div role="radiogroup" aria-label="Sort by" className="flex flex-wrap gap-x-5 gap-y-1">
-            <Radio id="chart-sort-original" name="chart-sort" label={kind === 'scale' ? 'Scale order (1, 2, 3...)' : 'Original option order'} checked={options.sort === 'original'} onChange={() => setOptions({ ...options, sort: 'original' })} />
-            <Radio id="chart-sort-value" name="chart-sort" label="Largest first" checked={options.sort === 'value'} onChange={() => setOptions({ ...options, sort: 'value' })} />
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            <span className="bg-body-sm text-(--text-secondary)">Order</span>
+            <Segmented
+              ariaLabel="Sort by"
+              value={options.sort}
+              onChange={(v) => setOptions({ ...options, sort: v as ChartOptions['sort'] })}
+              options={[{ id: 'original', label: kind === 'scale' ? 'Scale order' : 'Option order' }, { id: 'value', label: 'Largest first' }]}
+            />
           </div>
         )}
-      </fieldset>
+        {kind === 'choice' && (
+          <div className="flex items-center justify-between gap-4">
+            <label htmlFor="chart-legend" className="bg-body-sm text-(--text-secondary)">Show legend</label>
+            <Switch id="chart-legend" checked={options.legend} onChange={(on) => setOptions({ ...options, legend: on })} />
+          </div>
+        )}
+      </Step>
 
       {canShare && scope !== 'personal' && (
-        <div className="flex items-start justify-between gap-3 rounded-lg border border-(--border-default) p-3">
+        <div className="flex items-start justify-between gap-3 rounded-xl border border-(--border-default) p-4">
           <label htmlFor="chart-share" className="flex flex-col gap-0.5">
             <span className="bg-body-sm font-semibold text-(--text-primary)">Share with workspace</span>
             <span className="bg-caption text-(--text-muted)">

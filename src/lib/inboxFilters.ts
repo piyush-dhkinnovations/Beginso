@@ -6,8 +6,8 @@
 import type { ResponseFilters } from '@/types/response';
 import type { StageCategory, StageRef } from '@/types/stage';
 
-export type InboxViewMode = 'table' | 'board' | 'calendar' | 'chart';
-const VIEW_MODES = new Set<InboxViewMode>(['table', 'board', 'calendar', 'chart']);
+export type InboxViewMode = 'table' | 'board' | 'calendar';
+const VIEW_MODES = new Set<InboxViewMode>(['table', 'board', 'calendar']);
 
 export function normalizeViewMode(raw: string | null): InboxViewMode {
   return raw && VIEW_MODES.has(raw as InboxViewMode) ? (raw as InboxViewMode) : 'table';

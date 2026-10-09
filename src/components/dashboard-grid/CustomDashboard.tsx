@@ -56,7 +56,17 @@ export function useCustomDashboard({ scope, defaults, metrics, canEdit = true, e
         void qc.invalidateQueries({ queryKey: key });
       } else if (isAxiosError(error) && error.response?.status === 403) {
         toast("You don't have permission to change this dashboard.", 'error');
-      } else toast("Couldn't save the dashboard. Try again.", 'error');
+      } else if (isAxiosError(error) && error.response?.status === 400) {
+        // The server validates every widget. Say which setting it refused instead of a vague "try again" — and
+        // keep the draft, so nothing the user arranged is lost.
+        const issue = (error.response.data as { errors?: { field?: string; message?: string }[] } | undefined)?.errors?.[0];
+        toast(
+          issue?.message
+            ? `The server didn't accept this layout (${issue.field ? `${issue.field}: ` : ''}${issue.message}).`
+            : "The server didn't accept this layout. It may need an update — your changes are still here.",
+          'error',
+        );
+      } else toast("Couldn't save the dashboard. Check your connection and try again.", 'error');
     },
   });
 

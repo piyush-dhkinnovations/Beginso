@@ -58,6 +58,7 @@ export const config = {
     '/insights/:path*',
     '/exports/:path*',
     '/responses/:path*',
+    '/form-responses/:path*',
     '/analytics/:path*',
     '/reports/:path*',
     '/settings/:path*',

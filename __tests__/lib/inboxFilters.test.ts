@@ -117,7 +117,7 @@ describe('normalizeViewMode', () => {
   it.each([
     ['board', 'board'],
     ['calendar', 'calendar'],
-    ['chart', 'chart'],
+    ['chart', 'table'],
     ['table', 'table'],
     ['bogus', 'table'],
     [null, 'table'],

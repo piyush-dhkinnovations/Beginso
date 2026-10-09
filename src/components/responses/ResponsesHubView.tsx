@@ -9,7 +9,6 @@ import { ActiveFilterChips } from './ActiveFilterChips';
 import { ResponsesCountChips } from './ResponsesCountChips';
 import { ResponseDrawer } from './ResponseDrawer';
 import { SaveViewModal } from './SaveViewModal';
-import { ResponsesChartLazy as ResponsesChart } from './ResponsesChartLazy';
 import { ResponsesTableSection } from './ResponsesTableSection';
 import { ResponsesHeaderActions } from './ResponsesHeaderActions';
 import { DeleteResponsesModal } from './DeleteResponsesModal';
@@ -35,7 +34,6 @@ const VIEW_TABS = [
   { id: 'table', label: 'Table' },
   { id: 'board', label: 'Board' },
   { id: 'calendar', label: 'Calendar' },
-  { id: 'chart', label: 'Chart' },
 ];
 
 interface ResponsesHubViewProps {
@@ -59,12 +57,6 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   const role = useWorkspaceRole(scope);
   const timezone = useWorkspaceTimezone(scope);
   const mutations = useInboxMutations({ scope, formId });
-  // Same query key the form header uses, so no extra request on a form's own page.
-  const { data: scopedForm } = useQuery({
-    queryKey: ['form', formId],
-    queryFn: () => formsService.getFormById(formId as string),
-    enabled: !!formId,
-  });
   // The all-forms view needs each row's form name; the response itself only carries formId.
   const { data: allForms } = useQuery({
     queryKey: ['responses-form-names', scope],
@@ -82,7 +74,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   const canExport = role !== undefined && hasCapability(role, 'responses:export');
   const { runExport, exportCurrentFilter } = useInboxExports({ formId, filters });
 
-  const { form, formError, isFormError, refetchForm, stats, statsLoading, isStatsError, refetchStats, data, isLoading, isResponsesError, refetchResponses } =
+  const { form, formError, isFormError, refetchForm, stats, isStatsError, data, isLoading, isResponsesError, refetchResponses } =
     useResponsesData({ scope, formId, filters, page, pageLimit, setPage });
   const { responseId, responses, activeResponsePosition, openResponse, closeResponse, navigateResponse, expandResponse } = useResponseRouting({
     scope, formId, filters, page, pageLimit, data,
@@ -152,20 +144,8 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
     // Keeping this container out of an animated opacity stacking context is important:
     // ResponseDrawer is position:fixed, and must be able to layer above the fixed TopNav.
     // AppShell owns page width (CLAUDE.md) — this component sets none of its own.
-    <div className={formId ? 'flex flex-col gap-6' : 'flex flex-col gap-4'}>
-      {formId ? (
-        // Inside a form the shared form header already names the form and the tab, so there is no second page
-        // title: a one-line summary on the left, the page's actions on the right, same as Insights.
-        <>
-          <h1 className="sr-only">{`Responses: ${scopedForm?.title ?? '…'}`}</h1>
-          {(headerFacts || headerActions) && (
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="bg-body-sm m-0 text-(--text-muted)">{headerFacts}</p>
-              {headerActions && <div className="flex flex-wrap items-center gap-3">{headerActions}</div>}
-            </div>
-          )}
-        </>
-      ) : (
+    <div className="flex flex-col gap-4">
+      {!formId && (
         <PageHeader title="All responses" description={headerFacts} actions={headerActions} />
       )}
 
@@ -173,7 +153,11 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         <NoResponsesYet formId={formId} />
       ) : (
         <>
-          <ResponsesCountChips stats={isStatsError ? undefined : stats} stages={stages} filters={filters} onFilterChange={changeFilter} />
+          {/* Inside a form the form header already names the page, so the count chips and the page actions share one row. */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <ResponsesCountChips stats={isStatsError ? undefined : stats} stages={stages} filters={filters} onFilterChange={changeFilter} />
+            {formId && headerActions && <div className="flex flex-wrap items-center gap-3">{headerActions}</div>}
+          </div>
 
           <ResponsesToolbar
             search={search}
@@ -243,18 +227,6 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
 
           {view === 'calendar' && (
             <ResponsesCalendar scope={scope} formId={formId} filters={filters} timezone={timezone} onViewResponse={openResponse} />
-          )}
-
-          {view === 'chart' && (
-            <ResponsesChart
-              scope={scope}
-              formId={formId}
-              filters={filters}
-              stats={stats}
-              statsLoading={statsLoading}
-              statsError={isStatsError}
-              onRetryStats={() => void refetchStats()}
-            />
           )}
         </>
       )}
