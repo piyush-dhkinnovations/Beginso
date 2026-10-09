@@ -81,6 +81,7 @@ export const responseActivityKeys = {
 export const dashboardKeys = {
   all: ['dashboard'] as const,
   analytics: () => [...dashboardKeys.all, 'analytics'] as const,
+  layout: (scope: string) => [...dashboardKeys.all, 'layout', scope] as const,
   responseTrend: () => [...dashboardKeys.all, 'response-trend-30d'] as const,
 };
 

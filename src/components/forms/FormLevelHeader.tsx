@@ -1,8 +1,10 @@
 'use client';
 
-import Link from 'next/link';
-import { useParams, usePathname, useSearchParams } from 'next/navigation';
+import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+import { FormSubNav } from '@/components/forms/FormSubNav';
 import { Breadcrumb, type BreadcrumbItem } from '@/components/ui/Breadcrumb';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -20,13 +22,14 @@ const HEADER_ROUTE_RE = /^\/forms\/[^/]+\/(overview|inbox|insights|scores)\/?$/;
 
 /**
  * The form-level navigation spine: `Workspace › Forms › <Form>` breadcrumb, the form's name and
- * status, and a horizontal sub-nav (Overview · Inbox · Insights · Edit · Settings). It sits under
+ * status, and a horizontal sub-nav (Overview · Responses · Insights · Edit · Settings). It sits under
  * the workspace/personal sidebar, which stays mounted - the form's own nav never replaces it.
  * Edit and Settings are shown only to roles that can edit (presentation only; the server enforces).
  */
 export function FormLevelHeader() {
   const { id: formId } = useParams<{ id: string }>();
   const pathname = usePathname();
+  const router = useRouter();
   const show = HEADER_ROUTE_RE.test(pathname);
   const scope = useFormScope(formId);
   const ws = useSearchParams().get('ws') ?? (scope && scope !== 'personal' ? scope : null);
@@ -52,28 +55,21 @@ export function FormLevelHeader() {
       ? [{ label: 'Personal', href: '/dashboard' }, { label: 'Forms', href: '/forms' }, { label: form?.title ?? '…' }]
       : [{ label: 'Shared with me', href: '/shared' }, { label: form?.title ?? '…' }];
 
-  const canEdit = !form?.myRole || hasCapability(form.myRole, 'forms:edit');
-  const base = `/forms/${formId}`;
-  const q = ws ? `ws=${encodeURIComponent(ws)}` : '';
-  const withQuery = (path: string, extra?: string) => {
-    const parts = [extra, q].filter(Boolean).join('&');
-    return `${base}${path}${parts ? `?${parts}` : ''}`;
-  };
-  const items = [
-    { label: 'Overview', href: withQuery('/overview'), active: /\/(overview|scores)\/?$/.test(pathname) },
-    { label: 'Inbox', href: withQuery('/inbox'), active: pathname.endsWith('/inbox') },
-    { label: 'Insights', href: withQuery('/insights'), active: pathname.endsWith('/insights') },
-    ...(canEdit
-      ? [
-          { label: 'Edit', href: withQuery('/edit'), active: false },
-          { label: 'Settings', href: withQuery('/edit', 'tab=settings'), active: false },
-        ]
-      : []),
-  ];
+  const parent = breadcrumb[breadcrumb.length - 2];
+  const backHref = parent.href ?? '/forms';
+  const backLabel = parent.label;
 
+  const canEdit =!form?.myRole || hasCapability(form.myRole, 'forms:edit');
   return (
     <div className="flex flex-col gap-3">
-      <Breadcrumb items={breadcrumb} />
+      <div className="flex items-center gap-3">
+        {/* The app sidebar is hidden on these pages (see PersonalShell), so this is the way out. Always the list, never history. */}
+        <Button variant="ghost" size="small" onClick={() => router.push(backHref)} aria-label={`Back to ${backLabel}`}>
+          <ArrowLeft size={16} className="bg-icon" />
+          {backLabel}
+        </Button>
+        <Breadcrumb items={breadcrumb} />
+      </div>
       <div className="flex min-w-0 items-center gap-3">
         {form ? (
           <>
@@ -84,18 +80,12 @@ export function FormLevelHeader() {
           <Skeleton variant="text" width={200} height={24} />
         )}
       </div>
-      <nav aria-label="Form" className="bg-tabs">
-        {items.map((item) => (
-          <Link
-            key={item.label}
-            href={item.href}
-            aria-current={item.active ? 'page' : undefined}
-            className="bg-tab aria-[current=page]:border-b-(--border-focus) aria-[current=page]:text-(--text-link)"
-          >
-            {item.label}
-          </Link>
-        ))}
-      </nav>
+      <FormSubNav
+        formId={formId}
+        ws={ws}
+        canEdit={canEdit}
+        active={/\/inbox\/?$/.test(pathname) ? 'responses' : pathname.endsWith('/insights') ? 'insights' : 'overview'}
+      />
     </div>
   );
 }

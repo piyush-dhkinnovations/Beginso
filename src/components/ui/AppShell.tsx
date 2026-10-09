@@ -10,6 +10,8 @@ export interface AppShellProps {
   initialCollapsed?: boolean;
   /** Show the icon rail regardless of the user's saved preference (e.g. the form builder). Not persisted. */
   forceCollapsed?: boolean;
+  /** Focus view (e.g. a form's own pages): no docked sidebar; the menu button opens it as an overlay drawer at every width. */
+  hideSidebar?: boolean;
   sidebar: (collapsed: boolean) => React.ReactNode;
   topBar: (toggleCollapsed: () => void, toggleMobile?: () => void) => React.ReactNode;
   children: React.ReactNode;
@@ -31,6 +33,7 @@ export interface AppShellProps {
 export function AppShell({
   initialCollapsed = false,
   forceCollapsed = false,
+  hideSidebar = false,
   sidebar,
   topBar,
   children,
@@ -58,12 +61,13 @@ export function AppShell({
     document.cookie = `sidebar_collapsed=${preferCollapsed}; path=/; max-age=31536000; SameSite=Lax`;
   }, [preferCollapsed]);
 
-  const toggleCollapsed = () => (forceCollapsed ? setForceExpanded((prev) => !prev) : setCollapsed((prev) => !prev));
   const toggleMobile = () => {
     if (controlledMobileOpen === undefined) {
       setInternalMobileOpen((prev) => !prev);
     }
   };
+  const toggleCollapsed = () =>
+    hideSidebar ? toggleMobile() : forceCollapsed ? setForceExpanded((prev) => !prev) : setCollapsed((prev) => !prev);
 
   return (
     <div className={bx("flex flex-col min-h-screen", className)}>
@@ -73,7 +77,7 @@ export function AppShell({
       {mobileOpen && (
         <div
           role="presentation"
-          className="fixed inset-0 z-40 bg-black/40 animate-fade-in md:hidden"
+          className={bx("fixed inset-0 z-40 bg-black/40 animate-fade-in", !hideSidebar && "md:hidden")}
           onClick={handleMobileClose}
         >
           <div
@@ -81,7 +85,7 @@ export function AppShell({
             role="dialog"
             aria-modal="true"
             aria-label="Navigation menu"
-            className="absolute left-0 top-0 bottom-0 w-55 max-w-[80vw] bg-(--surface-card) shadow-(--shadow-lg) z-50 flex flex-col"
+            className="absolute left-0 top-0 bottom-0 w-64 max-w-[85vw] bg-(--surface-card) shadow-(--shadow-lg) z-50 flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between p-2 border-b border-(--border-default)">
@@ -95,7 +99,11 @@ export function AppShell({
                 <X size={18} className="bg-icon" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto">
+            {/* Following any link closes the drawer; the shell stays mounted across navigations. */}
+            <div
+              className="flex flex-1 flex-col overflow-y-auto [&>nav]:w-full [&>nav]:flex-1"
+              onClick={(e) => (e.target as HTMLElement).closest("a") && handleMobileClose()}
+            >
               {sidebar(false)}
             </div>
           </div>
@@ -110,9 +118,11 @@ export function AppShell({
             overflow-y-auto is a safety net for a viewport too short for every nav item, not the
             primary scroll mechanism. bg-topbar is 52px and .bg-sidenav 220px / .bg-sidenav-rail
             64px (beginso-ui.css §12) — keep the spacer widths in step with those. */}
-        <aside className={bx("hidden md:block shrink-0", collapsed ? "w-16" : "w-55")}>
-          <div className="fixed top-13 bottom-0 flex overflow-y-auto">{sidebar(collapsed)}</div>
-        </aside>
+        {!hideSidebar && (
+          <aside className={bx("hidden md:block shrink-0", collapsed ? "w-16" : "w-55")}>
+            <div className="fixed top-13 bottom-0 flex overflow-y-auto">{sidebar(collapsed)}</div>
+          </aside>
+        )}
         <main
           className={bx(
             // sprint-11-v2a-hardening 5.1 — real bug found by the width pass: a flex item's

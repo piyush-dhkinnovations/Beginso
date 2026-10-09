@@ -36,7 +36,7 @@ export interface ExpectedCell {
 // Sprint 12 (inbox-collaboration), task 1.9 — 'Inbox' added in the same PR as
 // src/app/w/[slug]/inbox/page.tsx (WorkspaceSidebar's own "never before" rule). Visible to every
 // role, same as Activity — collaboration signals are not manager-only.
-const WORKSPACE_NAV_BASE = ['Home', 'Forms', 'Inbox', 'Activity'];
+const WORKSPACE_NAV_BASE = ['Home', 'Forms', 'All responses', 'Activity'];
 
 export const WORKSPACE_NAV_MATRIX: ExpectedCell[] = [
   {
@@ -80,7 +80,7 @@ export const PERSONAL_NAV_MATRIX: ExpectedCell[] = [
     role: 'owner',
     ctx: 'personal',
     screen: 'PersonalSidebar',
-    visible: ['Home', 'Forms', 'Shared with me', 'Templates', 'Inbox', 'Insights', 'Settings'],
+    visible: ['Home', 'Forms', 'Shared with me', 'Templates', 'All responses', 'Insights', 'Settings'],
     hidden: ['Reports'],
   },
 ];

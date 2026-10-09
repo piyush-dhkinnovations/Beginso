@@ -16,6 +16,7 @@ import {
 import { responsesService } from '@/services/responses';
 import { responseKeys } from '@/lib/queryKeys';
 import { useBuilderStore } from '@/store/builderStore';
+import { useRecentForms } from '@/store/recentFormsStore';
 import type { Role } from '@/types/workspace';
 
 export interface WorkspaceSidebarProps {
@@ -54,6 +55,7 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role, 
     }
   };
   const base = `/w/${slug}`;
+  const recent = useRecentForms(slug);
 
   // Sprint 12 (inbox-collaboration), task 1.9 — the unread count badge from the stats call
   // (design.md §4: "wireframe shows a count badge; if that call fails, no badge, no error").
@@ -83,8 +85,14 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role, 
   // Primary: the four daily destinations (every role that can read the workspace can read Insights).
   const primary = [
     toItem({ label: 'Home', href: base, icon: Home }),
-    toItem({ label: 'Forms', href: `${base}/forms`, icon: FileText }),
-    toItem({ label: 'Inbox', href: `${base}/inbox`, icon: Inbox, count: stats?.unread }),
+    {
+      ...toItem({ label: 'Forms', href: `${base}/forms`, icon: FileText }),
+      subItems: recent.map((f) => {
+        const href = `/forms/${f.id}/overview?ws=${encodeURIComponent(slug)}`;
+        return { label: f.title, href, active: pathname.startsWith(`/forms/${f.id}`), onClick: guard(href) };
+      }),
+    },
+    toItem({ label: 'All responses', href: `${base}/inbox`, icon: Inbox, count: stats?.unread }),
     toItem({ label: 'Insights', href: `${base}/insights`, icon: BarChart3 }),
   ];
 

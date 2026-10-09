@@ -421,7 +421,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
       },
       {
         id: 'responses',
-        label: 'Open Inbox',
+        label: 'Open Responses',
         icon: <Table2 className="bg-icon" />,
         onSelect: () => router.push(formHref(`/forms/${formId}/inbox`, context)),
       },

@@ -30,6 +30,8 @@ const ALLOWED_API_ROOTS = new Set([
   'auth',
   'analytics',
   'dashboard',
+  // Custom Home layouts (GET/PUT/DELETE /api/dashboards/home) — a separate root from 'dashboard' (analytics).
+  'dashboards',
   'forms',
   // Sprint 9 (team-permissions, task 2.2) — the public/token-based invitation routes
   // (GET/POST /api/invitations/:token/...) live under their own root, not /workspaces, so

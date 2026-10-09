@@ -26,6 +26,7 @@ import { formsService } from '@/services/forms';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
 import { useBuilderStore } from '@/store/builderStore';
+import { FormSubNav } from '@/components/forms/FormSubNav';
 import { BuilderHeader } from '@/components/form-builder/BuilderHeader';
 import { BuilderTabs, BuilderTab } from '@/components/form-builder/BuilderTabs';
 import { useToast } from '@/components/ui/Toast';
@@ -703,6 +704,10 @@ export default function BuilderPageShell() {
               canDelete={canDeleteForm(formRole)}
               onDelete={() => setShowDeleteModal(true)}
             />
+
+            <div className="shrink-0 border-b bg-(--surface-card) px-4 [&_.bg-tabs]:border-b-0">
+              <FormSubNav formId={id} ws={formWorkspaceSlug} canEdit active={activeTab === 'settings' ? 'settings' : 'edit'} />
+            </div>
 
             <BuilderTabs
               activeTab={activeTab}

@@ -32,6 +32,8 @@ interface ResponsesTableProps {
   otherCount?: number;
   /** Undefined on the all-forms view — the empty-state CTA falls back to "Go to Forms". */
   formId?: string;
+  /** form id → title. Present only on the all-forms view, where it adds a Form column. */
+  formNames?: Record<string, string>;
 }
 
 export function ResponsesTable({
@@ -47,6 +49,7 @@ export function ResponsesTable({
   filterSummary,
   otherCount,
   formId,
+  formNames,
 }: ResponsesTableProps) {
   const router = useRouter();
   const allSelected = responses.length > 0 && selectedIds.size === responses.length;
@@ -153,6 +156,11 @@ export function ResponsesTable({
         </button>
       ),
     },
+    ...(formNames ? [{
+      key: 'form',
+      header: 'Form',
+      render: (r: IResponse) => <span className="block max-w-48 truncate" title={formNames[r.formId]}>{formNames[r.formId] ?? '—'}</span>,
+    }] : []),
     { key: 'email', header: 'Email', render: (r) => detectRespondentIdentity(r.answers).email ?? '—' },
     { key: 'tags', header: 'Tags', render: (r) => <TagsCell tags={r.tags} /> },
     { key: 'assignee', header: 'Assignee', render: (r) => <AssigneeCell response={r} /> },

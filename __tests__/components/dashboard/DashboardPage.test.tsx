@@ -5,7 +5,12 @@ const mockUseQuery = vi.fn();
 
 vi.mock('@tanstack/react-query', () => ({
   useQuery: (options: unknown) => mockUseQuery(options),
+  useMutation: () => ({ mutate: vi.fn(), isPending: false }),
+  useQueryClient: () => ({ setQueryData: vi.fn(), invalidateQueries: vi.fn() }),
 }));
+
+// CustomDashboard reports save/reset results through the toast provider the app shell supplies.
+vi.mock('@/components/ui/Toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 
 vi.mock('@/hooks/useAuth', () => ({
   useAuth: () => ({
@@ -59,7 +64,7 @@ describe('DashboardPage analytics integration', () => {
         enabled: true,
       })
     );
-    expect(screen.getByText('Responses This Month')).toBeInTheDocument();
+    expect(screen.getByText('Responses this month')).toBeInTheDocument();
     expect(screen.getByText('9')).toBeInTheDocument();
     expect(screen.getByText('Lead intake')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'View response for Lead intake' })).toHaveAttribute(
@@ -86,7 +91,7 @@ describe('DashboardPage analytics integration', () => {
 
     // Stat cards are gated on hasForms, which must now follow the corrected count (0), not the
     // leaked analytics count (1) — so they don't render at all, and the empty state shows instead.
-    expect(screen.queryByText('Total Forms')).not.toBeInTheDocument();
+    expect(screen.queryByText('Total forms')).not.toBeInTheDocument();
     expect(screen.getAllByText('Create your first form').length).toBeGreaterThan(0);
   });
 
@@ -108,6 +113,6 @@ describe('DashboardPage analytics integration', () => {
 
     render(<DashboardPage />);
 
-    expect(screen.queryByText('Total Forms')).not.toBeInTheDocument();
+    expect(screen.queryByText('Total forms')).not.toBeInTheDocument();
   });
 });

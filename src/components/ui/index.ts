@@ -48,6 +48,8 @@ export { Skeleton } from './Skeleton';
 export type { SkeletonProps } from './Skeleton';
 export { Spinner } from './Spinner';
 export type { SpinnerProps } from './Spinner';
+export { KpiCard } from './KpiCard';
+export type { KpiCardProps, KpiData, KpiTone, KpiVariant } from './KpiCard';
 export { StatCard } from './StatCard';
 export type { StatCardProps, StatChart } from './StatCard';
 export { StatusBadge } from './StatusBadge';

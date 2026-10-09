@@ -317,7 +317,7 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       const items = await screen.findAllByRole('menuitem');
       const labels = items.map((i) => i.textContent);
       expect(labels).toEqual(
-        expect.arrayContaining(['Overview', 'Open Inbox', 'Open Insights', 'Move', 'Share access', 'Duplicate', 'Delete'])
+        expect.arrayContaining(['Overview', 'Open Responses', 'Open Insights', 'Move', 'Share access', 'Duplicate', 'Delete'])
       );
     });
 

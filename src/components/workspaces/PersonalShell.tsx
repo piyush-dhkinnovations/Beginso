@@ -13,6 +13,8 @@
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { useEffect } from 'react';
+import { touchRecentForm } from '@/store/recentFormsStore';
 import { SearchTrigger } from '@/components/search/SearchTrigger';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -59,7 +61,6 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
   const searchParams = useSearchParams();
   const formId = FORM_DETAIL_ROUTE_RE.exec(pathname)?.[1];
   const wsHint = searchParams.get('ws');
-  const isBuilder = /^\/forms\/[^/]+\/edit\/?$/.test(pathname);
 
   const { data: form } = useQuery({
     queryKey: ['form', formId],
@@ -92,11 +93,21 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
 
   const contextUnresolved = !!formId && !wsHint && !form && !formWorkspace;
 
+  // The form's own pages are a focus view: no docked sidebar (the menu button still opens it as a drawer).
+  // The builder is included: it shows the same form sub-nav, so moving between a form's pages feels like one place.
+  const isFormFocus = /^\/forms\/[^/]+\/(overview|inbox|insights|scores|edit)\/?$/.test(pathname);
+
+  // Feed "recent forms" in the sidebar: record once the form's real scope is known (never guess 'personal' while resolving).
+  const recentScope = formWorkspace?.slug ?? (form && !form.workspaceId ? 'personal' : undefined);
+  const recentTitle = form?._id === formId ? form?.title : undefined;
+  useEffect(() => {
+    if (formId && recentScope && recentTitle) touchRecentForm(recentScope, { id: formId, title: recentTitle });
+  }, [formId, recentScope, recentTitle]);
+
   return (
     <AppShell
       initialCollapsed={initialCollapsed}
-      // The builder needs the width: its sidebar drops to the icon rail (still the same sidebar, never replaced).
-      forceCollapsed={isBuilder}
+      hideSidebar={isFormFocus}
       topBar={(toggleCollapsed, toggleMobile) => (
         <TopBar
           brand={

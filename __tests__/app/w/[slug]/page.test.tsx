@@ -111,7 +111,7 @@ describe('WorkspaceHomePage (/w/[slug]/page)', () => {
     // Shown as the pinned form and again as a row in the new "Responses by form" chart.
     expect(screen.getAllByText('Customer Survey').length).toBeGreaterThanOrEqual(1);
     // Quick actions
-    expect(screen.getByRole('link', { name: /Open Inbox/ })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /All responses/ })).toBeInTheDocument();
   });
 
   it('links to the correct edit URL for each pinned form', async () => {

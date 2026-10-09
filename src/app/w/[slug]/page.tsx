@@ -183,7 +183,7 @@ export default function WorkspaceHomePage() {
               <Link href={`/w/${slug}/inbox`}>
                 <Button variant="secondary" size="small">
                   <Table size={13} className="mr-1.5" />
-                  Open Inbox
+                  All responses
                 </Button>
               </Link>
               {canManageWorkspaceSettings(role) && (
@@ -219,7 +219,7 @@ export default function WorkspaceHomePage() {
                     </div>
                     <div className="flex items-center gap-3 bg-caption text-(--text-muted)">
                       <Link href={`/forms/${f._id}/inbox?ws=${slug}`} className="hover:text-(--text-primary) flex items-center gap-1">
-                        <Table size={12} /> Inbox
+                        <Table size={12} /> Responses
                       </Link>
                       <Link href={`/forms/${f._id}/insights?ws=${slug}`} className="hover:text-(--text-primary) flex items-center gap-1">
                         <BarChart2 size={12} /> Insights

@@ -9,10 +9,10 @@ import { formsService } from '@/services/forms';
 import { useResponseTrend } from '@/hooks/useResponseTrend';
 import { dashboardKeys, workspaceKeys } from '@/lib/queryKeys';
 import { formatRelativeTime } from '@/lib/formatters';
-import { StatisticsCards } from '@/components/dashboard/StatisticsCards';
+import { CustomDashboard } from '@/components/dashboard-grid/CustomDashboard';
+import { personalDefaults, personalMetrics } from '@/components/dashboard-grid/personalHome';
 import { RecentActivitySection } from '@/components/dashboard/RecentActivitySection';
-import { toSegments } from '@/lib/chartSegments';
-import { ActionCard, Card, BarsChart, ChartCard, EmptyState, PageHeader, Skeleton, StatusBadge } from '@/components/ui';
+import { ActionCard, Card, EmptyState, PageHeader, Skeleton, StatusBadge } from '@/components/ui';
 import type { FormStatus } from '@/types/form';
 
 const STATUS_VARIANT: Record<FormStatus, 'draft' | 'published' | 'closed'> = {
@@ -108,6 +108,8 @@ export default function DashboardPage() {
     publishedForms: formsLoaded ? Math.min(analytics.publishedForms, formsData.total) : analytics.publishedForms,
   };
 
+  const metrics = personalMetrics(effectiveCounts, responseTrend, formsData?.forms ?? []);
+
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
@@ -162,11 +164,12 @@ export default function DashboardPage() {
         <>
           {/* Gated on formsLoaded (not analyticsLoading) — rendering the cards before we know
               hasForms flashed them on every reload for a zero-forms account. */}
-          <StatisticsCards
-            isLoading={analyticsLoading}
-            counts={effectiveCounts}
-            dailyResponses={responseTrend}
-            formResponses={{ all: formsData.forms.map((f) => f.responseCount) }}
+          <CustomDashboard
+            scope="personal"
+            title="Overview"
+            defaults={personalDefaults(metrics)}
+            metrics={metrics}
+            enabled={!authLoading && isAuthenticated && !analyticsLoading}
           />
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -197,27 +200,11 @@ export default function DashboardPage() {
                   </Link>
                 ))}
               </Card>
-
-              {formsData.forms.some((f) => f.responseCount > 0) && (
-                <ChartCard title="Responses by form">
-                  <BarsChart
-                    horizontal
-                    ariaLabel="Responses by form"
-                    data={toSegments(
-                      [...formsData.forms]
-                        .filter((f) => f.responseCount > 0)
-                        .sort((a, b) => b.responseCount - a.responseCount)
-                        .slice(0, 5)
-                        .map((f) => ({ key: f._id, label: f.title, value: f.responseCount })),
-                    )}
-                  />
-                </ChartCard>
-              )}
             </section>
 
             <div className="flex flex-col gap-6">
               <section aria-labelledby="quick-actions-heading" className="flex flex-col gap-3">
-                <h2 id="quick-actions-heading" className="bg-h5 font-bold text-(--text-primary)">Quick actions</h2>
+                <div className="flex min-h-8 items-center"><h2 id="quick-actions-heading" className="bg-h5 font-bold text-(--text-primary)">Quick actions</h2></div>
                 <div className="flex flex-col gap-3">
                   <ActionCard href="/forms" title="Create a form" hint="Start from scratch" icon={<PlusCircle />} />
                   <ActionCard href="/templates" title="Browse templates" hint="Start with a proven structure" icon={<LayoutTemplate />} />

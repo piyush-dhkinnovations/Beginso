@@ -7,6 +7,7 @@ import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown';
 import { useBuilderStore } from '@/store/builderStore';
+import { useRecentForms } from '@/store/recentFormsStore';
 import { dashboardService } from '@/services/dashboard';
 import { formsService } from '@/services/forms';
 import { dashboardKeys, notificationKeys, workspaceKeys } from '@/lib/queryKeys';
@@ -33,6 +34,7 @@ export interface PersonalSidebarProps {
 // yet (Sprint 13).
 export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
   const pathname = usePathname();
+  const recent = useRecentForms('personal');
   const dirty = useBuilderStore((state) => state.dirty);
   const setPendingLeaveUrl = useBuilderStore((state) => state.setPendingLeaveUrl);
   // Shares its cache with (user)/dashboard/page.tsx's identical query key — no extra request
@@ -94,12 +96,22 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
         {
           items: [
             { label: 'Home', href: '/dashboard', icon: Home, active: pathname === '/dashboard', onClick: guard('/dashboard') },
-            { label: 'Forms', href: '/forms', icon: FileText, active: pathname.startsWith('/forms'), onClick: guard('/forms') },
+            {
+              label: 'Forms',
+              href: '/forms',
+              icon: FileText,
+              active: pathname.startsWith('/forms'),
+              onClick: guard('/forms'),
+              subItems: recent.map((f) => {
+                const href = `/forms/${f.id}/overview`;
+                return { label: f.title, href, active: pathname.startsWith(`/forms/${f.id}`), onClick: guard(href) };
+              }),
+            },
             // Inbox/Insights have nothing to show until a form exists - hidden rather than left to render
             // an empty state. Still shown while loading (hasForms defaults true) and when deep-linked onto
             // one of them, so an active page never vanishes from its own nav.
             ...(hasForms || isResponsesActive
-              ? [{ label: 'Inbox', href: '/inbox', icon: Table2, active: isResponsesActive, onClick: guard('/inbox') }]
+              ? [{ label: 'All responses', href: '/inbox', icon: Table2, active: isResponsesActive, onClick: guard('/inbox') }]
               : []),
             ...(hasForms || isAnalyticsActive
               ? [{ label: 'Insights', href: '/insights', icon: PieChart, active: isAnalyticsActive, onClick: guard('/insights') }]

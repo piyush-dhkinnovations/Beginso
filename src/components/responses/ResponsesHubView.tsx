@@ -99,6 +99,20 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   const role = useWorkspaceRole(scope);
   const timezone = useWorkspaceTimezone(scope);
   const mutations = useInboxMutations({ scope, formId });
+  // Same query key the form header uses, so no extra request on a form's own page.
+  const { data: scopedForm } = useQuery({
+    queryKey: ['form', formId],
+    queryFn: () => formsService.getFormById(formId as string),
+    enabled: !!formId,
+  });
+  // The all-forms view needs each row's form name; the response itself only carries formId.
+  const { data: allForms } = useQuery({
+    queryKey: ['responses-form-names', scope],
+    queryFn: () => formsService.getAllForms(scope === 'personal' ? { type: 'personal' } : { type: 'workspace', workspaceId: scope }),
+    enabled: !formId,
+    staleTime: 60_000,
+  });
+  const formNames = formId ? undefined : Object.fromEntries((allForms?.forms ?? []).map((f) => [f._id, f.title]));
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -384,7 +398,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
     // AppShell owns page width (CLAUDE.md) — this component sets none of its own.
     <div className="flex flex-col gap-4">
       <PageHeader
-        title="Inbox"
+        title={formId ? `Responses: ${scopedForm?.title ?? '…'}` : 'All responses'}
         description={headerFacts}
         actions={
           scope !== 'personal' || canExport ? (
@@ -515,6 +529,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
             isLoading={isLoading}
             selectedIds={selectedIds}
             formId={formId}
+            formNames={formNames}
             hasActiveFilters={hasActiveFilters}
             onClearFilters={() => {
               clearSelection();
