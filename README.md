@@ -135,7 +135,7 @@ Beginso/                    # Next.js 16 application (this repo)
 │   │                       #   settings, templates, notifications, publicForm, upload, dashboard
 │   ├── store/              # Zustand stores (builderStore.ts)
 │   ├── lib/                # Firebase client, axios instance, schemas, auth context, helpers
-│   ├── hooks/              # useAuth, useDebounce, useIntersectionObserver, useTypingEffect
+│   ├── hooks/              # useAuth, useDebounce, ...
 │   ├── types/              # Shared TypeScript types
 │   └── proxy.ts            # Route guards; validates the HttpOnly session with the backend
 ├── __tests__/              # Vitest unit and property-based tests

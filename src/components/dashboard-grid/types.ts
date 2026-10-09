@@ -5,8 +5,7 @@ export const WIDTHS = [3, 4, 6] as const;
 export type WidgetWidth = (typeof WIDTHS)[number];
 
 /** The chart looks the Insights pages already use. */
-export const CHART_KINDS = ['bar', 'line', 'area', 'hbar', 'donut', 'pie', 'status'] as const;
-export type ChartKind = (typeof CHART_KINDS)[number];
+export type ChartKind = 'bar' | 'line' | 'area' | 'hbar' | 'donut' | 'pie' | 'status';
 
 // Widgets name WHAT to show; they never carry a query. Data is resolved by the host page.
 export type WidgetConfig =
