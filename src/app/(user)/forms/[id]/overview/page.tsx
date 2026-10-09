@@ -5,20 +5,19 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Copy, Lock, FileQuestion, Share2 } from 'lucide-react';
+import { Copy, Lock, FileQuestion, Link2, Inbox } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { formAccessService } from '@/services/formAccess';
 import { eventsService } from '@/services/events';
 import { responsesService } from '@/services/responses';
+import { analyticsService } from '@/services/analytics';
 import { workspacesService } from '@/services/workspaces';
-import { formKeys, formAccessKeys, formEventKeys, responseKeys, workspaceKeys } from '@/lib/queryKeys';
+import { formKeys, formAccessKeys, formEventKeys, responseKeys, workspaceKeys, analyticsKeys } from '@/lib/queryKeys';
 import { hasCapability } from '@/lib/roles';
 import { formatRelativeTime } from '@/lib/formatters';
 import { useToast } from '@/components/ui/Toast';
-import { PageHeader } from '@/components/ui/PageHeader';
+import { ButtonLink } from '@/components/ui/ButtonLink';
 import { Button } from '@/components/ui/Button';
-import { PinButton } from '@/components/forms/PinButton';
-import { usePinForm } from '@/hooks/usePinForm';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Alert } from '@/components/ui/Alert';
@@ -45,7 +44,6 @@ function firstAnswer(response: IResponse): string {
 export default function FormOverviewPage() {
   const { id: formId } = useParams<{ id: string }>();
   const { toast } = useToast();
-  const pinMutation = usePinForm();
   const [isAccessOpen, setIsAccessOpen] = useState(false);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
 
@@ -91,6 +89,13 @@ export default function FormOverviewPage() {
     enabled: !!scope,
   });
   const responseCount = responsesQuery.data?.total;
+
+  // Real view count (nullable — the backend may not track views); the Views KPI is omitted when null.
+  const viewsQuery = useQuery({
+    queryKey: analyticsKeys.overview(formId, {}),
+    queryFn: () => analyticsService.getOverview({ formId }, scope),
+    enabled: !!scope,
+  });
 
   if (overviewQuery.isLoading) {
     return (
@@ -143,112 +148,104 @@ export default function FormOverviewPage() {
   // the two surfaces agree.
   const publicUrl =
     form.status === 'published' ? buildPublicFormUrl(publicFormSlug(form)) : '';
+  const editHref = workspace?.slug ? `/forms/${formId}/edit?ws=${workspace.slug}` : `/forms/${formId}/edit`;
+  const inboxHref = workspace?.slug ? `/forms/${formId}/inbox?ws=${workspace.slug}` : `/forms/${formId}/inbox`;
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in">
-      <PageHeader
-        title="Overview"
-        description={`${effectiveStats.responseCount} response${effectiveStats.responseCount === 1 ? '' : 's'}`}
-        actions={
-          <>
-            <PinButton title={form.title} pinned={!!form.pinned} onToggle={() => pinMutation.mutate({ id: formId, pin: !form.pinned })} />
-            <Link href={`/forms/${formId}/preview`}>
-              <Button variant="secondary">Preview</Button>
-            </Link>
-            {canEdit && (
-              <Button variant="secondary" onClick={() => setIsAccessOpen(true)}>
-                <Share2 size={16} className="mr-2" aria-hidden="true" />
-                Share
-              </Button>
-            )}
-            {canEdit && (
-              <Link href={workspace?.slug ? `/forms/${formId}/edit?ws=${workspace.slug}` : `/forms/${formId}/edit`}>
-                <Button variant="primary">Edit form</Button>
-              </Link>
-            )}
-          </>
-        }
+      <h1 className="sr-only">Overview</h1>
+      <FormOverviewStats
+        stats={effectiveStats}
+        accessLabel={accessLabel}
+        onOpenAccess={() => setIsAccessOpen(true)}
+        views={viewsQuery.data?.views}
       />
 
-      <FormOverviewStats stats={effectiveStats} accessLabel={accessLabel} onOpenAccess={() => setIsAccessOpen(true)} />
-
-      {/* Bug fix: the share link sat in the same narrow auto-fit column as every other card
-          here, so a real URL (localhost:3000/f/<10-char id>, in monospace) truncated down to
-          "http://localhost:3000/f…" — almost nothing actually readable. Full-width, outside the
-          grid below, gives it the room an id-bearing URL genuinely needs, same as any normal
-          share-link UI. */}
-      <Card className="flex flex-col gap-3">
-        <h2 className="bg-h4">Share link</h2>
-        {publicUrl ? (
+      <Card className="flex flex-col gap-4 md:flex-row md:items-center">
+        <span className="inline-flex size-12 flex-none items-center justify-center rounded-xl bg-(--surface-hover) text-(--action-primary)">
+          <Link2 className="size-6" aria-hidden="true" />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <div>
+            <h2 className="bg-h4">Share link</h2>
+            {!publicUrl && (
+              <p className="bg-body-sm text-(--text-muted) m-0">This form is not published yet, so there is no public link.</p>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <Input
               id="overview-public-url"
               aria-label="Public link"
-              value={publicUrl}
+              value={publicUrl || 'Publish your form to get a shareable link'}
               readOnly
-              title={publicUrl}
-              className="font-mono flex-1 min-w-0"
+              disabled={!publicUrl}
+              title={publicUrl || undefined}
+              leftIcon={publicUrl ? <Link2 size={16} aria-hidden="true" /> : <Lock size={16} aria-hidden="true" />}
+              className="min-w-0 flex-1 font-mono"
               onFocus={(e) => e.currentTarget.select()}
             />
-            <Button
-              variant="secondary"
-              aria-label="Copy link"
-              onClick={() => {
-                void navigator.clipboard.writeText(publicUrl);
-                toast('Link copied to clipboard.', 'success');
-              }}
-            >
-              <Copy size={16} aria-hidden="true" />
-            </Button>
+            {publicUrl && (
+              <Button
+                variant="secondary"
+                aria-label="Copy link"
+                onClick={() => {
+                  void navigator.clipboard.writeText(publicUrl);
+                  toast('Link copied to clipboard.', 'success');
+                }}
+              >
+                <Copy size={16} aria-hidden="true" />
+              </Button>
+            )}
           </div>
-        ) : (
-          <p className="bg-body-sm" style={{ color: 'var(--text-muted)', margin: 0 }}>
-            This form is not published yet, so there is no public link.
-          </p>
+        </div>
+        {!publicUrl && canEdit && (
+          <ButtonLink variant="primary" href={editHref} className="flex-none self-start md:self-center">
+            Publish form
+          </ButtonLink>
         )}
       </Card>
 
-      <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
-        <Card className="flex flex-col gap-3">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="bg-h4">Recent responses</h2>
-            <span className="flex items-center gap-3">
-              {/* Sprint 12 (inbox-collaboration), task 5.2 — placement judgment call, no wireframe
-                  names a surface for this (see ScoreComparison's own comment). */}
-              <Link href={`/forms/${formId}/scores`} className="bg-body-sm">
-                Score comparison
-              </Link>
-              <Link href={workspace?.slug ? `/forms/${formId}/inbox?ws=${workspace.slug}` : `/forms/${formId}/inbox`} className="bg-body-sm">
-                View inbox
-              </Link>
-            </span>
-          </div>
-          {responsesQuery.isLoading ? (
-            <Skeleton variant="text" width="100%" height={64} />
-          ) : responsesQuery.isError ? (
-            <Alert variant="error" title="Could not load responses." />
-          ) : !responsesQuery.data || responsesQuery.data.data.length === 0 ? (
-            <p className="bg-body-sm" style={{ color: 'var(--text-muted)', margin: 0 }}>
-              No responses yet.
-            </p>
-          ) : (
-            <ul className="flex flex-col" style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-              {responsesQuery.data.data.map((response) => (
-                <li
-                  key={response._id}
-                  className="flex items-baseline justify-between gap-3 py-2"
-                  style={{ borderBottom: '1px solid var(--border-subtle)' }}
-                >
-                  <span className="bg-body-sm truncate">{firstAnswer(response)}</span>
-                  <time className="bg-caption shrink-0" dateTime={response.submittedAt}>
-                    {formatRelativeTime(response.submittedAt)}
-                  </time>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </div>
+      {/* No "Response sources" card: the backend records no referrer/channel per response. */}
+      <section aria-labelledby="recent-responses-heading" className="flex flex-col gap-3 border-t border-(--border-default) pt-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="recent-responses-heading" className="bg-h4">Recent responses</h2>
+          <span className="flex items-center gap-3">
+            {/* Sprint 12 (inbox-collaboration), task 5.2 — placement judgment call, no wireframe
+                names a surface for this (see ScoreComparison's own comment). */}
+            <Link href={`/forms/${formId}/scores`} className="bg-body-sm">
+              Score comparison
+            </Link>
+            <ButtonLink variant="ghost" size="small" href={inboxHref}>
+              View all responses →
+            </ButtonLink>
+          </span>
+        </div>
+        {responsesQuery.isLoading ? (
+          <Skeleton variant="text" width="100%" height={64} />
+        ) : responsesQuery.isError ? (
+          <Alert variant="error" title="Could not load responses." />
+        ) : !responsesQuery.data || responsesQuery.data.data.length === 0 ? (
+          <EmptyState
+            icon={<Inbox className="bg-icon" aria-hidden="true" />}
+            title="No responses yet"
+            description="Once someone submits this form, their responses will appear here."
+          />
+        ) : (
+          <ul className="m-0 flex list-none flex-col p-0">
+            {responsesQuery.data.data.map((response) => (
+              <li
+                key={response._id}
+                className="flex items-baseline justify-between gap-3 border-b border-(--border-subtle) py-2"
+              >
+                <span className="bg-body-sm truncate">{firstAnswer(response)}</span>
+                <time className="bg-caption shrink-0" dateTime={response.submittedAt}>
+                  {formatRelativeTime(response.submittedAt)}
+                </time>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <FormActivityCard
         events={eventsQuery.data}
@@ -260,6 +257,7 @@ export default function FormOverviewPage() {
 
       <FormActivityDrawer formId={formId} isOpen={isActivityOpen} onClose={() => setIsActivityOpen(false)} />
 
+      {/* Opened from the "Who can see it" card; the shared header's Share button has its own instance. */}
       <FormAccessPanel formId={formId} formTitle={form.title} isOpen={isAccessOpen} onClose={() => setIsAccessOpen(false)} />
     </div>
   );

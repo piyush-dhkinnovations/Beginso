@@ -17,6 +17,13 @@ import { responseKeys } from '@/lib/queryKeys';
 import type { ResponseDetail } from '@/types/response';
 import type { StageRef } from '@/types/stage';
 
+// Unmocked services (tags, members, workspaces, notifications...) would hit the real axios
+// instance, whose 401 interceptor fetches a relative logout URL (invalid under jsdom/node).
+vi.mock('@/lib/axios', () => {
+  const ok = () => Promise.resolve({ data: [] });
+  return { default: { get: ok, post: ok, put: ok, patch: ok, delete: ok } };
+});
+
 const mockToast = vi.fn();
 vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: mockToast }),

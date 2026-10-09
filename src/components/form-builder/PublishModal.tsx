@@ -7,6 +7,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Copy, ExternalLink, Lock, Share2 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui/ButtonLink';
 import { Alert } from '@/components/ui/Alert';
 import { Input } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -331,10 +332,10 @@ function LiveState({ onClose, formId, slug, canPublish, onStatusChange }: Publis
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {/* Real links styled as buttons - a <button> inside an <a> is invalid and double-focusable. */}
-        <Link href={`/forms/${formId}/edit?tab=share`} onClick={onClose} className="bg-btn bg-btn-secondary min-h-11 w-full">
+        <ButtonLink href={`/forms/${formId}/edit?tab=share`} onClick={onClose} variant="secondary" className="min-h-11 w-full">
           <Share2 size={16} className="mr-1.5" aria-hidden="true" />
           Share &amp; embed
-        </Link>
+        </ButtonLink>
         <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="bg-btn bg-btn-secondary min-h-11 w-full">
           <ExternalLink size={16} className="mr-1.5" aria-hidden="true" />
           View live form

@@ -23,6 +23,7 @@ export function UserProfileDropdown({ variant = 'avatar', collapsed = false }: U
   const showText = inSidebar && !collapsed;
   const { user, logout, isLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [failedAvatar, setFailedAvatar] = useState<string | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Shares the cache Settings' ProfileTab/AvatarUploader populate and invalidate — AuthContext's
@@ -100,9 +101,10 @@ export function UserProfileDropdown({ variant = 'avatar', collapsed = false }: U
         <div className="w-8 h-8 rounded-full bg-(--action-primary) text-(--text-on-brand) flex items-center justify-center bg-body-sm font-bold shadow-(--shadow-sm) shrink-0 overflow-hidden">
           {isLoading ? (
             <span className="w-3 h-3 rounded-full border-2 border-(--text-on-brand)/40 border-t-(--text-on-brand) animate-spin" />
-          ) : profile?.avatarUrl ? (
+          ) : profile?.avatarUrl && failedAvatar !== profile.avatarUrl ? (
+            // referrerPolicy: Google's photo host rejects hot-linked requests that carry a Referer.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={profile.avatarUrl} alt="" className="h-full w-full object-cover" />
+            <img src={profile.avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => setFailedAvatar(profile.avatarUrl ?? null)} className="h-full w-full object-cover" />
           ) : (
             getInitials(user?.name)
           )}

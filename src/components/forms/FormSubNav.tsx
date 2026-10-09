@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { BarChart3, LayoutDashboard, PencilLine, Settings, Table2, type LucideIcon } from 'lucide-react';
 import { useBuilderStore } from '@/store/builderStore';
 
 export type FormSubNavKey = 'overview' | 'responses' | 'insights' | 'edit' | 'settings';
@@ -30,14 +31,14 @@ export function FormSubNav({ formId, ws, canEdit, active }: FormSubNavProps) {
     const parts = [extra, q].filter(Boolean).join('&');
     return `${base}${path}${parts ? `?${parts}` : ''}`;
   };
-  const items: Array<{ key: FormSubNavKey; label: string; href: string }> = [
-    { key: 'overview', label: 'Overview', href: href('/overview') },
-    { key: 'responses', label: 'Responses', href: href('/inbox') },
-    { key: 'insights', label: 'Insights', href: href('/insights') },
+  const items: Array<{ key: FormSubNavKey; label: string; href: string; icon: LucideIcon }> = [
+    { key: 'overview', label: 'Overview', href: href('/overview'), icon: LayoutDashboard },
+    { key: 'responses', label: 'Responses', href: href('/inbox'), icon: Table2 },
+    { key: 'insights', label: 'Insights', href: href('/insights'), icon: BarChart3 },
     ...(canEdit
       ? [
-          { key: 'edit' as const, label: 'Edit', href: href('/edit') },
-          { key: 'settings' as const, label: 'Settings', href: href('/edit', 'tab=settings') },
+          { key: 'edit' as const, label: 'Edit', href: href('/edit'), icon: PencilLine },
+          { key: 'settings' as const, label: 'Settings', href: href('/edit', 'tab=settings'), icon: Settings },
         ]
       : []),
   ];
@@ -60,6 +61,7 @@ export function FormSubNav({ formId, ws, canEdit, active }: FormSubNavProps) {
           }}
           className="bg-tab aria-[current=page]:border-b-(--border-focus) aria-[current=page]:text-(--text-link)"
         >
+          <item.icon aria-hidden="true" className="bg-icon" />
           {item.label}
         </Link>
       ))}

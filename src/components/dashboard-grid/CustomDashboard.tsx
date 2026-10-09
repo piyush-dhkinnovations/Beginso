@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, SlidersHorizontal } from 'lucide-react';
+import { MoreHorizontal, Plus, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Menu } from '@/components/ui/Menu';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { dashboardKeys } from '@/lib/queryKeys';
@@ -25,13 +26,12 @@ export interface CustomDashboardProps {
   /** Server enforces this too; here it only decides whether to show Customize. */
   canEdit?: boolean;
   enabled?: boolean;
-  /** Heading shown on the left of the toolbar row, so the buttons sit on a labelled row, not alone. */
-  title?: string;
 }
 
 // Saved layout (or the defaults) rendered on the grid, with Customize -> drag / resize / remove / add -> Save.
 // Draft lives here until Save; Cancel throws it away. A stale save (409) reloads the server copy.
-export function CustomDashboard({ scope, defaults, metrics, canEdit = true, enabled = true, title }: CustomDashboardProps) {
+/** Hook form: `toolbar` (Customize / Save / ...) can sit anywhere, e.g. in a PageHeader; `body` is the grid. */
+export function useCustomDashboard({ scope, defaults, metrics, canEdit = true, enabled = true }: CustomDashboardProps) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const key = dashboardKeys.layout(scope);
@@ -70,42 +70,54 @@ export function CustomDashboard({ scope, defaults, metrics, canEdit = true, enab
     onError: () => toast("Couldn't reset the dashboard. Try again.", 'error'),
   });
 
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-busy="true">
-        {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} variant="block" width="100%" height={160} />)}
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-4">
-      {(canEdit || title) && (
-        <div className="flex min-h-8 flex-wrap items-center justify-between gap-2">
-          {title ? <h2 className="bg-h5 font-bold text-(--text-primary)">{title}</h2> : <span />}
-          {canEdit && <div className="flex flex-wrap justify-end gap-2">
-          {editing ? (
-            <>
-              <Button variant="secondary" size="small" onClick={() => setAdding(true)}><Plus size={16} className="mr-1" />Add widget</Button>
-              <Button variant="secondary" size="small" onClick={() => reset.mutate()} disabled={reset.isPending || !data}>Reset to default</Button>
-              <Button variant="secondary" size="small" onClick={() => setDraft(null)}>Cancel</Button>
-              <Button size="small" onClick={() => save.mutate(draft)} disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save'}</Button>
-            </>
-          ) : (
-            <Button variant="secondary" size="small" onClick={() => setDraft(saved)}><SlidersHorizontal size={16} className="mr-1" />Customize</Button>
-          )}
-          </div>}
-        </div>
+  const toolbar = canEdit ? (
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      {editing ? (
+        <>
+          <Menu
+            trigger={<MoreHorizontal className="bg-icon" />}
+            triggerLabel="More dashboard options"
+            align="end"
+            items={[{ id: 'reset', label: 'Reset to default', icon: <RotateCcw size={16} />, disabled: reset.isPending || !data, onSelect: () => reset.mutate() }]}
+          />
+          <Button variant="secondary" size="small" onClick={() => setAdding(true)}><Plus size={16} className="sm:mr-1" /><span className="hidden sm:inline">Add widget</span><span className="sr-only sm:hidden">Add widget</span></Button>
+          <Button variant="secondary" size="small" onClick={() => setDraft(null)}>Cancel</Button>
+          <Button size="small" onClick={() => save.mutate(draft)} disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save'}</Button>
+        </>
+      ) : (
+        <Button variant="secondary" size="small" onClick={() => setDraft(saved)} disabled={isLoading} aria-label="Customize dashboard">
+          <SlidersHorizontal size={16} className="sm:mr-1" /><span className="hidden sm:inline">Customize</span>
+        </Button>
       )}
+    </div>
+  ) : null;
 
+  const body = isLoading ? (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-busy="true">
+      {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} variant="block" width="100%" height={144} />)}
+    </div>
+  ) : (
+    <>
       <DashboardGrid
         widgets={draft ?? saved}
         metrics={metrics}
         onChange={editing ? setDraft : undefined}
         empty={<p className="bg-body text-(--text-muted)">No widgets yet. {canEdit ? 'Click Customize, then Add widget.' : ''}</p>}
       />
-
       <AddWidgetDrawer isOpen={adding} onClose={() => setAdding(false)} metrics={metrics} onAdd={(w) => setDraft((d) => [...(d ?? saved), { ...w, id: uid() }])} />
+    </>
+  );
+
+  return { toolbar, body, editing };
+}
+
+/** Self-contained form: toolbar row above the grid. */
+export function CustomDashboard(props: CustomDashboardProps) {
+  const { toolbar, body } = useCustomDashboard(props);
+  return (
+    <div className="flex flex-col gap-3">
+      {toolbar}
+      {body}
     </div>
   );
 }

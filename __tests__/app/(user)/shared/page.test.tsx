@@ -13,6 +13,13 @@ import type { SharedFormItem } from '@/types/team';
 // The row menu navigates with useRouter (needs a mounted app router outside Next).
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
+// Unmocked services (tags, members, workspaces, notifications...) would hit the real axios
+// instance, whose 401 interceptor fetches a relative logout URL (invalid under jsdom/node).
+vi.mock('@/lib/axios', () => {
+  const ok = () => Promise.resolve({ data: [] });
+  return { default: { get: ok, post: ok, put: ok, patch: ok, delete: ok } };
+});
+
 const mockList = vi.fn();
 vi.mock('@/services/shared', () => ({
   sharedService: { list: (...args: unknown[]) => mockList(...args) },

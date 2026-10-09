@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { ButtonLink } from '@/components/ui';
 import { ArrowRight, BarChart3, Lightbulb } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 
@@ -19,10 +19,10 @@ export function ReportsSidebar({ scope = 'personal' }: { scope?: string }) {
         <span aria-hidden="true" className="bg-stat-icon mb-0 h-7! w-7!"><BarChart3 /></span>
         <h2 className="bg-h5 font-bold text-(--text-primary)">Need more insights?</h2>
         <p className="bg-body-sm text-(--text-muted)">Use Insights to understand your responses better with detailed charts and metrics.</p>
-        <Link href={scope === 'personal' ? '/insights' : `/w/${scope}/insights`} className="bg-btn bg-btn-secondary w-full">
+        <ButtonLink href={scope === 'personal' ? '/insights' : `/w/${scope}/insights`} variant="secondary" className="w-full">
           Go to Insights
           <ArrowRight size={16} className="ml-2" aria-hidden="true" />
-        </Link>
+        </ButtonLink>
       </Card>
 
       <Card className="gap-3">

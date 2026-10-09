@@ -1,5 +1,6 @@
 'use client';
 
+import { BarChart3 } from 'lucide-react';
 import { BarsChart, ChartCard, LineAreaChart, PieChart, seriesColor } from '@/components/ui/charts';
 import { toSegments } from '@/lib/chartSegments';
 import { isSeries, type ChartKind, type SegmentMetric, type SeriesMetric } from './types';
@@ -17,10 +18,19 @@ export function ChartWidget({ chart, metric, title }: { chart: ChartKind; metric
   const label = title ?? metric.label;
   const total = rows.reduce((s, r) => s + r.value, 0);
 
+  // Nothing to plot: a compact message, and the card sizes to it instead of stretching to the row.
+  if (total === 0) {
+    return (
+      <ChartCard title={label} className="h-auto!">
+        <p className="flex items-center gap-2 bg-body-sm text-(--text-muted)"><BarChart3 className="size-4 flex-none" aria-hidden="true" />No data in this range yet</p>
+      </ChartCard>
+    );
+  }
+
   let body;
   if (chart === 'line' || chart === 'area') body = <LineAreaChart data={data} ariaLabel={label} area={chart === 'area'} />;
   else if (chart === 'donut' || chart === 'pie') body = <PieChart data={data} ariaLabel={label} donut={chart === 'donut'} centreLabel="total" />;
-  else if (chart === 'hbar') body = <BarsChart data={data} ariaLabel={label} horizontal />;
+  else if (chart === 'hbar') body = <BarsChart data={data} ariaLabel={label} horizontal byCategory legend />;
   else if (chart === 'status') {
     body = (
       <div className="flex flex-col gap-4">
@@ -43,7 +53,7 @@ export function ChartWidget({ chart, metric, title }: { chart: ChartKind; metric
         </ul>
       </div>
     );
-  } else body = <BarsChart data={data} ariaLabel={label} byCategory={!isSeries(metric)} />;
+  } else body = <BarsChart data={data} ariaLabel={label} byCategory={!isSeries(metric)} legend={!isSeries(metric)} />;
 
-  return <ChartCard title={label} className="h-full">{body}</ChartCard>;
+  return <ChartCard title={label} className={chart === 'hbar' && rows.length <= 3 ? 'h-auto!' : 'h-full'}>{body}</ChartCard>;
 }

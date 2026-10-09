@@ -1,7 +1,6 @@
-import Link from 'next/link';
 import { Compass } from 'lucide-react';
 import { cookies } from 'next/headers';
-import { EmptyState } from '@/components/ui';
+import { ButtonLink, EmptyState } from '@/components/ui';
 import { SESSION_COOKIE_NAME } from '@/lib/sessionCookie';
 
 // Server Component, deliberately: no 'use client', no browser API, no Date/random value
@@ -22,21 +21,21 @@ export default async function NotFound() {
         actions={
           signedIn ? (
             <>
-              <Link href="/dashboard" className="bg-btn bg-btn-primary">
+              <ButtonLink href="/dashboard">
                 Go to Personal Home
-              </Link>
-              <Link href="/workspaces" className="bg-btn bg-btn-secondary">
+              </ButtonLink>
+              <ButtonLink href="/workspaces" variant="secondary">
                 Go to Workspaces
-              </Link>
+              </ButtonLink>
             </>
           ) : (
             <>
-              <Link href="/" className="bg-btn bg-btn-primary">
+              <ButtonLink href="/">
                 Go to homepage
-              </Link>
-              <Link href="/login" className="bg-btn bg-btn-secondary">
+              </ButtonLink>
+              <ButtonLink href="/login" variant="secondary">
                 Log in
-              </Link>
+              </ButtonLink>
             </>
           )
         }

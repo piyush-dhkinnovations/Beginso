@@ -39,7 +39,7 @@ export function Avatar({ src, name, alt, size = "default", square, className, ..
     <span className={bx("bg-avatar", sizeClass[size], square && "bg-avatar-square", className)} {...props}>
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={alt ?? name ?? ""} onError={() => setFailed(true)} />
+        <img src={src} alt={alt ?? name ?? ""} referrerPolicy="no-referrer" onError={() => setFailed(true)} />
       ) : initials ? (
         initials
       ) : (

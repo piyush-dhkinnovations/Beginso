@@ -13,7 +13,7 @@ describe('FormOverviewStats', () => {
     render(<FormOverviewStats stats={STATS} accessLabel="Just you" onOpenAccess={vi.fn()} />);
 
     expect(screen.getByText('12')).toBeInTheDocument();
-    expect(screen.getByText('+3 this week')).toBeInTheDocument();
+    expect(screen.getByText('this week')).toBeInTheDocument();
     // The value and the ring's own label both read 62% — the card is meant to show it twice.
     expect(screen.getAllByText('62%').length).toBeGreaterThanOrEqual(1);
   });

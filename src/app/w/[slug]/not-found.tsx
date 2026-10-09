@@ -1,6 +1,5 @@
-import Link from 'next/link';
 import { FolderX } from 'lucide-react';
-import { EmptyState } from '@/components/ui';
+import { ButtonLink, EmptyState } from '@/components/ui';
 
 // Segment-level not-found for /w/[slug] — rendered when the layout there calls notFound()
 // for a slug the backend confirmed doesn't exist (see workspaceServer.ts's
@@ -16,9 +15,9 @@ export default function WorkspaceNotFound() {
         title="Workspace not found"
         description="This workspace doesn't exist, or you no longer have access to it."
         actions={
-          <Link href="/workspaces" className="bg-btn bg-btn-primary">
+          <ButtonLink href="/workspaces">
             Switch Workspace
-          </Link>
+          </ButtonLink>
         }
       />
     </div>

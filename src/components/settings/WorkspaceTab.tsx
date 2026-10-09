@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
@@ -16,45 +16,7 @@ import { Textarea } from '@/components/ui/Textarea';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { StickySaveBar, useSavedFlash } from './StickySaveBar';
 import { DangerZoneSection } from './DangerZoneSection';
-
-// The main zones people actually pick, as IANA ids with a readable label. The field is type-to-search; any
-// other valid IANA zone can still be typed in (the schema checks it).
-const MAIN_TIMEZONES: { id: string; label: string }[] = [
-  { id: 'UTC', label: 'UTC' },
-  { id: 'Asia/Kolkata', label: 'India (Kolkata)' },
-  { id: 'Asia/Dubai', label: 'Dubai' },
-  { id: 'Asia/Singapore', label: 'Singapore' },
-  { id: 'Asia/Hong_Kong', label: 'Hong Kong' },
-  { id: 'Asia/Shanghai', label: 'China (Shanghai)' },
-  { id: 'Asia/Tokyo', label: 'Japan (Tokyo)' },
-  { id: 'Asia/Seoul', label: 'Seoul' },
-  { id: 'Asia/Karachi', label: 'Pakistan (Karachi)' },
-  { id: 'Asia/Dhaka', label: 'Dhaka' },
-  { id: 'Asia/Jakarta', label: 'Jakarta' },
-  { id: 'Australia/Sydney', label: 'Sydney' },
-  { id: 'Pacific/Auckland', label: 'Auckland' },
-  { id: 'Europe/London', label: 'London' },
-  { id: 'Europe/Dublin', label: 'Dublin' },
-  { id: 'Europe/Paris', label: 'Paris' },
-  { id: 'Europe/Berlin', label: 'Berlin' },
-  { id: 'Europe/Madrid', label: 'Madrid' },
-  { id: 'Europe/Rome', label: 'Rome' },
-  { id: 'Europe/Amsterdam', label: 'Amsterdam' },
-  { id: 'Europe/Istanbul', label: 'Istanbul' },
-  { id: 'Europe/Moscow', label: 'Moscow' },
-  { id: 'Africa/Cairo', label: 'Cairo' },
-  { id: 'Africa/Johannesburg', label: 'Johannesburg' },
-  { id: 'Africa/Lagos', label: 'Lagos' },
-  { id: 'Africa/Nairobi', label: 'Nairobi' },
-  { id: 'America/New_York', label: 'New York (Eastern)' },
-  { id: 'America/Chicago', label: 'Chicago (Central)' },
-  { id: 'America/Denver', label: 'Denver (Mountain)' },
-  { id: 'America/Los_Angeles', label: 'Los Angeles (Pacific)' },
-  { id: 'America/Toronto', label: 'Toronto' },
-  { id: 'America/Mexico_City', label: 'Mexico City' },
-  { id: 'America/Sao_Paulo', label: 'Sao Paulo' },
-  { id: 'America/Argentina/Buenos_Aires', label: 'Buenos Aires' },
-];
+import { TimezoneSelect } from './TimezoneSelect';
 
 interface WorkspaceTabProps {
   onDirtyChange?: (isDirty: boolean) => void;
@@ -85,6 +47,7 @@ export function WorkspaceTab({ onDirtyChange, scope }: WorkspaceTabProps) {
   // so every signed-in user is the sole owner today; there's nothing real to gate against yet.
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isDirty, isSubmitting },
@@ -169,20 +132,20 @@ export function WorkspaceTab({ onDirtyChange, scope }: WorkspaceTabProps) {
           error={errors.description?.message}
           {...register('description')}
         />
-        <Input
-          id="workspace-timezone"
-          label="Timezone"
-          list="workspace-timezone-options"
-          autoComplete="off"
-          placeholder="Type a city or region, e.g. Kolkata"
-          error={errors.timezone?.message}
-          {...register('timezone')}
+        <Controller
+          control={control}
+          name="timezone"
+          render={({ field }) => (
+            <TimezoneSelect
+              id="workspace-timezone"
+              label="Timezone"
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
+              error={errors.timezone?.message}
+            />
+          )}
         />
-        <datalist id="workspace-timezone-options">
-          {MAIN_TIMEZONES.map((tz) => (
-            <option key={tz.id} value={tz.id}>{tz.label}</option>
-          ))}
-        </datalist>
         <p className="-mt-2 bg-caption text-(--text-muted)">Dates in digests, exports and activity use this timezone.</p>
 
         <StickySaveBar

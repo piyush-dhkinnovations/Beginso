@@ -53,11 +53,11 @@ export default function ApplyTemplatePage() {
 
   if (isError) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--bg-page)] px-4 text-center">
-        <AlertCircle size={32} className="text-[var(--text-muted)]" />
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-(--bg-page) px-4 text-center">
+        <AlertCircle size={32} className="text-(--text-muted)" />
         <div>
-          <h1 className="bg-h4 text-[var(--text-primary)]">Couldn&apos;t create your form from this template</h1>
-          <p className="mt-1 bg-body-sm text-[var(--text-secondary)]">
+          <h1 className="bg-h4 text-(--text-primary)">Couldn&apos;t create your form from this template</h1>
+          <p className="mt-1 bg-body-sm text-(--text-secondary)">
             The template may no longer be available. You can try again from the templates gallery.
           </p>
         </div>
@@ -73,9 +73,9 @@ export default function ApplyTemplatePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-[var(--bg-page)]" aria-live="polite">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--border-default)] border-t-[var(--primary-500)]" />
-      <p className="bg-body-sm text-[var(--text-secondary)]">{isPending ? 'Setting up your form…' : 'Almost done…'}</p>
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-(--bg-page)" aria-live="polite">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-(--border-default) border-t-(--primary-500)" />
+      <p className="bg-body-sm text-(--text-secondary)">{isPending ? 'Setting up your form…' : 'Almost done…'}</p>
     </div>
   );
 }

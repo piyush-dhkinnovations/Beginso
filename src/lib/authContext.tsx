@@ -6,6 +6,7 @@ import { authService } from '@/services/auth';
 import { signOut } from 'firebase/auth';
 import { auth } from './firebase';
 import { PROTECTED_PATHS, matchesRoute } from './authRoutes';
+import { bindRecentFormsUser } from '@/store/recentFormsStore';
 
 interface User {
   id: string;
@@ -92,6 +93,14 @@ export const AuthContext = createContext<AuthContextValue | undefined>(undefined
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
   const router = useRouter();
+
+  // Sidebar "recent forms" live in localStorage, shared by every account on this browser: tie them to whoever is
+  // signed in so one account never sees another's forms. Waits for the session check to finish — before that
+  // `user` is null only because it is still unknown, and binding to null would wipe a valid list on every reload.
+  const userId = state.user?.id ?? null;
+  useEffect(() => {
+    if (!state.isLoading) bindRecentFormsUser(userId);
+  }, [userId, state.isLoading]);
 
   useEffect(() => {
     // Start Firebase's local persistence setup while the user is reading/typing on

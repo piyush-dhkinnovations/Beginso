@@ -1,6 +1,5 @@
-import Link from 'next/link';
 import { AlertTriangle } from 'lucide-react';
-import { EmptyState } from '@/components/ui';
+import { ButtonLink, EmptyState } from '@/components/ui';
 
 // The 'error' half of resolveWorkspaceBySlug()'s result — a lookup that failed for a reason
 // that says nothing about whether the workspace exists (network error, 401/500 from the
@@ -16,9 +15,9 @@ export function WorkspaceLoadError() {
         title="Couldn't load this workspace"
         description="Something went wrong reaching the server. Please try again."
         actions={
-          <Link href="/dashboard" className="bg-btn bg-btn-primary">
+          <ButtonLink href="/dashboard">
             Go to Personal Home
-          </Link>
+          </ButtonLink>
         }
       />
     </div>

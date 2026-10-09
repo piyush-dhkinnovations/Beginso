@@ -1,6 +1,14 @@
-import type { KpiData, KpiVariant } from '@/components/ui/KpiCard';
+import type { KpiData, KpiTone, KpiVariant } from '@/components/ui/KpiCard';
 
 // A dashboard is an ordered flow of widgets on a 12-column grid. `w` is the width in columns.
+export const TONES: { value: KpiTone; label: string }[] = [
+  { value: 'primary', label: 'Blue' },
+  { value: 'success', label: 'Green' },
+  { value: 'warning', label: 'Amber' },
+  { value: 'error', label: 'Red' },
+  { value: 'purple', label: 'Purple' },
+];
+
 export const WIDTHS = [3, 4, 6] as const;
 export type WidgetWidth = (typeof WIDTHS)[number];
 
@@ -9,7 +17,7 @@ export type ChartKind = 'bar' | 'line' | 'area' | 'hbar' | 'donut' | 'pie' | 'st
 
 // Widgets name WHAT to show; they never carry a query. Data is resolved by the host page.
 export type WidgetConfig =
-  | { type: 'kpi'; variant: KpiVariant; metric: string; title?: string }
+  | { type: 'kpi'; variant: KpiVariant; metric: string; title?: string; tone?: KpiTone }
   | { type: 'chart'; chart: ChartKind; metric: string; title?: string };
 
 export interface Widget {

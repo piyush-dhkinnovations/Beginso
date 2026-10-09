@@ -35,7 +35,8 @@ import { useAnalyticsTrend } from '@/hooks/useAnalyticsTrend';
 import { formsService } from '@/services/forms';
 import { useFormScope } from '@/hooks/useFormScope';
 import { analyticsService } from '@/services/analytics';
-import { analyticsKeys } from '@/lib/queryKeys';
+import { analyticsKeys, chartKeys } from '@/lib/queryKeys';
+import { chartsService } from '@/services/charts';
 import { ALL_TIME_SENTINEL, resolveEffectiveDateRange, resolveTrendBucket, resolvePreviousDateRange } from '@/lib/dateRange';
 import { computeChangePercent } from '@/lib/analyticsChange';
 import { browserTimezone } from '@/lib/calendarDates';
@@ -111,6 +112,14 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
     queryFn: () => analyticsService.getQuestions({ formId, from, to, timezone }, formScope),
     enabled: !!formId && !!formScope,
   });
+
+  // Same key as CustomChartsSection's list query, so this shares its cache entry (no extra request).
+  const chartsQuery = useQuery({
+    queryKey: chartKeys.list(formScope ?? '', formId ?? ''),
+    queryFn: () => chartsService.list(formId as string, formScope as string),
+    enabled: !!formId && !!formScope,
+  });
+  const chartedFieldIds = new Set((chartsQuery.data ?? []).map((c) => c.fieldId));
 
   const formsSummaryQuery = useQuery({
     queryKey: analyticsKeys.formsSummary(range, page, scope),
@@ -260,25 +269,38 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
   );
 
   return (
-    <div className="flex flex-col gap-4 animate-fade-in">
-      <PageHeader
-        title={title}
-        description={formId ? `Insights · ${form?.title ?? ''}` : 'See how every form in your workspace is performing.'}
-        actionsAlign="center"
-        actions={
-          isFirstRun ? undefined : (
-            <div className="flex flex-wrap items-center gap-3">
+    <div className={formId ? 'flex flex-col gap-6 animate-fade-in' : 'flex flex-col gap-4 animate-fade-in'}>
+      {formId ? (
+        // Inside a form the shared form header already names the form and the tab, so there is no second page
+        // title here — just the page's own controls, right-aligned like on Responses.
+        <>
+          <h1 className="sr-only">{title}</h1>
+          {!isFirstRun && (
+            <div className="flex flex-wrap items-center justify-end gap-3">
               {filterPopover}
-              {formId && canAddChart && (
+              {canAddChart && (
                 <Button size="small" onClick={() => setAddChartOpen(true)}>
                   <Plus size={14} className="mr-1.5" aria-hidden="true" />
                   Add chart
                 </Button>
               )}
             </div>
-          )
-        }
-      />
+          )}
+        </>
+      ) : (
+        <PageHeader
+          title={title}
+          description="See how every form in your workspace is performing."
+          actionsAlign="center"
+          actions={
+            isFirstRun ? undefined : (
+              <div className="flex flex-wrap items-center gap-3">
+                {filterPopover}
+              </div>
+            )
+          }
+        />
+      )}
 
       <OfflineBanner />
 
@@ -340,7 +362,15 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
                   periodLabel={periodLabel}
                 />
               ),
-              charts: (
+              charts: overviewQuery.data && overviewQuery.data.totalResponses === 0 ? (
+                // One message instead of two empty chart boxes saying the same thing.
+                <EmptyState
+                  icon={<FileText />}
+                  title="No responses in this range"
+                  description={isAllTime ? 'Charts appear once this form receives responses.' : 'Try a wider date range to see responses outside this window.'}
+                  actions={isAllTime ? undefined : <Button variant="secondary" size="small" onClick={widenRange}>Widen the date range</Button>}
+                />
+              ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-[7fr_3fr] gap-4">
                   <TrendChart
                     data={trendsQuery.data}
@@ -366,6 +396,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
                   isLoading={questionsQuery.isLoading}
                   isError={questionsQuery.isError}
                   onRetry={() => void questionsQuery.refetch()}
+                  chartedFieldIds={chartedFieldIds}
                 />
               ),
             }}

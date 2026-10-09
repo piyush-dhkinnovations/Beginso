@@ -31,6 +31,7 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [fileError, setFileError] = useState<string | null>(null);
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
 
   // Persists an already-uploaded URL (or null, to remove it) — toasting/reverting on failure is
   // handled by the two callers below, not here, since "upload the file" and "save the URL" are
@@ -74,9 +75,10 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
   return (
     <div className="flex items-center gap-4">
       <div className="relative h-16 w-16 shrink-0 rounded-full bg-(--action-primary) text-(--text-on-brand) flex items-center justify-center bg-h5 font-bold overflow-hidden">
-        {avatarUrl ? (
+        {avatarUrl && failedUrl !== avatarUrl ? (
+          // referrerPolicy: Google's photo host rejects hot-linked requests that carry a Referer.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+          <img src={avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => setFailedUrl(avatarUrl)} className="h-full w-full object-cover" />
         ) : (
           getInitials(name)
         )}

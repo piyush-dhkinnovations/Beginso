@@ -77,11 +77,11 @@ export function TemplateDestinationPicker({ onConfirm, isSubmitting }: TemplateD
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-page)] px-4 py-16">
+    <div className="min-h-screen bg-(--bg-page) px-4 py-16">
       <div className="mx-auto max-w-4xl">
         <div className="mb-10 text-center">
-          <h1 className="bg-h1 text-[var(--text-primary)]">Where should this form live?</h1>
-          <p className="mt-2 bg-body text-[var(--text-secondary)]">
+          <h1 className="bg-h1 text-(--text-primary)">Where should this form live?</h1>
+          <p className="mt-2 bg-body text-(--text-secondary)">
             You can move it later if you change your mind.
           </p>
         </div>
@@ -109,7 +109,7 @@ export function TemplateDestinationPicker({ onConfirm, isSubmitting }: TemplateD
           <div className="mt-5">
             {workspaces.length === 0 ? (
               <div className="bg-card bg-card-pad flex flex-col items-center gap-3 border-dashed text-center">
-                <p className="bg-body-sm text-[var(--text-secondary)]">You don&apos;t have a workspace yet.</p>
+                <p className="bg-body-sm text-(--text-secondary)">You don&apos;t have a workspace yet.</p>
                 <Button type="button" variant="secondary" onClick={() => setIsCreateWorkspaceOpen(true)}>
                   Create a workspace
                 </Button>
@@ -136,12 +136,12 @@ export function TemplateDestinationPicker({ onConfirm, isSubmitting }: TemplateD
           </div>
         )}
 
-        <p className="mt-7 flex items-center justify-center gap-2 text-center bg-caption text-[var(--text-muted)]">
+        <p className="mt-7 flex items-center justify-center gap-2 text-center bg-caption text-(--text-muted)">
           <Info size={15} className="shrink-0" />
           <span>
-            Forms in <strong className="text-[var(--text-secondary)]">Personal space</strong> are
+            Forms in <strong className="text-(--text-secondary)">Personal space</strong> are
             visible only to you. Forms in a{' '}
-            <strong className="text-[var(--text-secondary)]">workspace</strong> are visible to
+            <strong className="text-(--text-secondary)">workspace</strong> are visible to
             everyone in that workspace.
           </span>
         </p>
@@ -195,11 +195,11 @@ function DestinationCard({ selected, onSelect, icon: Icon, title, subtitle, feat
       </div>
 
       <div>
-        <h3 className="bg-h5 text-[var(--text-primary)]">{title}</h3>
-        <p className="bg-body-sm text-[var(--text-muted)]">{subtitle}</p>
+        <h3 className="bg-h5 text-(--text-primary)">{title}</h3>
+        <p className="bg-body-sm text-(--text-muted)">{subtitle}</p>
       </div>
 
-      <div className="border-t border-[var(--border-default)]" />
+      <div className="border-t border-(--border-default)" />
 
       <div className="flex flex-col gap-3">
         {features.map((f) => (
@@ -208,8 +208,8 @@ function DestinationCard({ selected, onSelect, icon: Icon, title, subtitle, feat
               <f.icon className="bg-icon" />
             </span>
             <div>
-              <div className="text-[13px] font-semibold text-[var(--text-primary)]">{f.title}</div>
-              <div className="text-[12.5px] text-[var(--text-muted)]">{f.body}</div>
+              <div className="text-[13px] font-semibold text-(--text-primary)">{f.title}</div>
+              <div className="text-[12.5px] text-(--text-muted)">{f.body}</div>
             </div>
           </div>
         ))}

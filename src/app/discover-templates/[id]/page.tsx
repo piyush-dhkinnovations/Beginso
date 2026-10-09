@@ -28,10 +28,10 @@ export default function TemplateDetailPage() {
 
   if (isLoading) {
     return (
-      <main className="min-h-screen bg-[var(--bg-page)]">
+      <main className="min-h-screen bg-(--bg-page)">
         <Navbar />
         <div className="pt-[160px] pb-24 text-center max-w-xl mx-auto px-4">
-          <p className="bg-body text-[var(--text-muted)]">Loading template…</p>
+          <p className="bg-body text-(--text-muted)">Loading template…</p>
         </div>
         <Footer />
       </main>
@@ -40,11 +40,11 @@ export default function TemplateDetailPage() {
 
   if (!template) {
     return (
-      <main className="min-h-screen bg-[var(--bg-page)]">
+      <main className="min-h-screen bg-(--bg-page)">
         <Navbar />
         <div className="pt-[160px] pb-24 text-center max-w-xl mx-auto px-4">
-          <h1 className="bg-h2 text-[var(--text-primary)] mb-4">Template not found</h1>
-          <Link href="/discover-templates" className="text-[var(--primary-600)] font-medium hover:underline">
+          <h1 className="bg-h2 text-(--text-primary) mb-4">Template not found</h1>
+          <Link href="/discover-templates" className="text-(--primary-600) font-medium hover:underline">
             Back to templates
           </Link>
         </div>
@@ -56,22 +56,22 @@ export default function TemplateDetailPage() {
   const schema = templateToPreviewSchema(template);
 
   return (
-    <main className="min-h-screen bg-[var(--bg-page)]">
+    <main className="min-h-screen bg-(--bg-page)">
       <Navbar />
 
       <article className="pt-[140px] pb-24 md:pt-[180px]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 bg-caption text-[var(--text-muted)] mb-6">
-            <Link href="/discover-templates" className="hover:text-[var(--text-primary)]">Templates</Link>
+          <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 bg-caption text-(--text-muted) mb-6">
+            <Link href="/discover-templates" className="hover:text-(--text-primary)">Templates</Link>
             <ChevronRight size={12} />
-            <span className="text-[var(--text-secondary)] truncate">{template.name}</span>
+            <span className="text-(--text-secondary) truncate">{template.name}</span>
           </nav>
 
           <Badge variant="primary" pill className="mb-3 capitalize">{template.category}</Badge>
-          <h1 className="text-[28px] md:text-[40px] font-extrabold text-[var(--text-primary)] leading-[1.15] mb-4">
+          <h1 className="text-[28px] md:text-[40px] font-extrabold text-(--text-primary) leading-[1.15] mb-4">
             {template.name}
           </h1>
-          <p className="bg-body-lg text-[var(--text-secondary)] mb-8 max-w-[65ch]">
+          <p className="bg-body-lg text-(--text-secondary) mb-8 max-w-[65ch]">
             {template.description || "A ready-made starting point you can customize after signing up."}
           </p>
 
@@ -79,7 +79,7 @@ export default function TemplateDetailPage() {
             <Button variant="primary" className="mb-10">Use this template</Button>
           </Link>
 
-          <div className="bg-overline text-[var(--text-muted)] mb-4">Preview — try it out, nothing is submitted</div>
+          <div className="bg-overline text-(--text-muted) mb-4">Preview — try it out, nothing is submitted</div>
         </div>
 
         <PublicFormShell schema={schema} slug={templatePreviewSlug(template._id)} previewMode />

@@ -1,5 +1,4 @@
 import { History } from 'lucide-react';
-import { Card } from '@/components/ui/Card';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -49,8 +48,8 @@ export function FormActivityCard({ events, isLoading, isError, onRetry, onViewAl
   const hasMore = (events?.length ?? 0) > FORM_ACTIVITY_PREVIEW_COUNT;
 
   return (
-    <Card className="flex flex-col gap-3">
-      <h2 className="bg-h4">Form activity</h2>
+    <section aria-labelledby="form-activity-heading" className="flex flex-col gap-3 border-t border-(--border-default) pt-6">
+      <h2 id="form-activity-heading" className="bg-h4">Form activity</h2>
 
       {isLoading ? (
         <div className="flex flex-col gap-2" aria-label="Loading activity">
@@ -81,6 +80,6 @@ export function FormActivityCard({ events, isLoading, isError, onRetry, onViewAl
           )}
         </>
       )}
-    </Card>
+    </section>
   );
 }

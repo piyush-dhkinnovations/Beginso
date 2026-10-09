@@ -9,9 +9,10 @@ import { formsService } from '@/services/forms';
 import { useResponseTrend } from '@/hooks/useResponseTrend';
 import { dashboardKeys, workspaceKeys } from '@/lib/queryKeys';
 import { formatRelativeTime } from '@/lib/formatters';
-import { CustomDashboard } from '@/components/dashboard-grid/CustomDashboard';
+import { useCustomDashboard } from '@/components/dashboard-grid/CustomDashboard';
 import { personalDefaults, personalMetrics } from '@/components/dashboard-grid/personalHome';
 import { RecentActivitySection } from '@/components/dashboard/RecentActivitySection';
+import { ButtonLink } from '@/components/ui';
 import { ActionCard, Card, EmptyState, PageHeader, Skeleton, StatusBadge } from '@/components/ui';
 import type { FormStatus } from '@/types/form';
 
@@ -67,6 +68,25 @@ export default function DashboardPage() {
     !authLoading && isAuthenticated && !!formsData,
   );
 
+  const formsLoaded = !!formsData;
+  const hasForms = formsLoaded && formsData.total > 0;
+  const effectiveCounts = analytics && {
+    ...analytics,
+    totalForms: formsLoaded ? formsData.total : analytics.totalForms,
+    // Can't exceed the corrected total — caps the same leaked-form case without needing to know
+    // exactly which of the (at most 5) previewed rows are published.
+    publishedForms: formsLoaded ? Math.min(analytics.publishedForms, formsData.total) : analytics.publishedForms,
+  };
+
+  const metrics = personalMetrics(effectiveCounts, responseTrend, formsData?.forms ?? []);
+
+  const dashboard = useCustomDashboard({
+    scope: 'personal',
+    defaults: personalDefaults(metrics),
+    metrics,
+    enabled: !authLoading && isAuthenticated && !analyticsLoading,
+  });
+
   if (authLoading) {
     return (
       <div className="flex flex-col gap-6" aria-busy="true">
@@ -98,17 +118,6 @@ export default function DashboardPage() {
   // flips false first, typically before `formsData` resolves, and until this fix that gap read a
   // stale/leaked analytics count as if it were confirmed. Never claim "has forms" until the
   // reliable query has actually answered; no fallback, no interim guess.
-  const formsLoaded = !!formsData;
-  const hasForms = formsLoaded && formsData.total > 0;
-  const effectiveCounts = analytics && {
-    ...analytics,
-    totalForms: formsLoaded ? formsData.total : analytics.totalForms,
-    // Can't exceed the corrected total — caps the same leaked-form case without needing to know
-    // exactly which of the (at most 5) previewed rows are published.
-    publishedForms: formsLoaded ? Math.min(analytics.publishedForms, formsData.total) : analytics.publishedForms,
-  };
-
-  const metrics = personalMetrics(effectiveCounts, responseTrend, formsData?.forms ?? []);
 
   return (
     <div className="flex flex-col gap-6">
@@ -116,10 +125,15 @@ export default function DashboardPage() {
         eyebrow="Personal space"
         title="Home"
         actions={
-          <Link href="/forms" className="bg-btn bg-btn-primary shrink-0">
-            <Plus size={16} className="mr-2" />
-            Create a form
-          </Link>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {hasForms && dashboard.toolbar}
+            {!dashboard.editing && (
+              <ButtonLink href="/forms" className="shrink-0">
+                <Plus size={16} className="mr-2" />
+                Create a form
+              </ButtonLink>
+            )}
+          </div>
         }
       />
 
@@ -139,13 +153,13 @@ export default function DashboardPage() {
               description="Build a form, share the link, and collect responses — all from one place."
               actions={
                 <>
-                  <Link href="/forms" className="bg-btn bg-btn-primary">
+                  <ButtonLink href="/forms">
                     <Plus size={16} className="mr-2" />
                     Create a form
-                  </Link>
-                  <Link href="/templates" className="bg-btn bg-btn-secondary">
+                  </ButtonLink>
+                  <ButtonLink href="/templates" variant="secondary">
                     Browse templates
-                  </Link>
+                  </ButtonLink>
                 </>
               }
             />
@@ -164,21 +178,15 @@ export default function DashboardPage() {
         <>
           {/* Gated on formsLoaded (not analyticsLoading) — rendering the cards before we know
               hasForms flashed them on every reload for a zero-forms account. */}
-          <CustomDashboard
-            scope="personal"
-            title="Overview"
-            defaults={personalDefaults(metrics)}
-            metrics={metrics}
-            enabled={!authLoading && isAuthenticated && !analyticsLoading}
-          />
+          {dashboard.body}
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
             <section aria-labelledby="your-forms-heading" className="flex flex-col gap-3">
               <div className="flex items-center justify-between gap-3">
                 <h2 id="your-forms-heading" className="bg-h5 font-bold text-(--text-primary)">Your forms</h2>
-                <Link href="/forms" className="bg-btn bg-btn-secondary bg-btn-sm">
+                <ButtonLink href="/forms" variant="secondary" size="small">
                   View all
-                </Link>
+                </ButtonLink>
               </div>
               <Card padded={false} className="divide-y divide-(--border-subtle) overflow-hidden">
                 {formsData.forms.slice(0, YOUR_FORMS_SHOWN).map((form) => (

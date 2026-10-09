@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
-import { ArrowLeft, CheckCircle2, Eye, MoreVertical } from 'lucide-react';
+import { useState, type ReactNode } from 'react';
+import { CheckCircle2, ExternalLink, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { FormHeader } from '@/components/forms/FormHeader';
 import { SaveIndicator } from './SaveIndicator';
 import type { FormStatus } from '@/types/form';
 
@@ -20,13 +22,22 @@ export interface BuilderHeaderProps {
   onTitleChange: (title: string) => void;
   onPreview: () => void;
   onBack: () => void;
+  /** Where Back goes, named in its label ("Forms", "Acme forms"). */
+  backLabel?: string;
   onPublish: () => void;
   onClose: () => void;
   /** The caller may delete (Owner only). Otherwise the action is not offered; the server enforces. */
   canDelete: boolean;
   onDelete: () => void;
+  /** The form tab bar (Overview · Responses · Insights · Edit · Settings), same as every other form page. */
+  nav: ReactNode;
 }
 
+const STATUS_LABEL = { draft: 'Draft', published: 'Published', closed: 'Closed' } as const;
+
+// The builder's flavour of the shared FormHeader: the title is an editable field, the muted line is the save
+// state, and the actions are Preview / Publish / ⋮ (Close, Delete). Everything else (frame, tabs) matches the
+// Overview, Responses and Insights pages.
 export function BuilderHeader({
   formTitle,
   dirty,
@@ -39,10 +50,12 @@ export function BuilderHeader({
   onTitleChange,
   onPreview,
   onBack,
+  backLabel = 'Forms',
   onPublish,
   onClose,
   canDelete,
   onDelete,
+  nav,
 }: BuilderHeaderProps) {
   const [title, setTitle] = useState(formTitle || '');
   const [prevFormTitle, setPrevFormTitle] = useState<string | undefined>(formTitle);
@@ -60,90 +73,59 @@ export function BuilderHeader({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.currentTarget.blur();
-    }
-  };
-
-  // Sprint 13 (CF2.12): the header works at phone width. Below md it wraps — title + actions on the
-  // first row, the save indicator on its own row — Preview is icon-only, and Close/Delete live in an
-  // overflow menu at every width so nothing is squeezed off-screen or silently missing.
+  // Close/Delete are rare and destructive: they live in the ⋮ menu at every width.
   const overflowItems: MenuItem[] = [
     ...(status === 'published' ? [{ id: 'close', label: 'Close form', onSelect: onClose }] : []),
     ...(canDelete ? [{ id: 'delete', label: 'Delete form', onSelect: onDelete, danger: true }] : []),
   ];
 
   return (
-    <header className="flex flex-wrap items-center gap-x-2 gap-y-0 px-4 min-h-14 border-b bg-(--surface-card) shrink-0 shadow-(--shadow-sm)">
-      <div className="flex items-center gap-2 flex-1 min-w-0 md:max-w-[30%]">
-        <Button
-          onClick={onBack}
-          variant="ghost"
-          size="small"
-          className="min-h-11 min-w-11 shrink-0 p-2"
-          title="Back to Forms"
-          aria-label="Back to Forms"
-        >
-          <ArrowLeft size={16} />
-        </Button>
+    <FormHeader
+      onBack={onBack}
+      backLabel={backLabel}
+      title={
         <input
           type="text"
           value={title ?? ''}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleBlur}
-          onKeyDown={handleKeyDown}
-          className="w-full min-w-0 bg-h5 font-bold text-(--text-primary) bg-transparent border-b-2 border-transparent focus:border-(--border-strong) focus:outline-none px-1 py-0.5 rounded transition-colors"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.currentTarget.blur();
+          }}
+          className="min-w-0 rounded border-b-2 border-transparent bg-transparent px-1 py-0.5 font-semibold text-(--text-primary) transition-colors focus:border-(--border-strong) focus:outline-none"
           placeholder="Untitled Form"
           aria-label="Form name"
         />
-      </div>
-
-      {/* One SaveIndicator instance (one live region): its own row below md, inline from md up. */}
-      <div className="order-last w-full pb-1 md:order-none md:ml-auto md:w-auto md:pb-0">
-        <SaveIndicator dirty={dirty} saving={isSaving} error={saveFailed} savedAt={savedAt} onRetry={onRetrySave} />
-      </div>
-
-      <div className="flex items-center gap-1 md:gap-2 shrink-0">
-        <Button
-          onClick={onPreview}
-          variant="ghost"
-          size="small"
-          className="flex min-h-11 min-w-11 items-center gap-1.5 px-3"
-          aria-label="Preview"
-        >
-          <Eye size={16} />
-          <span className="hidden md:inline">Preview</span>
-        </Button>
-
-        {status === 'published' ? (
-          canPublish ? (
-            <Button variant="secondary" size="small" onClick={onPublish} className="min-h-11 gap-1.5" title="Manage publishing">
-              <CheckCircle2 size={15} className="text-(--success-text)" aria-hidden="true" />
-              Published
-            </Button>
-          ) : (
-            <span className="flex items-center gap-1.5 text-(--success-text) font-semibold bg-body-sm px-2">
-              <CheckCircle2 size={15} aria-hidden="true" />
-              Published
-            </span>
-          )
-        ) : canPublish ? (
-          <Button variant="primary" size="small" onClick={onPublish} className="min-h-11">
-            {status === 'closed' ? 'Re-publish' : 'Publish'}
+      }
+      badge={<StatusBadge variant={status}>{STATUS_LABEL[status]}</StatusBadge>}
+      // One SaveIndicator instance (one live region).
+      meta={<SaveIndicator dirty={dirty} saving={isSaving} error={saveFailed} savedAt={savedAt} onRetry={onRetrySave} />}
+      actions={
+        <>
+          <Button onClick={onPreview} variant="secondary" aria-label="Preview">
+            Preview
+            <ExternalLink size={14} aria-hidden="true" className="ml-1.5" />
           </Button>
-        ) : null}
 
-        {/* Rare and destructive actions live here, at every width, instead of as header buttons. */}
-        {overflowItems.length > 0 && (
-        <Menu
-          align="end"
-          triggerLabel="More form actions"
-          trigger={<MoreVertical size={18} aria-hidden="true" />}
-          items={overflowItems}
-        />
-        )}
-      </div>
-    </header>
+          {status === 'published' ? (
+            canPublish ? (
+              <Button variant="secondary" onClick={onPublish} title="Manage publishing">
+                <CheckCircle2 size={15} className="mr-1.5 text-(--success-text)" aria-hidden="true" />
+                Published
+              </Button>
+            ) : null
+          ) : canPublish ? (
+            <Button variant="primary" onClick={onPublish}>
+              {status === 'closed' ? 'Re-publish' : 'Publish'}
+            </Button>
+          ) : null}
+
+          {overflowItems.length > 0 && (
+            <Menu align="end" triggerLabel="More form actions" trigger={<MoreVertical size={18} aria-hidden="true" />} items={overflowItems} />
+          )}
+        </>
+      }
+      nav={nav}
+    />
   );
 }

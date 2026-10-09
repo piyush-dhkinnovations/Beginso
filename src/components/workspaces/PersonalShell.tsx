@@ -14,10 +14,11 @@
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useEffect } from 'react';
-import { touchRecentForm } from '@/store/recentFormsStore';
+import { removeRecentForm, touchRecentForm } from '@/store/recentFormsStore';
 import { SearchTrigger } from '@/components/search/SearchTrigger';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 import { AppShell, TopBar, Skeleton } from '@/components/ui';
 import { PersonalSidebar } from '@/components/workspaces/PersonalSidebar';
 import { WorkspaceSidebar } from '@/components/workspaces/WorkspaceSidebar';
@@ -62,11 +63,17 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
   const formId = FORM_DETAIL_ROUTE_RE.exec(pathname)?.[1];
   const wsHint = searchParams.get('ws');
 
-  const { data: form } = useQuery({
+  const { data: form, error: formError } = useQuery({
     queryKey: ['form', formId],
     queryFn: () => formsService.getFormById(formId as string),
     enabled: !!formId,
   });
+
+  // A form this account cannot open (no access / deleted) must not stay in its sidebar list.
+  const formErrorStatus = isAxiosError(formError) ? formError.response?.status : undefined;
+  useEffect(() => {
+    if (formId && (formErrorStatus === 403 || formErrorStatus === 404)) removeRecentForm(formId);
+  }, [formId, formErrorStatus]);
 
   // Unconditional (not gated on form.workspaceId) so it fetches in parallel with `form` above
   // rather than waiting on it — and it's usually already warm anyway, since every sidebar's own

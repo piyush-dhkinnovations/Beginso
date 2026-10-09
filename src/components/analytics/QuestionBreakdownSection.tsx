@@ -18,9 +18,11 @@ interface QuestionBreakdownSectionProps {
   isLoading: boolean;
   isError?: boolean;
   onRetry?: () => void;
+  /** fieldIds that already have a saved chart in the Charts section. */
+  chartedFieldIds?: ReadonlySet<string>;
 }
 
-export function QuestionBreakdownSection({ form, breakdown, isLoading, isError = false, onRetry }: QuestionBreakdownSectionProps) {
+export function QuestionBreakdownSection({ form, breakdown, isLoading, isError = false, onRetry, chartedFieldIds }: QuestionBreakdownSectionProps) {
   const choiceFields = (form?.fields ?? []).filter(isChoiceField);
 
   // The form's own field label wins over whatever label the analytics payload carries (it can be the bare type name,
@@ -32,6 +34,21 @@ export function QuestionBreakdownSection({ form, breakdown, isLoading, isError =
 
   // No empty section header when there's nothing to show it for (Requirement 6.5).
   if (choiceFields.length === 0) return null;
+
+  // Questions the user already charted below are not repeated here; unanswered ones collapse into one list.
+  const rows = choiceFields.map((field, i) => ({
+    field,
+    i,
+    question: {
+      ...(breakdown?.find((b) => b.fieldId === field.fieldId) ?? { fieldId: field.fieldId, options: [] }),
+      label: labelOf(field, i),
+    },
+  }));
+  const charted = rows.filter((r) => chartedFieldIds?.has(r.field.fieldId));
+  const rest = rows.filter((r) => !chartedFieldIds?.has(r.field.fieldId));
+  const isEmpty = (r: (typeof rows)[number]) => r.question.options.every((o) => o.count === 0);
+  const empty = isLoading ? [] : rest.filter(isEmpty);
+  const shown = isLoading ? rest : rest.filter((r) => !isEmpty(r));
 
   return (
     <section aria-labelledby="question-breakdown-heading" className="flex flex-col gap-4">
@@ -48,26 +65,41 @@ export function QuestionBreakdownSection({ form, breakdown, isLoading, isError =
           {onRetry && <Button variant="secondary" size="small" onClick={onRetry}>Try again</Button>}
         </Card>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {choiceFields.map((field, i) =>
-            isLoading ? (
-              <Card key={field.fieldId}>
-                <div className="animate-pulse space-y-3" aria-busy="true" aria-label={`Loading ${field.label} breakdown`}>
-                  <div className="h-4 bg-(--border-default) rounded w-1/2" />
-                  <div className="h-24 bg-(--bg-sunken) rounded" />
-                </div>
-              </Card>
-            ) : (
-              <QuestionBreakdownChart
-                key={field.fieldId}
-                question={{
-                  ...(breakdown?.find((b) => b.fieldId === field.fieldId) ?? { fieldId: field.fieldId, options: [] }),
-                  label: labelOf(field, i),
-                }}
-              />
-            )
+        <>
+          {charted.length > 0 && (
+            <p className="bg-caption text-(--text-muted)">
+              Shown as a chart below: {charted.map(({ field, i }) => labelOf(field, i)).join(', ')}
+            </p>
           )}
-        </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {shown.map(({ field, question }) =>
+              isLoading ? (
+                <Card key={field.fieldId}>
+                  <div className="animate-pulse space-y-3" aria-busy="true" aria-label={`Loading ${field.label} breakdown`}>
+                    <div className="h-4 bg-(--border-default) rounded w-1/2" />
+                    <div className="h-24 bg-(--bg-sunken) rounded" />
+                  </div>
+                </Card>
+              ) : (
+                <QuestionBreakdownChart key={field.fieldId} question={question} />
+              )
+            )}
+          </div>
+          {empty.length > 0 && (
+            <Card>
+              <details>
+                <summary className="cursor-pointer bg-body-sm font-semibold text-(--text-primary)">
+                  {empty.length === 1 ? '1 question has' : `${empty.length} questions have`} no answers in this range
+                </summary>
+                <ul className="mt-3 list-disc pl-5 bg-body-sm text-(--text-muted)">
+                  {empty.map(({ field, question }) => (
+                    <li key={field.fieldId}>{question.label}</li>
+                  ))}
+                </ul>
+              </details>
+            </Card>
+          )}
+        </>
       )}
     </section>
   );

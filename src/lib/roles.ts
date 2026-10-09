@@ -102,6 +102,11 @@ export function canManageWorkspaceSettings(role: Role | undefined): boolean {
   return canManageMembers(role);
 }
 
+// Backend grants dashboard:manage to owner and admin only. Convenience gate; the server enforces it.
+export function canManageDashboard(role: Role | undefined): boolean {
+  return canManageMembers(role);
+}
+
 export function canViewAudit(role: Role | undefined): boolean {
   return role !== undefined && hasCapability(role, 'workspace:audit');
 }

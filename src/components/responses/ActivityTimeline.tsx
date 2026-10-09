@@ -13,6 +13,7 @@ import {
   Workflow,
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { Button } from '@/components/ui/Button';
 import { formatRelativeTime } from '@/lib/formatters';
 import type { ActivityEntry, ActivityType } from '@/types/activity';
 
@@ -75,9 +76,9 @@ export function ActivityTimeline({ entries, isLoading, isError, onRetry }: Activ
       <div role="alert" className="flex flex-col items-start gap-2">
         <p className="bg-body-sm text-(--text-muted)">Couldn&apos;t load activity.</p>
         {onRetry && (
-          <button type="button" onClick={onRetry} className="bg-btn bg-btn-secondary bg-btn-sm">
+          <Button variant="secondary" size="small" onClick={onRetry}>
             Retry
-          </button>
+          </Button>
         )}
       </div>
     );

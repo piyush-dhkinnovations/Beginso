@@ -1,35 +1,44 @@
 'use client';
 
+import { useState } from 'react';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft } from 'lucide-react';
+import { ExternalLink, Link2, MoreVertical, Pin, PinOff, Pencil, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { FormSubNav } from '@/components/forms/FormSubNav';
-import { Breadcrumb, type BreadcrumbItem } from '@/components/ui/Breadcrumb';
+import { ButtonLink } from '@/components/ui/ButtonLink';
+import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StatusBadge } from '@/components/ui/StatusBadge';
+import { useToast } from '@/components/ui/Toast';
+import { FormSubNav } from '@/components/forms/FormSubNav';
+import { FormHeader, formatFormDate } from '@/components/forms/FormHeader';
+import { FormAccessPanel } from '@/components/team/FormAccessPanel';
 import { useFormScope } from '@/hooks/useFormScope';
+import { usePinForm } from '@/hooks/usePinForm';
 import { formsService } from '@/services/forms';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
 import { hasCapability } from '@/lib/roles';
+import { buildPublicFormUrl, publicFormSlug } from '@/lib/publicFormUrl';
 
 const STATUS_LABEL = { draft: 'Draft', published: 'Published', closed: 'Closed' } as const;
 
-// Pages under /forms/:id that get the form header. The builder (/edit) is a full-bleed canvas with
-// its own chrome and the preview is a full-viewport overlay, so neither shows it.
+// Pages under /forms/:id that show this header. The builder renders the same FormHeader itself (it adds the
+// title field, save state and publish actions), and the preview is a full-viewport overlay with no header.
 const HEADER_ROUTE_RE = /^\/forms\/[^/]+\/(overview|inbox|insights|scores)\/?$/;
 
 /**
- * The form-level navigation spine: `Workspace › Forms › <Form>` breadcrumb, the form's name and
- * status, and a horizontal sub-nav (Overview · Responses · Insights · Edit · Settings). It sits under
- * the workspace/personal sidebar, which stays mounted - the form's own nav never replaces it.
- * Edit and Settings are shown only to roles that can edit (presentation only; the server enforces).
+ * The header for the form's read pages: icon, name, status, created/updated dates, Preview / Share /
+ * Edit form / ⋮, and the tab bar (Overview · Responses · Insights · Edit · Settings). Edit and Share are shown
+ * only to roles that can edit (presentation only; the server enforces).
  */
 export function FormLevelHeader() {
   const { id: formId } = useParams<{ id: string }>();
   const pathname = usePathname();
   const router = useRouter();
+  const { toast } = useToast();
+  const pin = usePinForm();
+  const [accessOpen, setAccessOpen] = useState(false);
   const show = HEADER_ROUTE_RE.test(pathname);
   const scope = useFormScope(formId);
   const ws = useSearchParams().get('ws') ?? (scope && scope !== 'personal' ? scope : null);
@@ -49,43 +58,80 @@ export function FormLevelHeader() {
 
   const workspace = workspaces.find((w) => w.slug === ws);
   const isOwnPersonal = !ws && (form?.myRole ?? 'owner') === 'owner';
-  const breadcrumb: BreadcrumbItem[] = ws
-    ? [{ label: workspace?.name ?? 'Workspace', href: `/w/${ws}` }, { label: 'Forms', href: `/w/${ws}/forms` }, { label: form?.title ?? '…' }]
+  const back = ws
+    ? { label: workspace?.name ? `${workspace.name} forms` : 'Forms', href: `/w/${ws}/forms` }
     : isOwnPersonal
-      ? [{ label: 'Personal', href: '/dashboard' }, { label: 'Forms', href: '/forms' }, { label: form?.title ?? '…' }]
-      : [{ label: 'Shared with me', href: '/shared' }, { label: form?.title ?? '…' }];
+      ? { label: 'Forms', href: '/forms' }
+      : { label: 'Shared with me', href: '/shared' };
 
-  const parent = breadcrumb[breadcrumb.length - 2];
-  const backHref = parent.href ?? '/forms';
-  const backLabel = parent.label;
+  const canEdit = !form?.myRole || hasCapability(form.myRole, 'forms:edit');
+  const q = ws ? `?ws=${encodeURIComponent(ws)}` : '';
+  const publicUrl = form?.status === 'published' ? buildPublicFormUrl(publicFormSlug(form)) : '';
 
-  const canEdit =!form?.myRole || hasCapability(form.myRole, 'forms:edit');
+  const menu: MenuItem[] = [
+    ...(form
+      ? [{
+          id: 'pin',
+          label: form.pinned ? 'Unpin from top' : 'Pin to top',
+          icon: form.pinned ? <PinOff size={16} /> : <Pin size={16} />,
+          onSelect: () => pin.mutate({ id: formId, pin: !form.pinned }),
+        }]
+      : []),
+    ...(publicUrl
+      ? [{
+          id: 'copy',
+          label: 'Copy public link',
+          icon: <Link2 size={16} />,
+          onSelect: () => {
+            void navigator.clipboard.writeText(publicUrl);
+            toast('Link copied to clipboard.', 'success');
+          },
+        }]
+      : []),
+  ];
+
+  const created = formatFormDate(form?.createdAt);
+  const updated = formatFormDate(form?.updatedAt);
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center gap-3">
-        {/* The app sidebar is hidden on these pages (see PersonalShell), so this is the way out. Always the list, never history. */}
-        <Button variant="ghost" size="small" onClick={() => router.push(backHref)} aria-label={`Back to ${backLabel}`}>
-          <ArrowLeft size={16} className="bg-icon" />
-          {backLabel}
-        </Button>
-        <Breadcrumb items={breadcrumb} />
-      </div>
-      <div className="flex min-w-0 items-center gap-3">
-        {form ? (
+    <>
+      <FormHeader
+        onBack={() => router.push(back.href)}
+        backLabel={back.label}
+        title={form ? form.title : <Skeleton variant="text" width={200} height={24} />}
+        badge={form && <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge>}
+        meta={form && (created || updated) ? <>{created && <>Created on {created}</>}{created && updated && ' · '}{updated && <>Last updated {updated}</>}</> : undefined}
+        actions={
           <>
-            <p className="bg-h4 min-w-0 truncate font-semibold text-(--text-primary)">{form.title}</p>
-            <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge>
+            <ButtonLink variant="secondary" href={`/forms/${formId}/preview`}>
+              Preview
+              <ExternalLink size={14} aria-hidden="true" className="ml-1.5" />
+            </ButtonLink>
+            {canEdit && (
+              <Button variant="secondary" onClick={() => setAccessOpen(true)}>
+                <Share2 size={16} className="mr-1.5" aria-hidden="true" />
+                Share
+              </Button>
+            )}
+            {canEdit && (
+              <ButtonLink href={`/forms/${formId}/edit${q}`}>
+                <Pencil size={16} className="mr-1.5" aria-hidden="true" />
+                Edit form
+              </ButtonLink>
+            )}
+            {menu.length > 0 && <Menu align="end" triggerLabel="More form actions" trigger={<MoreVertical size={18} aria-hidden="true" />} items={menu} />}
           </>
-        ) : (
-          <Skeleton variant="text" width={200} height={24} />
-        )}
-      </div>
-      <FormSubNav
-        formId={formId}
-        ws={ws}
-        canEdit={canEdit}
-        active={/\/inbox\/?$/.test(pathname) ? 'responses' : pathname.endsWith('/insights') ? 'insights' : 'overview'}
+        }
+        nav={
+          <FormSubNav
+            formId={formId}
+            ws={ws}
+            canEdit={canEdit}
+            active={/\/inbox\/?$/.test(pathname) ? 'responses' : pathname.endsWith('/insights') ? 'insights' : 'overview'}
+          />
+        }
       />
-    </div>
+      {form && canEdit && <FormAccessPanel formId={formId} formTitle={form.title} isOpen={accessOpen} onClose={() => setAccessOpen(false)} />}
+    </>
   );
 }

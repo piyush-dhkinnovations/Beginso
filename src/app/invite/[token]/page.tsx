@@ -3,7 +3,6 @@
 import { StateArt } from '@/components/illustrations/Illustration';
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Clock, XCircle, CheckCircle2, AlertCircle } from 'lucide-react';
 import { signOut } from 'firebase/auth';
@@ -15,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ROLE_LABELS } from '@/lib/roles';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { Button } from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui/ButtonLink';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 
@@ -289,9 +289,9 @@ export default function InviteAcceptPage() {
         </div>
       ) : (
         <div className="flex w-full flex-col gap-3">
-          <Link href={`/login?next=${nextParam}`} className="bg-btn bg-btn-primary w-full">
+          <ButtonLink href={`/login?next=${nextParam}`} className="w-full">
             Sign in to accept
-          </Link>
+          </ButtonLink>
           <div className="flex w-full gap-3">
             <Button
               variant="secondary"
@@ -301,9 +301,9 @@ export default function InviteAcceptPage() {
             >
               Decline
             </Button>
-            <Link href={`/signup?next=${nextParam}`} className="bg-btn bg-btn-secondary flex-1">
+            <ButtonLink href={`/signup?next=${nextParam}`} variant="secondary" className="flex-1">
               Sign up
-            </Link>
+            </ButtonLink>
           </div>
         </div>
       )}

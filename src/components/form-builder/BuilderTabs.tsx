@@ -18,6 +18,8 @@ interface BuilderTabsProps {
   showShare?: boolean;
   /** Non-deleted field count; shown on the Build tab when above zero. */
   fieldCount?: number;
+  /** Hide the Behaviour tab: the form's top-level Settings tab already covers it. */
+  hideSettings?: boolean;
 }
 
 const TABS: { id: BuilderTab; label: string }[] = [
@@ -27,7 +29,7 @@ const TABS: { id: BuilderTab; label: string }[] = [
   { id: 'share', label: 'Share' },
 ];
 
-export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onRedo, showShare = true, fieldCount = 0 }: BuilderTabsProps) {
+export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onRedo, showShare = true, fieldCount = 0, hideSettings = false }: BuilderTabsProps) {
   return (
     <nav className="flex items-center justify-between border-b bg-(--surface-card) shrink-0 shadow-(--shadow-sm)" aria-label="Form Builder Tabs">
       {/* Real role="tablist"/role="tab"/aria-selected semantics — confirmed missing during Sprint
@@ -35,7 +37,7 @@ export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onR
           here, since this component lacked them), fixed here per that sprint's Friday
           accessibility-pass task. */}
       <div className="flex min-w-0 items-center overflow-x-auto" role="tablist" aria-label="Form Builder sections">
-        {TABS.filter((t) => showShare || t.id !== 'share').map((tab) => {
+        {TABS.filter((t) => (showShare || t.id !== 'share') && !(hideSettings && t.id === 'settings')).map((tab) => {
           const isActive = activeTab === tab.id;
           return (
             <div key={tab.id} className="flex items-center">

@@ -97,9 +97,9 @@ export function ChartFullScreen({ isOpen, chart, field, formId, scope, range, on
             <Download size={14} className="mr-1.5" aria-hidden="true" />
             CSV
           </Button>
-          <button type="button" onClick={onClose} aria-label="Close full screen" className="bg-btn bg-btn-ghost bg-btn-icon">
+          <Button variant="ghost" onClick={onClose} aria-label="Close full screen" className="bg-btn-icon">
             <X size={18} className="bg-icon" />
-          </button>
+          </Button>
         </div>
       </div>
 

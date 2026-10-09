@@ -82,7 +82,8 @@ describe('AnalyticsView', () => {
   it('renders the Auto-Dashboard branch (stat cards, trend, status, questions) when formId is set', async () => {
     renderView('form-1');
 
-    expect(await screen.findByText('Insights · Customer Survey')).toBeInTheDocument();
+    // The form's name now lives in the shared form header, so inside a form the page only keeps its own heading.
+    expect(await screen.findByRole('heading', { name: 'Insights' })).toBeInTheDocument();
     expect(screen.getByText('Total Responses')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText('Response Trend')).toBeInTheDocument());
     expect(screen.getByText('Status Distribution')).toBeInTheDocument();

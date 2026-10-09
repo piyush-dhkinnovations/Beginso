@@ -12,6 +12,7 @@ import { auth } from '@/lib/firebase';
 import { authService } from '@/services/auth';
 import { resetPasswordSchema, type ResetPasswordFormValues } from '@/lib/schemas/resetPasswordSchema';
 import { Button } from '@/components/ui/Button';
+import { ButtonLink } from '@/components/ui/ButtonLink';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { Input } from '@/components/ui/Input';
 
@@ -137,12 +138,11 @@ export default function ResetPasswordPage() {
             {notificationWarning}
           </p>
         )}
-        <Link
-          href="/login"
-          className="bg-btn bg-btn-primary w-full"
+        <ButtonLink
+          href="/login" className="w-full"
         >
           Back to login
-        </Link>
+        </ButtonLink>
       </AuthCard>
     );
   }

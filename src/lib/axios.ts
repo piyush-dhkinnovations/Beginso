@@ -36,7 +36,7 @@ axiosInstance.interceptors.response.use(
           method: 'POST',
           credentials: 'include',
           keepalive: true,
-        }).finally(() => {
+        }).catch(() => {}).finally(() => {
           window.location.href = isSuspended ? '/login?reason=suspended' : '/login';
         });
       }

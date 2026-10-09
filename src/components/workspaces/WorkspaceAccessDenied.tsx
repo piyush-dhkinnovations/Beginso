@@ -1,6 +1,5 @@
-import Link from 'next/link';
 import { ShieldAlert } from 'lucide-react';
-import { EmptyState } from '@/components/ui';
+import { ButtonLink, EmptyState } from '@/components/ui';
 
 // The 403 half of requirements.md §7.1's route-level boundary — the workspace exists but the
 // caller has no membership in it. Distinct from the 404 case (slug doesn't resolve at all, which
@@ -18,9 +17,9 @@ export function WorkspaceAccessDenied() {
         title="You don't have access to this workspace"
         description="Ask a member to invite you, or switch to a workspace you already belong to."
         actions={
-          <Link href="/dashboard" className="bg-btn bg-btn-primary">
+          <ButtonLink href="/dashboard">
             Go to Personal Home
-          </Link>
+          </ButtonLink>
         }
       />
     </div>

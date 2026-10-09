@@ -22,10 +22,10 @@ export function personalMetrics(counts: Counts | undefined, dailyResponses: numb
   if (!counts) return m;
   const hasTrend = !!dailyResponses && dailyResponses.some((v) => v > 0);
 
-  m.totalForms = { label: 'Total forms', value: counts.totalForms, icon: icon(FileText), percent: pct(counts.publishedForms, counts.totalForms), sub: `${counts.publishedForms} published` } satisfies KpiData;
-  m.totalResponses = { label: 'Total responses', value: counts.totalResponses, icon: icon(MessageSquare), trend: hasTrend ? dailyResponses : undefined };
-  m.publishedForms = { label: 'Published forms', value: counts.publishedForms, sub: `/ ${counts.totalForms}`, percent: pct(counts.publishedForms, counts.totalForms), icon: icon(BarChart3) };
-  m.responsesThisMonth = { label: 'Responses this month', value: counts.responsesThisMonth, icon: icon(Calendar), percent: pct(counts.responsesThisMonth, counts.totalResponses), sub: 'of all responses' };
+  m.totalForms = { label: 'Total forms', value: counts.totalForms, icon: icon(FileText), percent: pct(counts.publishedForms, counts.totalForms), sub: `${counts.publishedForms} published`, emptyHint: 'No forms yet' } satisfies KpiData;
+  m.totalResponses = { label: 'Total responses', value: counts.totalResponses, icon: icon(MessageSquare), trend: hasTrend ? dailyResponses : undefined, emptyHint: 'No responses yet — share a form to get started' };
+  m.publishedForms = { label: 'Published forms', value: counts.publishedForms, sub: `/ ${counts.totalForms}`, percent: pct(counts.publishedForms, counts.totalForms), icon: icon(BarChart3), emptyHint: 'No published forms yet' };
+  m.responsesThisMonth = { label: 'Responses this month', value: counts.responsesThisMonth, icon: icon(Calendar), ...(counts.totalResponses > 0 ? { percent: pct(counts.responsesThisMonth, counts.totalResponses), sub: 'of all responses' } : {}), emptyHint: 'No responses this month' };
   if (counts.totalForms > 0) {
     m.avgPerForm = { label: 'Avg. responses / form', value: (counts.totalResponses / counts.totalForms).toFixed(1), icon: icon(BarChart3) };
   }

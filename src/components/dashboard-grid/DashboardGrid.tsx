@@ -5,11 +5,11 @@ import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, us
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Trash2 } from 'lucide-react';
-import { KpiCard, type KpiData } from '@/components/ui/KpiCard';
+import { KpiCard, type KpiData, type KpiTone } from '@/components/ui/KpiCard';
 import { Card } from '@/components/ui/Card';
 import { ChartWidget } from './ChartWidget';
 import { bx } from '@/lib/utils';
-import { WIDTHS, isKpi, isSegments, isSeries, type MetricMap, type Widget, type WidgetWidth } from './types';
+import { TONES, WIDTHS, isKpi, isSegments, isSeries, type MetricMap, type Widget, type WidgetWidth } from './types';
 
 // Literal class names so Tailwind sees them. Mobile: always full width; tablet: 3/4 -> half.
 const SPAN: Record<WidgetWidth, string> = {
@@ -20,7 +20,7 @@ const SPAN: Record<WidgetWidth, string> = {
 const WIDTH_LABEL: Record<WidgetWidth, string> = { 3: 'Small (1/4)', 4: 'Medium (1/3)', 6: 'Wide (1/2)' };
 // Rows share one track height so cards line up; a chart spans two tracks, a KPI card one.
 const rows = (w: Widget) => (w.config.type === 'chart' ? 'row-span-2' : '');
-const GRID = 'grid auto-rows-[minmax(11rem,auto)] grid-cols-1 gap-4 md:grid-cols-6 xl:grid-cols-12';
+const GRID = 'grid auto-rows-[minmax(8.5rem,auto)] grid-cols-1 gap-4 md:grid-cols-6 xl:grid-cols-12';
 
 function Unavailable({ onRemove }: { onRemove?: () => void }) {
   return (
@@ -37,14 +37,14 @@ function WidgetBody({ widget, metrics, onRemove }: { widget: Widget; metrics: Me
   if (!m) return <Unavailable onRemove={onRemove} />;
   if (c.type === 'kpi') {
     if (!isKpi(m)) return <Unavailable onRemove={onRemove} />;
-    const data: KpiData = c.title ? { ...m, label: c.title } : m;
+    const data: KpiData = { ...m, ...(c.title ? { label: c.title } : {}), ...(c.tone ? { tone: c.tone } : {}) };
     return <KpiCard variant={c.variant} data={data} />;
   }
   if (!isSeries(m) && !isSegments(m)) return <Unavailable onRemove={onRemove} />;
   return <ChartWidget chart={c.chart} metric={m} title={c.title} />;
 }
 
-function SortableWidget({ widget, metrics, onResize, onRemove }: { widget: Widget; metrics: MetricMap; onResize: (w: WidgetWidth) => void; onRemove: () => void }) {
+function SortableWidget({ widget, metrics, onResize, onRecolor, onRemove }: { widget: Widget; metrics: MetricMap; onResize: (w: WidgetWidth) => void; onRecolor: (t: KpiTone) => void; onRemove: () => void }) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: widget.id });
   return (
     <div
@@ -64,6 +64,16 @@ function SortableWidget({ widget, metrics, onResize, onRemove }: { widget: Widge
         >
           {WIDTHS.map((w) => <option key={w} value={w}>{WIDTH_LABEL[w]}</option>)}
         </select>
+        {widget.config.type === 'kpi' && (
+          <select
+            aria-label="Widget colour"
+            value={widget.config.tone ?? 'primary'}
+            onChange={(e) => onRecolor(e.target.value as KpiTone)}
+            className="rounded border border-(--border-default) bg-(--surface-card) px-1 py-0.5 text-xs text-(--text-primary)"
+          >
+            {TONES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+          </select>
+        )}
         <button type="button" aria-label="Remove widget" onClick={onRemove} className="rounded p-1 text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--error)">
           <Trash2 className="size-4" />
         </button>
@@ -113,6 +123,7 @@ export function DashboardGrid({ widgets, metrics, onChange, empty }: DashboardGr
               widget={w}
               metrics={metrics}
               onResize={(width) => onChange(widgets.map((x) => (x.id === w.id ? { ...x, w: width } : x)))}
+              onRecolor={(tone) => onChange(widgets.map((x) => (x.id === w.id && x.config.type === 'kpi' ? { ...x, config: { ...x.config, tone } } : x)))}
               onRemove={() => onChange(widgets.filter((x) => x.id !== w.id))}
             />
           ))}

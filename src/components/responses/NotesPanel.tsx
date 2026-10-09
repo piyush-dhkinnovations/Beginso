@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowDown, Lock } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { NoteItem } from './NoteItem';
@@ -158,9 +159,9 @@ export function NotesPanel({ responseId, scope, workspaceName, currentUserId, ca
         ) : isError ? (
           <div role="alert" className="flex flex-col items-start gap-2 py-2">
             <p className="bg-body-sm text-(--text-muted)">Couldn&apos;t load notes.</p>
-            <button type="button" onClick={() => void refetch()} className="bg-btn bg-btn-secondary bg-btn-sm">
+            <Button variant="secondary" size="small" onClick={() => void refetch()}>
               Retry
-            </button>
+            </Button>
           </div>
         ) : notes && notes.length > 0 ? (
           // Chat-style list, no divider line between messages — a bubble per message already
@@ -190,14 +191,15 @@ export function NotesPanel({ responseId, scope, workspaceName, currentUserId, ca
       </div>
 
       {hasUnseen && (
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="small"
           onClick={jumpToLatest}
-          className="bg-btn bg-btn-secondary bg-btn-sm self-center shadow-(--shadow-md)"
+          className="self-center shadow-(--shadow-md)"
         >
           <ArrowDown size={14} className="mr-1.5" aria-hidden="true" />
           New notes
-        </button>
+        </Button>
       )}
 
       <NoteComposer

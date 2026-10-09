@@ -13,15 +13,16 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { FormsOverviewCharts } from '@/components/analytics/FormsOverviewCharts';
-import { FileText, Files, MessageSquare, Plus, LayoutTemplate, FilePlus, Table, Settings, Download, Clock, BarChart2, Edit3, Share2 } from 'lucide-react';
+import { useCustomDashboard } from '@/components/dashboard-grid/CustomDashboard';
+import { workspaceDefaults, workspaceMetrics } from '@/components/dashboard-grid/workspaceHome';
+import { Plus, LayoutTemplate, FilePlus, Table, Settings, Download, Clock, BarChart2, Edit3, Share2 } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { eventsService } from '@/services/events';
 import { activityKeys, workspaceKeys } from '@/lib/queryKeys';
 import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
-import { canManageWorkspaceSettings } from '@/lib/roles';
+import { canManageDashboard, canManageWorkspaceSettings } from '@/lib/roles';
 import { ActivityFeed } from '@/components/workspaces/ActivityFeed';
-import { PageHeader, Button, EmptyState, StatCard, Card, Badge, Skeleton } from '@/components/ui';
+import { PageHeader, Button, EmptyState, Card, Badge, Skeleton, QuickActionsBanner } from '@/components/ui';
 import { FormAccessPanel } from '@/components/team/FormAccessPanel';
 import type { Form } from '@/types/form';
 
@@ -55,6 +56,15 @@ export default function WorkspaceHomePage() {
 
   const forms = data?.forms ?? [];
   const isEmpty = !isLoading && !error && forms.length === 0;
+
+  const metrics = workspaceMetrics(forms, data?.total ?? forms.length);
+  const dashboard = useCustomDashboard({
+    scope: slug,
+    defaults: workspaceDefaults(metrics, role),
+    metrics,
+    canEdit: canManageDashboard(role),
+    enabled: !isLoading && !error && !isEmpty && role !== undefined,
+  });
 
   // ── Loading state ──────────────────────────────────────────────────────────
   if (isLoading) {
@@ -113,19 +123,24 @@ export default function WorkspaceHomePage() {
       <PageHeader
         title="Home"
         actions={
-          <div className="flex items-center gap-2.5">
-            <Link href={`/w/${slug}/forms`}>
-              <Button variant="primary">
-                <Plus size={16} className="mr-1.5" />
-                New Form
-              </Button>
-            </Link>
-            <Link href={`/w/${slug}/templates`}>
-              <Button variant="secondary">
-                <LayoutTemplate size={16} className="mr-1.5" />
-                Templates
-              </Button>
-            </Link>
+          <div className="flex flex-wrap items-center justify-end gap-2.5">
+            {!isEmpty && dashboard.toolbar}
+            {!dashboard.editing && (
+              <>
+                <Link href={`/w/${slug}/forms`}>
+                  <Button variant="primary">
+                    <Plus size={16} className="mr-1.5" />
+                    New Form
+                  </Button>
+                </Link>
+                <Link href={`/w/${slug}/templates`}>
+                  <Button variant="secondary">
+                    <LayoutTemplate size={16} className="mr-1.5" />
+                    Templates
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         }
       />
@@ -150,58 +165,18 @@ export default function WorkspaceHomePage() {
       ) : (
         // ── Populated state (Screen 06) ────────────────────────────────────
         <div className="flex flex-col gap-5">
-          {/* Stat cards grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard label="Total Forms" value={data?.total ?? forms.length} icon={<FileText aria-hidden="true" />} />
-            <StatCard
-              label="Total Responses"
-              value={forms.reduce((s, f) => s + (f.responseCount ?? 0), 0)}
-              icon={<MessageSquare aria-hidden="true" />}
-            />
-            <StatCard
-              label="Active Forms"
-              value={forms.filter((f) => f.status === 'published').length}
-              unit={forms.length > 0 ? `/ ${forms.length}` : undefined}
-              icon={<Files aria-hidden="true" />}
-              chart={
-                forms.length > 0
-                  ? { kind: 'ring', percent: Math.round((forms.filter((f) => f.status === 'published').length / forms.length) * 100) }
-                  : undefined
-              }
-            />
-          </div>
+          {dashboard.body}
 
-          <FormsOverviewCharts
-            insightsHref={`/w/${slug}/insights`}
-            forms={forms.map((f) => ({ title: f.title, status: f.status, responses: f.responseCount ?? 0 }))}
+          <QuickActionsBanner
+            title="Quick Actions"
+            description="Manage your forms and data quickly."
+            icon={<Table />}
+            actions={[
+              { label: 'All responses', href: `/w/${slug}/inbox`, icon: <Table /> },
+              ...(canManageWorkspaceSettings(role) ? [{ label: 'Branding', href: `/w/${slug}/settings?tab=branding`, icon: <Settings /> }] : []),
+              { label: 'Exports', href: `/w/${slug}/exports`, icon: <Download /> },
+            ]}
           />
-
-          {/* Quick actions strip */}
-          <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
-            <span className="bg-body-sm font-semibold text-(--text-primary)">Quick Actions</span>
-            <div className="flex flex-wrap gap-2">
-              <Link href={`/w/${slug}/inbox`}>
-                <Button variant="secondary" size="small">
-                  <Table size={13} className="mr-1.5" />
-                  All responses
-                </Button>
-              </Link>
-              {canManageWorkspaceSettings(role) && (
-                <Link href={`/w/${slug}/settings?tab=branding`}>
-                  <Button variant="secondary" size="small">
-                    <Settings size={13} className="mr-1.5" />
-                    Branding
-                  </Button>
-                </Link>
-              )}
-              <Link href={`/w/${slug}/exports`}>
-                <Button variant="secondary" size="small">
-                  <Download size={13} className="mr-1.5" />
-                  Exports
-                </Button>
-              </Link>
-            </div>
-          </Card>
 
           {/* Two-column: Recent forms (left) + Recent Activity (right). Not "Pinned": pinning a workspace form does not persist yet, so this is the most recent five. */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

@@ -59,16 +59,17 @@ function SortableChart({ chart, children }: { chart: SavedChart; children: (hand
       className={`${SPAN[chart.size]} min-w-0`}
     >
       {children(
-        <button
+        <Button
           type="button"
+          variant="ghost"
           ref={setActivatorNodeRef}
           {...attributes}
           {...listeners}
           aria-label={`Reorder chart ${chart.title}`}
-          className="bg-btn bg-btn-ghost bg-btn-icon shrink-0 cursor-grab touch-none"
+          className="bg-btn-icon shrink-0 cursor-grab touch-none"
         >
           <GripVertical size={16} className="bg-icon" />
-        </button>,
+        </Button>,
       )}
     </div>
   );

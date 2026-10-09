@@ -2,6 +2,7 @@
 
 import { Pin } from 'lucide-react';
 import { bx } from '@/lib/utils';
+import { Button } from '@/components/ui/Button';
 
 export interface PinButtonProps {
   title: string;
@@ -15,9 +16,9 @@ export interface PinButtonProps {
 export function PinButton({ title, pinned, onToggle, disabled }: PinButtonProps) {
   const label = pinned ? `Unpin ${title}` : `Pin ${title}`;
   return (
-      <button
-        type="button"
-        className="bg-btn bg-btn-ghost bg-btn-icon"
+      <Button
+        variant="ghost"
+        className="bg-btn-icon"
         aria-label={label}
         title={pinned ? 'Unpin' : 'Pin to top'}
         aria-pressed={pinned}
@@ -25,6 +26,6 @@ export function PinButton({ title, pinned, onToggle, disabled }: PinButtonProps)
         onClick={onToggle}
       >
         <Pin className={bx('bg-icon', pinned && 'fill-current text-(--action-primary)')} aria-hidden="true" />
-      </button>
+      </Button>
   );
 }

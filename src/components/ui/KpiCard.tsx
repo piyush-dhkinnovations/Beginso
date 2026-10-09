@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, type CSSProperties, type ReactNode } from 'react';
-import { ArrowDown, ArrowUp, ChevronRight, CircleDot, MoreVertical, TrendingUp, Zap } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronRight, CircleDot, TrendingUp, Zap } from 'lucide-react';
 import { bx } from '@/lib/utils';
 import { Ring } from './charts';
 import { curve, scalePoints } from './charts/math';
@@ -37,6 +37,8 @@ export interface KpiData {
   items?: { label: string; value: string | number; icon?: ReactNode; tone?: KpiTone }[];
   /** Footer line for looks 12 / 20, e.g. "Higher than usual". */
   highlight?: string;
+  /** Muted line shown instead of an empty ring / bar / sparkline when there is no data yet, e.g. "No responses yet". */
+  emptyHint?: string;
 }
 
 export interface KpiCardProps {
@@ -68,7 +70,7 @@ const mutedCls = 'text-xs leading-4 text-(--text-muted)';
 function Shell({ children, className, style }: { children: ReactNode; className?: string; style?: CSSProperties }) {
   return (
     <div
-      className={bx('relative h-full min-h-40 min-w-0 overflow-hidden rounded-2xl border border-(--border-default) bg-(--surface-card) p-5 shadow-sm', className)}
+      className={bx('relative h-full min-h-34 min-w-0 overflow-hidden rounded-2xl border border-(--border-default) bg-(--surface-card) p-5 shadow-sm', className)}
       style={style}
     >
       {children}
@@ -144,7 +146,7 @@ function Spark({ values, tone = 'primary', fill = true, className }: { values: n
   );
 }
 
-function GradBars({ values, className }: { values: number[]; className?: string }) {
+function GradBars({ values, tone = 'primary', className }: { values: number[]; tone?: KpiTone; className?: string }) {
   const max = Math.max(...values, 1);
   return (
     <div className={bx('flex flex-none items-end gap-1.5', className)} aria-hidden="true">
@@ -152,7 +154,7 @@ function GradBars({ values, className }: { values: number[]; className?: string 
         <span
           key={i}
           className="w-2.5 rounded-full"
-          style={{ height: `${Math.max(16, (v / max) * 100)}%`, backgroundColor: TONE.primary, opacity: 0.2 + (0.8 * (i + 1)) / values.length }}
+          style={{ height: `${Math.max(16, (v / max) * 100)}%`, backgroundColor: TONE[tone], opacity: 0.2 + (0.8 * (i + 1)) / values.length }}
         />
       ))}
     </div>
@@ -172,13 +174,27 @@ function Note({ tone, icon, children }: { tone: KpiTone; icon: ReactNode; childr
   );
 }
 
-const lastN = (v: number[] | undefined, n: number) => (v && v.length >= 2 ? v.slice(-n) : undefined);
+// A trend with < 2 points or all zeros has no shape to draw, so it is dropped rather than drawn flat.
+const usableTrend = (v: number[] | undefined) => (v && v.length >= 2 && v.some((n) => n !== 0) ? v : undefined);
+const lastN = (v: number[] | undefined, n: number) => v?.slice(-n);
+const isZeroish = (v: string | number) => parseFloat(String(v).replace(/[^\d.-]/g, '')) === 0;
 
-function Render({ variant, d }: { variant: KpiVariant; d: KpiData }) {
+function Hint({ children }: { children?: string }) {
+  return children ? <div className={bx(mutedCls, 'mt-0.5')}>{children}</div> : null;
+}
+
+function Render({ variant, d: raw }: { variant: KpiVariant; d: KpiData }) {
+  const trend = usableTrend(raw.trend);
+  const d: KpiData = { ...raw, trend };
   const tone = d.tone ?? 'primary';
   const pct = Math.min(100, Math.max(0, d.percent ?? 0));
-  const bars = lastN(d.trend, 6);
+  const bars = lastN(trend, 6);
   const Icon = d.icon;
+  // Nothing real for a ring/progress to show: no percent given, or 0% of a zero value.
+  const noRing = d.percent === undefined || (pct === 0 && isZeroish(d.value));
+  const hint = d.emptyHint && isZeroish(d.value) ? d.emptyHint : undefined;
+  // Trend looks: say why there is no graphic instead of leaving a silent gap.
+  const trendHint = !trend ? hint : undefined;
 
   switch (variant) {
     case 1:
@@ -189,14 +205,14 @@ function Render({ variant, d }: { variant: KpiVariant; d: KpiData }) {
             {d.delta && <Pill value={d.delta.value} down={d.delta.down} />}
           </div>
           <div className="flex items-end justify-between gap-3">
-            <div className="min-w-0"><div className={valueCls}>{d.value}</div><div className={labelCls}>{d.label}</div></div>
+            <div className="min-w-0"><div className={valueCls}>{d.value}</div><div className={labelCls}>{d.label}</div><Hint>{trendHint}</Hint></div>
             {d.trend && <Spark values={d.trend} tone={tone} className="h-12 w-28 flex-none" />}
           </div>
         </Shell>
       );
     case 2:
       return (
-        <Shell className="flex flex-col justify-between gap-3 border-transparent text-white" style={{ background: 'linear-gradient(135deg, var(--primary-500, #3C69CC), var(--primary-700, #2A4A99))' }}>
+        <Shell className="flex flex-col justify-between gap-3 border-transparent text-white" style={{ background: tone === 'primary' ? 'linear-gradient(135deg, var(--primary-500, #3C69CC), var(--primary-700, #2A4A99))' : `linear-gradient(135deg, ${TONE[tone]}, color-mix(in srgb, ${TONE[tone]} 65%, black))` }}>
           <span className="pointer-events-none absolute -right-8 -top-8 size-36 rounded-full bg-white/10" />
           <span className="pointer-events-none absolute -bottom-12 right-10 size-28 rounded-full bg-white/10" />
           <div className="relative flex items-center justify-between gap-3">
@@ -220,20 +236,23 @@ function Render({ variant, d }: { variant: KpiVariant; d: KpiData }) {
             <span className={labelCls}>{d.label}</span>
             <span className={valueCls}>{d.value}</span>
             <DeltaRow d={d.delta} />
+            <Hint>{trendHint}</Hint>
           </div>
-          {bars && <GradBars values={bars} className="h-20" />}
+          {bars && <GradBars values={bars} tone={tone} className="h-20" />}
         </Shell>
       );
     case 4:
       return (
         <Shell className="flex items-center gap-5">
-          <Ring percent={pct} size={112} stroke={9} color={TONE[tone]}>
-            <span className="text-lg font-bold text-(--text-primary)">{Math.round(pct)}%</span>
-          </Ring>
+          {noRing ? (Icon && <Tile tone={tone} size="lg">{Icon}</Tile>) : (
+            <Ring percent={pct} size={112} stroke={9} color={TONE[tone]}>
+              <span className="text-lg font-bold text-(--text-primary)">{Math.round(pct)}%</span>
+            </Ring>
+          )}
           <div className="min-w-0">
             <div className={valueCls}>{d.value}</div>
             <div className={labelCls}>{d.label}</div>
-            {d.sub && <div className="mt-1 text-[13px] text-(--text-muted)">{d.sub}</div>}
+            {noRing && hint ? <Hint>{hint}</Hint> : d.sub && <div className="mt-1 text-[13px] text-(--text-muted)">{d.sub}</div>}
           </div>
         </Shell>
       );
@@ -242,11 +261,15 @@ function Render({ variant, d }: { variant: KpiVariant; d: KpiData }) {
       const st = d.status ?? { label: '', tone };
       return (
         <Shell className="flex items-center gap-4">
-          <Ring percent={pct} size={96} stroke={10} color={TONE[st.tone]}>
-            <span className="text-base font-bold text-(--text-primary)">{Math.round(pct)}%</span>
-          </Ring>
+          {noRing ? (Icon && <Tile tone={tone} size="lg">{Icon}</Tile>) : (
+            <Ring percent={pct} size={96} stroke={10} color={TONE[st.tone]}>
+              <span className="text-base font-bold text-(--text-primary)">{Math.round(pct)}%</span>
+            </Ring>
+          )}
           <div className="min-w-0">
             <div className={labelCls}>{d.label}</div>
+            {noRing && <div className={valueCls}>{d.value}</div>}
+            {noRing && <Hint>{hint}</Hint>}
             {st.label && <div className="text-[15px] font-semibold leading-6" style={{ color: TEXT[st.tone] }}>{st.label}</div>}
             {d.sub && <div className={bx(mutedCls, 'mt-0.5')}>{d.sub}</div>}
           </div>
@@ -281,7 +304,7 @@ function Render({ variant, d }: { variant: KpiVariant; d: KpiData }) {
                 <span className={labelCls}>{s.label}</span>
                 <span className="flex items-center gap-2">
                   <span className={valueCls}>{s.value}</span>
-                  {variant === 18 && <TrendingUp className="size-5 flex-none" style={{ color: TONE.primary }} />}
+                  {variant === 18 && <TrendingUp className="size-5 flex-none" style={{ color: TONE[tone] }} />}
                 </span>
                 {s.delta && <Pill value={s.delta.value} down={s.delta.down} />}
               </div>
@@ -297,8 +320,9 @@ function Render({ variant, d }: { variant: KpiVariant; d: KpiData }) {
             <span className={labelCls}>{d.label}</span>
             <span className={valueCls}>{d.value}</span>
             {d.delta && <Pill value={d.delta.value} down={d.delta.down} />}
+            <Hint>{trendHint}</Hint>
           </div>
-          {bars && <GradBars values={bars} className="h-20" />}
+          {bars && <GradBars values={bars} tone={tone} className="h-20" />}
         </Shell>
       );
     case 10:
@@ -308,6 +332,7 @@ function Render({ variant, d }: { variant: KpiVariant; d: KpiData }) {
             <span className={labelCls}>{d.label}</span>
             <span className={valueCls}>{d.value}</span>
             <DeltaRow d={d.delta} />
+            <Hint>{trendHint}</Hint>
           </div>
           {d.trend && <Spark values={d.trend} tone={tone} className="h-20 w-36 max-w-40 min-w-0 flex-1" />}
         </Shell>
@@ -333,6 +358,7 @@ function Render({ variant, d }: { variant: KpiVariant; d: KpiData }) {
               <span className={labelCls}>{d.label}</span>
               <span className={valueCls}>{d.value}</span>
               {d.delta && <Pill value={d.delta.value} down={d.delta.down} />}
+              <Hint>{trendHint}</Hint>
             </div>
             {d.trend && (
               <>
@@ -352,6 +378,7 @@ function Render({ variant, d }: { variant: KpiVariant; d: KpiData }) {
             <span className={valueCls}>{d.value}</span>
             <span className={labelCls}>{d.label}</span>
             {d.delta && <DeltaText value={d.delta.value} down={d.delta.down} note={d.delta.note} />}
+            <Hint>{hint}</Hint>
           </div>
         </Shell>
       );
@@ -366,12 +393,16 @@ function Render({ variant, d }: { variant: KpiVariant; d: KpiData }) {
             <span className={valueCls}>{d.value}</span>
             {d.sub && <span className="text-base text-(--text-muted)">{d.sub}</span>}
           </div>
-          <div className="flex items-center gap-3">
-            <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full" style={{ backgroundColor: tint(tone, 14) }}>
-              <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: TONE[tone] }} />
+          {noRing ? (
+            <div className="flex h-2 items-center"><span className={mutedCls}>{hint}</span></div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full" style={{ backgroundColor: tint(tone, 14) }}>
+                <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: TONE[tone] }} />
+              </div>
+              <span className="text-[13px] font-semibold text-(--text-primary)">{Math.round(pct)}%</span>
             </div>
-            <span className="text-[13px] font-semibold text-(--text-primary)">{Math.round(pct)}%</span>
-          </div>
+          )}
         </Shell>
       );
     case 15:
@@ -384,22 +415,25 @@ function Render({ variant, d }: { variant: KpiVariant; d: KpiData }) {
               {d.delta && <Pill value={d.delta.value} down={d.delta.down} />}
             </span>
             {d.sub && <span className={mutedCls}>{d.sub}</span>}
+            <Hint>{trendHint}</Hint>
           </div>
-          {bars && <GradBars values={bars.slice(-5)} className="h-20" />}
+          {bars && <GradBars values={bars.slice(-5)} tone={tone} className="h-20" />}
         </Shell>
       );
     case 16:
       return (
         <Shell className="flex items-center gap-4">
-          <Ring percent={pct} size={84} stroke={10} color={TONE[tone]}>
-            <span className="text-sm font-bold text-(--text-primary)">{Math.round(pct)}%</span>
-          </Ring>
+          {noRing ? (Icon && <Tile tone={tone} size="lg">{Icon}</Tile>) : (
+            <Ring percent={pct} size={84} stroke={10} color={TONE[tone]}>
+              <span className="text-sm font-bold text-(--text-primary)">{Math.round(pct)}%</span>
+            </Ring>
+          )}
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className={valueCls}>{d.value}</span>
             <span className={labelCls}>{d.label}</span>
             {d.delta && <Pill value={d.delta.value} down={d.delta.down} />}
+            {noRing && <Hint>{hint}</Hint>}
           </div>
-          <span aria-hidden="true" className="absolute right-3 top-3 p-1 text-(--text-muted)"><MoreVertical className="size-4" /></span>
         </Shell>
       );
     case 17:

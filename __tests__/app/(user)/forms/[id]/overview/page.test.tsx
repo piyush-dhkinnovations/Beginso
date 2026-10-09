@@ -25,6 +25,7 @@ const mockEvents = vi.fn();
 vi.mock('@/services/events', () => ({ eventsService: { listFormEvents: (...a: unknown[]) => mockEvents(...a) } }));
 const mockResponses = vi.fn();
 vi.mock('@/services/responses', () => ({ responsesService: { getResponses: (...a: unknown[]) => mockResponses(...a) } }));
+vi.mock('@/services/analytics', () => ({ analyticsService: { getOverview: () => Promise.resolve({ views: null }) } }));
 const mockWorkspaces = vi.fn();
 vi.mock('@/services/workspaces', () => ({ workspacesService: { list: (...a: unknown[]) => mockWorkspaces(...a) } }));
 
@@ -55,39 +56,25 @@ describe('FormOverviewPage', () => {
   it('renders the title, stats and empty activity state', async () => {
     renderPage();
 
-    expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Share link' })).toBeInTheDocument();
     expect(await screen.findByText('Just you')).toBeInTheDocument();
     expect(await screen.findByText('Nothing has happened here yet.')).toBeInTheDocument();
     expect(screen.getByLabelText('Completion rate not tracked yet')).toBeInTheDocument();
   });
 
-  it('a workspace form gets Edit/Share actions for an editor', async () => {
-    mockOverview.mockResolvedValue({ form: form({ workspaceId: 'w1' }), stats: STATS });
+  // Preview / Share / Edit form now live in the shared form header (FormHeader), not this page.
+  it('an unpublished form offers Publish form to an editor, never to a Reviewer', async () => {
+    mockOverview.mockResolvedValue({ form: form({ workspaceId: 'w1', status: 'draft' }), stats: STATS });
     mockWorkspaces.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role: 'member' }]);
-    renderPage();
-
-    expect(await screen.findByRole('button', { name: 'Edit form' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Share' })).toBeInTheDocument();
+    const { unmount } = renderPage();
+    expect(await screen.findByRole('link', { name: 'Publish form' })).toHaveAttribute('href', '/forms/f1/edit?ws=acme');
     expect(await screen.findByText('Workspace team')).toBeInTheDocument();
-  });
+    unmount();
 
-  it('a Reviewer sees Preview only', async () => {
-    mockOverview.mockResolvedValue({ form: form({ workspaceId: 'w1' }), stats: STATS });
     mockWorkspaces.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role: 'viewer' }]);
     renderPage();
-
-    await screen.findByRole('button', { name: 'Preview' });
-    expect(screen.queryByRole('button', { name: 'Edit form' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Share' })).not.toBeInTheDocument();
-  });
-
-  it('fails closed on a workspace form whose role is not yet known — Preview only', async () => {
-    mockOverview.mockResolvedValue({ form: form({ workspaceId: 'w1' }), stats: STATS });
-    mockWorkspaces.mockResolvedValue([]);
-    renderPage();
-
-    await screen.findByRole('button', { name: 'Preview' });
-    expect(screen.queryByRole('button', { name: 'Edit form' })).not.toBeInTheDocument();
+    await screen.findByText('Workspace team');
+    expect(screen.queryByRole('link', { name: 'Publish form' })).not.toBeInTheDocument();
   });
 
   it('shows the per-form grant count', async () => {
@@ -117,7 +104,7 @@ describe('FormOverviewPage', () => {
     renderPage();
 
     expect(await screen.findByText('Could not load activity.')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Overview' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Share link' })).toBeInTheDocument();
   });
 
   it('shows a permission state on 403 (BE 0.7 — 403 on a just-created own form is an open backend bug)', async () => {
@@ -139,10 +126,10 @@ describe('FormOverviewPage', () => {
     renderPage();
 
     await userEvent.click(await screen.findByRole('button', { name: 'Retry' }));
-    expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Share link' })).toBeInTheDocument();
   });
 
-  it('shows recent responses with a View inbox link', async () => {
+  it('shows recent responses with a View all responses link', async () => {
     mockResponses.mockResolvedValue({
       data: [{ _id: 'r1', formId: 'f1', answers: { Name: 'Ada' }, status: 'new', submittedAt: new Date().toISOString() }],
       total: 1, page: 1, limit: 5, totalPages: 1,
@@ -150,6 +137,6 @@ describe('FormOverviewPage', () => {
     renderPage();
 
     expect(await screen.findByText('Ada')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'View inbox' })).toHaveAttribute('href', '/forms/f1/inbox');
+    expect(screen.getByRole('link', { name: /View all responses/ })).toHaveAttribute('href', '/forms/f1/inbox');
   });
 });

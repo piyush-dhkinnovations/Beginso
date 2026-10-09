@@ -88,7 +88,7 @@ describe('QuestionBreakdownSection', () => {
         isLoading={false}
       />
     );
-    expect(screen.getByText('No answers yet in this range.')).toBeInTheDocument();
+    expect(screen.getByText('1 question has no answers in this range')).toBeInTheDocument();
   });
 
   it('shows a loading skeleton per choice field while the breakdown query is loading', () => {
