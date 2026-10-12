@@ -26,13 +26,14 @@ const connectSources = isDevelopment
       "https://accounts.google.com",
       "https://www.googleapis.com",
       "https://vitals.vercel-insights.com",
+      "https://maps.googleapis.com",
       "https://*.firebaseio.com",
       "wss://*.firebaseio.com",
     ].filter(Boolean);
 const frameSources = ["'self'", firebaseAuthOrigin, "https://accounts.google.com"].filter(Boolean);
 const contentSecurityPolicy = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline' https://apis.google.com${isDevelopment ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline' https://apis.google.com https://maps.googleapis.com${isDevelopment ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",

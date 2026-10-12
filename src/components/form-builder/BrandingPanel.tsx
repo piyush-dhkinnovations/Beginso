@@ -1,11 +1,13 @@
 'use client';
 
+import { isAxiosError } from 'axios';
 import { useId, useRef, useState } from 'react';
 import { Loader2, Plus, Upload, X } from 'lucide-react';
 import type { CoverFit, ButtonRadius, ButtonStyle, CardStyle, CoverPosition, FieldGrouping, FormBranding, FormWidth, FormFont, FormSpacing, LayoutPreset, PageBackground, PanelTreatment, TypeScale } from '@/types/form';
 import { FORM_FONT_OPTIONS, PAGE_BACKGROUND_OPTIONS } from '@/lib/formTheme';
 import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
+import { shrinkImage } from '@/lib/shrinkImage';
 import { uploadService } from '@/services/upload';
 import { useToast } from '@/components/ui/Toast';
 import { LiveFormPreview } from './LiveFormPreview';
@@ -66,7 +68,7 @@ export function ImageUploadZone({
       return;
     }
     if (file.type === 'image/gif' || freeform) {
-      await uploadNow(file);
+      await uploadNow(freeform ? await shrinkImage(file).catch(() => file) : file);
       return;
     }
     setPendingCrop(file);
@@ -214,8 +216,8 @@ export function BrandingPanel({ branding, onUpdate, layout, formId, showHeading 
       const res = await uploadService.uploadFile(file);
       // A cover remembers HOW it was added, so the form shows it the same way (whole, or cropped to the banner).
       onUpdate({ [key]: res.url, ...(key === 'coverImageUrl' ? { coverFit } : {}) });
-    } catch {
-      toast('Upload failed. Check your connection.', 'error');
+    } catch (err) {
+      toast(isAxiosError(err) && err.response?.status === 413 ? 'That image is too large. Use one under 5 MB.' : 'Upload failed. Check your connection.', 'error');
     }
   };
 
@@ -412,6 +414,7 @@ export function BrandingPanel({ branding, onUpdate, layout, formId, showHeading 
                 label="Page background image"
                 imageUrl={branding.backgroundImageUrl}
                 aspect="banner"
+                freeform
                 onUpload={(file) => uploadImage(file, 'backgroundImageUrl')}
                 onRemove={() => onUpdate({ backgroundImageUrl: undefined, formWidth: undefined, coverFit: undefined })}
               />

@@ -8,8 +8,8 @@ import { test, expect } from '@playwright/test';
 test.describe('Public form — unavailable screen', () => {
   test('a 404 (unknown/draft/closed) slug shows the generic unavailable screen', async ({ page }) => {
     await page.goto('/f/mock-not-found');
-    await expect(page.getByText('This form is not currently accepting responses.')).toBeVisible();
-    await expect(page.getByText('If you believe this is an error, please contact the form owner.')).toBeVisible();
+    await expect(page.getByText('Form not found')).toBeVisible();
+    await expect(page.getByText('Check the link you were given, or contact the person who shared it.')).toBeVisible();
   });
 
   test('a form past its closeDate shows the identical unavailable screen (client-side courtesy check)', async ({ page }) => {
@@ -32,7 +32,7 @@ test.describe('Public form — unavailable screen', () => {
   test('no horizontal overflow at 320px', async ({ page }) => {
     await page.setViewportSize({ width: 320, height: 700 });
     await page.goto('/f/mock-not-found');
-    await expect(page.getByText('This form is not currently accepting responses.')).toBeVisible();
+    await expect(page.getByText('Form not found')).toBeVisible();
     const { scrollWidth, clientWidth } = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
       clientWidth: document.documentElement.clientWidth,

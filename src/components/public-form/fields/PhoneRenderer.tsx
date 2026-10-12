@@ -34,7 +34,7 @@ export function PhoneRenderer({ field, control, error, disabled, inline }: Field
                 <span aria-hidden="true" className="font-medium tabular-nums">+{dial}</span>
                 <ChevronDown aria-hidden="true" size={14} className="shrink-0 text-(--text-muted)" />
                 <select
-                  aria-label="Country code"
+                  aria-label="Dialling code"
                   value={active}
                   disabled={disabled}
                   onChange={(e) => {

@@ -420,3 +420,8 @@
 /* Embedded public form (?embed=1): the page must size to its CONTENT so the embedder can auto-height it; a
    full-viewport min-height would pin the frame at its current height and never let it shrink. Unlayered on purpose. */
 [data-form-theme][data-embed] .min-h-screen { min-height: 0; }
+
+/* The response map in a dark theme: the light street tiles are inverted and re-hued so land stays dark and water stays blue. */
+.map-dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.92);
+}

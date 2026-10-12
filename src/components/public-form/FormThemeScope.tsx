@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useLayoutEffect, useMemo, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { createContext, useContext, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { parseEmbedOptions, type Scheme } from '@/lib/embed/embedParams';
 
 // Sprint 13 (CF2.11), requirements.md 3.4. The admin/OS dark theme must never reach the public
@@ -32,7 +32,8 @@ export function FormThemeScope({ children }: { children: ReactNode }) {
   // External-store reads: '' / false on the server and first hydration pass, the real value right after.
   const search = useSyncExternalStore(noopSubscribe, () => window.location.search, () => '');
   const osDark = useSyncExternalStore(subscribeDark, () => window.matchMedia('(prefers-color-scheme: dark)').matches, () => false);
-  const { theme, embed } = useMemo(() => parseEmbedOptions(search), [search]);
+  const { theme, embed, background } = useMemo(() => parseEmbedOptions(search), [search]);
+  const scopeRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     const root = document.documentElement;
@@ -58,9 +59,22 @@ export function FormThemeScope({ children }: { children: ReactNode }) {
 
   const isDark = theme === 'dark' || (theme === 'auto' && (hostScheme ? hostScheme === 'dark' : osDark));
 
+  // A dark embed whose frame is taller than the form would show the document's white body below it, so the body takes the
+  // theme's own page colour (read from the dark-scoped wrapper). Not when the owner turned the page background off.
+  useLayoutEffect(() => {
+    if (!embed || !isDark || !background || !scopeRef.current) return;
+    const colour = getComputedStyle(scopeRef.current).getPropertyValue('--bg-subtle').trim();
+    if (!colour) return;
+    const prev = document.body.style.background;
+    document.body.style.background = colour;
+    return () => {
+      document.body.style.background = prev;
+    };
+  }, [embed, isDark, background]);
+
   return (
     <HostSchemeContext.Provider value={setHostScheme}>
-      <div data-form-theme="" data-embed={embed ? '' : undefined} data-theme={isDark ? 'dark' : undefined} style={{ colorScheme: isDark ? 'dark' : 'light' }}>
+      <div ref={scopeRef} data-form-theme="" data-embed={embed ? '' : undefined} data-theme={isDark ? 'dark' : undefined} style={{ colorScheme: isDark ? 'dark' : 'light' }}>
         {children}
       </div>
     </HostSchemeContext.Provider>

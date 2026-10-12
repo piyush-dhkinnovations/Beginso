@@ -16,7 +16,7 @@ test.describe('Public form — SSR render', () => {
 
   test('sets the browser tab title from the form schema', async ({ page }) => {
     await page.goto('/f/mock-valid');
-    await expect(page).toHaveTitle('Customer Feedback Survey');
+    await expect(page).toHaveTitle('Customer Feedback Survey · Beginso');
   });
 
   test('shows the multi-page progress bar on page 1 of 2', async ({ page }) => {

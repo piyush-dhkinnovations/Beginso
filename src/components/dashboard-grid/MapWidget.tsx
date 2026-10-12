@@ -1,3 +1,4 @@
+/// <reference types="google.maps" />
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -9,18 +10,19 @@ import { Card } from '@/components/ui/Card';
 import { bx } from '@/lib/utils';
 import type { LocationMetric } from './types';
 
-// A clean street-style basemap (CARTO "Voyager": light, labelled, close to what people expect from a Google map) drawn with
-// Leaflet. No API key or billing needed; set NEXT_PUBLIC_MAP_TILE_URL to use any other XYZ tile server instead
-// (for example a self-hosted or paid one), and keep the attribution that provider requires.
-const TILE_URL = process.env.NEXT_PUBLIC_MAP_TILE_URL ?? 'https://{s}.basemaps.cartocdn.com/rasterTiles/voyager/{z}/{x}/{y}{r}.png';
-const ATTRIBUTION = process.env.NEXT_PUBLIC_MAP_ATTRIBUTION ?? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+// OpenStreetMap's standard street map (the familiar road-and-label look), drawn with Leaflet. It needs no API key or billing.
+// OSM's public tile servers are meant for light use (https://operations.osmfoundation.org/policies/tiles/): for a busy
+// production site set NEXT_PUBLIC_MAP_TILE_URL (and NEXT_PUBLIC_MAP_ATTRIBUTION) to a tile provider you have an account
+// with, e.g. MapTiler, Stadia, Mapbox or Google's tile API, using that provider's {z}/{x}/{y} URL.
+const TILE_URL = process.env.NEXT_PUBLIC_MAP_TILE_URL ?? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+const ATTRIBUTION = process.env.NEXT_PUBLIC_MAP_ATTRIBUTION ?? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
 const placeName = (p: LocationMetric['points'][number]) => [p.city, p.region, p.country].filter(Boolean).join(', ') || p.country;
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
 
 // The interactive map itself. Mounted client-side only (Leaflet touches `window`); sized by its container, so the same
 // component serves the card and the full-screen view.
-function MapCanvas({ metric, height, fitKey }: { metric: LocationMetric; height: string; fitKey: string }) {
+function LeafletCanvas({ metric, height, fitKey }: { metric: LocationMetric; height: string; fitKey: string }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<LeafletMap | null>(null);
 
@@ -32,10 +34,9 @@ function MapCanvas({ metric, height, fitKey }: { metric: LocationMetric; height:
       if (cancelled || !el.current) return;
       const m = L.map(el.current, { zoomControl: true, scrollWheelZoom: false, worldCopyJump: true, minZoom: 2 });
       map.current = m;
-      // Dark theme gets CARTO's dark basemap (unless a custom tile server is configured).
-      const dark = document.documentElement.getAttribute('data-theme') === 'dark';
-      const url = !process.env.NEXT_PUBLIC_MAP_TILE_URL && dark ? TILE_URL.replace('voyager', 'dark_all') : TILE_URL;
-      L.tileLayer(url, { attribution: ATTRIBUTION, subdomains: 'abcd', maxZoom: 18 }).addTo(m);
+      // Dark theme: the street tiles are inverted by CSS (see .map-dark in globals.css) rather than fetched from a second tile set.
+      if (document.documentElement.getAttribute('data-theme') === 'dark') el.current.classList.add('map-dark');
+      L.tileLayer(TILE_URL, { attribution: ATTRIBUTION, maxZoom: 18 }).addTo(m);
 
       const max = Math.max(...metric.points.map((p) => p.count), 1);
       const color = getComputedStyle(el.current).getPropertyValue('--action-primary').trim() || '#1D4ED8';
@@ -64,6 +65,94 @@ function MapCanvas({ metric, height, fitKey }: { metric: LocationMetric; height:
   }, [metric, fitKey]);
 
   return <div ref={el} role="application" aria-label="Map of where responses came from" className="z-0 w-full rounded-lg" style={{ height }} />;
+}
+
+declare global {
+  interface Window {
+    google?: typeof google;
+  }
+}
+
+// ── Google Maps (used when NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is set) ─────────────────────────────────────────────────
+// The key is a browser key: restrict it in the Google Cloud console to your site's domains and to the "Maps JavaScript API"
+// only. If Google refuses it (bad key, no billing, domain not allowed) the card quietly falls back to the OpenStreetMap map.
+const GOOGLE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+let googleLoading: Promise<void> | null = null;
+function loadGoogleMaps(key: string): Promise<void> {
+  if (typeof window !== 'undefined' && window.google?.maps) return Promise.resolve();
+  googleLoading ??= new Promise<void>((resolve, reject) => {
+    const callback = '__beginsoGoogleMapsReady';
+    (window as unknown as Record<string, unknown>)[callback] = () => resolve();
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&callback=${callback}&loading=async&v=weekly`;
+    script.async = true;
+    script.onerror = () => {
+      googleLoading = null;
+      reject(new Error('Google Maps failed to load'));
+    };
+    document.head.appendChild(script);
+  });
+  return googleLoading;
+}
+
+function GoogleCanvas({ metric, height, onFail }: { metric: LocationMetric; height: string; onFail: () => void }) {
+  const el = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    // Google calls this global when it rejects the key (invalid, billing off, referrer not allowed).
+    (window as unknown as Record<string, unknown>).gm_authFailure = () => { if (!cancelled) onFail(); };
+    loadGoogleMaps(GOOGLE_KEY as string)
+      .then(() => {
+        if (cancelled || !el.current) return;
+        const g = (window.google as typeof google).maps;
+        const map = new g.Map(el.current, {
+          center: { lat: 20, lng: 0 },
+          zoom: 2,
+          minZoom: 2,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false,
+          gestureHandling: 'cooperative', // Ctrl + scroll zooms; a plain scroll keeps scrolling the page
+          clickableIcons: false,
+        });
+        const max = Math.max(...metric.points.map((p) => p.count), 1);
+        const color = getComputedStyle(el.current).getPropertyValue('--action-primary').trim() || '#1D4ED8';
+        const info = new g.InfoWindow();
+        const bounds = new g.LatLngBounds();
+        for (const p of metric.points) {
+          const scale = 6 + 11 * Math.sqrt(p.count / max);
+          const marker = new g.Marker({
+            map,
+            position: { lat: p.lat, lng: p.lng },
+            icon: { path: g.SymbolPath.CIRCLE, scale, fillColor: color, fillOpacity: 0.78, strokeColor: '#fff', strokeWeight: 2 },
+            title: `${placeName(p)}: ${p.count}`,
+          });
+          marker.addListener('mouseover', () => {
+            info.setContent(`<strong>${escapeHtml(placeName(p))}</strong><br/>${p.count} response${p.count === 1 ? '' : 's'}`);
+            info.open({ map, anchor: marker });
+          });
+          marker.addListener('mouseout', () => info.close());
+          bounds.extend({ lat: p.lat, lng: p.lng });
+        }
+        if (metric.points.length > 0) {
+          map.fitBounds(bounds, 48);
+          g.event.addListenerOnce(map, 'idle', () => { if ((map.getZoom() ?? 0) > 6) map.setZoom(6); });
+        }
+      })
+      .catch(() => { if (!cancelled) onFail(); });
+    return () => { cancelled = true; };
+  }, [metric, onFail]);
+
+  return <div ref={el} role="application" aria-label="Map of where responses came from" className="z-0 w-full rounded-lg" style={{ height }} />;
+}
+
+// Google when a key is configured (and accepted), the keyless OpenStreetMap map otherwise.
+function MapCanvas({ metric, height, fitKey }: { metric: LocationMetric; height: string; fitKey: string }) {
+  const [googleFailed, setGoogleFailed] = useState(false);
+  if (GOOGLE_KEY && !googleFailed) return <GoogleCanvas key={fitKey} metric={metric} height={height} onFail={() => setGoogleFailed(true)} />;
+  return <LeafletCanvas metric={metric} height={height} fitKey={fitKey} />;
 }
 
 export function MapWidget({ metric, title, preview }: { metric: LocationMetric; title?: string; preview?: boolean }) {
@@ -145,7 +234,7 @@ export function MapWidget({ metric, title, preview }: { metric: LocationMetric; 
           <div className="flex items-center justify-between gap-3 border-b border-(--border-default) px-5 py-3">
             <div className="min-w-0">
               <h2 className="bg-h5 font-bold text-(--text-primary)">{label}</h2>
-              <p className="bg-body-sm text-(--text-muted)">{metric.located.toLocaleString()} responses · {metric.points.length} places · hold Ctrl and scroll to zoom</p>
+              <p className="bg-body-sm text-(--text-muted)">{metric.located.toLocaleString()} response{metric.located === 1 ? '' : 's'} · {metric.points.length} place{metric.points.length === 1 ? '' : 's'} · hold Ctrl and scroll to zoom</p>
             </div>
             <button type="button" onClick={() => setFull(false)} aria-label="Close full screen map" className="flex size-10 items-center justify-center rounded-lg border border-(--border-default) hover:bg-(--surface-hover)">
               <X size={18} />
@@ -153,7 +242,7 @@ export function MapWidget({ metric, title, preview }: { metric: LocationMetric; 
           </div>
           <div className="relative min-h-0 flex-1">
             <MapCanvas metric={metric} height="100%" fitKey="full" />
-            <aside className="absolute left-4 top-4 z-1000 hidden max-h-[calc(100%-2rem)] w-64 flex-col gap-2 overflow-auto rounded-xl border border-(--border-default) bg-(--surface-card) p-4 shadow-(--shadow-md) md:flex">
+            <aside className="absolute right-4 top-4 z-1000 hidden max-h-[calc(100%-2rem)] w-64 flex-col gap-2 overflow-auto rounded-xl border border-(--border-default) bg-(--surface-card) p-4 shadow-(--shadow-md) md:flex">
               <h3 className="bg-overline text-(--text-muted)">Top places</h3>
               <ol className="m-0 flex list-none flex-col gap-1.5 p-0">
                 {top.map((p) => (
