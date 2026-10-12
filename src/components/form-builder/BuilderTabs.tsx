@@ -31,7 +31,7 @@ const TABS: { id: BuilderTab; label: string }[] = [
 
 export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onRedo, showShare = true, fieldCount = 0, hideSettings = false }: BuilderTabsProps) {
   return (
-    <nav className="flex items-center justify-between border-b bg-(--surface-card) shrink-0 shadow-(--shadow-sm)" aria-label="Form Builder Tabs">
+    <nav className="flex shrink-0 items-center justify-between border-b border-(--border-default)" aria-label="Form Builder Tabs">
       {/* Real role="tablist"/role="tab"/aria-selected semantics — confirmed missing during Sprint
           6 (SettingsTabs.tsx was built with its own correct semantics rather than copied from
           here, since this component lacked them), fixed here per that sprint's Friday

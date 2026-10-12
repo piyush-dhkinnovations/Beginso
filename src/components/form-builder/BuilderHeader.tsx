@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import { CheckCircle2, ExternalLink, MoreVertical } from 'lucide-react';
+import { useState } from 'react';
+import { CheckCircle2, ExternalLink, MoreVertical, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { StatusBadge } from '@/components/ui/StatusBadge';
@@ -21,16 +21,14 @@ export interface BuilderHeaderProps {
   status: FormStatus;
   onTitleChange: (title: string) => void;
   onPreview: () => void;
-  onBack: () => void;
-  /** Where Back goes, named in its label ("Forms", "Acme forms"). */
-  backLabel?: string;
   onPublish: () => void;
   onClose: () => void;
   /** The caller may delete (Owner only). Otherwise the action is not offered; the server enforces. */
   canDelete: boolean;
   onDelete: () => void;
-  /** The form tab bar (Overview · Responses · Insights · Edit · Settings), same as every other form page. */
-  nav: ReactNode;
+  onBack: () => void;
+  /** Opens the Settings page of the builder (it is no longer a tab, so the ⋮ menu is its way in). */
+  onOpenSettings: () => void;
 }
 
 const STATUS_LABEL = { draft: 'Draft', published: 'Published', closed: 'Closed' } as const;
@@ -49,13 +47,12 @@ export function BuilderHeader({
   status,
   onTitleChange,
   onPreview,
-  onBack,
-  backLabel = 'Forms',
   onPublish,
   onClose,
   canDelete,
   onDelete,
-  nav,
+  onBack,
+  onOpenSettings,
 }: BuilderHeaderProps) {
   const [title, setTitle] = useState(formTitle || '');
   const [prevFormTitle, setPrevFormTitle] = useState<string | undefined>(formTitle);
@@ -75,6 +72,7 @@ export function BuilderHeader({
 
   // Close/Delete are rare and destructive: they live in the ⋮ menu at every width.
   const overflowItems: MenuItem[] = [
+    { id: 'settings', label: 'Form settings', icon: <Settings size={16} />, onSelect: onOpenSettings },
     ...(status === 'published' ? [{ id: 'close', label: 'Close form', onSelect: onClose }] : []),
     ...(canDelete ? [{ id: 'delete', label: 'Delete form', onSelect: onDelete, danger: true }] : []),
   ];
@@ -82,7 +80,7 @@ export function BuilderHeader({
   return (
     <FormHeader
       onBack={onBack}
-      backLabel={backLabel}
+      backLabel="Forms"
       title={
         <input
           type="text"
@@ -125,7 +123,6 @@ export function BuilderHeader({
           )}
         </>
       }
-      nav={nav}
     />
   );
 }

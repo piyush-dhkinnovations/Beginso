@@ -100,8 +100,7 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
 
   const contextUnresolved = !!formId && !wsHint && !form && !formWorkspace;
 
-  // The form's own pages (not its Responses / Summary pages, which belong to the Responses section) are a focus view: no docked sidebar (the menu button still opens it as a drawer).
-  // The builder is included: it shows the same form sub-nav, so moving between a form's pages feels like one place.
+  // A form's own pages (Overview, Edit, Settings) collapse the app sidebar to its icon rail for room; the menu button still expands it.
   const isFormFocus = /^\/forms\/[^/]+\/(overview|scores|edit)\/?$/.test(pathname);
 
   // Feed "recent forms" in the sidebar: record once the form's real scope is known (never guess 'personal' while resolving).
@@ -114,7 +113,7 @@ export function PersonalShell({ initialCollapsed, children }: PersonalShellProps
   return (
     <AppShell
       initialCollapsed={initialCollapsed}
-      hideSidebar={isFormFocus}
+      forceCollapsed={isFormFocus}
       topBar={(toggleCollapsed, toggleMobile) => (
         <TopBar
           brand={

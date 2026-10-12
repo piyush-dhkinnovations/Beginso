@@ -19,11 +19,11 @@ export function FormOverviewStats({ stats, accessLabel, onOpenAccess, views }: F
   const icon = (Icon: typeof Users) => <Icon aria-hidden="true" />;
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
       <KpiCard
         variant={13}
         data={{
-          label: 'Responses',
+          label: 'Total responses',
           value: responseCount,
           icon: icon(MessageSquare),
           tone: 'primary',
@@ -57,7 +57,7 @@ export function FormOverviewStats({ stats, accessLabel, onOpenAccess, views }: F
         onClick={onOpenAccess}
         className="h-full min-w-0 cursor-pointer border-0 bg-transparent p-0 text-left"
       >
-        <KpiCard variant={13} data={{ label: 'Who can see it', value: accessLabel, icon: icon(Users), tone: 'primary' }} />
+        <KpiCard variant={13} data={{ label: 'Access', value: accessLabel, icon: icon(Users), tone: 'primary' }} />
       </button>
     </div>
   );

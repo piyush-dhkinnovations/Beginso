@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import {
   Type,
@@ -12,6 +13,7 @@ import {
   List,
   CheckSquare,
   Upload,
+  Search,
   LucideIcon,
 } from 'lucide-react';
 import type { FieldType } from '@/types/form';
@@ -78,21 +80,37 @@ export interface ToolboxProps {
 }
 
 export function Toolbox({ onAdd }: ToolboxProps) {
+  const [query, setQuery] = useState('');
+  const q = query.trim().toLowerCase();
+  const fields = q ? FIELD_TYPE_CONFIG.filter((c) => c.label.toLowerCase().includes(q)) : FIELD_TYPE_CONFIG;
   return (
     // Sprint 13 (CF2.12): the rail is full width from 1024px and icon-only on tablet (768-1023px). On phones the toolbox is the
     // AddFieldSheet bottom sheet, opened from the build bar under the canvas.
-    <aside className="hidden md:flex w-16 lg:w-70 flex-col gap-4 p-2 lg:p-4 border-r bg-(--surface-card) overflow-y-auto shrink-0 shadow-(--shadow-sm)">
+    // Flat rail (no card): sticks under the top bar while the canvas scrolls with the page.
+    <aside className="sticky top-16 hidden max-h-[calc(100dvh-5rem)] w-16 shrink-0 flex-col gap-4 self-start overflow-y-auto py-2 md:flex lg:w-64">
       <div className="hidden lg:block">
-        <h3 className="bg-body font-semibold font-bold text-(--text-primary) tracking-tight">Field Types</h3>
-        <p className="bg-body-sm text-(--text-muted) mt-1">
-          Drag and drop fields onto the canvas to customize your form.
-        </p>
+        <h3 className="bg-body font-bold text-(--text-primary) tracking-tight">Add fields</h3>
+        <p className="bg-body-sm mt-1 text-(--text-muted)">Click or drag a field onto the form.</p>
+      </div>
+
+      <div className="relative hidden lg:block">
+        <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-(--text-muted)" />
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search fields…"
+          aria-label="Search fields"
+          className="min-h-11 w-full rounded-md border border-(--border-default) bg-(--surface-card) pl-9 pr-3 bg-body-sm outline-none focus:border-(--border-strong)"
+        />
       </div>
 
       <div className="flex flex-col gap-2">
-        {FIELD_TYPE_CONFIG.map((config) => (
+        <h4 className="bg-overline hidden text-(--text-muted) lg:block">Basic fields</h4>
+        {fields.map((config) => (
           <DraggableToolboxItem key={config.type} config={config} onAdd={onAdd} />
         ))}
+        {fields.length === 0 && <p className="bg-body-sm text-(--text-muted)">No fields match “{query}”.</p>}
       </div>
     </aside>
   );

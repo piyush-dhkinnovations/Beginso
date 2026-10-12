@@ -269,7 +269,9 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
   );
 
   return (
-    <div className={formId ? 'flex flex-col gap-6 animate-fade-in' : 'flex flex-col gap-4 animate-fade-in'}>
+    // No animate-fade-in here: an opacity animation makes this a stacking context, which traps the position:fixed
+    // ResponseDrawer (opened from a chart's drill panel) under the top bar, hiding its header. ResponsesHubView does the same.
+    <div className={formId ? 'flex flex-col gap-6' : 'flex flex-col gap-4'}>
       {formId ? (
         // Inside a form the shared form header already names the form and the tab, so there is no second page
         // title here — just the page's own controls, right-aligned like on Responses.

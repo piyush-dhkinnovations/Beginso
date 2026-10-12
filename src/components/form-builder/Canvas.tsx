@@ -44,8 +44,8 @@ function DroppableCanvas({
     <main
       ref={setNodeRef}
       onClick={onBackgroundClick}
-      className={`flex-1 min-w-0 p-3 md:p-6 overflow-y-auto overscroll-contain transition-colors duration-200 min-h-125 ${
-        showOver ? 'bg-(--accent-soft)/50' : 'bg-(--bg-subtle)'
+      className={`flex-1 min-w-0 rounded-xl py-2 transition-colors duration-200 min-h-125 ${
+        showOver ? 'bg-(--accent-soft)/50' : ''
       }`}
     >
       {/* Widened from the design system's 440px baseline — with live field previews now

@@ -111,7 +111,7 @@ export function PagesPanel({
   onDeletePage,
 }: PagesPanelProps) {
   return (
-    <aside className="hidden lg:flex w-23 bg-(--bg-subtle) flex-col shrink-0 overflow-y-auto p-3 gap-3">
+    <aside className="sticky top-16 hidden w-23 shrink-0 flex-col gap-3 self-start py-2 lg:flex">
       <h3 className="bg-body font-semibold font-bold text-(--text-primary) tracking-tight text-center">Pages</h3>
 
       <div className="flex flex-col items-center gap-3">

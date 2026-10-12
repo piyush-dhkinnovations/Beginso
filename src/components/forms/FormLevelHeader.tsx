@@ -3,14 +3,13 @@
 import { useState } from 'react';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { ExternalLink, Link2, MoreVertical, Pin, PinOff, Pencil, Share2 } from 'lucide-react';
+import { ExternalLink, Link2, MoreVertical, Pin, PinOff, Pencil, Settings, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ButtonLink } from '@/components/ui/ButtonLink';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useToast } from '@/components/ui/Toast';
-import { FormSubNav } from '@/components/forms/FormSubNav';
 import { FormHeader, formatFormDate } from '@/components/forms/FormHeader';
 import { FormAccessPanel } from '@/components/team/FormAccessPanel';
 import { useFormScope } from '@/hooks/useFormScope';
@@ -69,6 +68,9 @@ export function FormLevelHeader() {
   const publicUrl = form?.status === 'published' ? buildPublicFormUrl(publicFormSlug(form)) : '';
 
   const menu: MenuItem[] = [
+    ...(canEdit
+      ? [{ id: 'settings', label: 'Form settings', icon: <Settings size={16} />, onSelect: () => router.push(`/forms/${formId}/edit?tab=settings${ws ? `&ws=${encodeURIComponent(ws)}` : ''}`) }]
+      : []),
     ...(form
       ? [{
           id: 'pin',
@@ -121,14 +123,6 @@ export function FormLevelHeader() {
             )}
             {menu.length > 0 && <Menu align="end" triggerLabel="More form actions" trigger={<MoreVertical size={18} aria-hidden="true" />} items={menu} />}
           </>
-        }
-        nav={
-          <FormSubNav
-            formId={formId}
-            ws={ws}
-            canEdit={canEdit}
-            active="overview"
-          />
         }
       />
       {form && canEdit && <FormAccessPanel formId={formId} formTitle={form.title} isOpen={accessOpen} onClose={() => setAccessOpen(false)} />}

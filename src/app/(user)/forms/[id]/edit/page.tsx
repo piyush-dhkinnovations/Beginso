@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
 import { useBuilderStore } from '@/store/builderStore';
-import { FormSubNav } from '@/components/forms/FormSubNav';
 import { BuilderHeader } from '@/components/form-builder/BuilderHeader';
 import { BuilderTabs, BuilderTab } from '@/components/form-builder/BuilderTabs';
 import { SettingsPanel } from '@/components/form-builder/SettingsPanel';
@@ -105,9 +106,6 @@ export default function BuilderPageShell() {
     setActiveFieldId(null); // the inline editor is hidden in Reorder mode; don't leave a field "selected"
   };
 
-  const nav = (
-    <FormSubNav formId={id} ws={formWorkspaceSlug} canEdit active={activeTab === 'settings' ? 'settings' : 'edit'} />
-  );
   const liveFieldCount = fields.filter((f) => !f.deleted).length;
 
   return (
@@ -116,7 +114,6 @@ export default function BuilderPageShell() {
         <BuilderLoadingSkeleton />
       ) : (
         <div className="flex flex-col gap-4 animate-fade-in">
-          {/* Same header and tab bar as Overview, Responses and Insights, so the frame never changes between them. */}
           <BuilderHeader
             formTitle={formTitle}
             dirty={dirty}
@@ -127,24 +124,27 @@ export default function BuilderPageShell() {
             status={status}
             onTitleChange={setFormTitle}
             onPreview={handlePreview}
-            onBack={handleBack}
             canPublish={canPublishForm(formRole)}
             onPublish={handlePublishClick}
             onClose={() => setShowCloseModal(true)}
             canDelete={canDeleteForm(formRole)}
             onDelete={() => setShowDeleteModal(true)}
-            nav={nav}
+            onBack={handleBack}
+            onOpenSettings={() => setActiveTab('settings')}
           />
 
           {activeTab === 'settings' ? (
             // Settings is an ordinary page, not part of the canvas: it scrolls with the page in a form-width column.
-            <div className="flex max-w-160 flex-col gap-4">
+            <div className="flex flex-col gap-4">
+              <Button variant="ghost" size="small" className="self-start" onClick={() => setActiveTab('build')}>
+                <ArrowLeft size={16} className="mr-1.5" aria-hidden="true" />
+                Back to editor
+              </Button>
               <SettingsPanel settings={settings} status={status} slug={slug} onUpdate={setSettings} />
             </div>
           ) : (
-            // The builder lives in a framed panel that fills the rest of the viewport; the canvas and the side
-            // panels scroll inside it, so the page itself does not.
-            <div className="flex h-[calc(100dvh-19rem)] min-h-136 flex-col overflow-hidden rounded-2xl border border-(--border-default) bg-(--bg-subtle)">
+            // Unframed: tabs, then the field rail and canvas flow on the page itself, which scrolls as a whole.
+            <div className="flex flex-col gap-4">
               <BuilderTabs
                 activeTab={activeTab}
                 onChange={setActiveTab}
@@ -157,7 +157,7 @@ export default function BuilderPageShell() {
                 hideSettings
               />
 
-              <div className="flex flex-1 overflow-hidden">
+              <div className="flex items-start gap-6">
                 {activeTab === 'build' ? (
                   <BuildTabPanel
                     dnd={dnd}
@@ -166,7 +166,7 @@ export default function BuilderPageShell() {
                     onToggleReorder={toggleReorder}
                   />
                 ) : activeTab === 'branding' ? (
-                  <div className="flex-1 overflow-y-auto p-6">
+                  <div className="min-w-0 flex-1">
                     <BrandingTabContent
                       formId={formId ?? undefined}
                       formTitle={formTitle}
@@ -179,7 +179,7 @@ export default function BuilderPageShell() {
                     />
                   </div>
                 ) : activeTab === 'share' && canSeeShare(formRole) && formId ? (
-                  <div className="flex-1 overflow-y-auto p-6">
+                  <div className="min-w-0 flex-1">
                     <ShareView formId={formId} embedded onOpenPublish={handlePublishClick} />
                   </div>
                 ) : null}

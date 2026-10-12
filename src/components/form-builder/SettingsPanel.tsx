@@ -36,6 +36,10 @@ export interface SettingsPanelProps {
   onUpdate: (updates: Partial<FormSettings>) => void;
 }
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <h2 className="bg-overline border-b border-(--border-default) pb-2 text-(--text-muted)">{children}</h2>;
+}
+
 export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPanelProps) {
   const { toast } = useToast();
 
@@ -79,24 +83,14 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
   const publicUrl = buildPublicFormUrl(slug) || '';
 
   return (
-    <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-2">
-      <div className="xl:col-span-2">
-        <h2 className="bg-h4 font-bold text-(--text-primary)">Behaviour</h2>
-        <p className="bg-body text-(--text-muted) mt-1">Control how respondents interact with this form.</p>
+    <div className="flex flex-col gap-6">
+      <div>
+        <h1 className="bg-h3 font-bold text-(--text-primary)">Settings</h1>
+        <p className="bg-body text-(--text-muted) mt-1">Control who can respond and how this form behaves.</p>
       </div>
 
-      <PanelCard label="Success message" description="Shown to respondents after they submit.">
-        <textarea
-          value={message}
-          maxLength={500}
-          onChange={(e) => setMessage(e.target.value)}
-          onBlur={() => onUpdate({ successMessage: message })}
-          placeholder="Thank you for your response!"
-          rows={3}
-          className="w-full rounded-md border-2 border-(--border-default) px-3 py-2 bg-body-sm bg-(--surface-card) outline-none focus:border-(--border-strong) resize-none"
-        />
-        <p className="bg-caption text-(--text-muted) text-right">{message.length}/500</p>
-      </PanelCard>
+      <SectionLabel>Responses</SectionLabel>
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2 2xl:grid-cols-3">
 
       {/* Sprint 13 (D1.1, requirements.md 7.1). Plain-language access mode. A form with no stored value is
           Mode 1 (open) — that is what every pre-V2 form is. The new-form default is the backend's call
@@ -108,10 +102,13 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
           value={settings.accessMode ?? 'open'}
           onChange={(e) => onUpdate({ accessMode: e.target.value as AccessMode })}
         >
-          <option value="open">Anyone with the link — no email, no tracking</option>
-          <option value="tracked">Anyone with the link — ask for their email so they can view and correct their answers</option>
-          <option value="login">Only people signed in to Beginso</option>
+          <option value="open">Anyone with the link</option>
+          <option value="tracked">Anyone with the link, with their email</option>
+          <option value="login">Signed-in Beginso users only</option>
         </Select>
+        {(settings.accessMode ?? 'open') === 'open' && (
+          <p className="bg-caption text-(--text-muted)">No email and no tracking — the quickest way for people to respond.</p>
+        )}
         {settings.accessMode === 'tracked' && (
           <p className="bg-caption text-(--text-muted)">
             Respondents get an email link to view or correct their submission. The email never contains their answers.
@@ -134,16 +131,17 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
             onChange={(v) => onUpdate({ responseLimit: v ? 1 : undefined, responseLimitEnabled: v })}
           />
         </div>
+        {limitEnabled && (
         <Input
           id="response-limit-value"
           type="number"
           min={1}
-          disabled={!limitEnabled}
           value={limitStr}
           onChange={(e) => setLimitStr(e.target.value)}
           onBlur={commitLimit}
           error={limitError ?? undefined}
         />
+        )}
       </PanelCard>
 
       <PanelCard label="Close date" description="Automatically close the form at a set date and time.">
@@ -156,19 +154,44 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
             onChange={(v) => onUpdate({ closeDate: v ? new Date().toISOString() : undefined })}
           />
         </div>
+        {closeDateEnabled && (
         <Input
           id="close-date-value"
           type="datetime-local"
-          disabled={!closeDateEnabled}
           value={settings.closeDate ? isoToLocalInput(settings.closeDate) : ''}
           onChange={(e) => onUpdate({ closeDate: e.target.value ? localInputToIso(e.target.value) : undefined })}
         />
+        )}
         {isPastDate && (
           <p className="bg-caption text-(--warning-text) font-semibold">
             This date is in the past — the form will be immediately closed on publish.
           </p>
         )}
       </PanelCard>
+
+
+      </div>
+
+      <SectionLabel>After submission</SectionLabel>
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2 2xl:grid-cols-3">
+
+      <PanelCard label="Success message" description="Shown to respondents after they submit.">
+        <textarea
+          value={message}
+          maxLength={500}
+          onChange={(e) => setMessage(e.target.value)}
+          onBlur={() => onUpdate({ successMessage: message })}
+          placeholder="Thank you for your response!"
+          rows={4}
+          className="w-full rounded-md border-2 border-(--border-default) px-3 py-2 bg-body-sm bg-(--surface-card) outline-none focus:border-(--border-strong) resize-none"
+        />
+        <p className="bg-caption text-(--text-muted) text-right">{message.length}/500</p>
+      </PanelCard>
+
+      </div>
+
+      <SectionLabel>Protection &amp; link</SectionLabel>
+      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2 2xl:grid-cols-3">
 
       <PanelCard
         label="Spam protection"
@@ -203,6 +226,7 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
           </div>
         </PanelCard>
       )}
+      </div>
     </div>
   );
 }
