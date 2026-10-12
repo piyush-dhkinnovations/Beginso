@@ -1,18 +1,18 @@
 import { FormBanner } from '../FormBanner';
-import { Backdrop, type LayoutFrameProps } from './shared';
+import { Backdrop, cardClass, widthClass, type LayoutFrameProps } from './shared';
 
-// Card Stack: the banner and the form sit on separate stacked cards; below 768 the cards go
-// full-bleed (still one column).
-export function CardStackLayout({ branding, previewMode, children, hideCover }: LayoutFrameProps) {
+// Card Stack: the hero and the form sit on separate stacked cards; each form page is its own section with a
+// header. Below 768 the cards go full-bleed (still one column).
+export function CardStackLayout({ branding, title, previewMode, children, hideCover }: LayoutFrameProps) {
   return (
-    <Backdrop previewMode={previewMode}>
-      <div className="w-full max-w-130 self-start flex flex-col gap-4 max-md:-m-4 max-md:gap-0">
-        <div className="bg-(--surface-card) rounded-xl border border-(--border-default) shadow-(--shadow-sm) overflow-hidden max-md:rounded-none max-md:border-x-0">
-          {!hideCover && <FormBanner branding={branding} />}
-        </div>
-        <div className="bg-(--surface-card) rounded-xl border border-(--border-default) shadow-(--shadow-sm) overflow-hidden max-md:rounded-none max-md:border-x-0">
-          {children}
-        </div>
+    <Backdrop branding={branding} previewMode={previewMode}>
+      <div className={`w-full ${widthClass('card_stack', branding)} flex flex-col gap-4 max-md:-m-4 max-md:gap-0`}>
+        {!hideCover && (
+          <div className={cardClass(branding, 'max-md:rounded-none')}>
+            <FormBanner branding={branding} title={title} />
+          </div>
+        )}
+        <div className={cardClass(branding, 'max-md:rounded-none')}>{children}</div>
       </div>
     </Backdrop>
   );

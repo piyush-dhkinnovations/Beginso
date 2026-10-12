@@ -17,6 +17,17 @@ export interface PublicFormBranding {
   coverPosition?: 'center' | 'top' | 'bottom';
   showProgress?: boolean;
   spacing?: 'compact' | 'comfortable' | 'spacious';
+  fontFamily?: 'dm_sans' | 'inter' | 'work_sans' | 'lora' | 'nunito';
+  typeScale?: 'compact' | 'default' | 'large';
+  cardStyle?: 'flat' | 'soft' | 'bordered' | 'elevated';
+  panelTreatment?: 'solid' | 'gradient' | 'image' | 'pattern';
+  fieldGrouping?: 'auto' | 'single';
+  /** 'none' is never stored: the form page sets it for an embed with ?bg=0 (no page background). */
+  backgroundStyle?: 'wash' | 'plain' | 'solid' | 'gradient' | 'mesh' | 'dots' | 'grid' | 'image' | 'none';
+  backgroundColor?: string;
+  backgroundImageUrl?: string;
+  formWidth?: 'narrow' | 'standard' | 'wide';
+  coverFit?: 'banner' | 'original';
 }
 
 /** Shape returned by GET /api/public/:slug — user-only fields omitted. */

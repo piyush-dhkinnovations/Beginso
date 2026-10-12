@@ -40,7 +40,17 @@ export function FormThemeScope({ children }: { children: ReactNode }) {
     const dark = root.getAttribute('data-dark');
     root.removeAttribute('data-theme');
     root.removeAttribute('data-dark');
+    // Embed with ?bg=0: the document itself must be see-through too, or the body colour would still fill the frame.
+    const clear = new URLSearchParams(window.location.search).get('embed') === '1' && new URLSearchParams(window.location.search).get('bg') === '0';
+    const prevBody = document.body.style.background;
+    const prevRoot = root.style.background;
+    if (clear) {
+      document.body.style.background = 'transparent';
+      root.style.background = 'transparent';
+    }
     return () => {
+      document.body.style.background = prevBody;
+      root.style.background = prevRoot;
       if (htmlTheme !== null) root.setAttribute('data-theme', htmlTheme);
       if (dark !== null) root.setAttribute('data-dark', dark);
     };

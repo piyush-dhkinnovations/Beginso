@@ -1,27 +1,36 @@
 /* eslint-disable @next/next/no-img-element -- arbitrary backend-served upload URLs, same tradeoff as FormBanner (no remotePatterns configured). */
-import { Backdrop, DEFAULT_PRIMARY, type LayoutFrameProps } from './shared';
+import { brandPanelStyle } from '@/lib/formTheme';
+import { Backdrop, widthClass, type LayoutFrameProps } from './shared';
 
-// Split Feature: brand panel beside the form. Below 768 the panel becomes a header above the form;
-// below 480 it is hidden entirely (the form title is already inside the form).
-export function SplitFeatureLayout({ branding, title, previewMode, hideCover, children }: LayoutFrameProps) {
-  const { primaryColor = DEFAULT_PRIMARY, coverImageUrl, logoUrl } = branding;
+// Split Feature: a full-height brand panel beside the form (a real two-pane screen on desktop, not a card on a
+// blank page). The panel carries the logo, a large headline and the current step. Below 768 the panel becomes a
+// header above the form; below 480 it is hidden entirely (the form title is already inside the form).
+export function SplitFeatureLayout({ branding, title, stepNames, currentPage, previewMode, hideCover, children }: LayoutFrameProps) {
+  const { coverImageUrl, logoUrl } = branding;
+  const stepLabel = stepNames.length > 1 ? stepNames[currentPage] : '';
   return (
-    <Backdrop previewMode={previewMode}>
-      <div className="bg-(--surface-card) rounded-xl border border-(--border-default) shadow-(--shadow-sm) w-full overflow-hidden max-w-240 md:grid md:grid-cols-5">
+    <Backdrop branding={branding} previewMode={previewMode}>
+      <div className={`bg-(--surface-card) w-full overflow-hidden md:grid md:grid-cols-5 ${widthClass('split_feature', branding)} md:rounded-2xl md:shadow-xl ${previewMode ? '' : 'md:min-h-[min(46rem,calc(100vh-5rem))]'}`}>
         {/* The panel is decorative, so it comes AFTER the form in DOM order (wireframe a11y note) and is
             moved before it visually: first in the column below 768, left of the form from md up. */}
-        <div className="md:col-span-3 md:order-2">{children}</div>
+        <div className="md:col-span-3 md:order-2 md:flex md:flex-col md:justify-center">{children}</div>
         <div
           aria-hidden="true"
-          className="order-first relative flex flex-col justify-end gap-3 p-6 text-white md:order-1 md:col-span-2 md:min-h-96 max-[480px]:hidden"
-          style={{ backgroundColor: primaryColor }}
+          className="order-first relative flex flex-col justify-between gap-10 p-6 text-white md:order-1 md:col-span-2 md:p-10 max-[480px]:hidden"
+          style={brandPanelStyle(branding)}
         >
           {coverImageUrl && !hideCover && (
-            <img src={coverImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover opacity-40" />
+            <>
+              <img src={coverImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/30 to-black/20" />
+            </>
           )}
-          <div className="relative flex items-center gap-3">
-            {logoUrl && <img src={logoUrl} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-white" />}
-            <p className="bg-h5 font-bold">{title}</p>
+          <div className="relative">
+            {logoUrl && <img src={logoUrl} alt="" className="size-12 rounded-xl bg-white object-contain p-1 shadow-(--shadow-sm)" />}
+          </div>
+          <div className="relative flex flex-col gap-2">
+            {stepLabel && <p className="bg-overline" style={{ color: 'rgba(255,255,255,0.85)' }}>{stepLabel}</p>}
+            {title && <p className="font-bold leading-tight text-balance" style={{ fontSize: 'var(--form-headline, 1.75rem)' }}>{title}</p>}
           </div>
         </div>
       </div>

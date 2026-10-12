@@ -2,7 +2,6 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
-import { formVisual } from '@/lib/formVisual';
 import { FormTile } from './FormTile';
 import type { Form, FormStatus } from '@/types/form';
 
@@ -25,31 +24,33 @@ const formatDate = (iso: string) => {
 // Grid-view card: tinted icon tile (colour from the title), title + description, a response bar in
 // the form's own colour, status and counts in the footer.
 export function FormCard({ form, href, menu, maxResponses }: FormCardProps) {
-  const visual = formVisual(form.title);
   const share = maxResponses > 0 ? Math.max(4, (form.responseCount / maxResponses) * 100) : 4;
   return (
-    <Card padded={false} className="overflow-hidden bg-none bg-(--surface-card)">
-      <div className="flex items-start gap-3 px-4 pt-4">
-        <FormTile title={form.title} logoUrl={form.branding?.logoUrl} />
-        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <h3 className="min-w-0 bg-body font-semibold text-(--text-primary)">
-            <Link href={href} className="block truncate no-underline hover:underline">{form.title}</Link>
-          </h3>
-          <p className="line-clamp-1 bg-body-sm text-(--text-muted)">{form.description || 'No description'}</p>
-        </div>
-        <div className="-mr-1 flex flex-none items-center gap-1">{menu}</div>
+    <Card padded={false} className="flex-row items-stretch gap-4 overflow-hidden bg-none bg-(--surface-card) p-4">
+      {/* The logo owns the left edge at a size you can actually read; the bar and footer sit beside it, not under it. */}
+      <div className="flex flex-none items-center">
+        <FormTile title={form.title} size={72} logoUrl={form.branding?.logoUrl} />
       </div>
-      <div className="px-4 pt-3" aria-hidden="true">
-        <div className="h-1.5 overflow-hidden rounded-full bg-(--bg-sunken)">
-          <div className="h-full rounded-full" style={{ width: `${share}%`, backgroundColor: visual.ink }} />
+      <div className="flex min-w-0 flex-1 flex-col gap-3">
+        <div className="flex items-start gap-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <h3 className="min-w-0 bg-body font-semibold text-(--text-primary)">
+              <Link href={href} className="block truncate no-underline hover:underline">{form.title}</Link>
+            </h3>
+            <p className="line-clamp-1 bg-body-sm text-(--text-muted)">{form.description || 'No description'}</p>
+          </div>
+          <div className="-mr-1 -mt-1 flex flex-none items-center gap-1">{menu}</div>
         </div>
-      </div>
-      <div className="mt-3 flex items-center justify-between gap-2 border-t border-(--border-subtle) px-4 py-3">
-        <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge>
-        <span className="bg-caption text-(--text-muted)">
-          <strong className="bg-body-sm tabular-nums text-(--text-primary)">{form.responseCount}</strong>{' '}
-          response{form.responseCount !== 1 ? 's' : ''} · {formatDate(form.updatedAt)}
-        </span>
+        <div aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-(--bg-sunken)">
+          <div className="h-full rounded-full bg-(--action-primary)" style={{ width: `${share}%` }} />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge>
+          <span className="bg-caption text-(--text-muted)">
+            <strong className="bg-body-sm tabular-nums text-(--text-primary)">{form.responseCount}</strong>{' '}
+            response{form.responseCount !== 1 ? 's' : ''} · {formatDate(form.updatedAt)}
+          </span>
+        </div>
       </div>
     </Card>
   );

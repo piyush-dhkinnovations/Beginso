@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import type { FormBranding, FormSettings, LayoutPreset } from '@/types/form';
-import { normaliseLayout, LAYOUT_PRESETS } from '@/lib/layoutPresets';
+import { normaliseLayout, LAYOUT_PRESETS, lookBranding } from '@/lib/layoutPresets';
 import { BrandingPanel } from './BrandingPanel';
 import { LayoutGallery } from './LayoutGallery';
 
@@ -45,7 +45,10 @@ export function BrandingTabContent({
           currentLayout={settings.layout}
           fieldCount={fieldCount}
           isPublic={isPublic}
-          onUse={onLayoutChange}
+          onUse={(layout) => {
+            onLayoutChange(layout);
+            onBrandingUpdate(lookBranding(layout, branding));
+          }}
           onSkip={() => setStep('editor')}
         />
       </div>
@@ -60,7 +63,7 @@ export function BrandingTabContent({
               Step 2 of 2 — customising <strong>{preset.name}</strong>
             </span>
           </div>
-          <BrandingPanel branding={branding} formTitle={formTitle} onUpdate={onBrandingUpdate} />
+          <BrandingPanel branding={branding} formTitle={formTitle} layout={preset.id} formId={formId} onUpdate={onBrandingUpdate} />
         </div>
       )}
 

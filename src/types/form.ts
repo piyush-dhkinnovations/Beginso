@@ -143,6 +143,14 @@ export type ButtonStyle = 'solid' | 'outline';
 export type ButtonRadius = '4px' | '8px' | '16px';
 export type CoverPosition = 'center' | 'top' | 'bottom';
 export type FormSpacing = 'compact' | 'comfortable' | 'spacious';
+export type FormFont = 'dm_sans' | 'inter' | 'work_sans' | 'lora' | 'nunito';
+export type TypeScale = 'compact' | 'default' | 'large';
+export type CardStyle = 'flat' | 'soft' | 'bordered' | 'elevated';
+export type PanelTreatment = 'solid' | 'gradient' | 'image' | 'pattern';
+export type FieldGrouping = 'auto' | 'single';
+export type CoverFit = 'banner' | 'original';
+export type FormWidth = 'narrow' | 'standard' | 'wide';
+export type PageBackground = 'wash' | 'plain' | 'solid' | 'gradient' | 'mesh' | 'dots' | 'grid' | 'image';
 
 export interface FormBranding {
   primaryColor?: string;   // hex color — overrides workspace default when set
@@ -153,6 +161,16 @@ export interface FormBranding {
   coverPosition?: CoverPosition; // default 'center'
   showProgress?: boolean;        // default true — the multi-page progress indicator
   spacing?: FormSpacing;         // default 'comfortable'
+  fontFamily?: FormFont;         // default 'dm_sans'
+  typeScale?: TypeScale;         // default 'default'
+  cardStyle?: CardStyle;         // default 'soft'
+  panelTreatment?: PanelTreatment; // default 'solid' — the colour panel / banner behind the cover
+  fieldGrouping?: FieldGrouping; // default 'auto' — short fields pair into two columns
+  backgroundStyle?: PageBackground; // default 'wash' — how the PAGE behind the form card is filled (not the card)
+  coverFit?: CoverFit;           // 'banner' crops the cover to a strip; 'original' shows the whole image at its own ratio
+  formWidth?: FormWidth;         // default 'standard' — how wide the form card is
+  backgroundImageUrl?: string;   // the owner's own picture, used when backgroundStyle is 'image'
+  backgroundColor?: string;      // hex the page background is built from; absent = the primary colour
 }
 
 // Sprint 13 (builder-publish-respondent), design.md §13. Six presets replace the three V1 layout

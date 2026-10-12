@@ -34,15 +34,16 @@ export interface ContextSwitcherProps {
 
 // The icon slot: the workspace's own logo when it has one, otherwise the Personal / workspace glyph.
 function ContextAvatar({ logo, Icon, size }: { logo?: string | null; Icon: typeof User; size: "sm" | "lg" }) {
-  const box = size === "lg" ? "size-10 rounded-lg" : "size-6 rounded-md";
+  // A workspace with its own logo shows the logo alone (no box, border or background around it); the glyph keeps its quiet tile.
+  if (logo) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- uploaded workspace logo, served by the backend
+      <img src={logo} alt="" aria-hidden="true" className={bx("shrink-0 object-contain", size === "lg" ? "size-10 rounded-lg" : "size-6 rounded-md")} />
+    );
+  }
   return (
-    <span aria-hidden="true" className={bx("flex shrink-0 items-center justify-center overflow-hidden border border-(--border-default) bg-(--bg-subtle)", box)}>
-      {logo ? (
-        // eslint-disable-next-line @next/next/no-img-element -- uploaded workspace logo, served by the backend
-        <img src={logo} alt="" className="size-full object-cover" />
-      ) : (
-        <Icon className={size === "lg" ? "w-5 h-5 text-(--text-muted)" : "w-3.5 h-3.5 text-(--text-muted)"} />
-      )}
+    <span aria-hidden="true" className={bx("flex shrink-0 items-center justify-center overflow-hidden border border-(--border-default) bg-(--bg-subtle)", size === "lg" ? "size-10 rounded-lg" : "size-6 rounded-md")}>
+      <Icon className={size === "lg" ? "w-5 h-5 text-(--text-muted)" : "w-3.5 h-3.5 text-(--text-muted)"} />
     </span>
   );
 }

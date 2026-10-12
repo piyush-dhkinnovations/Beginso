@@ -51,17 +51,20 @@ export function EmbedStudio({ ctx, fields, pages, onCopy }: Props) {
 
       <EmbedMethodPicker config={config} onChange={patch} />
 
-      <div className="grid grid-cols-1 gap-4 items-start lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <EmbedConfigPanel config={config} onChange={patch} fields={fields} />
 
-        <div className="min-w-0 lg:sticky lg:top-4">
+        {/* On desktop the preview is exactly as tall as the settings column beside it (it is taken out of flow, so a tall form cannot
+            stretch the row) and scrolls inside. */}
+        <div className="min-w-0 lg:relative lg:min-h-44">
+          <div className="lg:absolute lg:inset-0">
           {!ctx ? (
             <Alert variant="info" title="Publish the form to get its embed code.">
               The preview and the code appear here once the form has a public link.
             </Alert>
           ) : (
             // Preview and code share one card behind two tabs, so the page is one screen shorter than stacking them.
-            <Card className="flex flex-col gap-3">
+            <Card className="flex h-full flex-col gap-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <Segmented
                   ariaLabel="Preview or code"
@@ -78,7 +81,7 @@ export function EmbedStudio({ ctx, fields, pages, onCopy }: Props) {
               </div>
 
               {/* Kept mounted (just hidden) so switching tabs never reloads the preview frame. */}
-              <div className={tab === 'preview' ? 'flex flex-col gap-3' : 'hidden'}>
+              <div className={tab === 'preview' ? 'flex min-h-0 flex-1 flex-col gap-3' : 'hidden'}>
                 {tooShort && (
                   <Alert variant="warning" title="This frame is shorter than your form.">
                     The form needs about {needed}px on its tallest page but the frame is {effective.height}px, so visitors would get a scrollbar inside the frame or lose the submit button. Raise the height to at least {needed}px, or use auto-height.
@@ -88,9 +91,9 @@ export function EmbedStudio({ ctx, fields, pages, onCopy }: Props) {
               </div>
 
               {tab === 'code' && (
-                <div className="flex flex-col gap-3">
-                  {/* Focusable so a keyboard user can scroll a long line. */}
-                  <pre tabIndex={0} aria-label={effective.method === 'link' ? 'Link' : 'Embed code'} className="rounded-md border-2 border-(--border-default) bg-(--bg-subtle) p-3 bg-body-sm font-mono overflow-x-auto whitespace-pre">
+                <div className="flex min-h-0 flex-1 flex-col gap-3 lg:overflow-auto">
+                  {/* Wraps long attributes (nothing to scroll sideways) and fills the card; focusable so a keyboard user can scroll a long snippet. */}
+                  <pre tabIndex={0} aria-label={effective.method === 'link' ? 'Link' : 'Embed code'} className="min-h-0 flex-1 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-(--border-default) bg-(--bg-subtle) p-4 font-mono text-sm leading-relaxed">
                     {snippet}
                   </pre>
                   {effective.method === 'auto' || effective.method === 'popup' || effective.method === 'drawer' ? (
@@ -100,6 +103,7 @@ export function EmbedStudio({ ctx, fields, pages, onCopy }: Props) {
               )}
             </Card>
           )}
+          </div>
         </div>
       </div>
 

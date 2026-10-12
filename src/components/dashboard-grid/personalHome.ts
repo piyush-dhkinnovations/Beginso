@@ -1,7 +1,8 @@
 import { createElement } from 'react';
 import { BarChart3, Calendar, FileText, MessageSquare } from 'lucide-react';
 import type { KpiData } from '@/components/ui/KpiCard';
-import type { MetricMap, Widget } from './types';
+import type { ResponseLocation } from '@/types/dashboard';
+import type { LocationMetric, MetricMap, Widget } from './types';
 
 interface Counts { totalForms: number; publishedForms: number; totalResponses: number; responsesThisMonth: number }
 interface FormRow { _id: string; title: string; responseCount: number }
@@ -17,7 +18,7 @@ function dayLabels(n: number): string[] {
 
 // What a dashboard can show on the personal Home. Only metrics the data truly supports are present —
 // a missing key renders as "unavailable", never as an invented number.
-export function personalMetrics(counts: Counts | undefined, dailyResponses: number[] | undefined, forms: FormRow[]): MetricMap {
+export function personalMetrics(counts: Counts | undefined, dailyResponses: number[] | undefined, forms: FormRow[], locations?: ResponseLocation[]): MetricMap {
   const m: MetricMap = {};
   if (!counts) return m;
   const hasTrend = !!dailyResponses && dailyResponses.some((v) => v > 0);
@@ -35,7 +36,14 @@ export function personalMetrics(counts: Counts | undefined, dailyResponses: numb
   }
   const top = [...forms].filter((f) => f.responseCount > 0).sort((a, b) => b.responseCount - a.responseCount).slice(0, 5);
   if (top.length > 0) m.responsesByForm = { label: 'Responses by form', segments: top.map((f) => ({ label: f.title, value: f.responseCount })) };
+  // The map is offered whenever the server sent location data (even an empty list: the card then explains why it is empty).
+  if (locations) m.responseMap = responseMapMetric(locations, counts.totalResponses);
   return m;
+}
+
+/** Where responses came from, for the map widget. */
+export function responseMapMetric(locations: ResponseLocation[], total: number): LocationMetric {
+  return { label: 'Where responses come from', points: locations, located: locations.reduce((s, l) => s + l.count, 0), total };
 }
 
 /** Layout for users who never customised. Widgets whose metric has no data are left out, not shown empty. */
@@ -47,6 +55,11 @@ export function personalDefaults(metrics: MetricMap): Widget[] {
     { id: 'd-month', w: 3, config: { type: 'kpi', variant: 16, metric: 'responsesThisMonth' } },
     { id: 'd-trend', w: 6, config: { type: 'chart', chart: 'bar', metric: 'responseTrend' } },
     { id: 'd-byform', w: 6, config: { type: 'chart', chart: 'hbar', metric: 'responsesByForm' } },
+    { id: 'd-map', w: 12, config: { type: 'map', metric: 'responseMap' } },
   ];
-  return all.filter((w) => metrics[w.config.metric]);
+  // The map joins a never-customised dashboard only once it has something to show.
+  return all.filter((w) => {
+    const metric = metrics[w.config.metric];
+    return metric && (w.config.type !== 'map' || ('points' in metric && metric.points.length > 0));
+  });
 }

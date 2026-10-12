@@ -38,6 +38,14 @@ export const FIELD_GROUPS: { id: FieldGroup; label: string }[] = [
   { id: 'uploads', label: 'Uploads & signature' },
 ];
 
+// Colour lives on the icon only (one hue per group), so the rail stays calm but a field is findable at a glance.
+export const GROUP_ICON_COLOR: Record<FieldGroup, string> = {
+  text: 'text-(--action-primary)',
+  choice: 'text-violet-600',
+  datetime: 'text-(--warning)',
+  uploads: 'text-(--success)',
+};
+
 export interface FieldTypeConfig {
   type: FieldType;
   icon: LucideIcon;
@@ -96,12 +104,12 @@ function DraggableToolboxItem({ config, onAdd }: DraggableItemProps) {
       {...attributes}
       onClick={() => onAdd?.(type)}
       title={label}
-      className={`flex items-center justify-center lg:justify-start gap-3 px-0 lg:px-3 py-2.5 rounded-md bg-(--surface-card) border border-(--border-default) cursor-grab active:cursor-grabbing hover:bg-(--surface-hover) hover:border-(--border-strong) transition-colors select-none shadow-(--shadow-sm) min-h-11 ${
+      className={`group flex items-center justify-center gap-3 px-0 py-2.5 rounded-lg bg-(--surface-card) border border-(--border-default) cursor-grab active:cursor-grabbing hover:bg-(--surface-hover) hover:border-(--border-strong) transition-colors select-none min-h-11 lg:min-h-18 lg:flex-col lg:gap-1.5 lg:px-1.5 lg:py-3 lg:text-center ${
         isDragging ? 'opacity-50 border-(--border-focus) ring-1 ring-(--border-focus)/20' : ''
       }`}
     >
-      <Icon size={16} className="text-(--text-muted) shrink-0" />
-      <span className="hidden lg:inline bg-body font-medium text-(--text-secondary)">{label}</span>
+      <Icon size={18} className={`${GROUP_ICON_COLOR[config.group]} shrink-0`} />
+      <span className="hidden lg:inline bg-body-sm font-medium leading-tight text-(--text-secondary) group-hover:text-(--text-primary)">{label}</span>
     </div>
   );
 }
@@ -121,8 +129,8 @@ export function Toolbox({ onAdd }: ToolboxProps) {
     // Sprint 13 (CF2.12): the rail is full width from 1024px and icon-only on tablet (768-1023px). On phones the toolbox is the
     // AddFieldSheet bottom sheet, opened from the build bar under the canvas.
     // Flat rail (no card): sticks under the top bar while the canvas scrolls with the page.
-    <aside className="sticky top-16 hidden w-16 shrink-0 flex-col gap-4 self-start py-2 md:flex lg:w-64">
-      <div className="hidden lg:block">
+    <aside className="sticky top-16 hidden w-16 shrink-0 flex-col gap-4 self-start rounded-xl border border-(--border-default) bg-(--surface-card) p-2 md:flex lg:w-72 lg:p-4 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto">
+      <div className="hidden border-b border-(--border-subtle) pb-3 lg:block">
         <h3 className="bg-body font-bold text-(--text-primary) tracking-tight">Add fields</h3>
         <p className="bg-body-sm mt-1 text-(--text-muted)">Click or drag a field onto the form.</p>
       </div>
@@ -145,12 +153,12 @@ export function Toolbox({ onAdd }: ToolboxProps) {
           if (items.length === 0) return null;
           const open = q !== '' || openGroup === group.id;
           return (
-            <section key={group.id} aria-label={group.label} className="flex flex-col gap-2">
+            <section key={group.id} aria-label={group.label} className="flex flex-col gap-2 lg:[&:not(:first-child)]:border-t lg:[&:not(:first-child)]:border-(--border-subtle) lg:[&:not(:first-child)]:pt-2">
               <button
                 type="button"
                 aria-expanded={open}
                 onClick={() => setOpenGroup(group.id)}
-                className="hidden min-h-9 items-center justify-between rounded-md px-1 bg-overline text-(--text-muted) hover:text-(--text-primary) lg:flex"
+                className={cn("hidden min-h-9 items-center justify-between rounded-md px-1 bg-overline hover:text-(--text-primary) lg:flex", open ? "text-(--text-primary)" : "text-(--text-muted)")}
               >
                 <span>{group.label}</span>
                 <span className="flex items-center gap-1.5">
@@ -159,7 +167,7 @@ export function Toolbox({ onAdd }: ToolboxProps) {
                 </span>
               </button>
               {/* The icon-only tablet rail has no headings to open, so it always lists every field. */}
-              <div className={cn('flex-col gap-2', open ? 'flex' : 'hidden max-lg:flex')}>
+              <div className={cn('flex-col gap-2', open ? 'flex lg:grid lg:grid-cols-2' : 'hidden max-lg:flex')}>
                 {items.map((config) => (
                   <DraggableToolboxItem key={config.type} config={config} onAdd={onAdd} />
                 ))}

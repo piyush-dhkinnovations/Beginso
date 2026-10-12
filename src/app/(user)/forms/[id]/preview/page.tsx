@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { formsService } from '@/services/forms';
-import { normaliseLayout } from '@/lib/layoutPresets';
+import type { FormBranding } from '@/types/form';
+import { lookBranding, normaliseLayout } from '@/lib/layoutPresets';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { PublicFormShell } from '@/components/public-form/PublicFormShell';
@@ -26,6 +27,19 @@ export default function FormPreviewPage() {
   const embed = searchParams.get('embed') === '1';
   const layoutOverride = searchParams.get('layout') ?? undefined;
   const [device, setDevice] = useState<PreviewDevice>('desktop');
+  // The Branding tab streams its unsaved branding + layout in over postMessage (same-origin only), so its preview is the
+  // real form updating as you type, not a saved-copy that lags the autosave.
+  const [live, setLive] = useState<{ branding: FormBranding; layout?: string } | null>(null);
+  useEffect(() => {
+    if (!embed) return;
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin || e.data?.type !== 'beginso-live-branding') return;
+      setLive({ branding: e.data.branding ?? {}, layout: e.data.layout });
+    };
+    window.addEventListener('message', onMessage);
+    window.parent.postMessage({ type: 'beginso-preview-ready' }, window.location.origin);
+    return () => window.removeEventListener('message', onMessage);
+  }, [embed]);
 
   const { data: form, isLoading, error } = useQuery({
     queryKey: ['form', id],
@@ -50,13 +64,14 @@ export default function FormPreviewPage() {
     title: form.title,
     pages: [...form.pages].sort((a, b) => a.order - b.order),
     fields: form.fields.filter((f) => !f.deleted).sort((a, b) => a.order - b.order),
-    branding: form.branding,
+    // A gallery preview (?layout=) shows the preset's own look - colour, font, card and panel - exactly as "Use this layout" would apply it.
+    branding: live ? live.branding : layoutOverride ? { ...form.branding, ...lookBranding(normaliseLayout(layoutOverride), form.branding, true) } : form.branding,
     settings: {
       honeypotEnabled: form.settings.honeypotEnabled,
       successMessage: form.settings.successMessage,
       responseLimit: form.settings.responseLimit,
       closeDate: form.settings.closeDate,
-      layout: layoutOverride ? normaliseLayout(layoutOverride) : form.settings.layout,
+      layout: layoutOverride ? normaliseLayout(layoutOverride) : live?.layout ? normaliseLayout(live.layout) : form.settings.layout,
       accessMode: form.settings.accessMode,
     },
   };

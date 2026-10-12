@@ -84,7 +84,7 @@ export function EmbedPreview({ ctx, config, onMeasured }: Props) {
     // A bounded viewport (it scrolls inside) so a long form does not stretch the whole page; on a real site the
     // frame grows to the form's height.
     return (
-      <div className="max-h-128 overflow-auto rounded-md border border-dashed border-(--border-strong) bg-(--bg-subtle) p-3">
+      <div className="max-h-128 overflow-auto rounded-md lg:max-h-none lg:min-h-0 lg:flex-1 border border-dashed border-(--border-strong) bg-(--bg-subtle) p-3">
         <iframe
           key={src}
           ref={iframeRef}

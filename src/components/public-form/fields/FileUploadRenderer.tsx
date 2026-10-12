@@ -130,7 +130,7 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
       )}
 
       {state.status === 'uploading' && (
-        <div className="flex flex-col gap-2 w-full min-h-11 rounded-md border-2 border-(--border-default) px-3 py-2">
+        <div className="flex flex-col gap-2 w-full min-h-11 rounded-lg border border-(--border-default) px-3 py-2">
           <div className="flex items-center gap-2">
             {previewUrl && (
               // eslint-disable-next-line @next/next/no-img-element -- ephemeral blob: URL for a file the browser hasn't uploaded anywhere yet, not a static asset
@@ -150,7 +150,7 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
       )}
 
       {state.status === 'uploaded' && (
-        <div className="flex items-center gap-2 w-full min-h-11 rounded-md border-2 border-(--border-default) px-3 py-2">
+        <div className="flex items-center gap-2 w-full min-h-11 rounded-lg border border-(--border-default) px-3 py-2">
           {previewUrl ? (
             // eslint-disable-next-line @next/next/no-img-element -- ephemeral blob: URL for a file the browser hasn't uploaded anywhere yet, not a static asset
             <img src={previewUrl} alt="" className="h-10 w-10 shrink-0 rounded object-cover border border-(--border-default)" />
@@ -176,7 +176,7 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
       )}
 
       {state.status === 'failed' && (
-        <div className="flex items-center gap-2 w-full min-h-11 rounded-md border-2 border-(--error) px-3 py-2">
+        <div className="flex items-center gap-2 w-full min-h-11 rounded-lg border border-(--error) px-3 py-2">
           <AlertCircle size={16} className="text-(--error-text) shrink-0" />
           <span className="bg-body-sm text-(--text-primary) truncate">{state.fileName}</span>
           <span className="bg-caption text-(--error-text)">{state.error}</span>

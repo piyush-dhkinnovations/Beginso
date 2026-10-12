@@ -6,14 +6,15 @@ import { Drawer } from '@/components/ui/Drawer';
 import { KpiCard, type KpiData, type KpiTone, type KpiVariant } from '@/components/ui/KpiCard';
 import { bx } from '@/lib/utils';
 import { CHART_LABEL, ChartWidget } from './ChartWidget';
-import { TONES, chartsFor, isKpi, type ChartKind, type MetricMap, type Widget, type WidgetWidth } from './types';
+import { MapWidget } from './MapWidget';
+import { TONES, chartsFor, isKpi, isLocations, type ChartKind, type MetricMap, type Widget, type WidgetWidth } from './types';
 
 const NAMES: Record<number, string> = {
   1: 'Minimal', 2: 'Solid', 3: 'With bars', 4: 'Progress ring', 5: 'Ring + status', 6: 'Ring + status', 7: 'Icon + change',
   8: 'Two metrics', 9: 'Compact bars', 10: 'Area chart', 11: 'Icon badge', 12: 'Trend + note', 13: 'Icon + value',
   14: 'Progress bar', 15: 'Comparison', 16: 'Mini donut', 17: 'Gradient', 18: 'Two metrics + trend', 19: 'Multi-metric', 20: 'Icon + note',
 };
-const SIZE_LABEL: Record<WidgetWidth, string> = { 3: 'Small', 4: 'Medium', 6: 'Wide' };
+const SIZE_LABEL: Record<WidgetWidth, string> = { 3: 'Small', 4: 'Medium', 6: 'Wide', 12: 'Full width' };
 const WIDE: KpiVariant[] = [8, 12, 18, 19];
 const chartWidth = (c: ChartKind): WidgetWidth => (c === 'donut' || c === 'pie' || c === 'status' ? 4 : 6);
 const defaultWidth = (v: KpiVariant): WidgetWidth => (WIDE.includes(v) ? 6 : 4);
@@ -137,7 +138,13 @@ export function AddWidgetDrawer({ isOpen, onClose, metrics, onAdd }: Props) {
             </div>
           )}
 
-          {m && !isKpi(m) ? (
+          {m && isLocations(m) ? (
+            <div className="grid grid-cols-1 gap-3">
+              <Tile name="Response map" size={12} onPick={() => add({ w: 12, config: { type: 'map', metric } })}>
+                <MapWidget metric={m} preview />
+              </Tile>
+            </div>
+          ) : m && !isKpi(m) ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               {chartsFor(m).map((chart) => (
                 <Tile key={chart} name={CHART_LABEL[chart]} size={chartWidth(chart)} onPick={() => add({ w: chartWidth(chart), config: { type: 'chart', chart, metric } })}>

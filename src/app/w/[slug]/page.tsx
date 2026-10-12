@@ -18,7 +18,8 @@ import { workspaceDefaults, workspaceMetrics } from '@/components/dashboard-grid
 import { Plus, LayoutTemplate, FilePlus, Table, Settings, Download, Clock, BarChart2, Edit3, Share2 } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { eventsService } from '@/services/events';
-import { activityKeys, workspaceKeys } from '@/lib/queryKeys';
+import { activityKeys, dashboardKeys, workspaceKeys } from '@/lib/queryKeys';
+import { dashboardService } from '@/services/dashboard';
 import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
 import { canManageDashboard, canManageWorkspaceSettings } from '@/lib/roles';
 import { ActivityFeed } from '@/components/workspaces/ActivityFeed';
@@ -57,7 +58,16 @@ export default function WorkspaceHomePage() {
   const forms = data?.forms ?? [];
   const isEmpty = !isLoading && !error && forms.length === 0;
 
-  const metrics = workspaceMetrics(forms, data?.total ?? forms.length);
+  // Where responses came from, for the map widget. Optional: a member without dashboard access, or a server without
+  // locations, simply has no map (the query is allowed to fail quietly).
+  const { data: wsAnalytics } = useQuery({
+    queryKey: dashboardKeys.analytics(slug),
+    queryFn: () => dashboardService.getWorkspaceAnalytics(slug),
+    enabled: !isLoading && !error && !isEmpty && role !== undefined,
+    retry: false,
+    staleTime: 60_000,
+  });
+  const metrics = workspaceMetrics(forms, data?.total ?? forms.length, wsAnalytics?.locations);
   const dashboard = useCustomDashboard({
     scope: slug,
     defaults: workspaceDefaults(metrics, role),

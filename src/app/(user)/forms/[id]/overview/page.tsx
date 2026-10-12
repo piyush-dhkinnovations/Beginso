@@ -165,13 +165,16 @@ export default function FormOverviewPage() {
       />
 
       {publicUrl ? (
-        <Card className="flex flex-col gap-4 md:flex-row md:items-center">
-          <span className="inline-flex size-12 flex-none items-center justify-center rounded-xl bg-(--surface-hover) text-(--action-primary)">
-            <Link2 className="size-6" aria-hidden="true" />
-          </span>
-          <div className="flex min-w-0 flex-1 flex-col gap-2">
+        <Card className="flex-col gap-4 md:flex-row md:items-center md:justify-between md:gap-8">
+          {/* Left: what this is. Right: the link itself, as wide as the space allows so the whole URL is readable. */}
+          <div className="flex flex-none items-center gap-3">
+            <span className="inline-flex size-12 flex-none items-center justify-center rounded-xl bg-(--surface-hover) text-(--action-primary)">
+              <Link2 className="size-6" aria-hidden="true" />
+            </span>
             <h2 className="bg-h4">Share link</h2>
-            <div className="flex items-center gap-2">
+          </div>
+          <div className="flex min-w-0 flex-1 items-center gap-2 md:max-w-3xl">
+            <div className="min-w-0 flex-1">
               <Input
                 id="overview-public-url"
                 aria-label="Public link"
@@ -179,20 +182,21 @@ export default function FormOverviewPage() {
                 readOnly
                 title={publicUrl}
                 leftIcon={<Link2 size={16} aria-hidden="true" />}
-                className="min-w-0 flex-1 font-mono"
+                className="w-full font-mono"
                 onFocus={(e) => e.currentTarget.select()}
               />
-              <Button
-                variant="secondary"
-                aria-label="Copy link"
-                onClick={() => {
-                  void navigator.clipboard.writeText(publicUrl);
-                  toast('Link copied to clipboard.', 'success');
-                }}
-              >
-                <Copy size={16} aria-hidden="true" />
-              </Button>
             </div>
+            <Button
+              variant="secondary"
+              aria-label="Copy link"
+              className="flex-none"
+              onClick={() => {
+                void navigator.clipboard.writeText(publicUrl);
+                toast('Link copied to clipboard.', 'success');
+              }}
+            >
+              <Copy size={16} aria-hidden="true" />
+            </Button>
           </div>
         </Card>
       ) : (

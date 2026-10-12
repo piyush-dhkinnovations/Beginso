@@ -4,7 +4,7 @@ import type { FieldError } from 'react-hook-form';
 
 /** Base input classes shared by every text-like field renderer — mirrors src/components/ui/Input.tsx. */
 export const FIELD_INPUT_CLASSES =
-  'w-full min-h-11 rounded-md px-3 bg-body-sm bg-(--surface-card) transition-colors duration-200 outline-none border-2 border-(--border-default) focus:border-(--border-strong)';
+  'w-full min-h-10 rounded-lg px-3 bg-body-sm bg-(--surface-card) font-[inherit] max-md:text-base text-[15px] text-(--text-primary) placeholder:text-(--text-muted) transition-colors duration-200 outline-none border border-(--border-default) hover:border-(--border-strong) focus:border-(--action-primary) focus:shadow-(--shadow-focus)';
 
 export const FIELD_INPUT_ERROR_CLASSES = 'border-(--error) focus:border-(--error)';
 export const FIELD_INPUT_DISABLED_CLASSES = 'bg-(--bg-sunken) opacity-60 cursor-not-allowed pointer-events-none';
@@ -31,7 +31,7 @@ interface FieldShellProps {
 export function FieldShell({ fieldId, label, required, helpText, error, inline, asGroup, children }: FieldShellProps) {
   const labelClassName = inline
     ? 'bg-body-sm font-semibold text-(--text-primary) pt-2.5 shrink-0 w-28'
-    : 'bg-body font-semibold text-(--text-primary)';
+    : 'bg-body-sm font-semibold text-(--text-primary)';
   const labelEl = asGroup ? (
     <span id={`${fieldId}-label`} className={labelClassName}>
       {label}

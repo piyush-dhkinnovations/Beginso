@@ -25,7 +25,7 @@ export function YesNoRenderer({ field, control, error, disabled, inline }: Field
                   onClick={() => c.onChange(option)}
                   onBlur={c.onBlur}
                   className={cn(
-                    'min-h-11 min-w-24 rounded-md border-2 px-4 bg-body-sm font-medium transition-colors',
+                    'min-h-10 min-w-20 rounded-lg border px-4 bg-body-sm font-medium transition-colors',
                     selected
                       ? 'border-(--action-primary) bg-(--accent-soft) text-(--accent-soft-text)'
                       : 'border-(--border-default) bg-(--surface-card) text-(--text-primary) hover:border-(--border-strong)',

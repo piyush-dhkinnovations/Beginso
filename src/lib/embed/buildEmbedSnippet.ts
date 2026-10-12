@@ -27,6 +27,7 @@ export interface EmbedConfig {
   side: 'left' | 'right';
   drawerWidth: number;
   cover: boolean;
+  background: boolean;
   progress: boolean;
   hideTitle: boolean;
   theme: EmbedTheme;
@@ -47,6 +48,7 @@ export const DEFAULT_EMBED_CONFIG: EmbedConfig = {
   side: 'right',
   drawerWidth: 480,
   cover: true,
+  background: true,
   progress: true,
   hideTitle: false,
   theme: 'light',
@@ -103,6 +105,7 @@ export function buildParamPairs(raw: EmbedConfig): [string, string][] {
   const pairs: [string, string][] = [
     ['embed', '1'],
     ['cover', c.cover ? '1' : '0'],
+    ['bg', c.background ? '1' : '0'],
     ['progress', c.progress ? '1' : '0'],
     ['title', c.hideTitle ? '1' : '0'],
     ['theme', c.theme],
@@ -225,6 +228,7 @@ export function buildAdvancedRows(raw: EmbedConfig): AdvancedRow[] {
   const rows: AdvancedRow[] = [
     urlRow('embed', '1', '0', 'Renders the form chrome-less and reports its height to the page that embeds it.'),
     urlRow('cover', c.cover ? '1' : '0', '1', '1 shows the cover banner and logo, 0 hides them.'),
+    urlRow('bg', c.background ? '1' : '0', '1', '1 keeps the page background behind the form card, 0 removes it so your page shows through.'),
     urlRow('progress', c.progress ? '1' : '0', '1', '1 shows page progress, 0 hides it.'),
     urlRow('title', c.hideTitle ? '1' : '0', '0', '1 hides the form title (kept for screen readers), 0 shows it.'),
     urlRow('theme', c.theme, 'light', 'light, dark, or auto (follows the colour scheme of the page that embeds the form).'),

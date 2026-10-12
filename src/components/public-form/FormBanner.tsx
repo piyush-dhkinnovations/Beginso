@@ -1,32 +1,63 @@
 import type { PublicFormBranding } from '@/types/publicForm';
-import { brandCoverObjectPosition } from '@/lib/formTheme';
+import { brandCoverObjectPosition, brandPanelStyle } from '@/lib/formTheme';
 
 interface FormBannerProps {
   branding: PublicFormBranding;
+  /** The form's headline, set large over the banner. Decorative (aria-hidden) — the real <h1> lives in the form body. */
+  title?: string;
 }
 
 /**
- * 3:1 cover banner + optional overlapping logo. Uses a plain <img> (not
- * next/image) for coverImageUrl/logoUrl — these are arbitrary backend-served
- * upload URLs with no remotePatterns configured, matching the same tradeoff
- * BrandingLivePreview already made in the user builder.
+ * Hero banner: the brand panel (solid / gradient / pattern) or the cover image under a scrim, with the logo
+ * and the form headline sitting on it. Uses a plain <img> (not next/image) for coverImageUrl/logoUrl — arbitrary
+ * backend-served upload URLs with no remotePatterns configured.
  */
-export function FormBanner({ branding }: FormBannerProps) {
-  const { coverImageUrl, logoUrl, primaryColor } = branding;
+export function FormBanner({ branding, title }: FormBannerProps) {
+  const { coverImageUrl, logoUrl } = branding;
+  const hasText = !!title || !!logoUrl;
+
+  // 'original': the whole picture at its own size and ratio (never cropped); the logo and headline sit under it.
+  if (coverImageUrl && branding.coverFit === 'original') {
+    return (
+      <div className="w-full">
+        {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset */}
+        <img src={coverImageUrl} alt="" className="block h-auto w-full" />
+        {hasText && (
+          <div className="flex items-center gap-3 px-6 pt-6 md:px-8">
+            {logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset
+              <img src={logoUrl} alt="" className="size-11 flex-none rounded-xl border border-(--border-default) bg-white object-contain p-1" />
+            )}
+            {title && (
+              <p aria-hidden="true" className="font-bold leading-tight text-balance text-(--text-primary)" style={{ fontSize: 'var(--form-headline, 1.75rem)' }}>
+                {title}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className="relative w-full aspect-3/1 max-h-56" style={{ backgroundColor: primaryColor ?? '#1D4ED8' }}>
+    <div className={`relative w-full overflow-hidden ${hasText ? 'min-h-44' : 'aspect-3/1 max-h-56'}`} style={brandPanelStyle(branding)}>
       {coverImageUrl && (
         // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset
-        <img src={coverImageUrl} alt="" className="w-full h-full object-cover" style={{ objectPosition: brandCoverObjectPosition(branding) }} />
+        <img src={coverImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: brandCoverObjectPosition(branding) }} />
       )}
-      {logoUrl && (
-        // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset
-        <img
-          src={logoUrl}
-          alt=""
-          className="absolute bottom-[-20px] left-6 w-10 h-10 rounded-full object-cover border-2 border-white shadow-(--shadow-sm)"
-        />
+      {coverImageUrl && hasText && <div aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />}
+      {hasText && (
+        <div className="relative flex h-full min-h-44 flex-col justify-end gap-3 p-6 md:p-8 text-white">
+          {logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset
+            <img src={logoUrl} alt="" className="size-11 rounded-xl bg-white object-contain p-1 shadow-(--shadow-sm)" />
+          )}
+          {title && (
+            <p aria-hidden="true" className="font-bold leading-tight text-balance" style={{ fontSize: 'var(--form-headline, 1.75rem)' }}>
+              {title}
+            </p>
+          )}
+        </div>
       )}
     </div>
   );

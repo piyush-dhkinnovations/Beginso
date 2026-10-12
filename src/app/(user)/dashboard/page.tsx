@@ -78,7 +78,7 @@ export default function DashboardPage() {
     publishedForms: formsLoaded ? Math.min(analytics.publishedForms, formsData.total) : analytics.publishedForms,
   };
 
-  const metrics = personalMetrics(effectiveCounts, responseTrend, formsData?.forms ?? []);
+  const metrics = personalMetrics(effectiveCounts, responseTrend, formsData?.forms ?? [], analytics?.locations);
 
   const dashboard = useCustomDashboard({
     scope: 'personal',

@@ -161,18 +161,6 @@
   container-type: inline-size;
 }
 
-@container (min-width: 620px) {
-  .branding-panel-columns {
-    flex-direction: row;
-    align-items: flex-start;
-  }
-
-  .branding-panel-preview {
-    width: 280px;
-    flex-shrink: 0;
-  }
-}
-
 .responses-table-container {
   container-type: inline-size;
 }

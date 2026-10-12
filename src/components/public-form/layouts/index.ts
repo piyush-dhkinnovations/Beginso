@@ -5,7 +5,7 @@ import { ClassicLayout } from './ClassicLayout';
 import type { LayoutFrameProps } from './shared';
 
 export type { LayoutFrameProps } from './shared';
-export { fieldsClassFor } from './shared';
+export { fieldsClassFor, isGrouped } from './shared';
 
 // Classic is the default and ships in the main bundle; the other five are code-split so a form
 // using Classic never pays for them (requirements.md §15).

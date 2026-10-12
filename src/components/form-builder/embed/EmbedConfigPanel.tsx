@@ -157,6 +157,7 @@ export function EmbedConfigPanel({ config: c, onChange, fields }: Props) {
           <summary className="cursor-pointer bg-h5 font-semibold text-(--text-primary)">Options for every embed</summary>
           <div className="mt-4 flex flex-col gap-4">
           <SwitchRow id="embed-cover" label="Show cover" hint="The banner and logo above the form." checked={c.cover} onChange={(v) => onChange({ cover: v })} />
+          <SwitchRow id="embed-background" label="Show page background" hint="The colour or pattern behind the form card. Turn off to let your own page show through." checked={c.background} onChange={(v) => onChange({ background: v })} />
           <SwitchRow id="embed-progress" label="Show progress" hint="Page progress, steps and the question counter." checked={c.progress} onChange={(v) => onChange({ progress: v })} />
           <SwitchRow id="embed-hide-title" label="Hide form title" hint="Hidden visually, still read by screen readers." checked={c.hideTitle} onChange={(v) => onChange({ hideTitle: v })} />
           <div className="flex items-start justify-between gap-3">

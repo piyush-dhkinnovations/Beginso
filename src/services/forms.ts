@@ -23,13 +23,22 @@ const BRANDING_ENUMS: Record<string, readonly string[]> = {
   buttonRadius: ['4px', '8px', '16px'],
   coverPosition: ['center', 'top', 'bottom'],
   spacing: ['compact', 'comfortable', 'spacious'],
+  fontFamily: ['dm_sans', 'inter', 'work_sans', 'lora', 'nunito'],
+  typeScale: ['compact', 'default', 'large'],
+  cardStyle: ['flat', 'soft', 'bordered', 'elevated'],
+  panelTreatment: ['solid', 'gradient', 'image', 'pattern'],
+  fieldGrouping: ['auto', 'single'],
+  formWidth: ['narrow', 'standard', 'wide'],
+  coverFit: ['banner', 'original'],
+  backgroundStyle: ['wash', 'plain', 'solid', 'gradient', 'mesh', 'dots', 'grid', 'image'],
 };
-const BRANDING_STRINGS = ['logoUrl', 'coverImageUrl'];
+const BRANDING_STRINGS = ['logoUrl', 'coverImageUrl', 'backgroundImageUrl'];
 
 export function sanitizeBranding(raw: Record<string, unknown> | undefined | null): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (!raw) return out;
   if (typeof raw.primaryColor === 'string' && HEX_RE.test(raw.primaryColor.trim())) out.primaryColor = raw.primaryColor.trim();
+  if (typeof raw.backgroundColor === 'string' && HEX_RE.test(raw.backgroundColor.trim())) out.backgroundColor = raw.backgroundColor.trim();
   for (const k of BRANDING_STRINGS) if (typeof raw[k] === 'string' && (raw[k] as string).trim()) out[k] = raw[k];
   for (const [k, allowed] of Object.entries(BRANDING_ENUMS)) if (typeof raw[k] === 'string' && allowed.includes(raw[k] as string)) out[k] = raw[k];
   if (typeof raw.showProgress === 'boolean') out.showProgress = raw.showProgress;

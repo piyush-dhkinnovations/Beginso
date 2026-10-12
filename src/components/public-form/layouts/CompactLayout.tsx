@@ -1,13 +1,13 @@
 import { FormBanner } from '../FormBanner';
-import { Backdrop, type LayoutFrameProps } from './shared';
+import { Backdrop, cardClass, widthClass, type LayoutFrameProps } from './shared';
 
-// Compact: two-column (see fieldsClassFor) for dense internal forms. Never two columns on a phone —
-// the grid is forced to one column below 768 in fieldsClassFor.
-export function CompactLayout({ branding, previewMode, children, hideCover }: LayoutFrameProps) {
+// Compact: two-column (see fieldsClassFor) for dense internal forms — plain and quick on purpose, so a wider card.
+// Never two columns on a phone — the grid is forced to one column below 768.
+export function CompactLayout({ branding, title, previewMode, children, hideCover }: LayoutFrameProps) {
   return (
-    <Backdrop previewMode={previewMode}>
-      <div className="bg-(--surface-card) rounded-xl border border-(--border-default) shadow-(--shadow-sm) w-full overflow-hidden max-w-170">
-        {!hideCover && <FormBanner branding={branding} />}
+    <Backdrop branding={branding} previewMode={previewMode}>
+      <div className={cardClass(branding, widthClass('compact', branding))}>
+        {!hideCover && <FormBanner branding={branding} title={title} />}
         {children}
       </div>
     </Backdrop>

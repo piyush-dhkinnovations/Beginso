@@ -61,7 +61,7 @@ export function buildFormColumns(s: FormsPageState, context: FormsContext): Tabl
         const owner = ownerName(form);
         return (
           <div className="flex min-w-0 items-center gap-3">
-            <FormTile title={form.title} size={32} logoUrl={form.branding?.logoUrl} />
+            <FormTile title={form.title} size={40} logoUrl={form.branding?.logoUrl} />
             <div className="flex min-w-0 flex-col">
               <span className="flex min-w-0 items-center gap-1.5">
                 <Link

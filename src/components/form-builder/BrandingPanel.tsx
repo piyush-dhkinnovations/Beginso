@@ -2,12 +2,13 @@
 
 import { useId, useRef, useState } from 'react';
 import { Loader2, Plus, Upload, X } from 'lucide-react';
-import type { ButtonRadius, ButtonStyle, CoverPosition, FormBranding, FormSpacing } from '@/types/form';
+import type { CoverFit, ButtonRadius, ButtonStyle, CardStyle, CoverPosition, FieldGrouping, FormBranding, FormWidth, FormFont, FormSpacing, LayoutPreset, PageBackground, PanelTreatment, TypeScale } from '@/types/form';
+import { FORM_FONT_OPTIONS, PAGE_BACKGROUND_OPTIONS } from '@/lib/formTheme';
 import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
 import { uploadService } from '@/services/upload';
 import { useToast } from '@/components/ui/Toast';
-import { BrandingLivePreview } from './BrandingLivePreview';
+import { LiveFormPreview } from './LiveFormPreview';
 import { ImageCropModal } from './ImageCropModal';
 import { PanelCard } from './PanelCard';
 
@@ -24,6 +25,7 @@ export function ImageUploadZone({
   aspect,
   hint,
   compact,
+  freeform,
   onUpload,
   onRemove,
 }: {
@@ -34,6 +36,8 @@ export function ImageUploadZone({
   hint?: string;
   /** Same fixed height for logo and cover (Settings layout) instead of a tall 16:9 banner. */
   compact?: boolean;
+  /** No crop step and no fixed frame: the picture goes up as it is and is previewed at its own ratio. */
+  freeform?: boolean;
   onUpload: (file: File) => Promise<void>;
   onRemove: () => void;
 }) {
@@ -61,7 +65,7 @@ export function ImageUploadZone({
       toast('File type not supported. Use JPG, PNG, GIF, or WEBP.', 'error');
       return;
     }
-    if (file.type === 'image/gif') {
+    if (file.type === 'image/gif' || freeform) {
       await uploadNow(file);
       return;
     }
@@ -86,7 +90,9 @@ export function ImageUploadZone({
       // Design system "Dashed" pattern (wf-btn-dashed): 1.5px dashed neutral-400 border,
       // neutral-50 fill, darker dashed border on hover — reserved for upload zones.
       className={`relative flex flex-col items-center justify-center gap-1.5 border-[1.5px] border-dashed rounded-lg cursor-pointer overflow-hidden shrink-0 transition-colors ${
-        compact
+        freeform
+          ? imageUrl ? 'w-full' : 'w-full h-36'
+          : compact
           ? aspect === 'square' ? 'w-full max-w-56 h-36' : 'w-full h-36'
           : aspect === 'square' ? 'w-24 h-24' : 'w-full aspect-video'
       } ${
@@ -108,7 +114,7 @@ export function ImageUploadZone({
         <Loader2 size={20} className="animate-spin text-(--text-disabled)" />
       ) : imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset
-        <img src={imageUrl} alt={label} className="w-full h-full object-cover" />
+        <img src={imageUrl} alt={label} className={freeform ? 'block h-auto max-h-80 w-full object-contain' : 'w-full h-full object-cover'} />
       ) : (
         <>
           <Upload size={aspect === 'square' ? 16 : 20} className="text-(--text-disabled)" />
@@ -155,6 +161,10 @@ export interface BrandingPanelProps {
   branding: FormBranding;
   formTitle: string;
   onUpdate: (updates: Partial<FormBranding>) => void;
+  /** The form's layout, so the live preview is drawn in it. */
+  layout?: LayoutPreset;
+  /** The saved form the live preview loads; without one there is nothing to preview. */
+  formId?: string;
   // Builder tabs have no other label for this section, so it needs its own heading there.
   // Settings' BrandingTab sits under a tab bar that already says "Branding" — a second
   // heading there was redundant and, unlike every other Settings tab, broke the shared
@@ -162,7 +172,7 @@ export interface BrandingPanelProps {
   showHeading?: boolean;
 }
 
-export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = true }: BrandingPanelProps) {
+export function BrandingPanel({ branding, onUpdate, layout, formId, showHeading = true }: BrandingPanelProps) {
   const uid = useId();
   const { toast } = useToast();
   const primaryColor = branding.primaryColor ?? DEFAULT_COLOR;
@@ -196,10 +206,14 @@ export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = tru
       ? `#${primaryColor[1]}${primaryColor[1]}${primaryColor[2]}${primaryColor[2]}${primaryColor[3]}${primaryColor[3]}`
       : primaryColor;
 
-  const uploadImage = async (file: File, key: 'logoUrl' | 'coverImageUrl') => {
+  // A form that already has a cover keeps showing it as before (cropped banner) until the owner chooses; a new one starts whole.
+  const coverFit: CoverFit = branding.coverFit ?? (branding.coverImageUrl ? 'banner' : 'original');
+
+  const uploadImage = async (file: File, key: 'logoUrl' | 'coverImageUrl' | 'backgroundImageUrl') => {
     try {
       const res = await uploadService.uploadFile(file);
-      onUpdate({ [key]: res.url });
+      // A cover remembers HOW it was added, so the form shows it the same way (whole, or cropped to the banner).
+      onUpdate({ [key]: res.url, ...(key === 'coverImageUrl' ? { coverFit } : {}) });
     } catch {
       toast('Upload failed. Check your connection.', 'error');
     }
@@ -212,7 +226,7 @@ export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = tru
     // content. `container-type: inline-size` below forbids exactly that (containment explicitly
     // decouples a container's size from its children), so the two together created a circular
     // dependency that collapsed the whole panel to near-zero width — a real regression caught live.
-    <div className="branding-panel-shell w-full max-w-4xl mx-auto flex flex-col gap-6">
+    <div className="branding-panel-shell @container w-full flex flex-col gap-6">
       {showHeading && (
         <div>
           <h2 className="bg-h4 font-bold text-(--text-primary)">Branding</h2>
@@ -229,8 +243,8 @@ export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = tru
           though Settings' actual column is still only 440px, causing the exact overflow this was
           built to fix (real bug found via live mobile testing — the fixed two-column layout with
           no breakpoint at all forced the whole page to scroll horizontally). */}
-      <div className="branding-panel-columns flex flex-col gap-6">
-        <div className="branding-panel-main flex-1 flex flex-col gap-4 min-w-0">
+      <div className="flex flex-col gap-6 @3xl:flex-row @3xl:items-start">
+        <div className="flex min-w-0 flex-col gap-4 @3xl:w-1/3 @3xl:max-w-120 @3xl:shrink-0">
           <PanelCard label="Primary colour" description="Used for buttons, links, and highlights across your workspace.">
             <div className="flex items-center gap-2">
               {PRESET_COLORS.map((color) => (
@@ -319,19 +333,19 @@ export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = tru
                 <option value="comfortable">Comfortable</option>
                 <option value="spacious">Spacious</option>
               </Select>
-              <Select
-                id={`${uid}-cover-position`}
-                label="Cover position"
-                value={branding.coverPosition ?? 'center'}
-                onChange={(e) => onUpdate({ coverPosition: e.target.value as CoverPosition })}
-                disabled={!branding.coverImageUrl}
-              >
-                <option value="center">Center</option>
-                <option value="top">Top</option>
-                <option value="bottom">Bottom</option>
-              </Select>
+              {branding.coverImageUrl && coverFit === 'banner' && (
+                <Select
+                  id={`${uid}-cover-position`}
+                  label="Cover position"
+                  value={branding.coverPosition ?? 'center'}
+                  onChange={(e) => onUpdate({ coverPosition: e.target.value as CoverPosition })}
+                >
+                  <option value="center">Center</option>
+                  <option value="top">Top</option>
+                  <option value="bottom">Bottom</option>
+                </Select>
+              )}
             </div>
-            {!branding.coverImageUrl && <p className="bg-caption text-(--text-muted)">Upload a cover image to choose where it is cropped.</p>}
             <div className="flex items-center justify-between gap-3">
               <label htmlFor={`${uid}-progress`} className="bg-body-sm font-medium text-(--text-secondary)">
                 Show progress indicator
@@ -339,11 +353,107 @@ export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = tru
               </label>
               <Switch id={`${uid}-progress`} checked={branding.showProgress !== false} onChange={(v) => onUpdate({ showProgress: v })} />
             </div>
-            <div>
-              <p className="bg-body-sm font-medium text-(--text-secondary)">Font</p>
-              <p className="bg-body text-(--text-primary)">DM Sans</p>
-              <p className="bg-caption text-(--text-muted)">The product font is fixed so every form stays consistent and readable.</p>
+          </PanelCard>
+
+          <PanelCard label="Typography" description="The typeface and how large the headline reads. Inputs always stay at least 16px.">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Select id={`${uid}-font`} label="Font" value={branding.fontFamily ?? 'dm_sans'} onChange={(e) => onUpdate({ fontFamily: e.target.value as FormFont })}>
+                {FORM_FONT_OPTIONS.map((f) => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </Select>
+              <Select id={`${uid}-scale`} label="Text size" value={branding.typeScale ?? 'default'} onChange={(e) => onUpdate({ typeScale: e.target.value as TypeScale })}>
+                <option value="compact">Compact headline</option>
+                <option value="default">Standard</option>
+                <option value="large">Large headline</option>
+              </Select>
             </div>
+          </PanelCard>
+
+          <PanelCard label="Style" description="The look of the form card, the colour panel and how fields are arranged.">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Select id={`${uid}-card-style`} label="Card style" value={branding.cardStyle ?? 'soft'} onChange={(e) => onUpdate({ cardStyle: e.target.value as CardStyle })}>
+                <option value="flat">Flat</option>
+                <option value="soft">Soft shadow</option>
+                <option value="bordered">Bordered</option>
+                <option value="elevated">Elevated</option>
+              </Select>
+              <Select id={`${uid}-panel`} label="Colour panel" value={branding.panelTreatment ?? 'solid'} onChange={(e) => onUpdate({ panelTreatment: e.target.value as PanelTreatment })}>
+                <option value="solid">Solid colour</option>
+                <option value="gradient">Gradient</option>
+                <option value="pattern">Dotted pattern</option>
+                <option value="image">Cover image (when set)</option>
+              </Select>
+              <Select id={`${uid}-width`} label="Form width" value={branding.formWidth ?? 'standard'} onChange={(e) => onUpdate({ formWidth: e.target.value as FormWidth })}>
+                <option value="narrow">Narrow</option>
+                <option value="standard">Standard</option>
+                <option value="wide">Wide</option>
+              </Select>
+              <Select id={`${uid}-grouping`} label="Field layout" value={branding.fieldGrouping ?? 'auto'} onChange={(e) => onUpdate({ fieldGrouping: e.target.value as FieldGrouping })}>
+                <option value="auto">Pair short fields side by side</option>
+                <option value="single">One field per row</option>
+              </Select>
+            </div>
+          </PanelCard>
+
+          <PanelCard label="Page background" description="The page behind the form card, not the card itself. Pick a style and the colour it is built from.">
+            <Select
+              id={`${uid}-page-bg`}
+              label="Background style"
+              value={branding.backgroundStyle ?? 'wash'}
+              onChange={(e) => onUpdate({ backgroundStyle: e.target.value as PageBackground })}
+            >
+              {PAGE_BACKGROUND_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </Select>
+            {branding.backgroundStyle === 'image' && (
+              <ImageUploadZone
+                label="Page background image"
+                imageUrl={branding.backgroundImageUrl}
+                aspect="banner"
+                onUpload={(file) => uploadImage(file, 'backgroundImageUrl')}
+                onRemove={() => onUpdate({ backgroundImageUrl: undefined, formWidth: undefined, coverFit: undefined })}
+              />
+            )}
+            {(branding.backgroundStyle ?? 'wash') !== 'plain' && branding.backgroundStyle !== 'image' && (
+              <div className="flex flex-col gap-2">
+                <span className="bg-body-sm font-medium text-(--text-secondary)">Background colour</span>
+                <div className="flex flex-wrap items-center gap-1">
+                  {PRESET_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => onUpdate({ backgroundColor: color })}
+                      className="flex h-11 w-11 items-center justify-center rounded-full"
+                      aria-label={`Use ${color} as the page colour`}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className={`h-7 w-7 rounded-full border-2 ${(branding.backgroundColor ?? primaryColor) === color ? 'border-(--border-strong)' : 'border-transparent'}`}
+                        style={{ backgroundColor: color }}
+                      />
+                    </button>
+                  ))}
+                  <label className="relative flex h-11 w-11 cursor-pointer items-center justify-center rounded-full" aria-label="Custom page colour">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-(--border-strong)">
+                      <Plus size={12} className="text-(--text-disabled)" />
+                    </span>
+                    <input
+                      type="color"
+                      value={branding.backgroundColor ?? primaryColor}
+                      onChange={(e) => onUpdate({ backgroundColor: e.target.value })}
+                      className="absolute inset-0 cursor-pointer opacity-0"
+                    />
+                  </label>
+                  {branding.backgroundColor && (
+                    <button type="button" onClick={() => onUpdate({ backgroundColor: undefined })} className="ml-1 min-h-11 bg-body-sm text-(--text-muted) underline underline-offset-2 hover:text-(--text-secondary)">
+                      Match brand colour
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </PanelCard>
 
           <PanelCard label="Logo" description="Square image, at least 256×256px. PNG or SVG with transparent background works best.">
@@ -356,24 +466,29 @@ export function BrandingPanel({ branding, formTitle, onUpdate, showHeading = tru
             />
           </PanelCard>
 
-          <PanelCard label="Cover image" description="Shown at the top of shared pages. Recommended 1600×500px.">
+          <PanelCard label="Cover image" description="Shown at the top of the form. Use any size: keep the whole picture, or crop it to a banner.">
+            <Select id={`${uid}-cover-fit`} label="Cover size" value={coverFit} onChange={(e) => onUpdate({ coverFit: e.target.value as CoverFit })}>
+              <option value="original">Original size (whole picture, any shape)</option>
+              <option value="banner">Wide banner (cropped to a 1600×500 strip)</option>
+            </Select>
             <ImageUploadZone
               label="Cover image"
               imageUrl={branding.coverImageUrl}
               aspect="banner"
+              freeform={coverFit === 'original'}
               onUpload={(file) => uploadImage(file, 'coverImageUrl')}
               onRemove={() => onUpdate({ coverImageUrl: undefined })}
             />
           </PanelCard>
         </div>
 
-        <div className="branding-panel-preview w-full flex flex-col gap-2">
+        <div className="flex w-full min-w-0 flex-col gap-3 @3xl:sticky @3xl:top-4 @3xl:flex-1">
           <span className="bg-overline text-(--text-muted)">Preview</span>
-          <BrandingLivePreview branding={branding} formTitle={formTitle} />
+          {formId ? <LiveFormPreview formId={formId} branding={branding} layout={layout} /> : <p className="bg-body-sm text-(--text-muted)">Save the form to see a live preview.</p>}
           <button
             type="button"
             onClick={() =>
-              onUpdate({ buttonStyle: undefined, buttonRadius: undefined, coverPosition: undefined, showProgress: undefined, spacing: undefined })
+              onUpdate({ buttonStyle: undefined, buttonRadius: undefined, coverPosition: undefined, showProgress: undefined, spacing: undefined, fontFamily: undefined, typeScale: undefined, cardStyle: undefined, panelTreatment: undefined, fieldGrouping: undefined, backgroundStyle: undefined, backgroundColor: undefined, backgroundImageUrl: undefined })
             }
             className="self-start min-h-11 bg-body-sm text-(--text-muted) underline underline-offset-2 hover:text-(--text-secondary)"
           >

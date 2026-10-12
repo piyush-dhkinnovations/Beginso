@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { FileText, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import { Tooltip } from '@/components/ui/Tooltip';
 import { useToast } from '@/components/ui/Toast';
 import { LogoChoice } from '@/components/flow/LogoChoice';
 
@@ -54,22 +53,21 @@ export function FormLogoButton({ logoUrl, onSave, canEdit = true }: FormLogoButt
 
   return (
     <>
-      <Tooltip content="Change logo">
-        <button
-          type="button"
-          onClick={() => {
-            setDraft(logoUrl ?? null);
-            setOpen(true);
-          }}
-          aria-label="Change form logo"
-          className="group relative flex-none rounded-2xl outline-none focus-visible:shadow-(--shadow-focus)"
-        >
-          {tile}
-          <span className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full border border-(--border-default) bg-(--surface-card) text-(--text-secondary) shadow-(--shadow-sm) transition-transform group-hover:scale-110">
-            <Pencil size={12} aria-hidden="true" />
-          </span>
-        </button>
-      </Tooltip>
+      <button
+        type="button"
+        onClick={() => {
+          setDraft(logoUrl ?? null);
+          setOpen(true);
+        }}
+        aria-label="Change form logo"
+        title="Change logo"
+        className="group relative flex-none rounded-2xl outline-none focus-visible:shadow-(--shadow-focus)"
+      >
+        {tile}
+        <span className="absolute -bottom-1 -right-1 flex size-5 items-center justify-center rounded-full border border-(--border-default) bg-(--surface-card) text-(--text-secondary) shadow-(--shadow-sm) transition-colors group-hover:border-(--action-primary) group-hover:text-(--action-primary)">
+          <Pencil size={10} aria-hidden="true" />
+        </span>
+      </button>
 
       <Modal isOpen={open} onClose={() => setOpen(false)} title="Change form logo" description="Pick the logo shown on this form.">
         <div className="flex flex-col gap-5">

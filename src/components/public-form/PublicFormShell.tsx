@@ -13,7 +13,7 @@ import { saveDraft, loadDraft, clearDraft } from '@/lib/formDraft';
 import { Button } from '@/components/ui/Button';
 import { normaliseLayout } from '@/lib/layoutPresets';
 import { brandButtonStyle, brandShowsProgress } from '@/lib/formTheme';
-import { LAYOUT_COMPONENTS, fieldsClassFor } from './layouts';
+import { LAYOUT_COMPONENTS, fieldsClassFor, isGrouped } from './layouts';
 import { parseEmbedOptions, carryEmbedSearch } from '@/lib/embed/embedParams';
 import { resolvePrefill } from '@/lib/embed/prefill';
 import { FormProgress } from './FormProgress';
@@ -410,7 +410,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   // review screen's inline editor, so there is one renderer and one validation path.
   function renderField(field: FormField) {
       const fieldError = methods.formState.errors[field.fieldId] as FieldError | undefined;
-      const spanClass = layout === 'compact' && FULL_WIDTH_TYPES.has(field.type) ? 'md:col-span-2' : '';
+      const spanClass = isGrouped(layout, schema.branding.fieldGrouping) && FULL_WIDTH_TYPES.has(field.type) ? 'md:col-span-2' : '';
 
       if (field.type === 'file_upload') {
         return (
@@ -479,14 +479,18 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
       );
   }
 
-  const fieldsContainerClass = fieldsClassFor(layout, schema.branding.spacing);
+  const fieldsContainerClass = fieldsClassFor(layout, schema.branding.spacing, schema.branding.fieldGrouping);
   const buttonTheme = brandButtonStyle(schema.branding);
   const LayoutFrame = LAYOUT_COMPONENTS[layout];
+  // The banner already shows the form's name as a large headline, so the in-body <h1> goes screen-reader-only when it
+  // would only repeat it (single page, or a page titled like the form).
+  const headlineInBanner = layout !== 'split_feature' && embedOpts.cover && (!currentPage?.title || currentPage.title === schema.title);
   const FieldsWrap = layout === 'card_stack' ? 'fieldset' : 'div';
 
   const frameProps = {
     layout,
-    branding: schema.branding,
+    // ?bg=0 (embed): no page background, so the host page shows around the card.
+    branding: embedOpts.background ? schema.branding : { ...schema.branding, backgroundStyle: 'none' as const },
     title: embedOpts.hideTitle ? '' : schema.title,
     previewMode,
     hideCover: !embedOpts.cover,
@@ -565,14 +569,14 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
 
   return (
     <LayoutFrame {...frameProps}>
-        <form onSubmit={handleFormSubmit} noValidate className={schema.branding.logoUrl ? 'p-6 pt-8' : 'p-6'}>
+        <form onSubmit={handleFormSubmit} noValidate className="p-6 md:p-8">
           {!showReview && (
             <>
             {layout !== 'steps' && !isGuided && brandShowsProgress(schema.branding) && embedOpts.progress && (
               <FormProgress currentPage={currentPageIndex + 1} totalPages={totalPages} />
             )}
 
-            <h1 className={embedOpts.hideTitle ? 'sr-only' : 'bg-h3 text-(--text-primary)'}>{currentPage?.title ?? schema.title}</h1>
+            <h1 className={embedOpts.hideTitle || headlineInBanner ? 'sr-only' : layout === 'card_stack' ? 'bg-h4 text-(--text-primary) border-b border-(--border-default) pb-3' : 'bg-h3 text-(--text-primary)'}>{currentPage?.title ?? schema.title}</h1>
             {currentPage?.description && <p className="bg-body text-(--text-muted) mt-1">{currentPage.description}</p>}
 
             </>

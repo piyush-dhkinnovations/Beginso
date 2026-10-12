@@ -1,6 +1,8 @@
 import { createElement } from 'react';
 import { BarChart3, FileText, MessageSquare } from 'lucide-react';
 import type { Role } from '@/types/workspace';
+import type { ResponseLocation } from '@/types/dashboard';
+import { responseMapMetric } from './personalHome';
 import type { MetricMap, Widget } from './types';
 
 interface FormRow { _id: string; title: string; status: string; responseCount?: number }
@@ -10,7 +12,7 @@ const icon = (I: typeof FileText) => createElement(I, { 'aria-hidden': true });
 
 // Everything here is derived from the forms list the Workspace Home already fetches — no new calls.
 // A missing key renders as "unavailable", never as an invented number.
-export function workspaceMetrics(forms: FormRow[], total: number): MetricMap {
+export function workspaceMetrics(forms: FormRow[], total: number, locations?: ResponseLocation[]): MetricMap {
   const m: MetricMap = {};
   const responses = forms.reduce((s, f) => s + (f.responseCount ?? 0), 0);
   const published = forms.filter((f) => f.status === 'published').length;
@@ -32,6 +34,7 @@ export function workspaceMetrics(forms: FormRow[], total: number): MetricMap {
   }
   const top = forms.filter((f) => (f.responseCount ?? 0) > 0).sort((a, b) => (b.responseCount ?? 0) - (a.responseCount ?? 0)).slice(0, 5);
   if (top.length > 0) m.responsesByForm = { label: 'Responses by form', segments: top.map((f) => ({ label: f.title, value: f.responseCount ?? 0 })) };
+  if (locations) m.responseMap = responseMapMetric(locations, responses);
   return m;
 }
 

@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 
 import { createPortal } from 'react-dom';
-import { ArrowRight, Info, X, Zap } from 'lucide-react';
+import { ArrowRight, X } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
@@ -62,26 +62,12 @@ export function LayoutGallery({ formId, currentLayout, fieldCount, isPublic, onU
       </div>
 
       {nudge && (
-        <div className="grid gap-4 rounded-xl border border-(--info-border) bg-(--info-surface) p-4 md:grid-cols-[1fr_auto] md:items-center">
-          <div className="flex items-center gap-3">
-            <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-(--surface-card) text-(--action-primary)">
-              <Info size={20} aria-hidden="true" />
-            </span>
-            <div>
-              <p className="bg-body font-semibold text-(--text-primary)">
-                Your form currently has {fieldCount} {fieldCount === 1 ? 'field' : 'fields'}
-              </p>
-              <p className="bg-body-sm text-(--text-secondary)">{nudge}</p>
-            </div>
-          </div>
-          <div className="hidden items-center gap-3 border-l border-(--info-border) pl-4 md:flex">
-            <Zap size={18} className="shrink-0 text-(--action-primary)" aria-hidden="true" />
-            <div>
-              <p className="bg-body-sm font-semibold text-(--text-primary)">Not sure?</p>
-              <p className="bg-caption text-(--text-muted)">You can always change the layout later without losing any data.</p>
-            </div>
-          </div>
-        </div>
+        <p className="border-l-2 border-(--border-strong) py-0.5 pl-3 bg-body-sm text-(--text-secondary)">
+          <strong className="font-semibold text-(--text-primary)">
+            Your form has {fieldCount} {fieldCount === 1 ? 'field' : 'fields'}.
+          </strong>{' '}
+          {nudge}
+        </p>
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -167,12 +153,12 @@ function FullScreenPreview({
         </div>
       </header>
 
-      <div className="flex-1 min-h-0 flex justify-center px-2 pt-2 pb-1 md:px-4 md:pt-3">
-        <PreviewFrame formId={formId ?? ''} device={device} layout={preset.id} title={`${preset.name} layout preview`} />
+      <div className="flex-1 min-h-0 flex justify-center px-2 pt-2 pb-1">
+        <PreviewFrame fill formId={formId ?? ''} device={device} layout={preset.id} title={`${preset.name} layout preview`} />
       </div>
 
-      <footer className="shrink-0 border-t bg-(--surface-card) px-4 py-2.5 flex flex-col gap-2">
-        <dl className="hidden lg:grid grid-cols-3 gap-6">
+      <footer className="shrink-0 border-t bg-(--surface-card) px-4 py-2 flex flex-col gap-1.5">
+        <dl className="hidden xl:grid grid-cols-3 gap-6">
           {[
             ['Mobile behaviour', preset.mobile],
             ['Accessibility', preset.a11y],

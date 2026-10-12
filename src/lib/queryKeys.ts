@@ -80,7 +80,8 @@ export const responseActivityKeys = {
 
 export const dashboardKeys = {
   all: ['dashboard'] as const,
-  analytics: () => [...dashboardKeys.all, 'analytics'] as const,
+  // Personal Home has no scope in its key (unchanged); a workspace Home adds its slug.
+  analytics: (scope?: string) => (scope && scope !== 'personal' ? ([...dashboardKeys.all, 'analytics', scope] as const) : ([...dashboardKeys.all, 'analytics'] as const)),
   layout: (scope: string) => [...dashboardKeys.all, 'layout', scope] as const,
   responseTrend: () => [...dashboardKeys.all, 'response-trend-30d'] as const,
 };

@@ -14,12 +14,12 @@ export function CheckboxRenderer({ field, control, error, disabled }: FieldRende
         render={({ field: controllerField }) => {
           const selected = Array.isArray(controllerField.value) ? controllerField.value : [];
           return (
-            <div role="group" aria-labelledby={`${field.fieldId}-label`} className="flex flex-col gap-2">
+            <div role="group" aria-labelledby={`${field.fieldId}-label`} className="flex flex-wrap gap-x-6 gap-y-0.5">
               {options.map((opt) => (
                 <label
                   key={opt}
                   className={cn(
-                    'flex items-center gap-2 min-h-11 bg-body-sm text-(--text-primary)',
+                    'flex cursor-pointer items-center gap-2.5 min-h-9 bg-body-sm text-(--text-primary)',
                     disabled && 'opacity-60 cursor-not-allowed pointer-events-none'
                   )}
                 >
@@ -34,7 +34,7 @@ export function CheckboxRenderer({ field, control, error, disabled }: FieldRende
                     }
                     onBlur={controllerField.onBlur}
                     disabled={disabled}
-                    className="w-4 h-4 accent-(--action-primary)"
+                    className="size-4.5 shrink-0 accent-(--action-primary)"
                   />
                   {opt}
                 </label>

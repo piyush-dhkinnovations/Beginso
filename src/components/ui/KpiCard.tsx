@@ -63,14 +63,14 @@ const TEXT: Record<KpiTone, string> = {
 };
 const tint = (t: KpiTone, pct = 12) => `color-mix(in srgb, ${TONE[t]} ${pct}%, transparent)`;
 
-const valueCls = 'text-[28px] font-bold leading-9 tracking-tight text-(--text-primary) tabular-nums';
-const labelCls = 'text-[13px] leading-5 text-(--text-secondary)';
+const valueCls = 'text-3xl font-semibold leading-9 tracking-tight text-(--text-primary) tabular-nums';
+const labelCls = 'text-sm font-medium leading-5 text-(--text-secondary)';
 const mutedCls = 'text-xs leading-4 text-(--text-muted)';
 
 function Shell({ children, className, style }: { children: ReactNode; className?: string; style?: CSSProperties }) {
   return (
     <div
-      className={bx('relative h-full min-h-34 min-w-0 overflow-hidden rounded-2xl border border-(--border-default) bg-(--surface-card) p-5 shadow-sm', className)}
+      className={bx('relative h-full min-h-34 min-w-0 overflow-hidden rounded-xl border border-(--border-default) bg-(--surface-card) p-5', className)}
       style={style}
     >
       {children}
@@ -79,11 +79,12 @@ function Shell({ children, className, style }: { children: ReactNode; className?
 }
 
 function Tile({ tone, size = 'md', round, children }: { tone: KpiTone; size?: 'sm' | 'md' | 'lg'; round?: boolean; children: ReactNode }) {
-  const dim = { sm: 'size-9 [&_svg]:size-4.5', md: 'size-12 [&_svg]:size-6', lg: 'size-14 [&_svg]:size-7' }[size];
+  // A quiet outlined icon square (not a pastel-filled one): the colour lives in the glyph only.
+  const dim = { sm: 'size-8 [&_svg]:size-4', md: 'size-10 [&_svg]:size-5', lg: 'size-12 [&_svg]:size-6' }[size];
   return (
     <span
-      className={bx('inline-flex flex-none items-center justify-center', dim, round ? 'rounded-full' : size === 'sm' ? 'rounded-lg' : 'rounded-xl')}
-      style={{ backgroundColor: tint(tone, 13), color: TONE[tone] }}
+      className={bx('inline-flex flex-none items-center justify-center border border-(--border-default) bg-(--surface-card)', dim, round ? 'rounded-full' : 'rounded-lg')}
+      style={{ color: TONE[tone] }}
     >
       {children}
     </span>
@@ -94,7 +95,7 @@ function Pill({ value, down }: { value: string; down?: boolean }) {
   const t: KpiTone = down ? 'error' : 'success';
   const Icon = down ? ArrowDown : ArrowUp;
   return (
-    <span className="inline-flex w-fit flex-none items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold leading-4" style={{ backgroundColor: tint(t, 13), color: TEXT[t] }}>
+    <span className="inline-flex w-fit flex-none items-center gap-0.5 text-xs font-semibold leading-4" style={{ color: TEXT[t] }}>
       <Icon className="size-3" strokeWidth={2.5} />
       {value}
     </span>

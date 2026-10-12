@@ -13,9 +13,11 @@ export interface PreviewFrameProps {
   /** Overrides the form's saved layout — used by the layout gallery to preview a preset before Use. */
   layout?: string;
   title: string;
+  /** Desktop takes the whole stage instead of a fixed 1280px, so a wide screen is not mostly empty margin. */
+  fill?: boolean;
 }
 
-export function PreviewFrame({ formId, device, layout, title }: PreviewFrameProps) {
+export function PreviewFrame({ formId, device, layout, title, fill }: PreviewFrameProps) {
   const params = new URLSearchParams({ embed: '1' });
   if (layout) params.set('layout', layout);
 
@@ -24,7 +26,7 @@ export function PreviewFrame({ formId, device, layout, title }: PreviewFrameProp
       title={title}
       src={`/forms/${formId}/preview?${params.toString()}`}
       className="h-full border border-(--border-default) rounded-lg bg-(--surface-card) shadow-(--shadow-md)"
-      style={{ width: DEVICE_WIDTH[device], maxWidth: '100%' }}
+      style={{ width: fill && device === 'desktop' ? '100%' : DEVICE_WIDTH[device], maxWidth: '100%' }}
     />
   );
 }

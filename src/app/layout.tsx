@@ -1,6 +1,6 @@
 import { ThemeInitScript } from '@/components/providers/ThemeInitScript';
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono, DM_Sans } from "next/font/google";
+import { Inter, JetBrains_Mono, DM_Sans, Work_Sans, Lora, Nunito } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/authContext";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -24,6 +24,11 @@ const dmSans = DM_Sans({
   variable: "--font-dm-sans",
   subsets: ["latin"],
 });
+
+// Respondent-form font choices (Branding → Font). preload:false = the files are only fetched by a form that uses them.
+const workSans = Work_Sans({ variable: "--font-work-sans", subsets: ["latin"], preload: false });
+const lora = Lora({ variable: "--font-lora", subsets: ["latin"], preload: false });
+const nunito = Nunito({ variable: "--font-nunito", subsets: ["latin"], preload: false });
 
 export const metadata: Metadata = {
   title: { default: "Beginso", template: "%s · Beginso" },
@@ -62,7 +67,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jetBrainsMono.variable} ${dmSans.variable} h-full antialiased`}
+      className={`${inter.variable} ${jetBrainsMono.variable} ${dmSans.variable} ${workSans.variable} ${lora.variable} ${nunito.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
       // THEME_INIT_SCRIPT below legitimately sets data-theme on this element before React
       // hydrates, to avoid a flash of the wrong theme. React doesn't track data-theme here

@@ -15,6 +15,8 @@ export interface EmbedOptions {
   preview: boolean;
   /** ?cover=0|1 (default 1) */
   cover: boolean;
+  /** ?bg=0|1 (default 1): 0 drops the page background behind the form card, so the host page shows through. */
+  background: boolean;
   /** ?progress=0|1 (default 1) */
   progress: boolean;
   /** ?title=1 hides the form title (default 0). */
@@ -37,6 +39,7 @@ export function parseEmbedOptions(search: string): EmbedOptions {
     embed: p.get('embed') === '1',
     preview: p.get('preview') === '1',
     cover: p.get('cover') !== '0',
+    background: p.get('bg') !== '0',
     progress: p.get('progress') !== '0',
     hideTitle: p.get('title') === '1',
     theme: theme === 'dark' || theme === 'auto' ? theme : 'light',
@@ -48,7 +51,7 @@ export function parseEmbedOptions(search: string): EmbedOptions {
 export function carryEmbedSearch(search: string): string {
   const p = new URLSearchParams(search);
   const out = new URLSearchParams();
-  for (const k of ['embed', 'theme']) if (p.has(k)) out.set(k, p.get(k)!);
+  for (const k of ['embed', 'theme', 'bg']) if (p.has(k)) out.set(k, p.get(k)!);
   return out.toString();
 }
 

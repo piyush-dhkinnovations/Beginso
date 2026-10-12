@@ -1,12 +1,12 @@
 import { FormBanner } from '../FormBanner';
-import { Backdrop, type LayoutFrameProps } from './shared';
+import { Backdrop, cardClass, widthClass, type LayoutFrameProps } from './shared';
 
-// Classic: one 520px card — the V1 single-column markup, so existing forms render as before.
-export function ClassicLayout({ branding, previewMode, children, hideCover }: LayoutFrameProps) {
+// Classic: one centred card under a hero banner carrying the logo and the form headline.
+export function ClassicLayout({ branding, title, previewMode, children, hideCover }: LayoutFrameProps) {
   return (
-    <Backdrop previewMode={previewMode}>
-      <div className="bg-(--surface-card) rounded-xl border border-(--border-default) shadow-(--shadow-sm) w-full overflow-hidden max-w-130">
-        {!hideCover && <FormBanner branding={branding} />}
+    <Backdrop branding={branding} previewMode={previewMode}>
+      <div className={cardClass(branding, widthClass('classic', branding))}>
+        {!hideCover && <FormBanner branding={branding} title={title} />}
         {children}
       </div>
     </Backdrop>

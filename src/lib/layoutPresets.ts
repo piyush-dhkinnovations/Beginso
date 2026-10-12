@@ -1,4 +1,4 @@
-import type { LayoutPreset } from '@/types/form';
+import type { CardStyle, FormBranding, FormFont, LayoutPreset, PageBackground, PanelTreatment } from '@/types/form';
 
 // Sprint 13 (CF2.7), requirements.md 2.1–2.3. The six presets and the ONE mapper from a stored
 // layout value to a preset — builder, preview and public form all import normaliseLayout(); nothing
@@ -19,6 +19,39 @@ export interface LayoutPresetInfo {
   a11y: string;
   watch: string;
   internalOnly?: boolean;
+}
+
+/** The starting look each preset ships with — a distinct colour, typeface, card style and panel, so the six read as six designs. */
+export interface LayoutLook {
+  color: string;
+  font: FormFont;
+  cardStyle: CardStyle;
+  panel: PanelTreatment;
+  /** The page behind the card. */
+  background: PageBackground;
+}
+
+export const LAYOUT_LOOKS: Record<LayoutPreset, LayoutLook> = {
+  classic: { color: '#1D4ED8', font: 'dm_sans', cardStyle: 'soft', panel: 'solid', background: 'wash' },
+  card_stack: { color: '#0F766E', font: 'inter', cardStyle: 'bordered', panel: 'solid', background: 'grid' },
+  guided: { color: '#7C3AED', font: 'nunito', cardStyle: 'elevated', panel: 'gradient', background: 'mesh' },
+  steps: { color: '#EA580C', font: 'work_sans', cardStyle: 'soft', panel: 'pattern', background: 'dots' },
+  split_feature: { color: '#BE185D', font: 'lora', cardStyle: 'elevated', panel: 'gradient', background: 'gradient' },
+  compact: { color: '#475569', font: 'inter', cardStyle: 'flat', panel: 'solid', background: 'plain' },
+};
+
+/** Branding changes for "Use this layout": font, card and panel always follow the preset; the colour only when the owner has not picked their own (`showcase`, used by the gallery preview, always swaps it so each layout reads as its own design). */
+export function lookBranding(layout: LayoutPreset, current: FormBranding, showcase = false): Partial<FormBranding> {
+  const look = LAYOUT_LOOKS[layout];
+  const ownColour = !!current.primaryColor && current.primaryColor.toUpperCase() !== '#1D4ED8' && !Object.values(LAYOUT_LOOKS).some((l) => l.color === current.primaryColor);
+  return {
+    fontFamily: look.font,
+    cardStyle: look.cardStyle,
+    panelTreatment: look.panel,
+    backgroundStyle: look.background,
+    backgroundColor: undefined, // built from the brand colour
+    ...(ownColour && !showcase ? {} : { primaryColor: look.color }),
+  };
 }
 
 export const LAYOUT_PRESETS: readonly LayoutPresetInfo[] = [

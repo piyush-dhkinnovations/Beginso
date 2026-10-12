@@ -987,19 +987,18 @@ body {
    10. CARDS
    ========================================================================== */
 
-/* Tinted surface: a soft gradient from the card colour toward the accent tint, hairline ring,
-   lifts on hover. Every card in the app (Card, StatCard, list/action cards) inherits it. */
+/* Flat surface: card colour, one hairline border, almost no shadow at rest; the border darkens on hover. A tint or gradient
+   on every card made the whole app read as a template, so colour is left to what a card actually says. Every card in the
+   app (Card, StatCard, list/action cards) inherits it. */
 .bg-card {
   display: flex;
   flex-direction: column;
   background-color: var(--surface-card);
-  background-image: linear-gradient(160deg, var(--surface-card) 0%, var(--accent-soft) 160%);
   border: 1px solid var(--border-default);
   border-radius: var(--bg-radius-lg);
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--standard) var(--ease), border-color var(--standard) var(--ease);
+  transition: border-color var(--standard) var(--ease), box-shadow var(--standard) var(--ease);
 }
-.bg-card:hover { box-shadow: var(--shadow-hover); }
+.bg-card:hover { border-color: var(--border-strong); }
 .bg-card-pad { padding: var(--space-4); gap: var(--space-3); }
 
 .bg-card-head {
@@ -1021,7 +1020,7 @@ body {
 }
 
 .bg-card-hover { transition: box-shadow var(--standard) var(--ease), border-color var(--standard) var(--ease), transform var(--standard) var(--ease); }
-.bg-card-hover:hover { box-shadow: var(--shadow-hover); border-color: var(--border-strong); transform: translateY(-2px); }
+.bg-card-hover:hover { box-shadow: var(--shadow-sm); border-color: var(--border-strong); }
 
 .bg-card-interactive { cursor: pointer; text-align: left; width: 100%; font: inherit; color: inherit; }
 .bg-card-selected { border-color: var(--primary-500); box-shadow: inset 0 0 0 1px var(--primary-500); }
