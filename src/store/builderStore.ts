@@ -91,6 +91,15 @@ const defaultLabelFor = (type: FieldType): string => {
     multiple_choice: 'Multiple Choice',
     checkbox: 'Checkbox',
     file_upload: 'File Upload',
+    rating: 'Rating',
+    yes_no: 'Yes / No',
+    url: 'Website',
+    time: 'Time',
+    datetime: 'Date & Time',
+    currency: 'Amount',
+    address: 'Address',
+    signature: 'Signature',
+    image_upload: 'Image Upload',
   };
   return labels[type] || 'New Field';
 };
@@ -195,6 +204,16 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       // Choice field default options config
       if (type === 'dropdown' || type === 'multiple_choice' || type === 'checkbox') {
         (defaultField as Extract<FormField, { options: string[] }>).options = ['Option 1'];
+      }
+
+      // Display & preview settings are stored explicitly on creation, so a later change to the
+      // defaults can never silently re-render responses to a form that was built before it.
+      if (type === 'image_upload') {
+        Object.assign(defaultField, { allowMultiple: false, previewPosition: 'top', aspectRatio: 'original', previewSize: 'large' });
+      } else if (type === 'url') {
+        Object.assign(defaultField, { urlPreviewStyle: 'rich', urlDisplay: 'card' });
+      } else if (type === 'currency') {
+        Object.assign(defaultField, { currency: 'INR' });
       }
 
       const newPageFields = [...currentPageFields];

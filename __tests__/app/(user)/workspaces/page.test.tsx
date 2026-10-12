@@ -9,8 +9,9 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import WorkspacesPage from '@/app/(user)/workspaces/page';
 
+const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn() }),
+  useRouter: () => ({ push: mockPush }),
 }));
 
 vi.mock('@/components/ui/Toast', () => ({
@@ -78,7 +79,7 @@ describe('WorkspacesPage', () => {
     expect(screen.getByRole('button', { name: /Try again/ })).toBeInTheDocument();
   });
 
-  it('opens the create-workspace modal from the header action', async () => {
+  it('opens the full-page create-workspace flow from the header action', async () => {
     mockList.mockResolvedValue([]);
     const user = userEvent.setup();
     renderPage();
@@ -87,6 +88,6 @@ describe('WorkspacesPage', () => {
     const headerButton = screen.getAllByRole('button', { name: /Create workspace/ })[0];
     await user.click(headerButton);
 
-    expect(screen.getByLabelText('Workspace name')).toBeInTheDocument();
+    expect(mockPush).toHaveBeenCalledWith('/workspaces/new');
   });
 });

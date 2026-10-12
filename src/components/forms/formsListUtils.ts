@@ -63,6 +63,11 @@ export function formsQueryEnabled(tab: FormsManagerTab): boolean {
 // Personal while it re-fetches the form to figure out its workspace from scratch (real bug this
 // fixes: crossing from /w/[slug]/forms into /forms/:id/edit unmounts WorkspaceShell entirely,
 // so the next shell starts knowing nothing).
+/** The full-page Create form flow, for the current space (a workspace's forms are created in that workspace). */
+export function createFormHref(context: FormsContext): string {
+  return context.type === 'workspace' ? `/forms/new?ws=${encodeURIComponent(context.workspaceId)}` : '/forms/new';
+}
+
 export function formHref(path: string, context: FormsContext): string {
   return context.type === 'workspace' ? `${path}?ws=${context.workspaceId}` : path;
 }

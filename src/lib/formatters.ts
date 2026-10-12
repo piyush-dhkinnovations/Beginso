@@ -88,6 +88,8 @@ export function buildAnswerPreview(answers: ResponseAnswers, maxLength = 60, exc
   const preview = Object.values(answers)
     .filter((value) => value !== null && value !== undefined && value !== '')
     .filter((value) => !(typeof value === 'string' && excluded.has(value)))
+    // A drawn signature is a PNG data URL — never useful (or sane) as a one-line preview.
+    .filter((value) => !(typeof value === 'string' && value.startsWith('data:image/')))
     .slice(0, 2)
     .map((value) => (Array.isArray(value) ? value.join(', ') : String(value)))
     .join(' · ');

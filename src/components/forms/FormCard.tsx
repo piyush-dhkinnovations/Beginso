@@ -28,16 +28,16 @@ export function FormCard({ form, href, menu, maxResponses }: FormCardProps) {
   const visual = formVisual(form.title);
   const share = maxResponses > 0 ? Math.max(4, (form.responseCount / maxResponses) * 100) : 4;
   return (
-    <Card padded={false} className="overflow-hidden">
-      <div className="flex items-center justify-between px-4 pt-4">
-        <FormTile title={form.title} />
-        <div className="flex items-center gap-1">{menu}</div>
-      </div>
-      <div className="flex flex-1 flex-col gap-1 px-4 pt-3">
-        <h3 className="min-w-0 bg-body font-semibold text-(--text-primary)">
-          <Link href={href} className="block truncate no-underline hover:underline">{form.title}</Link>
-        </h3>
-        <p className="bg-body-sm text-(--text-muted)">{form.description || 'No description'}</p>
+    <Card padded={false} className="overflow-hidden bg-none bg-(--surface-card)">
+      <div className="flex items-start gap-3 px-4 pt-4">
+        <FormTile title={form.title} logoUrl={form.branding?.logoUrl} />
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <h3 className="min-w-0 bg-body font-semibold text-(--text-primary)">
+            <Link href={href} className="block truncate no-underline hover:underline">{form.title}</Link>
+          </h3>
+          <p className="line-clamp-1 bg-body-sm text-(--text-muted)">{form.description || 'No description'}</p>
+        </div>
+        <div className="-mr-1 flex flex-none items-center gap-1">{menu}</div>
       </div>
       <div className="px-4 pt-3" aria-hidden="true">
         <div className="h-1.5 overflow-hidden rounded-full bg-(--bg-sunken)">

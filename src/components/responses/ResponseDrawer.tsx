@@ -6,7 +6,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
-  FileText,
   LockKeyhole,
   Maximize2,
   Minimize2,
@@ -18,7 +17,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/Toast';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { AnswerBlock } from './AnswerBlock';
+import { AnswerCard } from './answers/AnswerCard';
 import { StageBadge } from './StageBadge';
 import { NotesPanel } from './NotesPanel';
 import { WorkflowSidebar } from './WorkflowSidebar';
@@ -36,6 +35,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { formAccessKeys, noteKeys, responseKeys, workspaceKeys } from '@/lib/queryKeys';
 import { detectRespondentIdentity, shortId } from '@/lib/formatters';
 import { exportPayloadFromTarget } from '@/lib/reportExport';
+import { buildAnswerItems, isTopImage } from '@/lib/responseAnswers';
 import { hasCapability } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 import { workspacesService } from '@/services/workspaces';
@@ -50,6 +50,7 @@ interface ResponseDrawerProps {
   scope?: string;
   stages?: readonly StageRef[];
   formTitle?: string;
+  /** Fallback labels for uploaded files, used only if the drawer cannot load the form definition (which it normally does itself). */
   fileFieldLabels?: string[];
   displayMode?: 'drawer' | 'page';
   position?: number;
@@ -262,18 +263,13 @@ export function ResponseDrawer({
     (personalNotesQuery.data?.length ?? 0) > 0;
   const collaborationSettled = !isPersonal || grantsQuery.isSuccess || grantsQuery.isError;
 
-  const { data: responseForm } = useQuery({
+  // The form definition tells the drawer each answer's field type and its Display & Preview settings
+  // (image position/ratio/size, link style, currency…), so every answer renders as the form's owner chose.
+  const { data: responseForm, isLoading: formLoading } = useQuery({
     queryKey: ['form', response?.formId],
     queryFn: () => formsService.getFormById(response?.formId as string),
-    enabled: !!response?.formId && response.responseFiles.length > 0 && fileFieldLabels.length === 0,
+    enabled: !!response?.formId,
   });
-
-  const resolvedFileFieldLabels = fileFieldLabels.length > 0
-    ? fileFieldLabels
-    : (responseForm?.fields ?? [])
-        .filter((field) => field.type === 'file_upload' && !field.deleted)
-        .sort((a, b) => a.order - b.order)
-        .map((field) => field.label);
 
   // Opening a response marks it read for the caller via an explicit request (design.md §11.2:
   // "GET never mutates") — never as a side effect of the detail fetch above. Runs once per
@@ -324,6 +320,10 @@ export function ResponseDrawer({
   const identity = response ? detectRespondentIdentity(response.answers) : {};
   const hasIdentity = !!(identity.label || identity.email);
   const initial = (identity.label ?? identity.email ?? '?').charAt(0).toUpperCase();
+  // A failed/absent form lookup falls back to plain label → value rows rather than blocking the answers.
+  const answerItems = response ? buildAnswerItems(response.answers, response.responseFiles, responseForm?.fields, responseForm?.pages, fileFieldLabels) : [];
+  const topImages = answerItems.filter(isTopImage);
+  const otherAnswers = answerItems.filter((item) => !isTopImage(item));
 
   return (
     <div
@@ -348,7 +348,7 @@ export function ResponseDrawer({
         className={cn(
           'relative flex w-full flex-col overflow-hidden border border-(--border-default) bg-(--surface-card)',
           displayMode === 'drawer'
-            ? 'h-full border-y-0 border-r-0 shadow-(--shadow-lg) animate-slide-in-right sm:max-w-[min(1180px,calc(100vw-32px))]'
+            ? 'h-full border-y-0 border-r-0 shadow-(--shadow-lg) animate-slide-in-right lg:w-[80vw] lg:max-w-[1600px]'
             : 'min-h-full rounded-lg shadow-(--shadow-sm)'
         )}
       >
@@ -472,47 +472,36 @@ export function ResponseDrawer({
               onClose={onClose}
             />
           ) : (
-            <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_260px]">
-              {/* Main column: notes above the answers (wireframe screen 12 order). */}
-              <div className="flex min-w-0 flex-col gap-4">
-                {showCollaboration && (
-                  <NotesPanel
-                    responseId={response._id}
-                    scope={scope}
-                    workspaceName={workspaceName}
-                    currentUserId={user?.id ?? ''}
-                    canDeleteAny={canDeleteAnyNote}
-                  />
-                )}
-
-                <section className="min-w-0 rounded-lg border border-(--border-default) bg-(--surface-card) p-4">
-                  <div className="mb-3">
-                    <h3 className="bg-body font-semibold text-(--text-primary)">Submitted Answers</h3>
-                    <p className="mt-0.5 bg-caption text-(--text-muted)">All answers provided with this response</p>
-                  </div>
-                  <div className="flex flex-col rounded-lg border border-(--border-default) px-4">
-                    {Object.keys(response.answers).length === 0 && response.responseFiles.length === 0 ? (
-                      <p className="py-6 text-center bg-body-sm text-(--text-muted)">No submitted answers.</p>
-                    ) : (
-                      Object.entries(response.answers).map(([label, value]) => (
-                        <AnswerBlock key={label} label={label} value={value} />
-                      ))
-                    )}
-                    {response.responseFiles.map((file, index) => (
-                      <div key={file.id} className="flex items-center justify-between gap-4 border-b border-(--border-default) py-2.5 last:border-0">
-                        <span className="shrink-0 bg-body-sm text-(--text-muted)">
-                          {resolvedFileFieldLabels[index] ?? (response.responseFiles.length === 1 ? 'Uploaded file' : `Uploaded file ${index + 1}`)}
-                        </span>
-                        <span className="flex min-w-0 items-center gap-2 text-right bg-body-sm font-medium text-(--text-primary)">
-                          <FileText size={14} className="shrink-0 text-(--text-muted)" aria-hidden="true" />
-                          <span className="truncate" title={file.name}>{file.name}</span>
-                        </span>
-                      </div>
+            <div className="grid gap-4 p-4 sm:p-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)]">
+              {/* Left: every answer, rendered per its field type. Images set to "Top of response" come first. */}
+              <section className="@container min-w-0 self-start rounded-lg border border-(--border-default) bg-(--surface-card) px-4 py-4 sm:px-5">
+                <div className="mb-1">
+                  <h3 className="bg-body font-semibold text-(--text-primary)">Submitted response</h3>
+                  <p className="mt-0.5 bg-caption text-(--text-muted)">All answers provided by the respondent.</p>
+                </div>
+                {formLoading ? (
+                  <div className="flex flex-col gap-3 pt-3" aria-busy="true">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="h-10 animate-pulse rounded-md bg-(--bg-subtle)" />
                     ))}
                   </div>
-                </section>
-              </div>
+                ) : answerItems.length === 0 ? (
+                  <p className="py-6 text-center bg-body-sm text-(--text-muted)">No submitted answers.</p>
+                ) : (
+                  <div className="[&>*:last-child]:border-b-0">
+                    {topImages.map((item) => (
+                      <AnswerCard key={item.key} item={item} responseId={response._id} scope={scope} />
+                    ))}
+                    <div className="grid grid-cols-1 gap-x-8 @2xl:grid-cols-2">
+                      {otherAnswers.map((item) => (
+                        <AnswerCard key={item.key} item={item} responseId={response._id} scope={scope} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
 
+              {/* Right: overview and submission details, with the internal notes directly beneath them. */}
               <WorkflowSidebar
                 response={response}
                 scope={scope}
@@ -520,6 +509,17 @@ export function ResponseDrawer({
                 tags={tags}
                 members={members}
                 collaboration={showCollaboration}
+                notes={
+                  showCollaboration ? (
+                    <NotesPanel
+                      responseId={response._id}
+                      scope={scope}
+                      workspaceName={workspaceName}
+                      currentUserId={user?.id ?? ''}
+                      canDeleteAny={canDeleteAnyNote}
+                    />
+                  ) : undefined
+                }
                 onShare={isPersonal && collaborationSettled && !showCollaboration && grantFormId ? () => setShareOpen(true) : undefined}
                 canCreateTag={canCreateTag}
                 canScore={canCreateTag}

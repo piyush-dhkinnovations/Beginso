@@ -57,7 +57,7 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
   }
 
   const sourceOptions = allFields.filter(
-    (f) => !f.deleted && f.fieldId !== field.fieldId && f.type !== 'file_upload'
+    (f) => !f.deleted && f.fieldId !== field.fieldId && f.type !== 'file_upload' && f.type !== 'image_upload' && f.type !== 'signature'
   );
   const canAddRule = sourceOptions.length > 0;
   const sourceField = sourceOptions.find((f) => f.fieldId === sourceFieldId) ?? null;

@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { CalendarDays, Hash, Share2, Shield } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/Card';
@@ -29,6 +30,8 @@ export interface WorkflowSidebarProps {
   /** Assignee and Activity only make sense with more than one person involved — false hides them
    * (a personal form shared with nobody). Default true so every other caller is unchanged. */
   collaboration?: boolean;
+  /** The internal-notes panel, rendered directly under the submission details (the drawer's right column order). */
+  notes?: ReactNode;
   /** When set (solo personal form), shows a small "share this form" nudge that calls it. */
   onShare?: () => void;
   /** OQ-5 default: any `responses:act` role may create a tag inline from this picker — distinct
@@ -49,6 +52,8 @@ export interface WorkflowSidebarProps {
 }
 
 const SECTION_LABEL = 'bg-caption font-semibold text-(--text-muted) uppercase tracking-wide';
+const OVERVIEW_ROW = 'grid grid-cols-[5.5rem_minmax(0,1fr)] items-center gap-3';
+const OVERVIEW_LABEL = 'bg-body-sm text-(--text-muted)';
 const META_ROW = 'flex items-center justify-between gap-3 py-2 border-b border-(--border-default) last:border-0 last:pb-0';
 const META_LABEL = 'flex items-center gap-1.5 shrink-0 bg-caption text-(--text-muted)';
 
@@ -67,6 +72,7 @@ export function WorkflowSidebar({
   tags,
   members,
   collaboration = true,
+  notes,
   onShare,
   canCreateTag,
   canScore,
@@ -93,7 +99,7 @@ export function WorkflowSidebar({
   const { data: criteria = [] } = useScoreCriteria(scope);
 
   return (
-    <aside className="flex w-full shrink-0 flex-col gap-4 lg:max-w-65">
+    <aside className="flex w-full min-w-0 flex-col gap-4">
       {response.editedAfterReviewAt && (
         <EditedAfterReviewCallout
           responseId={response._id}
@@ -112,8 +118,9 @@ export function WorkflowSidebar({
       )}
 
       <Card className="flex flex-col gap-3">
-        <div>
-          <span id="workflow-stage-label" className={SECTION_LABEL}>Stage</span>
+        <h3 className="bg-body font-semibold text-(--text-primary)">Response overview</h3>
+        <div className={OVERVIEW_ROW}>
+          <span id="workflow-stage-label" className={OVERVIEW_LABEL}>Stage</span>
           <Select
             id="workflow-stage-select"
             aria-labelledby="workflow-stage-label"
@@ -124,7 +131,6 @@ export function WorkflowSidebar({
             value={response.stage?.id ?? (scope === 'personal' ? response.status ?? '' : '')}
             disabled={isUpdating || stages.length === 0}
             onChange={(e) => onStageChange(e.target.value)}
-            className="mt-1"
           >
             {!response.stage && scope !== 'personal' && <option value="">Unknown stage</option>}
             {stages.map((stage) => (
@@ -134,46 +140,40 @@ export function WorkflowSidebar({
         </div>
 
         {collaboration && (
-          <div>
-            <span className={SECTION_LABEL}>Assignee</span>
-            <div className="mt-1">
-              <AssigneePicker members={members} current={response.assignee} onChange={onAssigneeChange} disabled={isUpdating} />
-            </div>
+          <div className={OVERVIEW_ROW}>
+            <span className={OVERVIEW_LABEL}>Assignee</span>
+            <AssigneePicker members={members} current={response.assignee} onChange={onAssigneeChange} disabled={isUpdating} />
           </div>
         )}
 
-        <div>
-          <span className={SECTION_LABEL}>Tags</span>
-          <div className="mt-1">
-            <TagPicker
-              available={tags}
-              selectedIds={(response.tags ?? []).map((t) => t.id)}
-              canCreate={canCreateTag}
-              disabled={isUpdating}
-              onAdd={onTagAdd}
-              onRemove={onTagRemove}
-              onCreate={onTagCreate}
-            />
-          </div>
+        <div className={OVERVIEW_ROW}>
+          <span className={OVERVIEW_LABEL}>Tags</span>
+          <TagPicker
+            available={tags}
+            selectedIds={(response.tags ?? []).map((t) => t.id)}
+            canCreate={canCreateTag}
+            disabled={isUpdating}
+            onAdd={onTagAdd}
+            onRemove={onTagRemove}
+            onCreate={onTagCreate}
+          />
         </div>
 
         {scope !== 'personal' && (
-          <div>
-            <span className={SECTION_LABEL}>Score</span>
-            <div className="mt-1">
-              <ScoreCard responseId={response._id} criteria={criteria} disabled={!canScore} />
-            </div>
+          <div className={OVERVIEW_ROW}>
+            <span className={OVERVIEW_LABEL}>Score</span>
+            <ScoreCard responseId={response._id} criteria={criteria} disabled={!canScore} />
           </div>
         )}
       </Card>
 
       <Card className="flex flex-col gap-3">
-        <span className={SECTION_LABEL}>Submission</span>
+        <h3 className="bg-body font-semibold text-(--text-primary)">Submission details</h3>
         <div className="flex flex-col">
           <div className={META_ROW}>
             <span className={META_LABEL}>
               <CalendarDays size={13} aria-hidden="true" />
-              Date
+              Submitted on
             </span>
             <span className="bg-body-sm text-(--text-secondary) text-right">{formatResponseDate(response.submittedAt)}</span>
           </div>
@@ -189,12 +189,14 @@ export function WorkflowSidebar({
           <div className={META_ROW}>
             <span className={META_LABEL}>
               <Hash size={13} aria-hidden="true" />
-              Reference
+              Reference ID
             </span>
             <code className="font-mono bg-caption text-(--text-muted)">{response.reference ?? shortId(response._id)}</code>
           </div>
         </div>
       </Card>
+
+      {notes}
 
       {collaboration ? (
         <Card className="flex flex-col gap-3">

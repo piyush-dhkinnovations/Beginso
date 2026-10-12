@@ -2,19 +2,19 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Building2, Search } from 'lucide-react';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
 import { ROLE_LABELS } from '@/lib/roles';
 import { PageHeader, Button, Card, Badge, EmptyState, Skeleton } from '@/components/ui';
-import { CreateWorkspaceModal } from '@/components/workspaces/CreateWorkspaceModal';
 
 // Wireframe Screen 32: All Workspaces (requirements.md §7.5, C1.8) — lists every workspace
 // the caller belongs to, with role, and is where "Create workspace" (PersonalSidebar's bottom action)
 // lands. Displays eyebrow, title, description, filter bar (search + sort), and card grid with "Open" affordance.
 export default function WorkspacesPage() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const router = useRouter();
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<'name' | 'last-used'>('last-used');
 
@@ -40,7 +40,7 @@ export default function WorkspacesPage() {
         eyebrow="Account"
         title="All workspaces"
         actions={
-          <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+          <Button variant="primary" onClick={() => router.push('/workspaces/new')}>
             <Plus size={16} className="mr-2" />
             Create workspace
           </Button>
@@ -72,7 +72,7 @@ export default function WorkspacesPage() {
           title="Create your first workspace"
           description="A workspace is shared with your team — forms, responses and members all live inside it."
           actions={
-            <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+            <Button variant="primary" onClick={() => router.push('/workspaces/new')}>
               <Plus size={16} className="mr-2" />
               Create workspace
             </Button>
@@ -150,7 +150,6 @@ export default function WorkspacesPage() {
         </div>
       )}
 
-      <CreateWorkspaceModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 }

@@ -63,7 +63,8 @@ export const publicFormService = {
   async submitForm(
     slug: string,
     data: SubmissionData,
-    files: Record<string, File>,
+    // One entry per file field; an image field can hold several files under the same part name.
+    files: Record<string, File | File[]>,
     honeypot: string = '',
     // Mode 3 (login): the single-use ticket from getSubmitTicket() — sent as a form field so the direct
     // multipart POST stays a simple request. The server takes the email from the ACCOUNT, never the body.
@@ -73,8 +74,8 @@ export const publicFormService = {
     formData.append('data', JSON.stringify(data));
     formData.append('_hp', honeypot);
     if (opts.ticket) formData.append('ticket', opts.ticket);
-    for (const [fieldId, file] of Object.entries(files)) {
-      formData.append(fieldId, file);
+    for (const [fieldId, value] of Object.entries(files)) {
+      for (const file of Array.isArray(value) ? value : [value]) formData.append(fieldId, file);
     }
 
     const res = await fetch(`${BASE}/api/public/${slug}/submit`, {

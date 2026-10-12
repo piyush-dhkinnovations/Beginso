@@ -93,6 +93,8 @@ export interface FieldRendererProps {
 export interface FileUploadRendererProps extends FieldRendererProps {
   /** Hands the raw File up to PublicFormShell's files map (submitForm's third argument) — RHF only ever holds a string placeholder, never the binary. Called with null on remove. */
   onFileChange?: (file: File | null) => void;
+  /** image_upload: hands up every chosen image (an empty array when all are removed). */
+  onFilesChange?: (files: File[]) => void;
   /** Lets PublicFormShell disable Submit while this field's (simulated) upload is in-flight. */
   onUploadStateChange?: (state: UploadState) => void;
 }

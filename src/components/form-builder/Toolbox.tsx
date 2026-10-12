@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 import { useDraggable } from '@dnd-kit/core';
 import {
   Type,
@@ -13,28 +14,58 @@ import {
   List,
   CheckSquare,
   Upload,
+  Star,
+  ToggleLeft,
+  Link2,
+  Clock,
+  CalendarClock,
+  IndianRupee,
+  MapPin,
+  PenLine,
+  Image as ImageIcon,
   Search,
+  ChevronRight,
   LucideIcon,
 } from 'lucide-react';
 import type { FieldType } from '@/types/form';
+
+export type FieldGroup = 'text' | 'choice' | 'datetime' | 'uploads';
+
+export const FIELD_GROUPS: { id: FieldGroup; label: string }[] = [
+  { id: 'text', label: 'Text & contact' },
+  { id: 'choice', label: 'Choice & rating' },
+  { id: 'datetime', label: 'Date & time' },
+  { id: 'uploads', label: 'Uploads & signature' },
+];
 
 export interface FieldTypeConfig {
   type: FieldType;
   icon: LucideIcon;
   label: string;
+  group: FieldGroup;
 }
 
+// Listed in group order, so the flat list used by the mobile sheet reads in the same order as the rail.
 export const FIELD_TYPE_CONFIG: FieldTypeConfig[] = [
-  { type: 'short_text', icon: Type, label: 'Short Text' },
-  { type: 'long_text', icon: AlignLeft, label: 'Long Text' },
-  { type: 'email', icon: Mail, label: 'Email' },
-  { type: 'phone', icon: Phone, label: 'Phone' },
-  { type: 'number', icon: Hash, label: 'Number' },
-  { type: 'date', icon: Calendar, label: 'Date' },
-  { type: 'dropdown', icon: ChevronDown, label: 'Dropdown' },
-  { type: 'multiple_choice', icon: List, label: 'Multiple Choice' },
-  { type: 'checkbox', icon: CheckSquare, label: 'Checkbox' },
-  { type: 'file_upload', icon: Upload, label: 'File Upload' },
+  { type: 'short_text', icon: Type, label: 'Short Text', group: 'text' },
+  { type: 'long_text', icon: AlignLeft, label: 'Long Text', group: 'text' },
+  { type: 'email', icon: Mail, label: 'Email', group: 'text' },
+  { type: 'phone', icon: Phone, label: 'Phone', group: 'text' },
+  { type: 'number', icon: Hash, label: 'Number', group: 'text' },
+  { type: 'currency', icon: IndianRupee, label: 'Currency', group: 'text' },
+  { type: 'url', icon: Link2, label: 'Website / URL', group: 'text' },
+  { type: 'address', icon: MapPin, label: 'Address', group: 'text' },
+  { type: 'dropdown', icon: ChevronDown, label: 'Dropdown', group: 'choice' },
+  { type: 'multiple_choice', icon: List, label: 'Multiple Choice', group: 'choice' },
+  { type: 'checkbox', icon: CheckSquare, label: 'Checkbox', group: 'choice' },
+  { type: 'yes_no', icon: ToggleLeft, label: 'Yes / No', group: 'choice' },
+  { type: 'rating', icon: Star, label: 'Rating', group: 'choice' },
+  { type: 'date', icon: Calendar, label: 'Date', group: 'datetime' },
+  { type: 'time', icon: Clock, label: 'Time', group: 'datetime' },
+  { type: 'datetime', icon: CalendarClock, label: 'Date & Time', group: 'datetime' },
+  { type: 'file_upload', icon: Upload, label: 'File Upload', group: 'uploads' },
+  { type: 'image_upload', icon: ImageIcon, label: 'Image Upload', group: 'uploads' },
+  { type: 'signature', icon: PenLine, label: 'Signature', group: 'uploads' },
 ];
 
 interface DraggableItemProps {
@@ -83,11 +114,14 @@ export function Toolbox({ onAdd }: ToolboxProps) {
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
   const fields = q ? FIELD_TYPE_CONFIG.filter((c) => c.label.toLowerCase().includes(q)) : FIELD_TYPE_CONFIG;
+  // One group open at a time keeps the rail shorter than the viewport, so it needs no scrollbar of its own
+  // (the page is the only thing that scrolls). A search opens every group that has a match.
+  const [openGroup, setOpenGroup] = useState<FieldGroup>('text');
   return (
     // Sprint 13 (CF2.12): the rail is full width from 1024px and icon-only on tablet (768-1023px). On phones the toolbox is the
     // AddFieldSheet bottom sheet, opened from the build bar under the canvas.
     // Flat rail (no card): sticks under the top bar while the canvas scrolls with the page.
-    <aside className="sticky top-16 hidden max-h-[calc(100dvh-5rem)] w-16 shrink-0 flex-col gap-4 self-start overflow-y-auto py-2 md:flex lg:w-64">
+    <aside className="sticky top-16 hidden w-16 shrink-0 flex-col gap-4 self-start py-2 md:flex lg:w-64">
       <div className="hidden lg:block">
         <h3 className="bg-body font-bold text-(--text-primary) tracking-tight">Add fields</h3>
         <p className="bg-body-sm mt-1 text-(--text-muted)">Click or drag a field onto the form.</p>
@@ -106,10 +140,33 @@ export function Toolbox({ onAdd }: ToolboxProps) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <h4 className="bg-overline hidden text-(--text-muted) lg:block">Basic fields</h4>
-        {fields.map((config) => (
-          <DraggableToolboxItem key={config.type} config={config} onAdd={onAdd} />
-        ))}
+        {FIELD_GROUPS.map((group) => {
+          const items = fields.filter((c) => c.group === group.id);
+          if (items.length === 0) return null;
+          const open = q !== '' || openGroup === group.id;
+          return (
+            <section key={group.id} aria-label={group.label} className="flex flex-col gap-2">
+              <button
+                type="button"
+                aria-expanded={open}
+                onClick={() => setOpenGroup(group.id)}
+                className="hidden min-h-9 items-center justify-between rounded-md px-1 bg-overline text-(--text-muted) hover:text-(--text-primary) lg:flex"
+              >
+                <span>{group.label}</span>
+                <span className="flex items-center gap-1.5">
+                  <span className="bg-caption font-normal normal-case tracking-normal">{items.length}</span>
+                  <ChevronRight size={14} aria-hidden="true" className={cn('transition-transform', open && 'rotate-90')} />
+                </span>
+              </button>
+              {/* The icon-only tablet rail has no headings to open, so it always lists every field. */}
+              <div className={cn('flex-col gap-2', open ? 'flex' : 'hidden max-lg:flex')}>
+                {items.map((config) => (
+                  <DraggableToolboxItem key={config.type} config={config} onAdd={onAdd} />
+                ))}
+              </div>
+            </section>
+          );
+        })}
         {fields.length === 0 && <p className="bg-body-sm text-(--text-muted)">No fields match “{query}”.</p>}
       </div>
     </aside>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ExternalLink, Link2, MoreVertical, Pin, PinOff, Pencil, Settings, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ButtonLink } from '@/components/ui/ButtonLink';
@@ -12,6 +12,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useToast } from '@/components/ui/Toast';
 import { FormHeader, formatFormDate } from '@/components/forms/FormHeader';
 import { FormAccessPanel } from '@/components/team/FormAccessPanel';
+import { FormLogoButton } from '@/components/forms/FormLogoButton';
 import { useFormScope } from '@/hooks/useFormScope';
 import { usePinForm } from '@/hooks/usePinForm';
 import { formsService } from '@/services/forms';
@@ -51,6 +52,17 @@ export function FormLevelHeader() {
     queryKey: workspaceKeys.list(),
     queryFn: workspacesService.list,
     enabled: show && !!ws,
+  });
+
+  const queryClient = useQueryClient();
+  // Saves the whole branding object with the logo swapped in (a form's branding is written as one object); no logo = key omitted.
+  const logoMutation = useMutation({
+    mutationFn: (logoUrl: string | null) =>
+      formsService.updateForm(formId, { branding: { ...(form?.branding ?? {}), logoUrl: logoUrl ?? undefined } }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['form', formId] });
+      void queryClient.invalidateQueries({ queryKey: ['forms'] });
+    },
   });
 
   if (!show) return null;
@@ -100,6 +112,7 @@ export function FormLevelHeader() {
       <FormHeader
         onBack={() => router.push(back.href)}
         backLabel={back.label}
+        icon={form ? <FormLogoButton logoUrl={form.branding?.logoUrl} canEdit={canEdit} onSave={(url) => logoMutation.mutateAsync(url)} /> : undefined}
         title={form ? form.title : <Skeleton variant="text" width={200} height={24} />}
         badge={form && <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge>}
         meta={form && (created || updated) ? <>{created && <>Created on {created}</>}{created && updated && ' · '}{updated && <>Last updated {updated}</>}</> : undefined}

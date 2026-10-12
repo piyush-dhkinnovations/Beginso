@@ -28,6 +28,9 @@ const REASONS: Record<string, string> = {
   finalised: 'This submission has been completed and can no longer be changed.',
 };
 
+// Binary or drawn answers can't be re-typed in a text box, so a respondent can't change them here.
+const READ_ONLY_TYPES = new Set(['file_upload', 'image_upload', 'signature']);
+
 const asText = (v: unknown): string => (Array.isArray(v) ? v.join(', ') : v === null || v === undefined || v === '' ? '' : String(v));
 
 export function SubmissionView({ fields, status, canEdit, readOnlyReason, onSave }: SubmissionViewProps) {
@@ -38,14 +41,14 @@ export function SubmissionView({ fields, status, canEdit, readOnlyReason, onSave
   const [notice, setNotice] = useState<string | null>(null);
 
   const start = () => {
-    setDraft(Object.fromEntries(fields.filter((f) => f.type !== 'file_upload').map((f) => [f.fieldId, f.value ?? ''])));
+    setDraft(Object.fromEntries(fields.filter((f) => !READ_ONLY_TYPES.has(f.type)).map((f) => [f.fieldId, f.value ?? ''])));
     setError(null);
     setNotice(null);
     setEditing(true);
   };
 
   const save = async () => {
-    const missing = fields.find((f) => f.required && f.type !== 'file_upload' && asText(draft[f.fieldId]).trim() === '');
+    const missing = fields.find((f) => f.required && !READ_ONLY_TYPES.has(f.type) && asText(draft[f.fieldId]).trim() === '');
     if (missing) {
       setError(`"${missing.label}" is required.`);
       return;
@@ -111,10 +114,10 @@ export function SubmissionView({ fields, status, canEdit, readOnlyReason, onSave
           }}
         >
           {fields.map((f) =>
-            f.type === 'file_upload' ? (
+            READ_ONLY_TYPES.has(f.type) ? (
               <div key={f.fieldId}>
                 <p className="bg-caption text-(--text-muted)">{f.label}</p>
-                <p className="bg-body">{asText(f.value) || '—'} (files cannot be changed here)</p>
+                <p className="bg-body">{asText(f.value) || '—'} (this answer cannot be changed here)</p>
               </div>
             ) : (
               <div key={f.fieldId}>{control(f)}</div>

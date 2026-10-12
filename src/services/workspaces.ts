@@ -4,6 +4,8 @@ import type { Workspace, WorkspaceListItem } from '@/types/workspace';
 
 export interface CreateWorkspacePayload {
   name: string;
+  /** Logo image URL (from POST /api/upload), shown in the sidebar. Omitted = the BeginSo default. */
+  logo?: string;
 }
 
 // Corrected against the real live contract (Beginso-Report/API_CONTRACT.md, confirmed live

@@ -125,10 +125,10 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
           items: [
             {
               label: 'Create workspace',
-              href: '/workspaces',
+              href: '/workspaces/new',
               icon: Plus,
               active: pathname.startsWith('/workspaces'),
-              onClick: guard('/workspaces'),
+              onClick: guard('/workspaces/new'),
             },
           ],
         },

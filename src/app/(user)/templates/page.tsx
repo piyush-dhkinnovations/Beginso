@@ -16,10 +16,8 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { TemplateCard } from '@/components/templates/TemplateCard';
 import { TemplatePreviewModal } from '@/components/templates/TemplatePreviewModal';
-import { CreateFormModal } from '@/components/form-builder/CreateFormModal';
 import { cn } from '@/lib/utils';
 import type { Template } from '@/types/form';
-import type { FormDestination } from '@/types/workspace';
 
 type SortKey = 'relevant' | 'name' | 'fields';
 
@@ -39,7 +37,6 @@ export default function TemplatesPage({ scope = 'personal' }: TemplatesPageProps
   const [sort, setSort] = useState<SortKey>('relevant');
   const [usingId, setUsingId] = useState<string | null>(null);
   const [previewing, setPreviewing] = useState<Template | null>(null);
-  const [isBlankOpen, setIsBlankOpen] = useState(false);
 
   const { data: templates, isLoading, error } = useQuery({
     queryKey: templateKeys.list(scope),
@@ -53,9 +50,6 @@ export default function TemplatesPage({ scope = 'personal' }: TemplatesPageProps
     enabled: isWorkspace,
   });
   const workspace = isWorkspace ? workspaces?.find((w) => w.slug === scope) : undefined;
-  const defaultDestination: FormDestination | undefined = workspace
-    ? { type: 'workspace', workspaceId: workspace.id }
-    : undefined;
 
   const useMutationHook = useMutation({
     mutationFn: (templateId: string) =>
@@ -109,7 +103,7 @@ export default function TemplatesPage({ scope = 'personal' }: TemplatesPageProps
               <h2 className="bg-body font-semibold text-(--text-primary)">Need a custom form?</h2>
               <p className="bg-body-sm text-(--text-muted)">Start with a blank form and build it your way.</p>
             </div>
-            <Button onClick={() => setIsBlankOpen(true)}>
+            <Button onClick={() => router.push(isWorkspace ? `/forms/new?ws=${encodeURIComponent(scope)}` : '/forms/new')}>
               <Plus size={16} className="mr-2" aria-hidden="true" />
               Create a blank form
             </Button>
@@ -249,7 +243,6 @@ export default function TemplatesPage({ scope = 'personal' }: TemplatesPageProps
         onUse={(id) => useMutationHook.mutate(id)}
         isLoading={previewing !== null && usingId === previewing._id}
       />
-      <CreateFormModal isOpen={isBlankOpen} onClose={() => setIsBlankOpen(false)} defaultDestination={defaultDestination} />
     </div>
   );
 }

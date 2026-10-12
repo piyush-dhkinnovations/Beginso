@@ -6,6 +6,7 @@ import { getVisiblePageFields } from '@/lib/logicEngine';
 import type { FormField, FormPage } from '@/types/form';
 import type { FieldValue } from '@/types/publicForm';
 import { InlineFieldEdit } from './InlineFieldEdit';
+import { addressLines, currencyOf, formatCurrency, formatDateTime, formatTime12, isDrawnSignature } from '@/lib/fieldDisplay';
 
 // Sprint 13 (D1.2 / D1.2a), wireframe 36 "Review Before Submit". Every answer from every page on one
 // flat screen: one card per page (card header = page title), each row the field label (small) over
@@ -42,7 +43,13 @@ export interface ReviewStepProps {
 }
 
 function displayValue(field: FormField, value: FieldValue, fileName?: string): string {
-  if (field.type === 'file_upload') return fileName ?? '—';
+  if (field.type === 'file_upload' || field.type === 'image_upload') return fileName ?? '—';
+  if (field.type === 'signature') return value ? (isDrawnSignature(value) ? 'Drawn signature' : String(value)) : '—';
+  if (field.type === 'rating') return value ? `${value} / 5` : '—';
+  if (field.type === 'time' && typeof value === 'string' && value) return formatTime12(value);
+  if (field.type === 'datetime' && typeof value === 'string' && value) return formatDateTime(value);
+  if (field.type === 'currency' && value !== undefined && value !== '') return formatCurrency(Number(value), currencyOf(field));
+  if (field.type === 'address' && typeof value === 'string') return addressLines(value).join(', ') || '—';
   if (Array.isArray(value)) return value.length ? value.join(', ') : '—';
   if (value === undefined || value === null || value === '') return '—';
   return String(value);

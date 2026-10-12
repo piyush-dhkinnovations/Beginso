@@ -188,47 +188,50 @@ export function ShareView({ formId, embedded = false, onOpenPublish }: ShareView
       )}
 
       <div className="flex flex-col gap-6">
-        <Card className="flex flex-col gap-3 lg:max-w-160">
-          <h2 className="bg-h5 font-semibold">Public link</h2>
-          <div className="flex items-end gap-2">
-            <div className="min-w-0 flex-1">
-            <Input
-              id="share-public-url"
-              value={publicUrl}
-              readOnly
-              disabled={!isLive}
-              placeholder="Publish the form to get a link"
-              className="font-mono"
-              aria-label="Public form link"
-              title={publicUrl}
-              onFocus={(e) => e.currentTarget.select()}
-            />
-            </div>
-            <Button type="button" onClick={() => void copy(publicUrl, 'Link copied to clipboard.')} disabled={!isLive} className="shrink-0 min-h-11">
-              <Copy size={16} aria-hidden="true" /> Copy
-            </Button>
-          </div>
-          <p className="bg-body-sm text-(--text-muted)">The link never changes, even when you re-publish or edit the form.</p>
-          {isLive && (
-            <>
-              {qrDataUrl ? (
-                // Deliberately bg-white in every theme: a QR code needs a light quiet zone to scan, so this is not a dark-mode gap.
-                // eslint-disable-next-line @next/next/no-img-element -- client-generated data: URI, not a static asset
-                <img src={qrDataUrl} alt="QR code linking to the public form" width={200} height={200} className="rounded-md border border-(--border-default) bg-white p-1" />
-              ) : (
-                <p className="bg-body-sm text-(--text-muted)">QR code could not be generated.</p>
-              )}
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" variant="secondary" onClick={downloadQr} disabled={!qrDataUrl} className="min-h-11">
-                  <Download size={16} aria-hidden="true" /> Download QR
-                </Button>
+        <Card className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <h2 className="bg-h5 font-semibold">Public link</h2>
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="min-w-48 flex-1">
+                <Input
+                  id="share-public-url"
+                  value={publicUrl}
+                  readOnly
+                  disabled={!isLive}
+                  placeholder="Publish the form to get a link"
+                  className="font-mono"
+                  aria-label="Public form link"
+                  title={publicUrl}
+                  onFocus={(e) => e.currentTarget.select()}
+                />
+              </div>
+              <Button type="button" onClick={() => void copy(publicUrl, 'Link copied to clipboard.')} disabled={!isLive} className="shrink-0 min-h-11">
+                <Copy size={16} aria-hidden="true" /> Copy
+              </Button>
+              {isLive && (
                 <a href={publicUrl} target="_blank" rel="noopener noreferrer">
                   <Button type="button" variant="secondary" className="min-h-11">
                     <ExternalLink size={16} aria-hidden="true" /> Open form
                   </Button>
                 </a>
-              </div>
-            </>
+              )}
+            </div>
+            <p className="bg-body-sm text-(--text-muted)">The link never changes, even when you re-publish or edit the form.</p>
+          </div>
+
+          {isLive && (
+            <div className="flex shrink-0 items-center gap-3 sm:flex-col sm:items-stretch sm:gap-2">
+              {qrDataUrl ? (
+                // Deliberately bg-white in every theme: a QR code needs a light quiet zone to scan, so this is not a dark-mode gap.
+                // eslint-disable-next-line @next/next/no-img-element -- client-generated data: URI, not a static asset
+                <img src={qrDataUrl} alt="QR code linking to the public form" width={112} height={112} className="size-28 self-center rounded-md border border-(--border-default) bg-white p-1" />
+              ) : (
+                <p className="bg-body-sm text-(--text-muted)">QR code could not be generated.</p>
+              )}
+              <Button type="button" variant="secondary" size="small" onClick={downloadQr} disabled={!qrDataUrl} className="min-h-11">
+                <Download size={16} aria-hidden="true" /> Download QR
+              </Button>
+            </div>
           )}
         </Card>
 

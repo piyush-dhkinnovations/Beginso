@@ -47,35 +47,36 @@ function NumberField({ id, label, value, range, suffix, onChange }: { id: string
   );
 }
 
+/** The five embed methods as one compact row of choices (two columns on a phone), instead of five tall cards. */
+export function EmbedMethodPicker({ config: c, onChange }: Pick<Props, 'config' | 'onChange'>) {
+  return (
+    <div role="radiogroup" aria-label="How to embed" className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
+      {EMBED_METHODS.map((m) => (
+        <label key={m.id} className="bg-choice-card p-3" htmlFor={`embed-method-${m.id}`} title={m.whenToUse}>
+          <Radio id={`embed-method-${m.id}`} name="embed-method" checked={c.method === m.id} onChange={() => onChange({ method: m.id as EmbedMethod })} />
+          <span className="min-w-0">
+            <strong>{m.name}</strong>
+            <small className="line-clamp-2">{m.summary}</small>
+          </span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
 export function EmbedConfigPanel({ config: c, onChange, fields }: Props) {
   const inline = c.method === 'fixed' || c.method === 'auto';
   const button = c.method === 'popup' || c.method === 'drawer';
   const shared = c.method !== 'link';
   const widthRange = c.widthUnit === '%' ? LIMITS.widthPct : LIMITS.widthPx;
-  const liveFields = fields.filter((f) => !f.deleted && f.type !== 'file_upload');
+  const liveFields = fields.filter((f) => !f.deleted && f.type !== 'file_upload' && f.type !== 'image_upload' && f.type !== 'signature');
 
   const setRow = (id: string, patch: Partial<{ key: string; value: string }>) => onChange({ prefill: c.prefill.map((r) => (r.id === id ? { ...r, ...patch } : r)) });
 
   return (
     <div className="flex flex-col gap-4">
-      <Card className="flex flex-col gap-3">
-        <h3 className="bg-h5 font-semibold" id="embed-method-label">1. Choose how to embed</h3>
-        <div role="radiogroup" aria-labelledby="embed-method-label" className="flex flex-col gap-2">
-          {EMBED_METHODS.map((m) => (
-            <label key={m.id} className="bg-choice-card" htmlFor={`embed-method-${m.id}`}>
-              <Radio id={`embed-method-${m.id}`} name="embed-method" checked={c.method === m.id} onChange={() => onChange({ method: m.id as EmbedMethod })} />
-              <span className="min-w-0">
-                <strong>{m.name}</strong>
-                <small>{m.summary}</small>
-                <small>{m.whenToUse}</small>
-              </span>
-            </label>
-          ))}
-        </div>
-      </Card>
-
       <Card className="flex flex-col gap-4">
-        <h3 className="bg-h5 font-semibold">2. Configure it</h3>
+        <h3 className="bg-h5 font-semibold">Configure</h3>
 
         {inline && (
           <>
@@ -151,15 +152,17 @@ export function EmbedConfigPanel({ config: c, onChange, fields }: Props) {
       </Card>
 
       {shared && (
-        <Card className="flex flex-col gap-4">
-          <h3 className="bg-h5 font-semibold">3. Options for every embed</h3>
+        <Card padded={false}>
+         <details open className="p-4">
+          <summary className="cursor-pointer bg-h5 font-semibold text-(--text-primary)">Options for every embed</summary>
+          <div className="mt-4 flex flex-col gap-4">
           <SwitchRow id="embed-cover" label="Show cover" hint="The banner and logo above the form." checked={c.cover} onChange={(v) => onChange({ cover: v })} />
           <SwitchRow id="embed-progress" label="Show progress" hint="Page progress, steps and the question counter." checked={c.progress} onChange={(v) => onChange({ progress: v })} />
           <SwitchRow id="embed-hide-title" label="Hide form title" hint="Hidden visually, still read by screen readers." checked={c.hideTitle} onChange={(v) => onChange({ hideTitle: v })} />
           <div className="flex items-start justify-between gap-3">
             <label htmlFor="embed-branding" className="min-w-0">
               <span className="bg-body-sm font-medium text-(--text-secondary)">Hide Beginso branding</span>
-              <span className="block bg-caption text-(--text-muted)">Not available yet. Embedded forms do not show Beginso branding today, and there is no plan setting to unlock it, so this option is off and adds nothing to the code.</span>
+              <span className="block bg-caption text-(--text-muted)">Not available yet. Embedded forms show no Beginso branding today.</span>
             </label>
             <Tooltip content="Not available yet">
               <Switch id="embed-branding" checked={false} onChange={() => {}} disabled />
@@ -171,7 +174,7 @@ export function EmbedConfigPanel({ config: c, onChange, fields }: Props) {
             <option value="auto">Auto (follow the page it is embedded in)</option>
           </Select>
           <p className="bg-caption text-(--text-muted) -mt-2">
-            Auto follows your website, not Beginso. With the script (auto-height, popup, drawer) it uses your page&apos;s colour scheme; in a plain iframe it uses the visitor&apos;s browser setting, which only matches a site that does not force its own scheme.
+            Auto follows the website it is embedded in (the script reads the page&apos;s colour scheme; a plain iframe uses the visitor&apos;s browser setting).
           </p>
 
           <fieldset className="flex flex-col gap-2 border-0 p-0 m-0 min-w-0">
@@ -205,6 +208,8 @@ export function EmbedConfigPanel({ config: c, onChange, fields }: Props) {
               <Plus size={16} aria-hidden="true" /> Add pre-fill
             </Button>
           </fieldset>
+          </div>
+         </details>
         </Card>
       )}
     </div>

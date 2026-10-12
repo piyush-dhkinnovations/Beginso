@@ -53,6 +53,7 @@ export function WorkspaceContextSwitcher({ currentLabel = 'Personal', collapsed 
     <ContextSwitcher
       currentLabel={currentLabel}
       currentMeta={currentMeta}
+      currentLogo={current?.logo}
       workspaces={workspaces}
       onSelect={handleSelect}
       collapsed={collapsed}

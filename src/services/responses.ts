@@ -7,6 +7,7 @@ import type {
   PaginatedResponsesResult,
   IResponse,
   IResponseFile,
+  LinkPreview,
   ResponseAnswers,
   ResponseDetail,
   ResponseStats,
@@ -176,13 +177,32 @@ export const responsesService = {
   // backend isn't subject to CORS either, since CORS is a browser-only restriction. Result is
   // handed back as a local blob: URL that needs no auth to open — safe for both a forced
   // download and an in-tab preview.
-  getFileBlobUrl: async (responseId: string, fileId: string): Promise<string> => {
+  getFileBlob: async (responseId: string, fileId: string): Promise<Blob> => {
     const res = await axiosInstance.get<Blob>(
       `${window.location.origin}/api/responses/${responseId}/file/${fileId}`,
       { responseType: 'blob' }
     );
-    return URL.createObjectURL(res.data);
+    return res.data;
   },
+
+  getFileBlobUrl: async (responseId: string, fileId: string): Promise<string> =>
+    URL.createObjectURL(await responsesService.getFileBlob(responseId, fileId)),
+
+  // Title/thumbnail for a submitted website. The backend fetches it (SSRF-guarded, cached), never the browser.
+  // Read defensively: whatever comes back, the caller always gets at least the URL and its domain.
+  getLinkPreview: (url: string, scope?: string): Promise<LinkPreview> =>
+    axiosInstance
+      .get<{ preview?: Partial<LinkPreview> }>('/api/responses/link-preview', { params: { url }, headers: workspaceHeaders(scope) })
+      .then((r) => {
+        const p = r.data?.preview ?? {};
+        return {
+          url: typeof p.url === 'string' ? p.url : url,
+          domain: typeof p.domain === 'string' ? p.domain : new URL(url).hostname.replace(/^www\./, ''),
+          title: typeof p.title === 'string' ? p.title : undefined,
+          siteName: typeof p.siteName === 'string' ? p.siteName : undefined,
+          image: typeof p.image === 'string' && p.image.startsWith('https://') ? p.image : undefined,
+        };
+      }),
 
   // Sprint 12 (inbox-collaboration), task 2.2: one request per bulk action (B2.1) — never one per
   // id. `previous` comes back only for a reversible action; defensively defaulted to `[]` like

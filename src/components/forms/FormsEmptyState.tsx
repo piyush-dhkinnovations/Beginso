@@ -21,7 +21,7 @@ export function FormsFirstRunEmpty({ s }: { s: FormsPageState }) {
       icon={<FileText />}
       title="No forms yet"
       description="Create your first form to get started collecting responses."
-      actions={s.canCreate ? <CreateFormButton onClick={() => s.setIsModalOpen(true)} /> : undefined}
+      actions={s.canCreate ? <CreateFormButton onClick={() => s.startCreate()} /> : undefined}
     />
   );
 }
@@ -62,7 +62,7 @@ export function FormsEmptyFiltered({ s }: { s: FormsPageState }) {
         }
         secondaryAction={
           canCreate ? (
-            <Button variant="secondary" onClick={() => s.setIsModalOpen(true)}>
+            <Button variant="secondary" onClick={() => s.startCreate()}>
               <Plus size={16} className="mr-2" />
               Create Form
             </Button>
@@ -93,7 +93,7 @@ export function FormsEmptyFiltered({ s }: { s: FormsPageState }) {
       icon={<FileText />}
       title="No forms yet"
       description="Create your first form to get started collecting responses."
-      actions={canCreate ? <CreateFormButton onClick={() => s.setIsModalOpen(true)} /> : undefined}
+      actions={canCreate ? <CreateFormButton onClick={() => s.startCreate()} /> : undefined}
     />
   );
 }

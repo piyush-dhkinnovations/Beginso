@@ -14,7 +14,7 @@ import { useFormsCounts } from '@/hooks/useFormsCounts';
 import { useFormsMutations } from '@/hooks/useFormsMutations';
 import type { TableSort } from '@/components/ui/Table';
 import type { FormsManagerTab } from '@/components/forms/FormsManagerTabs';
-import { PAGE_SIZES, TAB_STATUS, formHref, formsQueryEnabled, sortForms } from '@/components/forms/formsListUtils';
+import { PAGE_SIZES, TAB_STATUS, createFormHref, formHref, formsQueryEnabled, sortForms } from '@/components/forms/formsListUtils';
 import type { Form, FormStatus } from '@/types/form';
 import type { FormsContext } from '@/types/workspace';
 
@@ -24,7 +24,6 @@ export function useFormsPage(context: FormsContext) {
   const { user } = useAuth();
   const router = useRouter();
   const [view, setView] = useFormsView();
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [formToMove, setFormToMove] = useState<Form | null>(null);
   const [formToShare, setFormToShare] = useState<Form | null>(null);
   const [formToDelete, setFormToDelete] = useState<Form | null>(null);
@@ -60,7 +59,6 @@ export function useFormsPage(context: FormsContext) {
   const [syncedContextKey, setSyncedContextKey] = useState(contextKey);
   if (contextKey !== syncedContextKey) {
     setSyncedContextKey(contextKey);
-    setIsModalOpen(false);
     setFormToMove(null);
     setFormToShare(null);
     setFormToDelete(null);
@@ -174,7 +172,7 @@ export function useFormsPage(context: FormsContext) {
 
   return {
     router, view, setView,
-    isModalOpen, setIsModalOpen,
+    startCreate: () => router.push(createFormHref(context)),
     formToMove, setFormToMove, formToShare, setFormToShare,
     formToDelete, setFormToDelete, formToTemplate, setFormToTemplate,
     search, setSearch, status, sort, setSort, pageSize, setPageSize, page, setPage,

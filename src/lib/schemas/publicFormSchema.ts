@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { FormField } from '@/types/form';
+import { safeHttpUrl } from '@/lib/fieldDisplay';
 
 /**
  * Builds a Zod schema for a subset of fields (visible fields on the current page,
@@ -39,7 +40,8 @@ export function buildPublicFormSchema(
           : z.string().regex(/^[\d\s\-+]+$/, 'Please enter a valid phone number.').optional().or(z.literal(''));
         break;
       }
-      case 'number': {
+      case 'number':
+      case 'currency': {
         // z.coerce.number() converts '' to 0 (Number('') === 0), so a required field left
         // blank would silently pass as "0" instead of failing — preprocess blank input to
         // undefined first so the required check actually fires.
@@ -101,6 +103,59 @@ export function buildPublicFormSchema(
           : z.array(z.string()).optional();
         break;
       }
+      case 'rating': {
+        // Stars are Controller-managed, so an untouched field is undefined, not ''.
+        const r = z.coerce.number({ error: 'This field is required' }).int().min(1, 'Please choose a rating.').max(5);
+        schema = field.required
+          ? z.preprocess((v) => (v === '' || v === null ? undefined : v), r)
+          : z.preprocess((v) => (v === '' || v === null ? undefined : v), r.optional());
+        break;
+      }
+      case 'yes_no': {
+        const s = z.enum(['Yes', 'No'], { error: 'Please choose Yes or No.' });
+        schema = field.required
+          ? z.preprocess((v) => (v === undefined || v === null ? '' : v), s)
+          : z.preprocess((v) => (v === '' || v === null ? undefined : v), s.optional());
+        break;
+      }
+      case 'url': {
+        const valid = (v: string) => v === '' || safeHttpUrl(v) !== null;
+        const base = (field.required ? z.string().min(1, 'This field is required') : z.string()).refine(valid, 'Please enter a valid web address starting with http:// or https://.');
+        schema = field.required ? base : base.optional();
+        break;
+      }
+      case 'time': {
+        const base = (field.required ? z.string().min(1, 'This field is required') : z.string()).refine(
+          (v) => v === '' || /^([01]\d|2[0-3]):[0-5]\d$/.test(v),
+          'Please enter a valid time.'
+        );
+        schema = field.required ? base : base.optional();
+        break;
+      }
+      case 'datetime': {
+        const base = (field.required ? z.string().min(1, 'This field is required') : z.string()).refine(
+          (v) => v === '' || /^\d{4}-\d{2}-\d{2}T([01]\d|2[0-3]):[0-5]\d$/.test(v),
+          'Please enter a valid date and time.'
+        );
+        schema = field.required ? base : base.optional();
+        break;
+      }
+      case 'address': {
+        // Stored as four newline-separated lines; "required" means at least one of them is filled in.
+        const base = z.string().max(500, 'Address is too long.');
+        schema = field.required
+          ? z.preprocess((v) => (v === undefined || v === null ? '' : v), base.refine((v) => v.replace(/\s/g, '') !== '', 'This field is required'))
+          : base.optional();
+        break;
+      }
+      case 'signature': {
+        const s = z.string().min(1, 'Please sign before submitting.');
+        schema = field.required
+          ? z.preprocess((v) => (v === undefined || v === null ? '' : v), s)
+          : z.string().optional();
+        break;
+      }
+      case 'image_upload':
       case 'file_upload': {
         // Value is the uploaded file's R2 key once the file finishes uploading.
         // Same undefined-preprocess issue as dropdown/multiple_choice/checkbox above.

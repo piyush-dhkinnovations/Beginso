@@ -1,5 +1,4 @@
 import { PublishTemplateModal } from '@/components/templates/PublishTemplateModal';
-import { CreateFormModal } from '@/components/form-builder/CreateFormModal';
 import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
 import { MoveFormModal } from '@/components/workspaces/MoveFormModal';
 import { FormAccessPanel } from '@/components/team/FormAccessPanel';
@@ -10,12 +9,6 @@ export function FormsDialogs({ s, context }: { s: FormsPageState; context: Forms
   const { formToMove, formToShare, formToDelete, formToTemplate } = s;
   return (
     <>
-      <CreateFormModal
-        isOpen={s.isModalOpen}
-        onClose={() => s.setIsModalOpen(false)}
-        defaultDestination={context}
-      />
-
       <MoveFormModal
         isOpen={formToMove !== null}
         formId={formToMove?._id ?? ''}

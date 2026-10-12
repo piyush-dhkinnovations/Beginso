@@ -6,6 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { useBuilderStore } from '@/store/builderStore';
 import { BuilderHeader } from '@/components/form-builder/BuilderHeader';
+import { FormLogoButton } from '@/components/forms/FormLogoButton';
 import { BuilderTabs, BuilderTab } from '@/components/form-builder/BuilderTabs';
 import { SettingsPanel } from '@/components/form-builder/SettingsPanel';
 import { AddFieldSheet } from '@/components/form-builder/AddFieldSheet';
@@ -131,6 +132,8 @@ export default function BuilderPageShell() {
             onDelete={() => setShowDeleteModal(true)}
             onBack={handleBack}
             onOpenSettings={() => setActiveTab('settings')}
+            // Same logo as Branding → Logo: it goes through the builder store, so it autosaves like every other edit.
+            icon={<FormLogoButton logoUrl={branding.logoUrl} canEdit={formRole !== 'viewer' && formRole !== 'reviewer'} onSave={(url) => setBranding({ logoUrl: url ?? undefined })} />}
           />
 
           {activeTab === 'settings' ? (

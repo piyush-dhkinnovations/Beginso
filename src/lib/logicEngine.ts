@@ -75,6 +75,6 @@ export function buildAnswers(
       // file_upload has nothing meaningful to report here — RHF only holds a local
       // filename placeholder, never a real answer. fileKey (backend-filled after the
       // multipart upload) is the only channel that matters for this field type.
-      value: f.type === 'file_upload' ? undefined : values[f.fieldId],
+      value: f.type === 'file_upload' || f.type === 'image_upload' ? undefined : values[f.fieldId],
     }));
 }

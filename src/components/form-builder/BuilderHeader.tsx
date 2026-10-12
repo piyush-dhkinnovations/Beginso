@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { FormHeader } from '@/components/forms/FormHeader';
+import type { ReactNode } from 'react';
 import { SaveIndicator } from './SaveIndicator';
 import type { FormStatus } from '@/types/form';
 
@@ -29,6 +30,8 @@ export interface BuilderHeaderProps {
   onBack: () => void;
   /** Opens the Settings page of the builder (it is no longer a tab, so the ⋮ menu is its way in). */
   onOpenSettings: () => void;
+  /** The form's logo button (see FormLogoButton); omitted = the default document icon. */
+  icon?: ReactNode;
 }
 
 const STATUS_LABEL = { draft: 'Draft', published: 'Published', closed: 'Closed' } as const;
@@ -53,6 +56,7 @@ export function BuilderHeader({
   onDelete,
   onBack,
   onOpenSettings,
+  icon,
 }: BuilderHeaderProps) {
   const [title, setTitle] = useState(formTitle || '');
   const [prevFormTitle, setPrevFormTitle] = useState<string | undefined>(formTitle);
@@ -80,6 +84,7 @@ export function BuilderHeader({
   return (
     <FormHeader
       onBack={onBack}
+      icon={icon}
       backLabel="Forms"
       title={
         <input

@@ -14,6 +14,8 @@ export interface FormHeaderProps {
   meta?: ReactNode;
   /** Right-hand actions (Preview, Share, Edit form, ⋮ …). */
   actions?: ReactNode;
+  /** Replaces the default document icon — e.g. the form's logo with its "Change logo" pencil. */
+  icon?: ReactNode;
 }
 
 const DATE = new Intl.DateTimeFormat('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
@@ -29,7 +31,7 @@ export function formatFormDate(iso?: string | null): string {
  * The one header every form page shares — Overview, Responses, Insights, Edit and Settings — so moving between
  * them never changes the frame: [back] [icon] title + status + dates ............ actions. Page navigation is the breadcrumb and the app sidebar.
  */
-export function FormHeader({ onBack, backLabel, title, badge, meta, actions }: FormHeaderProps) {
+export function FormHeader({ onBack, backLabel, title, badge, meta, actions, icon }: FormHeaderProps) {
   return (
     <header className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
@@ -39,9 +41,11 @@ export function FormHeader({ onBack, backLabel, title, badge, meta, actions }: F
             <ArrowLeft size={18} className="bg-icon" />
           </Button>
           )}
-          <span aria-hidden="true" className="inline-flex size-12 flex-none items-center justify-center rounded-2xl bg-(--accent-soft) text-(--action-primary) sm:size-13 [&_svg]:size-6">
-            <FileText />
-          </span>
+          {icon ?? (
+            <span aria-hidden="true" className="inline-flex size-12 flex-none items-center justify-center rounded-2xl bg-(--accent-soft) text-(--action-primary) sm:size-13 [&_svg]:size-6">
+              <FileText />
+            </span>
+          )}
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <div className="flex min-w-0 items-center gap-2.5">
               <div className="min-w-0 truncate bg-h4 font-semibold text-(--text-primary) [&_input]:w-full">{title}</div>

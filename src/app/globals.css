@@ -44,6 +44,8 @@
   --animate-slide-up: slideUp 0.25s ease-out both;
   --animate-drop-indicator: dropIndicatorIn 0.15s ease-out both;
   --animate-sort-line: sortLineIn 0.1s ease-out both;
+  --animate-float: floatY 6s ease-in-out infinite;
+  --animate-pop-in: popIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
 
   /* Shadow tokens */
   --shadow-(--shadow-sm): 0 1px 3px rgba(15, 23, 42, 0.06), 0 0 0 1px #E2E8F0;
@@ -115,6 +117,16 @@
       opacity: 1;
       transform: scaleY(1);
     }
+  }
+
+  @keyframes floatY {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: translateY(14px) scale(0.96); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
   }
 
   @keyframes sortLineIn {

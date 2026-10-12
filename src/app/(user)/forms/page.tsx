@@ -37,7 +37,7 @@ export default function FormsPage({ context = { type: 'personal' } }: FormsPageP
             {s.canCreate && (
               <Button
                 variant="primary"
-                onClick={() => s.setIsModalOpen(true)}
+                onClick={() => s.startCreate()}
                 aria-label="Create new form"
               >
                 <Plus size={16} className="mr-2" />

@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { buildAdvancedRows, buildSnippet, DEFAULT_EMBED_CONFIG, estimateFormHeight, normalizeConfig, type EmbedConfig, type EmbedContext } from '@/lib/embed/buildEmbedSnippet';
 import { checkPrefillRow } from '@/lib/embed/prefill';
-import { EmbedConfigPanel } from './EmbedConfigPanel';
+import { Segmented } from '@/components/ui/Segmented';
+import { EmbedConfigPanel, EmbedMethodPicker } from './EmbedConfigPanel';
 import { EmbedPreview } from './EmbedPreview';
 
 interface Props {
@@ -25,6 +26,7 @@ interface Props {
 export function EmbedStudio({ ctx, fields, pages, onCopy }: Props) {
   const [config, setConfig] = useState<EmbedConfig>(DEFAULT_EMBED_CONFIG);
   const [measured, setMeasured] = useState(0);
+  const [tab, setTab] = useState<'preview' | 'code'>('preview');
   const onMeasured = useCallback((px: number) => setMeasured(px), []);
   const patch = useCallback((p: Partial<EmbedConfig>) => setConfig((c) => ({ ...c, ...p })), []);
 
@@ -44,45 +46,59 @@ export function EmbedStudio({ ctx, fields, pages, onCopy }: Props) {
     <section aria-labelledby="embed-heading" className="flex flex-col gap-4">
       <div>
         <h2 id="embed-heading" className="bg-h5 font-semibold">Embed on your website</h2>
-        <p className="bg-body-sm text-(--text-muted)">Pick a method, set it up, and copy the code. It updates as you change anything.</p>
+        <p className="bg-body-sm text-(--text-muted)">Pick a method, set it up, then copy the code. It updates as you change anything.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
+      <EmbedMethodPicker config={config} onChange={patch} />
+
+      <div className="grid grid-cols-1 gap-4 items-start lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <EmbedConfigPanel config={config} onChange={patch} fields={fields} />
 
-        <div className="flex flex-col gap-4 min-w-0 lg:sticky lg:top-4">
+        <div className="min-w-0 lg:sticky lg:top-4">
           {!ctx ? (
             <Alert variant="info" title="Publish the form to get its embed code.">
               The preview and the code appear here once the form has a public link.
             </Alert>
           ) : (
-            <>
-              <Card className="flex flex-col gap-3">
-                <h3 className="bg-h5 font-semibold">Live preview</h3>
+            // Preview and code share one card behind two tabs, so the page is one screen shorter than stacking them.
+            <Card className="flex flex-col gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Segmented
+                  ariaLabel="Preview or code"
+                  value={tab}
+                  onChange={(id) => setTab(id as 'preview' | 'code')}
+                  options={[
+                    { id: 'preview', label: 'Live preview' },
+                    { id: 'code', label: effective.method === 'link' ? 'Link' : 'Code to paste' },
+                  ]}
+                />
+                <Button type="button" variant="secondary" size="small" onClick={() => onCopy(snippet, effective.method === 'link' ? 'Link copied to clipboard.' : 'Embed code copied.')} className="min-h-11">
+                  <Copy size={16} aria-hidden="true" /> {effective.method === 'link' ? 'Copy link' : 'Copy code'}
+                </Button>
+              </div>
+
+              {/* Kept mounted (just hidden) so switching tabs never reloads the preview frame. */}
+              <div className={tab === 'preview' ? 'flex flex-col gap-3' : 'hidden'}>
                 {tooShort && (
                   <Alert variant="warning" title="This frame is shorter than your form.">
                     The form needs about {needed}px on its tallest page but the frame is {effective.height}px, so visitors would get a scrollbar inside the frame or lose the submit button. Raise the height to at least {needed}px, or use auto-height.
                   </Alert>
                 )}
                 <EmbedPreview ctx={ctx} config={effective} onMeasured={onMeasured} />
-              </Card>
+              </div>
 
-              <Card className="flex flex-col gap-3">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="bg-h5 font-semibold" id="embed-code-label">{effective.method === 'link' ? 'Link' : 'Code to paste'}</h3>
-                  <Button type="button" variant="secondary" size="small" onClick={() => onCopy(snippet, effective.method === 'link' ? 'Link copied to clipboard.' : 'Embed code copied.')} className="min-h-11">
-                    <Copy size={16} aria-hidden="true" /> Copy
-                  </Button>
+              {tab === 'code' && (
+                <div className="flex flex-col gap-3">
+                  {/* Focusable so a keyboard user can scroll a long line. */}
+                  <pre tabIndex={0} aria-label={effective.method === 'link' ? 'Link' : 'Embed code'} className="rounded-md border-2 border-(--border-default) bg-(--bg-subtle) p-3 bg-body-sm font-mono overflow-x-auto whitespace-pre">
+                    {snippet}
+                  </pre>
+                  {effective.method === 'auto' || effective.method === 'popup' || effective.method === 'drawer' ? (
+                    <p className="bg-caption text-(--text-muted)">Without JavaScript the visitor sees a plain link to the form. Including the script more than once on a page is safe.</p>
+                  ) : null}
                 </div>
-                {/* Focusable so a keyboard user can scroll a long line. */}
-                <pre tabIndex={0} aria-labelledby="embed-code-label" className="rounded-md border-2 border-(--border-default) bg-(--bg-subtle) p-3 bg-body-sm font-mono overflow-x-auto whitespace-pre">
-                  {snippet}
-                </pre>
-                {effective.method === 'auto' || effective.method === 'popup' || effective.method === 'drawer' ? (
-                  <p className="bg-caption text-(--text-muted)">Without JavaScript the visitor sees a plain link to the form. Including the script more than once on a page is safe.</p>
-                ) : null}
-              </Card>
-            </>
+              )}
+            </Card>
           )}
         </div>
       </div>

@@ -128,7 +128,7 @@ describe('ResponseDrawer', () => {
     // nothing prevented the page body from scrolling while the drawer was open.
     mockGetResponseById.mockResolvedValue(detail);
     const { rerender, queryClient } = renderDrawer('resp-1');
-    await screen.findByText('Submitted Answers');
+    await screen.findByText('Submitted response');
 
     expect(document.body.style.overflow).toBe('hidden');
 
@@ -145,11 +145,13 @@ describe('ResponseDrawer', () => {
     mockGetResponseById.mockResolvedValue(detail);
     renderDrawer('resp-1');
 
-    expect(await screen.findByText('Submitted Answers')).toBeInTheDocument();
+    expect(await screen.findByText('Submitted response')).toBeInTheDocument();
     // "Priya Sharma" renders twice: once as the detected identity in the drawer header,
     // once as the "Full Name" answer value below.
+    // Answers render once the drawer has the form definition (or its lookup has failed), and are
+    // numbered by position ("1. Full Name"), so wait for the label first.
+    expect(await screen.findByText(/Full Name/)).toBeInTheDocument();
     expect(screen.getAllByText('Priya Sharma')).toHaveLength(2);
-    expect(screen.getByText('Full Name')).toBeInTheDocument();
     expect(mockGetResponseById).toHaveBeenCalledWith('resp-1', 'personal');
   });
 
@@ -190,7 +192,7 @@ describe('ResponseDrawer', () => {
     expect(await screen.findByRole('heading', { name: 'Unable to load response' })).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Try again' }));
 
-    expect(await screen.findByText('Submitted Answers')).toBeInTheDocument();
+    expect(await screen.findByText('Submitted response')).toBeInTheDocument();
     expect(mockGetResponseById).toHaveBeenCalledTimes(2);
   });
 
@@ -198,7 +200,7 @@ describe('ResponseDrawer', () => {
     mockGetResponseById.mockResolvedValue(detail);
     const user = userEvent.setup();
     const { onClose } = renderDrawer('resp-1');
-    await screen.findByText('Submitted Answers');
+    await screen.findByText('Submitted response');
 
     await user.keyboard('{Escape}');
     expect(onClose).toHaveBeenCalledOnce();
@@ -212,7 +214,7 @@ describe('ResponseDrawer', () => {
     opener.focus();
 
     const { rerender, queryClient } = renderDrawer('resp-1');
-    await screen.findByText('Submitted Answers');
+    await screen.findByText('Submitted response');
     expect(opener).not.toHaveFocus();
 
     rerender(
@@ -236,7 +238,7 @@ describe('ResponseDrawer', () => {
     mockGetResponseById.mockResolvedValue(detail);
     const user = userEvent.setup();
     const { onClose } = renderDrawer('resp-1');
-    await screen.findByText('Submitted Answers');
+    await screen.findByText('Submitted response');
 
     await user.click(screen.getByRole('presentation'));
     expect(onClose).toHaveBeenCalledOnce();
@@ -252,7 +254,7 @@ describe('ResponseDrawer', () => {
     mockUpdate.mockResolvedValue({ ...detail, stage: STAGES[1] });
     const user = userEvent.setup();
     const { queryClient } = renderDrawer('resp-1', undefined, { scope: 'acme' });
-    await screen.findByText('Submitted Answers');
+    await screen.findByText('Submitted response');
 
     queryClient.setQueryData(responseKeys.list('acme', 'form-1', {}), {
       data: [detail],
@@ -280,7 +282,7 @@ describe('ResponseDrawer', () => {
     mockUpdate.mockResolvedValue({ ...detail, stage: STAGES[1] });
     const user = userEvent.setup();
     const { queryClient } = renderDrawer('resp-1', undefined, { scope: 'acme' });
-    await screen.findByText('Submitted Answers');
+    await screen.findByText('Submitted response');
 
     queryClient.setQueryData(responseKeys.list('acme', 'form-1', {}), {
       data: [detail],
@@ -311,7 +313,7 @@ describe('ResponseDrawer', () => {
   // Escape/stopPropagation) with WorkflowSidebar's native `ui/Select`, which has no open/close JS
   // state to guard — Escape now behaves exactly like the "calls onClose on Escape" case above.
 
-  it('shows uploaded files under their form field labels in Submitted Answers', async () => {
+  it('shows uploaded files under their form field labels in Submitted response', async () => {
     mockGetResponseById.mockResolvedValue({
       ...detail,
       responseFiles: [
@@ -327,7 +329,8 @@ describe('ResponseDrawer', () => {
     });
     renderDrawer('resp-1', vi.fn(), { fileFieldLabels: ['Portfolio'] });
 
-    expect(await screen.findByText('Portfolio')).toBeInTheDocument();
+    // Answers are numbered by position ("1. Portfolio"), so match the label inside the heading.
+    expect(await screen.findByText(/Portfolio/)).toBeInTheDocument();
     expect(screen.getAllByText('portfolio.pdf').length).toBeGreaterThanOrEqual(1);
   });
 
@@ -346,7 +349,7 @@ describe('ResponseDrawer', () => {
       onNext,
       onExpand,
     });
-    await screen.findByText('Submitted Answers');
+    await screen.findByText('Submitted response');
 
     await user.click(screen.getByRole('button', { name: 'Previous response' }));
     await user.click(screen.getByRole('button', { name: 'Next response' }));
@@ -376,7 +379,7 @@ describe('ResponseDrawer', () => {
     mockDeleteResponse.mockResolvedValue(undefined);
     const user = userEvent.setup();
     const { onClose } = renderDrawer('resp-1');
-    await screen.findByText('Submitted Answers');
+    await screen.findByText('Submitted response');
 
     await user.click(screen.getByRole('button', { name: 'Delete response' }));
     await user.click(screen.getByRole('button', { name: 'Delete' }));
@@ -391,7 +394,7 @@ describe('ResponseDrawer', () => {
     it('hides them on a personal form that is shared with nobody, and offers to share it', async () => {
       mockGetResponseById.mockResolvedValue(detail);
       renderDrawer('resp-1');
-      await screen.findByText('Submitted Answers');
+      await screen.findByText('Submitted response');
 
       await waitFor(() => expect(screen.getByText('Working with others?')).toBeInTheDocument());
       expect(screen.queryByText('Internal notes')).not.toBeInTheDocument();

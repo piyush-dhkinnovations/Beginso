@@ -24,6 +24,16 @@ export interface IResponseFile {
   uploadTime: string;        // ISO 8601
 }
 
+/** GET /api/responses/link-preview — metadata for a URL a respondent submitted. Only `url` and `domain` are guaranteed. */
+export interface LinkPreview {
+  url: string;
+  domain: string;
+  title?: string;
+  siteName?: string;
+  /** https thumbnail (og:image), if the site published one. */
+  image?: string;
+}
+
 export interface ResponseAssignee {
   id: string;
   name: string;

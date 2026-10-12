@@ -31,6 +31,15 @@ import { DropdownRenderer } from './fields/DropdownRenderer';
 import { MultipleChoiceRenderer } from './fields/MultipleChoiceRenderer';
 import { CheckboxRenderer } from './fields/CheckboxRenderer';
 import { FileUploadRenderer } from './fields/FileUploadRenderer';
+import { ImageUploadRenderer } from './fields/ImageUploadRenderer';
+import { RatingRenderer } from './fields/RatingRenderer';
+import { YesNoRenderer } from './fields/YesNoRenderer';
+import { UrlRenderer } from './fields/UrlRenderer';
+import { TimeRenderer } from './fields/TimeRenderer';
+import { DateTimeRenderer } from './fields/DateTimeRenderer';
+import { CurrencyRenderer } from './fields/CurrencyRenderer';
+import { AddressRenderer } from './fields/AddressRenderer';
+import { SignatureRenderer } from './fields/SignatureRenderer';
 
 interface PublicFormShellProps {
   schema: PublicFormSchema;
@@ -49,11 +58,11 @@ interface PublicFormShellProps {
 
 // long_text/choice/file fields need room to wrap or list options — always full-width,
 // even in the two-column layout. The rest pair up two-per-row.
-const FULL_WIDTH_TYPES = new Set<FormField['type']>(['long_text', 'multiple_choice', 'checkbox', 'file_upload']);
+const FULL_WIDTH_TYPES = new Set<FormField['type']>(['long_text', 'multiple_choice', 'checkbox', 'file_upload', 'image_upload', 'address', 'signature']);
 
-// file_upload is dispatched separately below — it needs onFileChange/onUploadStateChange,
-// which the other 9 renderers don't take, so it doesn't fit this shared prop shape.
-const RENDERER_MAP: Record<Exclude<FormField['type'], 'file_upload'>, ComponentType<FieldRendererProps>> = {
+// file_upload and image_upload are dispatched separately below — they need onFileChange/onFilesChange,
+// which the other renderers don't take, so they don't fit this shared prop shape.
+const RENDERER_MAP: Record<Exclude<FormField['type'], 'file_upload' | 'image_upload'>, ComponentType<FieldRendererProps>> = {
   short_text: ShortTextRenderer,
   long_text: LongTextRenderer,
   email: EmailRenderer,
@@ -63,6 +72,14 @@ const RENDERER_MAP: Record<Exclude<FormField['type'], 'file_upload'>, ComponentT
   dropdown: DropdownRenderer,
   multiple_choice: MultipleChoiceRenderer,
   checkbox: CheckboxRenderer,
+  rating: RatingRenderer,
+  yes_no: YesNoRenderer,
+  url: UrlRenderer,
+  time: TimeRenderer,
+  datetime: DateTimeRenderer,
+  currency: CurrencyRenderer,
+  address: AddressRenderer,
+  signature: SignatureRenderer,
 };
 
 export function PublicFormShell({ schema, slug, previewMode: previewProp, onTestSubmit, search = '' }: PublicFormShellProps) {
@@ -90,7 +107,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewSubmitted, setPreviewSubmitted] = useState(false);
   const [uploadStates, setUploadStates] = useState<Record<string, UploadState>>({});
-  const [files, setFiles] = useState<Record<string, File>>({});
+  const [files, setFiles] = useState<Record<string, File[]>>({});
 
   // Read fresh inside the resolver (called at validation time) — avoids a stale schema
   // if we captured hiddenFieldIds by closure at useForm() call time instead.
@@ -153,8 +170,9 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
 
   // File values are placeholder filenames, not the actual File — there's nothing
   // real to restore for them after a reload, so they're excluded from the saved draft.
+  // A drawn signature is a large data URL, so it is kept out of localStorage too.
   const fileFieldIds = useMemo(
-    () => new Set(schema.fields.filter((f) => f.type === 'file_upload').map((f) => f.fieldId)),
+    () => new Set(schema.fields.filter((f) => f.type === 'file_upload' || f.type === 'image_upload' || f.type === 'signature').map((f) => f.fieldId)),
     [schema.fields]
   );
 
@@ -408,13 +426,37 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
               onFileChange={(file) =>
                 setFiles((prev) => {
                   const next = { ...prev };
-                  if (file) next[field.fieldId] = file;
+                  if (file) next[field.fieldId] = [file];
                   else delete next[field.fieldId];
                   return next;
                 })
               }
               onUploadStateChange={(state) =>
                 setUploadStates((prev) => ({ ...prev, [field.fieldId]: state }))
+              }
+            />
+          </div>
+        );
+      }
+
+      if (field.type === 'image_upload') {
+        return (
+          <div key={field.fieldId} className={spanClass}>
+            <ImageUploadRenderer
+              field={field}
+              control={methods.control}
+              register={methods.register}
+              trigger={methods.trigger}
+              setValue={methods.setValue}
+              error={fieldError}
+              disabled={isSubmitting}
+              onFilesChange={(list) =>
+                setFiles((prev) => {
+                  const next = { ...prev };
+                  if (list.length) next[field.fieldId] = list;
+                  else delete next[field.fieldId];
+                  return next;
+                })
               }
             />
           </div>
@@ -554,7 +596,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
               fields={schema.fields}
               hiddenFieldIds={hiddenFieldIds}
               values={watchedValues}
-              fileNames={Object.fromEntries(Object.entries(files).map(([id, f]) => [id, f.name]))}
+              fileNames={Object.fromEntries(Object.entries(files).map(([id, list]) => [id, list.map((f) => f.name).join(', ')]))}
               renderField={renderField}
               validateField={(id) => methods.trigger(id)}
               restoreField={(id, value) => methods.setValue(id, value)}

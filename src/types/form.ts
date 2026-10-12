@@ -15,7 +15,16 @@ export type FieldType =
   | 'dropdown'
   | 'multiple_choice'
   | 'checkbox'
-  | 'file_upload';
+  | 'file_upload'
+  | 'rating'
+  | 'yes_no'
+  | 'url'
+  | 'time'
+  | 'datetime'
+  | 'currency'
+  | 'address'
+  | 'signature'
+  | 'image_upload';
 
 // ─── Field Definitions ───────────────────────────────────────────────────────
 
@@ -63,7 +72,44 @@ export interface FileUploadField extends BaseField {
   maxSizeMb?: number;
 }
 
-export type FormField = TextField | ChoiceField | FileUploadField;
+// ─── V2 field types ──────────────────────────────────────────────────────────
+// Display & preview preferences live on the field itself, so a response is rendered the same way
+// everywhere it is shown (response drawer, full-page view) and for every response, old or new.
+
+export type CurrencyCode = 'INR' | 'USD' | 'EUR' | 'GBP';
+export type ImagePreviewPosition = 'top' | 'inline';
+export type ImageAspectRatio = 'original' | '16:9' | '1:1';
+export type ImagePreviewSize = 'small' | 'medium' | 'large';
+export type UrlPreviewStyle = 'rich' | 'compact' | 'text';
+export type UrlDisplay = 'card' | 'inline';
+
+/** Fields with no settings beyond the common ones. */
+export interface SimpleField extends BaseField {
+  type: 'rating' | 'yes_no' | 'time' | 'datetime' | 'address' | 'signature';
+}
+
+export interface CurrencyField extends BaseField, NumberConstraints {
+  type: 'currency';
+  currency?: CurrencyCode; // default 'INR'
+}
+
+export interface UrlField extends BaseField {
+  type: 'url';
+  urlPreviewStyle?: UrlPreviewStyle; // default 'rich'
+  urlDisplay?: UrlDisplay;           // default 'card'
+}
+
+export interface ImageUploadField extends BaseField {
+  type: 'image_upload';
+  maxFileSize?: number;                 // MB per image; the backend defaults to 10
+  allowMultiple?: boolean;              // default false
+  maxImages?: number;                   // 2 | 5 | 10 — only used when allowMultiple
+  previewPosition?: ImagePreviewPosition; // default 'top'
+  aspectRatio?: ImageAspectRatio;       // default 'original'
+  previewSize?: ImagePreviewSize;       // default 'large'
+}
+
+export type FormField = TextField | ChoiceField | FileUploadField | SimpleField | CurrencyField | UrlField | ImageUploadField;
 
 // ─── Pages (multi-page / multi-step forms) ───────────────────────────────────
 // Every form has at least one page, even simple single-page forms — a page is
@@ -216,6 +262,8 @@ export interface CreateFormPayload {
   description?: string;
   destination?: FormDestination;
   destinationWorkspaceId?: string | null;
+  /** Starting branding — e.g. the logo chosen on the Create form page. Merged over the workspace defaults server-side. */
+  branding?: Partial<FormBranding>;
 }
 
 

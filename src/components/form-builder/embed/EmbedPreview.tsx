@@ -81,8 +81,10 @@ export function EmbedPreview({ ctx, config, onMeasured }: Props) {
   }, [button]);
 
   if (inline) {
+    // A bounded viewport (it scrolls inside) so a long form does not stretch the whole page; on a real site the
+    // frame grows to the form's height.
     return (
-      <div className="overflow-x-auto rounded-md border border-dashed border-(--border-strong) bg-(--bg-subtle) p-3">
+      <div className="max-h-128 overflow-auto rounded-md border border-dashed border-(--border-strong) bg-(--bg-subtle) p-3">
         <iframe
           key={src}
           ref={iframeRef}
@@ -100,7 +102,7 @@ export function EmbedPreview({ ctx, config, onMeasured }: Props) {
           }}
         />
         <p className="mt-2 bg-caption text-(--text-muted)">
-          {auto ? 'The frame is resizing to the form as you move through it.' : `Fixed frame: ${c.widthValue}${c.widthUnit} wide, ${c.height}px tall.`}
+          {auto ? 'The frame resizes to the form as you move through it. Scroll this preview to see the rest.' : `Fixed frame: ${c.widthValue}${c.widthUnit} wide, ${c.height}px tall.`}
         </p>
       </div>
     );
