@@ -14,7 +14,7 @@ import { useFormsCounts } from '@/hooks/useFormsCounts';
 import { useFormsMutations } from '@/hooks/useFormsMutations';
 import type { TableSort } from '@/components/ui/Table';
 import type { FormsManagerTab } from '@/components/forms/FormsManagerTabs';
-import { PAGE_SIZES, TAB_STATUS, createFormHref, formHref, formsQueryEnabled, sortForms } from '@/components/forms/formsListUtils';
+import { PAGE_SIZES, TAB_STATUS, createFormHref, formHref, formsQueryEnabled, sortForms, SERVER_SORT_FIELD } from '@/components/forms/formsListUtils';
 import type { Form, FormStatus } from '@/types/form';
 import type { FormsContext } from '@/types/workspace';
 
@@ -106,9 +106,11 @@ export function useFormsPage(context: FormsContext) {
     if (tabStatus) setStatus(tabStatus);
   };
 
+  // The server orders the whole list; "responses" is a computed count it cannot sort by, so that one stays page-local.
+  const serverSort = SERVER_SORT_FIELD[sort.key];
   const formsListKey = workspaceKeys.forms(
     context,
-    { search: debouncedSearch, status, page, limit: pageSize, archived: onArchivedTab ? 'only' : undefined, pinned: onPinnedTab ? true : undefined }
+    { search: debouncedSearch, status, page, limit: pageSize, archived: onArchivedTab ? 'only' : undefined, pinned: onPinnedTab ? true : undefined, sort: serverSort, order: serverSort ? sort.dir : undefined }
   );
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: formsListKey,
@@ -122,6 +124,8 @@ export function useFormsPage(context: FormsContext) {
           limit: pageSize,
           archived: onArchivedTab ? 'only' : undefined,
           pinned: onPinnedTab ? true : undefined,
+          sort: serverSort,
+          order: serverSort ? sort.dir : undefined,
         },
         context
       ),
@@ -140,8 +144,8 @@ export function useFormsPage(context: FormsContext) {
 
   const rows = useMemo(
     // Pinned keeps the server order (most recently pinned first); the sort select is hidden there.
-    () => (onPinnedTab ? (data?.forms ?? []) : sortForms(data?.forms ?? [], sort)),
-    [data, sort, onPinnedTab]
+    () => (onPinnedTab || serverSort ? (data?.forms ?? []) : sortForms(data?.forms ?? [], sort)),
+    [data, sort, onPinnedTab, serverSort]
   );
   const maxResponses = Math.max(0, ...rows.map((form) => form.responseCount));
   const allOnPageSelected = rows.length > 0 && rows.every((form) => selectedIds.has(form._id));

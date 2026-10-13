@@ -1,6 +1,4 @@
-import { isAxiosError } from 'axios';
 import axiosInstance from '@/lib/axios';
-import { UserFacingError } from '@/lib/errorHelpers';
 import { unwrapEnvelope } from '@/lib/apiEnvelope';
 import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import type { CreateReportPayload, ReportJob, GetReportsParams, PaginatedReportsResult } from '@/types/report';
@@ -77,15 +75,7 @@ export const reportsService = {
   createReport: (payload: CreateReportPayload, scope = 'personal'): Promise<ReportJob> =>
     axiosInstance
       .post<RawCreateReportEnvelope>('/api/reports', payload, { headers: workspaceHeaders(scope) })
-      .then((r) => toReportJob(r.data.report))
-      .catch((err) => {
-        // The backend resolves a workspace for every export and has no personal-space path yet, so it
-        // answers 403 "Workspace not found or access denied". Say that, instead of a generic failure.
-        if (scope === 'personal' && isAxiosError(err) && err.response?.status === 403) {
-          throw new UserFacingError('Exports are not available in your personal space yet. Move the form into a workspace to export its responses.');
-        }
-        throw err;
-      }),
+      .then((r) => toReportJob(r.data.report)),
 
   // The list array is `data` when the account has jobs but `reports` on the empty-account branch
   // (live, 7 Oct 2026) - accept both rather than trusting either.

@@ -19,9 +19,15 @@ export const STATUS_LABEL: Record<FormStatus, string> = {
 
 export const PAGE_SIZES = [10, 25, 50] as const;
 
-// ponytail: sorting is applied to the loaded page only — the forms API (GET /api/forms) takes no sort
-// parameter and always returns createdAt-desc. With the page-size selector (10/25/50) that is exact for
-// most accounts; add a server-side `sort` query param if lists routinely span several pages.
+// GET /api/forms sorts on the server (`sort` + `order`). These table keys map to its fields; "responses" is a
+// computed count the server cannot sort by, so sortForms below still handles it (for the loaded page) and
+// serves the other lists that sort client-side (Responses landing).
+export const SERVER_SORT_FIELD: Record<string, 'title' | 'status' | 'updatedAt' | undefined> = {
+  title: 'title',
+  status: 'status',
+  updated: 'updatedAt',
+};
+
 export function sortForms(forms: Form[], { key, dir }: TableSort): Form[] {
   const sign = dir === 'asc' ? 1 : -1;
   const cmp: Record<string, (a: Form, b: Form) => number> = {

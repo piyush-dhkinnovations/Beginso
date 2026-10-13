@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/Input';
 import { Radio } from '@/components/ui/Radio';
 import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
-import { Tooltip } from '@/components/ui/Tooltip';
 import { EMBED_METHODS, LIMITS, type EmbedConfig, type EmbedMethod } from '@/lib/embed/buildEmbedSnippet';
 import { checkPrefillRow } from '@/lib/embed/prefill';
 
@@ -160,15 +159,6 @@ export function EmbedConfigPanel({ config: c, onChange, fields }: Props) {
           <SwitchRow id="embed-background" label="Show page background" hint="The colour or pattern behind the form card. Turn off to let your own page show through." checked={c.background} onChange={(v) => onChange({ background: v })} />
           <SwitchRow id="embed-progress" label="Show progress" hint="Page progress, steps and the question counter." checked={c.progress} onChange={(v) => onChange({ progress: v })} />
           <SwitchRow id="embed-hide-title" label="Hide form title" hint="Hidden visually, still read by screen readers." checked={c.hideTitle} onChange={(v) => onChange({ hideTitle: v })} />
-          <div className="flex items-start justify-between gap-3">
-            <label htmlFor="embed-branding" className="min-w-0">
-              <span className="bg-body-sm font-medium text-(--text-secondary)">Hide Beginso branding</span>
-              <span className="block bg-caption text-(--text-muted)">Not available yet. Embedded forms show no Beginso branding today.</span>
-            </label>
-            <Tooltip content="Not available yet">
-              <Switch id="embed-branding" checked={false} onChange={() => {}} disabled />
-            </Tooltip>
-          </div>
           <Select id="embed-theme" label="Theme" value={c.theme} onChange={(e) => onChange({ theme: e.target.value as EmbedConfig['theme'] })}>
             <option value="light">Light</option>
             <option value="dark">Dark</option>

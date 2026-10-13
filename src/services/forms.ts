@@ -12,6 +12,7 @@ import type {
   TestSubmissionAnswer,
 } from '@/types/form';
 import type { FormDestination, FormsContext } from '@/types/workspace';
+export type FormsSortField = 'title' | 'status' | 'updatedAt' | 'createdAt';
 
 // PATCH /api/forms/:id validates branding/settings strictly (zod `.optional()` rejects `null`, an empty
 // string where a hex is required, and out-of-enum values). Workspace default branding copied onto a new
@@ -82,7 +83,7 @@ export const formsService = {
   // that confirms the override needs backend support, not a different frontend guess.
   getForms: (
     // `archived` (Sprint 13, CF5.6): 'false' (default) hides archived forms, 'only' shows just them.
-    params?: { search?: string; status?: string; page?: number; limit?: number; archived?: 'true' | 'false' | 'only'; pinned?: boolean },
+    params?: { search?: string; status?: string; page?: number; limit?: number; archived?: 'true' | 'false' | 'only'; pinned?: boolean; sort?: FormsSortField; order?: 'asc' | 'desc' },
     context?: FormsContext
   ) =>
     axiosInstance
@@ -120,11 +121,11 @@ export const formsService = {
       }),
 
   // The backend caps `limit` at 50 (silently), so "all forms" for stats/pickers means paging.
-  // ponytail: capped at 10 pages (500 forms); a real aggregate endpoint is documented in api-reference.md.
+  // ponytail: capped at MAX_PAGES (2 000 forms) so a runaway workspace cannot fire unbounded requests.
   getAllForms: async (context?: FormsContext, params?: { status?: string }) => {
     const PAGE = 50;
     const first = await formsService.getForms({ ...params, page: 1, limit: PAGE }, context);
-    const pages = Math.min(Math.ceil(first.total / PAGE), 10);
+    const pages = Math.min(Math.ceil(first.total / PAGE), 40);
     const rest = await Promise.all(
       Array.from({ length: Math.max(0, pages - 1) }, (_, i) => formsService.getForms({ ...params, page: i + 2, limit: PAGE }, context)),
     );
