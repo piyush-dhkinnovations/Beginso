@@ -72,3 +72,19 @@ beforeEach(() => {
   localStorageMock.removeItem.mockClear();
   cookieStore = '';
 });
+
+// --- Link clicks: jsdom cannot navigate and prints "Not implemented: navigation to another Document" for every
+// click on a real <a href>. Tests assert on the href, never on an actual page load, so the default action is cancelled
+// after React's own handlers have run (this listener sits on document, above React's root).
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', (event) => {
+    const link = (event.target as Element | null)?.closest?.('a[href]');
+    if (link && !event.defaultPrevented) event.preventDefault();
+  });
+}
+
+// findBy*/waitFor default to 1 s. Pages that lazy-load their charts and grid (dynamic imports) can take longer than
+// that when 36 workers compile at once, which made a populated-state test fail once in a while. A passing test
+// never waits longer than it needs to, so a roomier ceiling only affects runs that would otherwise flake.
+import { configure } from '@testing-library/react';
+configure({ asyncUtilTimeout: 5000 });

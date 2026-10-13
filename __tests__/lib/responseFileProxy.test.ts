@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/responses/[responseId]/file/[fileId]/route';
 import { SESSION_COOKIE_NAME } from '@/lib/sessionCookie';
@@ -20,6 +20,13 @@ describe('response-file server proxy', () => {
     mockFetch.mockReset();
     vi.stubGlobal('fetch', mockFetch);
     vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://backend.example');
+    // The route logs upstream failures on purpose; silence it here (and keep the spy so a test can assert it).
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('rejects invalid IDs before contacting the backend', async () => {

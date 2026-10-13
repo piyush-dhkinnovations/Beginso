@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const mockGetReports = vi.fn();
@@ -101,10 +101,10 @@ describe('ReportJobsList', () => {
     });
     renderList();
 
-    await vi.waitFor(() => expect(mockGetReports).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockGetReports).toHaveBeenCalledTimes(1));
 
-    await vi.advanceTimersByTimeAsync(5_000);
-    await vi.waitFor(() => expect(mockGetReports).toHaveBeenCalledTimes(2));
+    await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
+    await waitFor(() => expect(mockGetReports).toHaveBeenCalledTimes(2));
   });
 
   it('backfills formId/responseStatus/from/to from the previous poll when a later poll omits them for the same job (S5-04)', async () => {
@@ -123,8 +123,8 @@ describe('ReportJobsList', () => {
 
     expect(await screen.findAllByText(/Job Application/)).not.toHaveLength(0);
 
-    await vi.advanceTimersByTimeAsync(5_000);
-    await vi.waitFor(() => expect(mockGetReports).toHaveBeenCalledTimes(2));
+    await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
+    await waitFor(() => expect(mockGetReports).toHaveBeenCalledTimes(2));
 
     // Second poll's raw response has no formId at all — the row must still show the form name
     // (backfilled), not regress to "All Forms".
@@ -143,9 +143,9 @@ describe('ReportJobsList', () => {
     });
     renderList();
 
-    await vi.waitFor(() => expect(mockGetReports).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockGetReports).toHaveBeenCalledTimes(1));
 
-    await vi.advanceTimersByTimeAsync(20_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(20_000); });
     expect(mockGetReports).toHaveBeenCalledTimes(1);
   });
 
@@ -155,13 +155,13 @@ describe('ReportJobsList', () => {
     mockGetReports.mockResolvedValueOnce({ data: [job], total: 1, page: 1, limit: 20, totalPages: 1 });
     renderList();
 
-    await vi.waitFor(() => expect(mockGetReports).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockGetReports).toHaveBeenCalledTimes(1));
     expect(mockToast).not.toHaveBeenCalled();
 
     mockGetReports.mockResolvedValue({ data: [{ ...job, status: 'completed' }], total: 1, page: 1, limit: 20, totalPages: 1 });
-    await vi.advanceTimersByTimeAsync(5_000);
+    await act(async () => { await vi.advanceTimersByTimeAsync(5_000); });
 
-    await vi.waitFor(() => expect(mockToast).toHaveBeenCalledWith('Your report is ready to download.', 'success'));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Your report is ready to download.', 'success'));
   });
 
   it('Retry reconstructs the original filters from the job and optimistically inserts the new job', async () => {

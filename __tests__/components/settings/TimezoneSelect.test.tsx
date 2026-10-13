@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TimezoneSelect } from '@/components/settings/TimezoneSelect';
 
@@ -45,23 +45,23 @@ describe('TimezoneSelect', () => {
   it('filters by city', async () => {
     setup();
     await userEvent.click(box());
-    await userEvent.type(box(), 'sydney');
+    await userEvent.paste('sydney');
     expect(options().map((o) => o.textContent)).toEqual([expect.stringContaining('Sydney')]);
   });
 
   it('matches friendly aliases such as a country name', async () => {
     setup({ value: 'UTC' });
     await userEvent.click(box());
-    await userEvent.type(box(), 'india');
+    await userEvent.paste('india');
     expect(options().some((o) => /Kolkata|Calcutta/.test(o.textContent ?? ''))).toBe(true);
   });
 
   it('requires every search term to match', async () => {
     setup();
     await userEvent.click(box());
-    await userEvent.type(box(), 'new york usa');
+    await userEvent.paste('new york usa');
     expect(options().map((o) => o.textContent)).toEqual([expect.stringContaining('New York')]);
-    await userEvent.type(box(), ' tokyo');
+    await userEvent.paste(' tokyo');
     expect(screen.queryByRole('option')).not.toBeInTheDocument();
     expect(screen.getByText(/No timezone matches/)).toBeInTheDocument();
   });
@@ -69,7 +69,7 @@ describe('TimezoneSelect', () => {
   it('matches by UTC offset', async () => {
     setup();
     await userEvent.click(box());
-    await userEvent.type(box(), 'utc+09:00');
+    await userEvent.paste('utc+09:00');
     expect(options().some((o) => o.textContent?.includes('Tokyo'))).toBe(true);
     expect(options().every((o) => o.textContent?.includes('UTC+09:00'))).toBe(true);
   });
@@ -77,7 +77,7 @@ describe('TimezoneSelect', () => {
   it('picks with the mouse: onChange, closes, blurs-notifies and refocuses the input', async () => {
     const { props } = setup();
     await userEvent.click(box());
-    await userEvent.type(box(), 'tokyo');
+    await userEvent.paste('tokyo');
     fireEvent.mouseDown(options()[0]);
     expect(props.onChange).toHaveBeenCalledWith('Asia/Tokyo');
     expect(props.onBlur).toHaveBeenCalled();
@@ -94,7 +94,7 @@ describe('TimezoneSelect', () => {
       </form>
     );
     await userEvent.click(box());
-    await userEvent.type(box(), 'london');
+    await userEvent.paste('london');
     await userEvent.keyboard('{Enter}');
     expect(onChange).toHaveBeenCalledWith('Europe/London');
     expect(onSubmit).not.toHaveBeenCalled();
@@ -104,7 +104,7 @@ describe('TimezoneSelect', () => {
     const onChange = vi.fn();
     setup({ onChange });
     await userEvent.click(box());
-    await userEvent.type(box(), 'utc+09:00');
+    await userEvent.paste('utc+09:00');
     const count = options().length;
     expect(count).toBeGreaterThan(1);
     await userEvent.keyboard('{ArrowUp}');
@@ -117,7 +117,7 @@ describe('TimezoneSelect', () => {
 
   it('ArrowDown opens a closed list', async () => {
     setup();
-    box().focus();
+    act(() => box().focus());
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     await userEvent.keyboard('{ArrowDown}');
@@ -127,7 +127,7 @@ describe('TimezoneSelect', () => {
   it('Escape closes without changing the value', async () => {
     const { props } = setup();
     await userEvent.click(box());
-    await userEvent.type(box(), 'tok');
+    await userEvent.paste('tok');
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     expect(props.onChange).not.toHaveBeenCalled();

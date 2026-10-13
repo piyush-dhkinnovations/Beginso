@@ -37,7 +37,7 @@ describe('ReportJobRow — property test', () => {
 
         const user = userEvent.setup();
         const job = mockReportJob({ _id: 'report-completed', status: 'completed', format: 'csv' });
-        render(<ReportJobRow job={job} onRetry={vi.fn()} />);
+        render(<table><tbody><ReportJobRow job={job} onRetry={vi.fn()} /></tbody></table>);
 
         const button = screen.getByRole('button', { name: 'Download' });
         for (let i = 0; i < clicks; i++) {

@@ -15,6 +15,8 @@ vi.mock('@/services/settings', () => ({
   settingsService: {
     getWorkspace: (...args: unknown[]) => mockGetWorkspace(...args),
     updateWorkspace: (...args: unknown[]) => mockUpdateWorkspace(...args),
+    // DeleteWorkspaceModal (inside DangerZoneSection) creates a profile query; without a queryFn react-query warns on every render.
+    getProfile: () => Promise.resolve({ id: 'u1', fullName: 'Test User', email: 'test@example.com' }),
   },
 }));
 

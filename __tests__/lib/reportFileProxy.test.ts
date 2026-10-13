@@ -6,7 +6,7 @@
  * Requirements: 12.1
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/reports/[reportId]/file/route';
 import { SESSION_COOKIE_NAME } from '@/lib/sessionCookie';
@@ -27,6 +27,13 @@ describe('report-file server proxy', () => {
     mockFetch.mockReset();
     vi.stubGlobal('fetch', mockFetch);
     vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://backend.example');
+    // The route logs upstream failures on purpose; silence it here (and keep the spy so a test can assert it).
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('rejects an invalid report ID before contacting the backend', async () => {
