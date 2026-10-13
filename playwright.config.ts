@@ -6,6 +6,13 @@ import { defineConfig, devices } from '@playwright/test';
  * so tests are deterministic and don't depend on the real backend's availability,
  * rate limits, or current bugs — those are tracked separately in docs/backend-contract/known-issues/.
  */
+// Ports can be moved with E2E_PORT (the app) and E2E_MOCK_PORT (the mock backend) when 3100/3101 are taken.
+// A server that is already listening is NOT reused unless E2E_REUSE_SERVER=1: reusing whatever answers on the
+// port once ran the whole suite against a different project's dev server and failed with a misleading page.
+const APP_PORT = Number(process.env.E2E_PORT ?? 3100);
+const MOCK_PORT = Number(process.env.E2E_MOCK_PORT ?? 3101);
+const reuseExistingServer = process.env.E2E_REUSE_SERVER === '1';
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -16,7 +23,7 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:3100',
+    baseURL: `http://localhost:${APP_PORT}`,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },
@@ -26,17 +33,18 @@ export default defineConfig({
   webServer: [
     {
       command: 'node e2e/mockServer.ts',
-      url: 'http://localhost:3101/api/public/mock-valid',
-      reuseExistingServer: !process.env.CI,
+      url: `http://localhost:${MOCK_PORT}/api/public/mock-valid`,
+      env: { E2E_MOCK_PORT: String(MOCK_PORT) },
+      reuseExistingServer,
       timeout: 30000,
     },
     {
       // Launch Node directly so Playwright can terminate the server process tree
       // reliably on Windows after the tests finish.
-      command: 'node node_modules/next/dist/bin/next dev -p 3100',
-      url: 'http://localhost:3100',
-      env: { NEXT_PUBLIC_API_URL: 'http://localhost:3101', NEXT_DIST_DIR: '.next-e2e' },
-      reuseExistingServer: !process.env.CI,
+      command: `node node_modules/next/dist/bin/next dev -p ${APP_PORT}`,
+      url: `http://localhost:${APP_PORT}`,
+      env: { NEXT_PUBLIC_API_URL: `http://localhost:${MOCK_PORT}`, NEXT_DIST_DIR: '.next-e2e' },
+      reuseExistingServer,
       timeout: 60000,
     },
   ],

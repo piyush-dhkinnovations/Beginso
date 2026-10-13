@@ -20,7 +20,7 @@ import type { PublicFormSchema } from '../src/types/publicForm.ts';
  *   contains "submit-500"   -> POST .../submit returns 500
  *   anything else           -> GET returns the mock schema as-is; submit returns 200
  */
-const PORT = 3101;
+const PORT = Number(process.env.E2E_MOCK_PORT ?? 3101);
 
 function schemaFor(slug: string): PublicFormSchema {
   if (slug.includes('closed-date')) {

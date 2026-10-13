@@ -11,13 +11,13 @@ function makeFile(size: number, type: string): File {
 }
 
 describe('validateFile', () => {
-  it('accepts a file exactly at the 100 MB limit', () => {
+  it('accepts a file exactly at the 25 MB limit', () => {
     expect(validateFile(makeFile(MAX_SIZE_BYTES, 'application/pdf'))).toBeNull();
   });
 
-  it('rejects a file one byte over the 100 MB limit', () => {
+  it('rejects a file one byte over the 25 MB limit', () => {
     expect(validateFile(makeFile(MAX_SIZE_BYTES + 1, 'application/pdf'))).toBe(
-      'File exceeds the 100 MB limit.'
+      'File exceeds the 25 MB limit.'
     );
   });
 

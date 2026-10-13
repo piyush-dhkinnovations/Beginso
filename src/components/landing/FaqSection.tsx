@@ -18,7 +18,7 @@ const FAQS = [
   },
   {
     q: "How big can uploaded files be?",
-    a: "Up to 100 MB per file. File type and size are validated on upload, and every file is scoped to the workspace that owns the form.",
+    a: "Up to 25 MB per file. File type and size are validated on upload, and every file is scoped to the workspace that owns the form.",
   },
   {
     q: "Do you store IP addresses?",

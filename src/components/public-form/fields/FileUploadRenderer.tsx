@@ -124,7 +124,7 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
           <Upload size={20} className="text-(--text-disabled)" />
           <p className="bg-body-sm text-(--text-primary)">Click or drag and drop a file</p>
           <p className="bg-caption text-(--text-disabled)">
-            PDF, Word, Excel, images, video (MP4), ZIP, plain text — up to 100 MB
+            PDF, Word, Excel, images, video (MP4), ZIP, plain text — up to 25 MB
           </p>
         </div>
       )}

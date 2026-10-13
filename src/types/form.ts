@@ -66,10 +66,10 @@ export interface ChoiceField extends BaseField {
   options: string[];     // min 1 option required before save/publish
 }
 
+// File type and size are platform-enforced (lib/validateFile.ts on the client, the backend's upload limits on the server);
+// the builder has no per-field setting for them, so this field has no extra keys.
 export interface FileUploadField extends BaseField {
   type: 'file_upload';
-  allowedTypes?: string[];
-  maxSizeMb?: number;
 }
 
 // ─── V2 field types ──────────────────────────────────────────────────────────

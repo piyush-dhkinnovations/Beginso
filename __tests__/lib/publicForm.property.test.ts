@@ -102,8 +102,8 @@ describe('Property 3: Logic Rule Evaluation Is Deterministic', () => {
 // ─── Property 4: File Size Rejection Is Consistent ───────────────────────────────
 
 describe('Property 4: File Size Rejection Is Consistent', () => {
-  it('validateFile rejects any file > 100 MB regardless of type', () => {
-    const MAX = 100 * 1024 * 1024;
+  it('validateFile rejects any file > 25 MB regardless of type', () => {
+    const MAX = 25 * 1024 * 1024;
     fc.assert(
       fc.property(
         fc.integer({ min: MAX + 1, max: MAX * 10 }),
@@ -112,7 +112,7 @@ describe('Property 4: File Size Rejection Is Consistent', () => {
           const file = { size, type: mimeType, name: 'test-file' } as File;
           const error = validateFile(file);
           expect(error).not.toBeNull();
-          expect(error).toContain('100 MB');
+          expect(error).toContain('25 MB');
         }
       ),
       { numRuns: 100 }

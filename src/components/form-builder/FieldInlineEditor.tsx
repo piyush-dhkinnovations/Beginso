@@ -606,7 +606,7 @@ export function FieldInlineEditor({ field, onUpdate, onUpdateOptions }: FieldInl
           </PanelSection>
 
           <PanelSection label="Max file size">
-            <p className="bg-body-sm text-(--text-secondary)">100 MB maximum file size</p>
+            <p className="bg-body-sm text-(--text-secondary)">25 MB maximum file size</p>
           </PanelSection>
         </>
       )}

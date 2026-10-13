@@ -1,6 +1,8 @@
 /** Client-side file validation for the public form's file_upload field. */
 
-export const MAX_SIZE_BYTES = 100 * 1024 * 1024; // 100 MB
+// 25 MB: the backend's per-file ceiling for a public submission (MAX_UPLOAD_MB, default 25). A larger limit here would let a
+// respondent pick a file that the server then refuses.
+export const MAX_SIZE_BYTES = 25 * 1024 * 1024;
 
 export const ALLOWED_MIME_TYPES = [
   'application/pdf',
@@ -32,7 +34,7 @@ export function validateFile(
 
   if (file.size > maxSizeBytes) {
     return isDefaultConstraints
-      ? 'File exceeds the 100 MB limit.'
+      ? 'File exceeds the 25 MB limit.'
       : `File exceeds the ${Math.round(maxSizeBytes / (1024 * 1024))} MB limit.`;
   }
   if (!allowedTypes.includes(file.type)) {

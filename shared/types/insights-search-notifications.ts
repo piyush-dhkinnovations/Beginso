@@ -1,5 +1,5 @@
-// Sprint 14 "Insights, Search & Launch" - the wire shapes of every new or changed backend route, as IMPLEMENTED in
-// Beginso-Backend (verified by src/__tests__/sprint14_insights_search_launch.test.ts). Interfaces and unions only.
+// Insights, search and notifications - the wire shapes of every new or changed backend route, as IMPLEMENTED in
+// Beginso-Backend (verified by src/__tests__/insights_search_notifications.test.ts). Interfaces and unions only.
 // Owned by the backend developer; the frontend adapts to these (CLAUDE.md: defensive unwrapping still applies).
 //
 // Conventions that hold for every route below
@@ -107,7 +107,7 @@ export interface ReadAllResponse {
 //                    counted views. Preview loads (`POST /api/public/:slug/view?preview=1`) are never counted.
 //   reviewedRate   = the OLD stage-based figure (responses in a "completed" stage / responses in range), 0-100.
 // GET /api/analytics/overview?formId=  -> { success, data: AnalyticsOverviewData }
-export interface AnalyticsOverviewDataSprint14 {
+export interface AnalyticsOverviewWithViews {
   formId: string;
   total: number;
   completed: number;
@@ -119,7 +119,7 @@ export interface AnalyticsOverviewDataSprint14 {
   // ...statusDistribution, stageDistribution, dateRange unchanged
 }
 // GET /api/analytics/forms -> { success, data: AnalyticsFormRow[], total, page, limit, totalPages }
-export interface AnalyticsFormRowSprint14 {
+export interface AnalyticsFormRowWithViews {
   formId: string;
   title: string;
   status: string;

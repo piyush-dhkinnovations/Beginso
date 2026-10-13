@@ -38,17 +38,17 @@ test.describe('Public form — file upload', () => {
     await expect(page.getByText('Remove')).toHaveCount(0); // never reached "uploaded"
   });
 
-  test('a file over 100 MB is rejected with the size-limit message', async ({ page }) => {
+  test('a file over 25 MB is rejected with the size-limit message', async ({ page }) => {
     // Playwright caps in-memory setInputFiles buffers at 50 MB (CDP limit) — a real
-    // on-disk temp file is required to actually exceed the 100 MB validation boundary.
+    // on-disk temp file keeps the test independent of that limit.
     const hugePath = path.join(os.tmpdir(), 'e2e-huge-upload.pdf');
-    fs.writeFileSync(hugePath, Buffer.alloc(101 * 1024 * 1024));
+    fs.writeFileSync(hugePath, Buffer.alloc(26 * 1024 * 1024));
     try {
       await goToPage2(page);
       const fileInput = page.getByLabel('Attach a file', { exact: false });
       await fileInput.setInputFiles(hugePath);
 
-      await expect(page.getByText('File exceeds the 100 MB limit.')).toBeVisible();
+      await expect(page.getByText('File exceeds the 25 MB limit.')).toBeVisible();
     } finally {
       fs.unlinkSync(hugePath);
     }
