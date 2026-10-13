@@ -1,4 +1,5 @@
 import type { FormBranding } from '@/types/form'; // reused, not redefined — see design.md §12
+import type { ThemePreference } from '@/lib/theme';
 
 export interface UserProfile {
   id: string;
@@ -12,11 +13,14 @@ export interface UserProfile {
   emailVerified: boolean;
   createdAt: string; // ISO 8601
   lastLoginAt: string; // ISO 8601
+  /** Saved colour theme (GET /api/users/me). Absent on a server that predates it. */
+  theme?: ThemePreference;
 }
 
 export interface UpdateProfilePayload {
   name?: string;
   avatarUrl?: string | null;
+  theme?: ThemePreference;
 }
 
 export interface WorkspaceSettings {

@@ -7,6 +7,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from './firebase';
 import { PROTECTED_PATHS, matchesRoute } from './authRoutes';
 import { bindRecentFormsUser } from '@/store/recentFormsStore';
+import { applyTheme, isThemePreference, readDarkVariant, readThemePreference, storeTheme, type ThemePreference } from './theme';
 
 interface User {
   id: string;
@@ -20,6 +21,8 @@ interface User {
   // settings' UserProfile) since it gates app-wide routing, not a page-local concern — see the
   // reasoning design.md §2 already applied to avatarUrl.
   onboardingCompleted?: boolean;
+  /** The account's saved colour theme; applied to this device after sign-in (see the effect in AuthProvider). */
+  theme?: ThemePreference;
 }
 
 interface AuthState {
@@ -101,6 +104,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!state.isLoading) bindRecentFormsUser(userId);
   }, [userId, state.isLoading]);
+
+  // The account's saved theme is the source of truth: when it differs from what this device has, adopt it (a new device
+  // or browser then looks the way the person chose). Settings → Appearance writes both sides, so they normally agree
+  // and this does nothing. The dark style stays per-device.
+  const savedTheme = state.user?.theme;
+  useEffect(() => {
+    if (!isThemePreference(savedTheme) || readThemePreference() === savedTheme) return;
+    const variant = readDarkVariant();
+    storeTheme(savedTheme, variant);
+    applyTheme(savedTheme, variant);
+  }, [savedTheme]);
 
   useEffect(() => {
     // Start Firebase's local persistence setup while the user is reading/typing on

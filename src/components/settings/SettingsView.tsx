@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { SettingsTabs, type SettingsTab } from '@/components/settings/SettingsTabs';
 import { ProfileTab } from '@/components/settings/ProfileTab';
+import { AppearanceTab } from '@/components/settings/AppearanceTab';
 import { WorkspaceTab } from '@/components/settings/WorkspaceTab';
 import { BrandingTab } from '@/components/settings/BrandingTab';
 import { NotificationsTab } from '@/components/settings/NotificationsTab';
@@ -19,6 +20,7 @@ import { CriteriaManager } from '@/components/scoring/CriteriaManager';
 
 const TAB_LABEL: Record<SettingsTab, string> = {
   profile: 'Profile',
+  appearance: 'Appearance',
   workspace: 'Workspace',
   branding: 'Branding',
   notifications: 'Notifications',
@@ -119,6 +121,11 @@ export function SettingsView({ title, description, tabs, scope, labels }: Settin
         {visitedTabs.has('profile') && (
           <div className={activeTab === 'profile' ? '' : 'hidden'}>
             <ProfileTab onDirtyChange={dirtyHandlers.profile} />
+          </div>
+        )}
+        {visitedTabs.has('appearance') && (
+          <div className={activeTab === 'appearance' ? '' : 'hidden'}>
+            <AppearanceTab />
           </div>
         )}
         {visitedTabs.has('workspace') && (

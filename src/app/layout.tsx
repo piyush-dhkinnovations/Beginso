@@ -47,17 +47,13 @@ export const metadata: Metadata = {
 // anything paints, still zero-flash on a cold /login load, without the static-generation cost
 // a server-side read would add app-wide.
 //
-// Real bug found and fixed here: this used to read a `theme_preference` cookie first and only
-// fall back to `prefers-color-scheme` when it was unset — but no Settings toggle (or anything
-// else in the app) has ever written that cookie, so it was pure dead-code precedence that could
-// only ever fire from a stray/manually-set browser cookie, permanently pinning the app to that
-// value on every reload regardless of the OS theme (reported: system set to dark, page kept
-// reloading into light). Until a real theme toggle exists to write it, system preference is the
-// only signal that can be trusted — reinstate the cookie priority alongside that toggle's write
-// side, not before.
+// The script reads the person's choice from localStorage ('beginso.theme': system | light | dark, and
+// 'beginso.darkVariant': slate | midnight | dimmed), written by Settings → Appearance (lib/theme.ts) and synced from the account's
+// saved `theme` after sign-in (authContext). With no saved choice it follows the OS setting, live. It deliberately
+// never reads a cookie (the old `theme_preference` cookie was never written by anything).
 // Sprint 13 (CF2.11): public pages (/f/*, /r/*) and the preview iframe document (?embed=1) never take
 // the OS/admin theme — they are styled by the form's own theme (see FormThemeScope).
-const THEME_INIT_SCRIPT = `(function(){try{function skip(){var p=location.pathname;return /^[/](f|r)([/]|$)/.test(p)||(/^[/]forms[/][^/]+[/]preview$/.test(p)&&/[?&]embed=1/.test(location.search));}var m=window.matchMedia('(prefers-color-scheme: dark)');function apply(){if(skip())return;if(m.matches){document.documentElement.setAttribute('data-theme','dark');}else{document.documentElement.removeAttribute('data-theme');}}apply();if(m.addEventListener){m.addEventListener('change',apply);}else if(m.addListener){m.addListener(apply);}}catch(e){}})();`;
+const THEME_INIT_SCRIPT = `(function(){try{function skip(){var p=location.pathname;return /^[/](f|r)([/]|$)/.test(p)||(/^[/]forms[/][^/]+[/]preview$/.test(p)&&/[?&]embed=1/.test(location.search));}function get(k){try{return localStorage.getItem(k);}catch(e){return null;}}var m=window.matchMedia('(prefers-color-scheme: dark)');function apply(){if(skip())return;var pref=get('beginso.theme');var v=get('beginso.darkVariant');var r=document.documentElement;var dark=pref==='dark'||(pref!=='light'&&m.matches);if(dark){r.setAttribute('data-theme','dark');if(v==='midnight'||v==='dimmed'){r.setAttribute('data-dark',v);}else{r.removeAttribute('data-dark');}}else{r.removeAttribute('data-theme');r.removeAttribute('data-dark');}}apply();if(m.addEventListener){m.addEventListener('change',apply);}else if(m.addListener){m.addListener(apply);}}catch(e){}})();`;
 
 export default function RootLayout({
   children,

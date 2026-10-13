@@ -7,7 +7,7 @@ import type { SettingsTab } from '@/components/settings/SettingsTabs';
 
 // Account settings only — the person, not any workspace. Workspace-owned settings (General,
 // Branding, Tags, Stages, Scoring) live at /w/[slug]/settings.
-const ACCOUNT_TABS: SettingsTab[] = ['profile', 'notifications', 'security', 'sessions', 'data'];
+const ACCOUNT_TABS: SettingsTab[] = ['profile', 'appearance', 'notifications', 'security', 'sessions', 'data'];
 
 export default function SettingsPage() {
   const tab = useSearchParams().get('tab');

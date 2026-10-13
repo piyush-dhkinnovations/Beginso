@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import { bx } from '@/lib/utils';
 
-export type SettingsTab = 'profile' | 'workspace' | 'branding' | 'notifications' | 'security' | 'sessions' | 'tags' | 'stages' | 'scoring' | 'data';
+export type SettingsTab = 'profile' | 'appearance' | 'workspace' | 'branding' | 'notifications' | 'security' | 'sessions' | 'tags' | 'stages' | 'scoring' | 'data';
 
 interface SettingsTabsProps {
   activeTab: SettingsTab;
@@ -18,6 +18,8 @@ interface SettingsTabsProps {
 
 const TABS: { id: SettingsTab; label: string }[] = [
   { id: 'profile', label: 'Profile' },
+  // Account → Appearance: colour theme (saved on the account) and dark style (per device).
+  { id: 'appearance', label: 'Appearance' },
   { id: 'workspace', label: 'Workspace' },
   { id: 'branding', label: 'Branding' },
   { id: 'notifications', label: 'Notifications' },
@@ -38,7 +40,7 @@ const TABS: { id: SettingsTab; label: string }[] = [
 ];
 
 const GROUPS: { title: string; ids: SettingsTab[] }[] = [
-  { title: 'General', ids: ['profile', 'workspace', 'branding', 'notifications'] },
+  { title: 'General', ids: ['profile', 'appearance', 'workspace', 'branding', 'notifications'] },
   { title: 'Response handling', ids: ['tags', 'stages', 'scoring'] },
   { title: 'Account', ids: ['security', 'sessions', 'data'] },
 ];

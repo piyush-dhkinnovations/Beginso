@@ -14,13 +14,13 @@ import { SettingsTabs } from '@/components/settings/SettingsTabs';
 describe('SettingsTabs', () => {
   // Sprint 12 (inbox-collaboration), task 2.5/5.1/5.2: gains a 7th "Tags" tab, an 8th "Stages"
   // tab, and a 9th "Scoring" tab (OQ-7 resolved 3 Oct 2026), last.
-  it('renders all 9 tabs, grouped', () => {
+  it('renders all 10 tabs, grouped', () => {
     render(<SettingsTabs activeTab="profile" onChange={vi.fn()} />);
     // Grouped vertical nav: General, Response handling, then Account.
     expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual([
-      'Profile', 'Workspace', 'Branding', 'Notifications', 'Tags', 'Stages', 'Scoring', 'Security', 'Sessions & Devices',
+      'Profile', 'Appearance', 'Workspace', 'Branding', 'Notifications', 'Tags', 'Stages', 'Scoring', 'Security', 'Sessions & Devices',
     ]);
-    ['Profile', 'Workspace', 'Branding', 'Notifications', 'Security', 'Sessions & Devices', 'Tags', 'Stages', 'Scoring'].forEach((label) => {
+    ['Profile', 'Appearance', 'Workspace', 'Branding', 'Notifications', 'Security', 'Sessions & Devices', 'Tags', 'Stages', 'Scoring'].forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();
     });
     expect(screen.queryByText('Billing & Integrations')).not.toBeInTheDocument();
@@ -70,6 +70,6 @@ describe('SettingsTabs', () => {
     const onChange = vi.fn();
     render(<SettingsTabs activeTab="profile" onChange={onChange} />);
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Profile' }), { key: 'ArrowRight' });
-    expect(onChange).toHaveBeenCalledWith('workspace');
+    expect(onChange).toHaveBeenCalledWith('appearance');
   });
 });

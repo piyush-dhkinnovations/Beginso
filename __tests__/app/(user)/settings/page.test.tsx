@@ -94,6 +94,6 @@ describe('SettingsPage tab wiring', () => {
   it('shows only account tabs', () => {
     render(<SettingsPage />);
 
-    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Profile', 'Notifications', 'Security', 'Sessions & Devices', 'Data & account']);
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Profile', 'Appearance', 'Notifications', 'Security', 'Sessions & Devices', 'Data & account']);
   });
 });
