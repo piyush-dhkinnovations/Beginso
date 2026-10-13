@@ -40,7 +40,8 @@ export function ImageUploadRenderer({ field, setValue, trigger, error, disabled,
 
   function addFiles(list: FileList | null) {
     if (!list || list.length === 0) return;
-    const room = settings.maxImages - picked.length;
+    // A single-image field replaces what is there, so all of its room is free; a multi-image field only has what is left.
+    const room = settings.allowMultiple ? settings.maxImages - picked.length : settings.maxImages;
     const accepted: Picked[] = [];
     let message: string | null = null;
     for (const file of Array.from(list)) {

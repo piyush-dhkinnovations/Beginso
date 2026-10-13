@@ -93,6 +93,20 @@ describe('ImageUploadRenderer', () => {
     expect(onFilesChange).toHaveBeenLastCalledWith([expect.objectContaining({ name: 'b.png' })]);
   });
 
+  it('single mode: choosing a second image replaces the first instead of refusing it', async () => {
+    const onFilesChange = vi.fn();
+    setup(single, onFilesChange);
+    await userEvent.upload(input(), img('a.png'));
+    const second = img('b.png');
+    await userEvent.upload(input(), second);
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByAltText('a.png')).not.toBeInTheDocument();
+    expect(screen.getByAltText('b.png')).toBeInTheDocument();
+    expect(revokeUrl).toHaveBeenCalledWith('blob:img-1');
+    expect(readValues(screen.getByTestId('values'))).toEqual({ f1: 'b.png' });
+    expect(onFilesChange).toHaveBeenLastCalledWith([second]);
+  });
+
   it('removing the last image clears the value and reports an empty list', async () => {
     const onFilesChange = vi.fn();
     setup(single, onFilesChange);

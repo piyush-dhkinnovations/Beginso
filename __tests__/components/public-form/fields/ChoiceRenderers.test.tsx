@@ -123,8 +123,16 @@ describe('RatingRenderer', () => {
     await userEvent.click(screen.getByRole('radio', { name: '3 stars' }));
     expect(values()).toEqual({ f1: 3 });
     await userEvent.click(screen.getByRole('radio', { name: '3 stars' }));
-    expect(values()).toEqual({});
+    expect(values()).toEqual({ f1: '' });
     expect(screen.queryByText('3 / 5')).not.toBeInTheDocument();
+  });
+
+  it('clears a rating that came from a restored draft or prefill (a default value)', async () => {
+    render(<Harness Renderer={RatingRenderer} field={field} defaultValues={{ f1: 4 }} />);
+    expect(screen.getByText('4 / 5')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('radio', { name: '4 stars' }));
+    expect(screen.queryByText('4 / 5')).not.toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: '4 stars' })).toHaveAttribute('aria-checked', 'false');
   });
 
   it('disables every star when disabled', () => {

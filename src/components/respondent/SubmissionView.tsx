@@ -56,7 +56,14 @@ export function SubmissionView({ fields, status, canEdit, readOnlyReason, onSave
     setSaving(true);
     setError(null);
     try {
-      const result = await onSave(draft);
+      // A multi-value answer (checkboxes) is shown and edited as "a, b" text; send it back as a list, as it came.
+      const payload = Object.fromEntries(
+        Object.entries(draft).map(([id, v]) => {
+          const wasList = Array.isArray(fields.find((f) => f.fieldId === id)?.value);
+          return [id, wasList && typeof v === 'string' ? v.split(',').map((s) => s.trim()).filter(Boolean) : v];
+        })
+      );
+      const result = await onSave(payload);
       setEditing(false);
       setNotice(result.editedAfterReview ? 'Edited — your reviewer has been told.' : 'Your changes were saved.');
     } catch (err) {

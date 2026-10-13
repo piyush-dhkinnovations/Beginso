@@ -7,7 +7,8 @@ export function useBuilderUndoShortcuts() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
-      const el = e.target as HTMLElement | null;
+      // A key event aimed at window or document has no closest().
+      const el = e.target instanceof Element ? e.target : null;
       if (el?.closest('input, textarea, select, [contenteditable="true"]')) return;
       const k = e.key?.toLowerCase();
       if (!k) return;

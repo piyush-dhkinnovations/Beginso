@@ -56,7 +56,7 @@ describe('DateTimeRenderer', () => {
 
   it('renders separate date and time inputs in a named group', () => {
     render(<Harness Renderer={DateTimeRenderer} field={field} />);
-    expect(screen.getByRole('group')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Appointment' })).toBeInTheDocument();
     expect(screen.getByLabelText('Date')).toHaveAttribute('type', 'date');
     expect(screen.getByLabelText('Time')).toHaveAttribute('type', 'time');
   });

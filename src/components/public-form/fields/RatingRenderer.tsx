@@ -26,8 +26,9 @@ export function RatingRenderer({ field, control, error, disabled, inline }: Fiel
                   aria-checked={value === n}
                   aria-label={`${n} star${n === 1 ? '' : 's'}`}
                   disabled={disabled}
-                  // Clicking the chosen star again clears the rating.
-                  onClick={() => c.onChange(n === value ? undefined : n)}
+                  // Clicking the chosen star again clears the rating. '' rather than undefined: react-hook-form turns
+                  // undefined back into the default value, so a restored draft or prefill could never be cleared.
+                  onClick={() => c.onChange(n === value ? '' : n)}
                   onBlur={c.onBlur}
                   className="flex min-h-10 min-w-8 items-center justify-center rounded-md text-(--warning-text) hover:bg-(--surface-hover)"
                 >

@@ -13,7 +13,7 @@ import { FieldShell, FIELD_INPUT_CLASSES, FIELD_INPUT_ERROR_CLASSES, FIELD_INPUT
 export function DateTimeRenderer({ field, control, error, disabled, inline }: FieldRendererProps) {
   const inputClass = cn(FIELD_INPUT_CLASSES, error && FIELD_INPUT_ERROR_CLASSES, disabled && FIELD_INPUT_DISABLED_CLASSES);
   return (
-    <FieldShell fieldId={field.fieldId} label={field.label} required={field.required} helpText={field.helpText} error={error} inline={inline}>
+    <FieldShell fieldId={field.fieldId} label={field.label} required={field.required} helpText={field.helpText} error={error} inline={inline} asGroup>
       <Controller
         name={field.fieldId}
         control={control}

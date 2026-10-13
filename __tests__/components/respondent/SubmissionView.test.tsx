@@ -75,6 +75,24 @@ describe('SubmissionView (edit mode)', () => {
     expect(screen.queryByLabelText('Signature')).not.toBeInTheDocument();
   });
 
+  it('sends a multi-value answer back as a list, whether edited or not', async () => {
+    const save = await startEditing();
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    expect(save.mock.calls[0][0].tags).toEqual(['a', 'b']);
+  });
+
+  it('turns an edited multi-value answer ("a, c , ") into a clean list', async () => {
+    const save = await startEditing();
+    const tags = screen.getByLabelText('Tags');
+    await userEvent.clear(tags);
+    await userEvent.type(tags, 'a, c , ');
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+    await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
+    expect(save.mock.calls[0][0].tags).toEqual(['a', 'c']);
+    expect(save.mock.calls[0][0].name).toBe('Asha');
+  });
+
   it('refuses to save a blank required answer and does not call onSave', async () => {
     const save = await startEditing();
     await userEvent.clear(screen.getByLabelText('Full name'));

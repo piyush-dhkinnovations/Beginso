@@ -18,6 +18,14 @@ beforeEach(() => {
 });
 
 describe('useBuilderUndoShortcuts', () => {
+  it('ignores a key event aimed at window or document instead of throwing', () => {
+    renderHook(() => useBuilderUndoShortcuts());
+    expect(() => press({ key: 'z', ctrlKey: true }, window)).not.toThrow();
+    expect(() => press({ key: 'z', ctrlKey: true }, document)).not.toThrow();
+    // no element to be "typing in", so it is still treated as the page-level shortcut
+    expect(undo).toHaveBeenCalledTimes(2);
+  });
+
   it('Ctrl+Z undoes and prevents the default', () => {
     renderHook(() => useBuilderUndoShortcuts());
     const e = press({ key: 'z', ctrlKey: true });
