@@ -31,7 +31,7 @@ Three skills live in `.claude/skills/`. Each is also a slash command.
 
 `/day` needs `Beginso-Report` open in the workspace to read the sprint plan's day rows. A multi-root workspace with both repos is the intended setup.
 
-**Standing decision (30 Sep 2026, from Sprint 12 Day 4 onward): do not write test files while building a feature.** Write and iterate on the implementation only. Every changed line of code used to also need its test file changed alongside it — for work that hasn't stabilized yet, that's a second edit (and a second review) on top of a first draft that's still moving, not verification. Tests come back as a **separate, later pass**, only once the feature's code is confirmed correct and stable (the owner has actually used it, not just "it type-checks") — request that pass explicitly when you want it, one feature/task at a time, not automatically bundled into every code change. Sprints 7–12 through Day 3 already have their test suites; those stay as they are, this does not apply retroactively. `npm test`/`type-check`/`lint`/`build` still get run as usual to verify *existing* tests aren't broken — this is about not authoring *new* test files mid-build, not about skipping verification of what's already there.
+**Tests ship with the feature (13 Oct 2026, replaces the 30 Sep 2026 "no tests while building" decision).** A change to behaviour comes with its test file in the same change, under `__tests__/` mirroring `src/`. The 8–12 Oct work that was built without tests got its suites on 13 Oct 2026. Name test files by feature, never by sprint.
 
 ---
 

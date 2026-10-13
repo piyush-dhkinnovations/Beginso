@@ -300,7 +300,9 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
 
     try {
       const answers = buildAnswers(schema.fields, hiddenFieldIds, values);
-      const honeypot = typeof values._hp === 'string' ? values._hp : '';
+      // The resolver strips keys the schema does not know, so `values` never carries the hidden `_hp` input: read it from the form state.
+      const hp = methods.getValues('_hp');
+      const honeypot = typeof hp === 'string' ? hp : '';
 
       // Mode 3: a one-shot ticket proves the signed-in account without the browser ever holding a session token.
       let ticket: string | undefined;
