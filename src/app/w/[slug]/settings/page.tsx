@@ -20,13 +20,14 @@ export default function WorkspaceSettingsPage() {
     ...(canManageTags(role) ? (['tags'] as const) : []),
     ...(canManageStages(role) ? (['stages'] as const) : []),
     ...(canManageScoring(role) ? (['scoring'] as const) : []),
+    'appearance', // every member picks their own theme (it is saved on the account, so it follows them across workspaces)
     'notifications', // every member has their own response-email preference
   ];
 
   return (
     <SettingsView
       title="Workspace settings"
-      description="Workspace details and response handling for people who manage it, plus your own response email setting."
+      description="Workspace details and response handling for people who manage it, plus your own theme and response email settings."
       tabs={tabs}
       scope={slug}
       labels={{ workspace: 'General' }}

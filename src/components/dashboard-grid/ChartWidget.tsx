@@ -30,7 +30,7 @@ export function ChartWidget({ chart, metric, title }: { chart: ChartKind; metric
   let body;
   if (chart === 'line' || chart === 'area') body = <LineAreaChart data={data} ariaLabel={label} area={chart === 'area'} />;
   else if (chart === 'donut' || chart === 'pie') body = <PieChart data={data} ariaLabel={label} donut={chart === 'donut'} centreLabel="total" />;
-  else if (chart === 'hbar') body = <BarsChart data={data} ariaLabel={label} horizontal byCategory legend />;
+  else if (chart === 'hbar') body = <BarsChart data={data} ariaLabel={label} horizontal byCategory legend={rows.length > 1} />;
   else if (chart === 'status') {
     body = (
       <div className="flex flex-col gap-4">
@@ -53,7 +53,13 @@ export function ChartWidget({ chart, metric, title }: { chart: ChartKind; metric
         </ul>
       </div>
     );
-  } else body = <BarsChart data={data} ariaLabel={label} byCategory={!isSeries(metric)} legend={!isSeries(metric)} />;
+  } else body = <BarsChart data={data} ariaLabel={label} byCategory={!isSeries(metric)} legend={!isSeries(metric) && rows.length > 1} />;
 
-  return <ChartCard title={label} className={chart === 'hbar' && rows.length <= 3 ? 'h-auto!' : 'h-full'}>{body}</ChartCard>;
+  // Always as tall as its grid cell (a shorter card left an empty framed area under it, most visibly when selected); the chart sits in
+  // the middle of the space, and a lone bar has no legend repeating its own label.
+  return (
+    <ChartCard title={label} className="h-full">
+      <div className="flex min-h-0 flex-1 flex-col justify-center">{body}</div>
+    </ChartCard>
+  );
 }

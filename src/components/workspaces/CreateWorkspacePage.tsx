@@ -47,6 +47,9 @@ export function CreateWorkspacePage() {
       title="Create a workspace"
       description="A workspace is a shared home for your team's forms, responses and templates. Give it a name to get started — you can change everything later."
       illustration={<WorkspaceIllustration />}
+      tint="#2f56d8"
+      panelTitle="One home for your team's forms"
+      panelText="Share forms, responses and templates with everyone who needs them."
       onClose={() => (window.history.length > 1 ? router.back() : router.push('/workspaces'))}
     >
       <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="flex flex-col gap-6" noValidate>

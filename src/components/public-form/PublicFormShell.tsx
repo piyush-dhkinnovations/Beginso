@@ -236,7 +236,8 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
 
   async function handleNext() {
     const fieldIds = shownFields.map((f) => f.fieldId);
-    const valid = await methods.trigger(fieldIds);
+    // A preview is for looking around: it never blocks Next on a required question, so every page of the template can be seen.
+    const valid = previewMode || (await methods.trigger(fieldIds));
     if (!valid) {
       const firstErrorId = fieldIds.find((id) => methods.formState.errors[id]);
       if (firstErrorId) {
@@ -567,19 +568,21 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
     <>
       {accessMode === 'tracked' ? (
       <EmailStep value={respondentEmail} onChange={setRespondentEmail} error={emailError} disabled={isSubmitting} />
-    ) : accessMode === 'login' && authUser ? (
-      <p className="bg-body-sm text-(--text-muted)">
-        Responding as <strong className="text-(--text-primary)">{authUser.email}</strong>
-      </p>
     ) : null}
       {testControls}
     </>
   );
-  const hasAccessExtra = accessMode === 'tracked' || (accessMode === 'login' && !!authUser) || !!testControls;
+  const hasAccessExtra = accessMode === 'tracked' || !!testControls;
 
   return (
     <LayoutFrame {...frameProps}>
         <form onSubmit={handleFormSubmit} noValidate className="p-6 md:p-8">
+          {/* Login mode: who the response will be recorded for, first thing in the form, before any question. */}
+          {accessMode === 'login' && authUser && (
+            <p className="bg-body-sm mb-4 text-(--text-muted)">
+              Responding as <strong className="text-(--text-primary)">{authUser.email}</strong>
+            </p>
+          )}
           {!showReview && (
             <>
             {layout !== 'steps' && !isGuided && brandShowsProgress(schema.branding) && embedOpts.progress && (

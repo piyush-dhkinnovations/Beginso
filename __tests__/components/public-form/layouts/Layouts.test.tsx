@@ -33,6 +33,28 @@ const FRAMES: [LayoutPreset, ComponentType<LayoutFrameProps>][] = [
 ];
 
 describe.each(FRAMES)('%s layout', (layout, Layout) => {
+  it('shows "Made with Beginso" below the form, opening the main website in a new tab', () => {
+    render(
+      <Layout {...base(layout)}>
+        <p>BODY</p>
+      </Layout>
+    );
+    const badge = screen.getByRole('link', { name: /Made with Beginso/ });
+    expect(badge).toHaveAttribute('href', '/');
+    expect(badge).toHaveAttribute('target', '_blank');
+    expect(badge).toHaveAttribute('rel', expect.stringContaining('noopener'));
+    expect(screen.getByText('BODY').compareDocumentPosition(badge) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('leaves the badge out of the builder preview', () => {
+    render(
+      <Layout {...base(layout, { previewMode: true })}>
+        <p>BODY</p>
+      </Layout>
+    );
+    expect(screen.queryByRole('link', { name: /Made with Beginso/ })).not.toBeInTheDocument();
+  });
+
   it('renders its children and the form title', () => {
     render(
       <Layout {...base(layout)}>

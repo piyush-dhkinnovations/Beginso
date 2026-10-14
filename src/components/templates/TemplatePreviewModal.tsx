@@ -3,7 +3,7 @@
 import type { Template } from '@/types/form';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { Tag } from '@/components/ui/Tag';
+import { TemplateFormSheet } from '@/components/templates/TemplateFormSheet';
 
 export interface TemplatePreviewModalProps {
   template: Template | null;
@@ -12,9 +12,7 @@ export interface TemplatePreviewModalProps {
   isLoading: boolean;
 }
 
-const humanize = (type: string) => type.replace(/_/g, ' ');
-
-// Read-only look at what a template contains — its questions in order — before creating a form.
+// Read-only look at a template — its questions in order, drawn like the real form — before creating a form.
 export function TemplatePreviewModal({ template, onClose, onUse, isLoading }: TemplatePreviewModalProps) {
   return (
     <Modal
@@ -24,18 +22,16 @@ export function TemplatePreviewModal({ template, onClose, onUse, isLoading }: Te
       description={template?.description}
       size="lg"
     >
-      <ol className="flex max-h-96 flex-col divide-y divide-(--border-subtle) overflow-y-auto">
-        {template?.fields.map((field, index) => (
-          <li key={index} className="flex items-center justify-between gap-3 py-2.5">
-            <span className="bg-body-sm text-(--text-primary)">
-              <span className="mr-2 text-(--text-disabled)">{index + 1}.</span>
-              {field.label}
-              {field.required && <span className="ml-1 text-(--error-text)" aria-label="required">*</span>}
-            </span>
-            <Tag className="capitalize">{humanize(field.type)}</Tag>
-          </li>
-        ))}
-      </ol>
+      {/* The questions as a respondent would see them, on a form-like sheet, scrolling inside the dialog. */}
+      <div className="max-h-[60vh] overflow-y-auto rounded-xl border border-(--border-default) bg-(--bg-subtle) p-3 sm:p-5">
+        <div className="rounded-xl border border-(--border-default) bg-(--surface-card) p-5 shadow-(--shadow-sm) sm:p-6">
+          <h3 className="bg-h5 text-(--text-primary)">{template?.name}</h3>
+          <p className="mb-5 mt-1 bg-caption text-(--text-muted)">
+            {template?.fields.length ?? 0} {template?.fields.length === 1 ? 'question' : 'questions'} · a preview, nothing is submitted
+          </p>
+          {template && <TemplateFormSheet fields={template.fields} />}
+        </div>
+      </div>
       <div className="flex justify-end gap-3 border-t border-(--border-subtle) pt-4">
         <Button variant="secondary" onClick={onClose}>Close</Button>
         {template && (

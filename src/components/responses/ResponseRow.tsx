@@ -38,6 +38,9 @@ export function RespondentCell({ response }: { response: IResponse }) {
           {response.editedAfterReviewAt && (
             <span className="shrink-0 rounded-full bg-(--warning-surface) px-2 bg-caption font-semibold text-(--warning-text)">Edited</span>
           )}
+          {!response.editedAfterReviewAt && response.lastEditedByRespondentAt && (
+            <span className="shrink-0 rounded-full bg-(--info-surface) px-2 bg-caption font-semibold text-(--info-text)" title="The respondent changed their answers">Edited</span>
+          )}
           {response.isTest && (
             <span className="shrink-0 rounded-full bg-(--bg-sunken) px-2 bg-caption font-semibold text-(--text-secondary)">Test</span>
           )}

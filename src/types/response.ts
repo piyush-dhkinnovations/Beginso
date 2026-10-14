@@ -80,6 +80,8 @@ export interface IResponse {
   isTest?: boolean;
   /** Sprint 13 (A5.2) — set when the respondent edited after review. Backend contract to confirm (BE 0.12). */
   editedAfterReviewAt?: string | null;
+  /** The last time the respondent changed their own answers (any edit). Absent/null = never edited. */
+  lastEditedByRespondentAt?: string | null;
   /** Uncertain (design.md §13) — cuttable (B6, requirements.md §7.10). */
   score?: { average: number; count: number } | null;
   ipHash?: string;            // SHA-256(rawIP), never the raw IP — absent when the backend

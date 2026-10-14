@@ -450,3 +450,5 @@
 .aa-fill { animation: aaFill 3s ease-in-out infinite alternate; }
 .aa-blob { animation: aaBlob 12s ease-in-out infinite; }
 .aa-pulse { animation: aaPulse 2s ease-in-out infinite; }
+@keyframes aaDraw { from { stroke-dashoffset: 32; } to { stroke-dashoffset: 0; } }
+.aa-draw { stroke-dasharray: 32; animation: aaDraw 0.5s 0.45s ease-out both; }

@@ -2,8 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, waitFor } from '@testing-library/react';
 
 const mockReplace = vi.fn();
+const mockNext = vi.hoisted(() => ({ value: null as string | null }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mockReplace }),
+  useSearchParams: () => ({ get: (k: string) => (k === 'next' ? mockNext.value : null) }),
 }));
 
 const mockAuth = vi.fn();
@@ -17,6 +19,7 @@ import OnboardingPage from '@/app/onboarding/page';
 describe('OnboardingPage', () => {
   beforeEach(() => {
     mockReplace.mockClear();
+    mockNext.value = null;
     mockComplete.mockReset().mockResolvedValue(undefined);
   });
 
@@ -32,5 +35,19 @@ describe('OnboardingPage', () => {
     render(<OnboardingPage />);
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
     expect(mockComplete).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands the person back to where they were heading (e.g. a template being applied) once onboarding is done', async () => {
+    mockNext.value = '/templates/apply/tpl-1';
+    mockAuth.mockReturnValue({ isLoading: false, user: { onboardingCompleted: false } });
+    render(<OnboardingPage />);
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/templates/apply/tpl-1'));
+  });
+
+  it('ignores an external next= and still goes to /dashboard', async () => {
+    mockNext.value = 'https://evil.example';
+    mockAuth.mockReturnValue({ isLoading: false, user: { onboardingCompleted: false } });
+    render(<OnboardingPage />);
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/dashboard'));
   });
 });

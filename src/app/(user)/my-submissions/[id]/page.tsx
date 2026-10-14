@@ -9,6 +9,7 @@ import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { SubmissionView } from '@/components/respondent/SubmissionView';
+import { formatResponseDate } from '@/lib/formatters';
 
 // Sprint 13 (A5.1 / A5.2): one of MY submissions, with in-place correction. Someone else's id is a 404 from the
 // server, shown here as "not found" — never as a permission hint.
@@ -24,6 +25,7 @@ export default function MySubmissionPage() {
       <PageHeader
         breadcrumb={[{ label: 'My Submissions', href: '/my-submissions' }, { label: query.data?.formName ?? 'Submission' }]}
         title={query.data?.formName ?? 'Submission'}
+        description={query.data?.submittedAt ? `Submitted ${formatResponseDate(query.data.submittedAt)}` : undefined}
       />
       {query.isLoading ? (
         <Skeleton variant="text" width="100%" height={160} />
@@ -36,6 +38,7 @@ export default function MySubmissionPage() {
           </Button>
         </Alert>
       ) : (
+        <div className="max-w-160">
         <SubmissionView
           fields={query.data.fields ?? []}
           status={query.data.status}
@@ -48,6 +51,7 @@ export default function MySubmissionPage() {
             return result;
           }}
         />
+        </div>
       )}
     </div>
   );

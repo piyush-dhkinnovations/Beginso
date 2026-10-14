@@ -168,6 +168,13 @@ describe('PublicFormShell multi-page flow', () => {
     expect(await screen.findByLabelText(/First/)).toHaveValue('one');
   });
 
+  it('in preview mode Next moves on without answering a required question, so every page can be seen', async () => {
+    render(<PublicFormShell schema={twoPage()} slug="s" previewMode />);
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Step two' })).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  });
+
   it('review shows every page, Back returns to the form, and Submit sends all answers', async () => {
     render(<PublicFormShell schema={twoPage()} slug="s" />);
     await userEvent.type(screen.getByLabelText(/First/), 'one');
@@ -311,6 +318,16 @@ describe('PublicFormShell access modes', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
     await waitFor(() => expect(svc.submitForm).toHaveBeenCalled());
     expect(svc.submitForm.mock.calls[0][4]).toEqual({ ticket: 'tkt' });
+  });
+
+  it('login: "Responding as" is the first thing in the form, above the title and every question', () => {
+    mockAuth.mockReturnValue({ user: { email: 'me@x.co' }, isLoading: false });
+    const { container } = render(<PublicFormShell schema={login()} slug="s" />);
+    const who = screen.getByText('Responding as', { exact: false });
+    const form = container.querySelector('form')!;
+    expect(form.firstElementChild).toBe(who);
+    expect(who.compareDocumentPosition(screen.getByLabelText(/Name/)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(who.compareDocumentPosition(screen.getByRole('button', { name: 'Submit' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it('login: a failed ticket request stops the submission with a sign-in message', async () => {

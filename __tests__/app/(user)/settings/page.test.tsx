@@ -38,6 +38,13 @@ describe('SettingsPage tab wiring', () => {
     mockTab = null;
   });
 
+  it('points personal accounts to workspace settings for tags, stages and scoring (workspace-only by decision)', () => {
+    render(<SettingsPage />);
+    expect(screen.getByText(/Tags, stages and scoring belong to a workspace/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Open your workspaces' })).toHaveAttribute('href', '/workspaces');
+    expect(screen.queryByRole('tab', { name: 'Tags' })).not.toBeInTheDocument();
+  });
+
   it('accepts ?tab=sessions and shows the Sessions & Devices tab as active', () => {
     mockTab = 'sessions';
     render(<SettingsPage />);

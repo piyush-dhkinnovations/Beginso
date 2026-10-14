@@ -10,7 +10,7 @@ export interface ContextSwitcherWorkspace {
   slug: string;
   role?: string;
   memberCount?: number;
-  /** The workspace's logo (an uploaded image URL); absent = the building icon. */
+  /** The workspace's logo (an uploaded image URL); absent = the BeginSo mark. */
   logo?: string | null;
 }
 
@@ -32,13 +32,22 @@ export interface ContextSwitcherProps {
   collapsed?: boolean;
 }
 
-// The icon slot: the workspace's own logo when it has one, otherwise the Personal / workspace glyph.
+// The icon slot: the workspace's own logo when it has one, otherwise the BeginSo mark (workspace) or the person glyph (Personal).
 function ContextAvatar({ logo, Icon, size }: { logo?: string | null; Icon: typeof User; size: "sm" | "lg" }) {
   // A workspace with its own logo shows the logo alone (no box, border or background around it); the glyph keeps its quiet tile.
   if (logo) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- uploaded workspace logo, served by the backend
       <img src={logo} alt="" aria-hidden="true" className={bx("shrink-0 object-contain", size === "lg" ? "size-10 rounded-lg" : "size-6 rounded-md")} />
+    );
+  }
+  // A workspace that chose "BeginSo default" (no logo) shows the BeginSo mark, not a generic building; Personal keeps the person glyph.
+  if (Icon === Building2) {
+    return (
+      <span aria-hidden="true" className={bx("flex shrink-0 items-center justify-center overflow-hidden border border-(--border-default) bg-(--surface-card)", size === "lg" ? "size-10 rounded-lg" : "size-6 rounded-md")}>
+        {/* eslint-disable-next-line @next/next/no-img-element -- local brand mark */}
+        <img src="/favicon.svg" alt="" className={size === "lg" ? "size-6" : "size-4"} />
+      </span>
     );
   }
   return (

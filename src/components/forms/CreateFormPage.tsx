@@ -107,6 +107,9 @@ export function CreateFormPage() {
       title="Create a new form"
       description={`Give your form a name and an optional description to get started. You can always change this later.${target ? ` It will be created in ${target.name}.` : ''}`}
       illustration={<FormIllustration />}
+      tint="#6a3fe0"
+      panelTitle="Your form, ready in minutes"
+      panelText="Add questions, make it yours, share one link."
       onClose={goBack}
     >
       <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="flex flex-col gap-5" noValidate>

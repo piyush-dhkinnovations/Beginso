@@ -1,7 +1,7 @@
 /**
- * .kiro/specs/public-template-gallery — Requirement 3 (apply handoff) and Requirement 7
- * (explicit Personal/Workspace destination). One call to POST /api/templates/:id/use carrying
- * the destination, then a redirect into the builder on the Branding tab.
+ * Feature: use a template from the public gallery.
+ * Tests: the form is always created in the personal account, straight away and exactly once (no Personal/Workspace
+ * question), then the builder opens on the Branding tab; a failure shows a way back, not a stuck spinner.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -20,14 +20,6 @@ vi.mock('@/services/templates', () => ({
   templatesService: { useTemplate: (...args: unknown[]) => mockUseTemplate(...args) },
 }));
 
-vi.mock('@/hooks/useWorkspaceDestinations', () => ({
-  useWorkspaceList: () => ({
-    data: [{ id: 'ws-1', name: 'Acme', slug: 'acme', role: 'owner' }],
-    isLoading: false,
-  }),
-}));
-vi.mock('@/components/workspaces/CreateWorkspaceModal', () => ({ CreateWorkspaceModal: () => null }));
-
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   return render(
@@ -44,42 +36,25 @@ describe('ApplyTemplatePage (/templates/apply/[id])', () => {
     mockUseTemplate.mockReset();
   });
 
-  it('asks where the form should live and creates nothing until the user confirms', () => {
-    renderPage();
-
-    expect(screen.getByText(/where should this form live/i)).toBeInTheDocument();
-    expect(mockUseTemplate).not.toHaveBeenCalled();
-  });
-
-  it('personal: sends destinationWorkspaceId null, then opens the builder on the Branding tab with no ws hint', async () => {
+  it('asks nothing: creates the form in the personal account (destination null) and opens the builder on Branding', async () => {
     mockUseTemplate.mockResolvedValueOnce({ _id: 'form-9', title: 'Pitch Plan' });
     renderPage();
 
-    await userEvent.click(screen.getByRole('button', { name: /use this template/i }));
-
+    expect(screen.queryByText(/where should this form live/i)).not.toBeInTheDocument();
     await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/forms/form-9/edit?tab=branding'));
+    expect(mockUseTemplate).toHaveBeenCalledTimes(1);
     expect(mockUseTemplate).toHaveBeenCalledWith('tpl-1', null);
   });
 
-  it('workspace: sends that workspace id and carries its slug as the ?ws= hint', async () => {
-    mockUseTemplate.mockResolvedValueOnce({ _id: 'form-10', title: 'Pitch Plan' });
+  it('shows a progress message while the form is being created', () => {
+    mockUseTemplate.mockReturnValueOnce(new Promise(() => {}));
     renderPage();
-
-    await userEvent.click(screen.getByRole('button', { name: /^workspace/i }));
-    await userEvent.selectOptions(screen.getByLabelText(/which workspace/i), 'ws-1');
-    await userEvent.click(screen.getByRole('button', { name: /use this template/i }));
-
-    await waitFor(() =>
-      expect(mockReplace).toHaveBeenCalledWith('/forms/form-10/edit?ws=acme&tab=branding')
-    );
-    expect(mockUseTemplate).toHaveBeenCalledWith('tpl-1', 'ws-1');
+    expect(screen.getByText(/setting up your form/i)).toBeInTheDocument();
   });
 
   it('a failed apply shows an error with a way back to the gallery, not a stuck spinner', async () => {
     mockUseTemplate.mockRejectedValueOnce(new Error('boom'));
     renderPage();
-
-    await userEvent.click(screen.getByRole('button', { name: /use this template/i }));
 
     expect(await screen.findByText(/couldn.t create your form/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: /back to templates/i }));

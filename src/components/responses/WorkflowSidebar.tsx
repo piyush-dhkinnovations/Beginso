@@ -1,5 +1,6 @@
 'use client';
 
+import { formatRelativeTime } from '@/lib/formatters';
 import type { ReactNode } from 'react';
 import { CalendarDays, Hash, Share2, Shield } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
@@ -107,6 +108,12 @@ export function WorkflowSidebar({
           scope={scope}
           canAct={canCreateTag}
         />
+      )}
+
+      {!response.editedAfterReviewAt && response.lastEditedByRespondentAt && (
+        <p className="m-0 rounded-lg border border-(--border-default) bg-(--info-surface) px-3 py-2 bg-body-sm text-(--info-text)">
+          <strong>Edited by the respondent</strong> {formatRelativeTime(response.lastEditedByRespondentAt)}. The answers shown are their latest.
+        </p>
       )}
 
       {response.duplicateOfId && onOpenOriginal && (

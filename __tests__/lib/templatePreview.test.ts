@@ -39,7 +39,7 @@ describe('templateToPreviewSchema', () => {
   it('copies layout and success message, and never enables the honeypot in a preview', () => {
     const schema = templateToPreviewSchema(BASE);
 
-    expect(schema.settings.layout).toBe('two_column');
+    expect(schema.settings.layout).toBe('steps'); // legacy two_column is replaced by the category's layout (hiring -> steps)
     expect(schema.settings.successMessage).toBe('Thanks');
     expect(schema.settings.honeypotEnabled).toBe(false);
   });
@@ -49,11 +49,19 @@ describe('templateToPreviewSchema', () => {
 
     const schema = templateToPreviewSchema(noSettings);
 
-    expect(schema.settings.layout).toBeUndefined();
+    expect(schema.settings.layout).toBe('steps');
   });
 
-  it('uses neutral branding, not any real form\'s', () => {
-    expect(templateToPreviewSchema(BASE).branding).toEqual({});
+  it('gives each category its own layout and colour, so previews do not all look the same', () => {
+    const cats = ['general', 'events', 'feedback', 'hr', 'advanced', 'sales'];
+    const schemas = cats.map((category) => templateToPreviewSchema({ ...BASE, category, settings: { honeypotEnabled: true } }));
+    expect(new Set(schemas.map((s) => s.settings.layout)).size).toBe(6);
+    expect(new Set(schemas.map((s) => s.branding.primaryColor)).size).toBe(6);
+  });
+
+  it('keeps a modern layout the template names itself, and maps aliases', () => {
+    expect(templateToPreviewSchema({ ...BASE, category: 'general', settings: { honeypotEnabled: true, layout: 'guided' } }).settings.layout).toBe('guided');
+    expect(templateToPreviewSchema({ ...BASE, category: 'hiring' }).branding).toEqual(templateToPreviewSchema({ ...BASE, category: 'hr' }).branding);
   });
 });
 

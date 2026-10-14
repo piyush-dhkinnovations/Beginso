@@ -172,3 +172,11 @@ describe('SubmissionView (edit mode)', () => {
     expect(screen.getByLabelText('When')).toHaveAttribute('type', 'date');
   });
 });
+
+describe('SubmissionView — status banner and answers sheet', () => {
+  it('explains the status in a plain line beside the badge, and numbers the answers', () => {
+    render(<SubmissionView fields={[{ fieldId: 'a', label: 'Full name', type: 'short_text', value: 'Asha' }]} status="Edited" canEdit={false} onSave={vi.fn()} />);
+    expect(screen.getByText('You changed it after it was reviewed.')).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Your answers' })).toHaveTextContent('1');
+  });
+});

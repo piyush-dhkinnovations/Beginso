@@ -15,11 +15,13 @@ export default function ForgotPasswordPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [noAccount, setNoAccount] = useState(false);
   const [fieldError, setFieldError] = useState<string | undefined>();
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    setNoAccount(false);
     const parsed = loginSchema.shape.email.safeParse(email.trim());
     if (!parsed.success) {
       setFieldError(parsed.error.issues[0]?.message ?? 'Please enter a valid email address');
@@ -30,11 +32,13 @@ export default function ForgotPasswordPage() {
     try {
       await authService.requestPasswordReset(email.trim());
       setSent(true);
-    } catch {
-      // Keep the message independent of account existence while remaining honest about an
-      // unavailable mail service. The backend itself always returns the same 202 for known and
-      // unknown addresses.
-      setError('We could not send the reset email right now. Please try again.');
+    } catch (requestError) {
+      // The backend now says whether the address can get a link (no account, Google-only, suspended, too many requests), with
+      // a message written for the person; anything else (mail service down, network) gets the generic line.
+      const res = (requestError as { response?: { status?: number; data?: { message?: unknown; code?: unknown } } })?.response;
+      const known = res?.status !== undefined && [400, 403, 404, 429].includes(res.status) && typeof res.data?.message === 'string';
+      setError(known ? (res!.data!.message as string) : 'We could not send the reset email right now. Please try again.');
+      setNoAccount(res?.data?.code === 'ACCOUNT_NOT_FOUND');
     } finally {
       setIsSubmitting(false);
     }
@@ -57,7 +61,7 @@ export default function ForgotPasswordPage() {
         <h1 className="bg-h3 font-bold text-(--text-primary)">Reset your password</h1>
         <p className="bg-body text-(--text-muted)">
           {sent
-            ? 'If an account exists for that email, a password-reset link is on its way.'
+            ? `A password-reset link is on its way to ${email.trim()}.`
             : 'Enter your email and we will send you a secure password-reset link.'}
         </p>
       </div>
@@ -76,7 +80,17 @@ export default function ForgotPasswordPage() {
             required
             disabled={isSubmitting}
           />
-          {error && <p role="alert" className="bg-body-sm font-semibold text-(--error-text)">{error}</p>}
+          {error && (
+            <p role="alert" className="bg-body-sm font-semibold text-(--error-text)">
+              {error}
+              {noAccount && (
+                <>
+                  {' '}
+                  <Link href="/signup" className="underline">Create an account</Link>
+                </>
+              )}
+            </p>
+          )}
           <Button type="submit" className="w-full" isLoading={isSubmitting} disabled={isSubmitting}>
             Send reset link
           </Button>

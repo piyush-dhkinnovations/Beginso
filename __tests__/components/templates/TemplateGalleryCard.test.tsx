@@ -30,3 +30,11 @@ describe('TemplateGalleryCard', () => {
     expect(screen.getByText('A ready-made starting point you can customize.')).toBeInTheDocument();
   });
 });
+
+describe('TemplateGalleryCard — preview and icon', () => {
+  it('shows a preview picture and the template colour icon beside its name', () => {
+    const { container } = render(<TemplateGalleryCard template={tpl({ name: 'Event Registration', category: 'events' })} />);
+    expect(container.querySelector('[aria-hidden="true"]')).toBeInTheDocument();
+    expect(container.querySelectorAll('svg[viewBox="0 0 24 24"]').length).toBeGreaterThan(0);
+  });
+});

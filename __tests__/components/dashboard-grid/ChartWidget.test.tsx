@@ -48,10 +48,16 @@ describe('ChartWidget', () => {
     expect(screen.getByTestId('pie')).toHaveAttribute('data-donut', 'false');
   });
 
-  it('draws horizontal bars, auto-sizing the card for three rows or fewer', () => {
+  it('draws horizontal bars, with the card filling its grid cell even for few rows (no empty frame under it)', () => {
     render(<ChartWidget chart="hbar" metric={segments} />);
     expect(screen.getByTestId('bars')).toHaveAttribute('data-horizontal', 'true');
-    expect(screen.getByTestId('card')).toHaveAttribute('data-class', 'h-auto!');
+    expect(screen.getByTestId('card')).toHaveAttribute('data-class', 'h-full');
+  });
+
+  it('shows no legend for a lone bar (it would only repeat the bar\'s own label)', () => {
+    const one: SegmentMetric = { label: 'One', segments: [{ label: 'Test', value: 2 }] };
+    render(<ChartWidget chart="hbar" metric={one} />);
+    expect(screen.getByTestId('bars')).not.toHaveAttribute('data-legend', 'true');
   });
 
   it('stretches the hbar card when there are more than three rows', () => {

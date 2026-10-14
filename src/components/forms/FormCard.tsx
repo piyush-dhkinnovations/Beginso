@@ -26,7 +26,7 @@ const formatDate = (iso: string) => {
 export function FormCard({ form, href, menu, maxResponses }: FormCardProps) {
   const share = maxResponses > 0 ? Math.max(4, (form.responseCount / maxResponses) * 100) : 4;
   return (
-    <Card padded={false} className="flex-row items-stretch gap-4 overflow-hidden bg-none bg-(--surface-card) p-4">
+    <Card padded={false} className="relative flex-row items-stretch gap-4 overflow-hidden bg-none bg-(--surface-card) p-4 transition-colors hover:bg-(--surface-hover)">
       {/* The icon or logo owns the left edge, 48px whichever it is; the bar and footer sit beside it, not under it. */}
       <div className="flex flex-none items-center">
         <FormTile title={form.title} size={48} logoUrl={form.branding?.logoUrl} iconName={form.branding?.iconName} />
@@ -35,11 +35,12 @@ export function FormCard({ form, href, menu, maxResponses }: FormCardProps) {
         <div className="flex items-start gap-2">
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
             <h3 className="min-w-0 bg-body font-semibold text-(--text-primary)">
-              <Link href={href} className="block truncate no-underline hover:underline">{form.title}</Link>
+              {/* The link's ::after covers the whole card, so a click anywhere on it opens the form; the ⋮ menu sits above it. */}
+              <Link href={href} className="block truncate no-underline after:absolute after:inset-0 after:content-[''] hover:underline">{form.title}</Link>
             </h3>
             <p className="line-clamp-1 bg-body-sm text-(--text-muted)">{form.description || 'No description'}</p>
           </div>
-          <div className="-mr-1 -mt-1 flex flex-none items-center gap-1">{menu}</div>
+          <div className="relative z-10 -mr-1 -mt-1 flex flex-none items-center gap-1">{menu}</div>
         </div>
         <div aria-hidden="true" className="h-1.5 overflow-hidden rounded-full bg-(--bg-sunken)">
           <div className="h-full rounded-full bg-(--action-primary)" style={{ width: `${share}%` }} />

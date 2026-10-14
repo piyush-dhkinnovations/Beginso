@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import type { LayoutPreset } from '@/types/form';
 import type { PublicFormBranding } from '@/types/publicForm';
 import { brandCardClass, brandTypeStyle, brandWashStyle } from '@/lib/formTheme';
+import { Wordmark } from '@/components/landing/Wordmark';
 
 // Sprint 13 (CF2.7), design.md §7. Every layout is a presentation FRAME around the form body that
 // PublicFormShell still owns (RHF state, validation, drafts, submit). A layout never holds form
@@ -32,11 +33,30 @@ export const DEFAULT_PRIMARY = '#1D4ED8';
 export function Backdrop({ branding, previewMode, children }: { branding: PublicFormBranding; previewMode?: boolean; children: ReactNode }) {
   const style: CSSProperties = { ...brandWashStyle(branding), ...brandTypeStyle(branding) };
   return (
-    <div
-      className={`flex justify-center items-start ${branding.backgroundStyle === 'none' ? 'p-2' : 'p-4 md:p-10'} ${previewMode ? 'min-h-full md:items-center' : 'min-h-screen md:items-center'}`}
-      style={style}
-    >
-      {children}
+    <div className={`flex flex-col ${previewMode ? 'min-h-full' : 'min-h-screen'}`} style={style}>
+      <div className={`flex flex-1 justify-center items-start md:items-center ${branding.backgroundStyle === 'none' ? 'p-2' : 'p-4 md:p-10'}`}>
+        {children}
+      </div>
+      {!previewMode && <MadeWithBeginso />}
+    </div>
+  );
+}
+
+/** "Made with Beginso", under every form a respondent sees: the wordmark in a pill at the bottom-right (readable on any page colour) that opens
+ *  the main website. A new tab, so it never replaces a form someone is half way through, and works inside an embed iframe. */
+function MadeWithBeginso() {
+  return (
+    <div className="flex justify-end px-4 pb-5 md:px-10">
+      <a
+        href="/"
+        target="_blank"
+        rel="noopener"
+        aria-label="Made with Beginso (opens the Beginso website)"
+        className="inline-flex items-center gap-2.5 rounded-full border border-(--border-default) bg-(--surface-card) px-4 py-2 bg-body-sm text-(--text-muted) shadow-(--shadow-sm) transition-colors hover:text-(--text-primary)"
+      >
+        Made with
+        <Wordmark height={24} />
+      </a>
     </div>
   );
 }

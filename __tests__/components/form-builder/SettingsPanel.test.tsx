@@ -38,6 +38,7 @@ describe('SettingsPanel: access mode', () => {
   it('login mode warns about reduced completions', () => {
     setup({ settings: { honeypotEnabled: true, accessMode: 'login' } });
     expect(screen.getByText('Requiring login reduces completions')).toBeInTheDocument();
+    expect(screen.getByText(/confirmation email and can also see their submission under My submissions/)).toBeInTheDocument();
   });
 });
 

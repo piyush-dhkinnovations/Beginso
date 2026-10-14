@@ -141,7 +141,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // so an absent field (older accounts) counts as onboarded.
         const path = window.location.pathname;
         if (data.user.onboardingCompleted === false && path !== '/onboarding' && matchesRoute(path, PROTECTED_PATHS)) {
-          router.replace('/onboarding');
+          // Remember where they were going, so onboarding hands them back there (a template being applied, a form link...).
+          router.replace(`/onboarding?next=${encodeURIComponent(path + window.location.search)}`);
         }
       } catch (error: unknown) {
         if (!['/verify-email', '/verification-code'].includes(window.location.pathname)) {

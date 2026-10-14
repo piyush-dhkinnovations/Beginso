@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { SettingsView } from '@/components/settings/SettingsView';
 import { LegacySettingsRedirect, LEGACY_WORKSPACE_TABS } from '@/components/settings/LegacySettingsRedirect';
@@ -14,5 +15,19 @@ export default function SettingsPage() {
   // Old bookmarks like /settings?tab=tags: send them to the workspace they now belong to.
   if (tab && LEGACY_WORKSPACE_TABS.includes(tab)) return <LegacySettingsRedirect tab={tab} />;
 
-  return <SettingsView title="Account settings" description="Manage your profile, security, and notification preferences." tabs={ACCOUNT_TABS} />;
+  return (
+    <SettingsView
+      title="Account settings"
+      description="Manage your profile, security, and notification preferences."
+      tabs={ACCOUNT_TABS}
+      note={
+        <>
+          Tags, stages and scoring belong to a workspace, so you set them up in a workspace&apos;s settings.{' '}
+          <Link href="/workspaces" className="font-semibold text-(--accent-soft-text) hover:underline">
+            Open your workspaces
+          </Link>
+        </>
+      }
+    />
+  );
 }

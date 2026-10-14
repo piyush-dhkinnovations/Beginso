@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type ReactNode } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Modal } from '@/components/ui/Modal';
@@ -40,9 +40,11 @@ interface SettingsViewProps {
   /** Workspace slug when rendered under /w/[slug]/settings; undefined for Account settings. */
   scope?: string;
   labels?: Partial<Record<SettingsTab, string>>;
+  /** A short pointer shown under the page heading (e.g. where a setting that is not on this page lives). */
+  note?: ReactNode;
 }
 
-export function SettingsView({ title, description, tabs, scope, labels }: SettingsViewProps) {
+export function SettingsView({ title, description, tabs, scope, labels, note }: SettingsViewProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -107,6 +109,7 @@ export function SettingsView({ title, description, tabs, scope, labels }: Settin
   return (
     <div className="flex flex-col gap-4 animate-fade-in">
       <PageHeader title={title} description={description} />
+      {note && <p className="m-0 bg-body-sm text-(--text-muted)">{note}</p>}
 
       <div className="flex flex-col gap-4 lg:flex-row lg:gap-10 lg:items-start">
       <SettingsTabs activeTab={activeTab} onChange={handleTabChange} dirtyTabs={dirtyTabs} visible={tabs} labels={labels} />

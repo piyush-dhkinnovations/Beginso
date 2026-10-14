@@ -6,7 +6,7 @@ import { SplitFlowLayout } from '@/components/flow/SplitFlowLayout';
 function setup(props: Partial<React.ComponentProps<typeof SplitFlowLayout>> = {}) {
   const onClose = vi.fn();
   render(
-    <SplitFlowLayout eyebrow="Create form" title="Create a form" description="Describe it" illustration={<div data-testid="art" />} onClose={onClose} {...props}>
+    <SplitFlowLayout eyebrow="Create form" title="Create a form" description="Describe it" illustration={<div data-testid="art" />} tint="#2f56d8" panelTitle="Panel headline" panelText="Panel line" onClose={onClose} {...props}>
       <p>the task</p>
     </SplitFlowLayout>,
   );
@@ -25,6 +25,14 @@ describe('SplitFlowLayout', () => {
   it('hides the decorative illustration from assistive tech', () => {
     setup();
     expect(screen.getByTestId('art').closest('aside')).toHaveAttribute('aria-hidden', 'true');
+  });
+
+  it('shows the headline and line on a solid-colour panel beside the illustration', () => {
+    setup();
+    const aside = screen.getByTestId('art').closest('aside') as HTMLElement;
+    expect(aside).toHaveStyle({ backgroundColor: '#2f56d8' });
+    expect(aside).toHaveTextContent('Panel headline');
+    expect(aside).toHaveTextContent('Panel line');
   });
 
   it('closes with a Cancel button by default, or a custom label', async () => {

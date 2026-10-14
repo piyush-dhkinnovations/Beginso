@@ -1,12 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { Check } from 'lucide-react';
+import { bx } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Select } from '@/components/ui/Select';
 import { Alert } from '@/components/ui/Alert';
-import { Badge } from '@/components/ui/Badge';
+import { Card } from '@/components/ui/Card';
+import { StatusBadge } from '@/components/ui/StatusBadge';
 import type { RespondLinkField, RespondentStatus } from '@/types/respondent';
 
 // Sprint 13 (A5.2 / A5.1). A respondent's OWN answers, read-only, with an Edit mode that reuses the same
@@ -30,6 +33,21 @@ const REASONS: Record<string, string> = {
 
 // Binary or drawn answers can't be re-typed in a text box, so a respondent can't change them here.
 const READ_ONLY_TYPES = new Set(['file_upload', 'image_upload', 'signature']);
+
+const STATUS_VARIANT: Record<RespondentStatus, 'new' | 'in_progress' | 'completed' | 'neutral'> = {
+  Received: 'new',
+  'In review': 'in_progress',
+  Completed: 'completed',
+  Edited: 'neutral',
+};
+const STEPS = ['Received', 'In review', 'Completed'];
+const STEP_OF: Record<RespondentStatus, number> = { Received: 0, 'In review': 1, Edited: 1, Completed: 2 };
+const STATUS_HINT: Record<RespondentStatus, string> = {
+  Received: 'We have your submission.',
+  'In review': 'It is being looked at.',
+  Edited: 'You changed it after it was reviewed.',
+  Completed: 'This one is finished.',
+};
 
 const asText = (v: unknown): string => (Array.isArray(v) ? v.join(', ') : v === null || v === undefined || v === '' ? '' : String(v));
 
@@ -105,9 +123,38 @@ export function SubmissionView({ fields, status, canEdit, readOnlyReason, onSave
   return (
     <div className="flex flex-col gap-4">
       {status && (
-        <p className="bg-body-sm text-(--text-muted)">
-          Status: <Badge variant="neutral">{status}</Badge>
-        </p>
+        <Card className="gap-4">
+          <div className="flex flex-col gap-1">
+            <p className="m-0 flex flex-wrap items-center gap-2 bg-body-sm font-semibold text-(--text-primary)">
+              Status: <StatusBadge variant={STATUS_VARIANT[status] ?? 'neutral'}>{status}</StatusBadge>
+            </p>
+            <p className="m-0 bg-body-sm text-(--text-muted)">{STATUS_HINT[status]}</p>
+          </div>
+          {/* Where it stands in the three steps a submission goes through. "Edited" means it was changed after review, so it sits on the review step. */}
+          <ol aria-hidden="true" className="m-0 flex list-none items-center p-0">
+            {STEPS.map((label, i) => {
+              const at = STEP_OF[status] ?? 0;
+              const done = i < at;
+              const current = i === at;
+              return (
+                <li key={label} className={bx('flex items-center', i < STEPS.length - 1 && 'flex-1')}>
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={bx(
+                        'flex size-5 shrink-0 items-center justify-center rounded-full border-2',
+                        done || current ? 'border-(--action-primary) bg-(--action-primary)' : 'border-(--border-strong) bg-(--surface-card)'
+                      )}
+                    >
+                      {(done || (current && at === STEPS.length - 1)) && <Check size={12} className="text-(--text-on-brand)" />}
+                    </span>
+                    <span className={bx('bg-caption', current ? 'font-semibold text-(--text-primary)' : 'text-(--text-muted)')}>{label}</span>
+                  </span>
+                  {i < STEPS.length - 1 && <span className={bx('mx-3 h-0.5 flex-1 rounded-full', done ? 'bg-(--action-primary)' : 'bg-(--border-default)')} />}
+                </li>
+              );
+            })}
+          </ol>
+        </Card>
       )}
       {notice && <Alert variant="success">{notice}</Alert>}
       {!canEdit && readOnlyReason && <Alert variant="info">{REASONS[readOnlyReason] ?? 'This submission can no longer be changed.'}</Alert>}
@@ -146,14 +193,27 @@ export function SubmissionView({ fields, status, canEdit, readOnlyReason, onSave
         </form>
       ) : (
         <>
-          <dl className="divide-y divide-(--border-subtle) rounded-lg border border-(--border-default)">
-            {fields.map((f) => (
-              <div key={f.fieldId} className="px-4 py-3">
-                <dt className="bg-caption text-(--text-muted)">{f.label}</dt>
-                <dd className="bg-body font-semibold text-(--text-primary) break-words">{asText(f.value) || '—'}</dd>
-              </div>
-            ))}
-          </dl>
+          <Card padded={false} role="region" aria-label="Your answers" className="overflow-hidden">
+            <div className="border-b border-(--border-subtle) bg-(--bg-subtle) px-5 py-3">
+              <h2 className="bg-overline m-0 text-(--text-muted)">Your answers</h2>
+            </div>
+            <dl className="m-0 divide-y divide-(--border-subtle)">
+              {fields.map((f, i) => {
+                const text = asText(f.value);
+                return (
+                  <div key={f.fieldId} className="flex items-start gap-4 px-5 py-4">
+                    <span aria-hidden="true" className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-(--accent-soft) bg-caption font-semibold text-(--accent-soft-text)">
+                      {i + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <dt className="bg-caption text-(--text-muted)">{f.label}</dt>
+                      <dd className={text ? 'm-0 mt-0.5 bg-body font-semibold text-(--text-primary) break-words' : 'm-0 mt-0.5 bg-body text-(--text-disabled)'}>{text || '—'}</dd>
+                    </div>
+                  </div>
+                );
+              })}
+            </dl>
+          </Card>
           {canEdit && (
             <div className="flex justify-end">
               <Button type="button" onClick={start} className="min-h-11">

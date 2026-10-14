@@ -23,7 +23,7 @@ function Chip({ icon, label, className, delay }: { icon: ReactNode; label: strin
 
 function Lines() {
   return (
-    <svg className="absolute inset-0 size-full text-(--border-strong)" fill="none" aria-hidden="true">
+    <svg className="absolute inset-0 size-full text-white/40" fill="none" aria-hidden="true">
       <path d="M 18% 30% C 18% 44%, 30% 40%, 36% 46%" stroke="currentColor" strokeWidth="1.5" strokeDasharray="5 6" />
       <path d="M 84% 52% C 84% 66%, 72% 62%, 66% 70%" stroke="currentColor" strokeWidth="1.5" strokeDasharray="5 6" />
       <path d="M 16% 74% C 22% 62%, 30% 66%, 36% 62%" stroke="currentColor" strokeWidth="1.5" strokeDasharray="5 6" />
@@ -32,7 +32,7 @@ function Lines() {
 }
 
 function Frame({ children }: { children: ReactNode }) {
-  return <div className="relative h-[34rem] w-full max-w-2xl">{children}</div>;
+  return <div className="relative h-[30rem] w-full max-w-2xl">{children}</div>;
 }
 
 const row = 'h-9 rounded-md border border-(--border-default) bg-(--bg-subtle)';

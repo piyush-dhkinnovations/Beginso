@@ -1,7 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { sanitizeNextParam } from '@/lib/authRoutes';
 import { useAuth } from '@/hooks/useAuth';
 import { authService } from '@/services/auth';
 import { Button, Spinner } from '@/components/ui';
@@ -9,8 +10,10 @@ import { Button, Spinner } from '@/components/ui';
 // There is no multi-step onboarding UI yet: an onboarding-incomplete user (authContext sends them
 // here) is marked complete via the idempotent backend call and moved on. A user who is already
 // onboarded is sent straight home. On failure the user gets a retry, never a redirect loop.
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter();
+  // Where the person was heading before onboarding interrupted (e.g. /templates/apply/<id>); the dashboard otherwise.
+  const home = sanitizeNextParam(useSearchParams().get('next')) ?? '/dashboard';
   const { user, isLoading } = useAuth();
   const [failed, setFailed] = useState(false);
   const started = useRef(false);
@@ -18,11 +21,11 @@ export default function OnboardingPage() {
   const complete = useCallback(async () => {
     try {
       await authService.completeOnboarding();
-      router.replace('/dashboard');
+      router.replace(home);
     } catch {
       setFailed(true);
     }
-  }, [router]);
+  }, [router, home]);
 
   useEffect(() => {
     if (isLoading || !user || started.current) return;
@@ -30,8 +33,8 @@ export default function OnboardingPage() {
     // setFailed only runs after the awaited call rejects, not synchronously.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (user.onboardingCompleted === false) void complete();
-    else router.replace('/dashboard');
-  }, [isLoading, user, router, complete]);
+    else router.replace(home);
+  }, [isLoading, user, router, complete, home]);
 
   if (failed) {
     return (
@@ -45,4 +48,13 @@ export default function OnboardingPage() {
     );
   }
   return <Spinner />;
+}
+
+// useSearchParams() (?next=) needs a Suspense boundary during prerender.
+export default function OnboardingPage() {
+  return (
+    <Suspense>
+      <OnboardingContent />
+    </Suspense>
+  );
 }

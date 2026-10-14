@@ -115,9 +115,15 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
           </p>
         )}
         {settings.accessMode === 'login' && (
-          <Alert variant="warning" title="Requiring login reduces completions">
-            People without an account have to sign up first. Use this for internal forms, not public ones.
-          </Alert>
+          <>
+            <p className="bg-caption text-(--text-muted)">
+              Respondents get a confirmation email and can also see their submission under My submissions after signing in. The email
+              never contains their answers.
+            </p>
+            <Alert variant="warning" title="Requiring login reduces completions">
+              People without an account have to sign up first. Use this for internal forms, not public ones.
+            </Alert>
+          </>
         )}
       </PanelCard>
 

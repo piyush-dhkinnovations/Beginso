@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Loader2, Upload, X } from 'lucide-react';
+import { ImagePlus, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import { uploadService } from '@/services/upload';
@@ -49,98 +49,100 @@ export function LogoChoice({ value, onChange, subject, disabled }: LogoChoicePro
     }
   }
 
-  const card = 'relative flex min-h-24 flex-1 cursor-pointer items-center gap-3 rounded-xl border bg-(--surface-card) p-3 transition-all duration-200 has-focus-visible:shadow-(--shadow-focus)';
-  const on = 'border-(--primary-500) bg-(--surface-active) shadow-[inset_0_0_0_1px_var(--primary-500)]';
-  const off = 'border-(--border-default) hover:border-(--border-strong) hover:bg-(--surface-hover)';
+  const pill =
+    'relative flex flex-1 cursor-pointer items-center justify-center rounded-lg px-3 py-2 bg-body-sm font-semibold transition-colors has-focus-visible:shadow-(--shadow-focus)';
+  const on = 'bg-(--surface-card) text-(--text-primary) shadow-(--shadow-sm)';
+  const off = 'text-(--text-muted) hover:text-(--text-primary)';
+  const link = 'font-semibold text-(--accent-soft-text) hover:underline';
 
   return (
     <fieldset className="m-0 min-w-0 border-0 p-0" disabled={disabled}>
       <legend className="mb-2 bg-label">{subject === 'form' ? 'Form logo' : 'Workspace logo'}</legend>
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <label className={cn(card, !uploadChosen ? on : off)}>
-          <input
-            type="radio"
-            name={`${subject}-logo`}
-            className="bg-radio shrink-0"
-            checked={!uploadChosen}
-            onChange={() => {
-              setWantsUpload(false);
-              onChange(null);
-            }}
-          />
-          <span className="flex size-14 shrink-0 items-center justify-center rounded-lg border border-(--border-default) bg-(--surface-card)">
-            {/* eslint-disable-next-line @next/next/no-img-element -- local brand mark */}
-            <img src="/favicon.svg" alt="" className="size-8" />
-          </span>
-          <span className="min-w-0">
-            <span className="block bg-body-sm font-semibold text-(--text-primary)">BeginSo default</span>
-            <span className="block bg-caption text-(--text-muted)">Use the BeginSo logo</span>
-          </span>
-        </label>
-
-        <label className={cn(card, uploadChosen ? on : off)}>
-          <input
-            type="radio"
-            name={`${subject}-logo`}
-            className="bg-radio shrink-0"
-            checked={uploadChosen}
-            onChange={() => {
-              setWantsUpload(true);
-              if (!value) inputRef.current?.click();
-            }}
-          />
-          <span
-            className={cn(
-              'flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-(--surface-card)',
-              value ? 'border-(--border-default)' : 'border-dashed border-(--border-strong)'
-            )}
-          >
-            {uploading ? (
-              <Loader2 size={20} className="animate-spin text-(--text-muted)" aria-label="Uploading" />
-            ) : value ? (
+      <div className="flex items-center gap-4">
+        {/* The logo as it will appear: the default mark, the uploaded image, or an empty dashed square waiting for one. */}
+        <span
+          className={cn(
+            'flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-(--surface-card) transition-colors',
+            uploadChosen && !value ? 'border-2 border-dashed border-(--border-strong)' : 'border border-(--border-default) shadow-(--shadow-sm)'
+          )}
+        >
+          {uploading ? (
+            <Loader2 size={24} className="animate-spin text-(--text-muted)" aria-label="Uploading" />
+          ) : uploadChosen ? (
+            value ? (
               // eslint-disable-next-line @next/next/no-img-element -- backend-served upload, not a static asset
               <img src={value} alt="Your uploaded logo" className="size-full object-cover" />
             ) : (
-              <Upload size={20} className="text-(--text-muted)" aria-hidden="true" />
-            )}
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block bg-body-sm font-semibold text-(--text-primary)">{value ? 'Your logo' : 'Upload your logo'}</span>
-            <span className="block bg-caption text-(--text-muted)">
-              {value ? (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    inputRef.current?.click();
-                  }}
-                  className="underline hover:text-(--text-primary)"
-                >
+              <ImagePlus size={26} className="text-(--text-muted)" aria-hidden="true" />
+            )
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element -- local brand mark
+            <img src="/favicon.svg" alt="" className="size-11" />
+          )}
+        </span>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <div className="flex gap-1 rounded-xl bg-(--surface-hover) p-1">
+            <label className={cn(pill, !uploadChosen ? on : off)}>
+              <input
+                type="radio"
+                name={`${subject}-logo`}
+                className="sr-only"
+                checked={!uploadChosen}
+                onChange={() => {
+                  setWantsUpload(false);
+                  onChange(null);
+                }}
+              />
+              BeginSo default
+            </label>
+            <label className={cn(pill, uploadChosen ? on : off)}>
+              <input
+                type="radio"
+                name={`${subject}-logo`}
+                className="sr-only"
+                checked={uploadChosen}
+                onChange={() => {
+                  setWantsUpload(true);
+                  if (!value) inputRef.current?.click();
+                }}
+              />
+              {value ? 'Your logo' : 'Upload your logo'}
+            </label>
+          </div>
+          <p className="m-0 flex flex-wrap items-center gap-x-3 bg-caption text-(--text-muted)">
+            {value ? (
+              <>
+                <button type="button" onClick={() => inputRef.current?.click()} className={link}>
                   Replace
                 </button>
-              ) : (
-                `Use your custom logo · PNG, JPG up to ${MAX_MB} MB`
-              )}
-            </span>
-          </span>
-          {value && (
-            <button
-              type="button"
-              aria-label="Remove logo"
-              onClick={(e) => {
-                e.preventDefault();
-                setWantsUpload(false);
-                onChange(null);
-              }}
-              className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--error-text)"
-            >
-              <X size={14} aria-hidden="true" />
-            </button>
-          )}
-          <input ref={inputRef} type="file" accept={ACCEPTED.join(',')} className="sr-only" tabIndex={-1} aria-label={`Upload ${subject} logo`} onChange={(e) => void pick(e.target.files?.[0])} />
-        </label>
+                <button
+                  type="button"
+                  aria-label="Remove logo"
+                  onClick={() => {
+                    setWantsUpload(false);
+                    onChange(null);
+                  }}
+                  className="font-semibold hover:text-(--error-text) hover:underline"
+                >
+                  Remove
+                </button>
+              </>
+            ) : uploadChosen ? (
+              <>
+                <button type="button" onClick={() => inputRef.current?.click()} className={link}>
+                  Choose an image
+                </button>
+                <span>PNG, JPG up to {MAX_MB} MB</span>
+              </>
+            ) : (
+              `Your ${subject} uses the BeginSo mark until you upload your own.`
+            )}
+          </p>
+        </div>
+        <input ref={inputRef} type="file" accept={ACCEPTED.join(',')} className="sr-only" tabIndex={-1} aria-label={`Upload ${subject} logo`} onChange={(e) => void pick(e.target.files?.[0])} />
       </div>
-      <p className="mt-2 bg-caption text-(--text-muted)">
+      <p className="mt-3 bg-caption text-(--text-muted)">
         {subject === 'form' ? 'Shown on the form card and at the top of your public form. You can change it any time.' : 'Shown in the sidebar next to your workspace name. You can change it any time in Settings.'}
       </p>
     </fieldset>

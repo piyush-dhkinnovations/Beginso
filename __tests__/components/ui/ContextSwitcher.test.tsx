@@ -100,3 +100,13 @@ describe('ContextSwitcher — real dropdown (sprint-8, Day 2)', () => {
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 });
+
+describe('ContextSwitcher — workspace logo', () => {
+  it('shows the BeginSo mark for a workspace without a logo, and its own logo when it has one', () => {
+    const { container, rerender } = render(<ContextSwitcher currentLabel="Acme" currentMeta="Owner · 1 member" />);
+    expect(container.querySelector('img[src="/favicon.svg"]')).toBeInTheDocument();
+    rerender(<ContextSwitcher currentLabel="Acme" currentLogo="https://cdn/x.png" />);
+    expect(container.querySelector('img[src="/favicon.svg"]')).not.toBeInTheDocument();
+    expect(container.querySelector('img[src="https://cdn/x.png"]')).toBeInTheDocument();
+  });
+});
