@@ -12,10 +12,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const mockGetSessions = vi.fn();
 const mockRevokeSession = vi.fn();
+const mockRevokeOthers = vi.fn();
 vi.mock('@/services/settings', () => ({
   settingsService: {
     getSessions: (...args: unknown[]) => mockGetSessions(...args),
     revokeSession: (...args: unknown[]) => mockRevokeSession(...args),
+    revokeOtherSessions: (...args: unknown[]) => mockRevokeOthers(...args),
   },
 }));
 
@@ -44,6 +46,7 @@ describe('SessionsList', () => {
   beforeEach(() => {
     mockGetSessions.mockReset();
     mockRevokeSession.mockReset();
+    mockRevokeOthers.mockReset();
     mockToast.mockReset();
   });
 
@@ -105,5 +108,61 @@ describe('SessionsList', () => {
 
     expect(mockRevokeSession).not.toHaveBeenCalled();
     expect(screen.getByText('Safari on iPhone')).toBeInTheDocument();
+  });
+
+  describe('sign out of all other devices', () => {
+    it('signs out the other devices after confirmation and leaves only this one', async () => {
+      mockGetSessions.mockResolvedValue({ sessions: SESSIONS });
+      mockRevokeOthers.mockResolvedValue({ revoked: 1 });
+      renderList();
+      await screen.findByText('Safari on iPhone');
+
+      fireEvent.click(screen.getByRole('button', { name: 'Sign out of all other devices' }));
+      expect(mockRevokeOthers).not.toHaveBeenCalled(); // asks first
+      // After the call the server lists the other session as revoked (the list is refetched).
+      mockGetSessions.mockResolvedValue({ sessions: [SESSIONS[0], { ...SESSIONS[1], revokedAt: '2026-08-17T09:00:00.000Z' }] });
+      fireEvent.click(screen.getByRole('button', { name: 'Sign out other devices' }));
+
+      await waitFor(() => expect(mockRevokeOthers).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(screen.queryByText('Safari on iPhone')).not.toBeInTheDocument());
+      expect(screen.getByText('Chrome on Windows')).toBeInTheDocument();
+      expect(mockToast).toHaveBeenCalledWith('Signed out of 1 other device.', 'success');
+    });
+
+    it('is disabled when this is the only active session', async () => {
+      mockGetSessions.mockResolvedValue({ sessions: [SESSIONS[0]] });
+      renderList();
+      await screen.findByText('Chrome on Windows');
+      expect(screen.getByRole('button', { name: 'Sign out of all other devices' })).toBeDisabled();
+    });
+
+    it('cancelling the confirmation does nothing', async () => {
+      mockGetSessions.mockResolvedValue({ sessions: SESSIONS });
+      renderList();
+      await screen.findByText('Safari on iPhone');
+      fireEvent.click(screen.getByRole('button', { name: 'Sign out of all other devices' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+      expect(mockRevokeOthers).not.toHaveBeenCalled();
+    });
+
+    it('reports a failure and keeps the list', async () => {
+      mockGetSessions.mockResolvedValue({ sessions: SESSIONS });
+      mockRevokeOthers.mockRejectedValue(new Error('500'));
+      renderList();
+      await screen.findByText('Safari on iPhone');
+      fireEvent.click(screen.getByRole('button', { name: 'Sign out of all other devices' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Sign out other devices' }));
+      await waitFor(() => expect(mockToast).toHaveBeenCalledWith(expect.any(String), 'error'));
+      expect(screen.getByText('Safari on iPhone')).toBeInTheDocument();
+    });
+  });
+
+  it('hides sessions that were already signed out', async () => {
+    mockGetSessions.mockResolvedValue({
+      sessions: [...SESSIONS, { id: 's3', deviceLabel: 'Old Firefox', approxLocation: null, lastActiveAt: '2026-08-01T00:00:00.000Z', isCurrent: false, revokedAt: '2026-08-02T00:00:00.000Z' }],
+    });
+    renderList();
+    await screen.findByText('Safari on iPhone');
+    expect(screen.queryByText('Old Firefox')).not.toBeInTheDocument();
   });
 });

@@ -72,6 +72,8 @@ export interface SessionSummary {
   approxLocation: ApproxLocation | null;
   lastActiveAt: string; // ISO 8601
   isCurrent: boolean;
+  /** Set once the session was signed out. The backend still lists those, so the UI hides them. */
+  revokedAt?: string | null;
 }
 
 // Job-id-then-poll pattern, same convention as Sprint 5's Reports (`ReportStatus`).

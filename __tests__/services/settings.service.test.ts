@@ -114,6 +114,17 @@ describe('settingsService', () => {
     expect(mockDelete).toHaveBeenCalledWith('/api/auth/sessions/session-2');
   });
 
+  it('revokeOtherSessions calls DELETE /api/auth/sessions and returns how many were revoked', async () => {
+    mockDelete.mockResolvedValueOnce({ data: { success: true, revoked: 3 } });
+    expect(await settingsService.revokeOtherSessions()).toEqual({ revoked: 3 });
+    expect(mockDelete).toHaveBeenCalledWith('/api/auth/sessions');
+  });
+
+  it('revokeOtherSessions treats a response without a count as 0', async () => {
+    mockDelete.mockResolvedValueOnce({ data: {} });
+    expect(await settingsService.revokeOtherSessions()).toEqual({ revoked: 0 });
+  });
+
   it('requestWorkspaceExport calls POST /api/workspaces/current/export and unwraps the returned job', async () => {
     mockPost.mockResolvedValueOnce({
       data: { success: true, message: 'Export job queued successfully', exportJob: { id: 'job-1', status: 'queued', expiresAt: '2026-08-15T18:50:00.000Z' } },

@@ -56,6 +56,10 @@ export const settingsService = {
   revokeSession: (id: string): Promise<void> =>
     axiosInstance.delete(`/api/auth/sessions/${id}`).then(() => undefined),
 
+  // "Sign out of all other devices": every active session except the one making the request. `{ revoked }` is how many.
+  revokeOtherSessions: (): Promise<{ revoked: number }> =>
+    axiosInstance.delete<{ revoked?: number }>('/api/auth/sessions').then((r) => ({ revoked: typeof r.data?.revoked === 'number' ? r.data.revoked : 0 })),
+
   // Corrected 14 Aug 2026 via `SPRINT6_HANDOFF.md`: this IS job-id-then-poll (the 18 Aug
   // "fixed-path stream" conclusion was wrong) — `202 { exportJob: { id, status, expiresAt } }`.
   requestWorkspaceExport: (): Promise<WorkspaceExportJob> =>
