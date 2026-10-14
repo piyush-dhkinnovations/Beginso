@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { GoogleSignInButton } from './GoogleSignInButton';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { sanitizeNextParam } from '@/lib/authRoutes';
 
@@ -154,6 +155,13 @@ export function LoginForm() {
         disabled={isAnyLoading}
         {...register('password', { onChange: clearError })}
       />
+
+      {/* Right under the password, on the right: where people look for it. */}
+      <div className="-mt-2 flex justify-end">
+        <Link href="/forgot-password" className="bg-body-sm font-medium text-(--accent-soft-text) hover:underline">
+          Forgot password?
+        </Link>
+      </div>
 
       {serverError && (
         <div

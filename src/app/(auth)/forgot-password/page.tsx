@@ -47,14 +47,14 @@ export default function ForgotPasswordPage() {
   );
 
   return (
-    <AuthCard className="w-full p-8 flex flex-col items-center text-center gap-6">
+    <AuthCard className="w-full flex flex-col items-center text-center gap-6">
       {sent ? (
         <StateArt name="email-sent" size="sm" fallback={mailIcon} />
       ) : (
         mailIcon
       )}
       <div className="space-y-2">
-        <h1 className="bg-h5 font-bold text-(--text-primary)">Reset your password</h1>
+        <h1 className="bg-h3 font-bold text-(--text-primary)">Reset your password</h1>
         <p className="bg-body text-(--text-muted)">
           {sent
             ? 'If an account exists for that email, a password-reset link is on its way.'

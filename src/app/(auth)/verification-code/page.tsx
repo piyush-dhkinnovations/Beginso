@@ -77,10 +77,10 @@ export default function VerificationCodePage() {
 
   if (revealState.status === 'loading') {
     return (
-      <AuthCard className="flex w-full flex-col items-center gap-4 p-8 text-center" aria-busy="true">
+      <AuthCard className="flex w-full flex-col items-center gap-4 text-center" aria-busy="true">
         <span className="h-10 w-10 animate-spin rounded-full border-2 border-(--accent-soft-hover) border-t-(--action-primary)" />
         <div className="space-y-1">
-          <h1 className="bg-h5 font-bold text-(--text-primary)">Opening your secure code</h1>
+          <h1 className="bg-h3 font-bold text-(--text-primary)">Opening your secure code</h1>
           <p className="bg-body text-(--text-muted)">This should only take a moment.</p>
         </div>
       </AuthCard>
@@ -89,7 +89,7 @@ export default function VerificationCodePage() {
 
   if (revealState.status === 'invalid') {
     return (
-      <AuthCard className="flex w-full flex-col items-center gap-5 p-8 text-center">
+      <AuthCard className="flex w-full flex-col items-center gap-5 text-center">
         <StateArt
           name="link-expired"
           size="sm"
@@ -100,7 +100,7 @@ export default function VerificationCodePage() {
           }
         />
         <div className="space-y-2">
-          <h1 className="bg-h5 font-bold text-(--text-primary)">Verification link unavailable</h1>
+          <h1 className="bg-h3 font-bold text-(--text-primary)">Verification link unavailable</h1>
           <p className="bg-body text-(--text-muted)">This link is invalid, expired, or has already been used.</p>
         </div>
         <Link
@@ -115,7 +115,7 @@ export default function VerificationCodePage() {
 
   if (revealState.status === 'error') {
     return (
-      <AuthCard className="flex w-full flex-col items-center gap-5 p-8 text-center">
+      <AuthCard className="flex w-full flex-col items-center gap-5 text-center">
         <StateArt
           name="error"
           size="sm"
@@ -126,7 +126,7 @@ export default function VerificationCodePage() {
           }
         />
         <div className="space-y-2">
-          <h1 className="bg-h5 font-bold text-(--text-primary)">Unable to load your code</h1>
+          <h1 className="bg-h3 font-bold text-(--text-primary)">Unable to load your code</h1>
           <p className="bg-body text-(--text-muted)">Check your connection and try again.</p>
         </div>
         <Button className="w-full" onClick={retry}>Try again</Button>
@@ -143,12 +143,12 @@ export default function VerificationCodePage() {
   const formattedCode = `${revealState.result.code.slice(0, 3)} ${revealState.result.code.slice(3)}`;
 
   return (
-    <AuthCard className="flex w-full flex-col items-center gap-6 p-8 text-center">
+    <AuthCard className="flex w-full flex-col items-center gap-6 text-center">
       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-(--accent-soft) text-(--text-link)">
         <CheckCircle2 size={22} aria-hidden="true" />
       </span>
       <div className="space-y-2">
-        <h1 className="bg-h5 font-bold text-(--text-primary)">Your verification code</h1>
+        <h1 className="bg-h3 font-bold text-(--text-primary)">Your verification code</h1>
         <p className="bg-body text-(--text-muted)">Copy this code, then enter it on the email verification page.</p>
       </div>
 

@@ -425,3 +425,28 @@
 .map-dark .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.92);
 }
+
+/* Auth screens: each part of the screen (heading block, form, links...) rises in one after another. */
+.auth-enter .auth-touch > * {
+  animation: fadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.auth-enter .auth-touch > :nth-child(2) { animation-delay: 70ms; }
+.auth-enter .auth-touch > :nth-child(3) { animation-delay: 140ms; }
+.auth-enter .auth-touch > :nth-child(4) { animation-delay: 210ms; }
+.auth-enter .auth-touch > :nth-child(n + 5) { animation-delay: 280ms; }
+
+/* Auth side panel scenes (components/auth/AuthAside.tsx). The global reduced-motion rule above shortens all of these. */
+@keyframes aaSlide { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
+@keyframes aaFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes aaPop { 0% { opacity: 0; transform: scale(0.4); } 70% { transform: scale(1.12); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes aaFill { 0% { width: 8%; } 70%, 100% { width: 100%; } }
+@keyframes aaFly { 0%, 100% { transform: translate(0, 0) rotate(0); } 50% { transform: translate(-14px, -18px) rotate(-6deg); } }
+@keyframes aaBlob { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(24px, 18px); } }
+@keyframes aaPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+.aa-slide { animation: aaSlide 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.aa-pop { animation: aaPop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.aa-float { animation: aaFloat 4s ease-in-out infinite; }
+.aa-fly { animation: aaFly 3.5s ease-in-out infinite; }
+.aa-fill { animation: aaFill 3s ease-in-out infinite alternate; }
+.aa-blob { animation: aaBlob 12s ease-in-out infinite; }
+.aa-pulse { animation: aaPulse 2s ease-in-out infinite; }

@@ -1,17 +1,12 @@
-import { Card, type CardProps } from '@/components/ui/Card';
-import { Wordmark } from '@/components/landing/Wordmark';
+import type { HTMLAttributes } from 'react';
 
-// Every (auth) page's outer Card, with the Beginso wordmark inside it (top-center) rather than
-// floating above it. No `force` prop on Wordmark here — the card itself is theme-aware
-// (bg-card switches under [data-theme="dark"]), so the wordmark auto-swaps to name-dark.svg via
-// the same [data-theme] toggle instead of being pinned to one color.
-export function AuthCard({ children, className, ...props }: CardProps) {
+// The content of every (auth) page: a plain column, no card around it. The wordmark and the page background live in the
+// (auth) layout (src/app/(auth)/layout.tsx), so a screen only supplies its own heading, form and links. `auth-touch` keeps the
+// larger touch targets the auth screens use.
+export function AuthCard({ children, className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
-    <Card {...props} className={["auth-touch", className].filter(Boolean).join(" ")}>
-      <div className="flex justify-center">
-        <Wordmark height={40} />
-      </div>
+    <div {...props} className={['auth-touch', className].filter(Boolean).join(' ')}>
       {children}
-    </Card>
+    </div>
   );
 }

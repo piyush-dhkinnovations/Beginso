@@ -95,7 +95,7 @@ function VerifyEmailPageInner() {
   };
 
   return (
-    <AuthCard className="w-full p-8 flex flex-col items-center text-center gap-6">
+    <AuthCard className="w-full flex flex-col items-center text-center gap-6">
       <StateArt
         name="email-sent"
         size="sm"
@@ -106,7 +106,7 @@ function VerifyEmailPageInner() {
         }
       />
       <div className="space-y-2">
-        <h1 className="bg-h5 font-bold text-(--text-primary)">Verify your email</h1>
+        <h1 className="bg-h3 font-bold text-(--text-primary)">Verify your email</h1>
         <p className="bg-body text-(--text-muted)">
           {email
             ? <>Enter the six-digit code sent to <strong>{email}</strong>.</>

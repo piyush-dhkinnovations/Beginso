@@ -1986,10 +1986,10 @@ body {
 }
 
 /* ---- Auth pages: 44px touch targets (WCAG 2.5.8 / mobile guidance). ------
-   Scoped to AuthCard so the app-wide 40px control ladder is untouched. Links
-   get a 44px hit area; font size stays the same. */
+   Scoped to AuthCard so the app-wide 40px control ladder is untouched. Links keep their text layout (they used to become 44px-tall
+   inline-flex boxes, which broke sentences such as "By creating an account you agree to our Terms of Use and Privacy Policy" and
+   pushed every link row apart); the 44px target is an invisible hit area drawn around them instead. */
 .auth-touch .bg-input,
 .auth-touch .bg-btn { min-height: 44px; }
-.auth-touch a:not(.bg-btn) {
-  display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding-inline: 4px;
-}
+.auth-touch a:not(.bg-btn) { position: relative; }
+.auth-touch a:not(.bg-btn)::after { content: ""; position: absolute; inset: -12px -6px; }

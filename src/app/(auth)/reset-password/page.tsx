@@ -89,7 +89,7 @@ export default function ResetPasswordPage() {
 
   if (resetState === 'checking') {
     return (
-      <AuthCard className="flex w-full flex-col items-center gap-4 p-8 text-center" aria-busy="true">
+      <AuthCard className="flex w-full flex-col items-center gap-4 text-center" aria-busy="true">
         <span className="h-10 w-10 animate-spin rounded-full border-2 border-(--accent-soft-hover) border-t-(--action-primary)" />
         <p className="bg-body text-(--text-muted)">Checking your password-reset link…</p>
       </AuthCard>
@@ -98,7 +98,7 @@ export default function ResetPasswordPage() {
 
   if (resetState === 'invalid') {
     return (
-      <AuthCard className="flex w-full flex-col items-center gap-5 p-8 text-center">
+      <AuthCard className="flex w-full flex-col items-center gap-5 text-center">
         <StateArt
           name="link-expired"
           size="sm"
@@ -109,7 +109,7 @@ export default function ResetPasswordPage() {
           }
         />
         <div className="space-y-2">
-          <h1 className="bg-h5 font-bold text-(--text-primary)">Reset link unavailable</h1>
+          <h1 className="bg-h3 font-bold text-(--text-primary)">Reset link unavailable</h1>
           <p className="bg-body text-(--text-muted)">This link is invalid, expired, or has already been used.</p>
         </div>
         <Link href="/forgot-password" className="inline-flex min-h-11 items-start font-semibold text-(--accent-soft-text) hover:text-(--accent-soft-text)">
@@ -121,7 +121,7 @@ export default function ResetPasswordPage() {
 
   if (resetState === 'success') {
     return (
-      <AuthCard className="flex w-full flex-col items-center gap-5 p-8 text-center">
+      <AuthCard className="flex w-full flex-col items-center gap-5 text-center">
         {hasIllustration('success') ? (
           <Illustration name="success" size="sm" />
         ) : (
@@ -130,7 +130,7 @@ export default function ResetPasswordPage() {
           </span>
         )}
         <div className="space-y-2">
-          <h1 className="bg-h5 font-bold text-(--text-primary)">Password updated</h1>
+          <h1 className="bg-h3 font-bold text-(--text-primary)">Password updated</h1>
           <p className="bg-body text-(--text-muted)">Your password was changed successfully. You can now log in.</p>
         </div>
         {notificationWarning && (
@@ -148,12 +148,12 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <AuthCard className="flex w-full flex-col items-center gap-6 p-8 text-center">
+    <AuthCard className="flex w-full flex-col items-center gap-6 text-center">
       <span className="flex h-12 w-12 items-center justify-center rounded-full bg-(--accent-soft) text-(--text-link)">
         <KeyRound size={22} aria-hidden="true" />
       </span>
       <div className="space-y-2">
-        <h1 className="bg-h5 font-bold text-(--text-primary)">Create a new password</h1>
+        <h1 className="bg-h3 font-bold text-(--text-primary)">Create a new password</h1>
         <p className="bg-body text-(--text-muted)">
           Enter a new password for <strong>{email}</strong>.
         </p>
