@@ -28,6 +28,7 @@ export interface PublicFormBranding {
   backgroundImageUrl?: string;
   formWidth?: 'narrow' | 'standard' | 'wide';
   coverFit?: 'banner' | 'original';
+  iconName?: string;
 }
 
 /** Shape returned by GET /api/public/:slug — user-only fields omitted. */

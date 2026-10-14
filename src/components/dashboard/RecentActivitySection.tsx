@@ -96,7 +96,7 @@ export function RecentActivitySection({
           description={hasForms ? 'New form responses will appear here.' : 'Get started by creating your first Beginso form.'}
           actions={
             hasForms ? undefined : (
-              <Link href="/forms">
+              <Link href="/forms/new">
                 <Button variant="primary" className="flex items-center gap-2">
                   <Plus size={16} />
                   <span>Create your first form</span>

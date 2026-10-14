@@ -31,13 +31,13 @@ export function SplitFlowLayout({ eyebrow, title, description, children, illustr
         </Button>
       </div>
 
-      <div className="mx-auto grid min-h-screen max-w-[1600px] grid-cols-1 lg:grid-cols-2">
-        <main className="flex flex-col justify-center px-6 pb-16 pt-24 sm:px-12 lg:px-20 xl:px-28">
-          <div className="w-full max-w-xl">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-2">
+        <main className="flex flex-col justify-center px-6 pb-10 pt-20 sm:px-12 lg:px-20 xl:px-28">
+          <div className="mx-auto w-full max-w-xl">
             <p className="animate-fade-up bg-overline text-(--action-primary)">{eyebrow}</p>
             <h1 className="animate-fade-up mt-3 bg-h2 font-bold text-(--text-primary) [animation-delay:60ms]">{title}</h1>
             <p className="animate-fade-up mt-3 max-w-[48ch] bg-body text-(--text-muted) [animation-delay:120ms]">{description}</p>
-            <div className="animate-fade-up mt-10 [animation-delay:180ms]">{children}</div>
+            <div className="animate-fade-up mt-7 [animation-delay:180ms]">{children}</div>
           </div>
         </main>
 

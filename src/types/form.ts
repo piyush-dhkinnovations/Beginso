@@ -154,6 +154,12 @@ export type CoverFit = 'banner' | 'original';
 export type FormWidth = 'narrow' | 'standard' | 'wide';
 export type PageBackground = 'wash' | 'plain' | 'solid' | 'gradient' | 'mesh' | 'dots' | 'grid' | 'image';
 
+/** A form's mark: an uploaded logo, or an icon (name + colour) from the icon library; none of them = picked automatically from the name. */
+export interface FormMark {
+  logoUrl?: string | null;
+  iconName?: string | null;
+}
+
 export interface FormBranding {
   primaryColor?: string;   // hex color — overrides workspace default when set
   logoUrl?: string;
@@ -169,6 +175,7 @@ export interface FormBranding {
   panelTreatment?: PanelTreatment; // default 'solid' — the colour panel / banner behind the cover
   fieldGrouping?: FieldGrouping; // default 'auto' — short fields pair into two columns
   backgroundStyle?: PageBackground; // default 'wash' — how the PAGE behind the form card is filled (not the card)
+  iconName?: string;             // the form's icon when it has no uploaded logo (lib/formIcons)
   coverFit?: CoverFit;           // 'banner' crops the cover to a strip; 'original' shows the whole image at its own ratio
   formWidth?: FormWidth;         // default 'standard' — how wide the form card is
   backgroundImageUrl?: string;   // the owner's own picture, used when backgroundStyle is 'image'

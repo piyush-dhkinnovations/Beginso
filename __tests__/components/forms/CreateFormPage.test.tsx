@@ -20,8 +20,13 @@ vi.mock('@/services/forms', () => ({ formsService: { createForm: (...a: unknown[
 vi.mock('@/services/settings', () => ({ settingsService: { getWorkspace: (...a: unknown[]) => getWorkspace(...a) } }));
 vi.mock('@/services/workspaces', () => ({ workspacesService: { list: (...a: unknown[]) => listWorkspaces(...a) } }));
 vi.mock('@/components/flow/FlowIllustrations', () => ({ FormIllustration: () => null }));
-vi.mock('@/components/flow/LogoChoice', () => ({
-  LogoChoice: ({ onChange }: { onChange: (v: string | null) => void }) => <button type="button" onClick={() => onChange('/logo.png')}>choose-logo</button>,
+vi.mock('@/components/forms/FormMarkPicker', () => ({
+  FormMarkPicker: ({ onChange }: { onChange: (v: object) => void }) => (
+    <>
+      <button type="button" onClick={() => onChange({ logoUrl: '/logo.png' })}>choose-logo</button>
+      <button type="button" onClick={() => onChange({ logoUrl: null, iconName: 'rocket' })}>choose-icon</button>
+    </>
+  ),
 }));
 
 function renderPage() {
@@ -82,7 +87,8 @@ describe('CreateFormPage', () => {
       destination: { type: 'personal' },
       destinationWorkspaceId: null,
     }));
-    expect(createForm.mock.calls[0][0]).not.toHaveProperty('branding');
+    // Nothing was picked, so the form gets only the icon that suits its name.
+    expect(createForm.mock.calls[0][0].branding).toEqual({ iconName: 'common-file-text' });
     expect(spy).toHaveBeenCalledWith({ queryKey: ['forms'] });
     const seeded = useBuilderStore.getState();
     expect(seeded).toMatchObject({ formId: 'new1', formTitle: 'My form', status: 'draft', fields: [] });
@@ -95,6 +101,31 @@ describe('CreateFormPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /Create Form/ }));
     await waitFor(() => expect(createForm).toHaveBeenCalled());
     expect(createForm.mock.calls[0][0].branding).toEqual({ logoUrl: '/logo.png' });
+  });
+
+  it('sends a chosen icon and colour as branding (no logo)', async () => {
+    renderPage();
+    await userEvent.type(screen.getByLabelText('Form Title'), 'My form');
+    await userEvent.click(screen.getByText('choose-icon'));
+    await userEvent.click(screen.getByRole('button', { name: /Create Form/ }));
+    await waitFor(() => expect(createForm).toHaveBeenCalled());
+    expect(createForm.mock.calls[0][0].branding).toEqual({ iconName: 'rocket' });
+  });
+
+  it('left untouched, the form gets the icon that suits its name', async () => {
+    renderPage();
+    await userEvent.type(screen.getByLabelText('Form Title'), 'Event Registration');
+    await userEvent.click(screen.getByRole('button', { name: /Create Form/ }));
+    await waitFor(() => expect(createForm).toHaveBeenCalled());
+    expect(createForm.mock.calls[0][0].branding).toEqual({ iconName: 'calendar-1' });
+  });
+
+  it('a name that says nothing gets the plain document icon', async () => {
+    renderPage();
+    await userEvent.type(screen.getByLabelText('Form Title'), 'My form');
+    await userEvent.click(screen.getByRole('button', { name: /Create Form/ }));
+    await waitFor(() => expect(createForm).toHaveBeenCalled());
+    expect(createForm.mock.calls[0][0].branding).toEqual({ iconName: 'common-file-text' });
   });
 
   it('creates inside the workspace named by ?ws=, inheriting its branding, and keeps ?ws= on the builder URL', async () => {

@@ -1,12 +1,13 @@
 /* eslint-disable @next/next/no-img-element -- arbitrary backend-served upload URLs, same tradeoff as FormBanner (no remotePatterns configured). */
 import { brandPanelStyle } from '@/lib/formTheme';
+import { BrandMark, hasBrandMark } from '../BrandMark';
 import { Backdrop, widthClass, type LayoutFrameProps } from './shared';
 
 // Split Feature: a full-height brand panel beside the form (a real two-pane screen on desktop, not a card on a
 // blank page). The panel carries the logo, a large headline and the current step. Below 768 the panel becomes a
 // header above the form; below 480 it is hidden entirely (the form title is already inside the form).
 export function SplitFeatureLayout({ branding, title, stepNames, currentPage, previewMode, hideCover, children }: LayoutFrameProps) {
-  const { coverImageUrl, logoUrl } = branding;
+  const { coverImageUrl } = branding;
   const stepLabel = stepNames.length > 1 ? stepNames[currentPage] : '';
   return (
     <Backdrop branding={branding} previewMode={previewMode}>
@@ -26,7 +27,7 @@ export function SplitFeatureLayout({ branding, title, stepNames, currentPage, pr
             </>
           )}
           <div className="relative">
-            {logoUrl && <img src={logoUrl} alt="" className="size-12 rounded-xl bg-white object-contain p-1 shadow-(--shadow-sm)" />}
+            {hasBrandMark(branding) && <BrandMark branding={branding} size={48} className="rounded-xl bg-white object-contain p-1 shadow-(--shadow-sm)" />}
           </div>
           <div className="relative flex flex-col gap-2">
             {stepLabel && <p className="bg-overline" style={{ color: 'rgba(255,255,255,0.85)' }}>{stepLabel}</p>}

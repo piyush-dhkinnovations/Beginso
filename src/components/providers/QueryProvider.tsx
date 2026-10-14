@@ -2,7 +2,9 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { onStorageMayHaveChanged, throttleTrailing } from '@/lib/storageRefresh';
+import { settingsKeys } from '@/lib/queryKeys';
 
 // Sensible app-wide defaults; a query that needs fresher/longer-lived data overrides locally.
 //  - staleTime 30s: navigating back to a screen (or two components mounting the same key) reuses the
@@ -28,6 +30,15 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
           },
         },
       })
+  );
+
+  // Writes that can change storage refresh the sidebar allowance (profile query); see lib/storageRefresh.ts.
+  useEffect(
+    () =>
+      onStorageMayHaveChanged(
+        throttleTrailing(() => void queryClient.invalidateQueries({ queryKey: settingsKeys.profile() }), 1200)
+      ),
+    [queryClient]
   );
 
   return (

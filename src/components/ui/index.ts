@@ -49,6 +49,7 @@ export type { SelectProps } from './Select';
 export { Sidebar } from './Sidebar';
 export type { SidebarNavGroup, SidebarNavItem, SidebarProps } from './Sidebar';
 export { Skeleton } from './Skeleton';
+export { CardGridSkeleton, DashboardGridSkeleton, HomeBodySkeleton, ListBodySkeleton, PageHeaderSkeleton, SkeletonRegion } from './PageSkeletons';
 export type { SkeletonProps } from './Skeleton';
 export { Spinner } from './Spinner';
 export type { SpinnerProps } from './Spinner';

@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { MoreHorizontal, Plus, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Menu } from '@/components/ui/Menu';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { DashboardGridSkeleton, SkeletonRegion } from '@/components/ui/PageSkeletons';
 import { useToast } from '@/components/ui/Toast';
 import { dashboardKeys } from '@/lib/queryKeys';
 import { dashboardLayoutService } from '@/services/dashboardLayout';
@@ -103,9 +103,9 @@ export function useCustomDashboard({ scope, defaults, metrics, canEdit = true, e
   ) : null;
 
   const body = isLoading ? (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-busy="true">
-      {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} variant="block" width="100%" height={144} />)}
-    </div>
+    <SkeletonRegion label="Loading your dashboard">
+      <DashboardGridSkeleton />
+    </SkeletonRegion>
   ) : (
     <>
       <DashboardGrid
@@ -118,7 +118,8 @@ export function useCustomDashboard({ scope, defaults, metrics, canEdit = true, e
     </>
   );
 
-  return { toolbar, body, editing };
+  // `loading` is true until the layout can be drawn (the query is disabled until the host page says it may run).
+  return { toolbar, body, editing, loading: !enabled || isLoading };
 }
 
 /** Self-contained form: toolbar row above the grid. */

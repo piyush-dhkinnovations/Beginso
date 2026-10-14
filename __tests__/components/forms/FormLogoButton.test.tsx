@@ -5,84 +5,104 @@ import { FormLogoButton } from '@/components/forms/FormLogoButton';
 
 const toast = vi.hoisted(() => vi.fn());
 vi.mock('@/components/ui/Toast', () => ({ useToast: () => ({ toast }) }));
-// The real picker uploads files; here it just offers "pick" / "remove" buttons that drive onChange.
-vi.mock('@/components/flow/LogoChoice', () => ({
-  LogoChoice: ({ value, onChange }: { value: string | null; onChange: (v: string | null) => void }) => (
+// The real picker has its own tests; here it just offers buttons that drive onChange.
+vi.mock('@/components/forms/FormMarkPicker', () => ({
+  FormMarkPicker: ({ value, onChange }: { value: { logoUrl?: string | null; iconName?: string | null }; onChange: (v: object) => void }) => (
     <div>
-      <span data-testid="draft">{value ?? 'none'}</span>
-      <button onClick={() => onChange('/new.png')}>pick</button>
-      <button onClick={() => onChange(null)}>remove</button>
+      <span data-testid="draft">{value.logoUrl ?? value.iconName ?? 'none'}</span>
+      <button onClick={() => onChange({ logoUrl: '/new.png', iconName: null })}>pick-logo</button>
+      <button onClick={() => onChange({ logoUrl: null, iconName: 'rocket' })}>pick-icon</button>
+      <button onClick={() => onChange({ logoUrl: null, iconName: null })}>auto</button>
     </div>
   ),
 }));
 
+const open = () => userEvent.click(screen.getByRole('button', { name: 'Change form icon' }));
+
 describe('FormLogoButton', () => {
-  it('without edit rights shows only the tile (no button)', () => {
-    const { container } = render(<FormLogoButton logoUrl="/a.png" canEdit={false} onSave={vi.fn()} />);
+  it('without edit rights shows only the mark (no button)', () => {
+    const { container } = render(<FormLogoButton mark={{ logoUrl: '/a.png' }} title="T" canEdit={false} onSave={vi.fn()} />);
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
     expect(container.querySelector('img')).toHaveAttribute('src', '/a.png');
   });
 
-  it('shows the default document icon when there is no logo', () => {
-    const { container } = render(<FormLogoButton onSave={vi.fn()} canEdit={false} />);
+  it('shows an icon chosen from the form name when there is no logo or icon', () => {
+    const { container } = render(<FormLogoButton mark={{}} title="Event Registration" onSave={vi.fn()} canEdit={false} />);
     expect(container.querySelector('img')).toBeNull();
     expect(container.querySelector('svg')).not.toBeNull();
   });
 
-  it('with edit rights, opens a dialog seeded with the current logo', async () => {
-    render(<FormLogoButton logoUrl="/a.png" onSave={vi.fn()} />);
+  it('shows the chosen icon, alone (no box around it)', () => {
+    const picked = render(<FormLogoButton mark={{ iconName: 'rating-star' }} title="T" canEdit={false} onSave={vi.fn()} />).container;
+    const auto = render(<FormLogoButton mark={{}} title="T" canEdit={false} onSave={vi.fn()} />).container;
+    expect(picked.querySelector('svg')).not.toBeNull();
+    expect(picked.innerHTML).not.toBe(auto.innerHTML);
+    expect((picked.firstElementChild as HTMLElement).className).not.toMatch(/border|bg-/);
+  });
+
+  it('with edit rights, opens a dialog seeded with the current mark', async () => {
+    render(<FormLogoButton mark={{ logoUrl: '/a.png' }} title="T" onSave={vi.fn()} />);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Change form logo' }));
+    await open();
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByTestId('draft')).toHaveTextContent('/a.png');
   });
 
-  it('Save is disabled until the draft differs from the current logo', async () => {
-    render(<FormLogoButton logoUrl="/a.png" onSave={vi.fn()} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Change form logo' }));
-    expect(screen.getByRole('button', { name: 'Save logo' })).toBeDisabled();
-    await userEvent.click(screen.getByText('pick'));
-    expect(screen.getByRole('button', { name: 'Save logo' })).toBeEnabled();
+  it('Save is disabled until the draft differs from the current mark', async () => {
+    render(<FormLogoButton mark={{ logoUrl: '/a.png' }} title="T" onSave={vi.fn()} />);
+    await open();
+    expect(screen.getByRole('button', { name: 'Save icon' })).toBeDisabled();
+    await userEvent.click(screen.getByText('pick-logo'));
+    expect(screen.getByRole('button', { name: 'Save icon' })).toBeEnabled();
   });
 
-  it('saves the new logo and closes the dialog', async () => {
+  it('saves a new logo and closes the dialog', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
-    render(<FormLogoButton logoUrl="/a.png" onSave={onSave} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Change form logo' }));
-    await userEvent.click(screen.getByText('pick'));
-    await userEvent.click(screen.getByRole('button', { name: 'Save logo' }));
-    expect(onSave).toHaveBeenCalledWith('/new.png');
+    render(<FormLogoButton mark={{ logoUrl: '/a.png' }} title="T" onSave={onSave} />);
+    await open();
+    await userEvent.click(screen.getByText('pick-logo'));
+    await userEvent.click(screen.getByRole('button', { name: 'Save icon' }));
+    expect(onSave).toHaveBeenCalledWith({ logoUrl: '/new.png', iconName: null });
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 
-  it('removing the logo saves null', async () => {
+  it('saves a picked icon and colour', async () => {
     const onSave = vi.fn().mockResolvedValue(undefined);
-    render(<FormLogoButton logoUrl="/a.png" onSave={onSave} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Change form logo' }));
-    await userEvent.click(screen.getByText('remove'));
-    await userEvent.click(screen.getByRole('button', { name: 'Save logo' }));
-    expect(onSave).toHaveBeenCalledWith(null);
+    render(<FormLogoButton mark={{}} title="T" onSave={onSave} />);
+    await open();
+    await userEvent.click(screen.getByText('pick-icon'));
+    await userEvent.click(screen.getByRole('button', { name: 'Save icon' }));
+    expect(onSave).toHaveBeenCalledWith({ logoUrl: null, iconName: 'rocket' });
+  });
+
+  it('going back to Automatic saves an empty mark', async () => {
+    const onSave = vi.fn().mockResolvedValue(undefined);
+    render(<FormLogoButton mark={{ logoUrl: '/a.png' }} title="T" onSave={onSave} />);
+    await open();
+    await userEvent.click(screen.getByText('auto'));
+    await userEvent.click(screen.getByRole('button', { name: 'Save icon' }));
+    expect(onSave).toHaveBeenCalledWith({ logoUrl: null, iconName: null });
   });
 
   it('keeps the dialog open and toasts an error when saving fails', async () => {
     toast.mockClear();
     const onSave = vi.fn().mockRejectedValue(new Error('x'));
-    render(<FormLogoButton onSave={onSave} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Change form logo' }));
-    await userEvent.click(screen.getByText('pick'));
-    await userEvent.click(screen.getByRole('button', { name: 'Save logo' }));
-    await waitFor(() => expect(toast).toHaveBeenCalledWith('Could not save the logo. Please try again.', 'error'));
+    render(<FormLogoButton mark={{}} title="T" onSave={onSave} />);
+    await open();
+    await userEvent.click(screen.getByText('pick-logo'));
+    await userEvent.click(screen.getByRole('button', { name: 'Save icon' }));
+    await waitFor(() => expect(toast).toHaveBeenCalledWith('Could not save the icon. Please try again.', 'error'));
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Save logo' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Save icon' })).toBeEnabled();
   });
 
-  it('Cancel closes and a reopen re-seeds the draft from the saved logo', async () => {
-    render(<FormLogoButton logoUrl="/a.png" onSave={vi.fn()} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Change form logo' }));
-    await userEvent.click(screen.getByText('pick'));
+  it('Cancel closes and a reopen re-seeds the draft from the saved mark', async () => {
+    render(<FormLogoButton mark={{ logoUrl: '/a.png' }} title="T" onSave={vi.fn()} />);
+    await open();
+    await userEvent.click(screen.getByText('pick-icon'));
     await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
-    await userEvent.click(screen.getByRole('button', { name: 'Change form logo' }));
+    await open();
     expect(screen.getByTestId('draft')).toHaveTextContent('/a.png');
   });
 });

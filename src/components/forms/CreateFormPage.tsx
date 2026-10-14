@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -18,7 +18,9 @@ import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { SplitFlowLayout } from '@/components/flow/SplitFlowLayout';
 import { FormIllustration } from '@/components/flow/FlowIllustrations';
-import { LogoChoice } from '@/components/flow/LogoChoice';
+import { FormMarkPicker } from '@/components/forms/FormMarkPicker';
+import { suggestFormIcon } from '@/lib/formIcons';
+import type { FormMark } from '@/types/form';
 import type { FormDestination } from '@/types/workspace';
 
 /**
@@ -31,7 +33,7 @@ export function CreateFormPage() {
   const { toast } = useToast();
   const initForm = useBuilderStore((s) => s.initForm);
   const ws = useSearchParams().get('ws');
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [mark, setMark] = useState<FormMark>({});
 
   const { data: workspaces = [] } = useWorkspaceList(!!ws);
   const target = ws ? workspaces.find((w) => w.id === ws || w.slug === ws) : undefined;
@@ -47,14 +49,24 @@ export function CreateFormPage() {
     register,
     handleSubmit,
     formState: { errors },
+    control,
   } = useForm<CreateFormValues>({ resolver: zodResolver(createFormSchema) });
+  const title = useWatch({ control, name: 'title' }) ?? '';
 
   const goBack = () => (window.history.length > 1 ? router.back() : router.push(ws ? `/w/${target?.slug ?? ws}/forms` : '/forms'));
 
   const mutation = useMutation({
     mutationFn: async (data: CreateFormValues) => {
       const destination: FormDestination = target ? { type: 'workspace', workspaceId: target.id } : { type: 'personal' };
-      const branding = { ...(workspace?.branding ?? {}), ...(logoUrl ? { logoUrl } : {}) };
+      // The form's own mark (logo, or icon + colour) wins over whatever the workspace's default branding carries.
+      // Untouched, the form gets the icon that suits its name (what the picker showed as selected).
+      const suggested = suggestFormIcon(data.title);
+      const chosen: FormMark = mark.logoUrl || mark.iconName ? mark : { iconName: suggested.name };
+      const branding = {
+        ...(workspace?.branding ?? {}),
+        ...(chosen.logoUrl ? { logoUrl: chosen.logoUrl } : {}),
+        ...(chosen.iconName ? { iconName: chosen.iconName } : {}),
+      };
       const created = await formsService.createForm({
         ...data,
         destination,
@@ -97,7 +109,7 @@ export function CreateFormPage() {
       illustration={<FormIllustration />}
       onClose={goBack}
     >
-      <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="flex flex-col gap-6" noValidate>
+      <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="flex flex-col gap-5" noValidate>
         <Input
           id="create-form-title-input"
           label="Form Title"
@@ -110,11 +122,11 @@ export function CreateFormPage() {
           id="create-form-description-input"
           label="Description (optional)"
           placeholder="What is this form for?"
-          rows={3}
+          rows={2}
           error={errors.description?.message}
           {...register('description')}
         />
-        <LogoChoice subject="form" value={logoUrl} onChange={setLogoUrl} disabled={mutation.isPending} />
+        <FormMarkPicker value={mark} onChange={setMark} title={title} disabled={mutation.isPending} />
         <div>
           <Button type="submit" variant="primary" isLoading={mutation.isPending} className="min-h-12 px-6">
             Create Form

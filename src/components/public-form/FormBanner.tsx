@@ -1,5 +1,6 @@
 import type { PublicFormBranding } from '@/types/publicForm';
 import { brandCoverObjectPosition, brandPanelStyle } from '@/lib/formTheme';
+import { BrandMark, hasBrandMark } from './BrandMark';
 
 interface FormBannerProps {
   branding: PublicFormBranding;
@@ -13,8 +14,9 @@ interface FormBannerProps {
  * backend-served upload URLs with no remotePatterns configured.
  */
 export function FormBanner({ branding, title }: FormBannerProps) {
-  const { coverImageUrl, logoUrl } = branding;
-  const hasText = !!title || !!logoUrl;
+  const { coverImageUrl } = branding;
+  const hasMark = hasBrandMark(branding);
+  const hasText = !!title || hasMark;
 
   // 'original': the whole picture at its own size and ratio (never cropped); the logo and headline sit under it.
   if (coverImageUrl && branding.coverFit === 'original') {
@@ -24,10 +26,7 @@ export function FormBanner({ branding, title }: FormBannerProps) {
         <img src={coverImageUrl} alt="" className="block h-auto w-full" />
         {hasText && (
           <div className="flex items-center gap-3 px-6 pt-6 md:px-8">
-            {logoUrl && (
-              // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset
-              <img src={logoUrl} alt="" className="size-11 flex-none rounded-xl border border-(--border-default) bg-white object-contain p-1" />
-            )}
+            {hasMark && <span className="flex-none"><BrandMark branding={branding} size={44} className="rounded-xl border border-(--border-default) bg-white object-contain p-1" /></span>}
             {title && (
               <p aria-hidden="true" className="font-bold leading-tight text-balance text-(--text-primary)" style={{ fontSize: 'var(--form-headline, 1.75rem)' }}>
                 {title}
@@ -48,10 +47,7 @@ export function FormBanner({ branding, title }: FormBannerProps) {
       {coverImageUrl && hasText && <div aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />}
       {hasText && (
         <div className="relative flex h-full min-h-44 flex-col justify-end gap-3 p-6 md:p-8 text-white">
-          {logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset
-            <img src={logoUrl} alt="" className="size-11 rounded-xl bg-white object-contain p-1 shadow-(--shadow-sm)" />
-          )}
+          {hasMark && <BrandMark branding={branding} size={44} className="rounded-xl bg-white object-contain p-1 shadow-(--shadow-sm)" />}
           {title && (
             <p aria-hidden="true" className="font-bold leading-tight text-balance" style={{ fontSize: 'var(--form-headline, 1.75rem)' }}>
               {title}

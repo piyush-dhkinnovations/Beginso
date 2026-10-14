@@ -1,0 +1,649 @@
+{
+  "_note": "The form icons offered in the picker, from Streamline 'Ultimate Color' (free, CC BY 4.0). Each entry names an icon in @iconify-json/streamline-ultimate-color. `color` is a representative hue of the icon (used for avatars); `featured` icons are shown up front. Regenerate src/lib/formIconData.generated.ts with: npm run generate:form-icons",
+  "icons": [
+    {
+      "name": "common-file-text",
+      "label": "Document",
+      "keywords": "form page text paper",
+      "color": "#2563EB",
+      "featured": true
+    },
+    {
+      "name": "notes-checklist-flip",
+      "label": "Checklist",
+      "keywords": "list survey tasks todo quiz",
+      "color": "#0D9488",
+      "featured": true
+    },
+    {
+      "name": "office-file-stamp",
+      "label": "Approval",
+      "keywords": "stamp approve contract review audit",
+      "color": "#16A34A"
+    },
+    {
+      "name": "notes-book",
+      "label": "Notes",
+      "keywords": "notebook journal log",
+      "color": "#D97706"
+    },
+    {
+      "name": "medical-file",
+      "label": "Medical file",
+      "keywords": "patient record health chart",
+      "color": "#DC2626"
+    },
+    {
+      "name": "calendar-date",
+      "label": "Calendar",
+      "keywords": "date schedule appointment booking",
+      "color": "#EA580C",
+      "featured": true
+    },
+    {
+      "name": "calendar-1",
+      "label": "Event",
+      "keywords": "registration rsvp webinar conference",
+      "color": "#DC2626"
+    },
+    {
+      "name": "ticket-1",
+      "label": "Ticket",
+      "keywords": "entry pass admission",
+      "color": "#EA580C"
+    },
+    {
+      "name": "party-confetti",
+      "label": "Party",
+      "keywords": "celebration wedding birthday",
+      "color": "#DB2777"
+    },
+    {
+      "name": "party-balloon",
+      "label": "Celebration",
+      "keywords": "balloon birthday party event",
+      "color": "#DB2777"
+    },
+    {
+      "name": "time-clock-circle",
+      "label": "Time",
+      "keywords": "clock hours shift schedule",
+      "color": "#475569"
+    },
+    {
+      "name": "multiple-users-1",
+      "label": "Team",
+      "keywords": "people group members community",
+      "color": "#4F46E5",
+      "featured": true
+    },
+    {
+      "name": "network-users",
+      "label": "Community",
+      "keywords": "network members group join",
+      "color": "#4F46E5"
+    },
+    {
+      "name": "team-meeting",
+      "label": "Meeting",
+      "keywords": "team call conference discussion",
+      "color": "#2563EB"
+    },
+    {
+      "name": "team-chat",
+      "label": "Team chat",
+      "keywords": "discussion group message",
+      "color": "#2563EB"
+    },
+    {
+      "name": "human-resources-businessman",
+      "label": "HR",
+      "keywords": "employee staff onboarding people",
+      "color": "#0891B2"
+    },
+    {
+      "name": "job-seach-woman",
+      "label": "Job search",
+      "keywords": "career hiring recruit resume application",
+      "color": "#D97706"
+    },
+    {
+      "name": "cash-briefcase",
+      "label": "Job",
+      "keywords": "work career briefcase business application hiring",
+      "color": "#D97706",
+      "featured": true
+    },
+    {
+      "name": "business-deal-handshake-1",
+      "label": "Partnership",
+      "keywords": "handshake deal agreement vendor partner",
+      "color": "#0D9488"
+    },
+    {
+      "name": "single-neutral-actions-heart",
+      "label": "Volunteer",
+      "keywords": "charity donation help care",
+      "color": "#DB2777"
+    },
+    {
+      "name": "single-woman-book",
+      "label": "Student",
+      "keywords": "study school course class training education",
+      "color": "#7C3AED",
+      "featured": true
+    },
+    {
+      "name": "book-open-bookmark",
+      "label": "Learning",
+      "keywords": "reading book study course",
+      "color": "#0891B2"
+    },
+    {
+      "name": "shelf-books-1",
+      "label": "Library",
+      "keywords": "books reading shelf",
+      "color": "#B45309"
+    },
+    {
+      "name": "award-trophy-1",
+      "label": "Contest",
+      "keywords": "trophy winner competition award",
+      "color": "#D97706"
+    },
+    {
+      "name": "award-medal-4",
+      "label": "Award",
+      "keywords": "medal prize recognition",
+      "color": "#D97706"
+    },
+    {
+      "name": "ranking-stars-ribbon",
+      "label": "Ranking",
+      "keywords": "stars rank top rated",
+      "color": "#D97706"
+    },
+    {
+      "name": "shopping-cart-full",
+      "label": "Order",
+      "keywords": "shop store purchase cart sales",
+      "color": "#DC2626",
+      "featured": true
+    },
+    {
+      "name": "shopping-bag-check",
+      "label": "Shopping",
+      "keywords": "retail bag product purchase",
+      "color": "#DB2777"
+    },
+    {
+      "name": "e-commerce-shopping-bag",
+      "label": "Store",
+      "keywords": "shop retail bag sale",
+      "color": "#DB2777"
+    },
+    {
+      "name": "delivery-truck-3",
+      "label": "Delivery",
+      "keywords": "truck shipping logistics transport",
+      "color": "#EA580C"
+    },
+    {
+      "name": "warehouse-cart-packages-2",
+      "label": "Inventory",
+      "keywords": "warehouse stock packages boxes",
+      "color": "#D97706"
+    },
+    {
+      "name": "delivery-package-person",
+      "label": "Parcel",
+      "keywords": "package courier shipment",
+      "color": "#D97706"
+    },
+    {
+      "name": "credit-card-1",
+      "label": "Payment",
+      "keywords": "billing invoice card fee donation",
+      "color": "#0D9488",
+      "featured": true
+    },
+    {
+      "name": "cash-payment-bills-1",
+      "label": "Cash",
+      "keywords": "money bills finance salary",
+      "color": "#16A34A"
+    },
+    {
+      "name": "money-bag-dollar",
+      "label": "Money",
+      "keywords": "budget funds dollar finance",
+      "color": "#16A34A"
+    },
+    {
+      "name": "money-wallet-open",
+      "label": "Wallet",
+      "keywords": "money budget expense",
+      "color": "#16A34A"
+    },
+    {
+      "name": "receipt-dollar",
+      "label": "Receipt",
+      "keywords": "invoice bill expense",
+      "color": "#475569"
+    },
+    {
+      "name": "saving-bank-1",
+      "label": "Bank",
+      "keywords": "finance savings institution government",
+      "color": "#4F46E5"
+    },
+    {
+      "name": "tag-dollar",
+      "label": "Price",
+      "keywords": "offer coupon discount label",
+      "color": "#DB2777"
+    },
+    {
+      "name": "accounting-calculator-1",
+      "label": "Accounting",
+      "keywords": "calculator tax finance",
+      "color": "#475569"
+    },
+    {
+      "name": "hospital-building",
+      "label": "Hospital",
+      "keywords": "clinic medical care patient",
+      "color": "#DC2626"
+    },
+    {
+      "name": "monitor-heart-beat",
+      "label": "Health",
+      "keywords": "medical wellness patient heartbeat",
+      "color": "#DC2626",
+      "featured": true
+    },
+    {
+      "name": "radiology-scan-doctor",
+      "label": "Doctor",
+      "keywords": "scan medical clinic",
+      "color": "#0891B2"
+    },
+    {
+      "name": "pill-laptop",
+      "label": "Pharmacy",
+      "keywords": "medicine pills prescription",
+      "color": "#0D9488"
+    },
+    {
+      "name": "dentistry-tooth-shield",
+      "label": "Dental",
+      "keywords": "tooth dentist clinic",
+      "color": "#0891B2"
+    },
+    {
+      "name": "medical-instrument-ambulance-bed",
+      "label": "Emergency",
+      "keywords": "ambulance urgent care",
+      "color": "#DC2626"
+    },
+    {
+      "name": "fitness-bicycle-1",
+      "label": "Fitness",
+      "keywords": "gym sport workout cycling exercise",
+      "color": "#EA580C"
+    },
+    {
+      "name": "rating-star",
+      "label": "Feedback",
+      "keywords": "rating review survey nps stars",
+      "color": "#D97706",
+      "featured": true
+    },
+    {
+      "name": "like",
+      "label": "Like",
+      "keywords": "thumbs up recommend approve",
+      "color": "#2563EB"
+    },
+    {
+      "name": "smiley-happy",
+      "label": "Happy",
+      "keywords": "smile satisfaction mood emoji",
+      "color": "#D97706"
+    },
+    {
+      "name": "messages-bubble-text",
+      "label": "Message",
+      "keywords": "comment chat contact opinion",
+      "color": "#DB2777",
+      "featured": true
+    },
+    {
+      "name": "question-help-message",
+      "label": "Questions",
+      "keywords": "ask faq help enquiry",
+      "color": "#2563EB"
+    },
+    {
+      "name": "messages-bubble-square-typing-1",
+      "label": "Comment",
+      "keywords": "chat typing reply",
+      "color": "#DB2777"
+    },
+    {
+      "name": "envelope-letter",
+      "label": "Email",
+      "keywords": "mail contact letter",
+      "color": "#2563EB"
+    },
+    {
+      "name": "send-email-fly",
+      "label": "Newsletter",
+      "keywords": "subscribe mailing send email",
+      "color": "#2563EB"
+    },
+    {
+      "name": "phone-actions-call",
+      "label": "Call",
+      "keywords": "phone contact callback",
+      "color": "#16A34A"
+    },
+    {
+      "name": "megaphone",
+      "label": "Announcement",
+      "keywords": "marketing campaign news promote",
+      "color": "#EA580C"
+    },
+    {
+      "name": "newspaper-fold",
+      "label": "News",
+      "keywords": "blog article press",
+      "color": "#475569"
+    },
+    {
+      "name": "headphones-customer-support-question",
+      "label": "Support",
+      "keywords": "help ticket request customer service",
+      "color": "#4F46E5"
+    },
+    {
+      "name": "information-desk-customer",
+      "label": "Help desk",
+      "keywords": "reception information service",
+      "color": "#2563EB"
+    },
+    {
+      "name": "maps",
+      "label": "Map",
+      "keywords": "location directions visit",
+      "color": "#16A34A"
+    },
+    {
+      "name": "earth-pin-2",
+      "label": "Location",
+      "keywords": "address place world website global",
+      "color": "#0891B2",
+      "featured": true
+    },
+    {
+      "name": "style-one-pin-plane",
+      "label": "Travel",
+      "keywords": "trip flight holiday plane",
+      "color": "#2563EB"
+    },
+    {
+      "name": "trip-pin-multiple",
+      "label": "Trip",
+      "keywords": "tour route journey pins",
+      "color": "#EA580C"
+    },
+    {
+      "name": "car-4",
+      "label": "Car",
+      "keywords": "vehicle rental driving transport",
+      "color": "#475569"
+    },
+    {
+      "name": "house-4",
+      "label": "Home",
+      "keywords": "property housing residence",
+      "color": "#0D9488"
+    },
+    {
+      "name": "real-estate-deal-shake-building",
+      "label": "Property",
+      "keywords": "real estate deal buy rent",
+      "color": "#0D9488"
+    },
+    {
+      "name": "building-2",
+      "label": "Company",
+      "keywords": "office business corporate",
+      "color": "#4F46E5"
+    },
+    {
+      "name": "project-blueprint-home",
+      "label": "Construction",
+      "keywords": "blueprint build architecture project",
+      "color": "#2563EB"
+    },
+    {
+      "name": "idea-strategy",
+      "label": "Idea",
+      "keywords": "pitch proposal suggestion innovation plan strategy",
+      "color": "#D97706",
+      "featured": true
+    },
+    {
+      "name": "startup-launch",
+      "label": "Launch",
+      "keywords": "startup rocket project beta",
+      "color": "#4F46E5",
+      "featured": true
+    },
+    {
+      "name": "business-team-goal",
+      "label": "Goal",
+      "keywords": "objective target plan team",
+      "color": "#DC2626"
+    },
+    {
+      "name": "target-center-monitor",
+      "label": "Target",
+      "keywords": "goal aim marketing",
+      "color": "#DC2626"
+    },
+    {
+      "name": "analytics-pie-2",
+      "label": "Analytics",
+      "keywords": "chart pie data stats",
+      "color": "#7C3AED"
+    },
+    {
+      "name": "analytics-graph-lines",
+      "label": "Report",
+      "keywords": "graph data trend",
+      "color": "#2563EB"
+    },
+    {
+      "name": "performance-increase",
+      "label": "Growth",
+      "keywords": "increase performance progress",
+      "color": "#16A34A"
+    },
+    {
+      "name": "presentation-microphone-1",
+      "label": "Presentation",
+      "keywords": "speaker talk keynote pitch",
+      "color": "#4F46E5"
+    },
+    {
+      "name": "business-contract-give",
+      "label": "Contract",
+      "keywords": "agreement legal sign terms",
+      "color": "#475569"
+    },
+    {
+      "name": "office-business-card",
+      "label": "Business card",
+      "keywords": "contact networking lead",
+      "color": "#2563EB"
+    },
+    {
+      "name": "gift-box-1",
+      "label": "Gift",
+      "keywords": "giveaway reward promo present",
+      "color": "#DB2777"
+    },
+    {
+      "name": "modern-music-electric-guitar",
+      "label": "Music",
+      "keywords": "concert band guitar audio",
+      "color": "#7C3AED"
+    },
+    {
+      "name": "concert-microphone",
+      "label": "Concert",
+      "keywords": "microphone singing show stage",
+      "color": "#7C3AED"
+    },
+    {
+      "name": "taking-pictures-cameras",
+      "label": "Photo",
+      "keywords": "picture media gallery photography",
+      "color": "#475569"
+    },
+    {
+      "name": "color-palette",
+      "label": "Design",
+      "keywords": "art creative brand paint",
+      "color": "#DB2777"
+    },
+    {
+      "name": "fast-food-french-fries",
+      "label": "Food",
+      "keywords": "restaurant menu catering order fast food",
+      "color": "#EA580C"
+    },
+    {
+      "name": "coffee-espresso-machine",
+      "label": "Cafe",
+      "keywords": "coffee drink tea",
+      "color": "#B45309"
+    },
+    {
+      "name": "seafood-sushi",
+      "label": "Restaurant",
+      "keywords": "sushi dining menu food",
+      "color": "#DC2626"
+    },
+    {
+      "name": "board-game-dice-1",
+      "label": "Games",
+      "keywords": "dice play fun gaming",
+      "color": "#4F46E5"
+    },
+    {
+      "name": "module-puzzle",
+      "label": "Puzzle",
+      "keywords": "integration plugin challenge",
+      "color": "#7C3AED"
+    },
+    {
+      "name": "laptop-user",
+      "label": "Tech",
+      "keywords": "computer it device laptop",
+      "color": "#475569"
+    },
+    {
+      "name": "programming-user-chat",
+      "label": "Developer",
+      "keywords": "software engineering code api",
+      "color": "#4F46E5"
+    },
+    {
+      "name": "file-code",
+      "label": "Code",
+      "keywords": "programming source file",
+      "color": "#2563EB"
+    },
+    {
+      "name": "monitor-bug",
+      "label": "Bug report",
+      "keywords": "issue defect software error",
+      "color": "#DC2626"
+    },
+    {
+      "name": "tool-box",
+      "label": "Tools",
+      "keywords": "service repair maintenance toolbox",
+      "color": "#D97706"
+    },
+    {
+      "name": "car-repair-engine",
+      "label": "Repair",
+      "keywords": "garage mechanic service maintenance",
+      "color": "#475569"
+    },
+    {
+      "name": "shield-check-1",
+      "label": "Security",
+      "keywords": "safety compliance protection",
+      "color": "#16A34A"
+    },
+    {
+      "name": "lock-shield",
+      "label": "Privacy",
+      "keywords": "lock data protection gdpr",
+      "color": "#475569"
+    },
+    {
+      "name": "flag",
+      "label": "Report",
+      "keywords": "incident flag mark issue",
+      "color": "#DC2626"
+    },
+    {
+      "name": "tags-favorite",
+      "label": "Tags",
+      "keywords": "labels favourite organise",
+      "color": "#DB2777"
+    },
+    {
+      "name": "diamond-shine",
+      "label": "Premium",
+      "keywords": "diamond luxury vip special",
+      "color": "#0891B2"
+    },
+    {
+      "name": "vip-crown-queen-1",
+      "label": "VIP",
+      "keywords": "crown royal exclusive",
+      "color": "#D97706"
+    },
+    {
+      "name": "check-badge",
+      "label": "Verified",
+      "keywords": "approved check certified badge",
+      "color": "#2563EB"
+    },
+    {
+      "name": "login-key",
+      "label": "Access",
+      "keywords": "login key sign in permission",
+      "color": "#D97706"
+    },
+    {
+      "name": "information-circle",
+      "label": "Info",
+      "keywords": "information about notice",
+      "color": "#2563EB"
+    },
+    {
+      "name": "ab-testing-monitors",
+      "label": "A/B test",
+      "keywords": "experiment compare variants",
+      "color": "#7C3AED"
+    }
+  ]
+}

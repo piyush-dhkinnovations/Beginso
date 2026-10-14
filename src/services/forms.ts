@@ -40,6 +40,7 @@ export function sanitizeBranding(raw: Record<string, unknown> | undefined | null
   if (!raw) return out;
   if (typeof raw.primaryColor === 'string' && HEX_RE.test(raw.primaryColor.trim())) out.primaryColor = raw.primaryColor.trim();
   if (typeof raw.backgroundColor === 'string' && HEX_RE.test(raw.backgroundColor.trim())) out.backgroundColor = raw.backgroundColor.trim();
+  if (typeof raw.iconName === 'string' && /^[a-z0-9-]{2,40}$/.test(raw.iconName)) out.iconName = raw.iconName;
   for (const k of BRANDING_STRINGS) if (typeof raw[k] === 'string' && (raw[k] as string).trim()) out[k] = raw[k];
   for (const [k, allowed] of Object.entries(BRANDING_ENUMS)) if (typeof raw[k] === 'string' && allowed.includes(raw[k] as string)) out[k] = raw[k];
   if (typeof raw.showProgress === 'boolean') out.showProgress = raw.showProgress;

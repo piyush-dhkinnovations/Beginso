@@ -133,7 +133,7 @@ export default function BuilderPageShell() {
             onBack={handleBack}
             onOpenSettings={() => setActiveTab('settings')}
             // Same logo as Branding → Logo: it goes through the builder store, so it autosaves like every other edit.
-            icon={<FormLogoButton logoUrl={branding.logoUrl} canEdit={formRole !== 'viewer' && formRole !== 'reviewer'} onSave={(url) => setBranding({ logoUrl: url ?? undefined })} />}
+            icon={<FormLogoButton mark={branding} title={formTitle} canEdit={formRole !== 'viewer' && formRole !== 'reviewer'} onSave={(mark) => setBranding({ logoUrl: mark.logoUrl ?? undefined, iconName: mark.iconName ?? undefined})} />}
           />
 
           {activeTab === 'settings' ? (

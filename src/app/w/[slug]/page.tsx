@@ -24,6 +24,7 @@ import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
 import { canManageDashboard, canManageWorkspaceSettings } from '@/lib/roles';
 import { ActivityFeed } from '@/components/workspaces/ActivityFeed';
 import { PageHeader, Button, EmptyState, Card, Badge, Skeleton, QuickActionsBanner } from '@/components/ui';
+import { HomeBodySkeleton } from '@/components/ui/PageSkeletons';
 import { FormAccessPanel } from '@/components/team/FormAccessPanel';
 import type { Form } from '@/types/form';
 
@@ -77,33 +78,13 @@ export default function WorkspaceHomePage() {
   });
 
   // ── Loading state ──────────────────────────────────────────────────────────
-  if (isLoading) {
+  // One skeleton from the first paint to the real page (the route's loading.tsx shows this same one): the forms list, and
+  // - when there are forms - the widget layout, are both waited for before anything is swapped in.
+  if (isLoading || (!error && !isEmpty && dashboard.loading)) {
     return (
       <div className="flex flex-col gap-4 w-full">
-        <div className="flex flex-col gap-1">
-          <Skeleton variant="title" width="40%" />
-          <Skeleton variant="text" width="60%" />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[0, 1, 2].map((i) => (
-            <Card key={i} className="flex flex-col gap-2">
-              <Skeleton variant="text" width="50%" />
-              <Skeleton variant="title" width="30%" />
-            </Card>
-          ))}
-        </div>
-        <Card className="flex flex-col gap-3">
-          {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-3 py-2 border-b border-(--border-default) last:border-0">
-              <Skeleton variant="circle" width="36px" height="36px" />
-              <div className="flex flex-col gap-1.5 flex-1">
-                <Skeleton variant="text" width="45%" />
-                <Skeleton variant="text" width="30%" />
-              </div>
-              <Skeleton variant="text" width="60px" />
-            </div>
-          ))}
-        </Card>
+        <PageHeader title="Home" />
+        <HomeBodySkeleton />
       </div>
     );
   }
@@ -137,7 +118,7 @@ export default function WorkspaceHomePage() {
             {!isEmpty && dashboard.toolbar}
             {!dashboard.editing && (
               <>
-                <Link href={`/w/${slug}/forms`}>
+                <Link href={`/forms/new?ws=${encodeURIComponent(slug)}`}>
                   <Button variant="primary">
                     <Plus size={16} className="mr-1.5" />
                     New Form
@@ -162,7 +143,7 @@ export default function WorkspaceHomePage() {
           title="Welcome to your workspace!"
           description="Create your first interactive web form or start from one of our professional, pre-built templates to get started."
           primaryAction={
-            <Link href={`/w/${slug}/forms`}>
+            <Link href={`/forms/new?ws=${encodeURIComponent(slug)}`}>
               <Button variant="primary">Create Form</Button>
             </Link>
           }

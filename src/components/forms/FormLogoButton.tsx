@@ -1,41 +1,38 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, Pencil } from 'lucide-react';
+import { Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
-import { LogoChoice } from '@/components/flow/LogoChoice';
+import { FormMarkPicker } from '@/components/forms/FormMarkPicker';
+import { FormTile } from '@/components/forms/FormTile';
+import type { FormMark } from '@/types/form';
 
 interface FormLogoButtonProps {
-  /** The form's current logo, or null/undefined for the BeginSo default tile. */
-  logoUrl?: string | null;
-  /** Saves the new logo (null = back to the default). Rejects on failure. */
-  onSave: (logoUrl: string | null) => Promise<unknown> | void;
-  /** Without edit rights the logo is shown but cannot be changed (the server enforces this too). */
+  /** The form's current mark: an uploaded logo, an icon, or none (picked automatically from the name). */
+  mark: FormMark;
+  /** The form's name, for the automatic icon. */
+  title: string;
+  /** Saves the new mark. Rejects on failure. */
+  onSave: (mark: FormMark) => Promise<unknown> | void;
+  /** Without edit rights the mark is shown but cannot be changed (the server enforces this too). */
   canEdit?: boolean;
 }
 
+const same = (a: FormMark, b: FormMark) => (a.logoUrl ?? null) === (b.logoUrl ?? null) && (a.iconName ?? null) === (b.iconName ?? null);
+
 /**
  * The form's icon in its page header. With edit rights it carries a small pencil; clicking opens the same
- * "BeginSo default / Upload your logo" choice as the Create form page.
+ * icon grid (with the upload tile) as the Create form page.
  */
-export function FormLogoButton({ logoUrl, onSave, canEdit = true }: FormLogoButtonProps) {
+export function FormLogoButton({ mark, title, onSave, canEdit = true }: FormLogoButtonProps) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<string | null>(logoUrl ?? null);
+  const [draft, setDraft] = useState<FormMark>(mark);
   const [saving, setSaving] = useState(false);
 
-  const tile = (
-    <span className="inline-flex size-12 flex-none items-center justify-center overflow-hidden rounded-2xl bg-(--accent-soft) text-(--action-primary) sm:size-13 [&_svg]:size-6">
-      {logoUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element -- backend-served upload, not a static asset
-        <img src={logoUrl} alt="" className="size-full object-cover" />
-      ) : (
-        <FileText aria-hidden="true" />
-      )}
-    </span>
-  );
+  const tile = <FormTile title={title} size={52} logoUrl={mark.logoUrl} iconName={mark.iconName} />;
 
   if (!canEdit) return tile;
 
@@ -45,7 +42,7 @@ export function FormLogoButton({ logoUrl, onSave, canEdit = true }: FormLogoButt
       await onSave(draft);
       setOpen(false);
     } catch {
-      toast('Could not save the logo. Please try again.', 'error');
+      toast('Could not save the icon. Please try again.', 'error');
     } finally {
       setSaving(false);
     }
@@ -56,11 +53,11 @@ export function FormLogoButton({ logoUrl, onSave, canEdit = true }: FormLogoButt
       <button
         type="button"
         onClick={() => {
-          setDraft(logoUrl ?? null);
+          setDraft(mark);
           setOpen(true);
         }}
-        aria-label="Change form logo"
-        title="Change logo"
+        aria-label="Change form icon"
+        title="Change icon"
         className="group relative flex-none rounded-2xl outline-none focus-visible:shadow-(--shadow-focus)"
       >
         {tile}
@@ -69,15 +66,15 @@ export function FormLogoButton({ logoUrl, onSave, canEdit = true }: FormLogoButt
         </span>
       </button>
 
-      <Modal isOpen={open} onClose={() => setOpen(false)} title="Change form logo" description="Pick the logo shown on this form.">
+      <Modal isOpen={open} onClose={() => setOpen(false)} title="Change form icon" description="Pick the icon shown for this form.">
         <div className="flex flex-col gap-5">
-          <LogoChoice subject="form" value={draft} onChange={setDraft} disabled={saving} />
+          <FormMarkPicker value={draft} onChange={setDraft} title={title} disabled={saving} />
           <div className="flex items-center justify-end gap-3 border-t border-(--border-default) pt-4">
             <Button variant="secondary" onClick={() => setOpen(false)} disabled={saving}>
               Cancel
             </Button>
-            <Button onClick={() => void save()} isLoading={saving} disabled={draft === (logoUrl ?? null)}>
-              Save logo
+            <Button onClick={() => void save()} isLoading={saving} disabled={same(draft, mark)}>
+              Save icon
             </Button>
           </div>
         </div>

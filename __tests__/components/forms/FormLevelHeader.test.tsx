@@ -29,8 +29,8 @@ vi.mock('@/components/team/FormAccessPanel', () => ({
   FormAccessPanel: ({ isOpen, formTitle }: { isOpen: boolean; formTitle: string }) => (isOpen ? <div role="dialog">Access for {formTitle}</div> : null),
 }));
 vi.mock('@/components/forms/FormLogoButton', () => ({
-  FormLogoButton: ({ onSave, canEdit }: { onSave: (u: string | null) => Promise<unknown>; canEdit: boolean }) => (
-    <button onClick={() => void onSave('/logo.png')}>logo-{String(canEdit)}</button>
+  FormLogoButton: ({ onSave, canEdit }: { onSave: (m: object) => Promise<unknown>; canEdit: boolean }) => (
+    <button onClick={() => void onSave({ logoUrl: '/logo.png' })}>logo-{String(canEdit)}</button>
   ),
 }));
 

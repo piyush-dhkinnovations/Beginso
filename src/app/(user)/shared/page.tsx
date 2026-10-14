@@ -11,7 +11,6 @@ import { sharedService } from '@/services/shared';
 import { sharedKeys } from '@/lib/queryKeys';
 import { ROLE_LABELS } from '@/lib/roles';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Avatar } from '@/components/ui/Avatar';
 import { Input } from '@/components/ui/Input';
@@ -20,7 +19,7 @@ import { Menu } from '@/components/ui/Menu';
 import { Table, type TableColumn } from '@/components/ui/Table';
 import { Toolbar } from '@/components/ui/Toolbar';
 import { EmptyState } from '@/components/ui/EmptyState';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { CardGridSkeleton } from '@/components/ui/PageSkeletons';
 import { FormTile } from '@/components/forms/FormTile';
 import { FormsViewToggle } from '@/components/forms/FormsViewToggle';
 import { PaginationControls } from '@/components/responses/PaginationControls';
@@ -158,14 +157,7 @@ export default function SharedWithMePage() {
       />
 
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Card key={i}>
-              <Skeleton variant="title" width="70%" />
-              <Skeleton variant="text" width="50%" />
-            </Card>
-          ))}
-        </div>
+        <CardGridSkeleton count={4} columns={2} />
       ) : isError ? (
         isPermissionDenied ? (
           <EmptyState illustration="no-access" icon={<Lock className="bg-icon" aria-hidden="true" />} title="You do not have access." />

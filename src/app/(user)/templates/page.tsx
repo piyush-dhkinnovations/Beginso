@@ -17,6 +17,7 @@ import { Select } from '@/components/ui/Select';
 import { TemplateCard } from '@/components/templates/TemplateCard';
 import { TemplatePreviewModal } from '@/components/templates/TemplatePreviewModal';
 import { cn } from '@/lib/utils';
+import { CardGridSkeleton } from '@/components/ui/PageSkeletons';
 import type { Template } from '@/types/form';
 
 type SortKey = 'relevant' | 'name' | 'fields';
@@ -112,19 +113,7 @@ export default function TemplatesPage({ scope = 'personal' }: TemplatesPageProps
       />
 
       {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="overflow-hidden rounded-lg border border-(--border-default) bg-(--surface-card) animate-pulse">
-              <div className="h-32 bg-(--bg-sunken)" />
-              <div className="flex flex-col gap-3 p-4">
-                <div className="h-5 w-2/5 rounded bg-(--border-default)" />
-                <div className="h-3 w-full rounded bg-(--bg-sunken)" />
-                <div className="h-3 w-4/5 rounded bg-(--bg-sunken)" />
-                <div className="h-8 w-full rounded bg-(--border-default)" />
-              </div>
-            </div>
-          ))}
-        </div>
+        <CardGridSkeleton count={6} media />
       ) : error ? (
         <div className="flex items-center justify-center py-20">
           <p className="bg-body text-(--error-text)">Failed to load templates. Please refresh.</p>

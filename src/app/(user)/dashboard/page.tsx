@@ -13,7 +13,8 @@ import { useCustomDashboard } from '@/components/dashboard-grid/CustomDashboard'
 import { personalDefaults, personalMetrics } from '@/components/dashboard-grid/personalHome';
 import { RecentActivitySection } from '@/components/dashboard/RecentActivitySection';
 import { ButtonLink } from '@/components/ui';
-import { ActionCard, Card, EmptyState, PageHeader, Skeleton, StatusBadge } from '@/components/ui';
+import { ActionCard, Card, EmptyState, PageHeader, StatusBadge } from '@/components/ui';
+import { HomeBodySkeleton } from '@/components/ui/PageSkeletons';
 import type { FormStatus } from '@/types/form';
 
 const STATUS_VARIANT: Record<FormStatus, 'draft' | 'published' | 'closed'> = {
@@ -80,30 +81,16 @@ export default function DashboardPage() {
 
   const metrics = personalMetrics(effectiveCounts, responseTrend, formsData?.forms ?? [], analytics?.locations);
 
+  // ONE loading state for the whole page: signing in, the forms list, and (when there are forms) the stats and the widget
+  // layout. It is the same skeleton as the route's loading.tsx, so nothing is swapped for a different one on the way.
+  const dashboardEnabled = !authLoading && isAuthenticated && !analyticsLoading;
   const dashboard = useCustomDashboard({
     scope: 'personal',
     defaults: personalDefaults(metrics),
     metrics,
-    enabled: !authLoading && isAuthenticated && !analyticsLoading,
+    enabled: dashboardEnabled,
   });
-
-  if (authLoading) {
-    return (
-      <div className="flex flex-col gap-6" aria-busy="true">
-        <Skeleton variant="title" width="40%" height={32} />
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} variant="block" width="100%" height={96} />
-          ))}
-        </div>
-        <Card className="flex flex-col gap-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} variant="text" width="100%" height={20} />
-          ))}
-        </Card>
-      </div>
-    );
-  }
+  const homeLoading = authLoading || formsLoading || (hasForms && (analyticsLoading || dashboard.loading));
 
   // Real bug found and fixed: `analytics.totalForms` comes from GET /api/dashboard/analytics,
   // a separate backend aggregate that has the identical workspace-leak bug formsService.getForms()
@@ -128,7 +115,7 @@ export default function DashboardPage() {
           <div className="flex flex-wrap items-center justify-end gap-2">
             {hasForms && dashboard.toolbar}
             {!dashboard.editing && (
-              <ButtonLink href="/forms" className="shrink-0">
+              <ButtonLink href="/forms/new" className="shrink-0">
                 <Plus size={16} className="mr-2" />
                 Create a form
               </ButtonLink>
@@ -137,12 +124,8 @@ export default function DashboardPage() {
         }
       />
 
-      {formsLoading ? (
-        <Card className="flex flex-col gap-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} variant="text" width="100%" height={20} />
-          ))}
-        </Card>
+      {homeLoading ? (
+        <HomeBodySkeleton />
       ) : !hasForms ? (
         <>
           <Card className="items-center py-6">
@@ -153,7 +136,7 @@ export default function DashboardPage() {
               description="Build a form, share the link, and collect responses — all from one place."
               actions={
                 <>
-                  <ButtonLink href="/forms">
+                  <ButtonLink href="/forms/new">
                     <Plus size={16} className="mr-2" />
                     Create a form
                   </ButtonLink>
@@ -214,7 +197,7 @@ export default function DashboardPage() {
               <section aria-labelledby="quick-actions-heading" className="flex flex-col gap-3">
                 <div className="flex min-h-8 items-center"><h2 id="quick-actions-heading" className="bg-h5 font-bold text-(--text-primary)">Quick actions</h2></div>
                 <div className="flex flex-col gap-3">
-                  <ActionCard href="/forms" title="Create a form" hint="Start from scratch" icon={<PlusCircle />} />
+                  <ActionCard href="/forms/new" title="Create a form" hint="Start from scratch" icon={<PlusCircle />} />
                   <ActionCard href="/templates" title="Browse templates" hint="Start with a proven structure" icon={<LayoutTemplate />} />
                 </div>
               </section>

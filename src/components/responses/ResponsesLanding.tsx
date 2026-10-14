@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { FilterChips } from '@/components/ui/FilterChips';
 import { Input } from '@/components/ui/Input';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { CardGridSkeleton, ToolbarSkeleton } from '@/components/ui/PageSkeletons';
 import { FormCard } from '@/components/forms/FormCard';
 import { FormTile } from '@/components/forms/FormTile';
 import { OwnerMonogram } from '@/components/forms/OwnerMonogram';
@@ -76,7 +76,7 @@ export function ResponsesLanding({ scope = 'personal' }: ResponsesLandingProps) 
       sortKey: 'title',
       render: (f) => (
         <div className="flex min-w-0 items-center gap-3">
-          <FormTile title={f.title} size={40} logoUrl={f.branding?.logoUrl} />
+          <FormTile title={f.title} size={40} logoUrl={f.branding?.logoUrl} iconName={f.branding?.iconName} />
           <div className="flex min-w-0 flex-col">
             <span className="truncate bg-body-sm font-semibold text-(--text-primary)">{f.title}</span>
             <span className="truncate bg-caption text-(--text-muted)">{ownerOf(f) ? `${ownerOf(f)} · ` : ''}created {formatRelativeTime(f.createdAt)}</span>
@@ -131,11 +131,10 @@ export function ResponsesLanding({ scope = 'personal' }: ResponsesLandingProps) 
       )}
 
       {isLoading ? (
-        <div className={GRID} aria-busy="true" aria-label="Loading forms">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} variant="block" height={84} className="w-full rounded-lg" />
-          ))}
-        </div>
+        <>
+          <ToolbarSkeleton />
+          <CardGridSkeleton count={6} label="Loading forms" />
+        </>
       ) : isError ? (
         <EmptyState
           icon={<AlertCircle />}

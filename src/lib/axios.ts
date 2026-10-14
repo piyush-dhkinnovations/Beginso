@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { affectsStorage, notifyStorageMayHaveChanged } from '@/lib/storageRefresh';
 
 function getApiErrorCode(data: unknown): string | undefined {
   if (!data || typeof data !== 'object') return undefined;
@@ -21,7 +22,11 @@ const axiosInstance = axios.create({
 });
 
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // A write that can change storage or the workspace count: let the sidebar numbers refresh (see storageRefresh.ts).
+    if (affectsStorage(response.config?.method, response.config?.url)) notifyStorageMayHaveChanged();
+    return response;
+  },
   (error) => {
     const status = error.response?.status;
     const url: string = error.config?.url ?? '';

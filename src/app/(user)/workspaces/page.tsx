@@ -8,7 +8,8 @@ import { Plus, Building2, Search } from 'lucide-react';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
 import { ROLE_LABELS } from '@/lib/roles';
-import { PageHeader, Button, Card, Badge, EmptyState, Skeleton } from '@/components/ui';
+import { PageHeader, Button, Card, Badge, EmptyState } from '@/components/ui';
+import { CardGridSkeleton } from '@/components/ui/PageSkeletons';
 
 // Wireframe Screen 32: All Workspaces (requirements.md §7.5, C1.8) — lists every workspace
 // the caller belongs to, with role, and is where "Create workspace" (PersonalSidebar's bottom action)
@@ -48,14 +49,7 @@ export default function WorkspacesPage() {
       />
 
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Card key={i}>
-              <Skeleton variant="title" width="60%" />
-              <Skeleton variant="text" width="40%" />
-            </Card>
-          ))}
-        </div>
+        <CardGridSkeleton count={3} />
       ) : isError ? (
         <Card role="alert" className="flex items-center justify-between gap-4">
           <div>
