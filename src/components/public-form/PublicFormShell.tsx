@@ -414,6 +414,14 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
       const fieldError = methods.formState.errors[field.fieldId] as FieldError | undefined;
       const spanClass = isGrouped(layout, schema.branding.fieldGrouping) && FULL_WIDTH_TYPES.has(field.type) ? 'md:col-span-2' : '';
 
+      if (field.uploadsDisabled) {
+        return (
+          <div key={field.fieldId} className={spanClass}>
+            <p className="text-sm text-(--text-muted)">{field.label}: file uploads are unavailable right now. You can still submit the rest of the form.</p>
+          </div>
+        );
+      }
+
       if (field.type === 'file_upload') {
         return (
           <div key={field.fieldId} className={spanClass}>

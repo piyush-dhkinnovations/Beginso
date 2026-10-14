@@ -9,12 +9,14 @@ import { ArrowRight } from 'lucide-react';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
 import { createWorkspaceSchema, type CreateWorkspaceValues } from '@/lib/schemas/workspaceSchema';
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useToast } from '@/components/ui/Toast';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { SplitFlowLayout } from '@/components/flow/SplitFlowLayout';
 import { WorkspaceIllustration } from '@/components/flow/FlowIllustrations';
 import { LogoChoice } from '@/components/flow/LogoChoice';
+import { useAccountUsage } from '@/hooks/useAccountUsage';
 
 /** Full-page "Create a workspace" — same layout as Create a new form. The logo, if chosen, shows in the sidebar. */
 export function CreateWorkspacePage() {
@@ -22,6 +24,7 @@ export function CreateWorkspacePage() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [logo, setLogo] = useState<string | null>(null);
+  const usage = useAccountUsage();
 
   const {
     register,
@@ -35,7 +38,7 @@ export function CreateWorkspacePage() {
       queryClient.invalidateQueries({ queryKey: workspaceKeys.list() });
       router.push(`/w/${workspace.slug}`);
     },
-    onError: () => toast('Failed to create workspace. Please try again.', 'error'),
+    onError: (error) => toast(getFriendlyErrorMessage(error, { fallback: 'Failed to create workspace. Please try again.' }), 'error'),
   });
 
   return (
@@ -55,6 +58,11 @@ export function CreateWorkspacePage() {
           error={errors.name?.message}
           {...register('name')}
         />
+        {usage?.workspaceLimit !== undefined && usage.workspaceCount !== undefined && (
+          <p className="text-sm text-(--text-muted)">
+            {usage.workspaceCount} of {usage.workspaceLimit} workspaces used
+          </p>
+        )}
         <LogoChoice subject="workspace" value={logo} onChange={setLogo} disabled={mutation.isPending} />
         <div>
           <Button type="submit" variant="primary" isLoading={mutation.isPending} className="min-h-12 px-6">

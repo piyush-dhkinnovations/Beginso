@@ -60,6 +60,8 @@ export function getFriendlyErrorMessage(error: unknown, options: FriendlyErrorOp
     REAUTH_INVALID: 'We could not confirm your password. Please try again.',
     REAUTH_MISMATCH: 'That confirmation belongs to a different account.',
     REAUTH_EXPIRED: 'Your password confirmation expired. Please try again.',
+    STORAGE_QUOTA_EXCEEDED: 'Your storage is full. Empty Trash or delete files to free up space, then try again.',
+    WORKSPACE_LIMIT_REACHED: "You've reached the limit on workspaces you can own.",
     TOKEN_REVOKED: 'Your session was ended. Please sign in again.',
   };
   if (apiCode && codeMessages[apiCode]) return codeMessages[apiCode];

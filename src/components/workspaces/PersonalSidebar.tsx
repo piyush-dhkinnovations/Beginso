@@ -11,6 +11,7 @@ import { dashboardService } from '@/services/dashboard';
 import { formsService } from '@/services/forms';
 import { dashboardKeys, notificationKeys, workspaceKeys } from '@/lib/queryKeys';
 import { notificationsService } from '@/services/notifications';
+import { StorageUsage } from '@/components/workspaces/StorageUsage';
 
 export interface PersonalSidebarProps {
   collapsed?: boolean;
@@ -88,7 +89,12 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
     <Sidebar
       collapsed={collapsed}
       header={<WorkspaceContextSwitcher currentLabel="Personal" collapsed={collapsed} />}
-      footer={<UserProfileDropdown variant="sidebar" collapsed={collapsed} />}
+      footer={
+        <>
+          {!collapsed && <StorageUsage />}
+          <UserProfileDropdown variant="sidebar" collapsed={collapsed} />
+        </>
+      }
       groups={[
         // Grouped by job; every item keeps its icon so the list reads evenly.
         {

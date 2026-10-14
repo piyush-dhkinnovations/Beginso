@@ -29,6 +29,8 @@ export type FieldType =
 // ─── Field Definitions ───────────────────────────────────────────────────────
 
 export interface BaseField {
+  /** Public form only: the owner is out of storage, so this upload field is switched off (and never required). */
+  uploadsDisabled?: boolean;
   fieldId: string;       // UUID — immutable once created; assigned via crypto.randomUUID()
   pageId: string;        // FormPage.id this field belongs to — always present (see FormPage below)
   type: FieldType;

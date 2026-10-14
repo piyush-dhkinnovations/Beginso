@@ -1,5 +1,6 @@
 'use client';
 
+import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -60,8 +61,8 @@ export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorks
         router.push(`/w/${workspace.slug}`);
       }
     },
-    onError: () => {
-      toast('Failed to create workspace. Please try again.', 'error');
+    onError: (error) => {
+      toast(getFriendlyErrorMessage(error, { fallback: 'Failed to create workspace. Please try again.' }), 'error');
       // keep modal open
     },
   });

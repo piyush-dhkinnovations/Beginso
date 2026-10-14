@@ -15,6 +15,13 @@ export interface UserProfile {
   lastLoginAt: string; // ISO 8601
   /** Saved colour theme (GET /api/users/me). Absent on a server that predates it. */
   theme?: ThemePreference;
+  /** Storage and workspace allowance (GET /api/users/me). Absent on a server that predates the quota. */
+  storageUsedBytes?: number;
+  /** Part of storageUsedBytes that is sitting in Trash. */
+  storageTrashBytes?: number;
+  storageQuotaBytes?: number;
+  workspaceCount?: number;
+  workspaceLimit?: number;
 }
 
 export interface UpdateProfilePayload {
