@@ -167,6 +167,10 @@ export interface BrandingPanelProps {
   layout?: LayoutPreset;
   /** The saved form the live preview loads; without one there is nothing to preview. */
   formId?: string;
+  /** Guest builder: park the picked image locally instead of uploading it. The returned URL is what the form shows. */
+  onPickImage?: (file: File, key: 'logoUrl' | 'coverImageUrl' | 'backgroundImageUrl') => Promise<string | null>;
+  /** Guest builder: replaces the saved-form live preview. */
+  preview?: React.ReactNode;
   // Builder tabs have no other label for this section, so it needs its own heading there.
   // Settings' BrandingTab sits under a tab bar that already says "Branding" — a second
   // heading there was redundant and, unlike every other Settings tab, broke the shared
@@ -174,7 +178,7 @@ export interface BrandingPanelProps {
   showHeading?: boolean;
 }
 
-export function BrandingPanel({ branding, onUpdate, layout, formId, showHeading = true }: BrandingPanelProps) {
+export function BrandingPanel({ branding, onUpdate, layout, formId, onPickImage, preview, showHeading = true }: BrandingPanelProps) {
   const uid = useId();
   const { toast } = useToast();
   const primaryColor = branding.primaryColor ?? DEFAULT_COLOR;
@@ -213,9 +217,10 @@ export function BrandingPanel({ branding, onUpdate, layout, formId, showHeading 
 
   const uploadImage = async (file: File, key: 'logoUrl' | 'coverImageUrl' | 'backgroundImageUrl') => {
     try {
-      const res = await uploadService.uploadFile(file);
+      const url = onPickImage ? await onPickImage(file, key) : (await uploadService.uploadFile(file)).url;
+      if (!url) return; // the guest picker already told the user why
       // A cover remembers HOW it was added, so the form shows it the same way (whole, or cropped to the banner).
-      onUpdate({ [key]: res.url, ...(key === 'coverImageUrl' ? { coverFit } : {}) });
+      onUpdate({ [key]: url, ...(key === 'coverImageUrl' ? { coverFit } : {}) });
     } catch (err) {
       toast(isAxiosError(err) && err.response?.status === 413 ? 'That image is too large. Use one under 5 MB.' : 'Upload failed. Check your connection.', 'error');
     }
@@ -487,7 +492,7 @@ export function BrandingPanel({ branding, onUpdate, layout, formId, showHeading 
 
         <div className="flex w-full min-w-0 flex-col gap-3 @3xl:sticky @3xl:top-4 @3xl:flex-1">
           <span className="bg-overline text-(--text-muted)">Preview</span>
-          {formId ? <LiveFormPreview formId={formId} branding={branding} layout={layout} /> : <p className="bg-body-sm text-(--text-muted)">Save the form to see a live preview.</p>}
+          {preview ?? (formId ? <LiveFormPreview formId={formId} branding={branding} layout={layout} /> : <p className="bg-body-sm text-(--text-muted)">Save the form to see a live preview.</p>)}
           <button
             type="button"
             onClick={() =>

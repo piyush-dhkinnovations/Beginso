@@ -31,18 +31,19 @@ describe('Navbar component', () => {
     expect(screen.getAllByAltText('Beginso').length).toBeGreaterThan(0);
   });
 
-  it('renders the three shipped nav links — Features, How it works, Blog — with no Pricing link', () => {
+  it('renders the three shipped nav links — Features, How it works, Templates — with no Pricing or Blog link', () => {
     render(<Navbar />);
     expect(screen.getByText('Features')).toBeInTheDocument();
     expect(screen.getByText('How it works')).toBeInTheDocument();
-    expect(screen.getByText('Blog')).toBeInTheDocument();
+    expect(screen.getByText('Templates')).toBeInTheDocument();
+    expect(screen.queryByText('Blog')).toBeNull();
     expect(screen.queryByText(/pricing/i)).not.toBeInTheDocument();
   });
 
-  it('shows Log in / Start free when logged out', () => {
+  it('shows Log in / Create a form when logged out', () => {
     render(<Navbar />);
     expect(screen.getByText('Log in')).toBeInTheDocument();
-    expect(screen.getAllByText('Start free').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Create a form').length).toBeGreaterThan(0);
     expect(screen.queryByText('Go to dashboard')).not.toBeInTheDocument();
   });
 

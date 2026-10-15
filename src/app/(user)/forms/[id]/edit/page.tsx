@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Alert } from '@/components/ui/Alert';
 import { useBuilderStore } from '@/store/builderStore';
 import { BuilderHeader } from '@/components/form-builder/BuilderHeader';
 import { FormLogoButton } from '@/components/forms/FormLogoButton';
@@ -39,6 +40,8 @@ export default function BuilderPageShell() {
   // Settings link, deep links, reload and the tab bar all agree. State copied from the URL once at mount
   // ignored in-page navigation (the sidebar link changed the URL but not the tab).
   const tabFromUrl = searchParams.get('tab') as BuilderTab | null;
+  // Arriving from the guest builder's claim: say where the form is and offer the one next step.
+  const justClaimed = searchParams.get('claimed') === '1';
   const activeTab: BuilderTab = tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'build';
   const setActiveTab = (tab: BuilderTab) => {
     router.replace(`/forms/${id}/edit?tab=${tab}`, { scroll: false });
@@ -115,6 +118,13 @@ export default function BuilderPageShell() {
         <BuilderLoadingSkeleton />
       ) : (
         <div className="flex flex-col gap-4 animate-fade-in">
+          {justClaimed && status === 'draft' && (
+            <Alert variant="success" title="Your form is saved. Publish it to get a link">
+              <div className="mt-2">
+                <Button size="small" onClick={handlePublishClick}>Publish</Button>
+              </div>
+            </Alert>
+          )}
           <BuilderHeader
             formTitle={formTitle}
             dirty={dirty}

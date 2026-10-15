@@ -112,8 +112,10 @@ const nextConfig: NextConfig = {
       // Sprint 13: the form preview and the layout gallery embed this same-origin route in an
       // <iframe> (components/preview/PreviewFrame). Same narrow carve-out, same reasoning.
       { source: "/forms/:id/preview", headers: framePreviewHeaders },
+      // The guest builder previews the logged-out draft in the same way (src/app/try/preview).
+      { source: "/try/preview", headers: framePreviewHeaders },
       { source: "/f/:path*", headers: publicFormHeaders },
-      { source: "/((?!dev/ui/frame$)(?!forms/[^/]+/preview$)(?!r/)(?!f/).*)", headers: securityHeaders },
+      { source: "/((?!dev/ui/frame$)(?!forms/[^/]+/preview$)(?!try/preview$)(?!r/)(?!f/).*)", headers: securityHeaders },
     ];
   },
 };

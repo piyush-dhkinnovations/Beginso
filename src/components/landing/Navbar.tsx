@@ -12,7 +12,6 @@ const NAV_LINKS = [
   { name: "Features", href: "#features" },
   { name: "How it works", href: "#how-it-works" },
   { name: "Templates", href: "/discover-templates" },
-  { name: "Blog", href: "/blog" },
 ];
 
 export default function Navbar() {
@@ -87,8 +86,8 @@ export default function Navbar() {
                 >
                   Log in
                 </Link>
-                <Link href="/signup">
-                  <Button variant="primary">Start free</Button>
+                <Link href="/try">
+                  <Button variant="primary" className="btn-try">Create a form</Button>
                 </Link>
               </>
             )}
@@ -139,9 +138,9 @@ export default function Navbar() {
                     Log in
                   </Button>
                 </Link>
-                <Link href="/signup" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link href="/try" onClick={() => setIsMobileMenuOpen(false)}>
                   <Button variant="primary" className="w-full justify-center">
-                    Start free
+                    Create a form
                   </Button>
                 </Link>
               </div>

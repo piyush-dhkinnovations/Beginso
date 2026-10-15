@@ -5,13 +5,6 @@ import { useReveal } from "@/hooks/useReveal";
 import { Avatar } from "@/components/ui/Avatar";
 import { personById, type PersonId } from "./data/people";
 import {
-  MousePointer2,
-  Type,
-  Mail,
-  Calendar,
-  List,
-  CheckSquare,
-  Upload,
   ArrowUp,
   ArrowDown,
   FileText,
@@ -19,44 +12,6 @@ import {
   Loader2,
   Clock,
 } from "lucide-react";
-
-const TOOLBOX_ICONS = [Type, Mail, Calendar, List, CheckSquare, Upload];
-
-function BuilderVisual() {
-  return (
-    <div className="flex gap-2 rounded-(--bg-radius-sm) border border-(--border-default) bg-(--surface-hover) p-3 h-full">
-      <div className="hidden sm:flex flex-col gap-1.5 shrink-0">
-        {TOOLBOX_ICONS.map((Icon, i) => (
-          <span
-            key={i}
-            className="h-6 w-6 rounded-(--bg-radius-sm) border border-(--border-default) bg-(--surface-card) flex items-center justify-center"
-          >
-            <Icon size={12} className="text-(--text-muted)" />
-          </span>
-        ))}
-      </div>
-      <div className="flex-1 space-y-1.5">
-        {["Full name", "Email address", "Company"].map((label) => (
-          <div key={label} className="rounded-(--bg-radius-sm) border border-(--border-default) bg-(--surface-card) px-2.5 py-1.5 bg-caption text-(--text-secondary)">
-            {label}
-          </div>
-        ))}
-        <div className="border-t border-dashed border-(--border-strong) pt-1.5">
-          <div className="rounded-(--bg-radius-sm) border border-(--border-default) bg-(--surface-card) px-2.5 py-1.5 bg-caption text-(--text-secondary)">
-            Team size
-          </div>
-        </div>
-        <div className="relative rounded-(--bg-radius-sm) border-2 border-dashed border-(--border-focus) bg-(--accent-soft) px-2.5 py-1.5 bg-caption text-(--accent-soft-text) rotate-2 shadow-(--shadow-sm)">
-          Phone number
-          <span className="absolute -bottom-2 -right-2 flex items-center gap-1 rounded-full bg-(--action-primary) px-2 py-0.5 bg-caption text-(--text-on-brand) shadow-(--shadow-sm) rotate-0">
-            <MousePointer2 size={9} />
-            Sarah is dragging
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function DashboardVisual() {
   const chips = [
@@ -174,8 +129,23 @@ function ExportVisual() {
   );
 }
 
+function RolesVisual() {
+  const people = [{ n: "Amelia Ross", r: "Owner" }, { n: "Marcus Lee", r: "Editor" }, { n: "Priya Nair", r: "Reviewer" }, { n: "Tom Reyes", r: "Viewer" }];
+  return (
+    <div className="flex h-full flex-col justify-center gap-2 rounded-(--bg-radius-sm) border border-(--border-default) bg-(--surface-hover) p-3">
+      {people.map((p) => (
+        <div key={p.n} className="flex items-center gap-2 rounded-(--bg-radius-sm) border border-(--border-default) bg-(--surface-card) px-2.5 py-1.5">
+          <Avatar name={p.n} alt="" size="xs" />
+          <span className="flex-1 truncate bg-caption text-(--text-primary)">{p.n}</span>
+          <span className="bg-caption text-(--text-muted)">{p.r}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const FEATURES = [
-  { visual: BuilderVisual, title: "Build it by dragging", body: "Ten field types, conditional logic, and your own branding. No code, no template to fight with. Publish to a link, an embed or a QR code in one click.", span: "lg:col-span-7" },
+  { visual: RolesVisual, title: "Workspaces with roles", body: "Share forms with a team and decide who can edit, review or only view. Every form can also stay in your personal space.", span: "lg:col-span-7" },
   { visual: DashboardVisual, title: "A dashboard that builds itself", body: "The first submission generates it. Response trends, status breakdown, per-question charts — no configuration, no setup screen.", span: "lg:col-span-5" },
   { visual: KanbanVisual, title: "Responses you can actually work", body: "Assign to a teammate, tag it, move it through your own stages, and leave internal notes the respondent never sees.", span: "lg:col-span-5" },
   { visual: ExportVisual, title: "Get the data out", body: "Stream to CSV or generate a PDF summary. Exports respect whatever filter you are looking at, so you get the rows you meant.", span: "lg:col-span-7" },
@@ -209,7 +179,6 @@ export default function FeaturesSection() {
           ref={headingRef}
           className={`reveal ${headingVisible ? "is-visible" : ""} text-center mb-8 md:mb-12 max-w-3xl mx-auto`}
         >
-          <div className="bg-overline text-(--text-link) mb-3">Features</div>
           <h2 className="bg-h2 text-(--text-primary) mb-4">Everything after the submit button</h2>
           <p className="bg-body-lg text-(--text-secondary)">
             Most form tools stop at collection. Beginso picks up where they leave off.

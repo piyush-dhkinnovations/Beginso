@@ -1,12 +1,10 @@
 import type { Metadata } from 'next';
 import Navbar from "@/components/landing/Navbar";
 import HeroSection from "@/components/landing/HeroSection";
-import LogoMarquee from "@/components/landing/LogoMarquee";
+import TemplatesSection from "@/components/landing/TemplatesSection";
 import FeaturesSection from "@/components/landing/FeaturesSection";
-import StatsBar from "@/components/landing/StatsBar";
 import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import FaqSection from "@/components/landing/FaqSection";
-import BlogSection from "@/components/landing/BlogSection";
 import CtaSection from "@/components/landing/CtaSection";
 import Footer from "@/components/landing/Footer";
 
@@ -20,12 +18,10 @@ export default function Home() {
     <main className="min-h-screen bg-(--bg-page) selection:bg-(--accent-soft-hover) selection:text-(--accent-soft-text)">
       <Navbar />
       <HeroSection />
-      <LogoMarquee />
-      <FeaturesSection />
-      <StatsBar />
+      <TemplatesSection />
       <HowItWorksSection />
+      <FeaturesSection />
       <FaqSection />
-      <BlogSection />
       <CtaSection />
       <Footer />
     </main>

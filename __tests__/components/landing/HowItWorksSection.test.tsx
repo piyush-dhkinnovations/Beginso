@@ -36,10 +36,10 @@ describe('HowItWorksSection component', () => {
     });
   });
 
-  it('renders the Build, Share and Track eyebrows', () => {
+  it('names the Build, Share and Track steps in their headings', () => {
     render(<HowItWorksSection />);
     ['Build', 'Share', 'Track'].forEach((label) => {
-      expect(screen.getByText(label)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 3, name: new RegExp(`^${label}:`) })).toBeInTheDocument();
     });
   });
 

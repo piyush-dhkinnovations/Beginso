@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/Button';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { GoogleSignInButton } from './GoogleSignInButton';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { passwordMatch } from '@/lib/passwordMatch';
 import { sanitizeNextParam } from '@/lib/authRoutes';
 
 export function SignupForm() {
@@ -30,6 +31,7 @@ export function SignupForm() {
 
   const {
     register,
+    control,
     handleSubmit,
     setError,
     formState: { errors, isSubmitting },
@@ -79,6 +81,10 @@ export function SignupForm() {
       setServerError(getFriendlyErrorMessage(error));
     }
   };
+
+  const pw = useWatch({ control, name: 'password' });
+  const cpw = useWatch({ control, name: 'confirmPassword' });
+  const live = passwordMatch(pw, cpw);
 
   const clearError = () => {
     if (serverError) {
@@ -160,7 +166,8 @@ export function SignupForm() {
         label="Confirm Password"
         type={showConfirmPassword ? 'text' : 'password'}
         placeholder="Re-enter your password"
-        error={errors.confirmPassword?.message}
+        error={live.error ?? errors.confirmPassword?.message}
+        success={live.success}
         rightSlot={confirmPasswordToggleSlot}
         disabled={isUiLoading}
         {...register('confirmPassword', { onChange: clearError })}

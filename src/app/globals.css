@@ -336,9 +336,8 @@
 
 /* Blur-to-sharp reveal. The signature effect: every section heading and
    card enters blurred and faded, then resolves. */
+/* Hidden-until-revealed only when scripting runs: with JavaScript off, everything is simply visible. */
 .reveal {
-  opacity: 0;
-  filter: blur(10px);
   transform: translateY(20px);
   transition:
     opacity 700ms cubic-bezier(0.2, 0, 0, 1),
@@ -347,6 +346,7 @@
   transition-delay: var(--reveal-delay, 0ms);
   will-change: opacity, filter, transform;
 }
+@media (scripting: enabled) { .reveal { opacity: 0; filter: blur(10px); } }
 .reveal.is-visible {
   opacity: 1;
   filter: blur(0);
@@ -356,13 +356,13 @@
 /* Cards rise without the blur — blur on a card with a screenshot inside
    reads as a rendering fault rather than an effect. */
 .reveal-up {
-  opacity: 0;
-  transform: translateY(24px);
+  transform: translateY(16px);
   transition:
     opacity 600ms cubic-bezier(0.2, 0, 0, 1),
     transform 600ms cubic-bezier(0.2, 0, 0, 1);
   transition-delay: var(--reveal-delay, 0ms);
 }
+@media (scripting: enabled) { .reveal-up { opacity: 0; } }
 .reveal-up.is-visible { opacity: 1; transform: none; }
 
 /* Hero tilt. The wrapper owns the perspective; the card owns the rotation. */
@@ -391,6 +391,53 @@
   .lift:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
 }
 
+
+/* "Create a form" button. Lifts on hover, presses on click, and a single light sweep crosses it once when it
+   scrolls into view (not a loop: a button that keeps pulsing reads as nagging). */
+.btn-try { position: relative; overflow: hidden; transition: transform 200ms cubic-bezier(0.2, 0, 0, 1), box-shadow 200ms; }
+.btn-try::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 0.35) 50%, transparent 65%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+.is-visible .btn-try::after, .btn-try.is-visible::after { animation: btn-sweep 900ms 600ms cubic-bezier(0.2, 0, 0, 1) 1 forwards; }
+@keyframes btn-sweep { to { transform: translateX(120%); } }
+@media (hover: hover) and (pointer: fine) {
+  .btn-try:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+}
+.btn-try:active { transform: scale(0.98); }
+
+/* Rows of the landing "build a form" demo: each steps in when its turn comes. */
+.demo-row {
+  transform: translateY(8px);
+  transition: opacity 350ms cubic-bezier(0.2, 0, 0, 1), transform 350ms cubic-bezier(0.2, 0, 0, 1);
+}
+.demo-row.is-on { opacity: 1; transform: none; }
+
+
+/* Hero headline: each word rises into place once, in the server HTML (no JS). 500ms total. */
+@keyframes word-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.word-in { display: inline-block; animation: word-in 400ms cubic-bezier(0.2, 0, 0, 1) both; animation-delay: calc(var(--i) * 40ms); }
+
+/* Spotlight card: a soft light under the pointer. Fine pointers only; touch gets a plain card. */
+.spot { position: relative; }
+@media (hover: hover) and (pointer: fine) {
+  .spot::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 200ms cubic-bezier(0.2, 0, 0, 1);
+    background: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--action-primary) 12%, transparent), transparent 70%);
+  }
+  .spot:hover::before { opacity: 1; }
+}
+
 /* One switch disables the entire system. */
 @media (prefers-reduced-motion: reduce) {
   .reveal, .reveal-up {
@@ -400,6 +447,11 @@
     transition: none !important;
   }
   .marquee-track { animation: none; }
+  .btn-try::after { animation: none !important; display: none; }
+  .btn-try:hover, .btn-try:active { transform: none; }
+  .word-in { animation: none; }
+  .spot::before { display: none; }
+  .demo-row { opacity: 1; transform: none; transition: none; }
   .tilt-card { transform: none !important; }
 }
 

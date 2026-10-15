@@ -21,7 +21,7 @@ export default function DiscoverTemplatesPage() {
     <main className="min-h-screen bg-(--bg-page)">
       <Navbar />
 
-      <section className="pt-[140px] pb-16 md:pt-[180px] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="pt-35 pb-16 md:pt-45 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div ref={headerRef} className={`reveal ${headerVisible ? "is-visible" : ""} text-center max-w-2xl mx-auto mb-10`}>
           <h1 className="bg-h1 text-(--text-primary) mb-3">Start from a template</h1>
           <p className="bg-body-lg text-(--text-secondary)">
@@ -60,7 +60,7 @@ export default function DiscoverTemplatesPage() {
                   onClick={() => setCategory(c)}
                   aria-pressed={category === c}
                   className={bx(
-                    "min-h-[36px] rounded-full border px-4 text-[13px] font-medium capitalize transition-colors",
+                    "min-h-9 rounded-full border px-4 text-[13px] font-medium capitalize transition-colors",
                     category === c
                       ? "border-(--primary-500) bg-(--accent-soft) text-(--primary-700)"
                       : "border-(--border-default) bg-(--surface-card) text-(--text-secondary) hover:bg-(--surface-hover)"

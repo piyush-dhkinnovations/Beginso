@@ -27,7 +27,7 @@ describe('FeaturesSection component', () => {
   it('renders exactly 4 feature cards with correct titles', () => {
     render(<FeaturesSection />);
     const expectedTitles = [
-      /build it by dragging/i,
+      /workspaces with roles/i,
       /a dashboard that builds itself/i,
       /responses you can actually work/i,
       /get the data out/i,

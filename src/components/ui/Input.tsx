@@ -1,10 +1,12 @@
 import React from "react";
 import { bx } from "@/lib/utils";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
+  /** Positive live feedback (e.g. "Passwords match"): green border and message. An `error` wins over it. */
+  success?: string;
   rightSlot?: React.ReactNode;
   /** Decorative icon inside the left edge (e.g. a search glass). */
   leftIcon?: React.ReactNode;
@@ -13,7 +15,7 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 
 // beginso-ui.css classes — see src/styles/beginso-ui.css §6 FORM FIELDS.
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, disabled, type = "text", id, rightSlot, leftIcon, style, ...props }, ref) => {
+  ({ className, label, error, success, disabled, type = "text", id, rightSlot, leftIcon, style, ...props }, ref) => {
     return (
       <div className="bg-field">
         {label && (
@@ -33,8 +35,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type={type}
             disabled={disabled}
             aria-invalid={!!error}
-            aria-describedby={error ? `${id}-error` : undefined}
-            className={bx("bg-input", error && "is-error", className)}
+            aria-describedby={error ? `${id}-error` : success ? `${id}-success` : undefined}
+            className={bx("bg-input", error && "is-error", !error && success && "is-success", className)}
             // beginso-ui.css's ".bg-input-wrap .bg-input" rule always reserves 40px of left
             // padding for a *leading* icon (.bg-input-lead) this component doesn't have —
             // reset back to .bg-input's own default. An inline style is the only thing
@@ -53,6 +55,12 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             <span className="bg-input-trail is-action">{rightSlot}</span>
           )}
         </div>
+        {!error && success && (
+          <p id={`${id}-success`} role="status" className="flex items-center gap-1 bg-body-sm text-(--success-text)">
+            <CheckCircle2 size={14} className="bg-icon" />
+            {success}
+          </p>
+        )}
         {error && (
           <p id={`${id}-error`} role="alert" className="bg-error-text bg-body-sm flex items-center gap-1">
             <AlertCircle size={14} className="bg-icon" />

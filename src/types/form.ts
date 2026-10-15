@@ -325,8 +325,10 @@ export interface Template {
   description: string;
   category: string;      // e.g. 'contact' | 'event' | 'feedback' | 'hiring'
   fields: FormField[];
+  pages?: FormPage[];    // returned by GET /api/templates/public so a guest can copy the template client-side
   settings: FormSettings;
   isActive: boolean;
+  showInGallery?: boolean; // false = internal/demo template, hidden from the public gallery
   source?: 'workspace' | 'beginso'; // Backend contract to confirm (BE 0.13) — absent = beginso
 }
 

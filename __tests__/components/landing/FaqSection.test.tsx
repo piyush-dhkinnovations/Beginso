@@ -12,7 +12,7 @@ describe('FaqSection', () => {
   it('lists six questions, each collapsed into its own details element', () => {
     const { container } = render(<FaqSection />);
     const details = container.querySelectorAll('details');
-    expect(details).toHaveLength(6);
+    expect(details).toHaveLength(7);
     details.forEach((d) => expect(d.open).toBe(false));
   });
 

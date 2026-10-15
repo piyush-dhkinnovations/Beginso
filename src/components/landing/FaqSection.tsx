@@ -25,6 +25,10 @@ const FAQS = [
     a: "No. Every address is hashed before it is stored. Raw IPs are never saved.",
   },
   {
+    q: "Is it free?",
+    a: "Every account starts with 500 MB of storage and can own up to 10 workspaces. You do not need a card to start.",
+  },
+  {
     q: "Can I export my data?",
     a: "Any time. CSV or PDF, and the export respects whatever filter is applied to the view.",
   },
@@ -37,11 +41,10 @@ export default function FaqSection() {
     <section id="faq" className="py-14 md:py-[72px] lg:py-24 bg-(--bg-subtle) border-t border-(--border-default)">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         <div ref={headingRef} className={`reveal ${headingVisible ? "is-visible" : ""} text-center mb-8 md:mb-12`}>
-          <div className="bg-overline text-(--text-link) mb-3">FAQ</div>
           <h2 className="bg-h2 text-(--text-primary)">Questions, answered</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 items-start gap-4">
           {FAQS.map((faq) => (
             <details
               key={faq.q}

@@ -64,7 +64,7 @@ function TrackVisual() {
 }
 
 const STEPS = [
-  { visual: BuildVisual, eyebrow: "Build", title: "Drag the fields you need", body: "Start blank or from a template. Add logic so people only see questions that apply to them." },
+  { visual: BuildVisual, eyebrow: "Build", title: "Drag the fields you need", body: "Start blank or from a template, with no account. Your draft stays on this device for 30 days." },
   { visual: ShareVisual, eyebrow: "Share", title: "One link, anywhere", body: "A public link, an embed snippet, or a QR code. Works on any screen from 320px up, no login for respondents." },
   { visual: TrackVisual, eyebrow: "Track", title: "Watch it fill up", body: "Responses arrive with status, assignment and notes. The dashboard updates as they land." },
 ];
@@ -79,8 +79,7 @@ function StepCard({ index, step }: { index: number; step: (typeof STEPS)[number]
       style={{ "--reveal-delay": `${index * 80}ms` } as React.CSSProperties}
     >
       <Visual />
-      <div className="bg-overline text-(--text-link) mb-2">{step.eyebrow}</div>
-      <h3 className="bg-h5 text-(--text-primary) mb-2">{step.title}</h3>
+      <h3 className="bg-h5 text-(--text-primary) mb-2">{step.eyebrow}: {step.title}</h3>
       <p className="bg-body-sm text-(--text-secondary)">{step.body}</p>
     </div>
   );
@@ -93,8 +92,7 @@ export default function HowItWorksSection() {
     <section id="how-it-works" className="py-14 md:py-[72px] lg:py-24 bg-(--surface-card)">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div ref={headingRef} className={`reveal ${headingVisible ? "is-visible" : ""} text-center mb-8 md:mb-12 max-w-3xl mx-auto`}>
-          <div className="bg-overline text-(--text-link) mb-3">How it works</div>
-          <h2 className="bg-h2 text-(--text-primary)">Three steps, then it runs itself</h2>
+          <h2 className="bg-h2 text-(--text-primary)">Build, share, track</h2>
         </div>
 
         <div className="flex flex-col md:flex-row gap-6">

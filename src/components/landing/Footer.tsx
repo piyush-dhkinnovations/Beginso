@@ -43,21 +43,20 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-(--surface-inverse) py-16">
+    <footer className="bg-(--surface-inverse) pt-12 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-x-8 gap-y-8">
           <div>
             <Wordmark height={32} force="dark" />
-            <p className="bg-body-sm text-(--text-on-brand)/60 mt-3">&copy; {currentYear} Beginso. All rights reserved.</p>
           </div>
 
           {COLUMNS.map((column) => (
             <div key={column.title}>
-              <div className="bg-body-sm font-semibold uppercase tracking-wide text-(--text-on-brand)/50 mb-4">{column.title}</div>
+              <div className="bg-body-sm font-semibold text-(--text-on-brand)/70 mb-2">{column.title}</div>
               <ul>
                 {column.links.map((link) => (
                   <li key={link.label}>
-                    <a href={link.href} className="inline-flex min-h-11 items-center bg-body text-(--text-on-brand)/80 hover:text-(--text-on-brand) transition-colors">
+                    <a href={link.href} className="inline-flex min-h-10 items-center bg-body-sm text-(--text-on-brand)/80 hover:text-(--text-on-brand) transition-colors">
                       {link.label}
                     </a>
                   </li>
@@ -66,6 +65,7 @@ export default function Footer() {
             </div>
           ))}
         </div>
+        <p className="mt-10 border-t border-(--text-on-brand)/15 pt-6 bg-body-sm text-(--text-on-brand)/60">&copy; {currentYear} Beginso. All rights reserved.</p>
       </div>
     </footer>
   );

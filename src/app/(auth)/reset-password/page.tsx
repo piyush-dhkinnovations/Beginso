@@ -4,7 +4,8 @@ import { StateArt } from '@/components/illustrations/Illustration';
 import { Illustration, hasIllustration } from '@/components/illustrations/Illustration';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
+import { passwordMatch } from '@/lib/passwordMatch';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, CheckCircle2, Eye, EyeOff, KeyRound } from 'lucide-react';
 import { confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth';
@@ -29,6 +30,7 @@ export default function ResetPasswordPage() {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors, isSubmitting, isValid },
   } = useForm<ResetPasswordFormValues>({
@@ -37,6 +39,9 @@ export default function ResetPasswordPage() {
     mode: 'onChange',
     reValidateMode: 'onChange',
   });
+  const pw = useWatch({ control, name: 'password' });
+  const cpw = useWatch({ control, name: 'confirmPassword' });
+  const live = passwordMatch(pw, cpw);
 
   useEffect(() => {
     const code = new URLSearchParams(window.location.search).get('oobCode');
@@ -177,7 +182,8 @@ export default function ResetPasswordPage() {
           type={showConfirmPassword ? 'text' : 'password'}
           placeholder="Re-enter your new password"
           autoComplete="newPassword"
-          error={errors.confirmPassword?.message}
+          error={live.error ?? errors.confirmPassword?.message}
+          success={live.success}
           rightSlot={visibilityButton(
             showConfirmPassword,
             () => setShowConfirmPassword((value) => !value),
