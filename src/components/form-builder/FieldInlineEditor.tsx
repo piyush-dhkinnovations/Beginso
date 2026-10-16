@@ -262,6 +262,29 @@ function DateRangeSection({
   maxDate?: string;
   onUpdate: (fieldId: string, updates: Partial<FormField>) => void;
 }) {
+  // Local copy so a reversed range can be shown and kept out of the store (the server rejects it with a 400 and the
+  // whole form then fails to save). Re-seeded when the stored value changes from outside (undo, another field).
+  const [from, setFrom] = useState(minDate ?? '');
+  const [to, setTo] = useState(maxDate ?? '');
+  const [prev, setPrev] = useState({ fieldId, minDate, maxDate });
+  if (prev.fieldId !== fieldId || prev.minDate !== minDate || prev.maxDate !== maxDate) {
+    setFrom(minDate ?? '');
+    setTo(maxDate ?? '');
+    setPrev({ fieldId, minDate, maxDate });
+  }
+  // ISO dates compare correctly as strings.
+  const error = from && to && from > to ? 'From cannot be after To. This range is not saved.' : null;
+
+  // Only the key that changed is sent, and only while the range is valid.
+  const change = (key: 'minDate' | 'maxDate', value: string) => {
+    const nextFrom = key === 'minDate' ? value : from;
+    const nextTo = key === 'maxDate' ? value : to;
+    setFrom(nextFrom);
+    setTo(nextTo);
+    if (nextFrom && nextTo && nextFrom > nextTo) return;
+    onUpdate(fieldId, { [key]: value || undefined } as Partial<FormField>);
+  };
+
   return (
     <PanelSection label="Date range">
       <div className="grid grid-cols-1 min-[881px]:grid-cols-2 gap-2">
@@ -270,16 +293,17 @@ function DateRangeSection({
           label="From"
           type="date"
           lang="en-GB"
-          value={minDate ?? ''}
-          onChange={(e) => onUpdate(fieldId, { minDate: e.target.value || undefined })}
+          value={from}
+          onChange={(e) => change('minDate', e.target.value)}
+          error={error ?? undefined}
         />
         <Input
           id={`${fieldId}-maxdate`}
           label="To"
           type="date"
           lang="en-GB"
-          value={maxDate ?? ''}
-          onChange={(e) => onUpdate(fieldId, { maxDate: e.target.value || undefined })}
+          value={to}
+          onChange={(e) => change('maxDate', e.target.value)}
         />
       </div>
     </PanelSection>

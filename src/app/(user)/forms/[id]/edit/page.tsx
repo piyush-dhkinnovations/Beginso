@@ -20,7 +20,7 @@ import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
 import { BuilderLoadingSkeleton } from '@/components/form-builder/BuilderLoadingSkeleton';
 import { BuildTabPanel } from '@/components/form-builder/BuildTabPanel';
 import { useBuilderForm } from '@/components/form-builder/useBuilderForm';
-import { useBuilderAutosave } from '@/components/form-builder/useBuilderAutosave';
+import { reloadBuilder, useBuilderAutosave } from '@/components/form-builder/useBuilderAutosave';
 import { useBuilderUndoShortcuts } from '@/components/form-builder/useBuilderUndoShortcuts';
 import { useBuilderPublishFlow } from '@/components/form-builder/useBuilderPublishFlow';
 import { useBuilderFormMutations } from '@/components/form-builder/useBuilderFormMutations';
@@ -75,7 +75,9 @@ export default function BuilderPageShell() {
 
   const { form, isLoading, formWorkspaceSlug, formsListHref, overviewHref, formRole } = useBuilderForm(id);
 
-  const { saveState, setSaveState, savedAt, handleRetrySave } = useBuilderAutosave();
+  const { saveState, setSaveState, savedAt, saveDetail, handleRetrySave } = useBuilderAutosave();
+  const stale = useBuilderStore((state) => state.stale);
+  const unsavedCount = useBuilderStore((state) => Math.max(1, state.undoStack.length - state.savedUndoDepth));
   useBuilderUndoShortcuts();
 
   const { showPublishModal, setShowPublishModal, handleStatusChange, handlePublishClick, handleChangeSetting, handleFixField, handlePreview } =
@@ -130,6 +132,10 @@ export default function BuilderPageShell() {
             dirty={dirty}
             isSaving={saveState === 'saving'}
             saveFailed={saveState === 'error'}
+            saveDetail={saveDetail}
+            saveConflict={stale}
+            unsavedCount={unsavedCount}
+            onReload={reloadBuilder}
             savedAt={savedAt}
             onRetrySave={handleRetrySave}
             status={status}

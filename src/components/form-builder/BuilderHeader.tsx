@@ -15,6 +15,12 @@ export interface BuilderHeaderProps {
   dirty: boolean;
   isSaving: boolean;
   saveFailed: boolean;
+  /** The server's reason when a save was rejected ("Option value cannot be empty"). */
+  saveDetail?: string | null;
+  /** Another tab or person saved this form first (409 FORM_STALE). */
+  saveConflict?: boolean;
+  unsavedCount?: number;
+  onReload?: () => void;
   savedAt: Date | null;
   onRetrySave: () => void;
   /** The caller may publish (Owner/Admin). Without it there is no Publish button — a convenience; the server enforces. */
@@ -44,6 +50,10 @@ export function BuilderHeader({
   dirty,
   isSaving,
   saveFailed,
+  saveDetail,
+  saveConflict,
+  unsavedCount,
+  onReload,
   savedAt,
   onRetrySave,
   canPublish,
@@ -97,12 +107,13 @@ export function BuilderHeader({
           }}
           className="min-w-0 rounded border-b-2 border-transparent bg-transparent px-1 py-0.5 font-semibold text-(--text-primary) transition-colors focus:border-(--border-strong) focus:outline-none"
           placeholder="Untitled Form"
+          title={title ?? ''}
           aria-label="Form name"
         />
       }
       badge={<StatusBadge variant={status}>{STATUS_LABEL[status]}</StatusBadge>}
       // One SaveIndicator instance (one live region).
-      meta={<SaveIndicator dirty={dirty} saving={isSaving} error={saveFailed} savedAt={savedAt} onRetry={onRetrySave} />}
+      meta={<SaveIndicator dirty={dirty} saving={isSaving} error={saveFailed} detail={saveDetail} conflict={saveConflict} unsavedCount={unsavedCount} onReload={onReload} savedAt={savedAt} onRetry={onRetrySave} />}
       actions={
         <>
           <Button onClick={onPreview} variant="secondary" aria-label="Preview">

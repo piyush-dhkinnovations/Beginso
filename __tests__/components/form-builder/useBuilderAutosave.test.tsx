@@ -203,6 +203,9 @@ describe('useBuilderAutosave - retry and flush', () => {
     const { unmount } = renderHook(() => useBuilderAutosave());
     act(() => store().setFormTitle('Last'));
     unmount();
+    // Saves go through one queue (so a user's own saves never conflict); the flush starts on the next microtask.
+    await Promise.resolve();
+    await Promise.resolve();
     expect(updateForm).toHaveBeenCalledTimes(1);
     expect(updateForm.mock.calls[0][1]).toMatchObject({ title: 'Last' });
 

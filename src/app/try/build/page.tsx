@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBuilderUndoShortcuts } from '@/components/form-builder/useBuilderUndoShortcuts';
 import { SimpleCanvas, addQuestionToActive } from '@/components/guest/SimpleCanvas';
@@ -11,7 +11,7 @@ import { GuestPreviewOverlay } from '@/components/guest/GuestPreviewOverlay';
 import { CLAIM_PATH, GuestAccountModal } from '@/components/guest/GuestAccountModal';
 import { useBuilderStore } from '@/store/builderStore';
 import { useAuth } from '@/hooks/useAuth';
-import { hydrateBranding, isDraftPersistent, loadDraft, saveDraft } from '@/lib/guest/guestDraft';
+import { DRAFT_STORAGE_KEY, hydrateBranding, isDraftPersistent, loadDraft, saveDraft, versionOfRaw } from '@/lib/guest/guestDraft';
 import { toPublicSchema } from '@/lib/guest/previewSchema';
 import { trackFunnel } from '@/lib/guest/funnel';
 import type { Form } from '@/types/form';
@@ -29,6 +29,10 @@ export default function GuestBuilderPage() {
   const [previewing, setPreviewing] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [saved, setSaved] = useState<SaveStatus>('saved');
+  // The draft version this tab is based on. Another tab saving first makes it stale: saving stops until a reload.
+  const version = useRef(0);
+  const stale = useRef(false);
+  const queue = useRef<Promise<unknown>>(Promise.resolve());
 
   const formTitle = useBuilderStore((s) => s.formTitle);
   const fields = useBuilderStore((s) => s.fields);
@@ -49,6 +53,7 @@ export default function GuestBuilderPage() {
       router.replace('/try');
       return;
     }
+    version.current = draft.version ?? 0;
     void hydrateBranding(draft).then((hydrated) => {
       useBuilderStore.getState().initForm({
         _id: '', workspaceId: null, title: draft.title, status: 'draft', fields: draft.fields, pages: draft.pages,
@@ -58,11 +63,33 @@ export default function GuestBuilderPage() {
     });
   }, [router]);
 
-  const persist = async () => {
-    const s = useBuilderStore.getState();
-    const r = await saveDraft({ title: s.formTitle, fields: s.fields, pages: s.pages, settings: s.settings, branding: s.branding, designed: true });
-    setSaved(!r.ok ? 'full' : r.persisted && isDraftPersistent() ? 'saved' : 'memory');
+  const markStale = () => {
+    stale.current = true;
+    setSaved('stale');
   };
+  // One save at a time: a debounced save and a hidden-tab save must not race each other into a false conflict.
+  const persist = () => {
+    const run = queue.current.then(async () => {
+      if (stale.current) return;
+      const s = useBuilderStore.getState();
+      const r = await saveDraft({ title: s.formTitle, fields: s.fields, pages: s.pages, settings: s.settings, branding: s.branding, designed: true }, Date.now(), version.current);
+      if (r.ok) version.current = r.version;
+      if (!r.ok && r.reason === 'stale') return markStale();
+      setSaved(!r.ok ? 'full' : r.persisted && isDraftPersistent() ? 'saved' : 'memory');
+    });
+    queue.current = run.catch(() => undefined);
+    return run;
+  };
+  // Another tab saved (or cleared) the draft: its `storage` event fires here, and this tab's copy is out of date.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== DRAFT_STORAGE_KEY || (e.storageArea && e.storageArea !== localStorage)) return;
+      const theirs = versionOfRaw(e.newValue);
+      if (theirs === null || theirs !== version.current) markStale();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
   useEffect(() => {
     if (!ready) return;
     const t = setTimeout(() => void persist(), 800);
@@ -87,7 +114,7 @@ export default function GuestBuilderPage() {
 
   return (
     <main className="flex h-dvh flex-col bg-(--bg-subtle)">
-      <GuestHeader title={formTitle} onTitle={setTitle} status={saved} onDesign={() => setDesignOpen(true)} onPreview={() => setPreviewing(true)} onSave={save} />
+      <GuestHeader title={formTitle} onTitle={setTitle} status={saved} onReload={() => window.location.reload()} onDesign={() => setDesignOpen(true)} onPreview={() => setPreviewing(true)} onSave={save} />
 
       <div className="flex min-h-0 flex-1">
         <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-(--border-default) bg-(--surface-card) p-4 lg:block">

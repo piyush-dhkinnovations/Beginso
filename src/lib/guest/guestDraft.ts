@@ -23,6 +23,8 @@ export interface ClaimState {
 
 export interface GuestDraft {
   v: 1;
+  /** Bumped by every content save. Another tab saving first makes this tab's save stale. Absent (older drafts) = 0. */
+  version?: number;
   createdAt: number;
   updatedAt: number;
   title: string;
@@ -38,7 +40,7 @@ export interface GuestDraft {
 }
 
 export type DraftInput = Pick<GuestDraft, 'title' | 'fields' | 'pages' | 'settings' | 'designed'> & { branding: FormBranding; createdAt?: number; claim?: ClaimState };
-export type SaveResult = { ok: true; persisted: boolean } | { ok: false; reason: 'too_large' };
+export type SaveResult = { ok: true; persisted: boolean; version: number } | { ok: false; reason: 'too_large' | 'stale' };
 
 let memory: string | null = null;
 let persistent = true;
@@ -65,6 +67,22 @@ function write(json: string) {
 /** False once storage has refused a write: the draft is then lost when the tab closes, and the UI says so. */
 export const isDraftPersistent = () => persistent;
 
+/** The localStorage key, for the `storage` event another tab's save fires. */
+export const DRAFT_STORAGE_KEY = KEY;
+
+/** The version stored in a raw draft string (what a `storage` event carries); 0 for an older draft, null if there is none. */
+export function versionOfRaw(raw: string | null | undefined): number | null {
+  if (!raw) return null;
+  try {
+    return (JSON.parse(raw) as GuestDraft).version ?? 0;
+  } catch {
+    return null;
+  }
+}
+
+/** The version currently stored, read fresh. */
+export const storedDraftVersion = (): number | null => versionOfRaw(read());
+
 export function loadDraft(now = Date.now()): GuestDraft | null {
   const raw = read();
   if (!raw) return null;
@@ -81,7 +99,7 @@ export function loadDraft(now = Date.now()): GuestDraft | null {
 
 const isBlobUrl = (v: unknown): v is string => typeof v === 'string' && v.startsWith('blob:');
 
-export async function saveDraft(input: DraftInput, now = Date.now()): Promise<SaveResult> {
+export async function saveDraft(input: DraftInput, now = Date.now(), expectedVersion?: number): Promise<SaveResult> {
   const branding = { ...input.branding };
   const imageKeys: ImageKey[] = [];
   for (const k of IMAGE_KEYS) {
@@ -104,11 +122,16 @@ export async function saveDraft(input: DraftInput, now = Date.now()): Promise<Sa
     designed: input.designed,
     claim: input.claim ?? previous?.claim ?? { step: 'draft_ready' },
   };
-  const json = JSON.stringify(draft);
   const blobs = await (await getBlobStore()).totalBytes().catch(() => 0);
+  // Compare and write with nothing awaited in between (localStorage is synchronous): if another tab saved since this
+  // tab last read the draft, refuse instead of overwriting its work.
+  const current = storedDraftVersion() ?? 0;
+  if (expectedVersion !== undefined && current !== expectedVersion) return { ok: false, reason: 'stale' };
+  const version = current + 1;
+  const json = JSON.stringify({ ...draft, version });
   if (json.length + blobs > DRAFT_MAX_BYTES) return { ok: false, reason: 'too_large' };
   write(json);
-  return { ok: true, persisted: persistent };
+  return { ok: true, persisted: persistent, version };
 }
 
 /** Update only the claim bookkeeping (formId, step) without touching the content. */

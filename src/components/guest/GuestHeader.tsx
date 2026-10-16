@@ -7,12 +7,13 @@ import { Input } from '@/components/ui/Input';
 import { Wordmark } from '@/components/landing/Wordmark';
 import { cn } from '@/lib/utils';
 
-export type SaveStatus = 'saved' | 'memory' | 'full';
+export type SaveStatus = 'saved' | 'memory' | 'full' | 'stale';
 
 const STATUS_TEXT: Record<SaveStatus, string> = {
   saved: 'Saved on this device',
   memory: 'Not saved: this browser blocks storage. Your form is lost when you close this tab.',
   full: 'Not saved: the draft is over 8 MB. Remove an image to keep saving.',
+  stale: 'This draft changed in another tab. Reload to continue.',
 };
 
 // logo | form title | save status | Design | Preview | Save to my account. Below 768px the header keeps logo, title and the
@@ -24,8 +25,10 @@ export function GuestHeader(props: {
   onDesign: () => void;
   onPreview: () => void;
   onSave: () => void;
+  /** Offered with the 'stale' status: another tab saved this draft first. */
+  onReload?: () => void;
 }) {
-  const status = <span role="status" className={cn('inline-flex items-center gap-2 bg-body-sm', props.status === 'saved' ? 'text-(--text-secondary)' : 'text-(--error-text)')}><Cloud size={16} aria-hidden="true" />{STATUS_TEXT[props.status]}</span>;
+  const status = <span role="status" className={cn('inline-flex items-center gap-2 bg-body-sm', props.status === 'saved' ? 'text-(--text-secondary)' : 'text-(--error-text)')}><Cloud size={16} aria-hidden="true" />{STATUS_TEXT[props.status]}{props.status === 'stale' && props.onReload && <button type="button" onClick={props.onReload} className="min-h-11 px-2 font-semibold text-(--text-primary) underline underline-offset-2">Reload</button>}</span>;
   return (
     <header className="relative z-30 shrink-0 border-b border-(--border-default) bg-(--surface-card) px-4 py-2 sm:px-8">
       <div className="flex items-center gap-3 md:gap-4">

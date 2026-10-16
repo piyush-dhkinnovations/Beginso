@@ -5,6 +5,7 @@ import { AlertTriangle, Pencil, Plus, X } from 'lucide-react';
 import type { FormField, LogicRule } from '@/types/form';
 import { Button } from '@/components/ui/Button';
 import { Switch } from '@/components/ui/Switch';
+import { dependentsOf } from '@/lib/logicGraph';
 
 export interface FieldLogicEditorProps {
   field: FormField;
@@ -56,8 +57,17 @@ export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, on
     setPrevFieldId(field.fieldId);
   }
 
+  // Fields this one already (transitively) shows or hides cannot be its trigger: that would be a loop in which
+  // neither field is ever shown.
+  const decidedByThisField = dependentsOf(allFields, field.fieldId);
   const sourceOptions = allFields.filter(
-    (f) => !f.deleted && f.fieldId !== field.fieldId && f.type !== 'file_upload' && f.type !== 'image_upload' && f.type !== 'signature'
+    (f) =>
+      !f.deleted &&
+      f.fieldId !== field.fieldId &&
+      !decidedByThisField.has(f.fieldId) &&
+      f.type !== 'file_upload' &&
+      f.type !== 'image_upload' &&
+      f.type !== 'signature'
   );
   const canAddRule = sourceOptions.length > 0;
   const sourceField = sourceOptions.find((f) => f.fieldId === sourceFieldId) ?? null;

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DRAFT_MAX_BYTES, DRAFT_TTL_MS, clearDraft, loadDraft, putImage, saveClaim, saveDraft, type DraftInput } from '@/lib/guest/guestDraft';
+import { DRAFT_MAX_BYTES, DRAFT_STORAGE_KEY, DRAFT_TTL_MS, clearDraft, loadDraft, putImage, saveClaim, saveDraft, versionOfRaw, type DraftInput } from '@/lib/guest/guestDraft';
 import { getBlobStore, memoryBlobStore, setBlobStore } from '@/lib/guest/blobStore';
 
 const input = (over: Partial<DraftInput> = {}): DraftInput => ({
@@ -19,7 +19,7 @@ beforeEach(async () => {
 
 describe('guest draft', () => {
   it('saves and loads', async () => {
-    expect(await saveDraft(input())).toEqual({ ok: true, persisted: true });
+    expect(await saveDraft(input())).toEqual({ ok: true, persisted: true, version: 1 });
     expect(loadDraft()?.title).toBe('Contact');
   });
 
@@ -39,7 +39,7 @@ describe('guest draft', () => {
     const spy = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
       throw new Error('blocked');
     });
-    expect(await saveDraft(input())).toEqual({ ok: true, persisted: false });
+    expect(await saveDraft(input())).toEqual({ ok: true, persisted: false, version: 1 });
     spy.mockRestore();
   });
 
@@ -69,5 +69,51 @@ describe('guest draft', () => {
     await saveDraft(input());
     saveClaim({ step: 'form_created', formId: 'f1' });
     expect(loadDraft()).toMatchObject({ title: 'Contact', claim: { step: 'form_created', formId: 'f1' } });
+  });
+
+  describe('versions: another tab saving first (QA A10-004)', () => {
+    it('counts content saves, and an older draft without a version reads as 0', async () => {
+      expect(loadDraft()).toBeNull();
+      await saveDraft(input());
+      expect(loadDraft()?.version).toBe(1);
+      await saveDraft(input({ title: 'Two' }));
+      expect(loadDraft()?.version).toBe(2);
+
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({ ...loadDraft(), version: undefined }));
+      expect(loadDraft()?.title).toBe('Two'); // still opens (the claim flow reads it the same way)
+      expect(versionOfRaw(localStorage.getItem(DRAFT_STORAGE_KEY))).toBe(0);
+    });
+
+    it('a save based on the version it last saw succeeds, so one tab never conflicts with its own saves', async () => {
+      const a = await saveDraft(input({ title: 'A1' }), Date.now(), 0);
+      expect(a).toMatchObject({ ok: true, version: 1 });
+      const b = await saveDraft(input({ title: 'A2' }), Date.now(), 1);
+      expect(b).toMatchObject({ ok: true, version: 2 });
+    });
+
+    it('refuses a save from a tab that missed a save from another tab, and writes nothing', async () => {
+      await saveDraft(input({ title: 'Tab A edit' }), Date.now(), 0); // tab A: version 0 -> 1
+      const stale = await saveDraft(input({ title: 'Tab B overwrite' }), Date.now(), 0); // tab B still thinks 0
+      expect(stale).toEqual({ ok: false, reason: 'stale' });
+      expect(loadDraft()?.title).toBe('Tab A edit');
+      expect(loadDraft()?.version).toBe(1);
+    });
+
+    it('saves without an expected version (the template picker) are unconditional', async () => {
+      await saveDraft(input({ title: 'X' }));
+      expect(await saveDraft(input({ title: 'Y' }))).toMatchObject({ ok: true, version: 2 });
+    });
+
+    it('recording claim progress keeps the version and the content', async () => {
+      await saveDraft(input());
+      saveClaim({ step: 'form_created', formId: 'f1' });
+      expect(loadDraft()).toMatchObject({ version: 1, title: 'Contact' });
+    });
+
+    it('reads the version a storage event carries', () => {
+      expect(versionOfRaw(null)).toBeNull();
+      expect(versionOfRaw('{nope')).toBeNull();
+      expect(versionOfRaw(JSON.stringify({ v: 1, version: 7 }))).toBe(7);
+    });
   });
 });

@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { OptionsEditor } from '@/components/form-builder/OptionsEditor';
 
@@ -50,5 +50,33 @@ describe('OptionsEditor', () => {
     await user.type(input, 'Renamed');
     await user.tab();
     expect(onUpdate).toHaveBeenCalledWith('f1', ['Renamed', 'B']);
+  });
+
+  it('commits the last-typed option shortly after typing stops, without needing a blur (QA P0-003)', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    render(<OptionsEditor fieldId="f1" options={['A', 'B']} onUpdate={onUpdate} />);
+    await user.type(screen.getByDisplayValue('B'), 'x');
+    expect(onUpdate).not.toHaveBeenCalled();
+    await waitFor(() => expect(onUpdate).toHaveBeenCalledWith('f1', ['A', 'Bx']), { timeout: 2000 });
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('never sends an empty option: it is flagged inline, and saved once filled in (QA A4-002)', async () => {
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    render(<OptionsEditor fieldId="f1" options={['A', 'B']} onUpdate={onUpdate} />);
+    const first = screen.getByDisplayValue('A');
+    await user.clear(first);
+    await user.tab(); // blur: still empty
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(first).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByRole('alert')).toHaveTextContent(/An option is empty/);
+    await new Promise((r) => setTimeout(r, 800));
+    expect(onUpdate).not.toHaveBeenCalled();
+
+    await user.type(first, 'Z');
+    await waitFor(() => expect(onUpdate).toHaveBeenCalledWith('f1', ['Z', 'B']), { timeout: 2000 });
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

@@ -3,7 +3,7 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useBuilderStore } from '@/store/builderStore';
 import { useToast } from '@/components/ui/Toast';
-import { saveFormSnapshot } from './useBuilderAutosave';
+import { saveFormSnapshot, syncBuilderVersion } from './useBuilderAutosave';
 import type { BuilderTab } from './BuilderTabs';
 import type { Form, FormStatus } from '@/types/form';
 
@@ -45,6 +45,8 @@ export function useBuilderPublishFlow({
         oldData ? { ...oldData, status: nextStatus, ...(nextSlug ? { slug: nextSlug } : {}) } : oldData
       );
       queryClient.invalidateQueries({ queryKey: ['forms'] });
+      // Publishing/unpublishing moved the form's version on the server; adopt it so the next autosave is not refused.
+      if (formId) void syncBuilderVersion(formId);
     },
     [setStatus, queryClient, formId]
   );
