@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react';
+'use client';
+
+import { useEffect, useRef, type ReactNode } from 'react';
 import { AlertCircle } from 'lucide-react';
 import type { FieldError } from 'react-hook-form';
 
@@ -29,6 +31,27 @@ interface FieldShellProps {
 
 /** Shared label/helpText/error chrome around every field renderer's input (Requirement 4, shared rules 1–4). */
 export function FieldShell({ fieldId, label, required, helpText, error, inline, asGroup, children }: FieldShellProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const errorId = `${fieldId}-error`;
+
+  // Tell assistive tech which answer is wrong and why. One place instead of 19 renderers: while the error shows, every
+  // native control inside is aria-invalid and described by the message (a radio/checkbox group by its container too).
+  // aria-invalid goes only on native controls, where it is valid; the attributes are removed again once the error clears.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const controls = Array.from(root.querySelectorAll<HTMLElement>('input:not([type="hidden"]), select, textarea'));
+    const groups = Array.from(root.querySelectorAll<HTMLElement>('[role="group"], [role="radiogroup"]'));
+    if (error?.message) {
+      for (const c of controls) c.setAttribute('aria-invalid', 'true');
+      for (const c of [...controls, ...groups]) c.setAttribute('aria-describedby', errorId);
+    }
+    return () => {
+      for (const c of controls) c.removeAttribute('aria-invalid');
+      for (const c of [...controls, ...groups]) if (c.getAttribute('aria-describedby') === errorId) c.removeAttribute('aria-describedby');
+    };
+  }, [error?.message, errorId]);
+
   const labelClassName = inline
     ? 'bg-body-sm font-semibold text-(--text-primary) pt-2.5 shrink-0 w-28'
     : 'bg-body-sm font-semibold text-(--text-primary)';
@@ -49,7 +72,7 @@ export function FieldShell({ fieldId, label, required, helpText, error, inline, 
       {children}
       {helpText && <p className="bg-body-sm text-(--text-disabled)">{helpText}</p>}
       {error && (
-        <p role="alert" className="bg-caption text-(--error-text) font-semibold flex items-center gap-1">
+        <p id={errorId} role="alert" className="bg-caption text-(--error-text) font-semibold flex items-center gap-1">
           <AlertCircle size={10} className="shrink-0" />
           {error.message}
         </p>
@@ -59,7 +82,7 @@ export function FieldShell({ fieldId, label, required, helpText, error, inline, 
 
   if (inline) {
     return (
-      <div className="flex items-start gap-3 w-full">
+      <div ref={rootRef} data-field-id={fieldId} className="flex items-start gap-3 w-full">
         {labelEl}
         <div className="flex flex-col gap-1 flex-1 min-w-0">{rest}</div>
       </div>
@@ -67,7 +90,7 @@ export function FieldShell({ fieldId, label, required, helpText, error, inline, 
   }
 
   return (
-    <div className="flex flex-col gap-1.5 w-full">
+    <div ref={rootRef} data-field-id={fieldId} className="flex flex-col gap-1.5 w-full">
       {labelEl}
       {rest}
     </div>

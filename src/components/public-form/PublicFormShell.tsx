@@ -8,7 +8,9 @@ import type { FormField } from '@/types/form';
 import type { PublicFormSchema, FieldValue, UploadState, FieldRendererProps, Answer } from '@/types/publicForm';
 import { evaluateLogicRules, getVisiblePageFields, buildAnswers } from '@/lib/logicEngine';
 import { buildPublicFormSchema } from '@/lib/schemas/publicFormSchema';
-import { publicFormService } from '@/services/publicForm';
+import { publicFormService, type SubmitFieldError } from '@/services/publicForm';
+import { MID_FILL_COPY, reasonFromCode } from '@/lib/formUnavailable';
+import { focusFirstInvalidSoon } from '@/lib/focusField';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/formDraft';
 import { Button } from '@/components/ui/Button';
 import { normaliseLayout } from '@/lib/layoutPresets';
@@ -243,6 +245,8 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
       if (firstErrorId) {
         document.getElementById(firstErrorId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }
+      // Keyboard and screen-reader users land on the first invalid answer, not on the Next button they just pressed.
+      focusFirstInvalidSoon();
       return;
     }
     if (isGuided && questionIndex < currentPageFields.length - 1) {
@@ -310,8 +314,13 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
       if (accessMode === 'login') {
         try {
           ticket = (await publicFormService.getSubmitTicket(slug)).ticket;
-        } catch {
-          setSubmitError('We could not confirm your sign-in. Please sign in again and retry.');
+        } catch (err) {
+          // The ticket request runs the same availability check as the submit, so a form that closed while this
+          // person was filling it in fails HERE first: say that, not "sign in again".
+          const status = (err as { response?: { status?: number } })?.response?.status;
+          const code = (err as { response?: { data?: { error?: { code?: string } } } })?.response?.data?.error?.code;
+          const closed = reasonFromCode(code, status === 410 ? 410 : undefined);
+          setSubmitError(closed ? MID_FILL_COPY[closed] : 'We could not confirm your sign-in. Please sign in again and retry.');
           return;
         }
       }
@@ -334,7 +343,19 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
         return;
       }
 
-      if (result.code === 'EMAIL_REQUIRED') {
+      // The form stopped accepting responses while this person was filling it in: say so (their answers stay on the page,
+      // and the draft is still in this browser) instead of "Something went wrong". A bare 403 is only read as closed when
+      // its own message says so, because a 403 can mean other things.
+      const closedWhileFilling = reasonFromCode(result.code, result.status === 410 ? 410 : undefined) ?? (result.status === 403 && /closed/i.test(result.message ?? '') ? 'closed' : undefined);
+      if (closedWhileFilling) {
+        setSubmitError(MID_FILL_COPY[closedWhileFilling]);
+      } else if (result.status === 404) {
+        setSubmitError(MID_FILL_COPY.gone);
+      } else if (result.code === 'UNCONFIRMED') {
+        setSubmitError('We could not confirm that your response was received. Please check your connection and try again.');
+      } else if (result.status === 422 && result.fieldErrors?.length && applyServerFieldErrors(result.fieldErrors)) {
+        // handled: each message sits on its own field and focus is moving there
+      } else if (result.code === 'EMAIL_REQUIRED') {
         setEmailError(result.message ?? 'Please enter a valid email address.');
         setSubmitError(null);
       } else if (result.code === 'LOGIN_REQUIRED') {
@@ -367,7 +388,31 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   // current page's fields are rendered — a stale draft can leave an earlier page's required
   // field (e.g. a file upload, which can't survive a reload) failing invisibly, making Submit
   // look like it does nothing. Jump back to the earliest page with an error instead.
+  // The server's field-level messages ("Field \"Phone\" must be ...") name a field by LABEL. Put each on its own field,
+  // jump to the earliest page that has one, and focus it. Returns false when none could be matched, so the caller can
+  // fall back to showing the message as a banner.
+  function applyServerFieldErrors(fieldErrors: SubmitFieldError[]): boolean {
+    const idByLabel = new Map<string, string>();
+    for (const f of schema.fields) if (!idByLabel.has(f.label)) idByLabel.set(f.label, f.fieldId);
+    const mapped: Record<string, { type: string; message: string }> = {};
+    const unmatched: string[] = [];
+    for (const e of fieldErrors) {
+      const id = idByLabel.get(e.field);
+      if (id) {
+        methods.setError(id, { type: 'server', message: e.message });
+        mapped[id] = { type: 'server', message: e.message };
+      } else {
+        unmatched.push(e.message);
+      }
+    }
+    if (Object.keys(mapped).length === 0) return false;
+    onInvalid(mapped as FieldErrors<Record<string, FieldValue>>);
+    setSubmitError(unmatched.length > 0 ? unmatched.join(' ') : 'Please check the highlighted answers and submit again.');
+    return true;
+  }
+
   function onInvalid(errors: FieldErrors<Record<string, FieldValue>>) {
+    focusFirstInvalidSoon();
     const erroredFieldIds = new Set(Object.keys(errors));
     const erroredPageIndices = schema.fields
       .filter((f) => erroredFieldIds.has(f.fieldId))
