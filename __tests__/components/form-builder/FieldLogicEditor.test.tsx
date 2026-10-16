@@ -77,6 +77,19 @@ describe('FieldLogicEditor', () => {
     expect(options).toEqual(['OkF']);
   });
 
+  it('does not offer a field this one already shows or hides as its trigger: that would be a loop (QA A4-004)', async () => {
+    const a = makeField('short_text', { label: 'AField' });
+    const b = makeField('short_text', { label: 'BField' });
+    const c = makeField('short_text', { label: 'CField' });
+    a.logicRules = [ruleFor(a, b)]; // A decides B
+    b.logicRules = [ruleFor(b, c)]; // B decides C, so A also decides C
+    setup(a, [a, b, c]);
+    await userEvent.click(screen.getByRole('switch', { name: 'Conditional logic' }));
+    await userEvent.click(screen.getByRole('button', { name: /Add condition/ }));
+    // A's trigger could be B or C only if they did not depend on A; both do, so nothing is left to offer.
+    expect(screen.queryAllByRole('option').map((o) => o.textContent)).toEqual([]);
+  });
+
   it('Save is disabled until a non-blank value exists; saving adds the rule to the SOURCE field', async () => {
     const target = makeField('short_text', { label: 'Target' });
     const source = makeField('short_text', { label: 'Source' });

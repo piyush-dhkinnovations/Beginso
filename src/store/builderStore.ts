@@ -1,4 +1,5 @@
 import { publicFormSlug } from '@/lib/publicFormUrl';
+import { wouldCreateCycle } from '@/lib/logicGraph';
 import { create } from 'zustand';
 import type {
   Form,
@@ -354,9 +355,14 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       const fieldIndex = state.fields.findIndex((f) => f.fieldId === fieldId);
       if (fieldIndex === -1) return {};
 
+      // Rules that decide this field's visibility, and this field's own rules, are meaningless once it is gone.
+      // They are dropped here (undo restores them with the field) instead of lingering on other fields' cards.
       const updatedFields = state.fields.map((f) => {
         if (f.fieldId === fieldId) {
-          return { ...f, deleted: true } as FormField;
+          return { ...f, deleted: true, logicRules: [] } as FormField;
+        }
+        if (f.logicRules?.some((r) => r.targetFieldId === fieldId)) {
+          return { ...f, logicRules: f.logicRules.filter((r) => r.targetFieldId !== fieldId) } as FormField;
         }
         return f;
       });
@@ -483,6 +489,8 @@ export const useBuilderStore = create<BuilderState>((set) => ({
     set((state) => {
       // Guard: target field can never be the source field
       if (rule.targetFieldId === fieldId) return {};
+      // Guard: a rule that closes a loop (A shows B, B shows A) would hide both fields forever
+      if (wouldCreateCycle(state.fields, fieldId, rule.targetFieldId)) return {};
       const fieldIndex = state.fields.findIndex((f) => f.fieldId === fieldId);
       if (fieldIndex === -1) return {};
 
@@ -503,6 +511,11 @@ export const useBuilderStore = create<BuilderState>((set) => ({
     set((state) => {
       // Guard: target field can never be the (possibly new) source field
       if (rule.targetFieldId === newFieldId) return {};
+      // Guard: no loops. The rule being replaced does not count: it is about to disappear.
+      const withoutOld = state.fields.map((f) =>
+        f.fieldId === oldFieldId ? ({ ...f, logicRules: (f.logicRules ?? []).filter((_, i) => i !== oldRuleIndex) } as FormField) : f
+      );
+      if (wouldCreateCycle(withoutOld, newFieldId, rule.targetFieldId)) return {};
       const oldFieldIndex = state.fields.findIndex((f) => f.fieldId === oldFieldId);
       const newFieldIndex = state.fields.findIndex((f) => f.fieldId === newFieldId);
       if (oldFieldIndex === -1 || newFieldIndex === -1) return {};
