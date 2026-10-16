@@ -138,7 +138,7 @@ describe('PersonalSidebar', () => {
     mockGetForms.mockResolvedValue({ forms: [{ _id: 'f1' }], total: 3, page: 1, limit: 1 });
     renderSidebar();
     expect(await screen.findByText('Responses')).toBeInTheDocument();
-    expect(screen.queryByText('Insights')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Insights' })).toHaveAttribute('href', '/insights');
     // Sprint 14: Reports is the Exports tab inside Analytics, not a sidebar item, even with forms.
     expect(screen.queryByText('Reports')).not.toBeInTheDocument();
   });
@@ -156,6 +156,14 @@ describe('PersonalSidebar', () => {
     expect(await screen.findByText('Forms')).toBeInTheDocument();
     expect(screen.queryByText('Responses')).not.toBeInTheDocument();
     expect(screen.queryByText('Reports')).not.toBeInTheDocument();
+  });
+
+  it('lights Insights, not Responses, on /insights', async () => {
+    mockPathname.mockReturnValue('/insights');
+    renderSidebar();
+    await screen.findByText('Forms');
+    expect(screen.getByRole('link', { name: 'Insights' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByRole('link', { name: /^Responses$/ })?.getAttribute('aria-current') ?? null).toBeNull();
   });
 
   it('keeps Responses visible when already deep-linked onto it, even with zero forms', async () => {

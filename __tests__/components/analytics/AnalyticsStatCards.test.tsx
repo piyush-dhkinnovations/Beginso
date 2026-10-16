@@ -38,6 +38,13 @@ describe('AnalyticsStatCards', () => {
     expect(screen.getByText('42% of people who open this form finish it')).toBeInTheDocument();
   });
 
+  it('shows "—" instead of the lifetime rate when the selected range has no responses', () => {
+    const overview = mockAnalyticsOverview({ totalResponses: 0, completionRate: 100, categoryCounts: { new: 0, in_progress: 0, completed: 0 } });
+    render(<AnalyticsStatCards overview={overview} isLoading={false} />);
+    expect(screen.getByText('Not enough views yet')).toBeInTheDocument();
+    expect(screen.queryByText('100%')).not.toBeInTheDocument();
+  });
+
   it('renders a zero value in muted text-(--text-muted) (theme-aware)', () => {
     const overview = mockAnalyticsOverview({ totalResponses: 0, categoryCounts: { new: 0, in_progress: 0, completed: 0 } });
     render(<AnalyticsStatCards overview={overview} isLoading={false} />);

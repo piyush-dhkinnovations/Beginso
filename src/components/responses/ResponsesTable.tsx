@@ -11,6 +11,7 @@ import { Menu } from '@/components/ui/Menu';
 import { StageBadge } from './StageBadge';
 import { RespondentCell, TagsCell, AssigneeCell, SubmittedCell } from './ResponseRow';
 import { detectRespondentIdentity } from '@/lib/formatters';
+import { useFormFieldsMap } from '@/hooks/useFormFields';
 import type { IResponse } from '@/types/response';
 
 interface ResponsesTableProps {
@@ -76,21 +77,22 @@ export function ResponsesTable({
   const [sort, setSort] = useState<TableSort | undefined>();
   const toggleSort = (key: string) =>
     setSort((cur) => (cur?.key === key ? (cur.dir === 'asc' ? { key, dir: 'desc' } : undefined) : { key, dir: key === 'submitted' ? 'desc' : 'asc' }));
+  const fieldsByForm = useFormFieldsMap(responses.map((r) => r.formId));
   const rows = useMemo(() => {
     if (!sort) return responses;
     const sign = sort.dir === 'asc' ? 1 : -1;
     const value = (r: IResponse): string => {
       if (sort.key === 'respondent') {
-        const id = detectRespondentIdentity(r.answers);
+        const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId]);
         return (id.label ?? id.email ?? '').toLowerCase();
       }
       if (sort.key === 'stage') return (r.stage?.name ?? r.status ?? '').toLowerCase();
       return r.submittedAt ?? '';
     };
     return [...responses].sort((a, b) => sign * value(a).localeCompare(value(b)));
-  }, [responses, sort]);
+  }, [responses, sort, fieldsByForm]);
   const respondentLabel = (r: IResponse) => {
-    const id = detectRespondentIdentity(r.answers);
+    const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId]);
     return id.label ?? id.email ?? 'this respondent';
   };
 
@@ -161,7 +163,7 @@ export function ResponsesTable({
       header: 'Form',
       render: (r: IResponse) => <span className="block max-w-48 truncate" title={formNames[r.formId]}>{formNames[r.formId] ?? '—'}</span>,
     }] : []),
-    { key: 'email', header: 'Email', render: (r) => detectRespondentIdentity(r.answers).email ?? '—' },
+    { key: 'email', header: 'Email', render: (r) => detectRespondentIdentity(r.answers, fieldsByForm[r.formId]).email ?? '—' },
     { key: 'tags', header: 'Tags', render: (r) => <TagsCell tags={r.tags} /> },
     { key: 'assignee', header: 'Assignee', render: (r) => <AssigneeCell response={r} /> },
     { key: 'stage', header: 'Stage', sortKey: 'stage', render: (r) => <StageBadge stage={r.stage} status={r.status} /> },

@@ -80,7 +80,8 @@ export function WorkspaceTab({ onDirtyChange, scope }: WorkspaceTabProps) {
       ),
     onSuccess: (updated, values) => {
       queryClient.invalidateQueries({ queryKey: settingsKeys.workspace() });
-      reset({ name: updated.name ?? values.name, description: updated.description ?? values.description, timezone: updated.timezone ?? values.timezone });
+      // Show what the server actually stored. Falling back to the typed values hid a backend that dropped them.
+      reset({ name: updated.name ?? values.name, description: updated.description ?? '', timezone: updated.timezone ?? 'UTC' });
       flashSaved();
       toast('Workspace settings saved.', 'success');
     },

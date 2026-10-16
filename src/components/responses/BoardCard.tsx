@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/Card';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { ResponseSignals } from './ResponseSignals';
 import { detectRespondentIdentity, shortId } from '@/lib/formatters';
+import { useFormFields } from '@/hooks/useFormFields';
 import type { IResponse } from '@/types/response';
 import type { StageRef } from '@/types/stage';
 
@@ -25,7 +26,7 @@ export interface BoardCardProps {
  * drag (OQ-12 resolved: not required).
  */
 export function BoardCard({ response, stages, canAct, onView, onChangeStage }: BoardCardProps) {
-  const identity = detectRespondentIdentity(response.answers);
+  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId));
   const name = identity.label ?? identity.email ?? 'Anonymous';
   const reference = response.reference ?? `#${shortId(response._id)}`;
 

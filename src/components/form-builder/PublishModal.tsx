@@ -110,7 +110,7 @@ export function PublishModal(props: PublishFlowProps) {
 
 // ─── Pre-flight ──────────────────────────────────────────────────────────────
 
-function Preflight({ onClose, formId, slug, settings, scope, canPublish, onStatusChange, onChangeSetting, onFixField }: PublishFlowProps) {
+function Preflight({ onClose, formId, settings, scope, canPublish, onStatusChange, onChangeSetting, onFixField }: PublishFlowProps) {
   const { toast } = useToast();
   const timezone = useWorkspaceTimezone(scope);
 
@@ -172,7 +172,6 @@ function Preflight({ onClose, formId, slug, settings, scope, canPublish, onStatu
         : myPref.isError
           ? 'Unavailable'
           : '…';
-  const publicUrl = buildPublicFormUrl(slug) || null;
 
   const blocking = readiness.data?.blocking ?? [];
   const warnings = readiness.data?.warnings ?? [];
@@ -193,13 +192,9 @@ function Preflight({ onClose, formId, slug, settings, scope, canPublish, onStatu
         <div className="rounded-lg border border-(--border-default) divide-y divide-(--border-subtle)">
           <ReviewRow
             label="Public URL"
-            value={
-              publicUrl ? (
-                <span className="font-mono text-sm">{publicUrl}</span>
-              ) : (
-                <>A link will be created. It stays the same every time you re-publish.</>
-              )
-            }
+            // Never print a URL before publishing: the slug shown to a draft is not the one issued at publish,
+            // so a copied pre-publish link is dead ("Form not found"). The real link appears once it is live.
+            value={<>A link will be created when you publish. It stays the same every time you re-publish.</>}
             changeLabel="Public URL is managed after publishing"
           />
           <ReviewRow

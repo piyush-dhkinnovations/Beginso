@@ -7,20 +7,13 @@ import { useToast } from '@/components/ui/Toast';
 import { uploadService } from '@/services/upload';
 import { settingsService } from '@/services/settings';
 import { validateFile } from '@/lib/validateFile';
+import { initialsOf } from '@/lib/formatters';
 import { settingsKeys } from '@/lib/queryKeys';
 
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const AVATAR_MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB, Requirement 3.2
 
-function getInitials(name: string | undefined): string {
-  if (!name) return 'U';
-  return name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2) || 'U';
-}
+const getInitials = (name: string | undefined): string => initialsOf(name) || 'U';
 
 interface AvatarUploaderProps {
   name: string | undefined;

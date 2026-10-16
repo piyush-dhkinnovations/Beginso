@@ -72,7 +72,8 @@ export function AnalyticsStatCards({ overview, isLoading, isError = false, onRet
   const cardsView = sparse ? cards.map((c) => ({ ...c, chart: undefined, delta: undefined })) : cards;
 
   // Completion rate is views-based (OQ-3) - its delta is a change in points, only when both periods have one.
-  const rate = overview?.completionRate;
+  // The API rate is lifetime; in a selected range with no responses it would read 100%/stale, so show "—".
+  const rate = total > 0 ? overview?.completionRate : null;
   const previousRate = previousOverview?.completionRate;
   const rateDelta =
     typeof rate === 'number' && typeof previousRate === 'number' && Math.round(rate) !== Math.round(previousRate)

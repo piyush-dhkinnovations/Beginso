@@ -63,10 +63,13 @@ describe('public form success page', () => {
     expect(screen.getByRole('link', { name: 'Create your own form' })).toHaveAttribute('href', '/signup');
   });
 
-  it('shows the unavailable page for a slug that does not exist, but still thanks when the lookup itself fails', async () => {
+  it('still thanks the respondent when the form stopped accepting responses as theirs was saved (QA A5-002)', async () => {
+    // Response limit reached / closed mid-fill: the public schema is 404 now, but the submit succeeded.
     getFormSchema.mockResolvedValueOnce({ schema: null });
-    const { unmount } = await page();
-    expect(screen.getByText('unavailable')).toBeInTheDocument();
+    const { container, unmount } = await page();
+    expect(screen.getByRole('heading', { name: 'Thank you!' })).toBeInTheDocument();
+    expect(screen.queryByText('unavailable')).not.toBeInTheDocument();
+    expect(container.innerHTML).toContain('background-color: rgb(29, 78, 216)');
     unmount();
     getFormSchema.mockRejectedValueOnce(new Error('down'));
     await page();

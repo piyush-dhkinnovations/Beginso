@@ -2,7 +2,8 @@
 
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Home, FileText, LayoutTemplate, Table2, Settings, Plus, Share2, Trash2, ClipboardList, Download } from 'lucide-react';
+import { POLL_MS } from '@/hooks/useUnreadCount';
+import { Home, FileText, LayoutTemplate, Table2, BarChart3, Settings, Plus, Share2, Trash2, ClipboardList, Download } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown';
@@ -77,13 +78,14 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
     queryKey: notificationKeys.unreadOfType('personal', 'form_shared'),
     queryFn: () => notificationsService.unreadCount('personal', 'form_shared'),
     retry: false,
-    refetchInterval: 45_000,
+    refetchInterval: POLL_MS,
     refetchOnWindowFocus: true,
   });
 
   // Responses owns the form-level data pages too (/forms/:id/inbox and /insights); Forms keeps the rest.
   const isFormDataRoute = /^\/forms\/[^/]+\/(inbox|insights)\/?$/.test(pathname);
-  const isResponsesActive = isFormDataRoute || /^\/(form-responses|inbox|insights)(\/|$)/.test(pathname);
+  const isResponsesActive = isFormDataRoute || /^\/(form-responses|inbox)(\/|$)/.test(pathname);
+  const isInsightsActive = /^\/insights(\/|$)/.test(pathname);
 
   return (
     <Sidebar
@@ -105,6 +107,9 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
             // while loading (hasForms defaults true) and when deep-linked, so an active page never vanishes from its nav.
             ...(hasForms || isResponsesActive
               ? [{ label: 'Responses', href: '/form-responses', icon: Table2, active: isResponsesActive, onClick: guard('/form-responses') }]
+              : []),
+            ...(hasForms || isInsightsActive
+              ? [{ label: 'Insights', href: '/insights', icon: BarChart3, active: isInsightsActive, onClick: guard('/insights') }]
               : []),
           ],
         },

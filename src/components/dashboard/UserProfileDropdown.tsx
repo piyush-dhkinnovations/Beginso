@@ -9,6 +9,7 @@ import { settingsKeys } from '@/lib/queryKeys';
 
 import { ChevronsUpDown, FileText, LogOut, Settings, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { initialsOf } from '@/lib/formatters';
 
 
 export interface UserProfileDropdownProps {
@@ -69,15 +70,7 @@ export function UserProfileDropdown({ variant = 'avatar', collapsed = false }: U
     setIsOpen((prev) => !prev);
   };
 
-  const getInitials = (name?: string) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const getInitials = (name?: string) => initialsOf(name) || 'U';
 
   const handleLogout = async () => {
     setIsOpen(false);

@@ -1,11 +1,7 @@
 import { User } from 'lucide-react';
 import { formVisual } from '@/lib/formVisual';
+import { initialsOf } from '@/lib/formatters';
 
-function initialsOf(name?: string): string {
-  const parts = (name ?? '').trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '';
-  return ((parts[0][0] ?? '') + (parts.length > 1 ? (parts[parts.length - 1][0] ?? '') : '')).toUpperCase();
-}
 
 // Readable ink on an arbitrary brand hex (WCAG relative luminance, threshold at the black/white crossover).
 function inkFor(hex: string): string {

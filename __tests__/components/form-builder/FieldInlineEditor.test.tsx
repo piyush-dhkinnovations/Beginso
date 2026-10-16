@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FieldInlineEditor } from '@/components/form-builder/FieldInlineEditor';
 import { makeField } from './builderTestUtils';
@@ -22,6 +22,23 @@ describe('FieldInlineEditor: common controls', () => {
     expect(onUpdate).not.toHaveBeenCalled();
     await userEvent.tab();
     expect(onUpdate).toHaveBeenCalledWith(f.fieldId, { label: 'Full name' });
+  });
+
+  it('commits shortly after typing stops, without needing a blur (so the edit is not lost on reload)', async () => {
+    const f = makeField('short_text', { label: 'Name' });
+    const { onUpdate } = setup(f);
+    await userEvent.type(screen.getByPlaceholderText('Field label'), ' 2');
+    expect(onUpdate).not.toHaveBeenCalled();
+    await waitFor(() => expect(onUpdate).toHaveBeenCalledWith(f.fieldId, { label: 'Name 2' }), { timeout: 2000 });
+    expect(onUpdate).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not commit a cleared label while the user is still typing', async () => {
+    const f = makeField('short_text', { label: 'Name' });
+    const { onUpdate } = setup(f);
+    await userEvent.clear(screen.getByPlaceholderText('Field label'));
+    await new Promise((r) => setTimeout(r, 800));
+    expect(onUpdate).not.toHaveBeenCalled();
   });
 
   it('Enter commits too', async () => {

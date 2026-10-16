@@ -13,6 +13,7 @@ import { responsesService } from '@/services/responses';
 import { chartKeys, type AnalyticsRangeParams } from '@/lib/queryKeys';
 import { drillHref } from '@/lib/chartDrill';
 import { detectRespondentIdentity, formatResponseDate, shortId } from '@/lib/formatters';
+import { useFormFields } from '@/hooks/useFormFields';
 import type { DateGranularity } from '@/types/charts';
 import type { FormField } from '@/types/form';
 import type { IResponse } from '@/types/response';
@@ -49,6 +50,7 @@ function answerText(response: IResponse, field?: FormField): string {
 // `total`, which must equal the chart's count for the segment.
 export function ChartDrillPanel({ isOpen, drill, onClose, formId, scope, field, range, granularity, onOpenResponse }: ChartDrillPanelProps) {
   const router = useRouter();
+  const formFields = useFormFields(formId);
   const target = drill?.target;
   const gran = field?.type === 'date' ? granularity : undefined;
 
@@ -95,7 +97,7 @@ export function ChartDrillPanel({ isOpen, drill, onClose, formId, scope, field, 
           <>
             <ul className="flex flex-col divide-y divide-(--border-subtle)">
               {rows.map((r) => {
-                const who = detectRespondentIdentity(r.answers);
+                const who = detectRespondentIdentity(r.answers, formFields);
                 const name = who.label ?? who.email ?? r.reference ?? shortId(r._id);
                 const answer = answerText(r, field);
                 return (

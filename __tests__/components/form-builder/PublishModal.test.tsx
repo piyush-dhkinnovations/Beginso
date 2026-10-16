@@ -82,7 +82,9 @@ describe('PublishModal: pre-flight', () => {
 
   it('summarises URL, access, closing date and notifications', async () => {
     renderModal(props({ settings: { honeypotEnabled: true, accessMode: 'tracked', closeDate: '2026-12-31T10:00:00.000Z' } }));
-    expect(await screen.findByText(/\/f\/abc123$/)).toBeInTheDocument();
+    // No URL before publishing: the draft's slug is not the one issued at publish (QA A4-006 / A14-001).
+    expect(await screen.findByText(/A link will be created when you publish/)).toBeInTheDocument();
+    expect(screen.queryByText(/\/f\/abc123/)).not.toBeInTheDocument();
     expect(screen.getByText(/asked for their email/)).toBeInTheDocument();
     expect(screen.getByText(/31 Dec 2026/)).toBeInTheDocument();
     expect(screen.getByText(/Email me on every response/)).toBeInTheDocument();
