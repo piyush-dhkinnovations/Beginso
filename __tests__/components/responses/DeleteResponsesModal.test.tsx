@@ -13,16 +13,20 @@ describe('DeleteResponsesModal', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
-  it('warns the single delete is permanent', () => {
+  // QA A6-009: single delete used to claim "permanently ... cannot be undone" although it moves the response to Trash for 30 days.
+  it('says the single delete moves the response to Trash for 30 days, not that it is permanent', () => {
     render(<DeleteResponsesModal confirmDelete={single} isDeleting={false} onClose={vi.fn()} onConfirm={vi.fn()} />);
     expect(screen.getByRole('heading', { name: 'Delete this response?' })).toBeInTheDocument();
-    expect(screen.getByText(/cannot be undone/)).toBeInTheDocument();
+    expect(screen.getByText(/moves the response to Trash/)).toBeInTheDocument();
+    expect(screen.getByText(/deleted for good after 30 days/)).toBeInTheDocument();
+    expect(screen.queryByText(/cannot be undone/)).not.toBeInTheDocument();
   });
 
   it('shows the count and the undo hint for a bulk delete', () => {
     render(<DeleteResponsesModal confirmDelete={bulk} isDeleting={false} onClose={vi.fn()} onConfirm={vi.fn()} />);
     expect(screen.getByRole('heading', { name: 'Delete 3 responses?' })).toBeInTheDocument();
-    expect(screen.getByText(/undo this from the toast/)).toBeInTheDocument();
+    expect(screen.getByText(/move to Trash/)).toBeInTheDocument();
+    expect(screen.getByText(/undo right away from the toast/)).toBeInTheDocument();
   });
 
   it('fires onConfirm and onClose from the buttons', async () => {

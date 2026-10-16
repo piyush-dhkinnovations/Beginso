@@ -100,7 +100,7 @@ export default function MySubmissionsPage() {
       <PageHeader
         eyebrow="Personal space"
         title="My Submissions"
-        description="Every form you filled in while signed in, with where it stands. Open one to see what you sent or, where the form allows it, correct it."
+        description="Responses you can come back to: forms that asked you to sign in, and forms that emailed you a link. Open one to see what you sent or, where the form allows it, correct it."
       />
 
       {query.isError ? (
@@ -122,7 +122,7 @@ export default function MySubmissionsPage() {
           illustration="empty-inbox"
           icon={<ClipboardList />}
           title="You have not submitted anything yet"
-          description="Forms you fill out while signed in will show up here."
+          description="Responses to forms that ask you to sign in, or that email you a link, will show up here. A form anyone can fill in without signing in is not linked to your account."
           primaryAction={
             <Link href="/dashboard">
               <Button>Back to Home</Button>

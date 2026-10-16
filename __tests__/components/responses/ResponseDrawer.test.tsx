@@ -241,6 +241,54 @@ describe('ResponseDrawer', () => {
     opener.remove();
   });
 
+  // QA A6-011: the parent re-creates onClose on every render. The focus effect depended on it, so each parent render
+  // re-captured "the opener" from inside the drawer and pulled focus back to the first button; Esc then left focus on <body>.
+  it('keeps the focus where the user put it when the parent re-renders with a new onClose, and still returns it to the opener', async () => {
+    mockGetResponseById.mockResolvedValue(detail);
+    const opener = document.createElement('button');
+    opener.textContent = 'Open response';
+    document.body.appendChild(opener);
+    opener.focus();
+
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const ui = (responseId: string | null, onClose: () => void) => (
+      <QueryClientProvider client={queryClient}>
+        <ResponseDrawer responseId={responseId} formId="form-1" stages={STAGES} onClose={onClose} />
+      </QueryClientProvider>
+    );
+    const { rerender } = render(ui('resp-1', () => undefined));
+    await screen.findByText('Submitted response');
+
+    const download = screen.getByRole('button', { name: 'Download response' });
+    download.focus();
+    rerender(ui('resp-1', () => undefined)); // a brand-new onClose, as the real parent produces
+    rerender(ui('resp-1', () => undefined));
+    expect(download).toHaveFocus(); // not stolen back to the first button
+
+    rerender(ui(null, () => undefined)); // closed (what Esc does through the parent)
+    expect(opener).toHaveFocus();
+    opener.remove();
+  });
+
+  it('Escape still calls the latest onClose even though the handler is registered once', async () => {
+    mockGetResponseById.mockResolvedValue(detail);
+    const user = userEvent.setup();
+    const first = vi.fn();
+    const latest = vi.fn();
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const ui = (onClose: () => void) => (
+      <QueryClientProvider client={queryClient}>
+        <ResponseDrawer responseId="resp-1" formId="form-1" stages={STAGES} onClose={onClose} />
+      </QueryClientProvider>
+    );
+    const { rerender } = render(ui(first));
+    await screen.findByText('Submitted response');
+    rerender(ui(latest));
+    await user.keyboard('{Escape}');
+    expect(latest).toHaveBeenCalledOnce();
+    expect(first).not.toHaveBeenCalled();
+  });
+
   it('shows an explicit empty state when a response has no answers', async () => {
     mockGetFormById.mockRejectedValue(new Error('form unavailable'));
     mockGetResponseById.mockResolvedValue({ ...detail, answers: {} });
@@ -447,5 +495,21 @@ describe('ResponseDrawer', () => {
       expect(await screen.findByText('Internal notes')).toBeInTheDocument();
       expect(mockListGrants).not.toHaveBeenCalled();
     });
+  });
+});
+
+// QA A6-010: below 640px the six action buttons (about 290px) left the respondent's name almost no room. jsdom has no
+// layout, so this pins the structure that gives the name its own row instead of measuring pixels.
+describe('ResponseDrawer header on small screens', () => {
+  it('lets the header wrap, with the name taking a full row and the actions pushed to the end of the next', async () => {
+    mockGetResponseById.mockResolvedValue(detail);
+    renderDrawer('resp-1');
+    await screen.findByText('Submitted response');
+    const header = screen.getByRole('heading', { level: 2 }).closest('header') as HTMLElement;
+    expect(header.className).toMatch(/\bflex-wrap\b/);
+    const nameRow = screen.getByRole('heading', { level: 2 }).closest('div.min-w-0.items-center, div.flex.min-w-0') as HTMLElement;
+    expect(nameRow.className).toMatch(/max-sm:basis-full/);
+    const actions = screen.getByRole('button', { name: 'Download response' }).parentElement as HTMLElement;
+    expect(actions.className).toMatch(/max-sm:ml-auto/);
   });
 });

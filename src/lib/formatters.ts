@@ -112,12 +112,15 @@ const FULL_NAME_RE = /^(your |full |respondent |contact )?name\b/i;
  * "Name", or "First name" + "Last name"); the email from an email field, or any email-shaped answer.
  * An arbitrary answer ("Meeting", "No") is never a person. Without `fields` (still loading, or the
  * lookup failed) no name is guessed; callers render "Anonymous".
+ *
+ * `respondentEmail` is the address the server recorded (the account email on a signed-in-only form, the address given on a
+ * tracked form). It is authoritative, so it wins over anything guessed from the answers.
  */
-export function detectRespondentIdentity(answers: ResponseAnswers, fields?: FormField[]): RespondentIdentity {
+export function detectRespondentIdentity(answers: ResponseAnswers, fields?: FormField[], respondentEmail?: string | null): RespondentIdentity {
   const live = (fields ?? []).filter((f) => !f.deleted);
   const answer = (f?: FormField) => (f ? str(answers[f.fieldId]) : undefined);
   const emailField = live.find((f) => f.type === 'email' && answer(f));
-  const email = answer(emailField) ?? Object.values(answers).map(str).find((v) => v && EMAIL_RE.test(v));
+  const email = str(respondentEmail) ?? answer(emailField) ?? Object.values(answers).map(str).find((v) => v && EMAIL_RE.test(v));
 
   const textFields = live.filter((f) => f.type === 'short_text' && answer(f));
   const full = textFields.find((f) => FULL_NAME_RE.test(f.label.trim()));

@@ -83,7 +83,7 @@ export function ResponsesTable({
     const sign = sort.dir === 'asc' ? 1 : -1;
     const value = (r: IResponse): string => {
       if (sort.key === 'respondent') {
-        const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId]);
+        const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId], r.respondentEmail);
         return (id.label ?? id.email ?? '').toLowerCase();
       }
       if (sort.key === 'stage') return (r.stage?.name ?? r.status ?? '').toLowerCase();
@@ -92,7 +92,7 @@ export function ResponsesTable({
     return [...responses].sort((a, b) => sign * value(a).localeCompare(value(b)));
   }, [responses, sort, fieldsByForm]);
   const respondentLabel = (r: IResponse) => {
-    const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId]);
+    const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId], r.respondentEmail);
     return id.label ?? id.email ?? 'this respondent';
   };
 
@@ -163,7 +163,7 @@ export function ResponsesTable({
       header: 'Form',
       render: (r: IResponse) => <span className="block max-w-48 truncate" title={formNames[r.formId]}>{formNames[r.formId] ?? '—'}</span>,
     }] : []),
-    { key: 'email', header: 'Email', render: (r) => detectRespondentIdentity(r.answers, fieldsByForm[r.formId]).email ?? '—' },
+    { key: 'email', header: 'Email', render: (r) => detectRespondentIdentity(r.answers, fieldsByForm[r.formId], r.respondentEmail).email ?? '—' },
     { key: 'tags', header: 'Tags', render: (r) => <TagsCell tags={r.tags} /> },
     { key: 'assignee', header: 'Assignee', render: (r) => <AssigneeCell response={r} /> },
     { key: 'stage', header: 'Stage', sortKey: 'stage', render: (r) => <StageBadge stage={r.stage} status={r.status} /> },

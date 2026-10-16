@@ -33,7 +33,7 @@ export interface ResponsesCalendarProps {
 }
 
 function CalendarCellLabel({ response }: { response: IResponse }) {
-  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId));
+  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId), response.respondentEmail);
   return <span className="w-full truncate bg-caption text-(--text-primary)">{identity.label ?? identity.email ?? 'Response'}</span>;
 }
 
@@ -41,7 +41,7 @@ function CalendarCellLabel({ response }: { response: IResponse }) {
  * "+N" day-overflow modal so they can't independently drift on what a calendar item shows
  * (requirements.md §7.4: "every view carries the same signals"). */
 export function CalendarItemRow({ response, onSelect }: { response: IResponse; onSelect: (id: string) => void }) {
-  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId));
+  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId), response.respondentEmail);
   const name = identity.label ?? identity.email ?? 'Anonymous';
   return (
     <button

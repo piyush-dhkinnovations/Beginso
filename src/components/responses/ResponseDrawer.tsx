@@ -36,6 +36,7 @@ import { formAccessKeys, noteKeys, responseKeys, workspaceKeys } from '@/lib/que
 import { detectRespondentIdentity, initialsOf, shortId } from '@/lib/formatters';
 import { exportPayloadFromTarget } from '@/lib/reportExport';
 import { buildAnswerItems, isTopImage } from '@/lib/responseAnswers';
+import { DELETE_COPY, DOWNLOAD_FAILED, DOWNLOAD_QUEUED } from '@/lib/responseCopy';
 import { hasCapability } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 import { workspacesService } from '@/services/workspaces';
@@ -195,20 +196,36 @@ export function ResponseDrawer({
   }, [displayMode, responseId]);
 
   // Close on Escape; trap Tab/Shift+Tab focus within the drawer — same pattern as Modal.tsx.
+  //
+  // Two effects with narrow dependencies on purpose. This used to be one effect that also depended on `onClose`, which
+  // the parent re-creates on every render: so it re-ran constantly, re-captured "the opener" as whatever was focused INSIDE
+  // the drawer (gone by the time it closed), and pulled focus back to the first button each time. Result: Esc left focus
+  // on <body> (QA A6-011). Now the opener is captured once when the drawer opens and restored once when it closes.
+  const isDrawerOpen = !!responseId && displayMode !== 'page';
+  const onCloseRef = useRef(onClose);
   useEffect(() => {
-    if (!responseId) return;
-    if (displayMode === 'page') return;
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const focusableSelector =
-      'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
-    const getFocusable = () =>
-      Array.from(drawerRef.current?.querySelectorAll<HTMLElement>(focusableSelector) ?? []);
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
+  const focusableSelector = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+  const getFocusable = () => Array.from(drawerRef.current?.querySelectorAll<HTMLElement>(focusableSelector) ?? []);
+
+  useEffect(() => {
+    if (!isDrawerOpen) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     getFocusable()[0]?.focus();
+    return () => {
+      // The opener can have been re-rendered away (a list refetch); then there is nothing to return to.
+      if (opener?.isConnected) opener.focus();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- getFocusable only reads a ref
+  }, [isDrawerOpen]);
 
+  useEffect(() => {
+    if (!isDrawerOpen) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
         return;
       }
       if (e.key !== 'Tab') return;
@@ -225,11 +242,9 @@ export function ResponseDrawer({
       }
     };
     document.addEventListener('keydown', handler);
-    return () => {
-      document.removeEventListener('keydown', handler);
-      previouslyFocused?.focus();
-    };
-  }, [displayMode, responseId, onClose]);
+    return () => document.removeEventListener('keydown', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- getFocusable only reads a ref
+  }, [isDrawerOpen]);
 
   const { data: response, error: responseError, isError, isFetching, isLoading, refetch } = useQuery({
     queryKey: responseKeys.detail(scope, responseId ?? ''),
@@ -311,13 +326,13 @@ export function ResponseDrawer({
     // Export/BulkActionBar already build from, rather than a bespoke download call.
     reportsService
       .createReport(exportPayloadFromTarget('csv', { ids: [response._id] }))
-      .then(() => toast('Download started. Find it under Reports when it finishes.', 'success'))
-      .catch(() => toast('Failed to start the download. Please try again.', 'error'));
+      .then(() => toast(DOWNLOAD_QUEUED, 'success'))
+      .catch(() => toast(DOWNLOAD_FAILED, 'error'));
   }
 
   if (!responseId) return null;
 
-  const identity = response ? detectRespondentIdentity(response.answers, responseForm?.fields) : {};
+  const identity = response ? detectRespondentIdentity(response.answers, responseForm?.fields, response.respondentEmail) : {};
   const hasIdentity = !!(identity.label || identity.email);
   const initial = initialsOf(identity.label ?? identity.email).charAt(0) || '?';
   // A failed/absent form lookup falls back to plain label → value rows rather than blocking the answers.
@@ -352,8 +367,9 @@ export function ResponseDrawer({
             : 'min-h-full rounded-lg shadow-(--shadow-sm)'
         )}
       >
-        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-(--border-default) px-4 py-3 sm:px-6">
-          <div className="flex min-w-0 items-center gap-3">
+        {/* Below 640px the six action buttons (about 290px) left the name almost no room, so the header wraps: the respondent's name gets its own row and the actions sit under it. */}
+        <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-(--border-default) px-4 py-3 sm:px-6">
+          <div className="flex min-w-0 items-center gap-3 max-sm:basis-full">
             {/* Full-screen sheet with a back chevron below 768px (requirements.md §9.1) — the
                 close/back control is the same handler either way, only the icon changes. */}
             <button
@@ -388,7 +404,7 @@ export function ResponseDrawer({
               {/* "Edited after review" indicator — Sprint 13 (A5.2), space reserved, not built. */}
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-1.5">
+          <div className="flex shrink-0 items-center gap-1.5 max-sm:ml-auto">
             {position !== undefined && totalResponses !== undefined && (
               <div className="flex items-center gap-1">
                 <Button
@@ -549,7 +565,7 @@ export function ResponseDrawer({
         isOpen={confirmDeleteOpen}
         onClose={() => setConfirmDeleteOpen(false)}
         title="Delete this response?"
-        description="This will permanently delete the response and all uploaded files. This action cannot be undone."
+        description={DELETE_COPY.single}
       >
         <div className="flex items-center justify-end gap-3 pt-2 border-t border-(--border-default)">
           <Button variant="secondary" onClick={() => setConfirmDeleteOpen(false)} disabled={deleteMutation.isPending}>

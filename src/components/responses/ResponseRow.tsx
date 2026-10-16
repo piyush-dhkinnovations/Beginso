@@ -14,7 +14,7 @@ import type { IResponse, ResponseTag } from '@/types/response';
  */
 
 export function RespondentCell({ response }: { response: IResponse }) {
-  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId));
+  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId), response.respondentEmail);
   const name = identity.label ?? identity.email ?? 'Anonymous';
   const noteCount = response.noteCount ?? 0;
   const attachmentCount = response.attachmentCount ?? 0;

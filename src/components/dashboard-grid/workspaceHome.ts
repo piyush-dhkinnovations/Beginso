@@ -18,7 +18,7 @@ export function workspaceMetrics(forms: FormRow[], total: number, locations?: Re
   const published = forms.filter((f) => f.status === 'published').length;
   const closed = forms.filter((f) => f.status === 'closed').length;
 
-  m.totalForms = { label: 'Total Forms', value: total, icon: icon(FileText), percent: pct(published, forms.length), sub: `${published} published` };
+  m.totalForms = { label: 'Total Forms', value: total, icon: icon(FileText), percent: pct(published, forms.length), sub: total === forms.length ? `${published} of ${total} published` : `${published} published` };
   m.totalResponses = { label: 'Total Responses', value: responses, icon: icon(MessageSquare) };
   m.publishedForms = { label: 'Active Forms', value: published, sub: `/ ${forms.length}`, percent: pct(published, forms.length), icon: icon(BarChart3) };
   if (forms.length > 0) {
