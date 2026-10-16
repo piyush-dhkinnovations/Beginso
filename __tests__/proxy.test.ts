@@ -134,4 +134,19 @@ describe('Next.js Edge Proxy (auth guard)', () => {
     expect(res.headers.get('location')).toContain('/login');
     expect(res.headers.get('set-cookie')).toContain(`${SESSION_COOKIE_NAME}=`);
   });
+
+  // A15-004: a backend that cannot answer says nothing about the session, so it must neither log the person out nor delete the cookie.
+  it.each([500, 502, 429])('a %s from the session check keeps the person on the page and does not clear the cookie', async (status) => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status })));
+    const res = await proxy(makeRequest('/dashboard', true));
+    expect(res.headers.get('location')).toBeNull();
+    expect(res.headers.get('set-cookie')).toBeNull();
+  });
+
+  it('a network failure during the session check is treated the same way', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('down')));
+    const res = await proxy(makeRequest('/dashboard', true));
+    expect(res.headers.get('location')).toBeNull();
+    expect(res.headers.get('set-cookie')).toBeNull();
+  });
 });
