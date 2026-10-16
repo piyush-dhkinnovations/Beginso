@@ -5,6 +5,7 @@
  */
 
 import { imageSettings } from '@/lib/fieldDisplay';
+import { buildAnswerKeyMap } from '@/lib/answerKeys';
 import type { FormField, FormPage } from '@/types/form';
 import type { AnswerValue, IResponseFile, ResponseAnswers } from '@/types/response';
 
@@ -36,6 +37,9 @@ export function buildAnswerItems(
 
   if (fields) {
     const pageOrder = new Map(pages.map((p) => [p.id, p.order]));
+    // Two questions can share a label; each answer is filed under its own key ("Comment", "Comment (2)").
+    const keys = buildAnswerKeyMap(fields);
+    const keyOf = (f: FormField) => keys.get(f) ?? f.label;
     const ordered = fields
       .filter((f) => !f.deleted)
       .sort((a, b) => (pageOrder.get(a.pageId) ?? 0) - (pageOrder.get(b.pageId) ?? 0) || a.order - b.order);
@@ -43,7 +47,7 @@ export function buildAnswerItems(
     // Image answers name their files, so they are matched exactly.
     for (const field of ordered) {
       if (field.type !== 'image_upload') continue;
-      const names = Array.isArray(answers[field.label]) ? (answers[field.label] as string[]) : [];
+      const names = Array.isArray(answers[keyOf(field)]) ? (answers[keyOf(field)] as string[]) : [];
       const matched = names
         .map((name) => files.find((f) => !claimed.has(f.id) && storedName(f) === name))
         .filter((f): f is IResponseFile => !!f);
@@ -58,14 +62,14 @@ export function buildAnswerItems(
     const byField = new Map(items.map((i) => [i.key, i]));
     const result: Omit<AnswerItem, 'number'>[] = [];
     for (const field of ordered) {
-      known.add(field.label);
+      known.add(keyOf(field));
       if (field.type === 'image_upload') {
         result.push(byField.get(field.fieldId)!);
       } else if (field.type === 'file_upload') {
         const file = remaining[fileIndex++];
         result.push({ key: field.fieldId, label: field.label, field, value: null, files: file ? [file] : [] });
       } else {
-        result.push({ key: field.fieldId, label: field.label, field, value: answers[field.label] ?? null, files: [] });
+        result.push({ key: field.fieldId, label: field.label, field, value: answers[keyOf(field)] ?? null, files: [] });
       }
     }
     // Answers whose field no longer exists are kept (never silently dropped).

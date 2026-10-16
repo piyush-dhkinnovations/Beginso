@@ -15,6 +15,7 @@ import { drillHref } from '@/lib/chartDrill';
 import { detectRespondentIdentity, formatResponseDate, shortId } from '@/lib/formatters';
 import { useFormFields } from '@/hooks/useFormFields';
 import type { DateGranularity } from '@/types/charts';
+import { answerKeyOf } from '@/lib/answerKeys';
 import type { FormField } from '@/types/form';
 import type { IResponse } from '@/types/response';
 
@@ -39,8 +40,8 @@ interface ChartDrillPanelProps {
   onOpenResponse: (id: string) => void;
 }
 
-function answerText(response: IResponse, field?: FormField): string {
-  const v = field ? response.answers[field.label] : undefined;
+function answerText(response: IResponse, field?: FormField, fields?: FormField[]): string {
+  const v = field ? response.answers[answerKeyOf(fields ?? [field], field)] : undefined;
   if (v === undefined || v === null || v === '') return '';
   return Array.isArray(v) ? v.join(', ') : String(v);
 }
@@ -99,7 +100,7 @@ export function ChartDrillPanel({ isOpen, drill, onClose, formId, scope, field, 
               {rows.map((r) => {
                 const who = detectRespondentIdentity(r.answers, formFields, r.respondentEmail);
                 const name = who.label ?? who.email ?? r.reference ?? shortId(r._id);
-                const answer = answerText(r, field);
+                const answer = answerText(r, field, formFields);
                 return (
                   <li key={r._id}>
                     <button

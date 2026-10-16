@@ -1,5 +1,6 @@
 import type { ResponseAnswers } from '@/types/response';
 import type { ApproxLocation } from '@/types/settings';
+import { buildAnswerKeyMap } from '@/lib/answerKeys';
 import type { FormField } from '@/types/form';
 
 // `{}` for an unresolved IP (private/local ranges, lookup failure) is indistinguishable from a
@@ -120,7 +121,8 @@ export function detectRespondentIdentity(answers: ResponseAnswers, fields?: Form
   const live = (fields ?? []).filter((f) => !f.deleted);
   // The API returns answers keyed by the question's LABEL (it strips id-style keys), so that is the key to read. The field
   // id is the fallback for data that still carries it. Looking up only by id found nothing on real responses.
-  const answer = (f?: FormField) => (f ? str(answers[f.label] ?? answers[f.fieldId]) : undefined);
+  const keys = buildAnswerKeyMap(fields);
+  const answer = (f?: FormField) => (f ? str(answers[keys.get(f) ?? f.label] ?? answers[f.fieldId]) : undefined);
   const emailField = live.find((f) => f.type === 'email' && answer(f));
   const email = str(respondentEmail) ?? answer(emailField) ?? Object.values(answers).map(str).find((v) => v && EMAIL_RE.test(v));
 
