@@ -37,8 +37,16 @@ export interface BuilderState {
   // Set by Sidebar when it intercepts a nav-link click while dirty; the builder page
   // watches this to open the same Leave-Builder modal used for its own Back button.
   pendingLeaveUrl: string | null;
+  // Optimistic concurrency: the server's contentVersion this editor is based on, sent with every save. A 409 FORM_STALE
+  // sets `stale`: another tab or person saved first, so saving stops until the user reloads.
+  contentVersion: number | null;
+  stale: boolean;
+  // undoStack depth at the last successful save: how many edits are unsaved is the difference.
+  savedUndoDepth: number;
 
   initForm: (form: Form) => void;
+  setContentVersion: (contentVersion: number) => void;
+  markStale: () => void;
   setFormTitle: (title: string) => void;
   addField: (type: FieldType, insertIndex?: number) => void;
   duplicateField: (fieldId: string) => void;
@@ -131,6 +139,9 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   status: 'draft',
   slug: undefined,
   pendingLeaveUrl: null,
+  contentVersion: null,
+  stale: false,
+  savedUndoDepth: 0,
 
   setPendingLeaveUrl: (url) => set({ pendingLeaveUrl: url }),
 
@@ -173,6 +184,9 @@ export const useBuilderStore = create<BuilderState>((set) => ({
         dirty: false,
         undoStack: [],
         redoStack: [],
+        contentVersion: form.contentVersion ?? 0,
+        stale: false,
+        savedUndoDepth: 0,
       };
     }),
 
@@ -427,9 +441,13 @@ export const useBuilderStore = create<BuilderState>((set) => ({
     }),
 
   markSaved: () =>
-    set({
+    set((state) => ({
       dirty: false,
-    }),
+      savedUndoDepth: state.undoStack.length,
+    })),
+
+  setContentVersion: (contentVersion) => set({ contentVersion }),
+  markStale: () => set({ stale: true }),
 
   setBranding: (updates) =>
     set((state) => ({

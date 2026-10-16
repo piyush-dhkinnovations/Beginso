@@ -214,6 +214,8 @@ export interface Form {
   responseCount: number;
   createdAt: string;         // ISO 8601
   updatedAt: string;         // ISO 8601
+  /** Moves only when builder content is saved (not on views, closing, archiving); the stale-save check compares it. */
+  contentVersion?: number;
   publishedAt?: string;      // ISO 8601
   /** The caller's own role on this form (per-form grant, workspace role, or owner). Set by GET /api/forms/:id. */
   myRole?: import('./workspace').Role;
@@ -301,6 +303,10 @@ export interface UpdateFormPayload {
   pages?: FormPage[];  // each page carries its own title/description — see FormPage
   branding?: Partial<FormBranding>;
   settings?: Partial<FormSettings>;
+  /** The contentVersion this edit is based on. The server refuses the save (409 FORM_STALE) if the form has moved on. */
+  expectedContentVersion?: number;
+  /** Identifies this save, so a retry of one whose reply was lost is recognised instead of refused. */
+  saveId?: string;
 }
 
 // ─── API Response Types ───────────────────────────────────────────────────────

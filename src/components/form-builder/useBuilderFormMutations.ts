@@ -5,6 +5,7 @@ import { formsService } from '@/services/forms';
 import { trashService } from '@/services/trash';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useBuilderStore } from '@/store/builderStore';
+import { syncBuilderVersion } from './useBuilderAutosave';
 import { useToast } from '@/components/ui/Toast';
 import type { Form } from '@/types/form';
 
@@ -35,6 +36,7 @@ export function useBuilderFormMutations({
       queryClient.setQueryData<Form>(['form', formId], (oldData) =>
         oldData ? { ...oldData, status: 'closed' } : oldData
       );
+      if (formId) void syncBuilderVersion(formId);
       setShowCloseModal(false);
       toast('Form closed. It will no longer accept new responses.', 'success');
     },

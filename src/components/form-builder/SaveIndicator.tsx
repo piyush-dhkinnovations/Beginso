@@ -12,14 +12,20 @@ export interface SaveIndicatorProps {
   error: boolean;
   /** Why the save failed, when the server said. */
   detail?: string | null;
+  /** Another tab or person saved this form first: saving has stopped until the page is reloaded. */
+  conflict?: boolean;
+  /** How many edits would be lost by reloading, shown with the conflict message. */
+  unsavedCount?: number;
+  onReload?: () => void;
   savedAt: Date | null;
   onRetry: () => void;
 }
 
-type Label = 'error' | 'saving' | 'unsaved' | 'saved';
+type Label = 'conflict' | 'error' | 'saving' | 'unsaved' | 'saved';
 
-export function SaveIndicator({ dirty, saving, error, detail, savedAt, onRetry }: SaveIndicatorProps) {
-  const label: Label = saving ? 'saving' : error ? 'error' : dirty ? 'unsaved' : 'saved';
+export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedCount = 0, onReload, savedAt, onRetry }: SaveIndicatorProps) {
+  // A conflict outranks everything: "All changes saved" would be a lie while this tab's edits cannot be saved.
+  const label: Label = conflict ? 'conflict' : saving ? 'saving' : error ? 'error' : dirty ? 'unsaved' : 'saved';
 
   // Announce once the label has been stable for 500 ms (design.md §18) — not on every keystroke,
   // which flips Unsaved ⇄ Saving… constantly while typing.
@@ -30,6 +36,7 @@ export function SaveIndicator({ dirty, saving, error, detail, savedAt, onRetry }
   }, [label]);
 
   const text: Record<Label, string> = {
+    conflict: 'This form changed in another tab or by someone else. Reload to continue.',
     error: detail ? `Save failed: ${detail}` : 'Save failed',
     saving: 'Saving…',
     unsaved: 'Unsaved changes',
@@ -42,6 +49,11 @@ export function SaveIndicator({ dirty, saving, error, detail, savedAt, onRetry }
         {label === 'saving' ? (
           <span className="inline-flex items-center gap-1.5 text-(--text-muted) font-medium animate-pulse">
             <LoaderCircle size={14} className="animate-spin" /> {text.saving}
+          </span>
+        ) : label === 'conflict' ? (
+          <span className="inline-flex flex-wrap items-center gap-x-2 text-(--error-text) font-medium">
+            <CloudAlert size={14} /> {text.conflict}
+            {unsavedCount > 0 && <span className="font-normal">{unsavedCount} unsaved change{unsavedCount === 1 ? '' : 's'}</span>}
           </span>
         ) : label === 'error' ? (
           <span className="inline-flex items-center gap-1.5 text-(--error-text) font-medium">
@@ -62,6 +74,15 @@ export function SaveIndicator({ dirty, saving, error, detail, savedAt, onRetry }
           </span>
         )}
       </span>
+      {label === 'conflict' && onReload && (
+        <button
+          type="button"
+          onClick={onReload}
+          className="min-h-11 px-2 bg-body-sm font-semibold text-(--text-primary) underline underline-offset-2"
+        >
+          Reload
+        </button>
+      )}
       {label === 'error' && (
         <button
           type="button"
