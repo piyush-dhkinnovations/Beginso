@@ -60,3 +60,36 @@ describe('initialsOf', () => {
     expect(/[\uD800-\uDFFF]/.test(initialsOf('J🎉'))).toBe(false);
   });
 });
+
+// The API returns answers keyed by the question's LABEL and strips id-style keys (UUIDs, 24-hex ids, f_...). The first
+// version of the name fix looked answers up by field id, which found nothing on real data: every respondent became
+// "Anonymous" in production, while tests that used id-keyed answers passed.
+describe('detectRespondentIdentity on the real API shape: UUID field ids, label-keyed answers', () => {
+  const REAL_FIELDS = [
+    f('3f2b8c1e-5a6d-4f0e-9b7a-1c2d3e4f5a6b', 'short_text', 'Full name'),
+    f('8d1e2f3a-4b5c-4d6e-8f70-91a2b3c4d5e6', 'multiple_choice', 'Preferred contact'),
+    f('0a9b8c7d-6e5f-4a3b-9c2d-1e0f9a8b7c6d', 'email', 'Work email'),
+  ];
+
+  it('finds the name and email by label', () => {
+    const id = detectRespondentIdentity({ 'Full name': 'Alice Pro', 'Preferred contact': 'Meeting', 'Work email': 'alice@example.com' }, REAL_FIELDS);
+    expect(id).toEqual({ label: 'Alice Pro', email: 'alice@example.com' });
+  });
+
+  it('still shows a real name when the first answer is a choice (the original bug)', () => {
+    expect(detectRespondentIdentity({ 'Preferred contact': 'Meeting', 'Full name': 'Alice Pro' }, REAL_FIELDS).label).toBe('Alice Pro');
+  });
+
+  it('first and last name fields are joined by label too', () => {
+    const fields = [f('a-uuid', 'short_text', 'First name'), f('b-uuid', 'short_text', 'Last name')];
+    expect(detectRespondentIdentity({ 'First name': 'Priya', 'Last name': 'Sharma' }, fields).label).toBe('Priya Sharma');
+  });
+
+  it('falls back to the field id for data that still carries it', () => {
+    expect(detectRespondentIdentity({ '3f2b8c1e-5a6d-4f0e-9b7a-1c2d3e4f5a6b': 'Carol' }, REAL_FIELDS).label).toBe('Carol');
+  });
+
+  it('a label-keyed answer wins over a stale id-keyed one', () => {
+    expect(detectRespondentIdentity({ 'Full name': 'By label', '3f2b8c1e-5a6d-4f0e-9b7a-1c2d3e4f5a6b': 'By id' }, REAL_FIELDS).label).toBe('By label');
+  });
+});
