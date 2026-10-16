@@ -74,8 +74,9 @@ interface RawQuestionsEnvelope {
       fieldId: string;
       label: string;
       type: string;
+      totalAnswered?: number;
       summary: {
-        options?: { label: string; count: number }[];
+        options?: { label: string; count: number; percentage?: number }[];
       };
     }[];
   };
@@ -86,7 +87,9 @@ function toQuestionBreakdowns(raw: RawQuestionsEnvelope): { questions: QuestionB
     questions: raw.data.questions.map((q) => ({
       fieldId: q.fieldId,
       label: q.label,
-      options: (q.summary.options ?? []).map((o) => ({ option: o.label, count: o.count })),
+      type: q.type,
+      totalAnswered: q.totalAnswered,
+      options: (q.summary.options ?? []).map((o) => ({ option: o.label, count: o.count, percentage: o.percentage })),
     })),
   };
 }

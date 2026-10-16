@@ -43,11 +43,16 @@ export interface AnalyticsTrendResult {
 export interface QuestionOption {
   option: string;
   count: number;
+  /** Share of the people who answered this question (0-100), as computed by the API. Multi-select options can add up to more than 100. */
+  percentage?: number;
 }
 
 export interface QuestionBreakdown {
   fieldId: string;
   label: string;
+  type?: string;
+  /** People who answered this question; the denominator for every option percentage. */
+  totalAnswered?: number;
   options: QuestionOption[];
 }
 

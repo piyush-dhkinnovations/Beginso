@@ -1,5 +1,6 @@
 'use client';
 
+import { completionRateUnavailableReason } from '@/lib/completionRate';
 import { CheckCircle2, Clock, Inbox, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -101,7 +102,7 @@ export function AnalyticsStatCards({ overview, isLoading, isError = false, onRet
           />
         );
       })}
-      <CompletionRateCard rate={rate} isLoading={isLoading} delta={sparse ? undefined : rateDelta} sparse={sparse} />
+      <CompletionRateCard rate={rate} unavailableReason={completionRateUnavailableReason(total, overview?.views)} isLoading={isLoading} delta={sparse ? undefined : rateDelta} sparse={sparse} />
     </div>
   );
 }

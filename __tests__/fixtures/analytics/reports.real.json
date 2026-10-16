@@ -1,0 +1,120 @@
+{
+ "status": 200,
+ "body": {
+  "success": true,
+  "data": [
+   {
+    "_id": "6ad0cfc2cd9c0e59e9e6517f",
+    "id": "6ad0cfc2cd9c0e59e9e6517f",
+    "workspaceId": null,
+    "format": "csv",
+    "status": "completed",
+    "formId": null,
+    "formTitle": "All Workspace Forms",
+    "filters": {
+     "ids": [
+      "6ad0cc7acd9c0e59e9e5d507"
+     ]
+    },
+    "errorMessage": null,
+    "fileSize": 341,
+    "expiresAt": "2026-10-16T13:06:10.898Z",
+    "createdAt": "2026-10-15T13:06:10.899Z",
+    "updatedAt": "2026-10-15T13:06:10.965Z"
+   },
+   {
+    "_id": "6ad0cc7fcd9c0e59e9e5d5ff",
+    "id": "6ad0cc7fcd9c0e59e9e5d5ff",
+    "workspaceId": null,
+    "format": "pdf",
+    "status": "completed",
+    "formId": "6ad0c02ccd9c0e59e9e4f67d",
+    "formTitle": null,
+    "filters": {
+     "formId": "6ad0c02ccd9c0e59e9e4f67d"
+    },
+    "errorMessage": null,
+    "fileSize": 4678,
+    "expiresAt": "2026-10-16T12:52:15.605Z",
+    "createdAt": "2026-10-15T12:52:15.606Z",
+    "updatedAt": "2026-10-15T12:52:15.729Z"
+   },
+   {
+    "_id": "6ad0cc65cd9c0e59e9e5d1e9",
+    "id": "6ad0cc65cd9c0e59e9e5d1e9",
+    "workspaceId": null,
+    "format": "csv",
+    "status": "completed",
+    "formId": "6ad0be3ccd9c0e59e9e4ec1d",
+    "formTitle": null,
+    "filters": {
+     "formId": "6ad0be3ccd9c0e59e9e4ec1d"
+    },
+    "errorMessage": null,
+    "fileSize": 3248,
+    "expiresAt": "2026-10-16T12:51:49.142Z",
+    "createdAt": "2026-10-15T12:51:49.143Z",
+    "updatedAt": "2026-10-15T12:51:49.221Z"
+   }
+  ],
+  "reports": [
+   {
+    "_id": "6ad0cfc2cd9c0e59e9e6517f",
+    "id": "6ad0cfc2cd9c0e59e9e6517f",
+    "workspaceId": null,
+    "format": "csv",
+    "status": "completed",
+    "formId": null,
+    "formTitle": "All Workspace Forms",
+    "filters": {
+     "ids": [
+      "6ad0cc7acd9c0e59e9e5d507"
+     ]
+    },
+    "errorMessage": null,
+    "fileSize": 341,
+    "expiresAt": "2026-10-16T13:06:10.898Z",
+    "createdAt": "2026-10-15T13:06:10.899Z",
+    "updatedAt": "2026-10-15T13:06:10.965Z"
+   },
+   {
+    "_id": "6ad0cc7fcd9c0e59e9e5d5ff",
+    "id": "6ad0cc7fcd9c0e59e9e5d5ff",
+    "workspaceId": null,
+    "format": "pdf",
+    "status": "completed",
+    "formId": "6ad0c02ccd9c0e59e9e4f67d",
+    "formTitle": null,
+    "filters": {
+     "formId": "6ad0c02ccd9c0e59e9e4f67d"
+    },
+    "errorMessage": null,
+    "fileSize": 4678,
+    "expiresAt": "2026-10-16T12:52:15.605Z",
+    "createdAt": "2026-10-15T12:52:15.606Z",
+    "updatedAt": "2026-10-15T12:52:15.729Z"
+   },
+   {
+    "_id": "6ad0cc65cd9c0e59e9e5d1e9",
+    "id": "6ad0cc65cd9c0e59e9e5d1e9",
+    "workspaceId": null,
+    "format": "csv",
+    "status": "completed",
+    "formId": "6ad0be3ccd9c0e59e9e4ec1d",
+    "formTitle": null,
+    "filters": {
+     "formId": "6ad0be3ccd9c0e59e9e4ec1d"
+    },
+    "errorMessage": null,
+    "fileSize": 3248,
+    "expiresAt": "2026-10-16T12:51:49.142Z",
+    "createdAt": "2026-10-15T12:51:49.143Z",
+    "updatedAt": "2026-10-15T12:51:49.221Z"
+   }
+  ],
+  "total": 3,
+  "page": 1,
+  "limit": 50,
+  "totalPages": 1
+ }
+}

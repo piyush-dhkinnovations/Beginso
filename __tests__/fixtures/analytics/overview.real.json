@@ -1,0 +1,39 @@
+{
+ "status": 200,
+ "body": {
+  "success": true,
+  "data": {
+   "formId": "6ad1dfc047e851641700db4a",
+   "total": 0,
+   "completed": 0,
+   "in_progress": 0,
+   "new": 0,
+   "completionRate": 0,
+   "reviewedRate": 0,
+   "views": 1,
+   "statusDistribution": [
+    {
+     "status": "completed",
+     "count": 0,
+     "percentage": 0
+    },
+    {
+     "status": "in_progress",
+     "count": 0,
+     "percentage": 0
+    },
+    {
+     "status": "new",
+     "count": 0,
+     "percentage": 0
+    }
+   ],
+   "stageDistribution": [],
+   "dateRange": {
+    "from": null,
+    "to": null,
+    "timezone": "Asia/Kolkata"
+   }
+  }
+ }
+}

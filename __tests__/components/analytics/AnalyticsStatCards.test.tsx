@@ -28,14 +28,15 @@ describe('AnalyticsStatCards', () => {
 
   // Sprint 14 (OQ-3): no counted views -> "—" with its explanation, never 0%.
   it('shows "—" with "Not enough views yet" when the completion rate is null, and a percentage when it is not', () => {
-    const { rerender } = render(<AnalyticsStatCards overview={mockAnalyticsOverview({ completionRate: null })} isLoading={false} />);
-    expect(screen.getByText('Not enough views yet')).toBeInTheDocument();
+    const { rerender } = render(<AnalyticsStatCards overview={mockAnalyticsOverview({ completionRate: null, totalResponses: 128, views: 20 })} isLoading={false} />);
+    // 128 responses but only 20 recorded views: the dash says WHY instead of claiming "not enough views".
+    expect(screen.getByText(/more responses than recorded views/i)).toBeInTheDocument();
     expect(screen.queryByText('0%')).not.toBeInTheDocument();
 
     rerender(<AnalyticsStatCards overview={mockAnalyticsOverview({ completionRate: 42 })} isLoading={false} />);
     // The value and the ring's own label both read 42%.
     expect(screen.getAllByText('42%').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('42% of people who open this form finish it')).toBeInTheDocument();
+    expect(screen.getByText('42% of people who open this form finish it (all time)')).toBeInTheDocument();
   });
 
   it('shows "—" instead of the lifetime rate when the selected range has no responses', () => {

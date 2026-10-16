@@ -30,6 +30,8 @@ interface RawReportJob {
   responseStatus?: ReportJob['responseStatus'];
   from?: string;
   to?: string;
+  // Live shape (captured 16 Oct 2026): the scope a report was created with lives under `filters`, not at the top level.
+  filters?: { status?: ReportJob['responseStatus']; from?: string; to?: string; ids?: string[] } | null;
   createdAt: string;
   completedAt?: string;
   expiresAt?: string;
@@ -44,9 +46,9 @@ function toReportJob(raw: RawReportJob): ReportJob {
     formId: raw.formId,
     formTitle: raw.formTitle,
     stage: raw.stage,
-    responseStatus: raw.responseStatus,
-    from: raw.from,
-    to: raw.to,
+    responseStatus: raw.responseStatus ?? raw.filters?.status,
+    from: raw.from ?? raw.filters?.from,
+    to: raw.to ?? raw.filters?.to,
     createdAt: raw.createdAt,
     completedAt: raw.completedAt,
     expiresAt: raw.expiresAt,

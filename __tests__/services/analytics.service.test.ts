@@ -125,8 +125,8 @@ describe('analyticsService', () => {
     });
     expect(result).toEqual({
       questions: [
-        { fieldId: 'f0', label: 'Attendee Name', options: [] },
-        { fieldId: 'f1', label: 'Ticket Type', options: [{ option: 'VIP', count: 2 }, { option: 'Student', count: 1 }] },
+        { fieldId: 'f0', label: 'Attendee Name', type: 'short_text', totalAnswered: 0, options: [] },
+        { fieldId: 'f1', label: 'Ticket Type', type: 'multiple_choice', totalAnswered: 3, options: [{ option: 'VIP', count: 2, percentage: 67 }, { option: 'Student', count: 1, percentage: 33 }] },
       ],
     });
   });

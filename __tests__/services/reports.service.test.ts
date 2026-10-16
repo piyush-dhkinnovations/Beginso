@@ -133,3 +133,19 @@ describe('reportsService', () => {
     expect(result).toBe('blob:mock-url');
   });
 });
+
+describe('report job scope from the live shape (A7-006)', () => {
+  it('maps filters.status / filters.from / filters.to onto the job', async () => {
+    const { default: axiosInstance } = await import('@/lib/axios');
+    const { reportsService } = await import('@/services/reports');
+    (axiosInstance.get as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      data: {
+        success: true,
+        reports: [{ id: 'r1', format: 'csv', status: 'completed', formId: null, filters: { status: 'completed', from: '2026-10-01T00:00:00.000Z', to: '2026-10-10T23:59:59.999Z' }, createdAt: '2026-10-15T13:06:10.899Z' }],
+        total: 1, page: 1, limit: 20,
+      },
+    });
+    const result = await reportsService.getReports({ page: 1, limit: 20 }, 'personal');
+    expect(result.data[0]).toMatchObject({ responseStatus: 'completed', from: '2026-10-01T00:00:00.000Z', to: '2026-10-10T23:59:59.999Z' });
+  });
+});

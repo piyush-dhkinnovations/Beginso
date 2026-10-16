@@ -130,13 +130,37 @@ describe('QuestionBreakdownSection', () => {
 });
 
 describe('computeOptionPercentages', () => {
-  it('sums to exactly 100 for a non-empty, non-zero breakdown', () => {
+  it('single-choice without totalAnswered: share of the counts', () => {
     const result = computeOptionPercentages([
       { option: 'A', count: 1 },
-      { option: 'B', count: 1 },
-      { option: 'C', count: 1 },
+      { option: 'B', count: 3 },
     ]);
-    expect(result.reduce((sum, o) => sum + o.percentage, 0)).toBe(100);
+    expect(result.map((o) => o.percentage)).toEqual([25, 75]);
+  });
+
+  it('multi-select: share of the people who answered, so the total can exceed 100 (A7-001)', () => {
+    // Two people each ticked all three options: 50 / 50 / 50 would be wrong; each option is 100% of answerers.
+    const result = computeOptionPercentages(
+      [
+        { option: 'A', count: 2 },
+        { option: 'B', count: 2 },
+        { option: 'C', count: 2 },
+      ],
+      2
+    );
+    expect(result.map((o) => o.percentage)).toEqual([100, 100, 100]);
+  });
+
+  it('prefers the API percentage and never normalises it to 100', () => {
+    const result = computeOptionPercentages(
+      [
+        { option: 'A', count: 1, percentage: 50 },
+        { option: 'B', count: 1, percentage: 50 },
+        { option: 'C', count: 1, percentage: 50 },
+      ],
+      2
+    );
+    expect(result.map((o) => o.percentage)).toEqual([50, 50, 50]);
   });
 
   it('returns 0% for every option when all counts are 0', () => {

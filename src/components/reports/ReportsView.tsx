@@ -44,6 +44,7 @@ export function ReportsView({ scope = 'personal', embedded = false }: ReportsVie
   // initial selection on mount (Requirement 9.4), it doesn't keep the form select URL-bound.
   const [formId, setFormId] = useState<string | undefined>(searchParams.get('formId') ?? undefined);
   const [dateRange, setDateRange] = useState<{ from?: string; to?: string }>({});
+  const [status, setStatus] = useState<CreateReportPayload['status']>(undefined);
 
   const { data: formsData } = useQuery({
     queryKey: ['forms', 'list-for-reports', scope],
@@ -71,6 +72,7 @@ export function ReportsView({ scope = 'personal', embedded = false }: ReportsVie
       const optimisticJob: ReportJob = {
         ...job,
         formId: job.formId ?? payload.formId,
+        responseStatus: job.responseStatus ?? payload.status,
         from: job.from ?? payload.from,
         to: job.to ?? payload.to,
       };
@@ -86,6 +88,7 @@ export function ReportsView({ scope = 'personal', embedded = false }: ReportsVie
     createReportMutation.mutate({
       format,
       formId,
+      status,
       from: dateRange.from,
       to: dateRange.to,
     });
@@ -136,7 +139,21 @@ export function ReportsView({ scope = 'personal', embedded = false }: ReportsVie
       <div className="flex flex-wrap items-center gap-3">
         <DateRangeFilter part="presets" value={dateRange} onChange={setDateRange} />
         {embedded && <DateRangeFilter part="range" value={dateRange} onChange={setDateRange} />}
-        <div className="ml-auto w-52">
+        <div className="ml-auto flex flex-wrap gap-3">
+          <div className="w-44">
+            <Select
+              id="reports-status"
+              aria-label="Status"
+              value={status ?? 'all'}
+              onChange={(e) => setStatus(e.target.value === 'all' ? undefined : (e.target.value as CreateReportPayload['status']))}
+            >
+              <option value="all">All statuses</option>
+              <option value="new">New</option>
+              <option value="in_progress">In progress</option>
+              <option value="completed">Completed</option>
+            </Select>
+          </div>
+          <div className="w-52">
           <Select
             id="reports-form"
             aria-label="Form"
@@ -148,6 +165,7 @@ export function ReportsView({ scope = 'personal', embedded = false }: ReportsVie
               <option key={f._id} value={f._id}>{f.title}</option>
             ))}
           </Select>
+          </div>
         </div>
       </div>
 

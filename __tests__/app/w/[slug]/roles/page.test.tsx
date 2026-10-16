@@ -22,6 +22,11 @@ describe('RolesPage (/w/[slug]/roles)', () => {
     );
   });
 
+  it('says Editors can see Activity and the member list (A9-009)', () => {
+    render(<RolesPage />);
+    expect(screen.getByText(/Editors can also see the workspace Activity feed and the member list/)).toBeInTheDocument();
+  });
+
   // design.md §5/§21 — the matrix is static data; this page must never show a loading state.
   it('never shows a loading state — there is no useQuery on this page', () => {
     render(<RolesPage />);
