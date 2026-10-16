@@ -25,10 +25,6 @@ import { StatusDropdown } from './StatusDropdown';
 import { UploadedFilesPreview } from './UploadedFilesPreview';
 import { responsesService } from '@/services/responses';
 import { formsService } from '@/services/forms';
-<<<<<<< Updated upstream
-import { responseKeys } from '@/lib/queryKeys';
-import { detectRespondentIdentity, shortId } from '@/lib/formatters';
-=======
 import { tagsService } from '@/services/tags';
 import { reportsService } from '@/services/reports';
 import { useInboxMutations } from '@/hooks/useInboxMutations';
@@ -40,7 +36,6 @@ import { detectRespondentIdentity, initialsOf, shortId } from '@/lib/formatters'
 import { exportPayloadFromTarget } from '@/lib/reportExport';
 import { buildAnswerItems, isTopImage } from '@/lib/responseAnswers';
 import { hasCapability } from '@/lib/roles';
->>>>>>> Stashed changes
 import { cn } from '@/lib/utils';
 import type { PaginatedResponsesResult, ResponseDetail } from '@/types/response';
 import type { StageRef } from '@/types/stage';
@@ -293,15 +288,11 @@ export function ResponseDrawer({
 
   const identity = response ? detectRespondentIdentity(response.answers, responseForm?.fields) : {};
   const hasIdentity = !!(identity.label || identity.email);
-<<<<<<< Updated upstream
-  const initial = (identity.label ?? identity.email ?? '?').charAt(0).toUpperCase();
-=======
   const initial = initialsOf(identity.label ?? identity.email).charAt(0) || '?';
   // A failed/absent form lookup falls back to plain label → value rows rather than blocking the answers.
   const answerItems = response ? buildAnswerItems(response.answers, response.responseFiles, responseForm?.fields, responseForm?.pages, fileFieldLabels) : [];
   const topImages = answerItems.filter(isTopImage);
   const otherAnswers = answerItems.filter((item) => !isTopImage(item));
->>>>>>> Stashed changes
 
   return (
     <div

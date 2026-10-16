@@ -88,8 +88,6 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-<<<<<<< Updated upstream
-=======
       // Static art in /public served with max-age=0 was revalidated on every page load (QA A11-008).
       ...["/favicon.svg", "/avatars/:path*"].map((source) => ({
         source,
@@ -97,7 +95,6 @@ const nextConfig: NextConfig = {
       })),
       // Sprint 13 (A5.4): a signed-link URL must never leak through a referrer.
       { source: "/r/:path*", headers: [...securityHeaders.filter((h) => h.key !== "Referrer-Policy"), { key: "Referrer-Policy", value: "no-referrer" }] },
->>>>>>> Stashed changes
       { source: "/dev/ui/frame", headers: framePreviewHeaders },
       { source: "/((?!dev/ui/frame$).*)", headers: securityHeaders },
     ];

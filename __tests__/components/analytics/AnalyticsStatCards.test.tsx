@@ -25,9 +25,6 @@ describe('AnalyticsStatCards', () => {
     expect(screen.getByText('42')).toBeInTheDocument();
   });
 
-<<<<<<< Updated upstream
-  it('renders a zero value in muted text-text-muted (theme-aware, unlike the old static text-neutral-400)', () => {
-=======
   // Sprint 14 (OQ-3): no counted views -> "—" with its explanation, never 0%.
   it('shows "—" with "Not enough views yet" when the completion rate is null, and a percentage when it is not', () => {
     const { rerender } = render(<AnalyticsStatCards overview={mockAnalyticsOverview({ completionRate: null })} isLoading={false} />);
@@ -48,7 +45,6 @@ describe('AnalyticsStatCards', () => {
   });
 
   it('renders a zero value in muted text-(--text-muted) (theme-aware)', () => {
->>>>>>> Stashed changes
     const overview = mockAnalyticsOverview({ totalResponses: 0, categoryCounts: { new: 0, in_progress: 0, completed: 0 } });
     render(<AnalyticsStatCards overview={overview} isLoading={false} />);
 

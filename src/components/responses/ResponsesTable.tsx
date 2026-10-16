@@ -8,12 +8,8 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { Table, type TableColumn } from '@/components/ui/Table';
 import { StageBadge } from './StageBadge';
 import { RespondentCell, TagsCell, AssigneeCell, SubmittedCell } from './ResponseRow';
-<<<<<<< Updated upstream
-import { detectRespondentIdentity, shortId } from '@/lib/formatters';
-=======
 import { detectRespondentIdentity } from '@/lib/formatters';
 import { useFormFieldsMap } from '@/hooks/useFormFields';
->>>>>>> Stashed changes
 import type { IResponse } from '@/types/response';
 
 interface ResponsesTableProps {
@@ -47,8 +43,6 @@ export function ResponsesTable({
 }: ResponsesTableProps) {
   const router = useRouter();
   const allSelected = responses.length > 0 && selectedIds.size === responses.length;
-<<<<<<< Updated upstream
-=======
   // Checkboxes stay hidden until the user asks for them (double-click a row, or "Select" in the row menu) and
   // go away again when the last row is deselected.
   const selecting = selectedIds.size > 0;
@@ -90,7 +84,6 @@ export function ResponsesTable({
     const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId]);
     return id.label ?? id.email ?? 'this respondent';
   };
->>>>>>> Stashed changes
 
   const emptyState = hasActiveFilters ? (
     <EmptyState
@@ -142,17 +135,23 @@ export function ResponsesTable({
         />
       ),
     },
-<<<<<<< Updated upstream
-    { key: 'respondent', header: 'Respondent', render: (r) => <RespondentCell response={r} /> },
-    { key: 'email', header: 'Email', render: (r) => detectRespondentIdentity(r.answers).email ?? '—' },
-=======
+    {
+      key: 'respondent',
+      header: 'Respondent',
+      sortKey: 'respondent',
+      // The real button gives the row its keyboard/screen-reader semantics; a click anywhere else on the row also opens it.
+      render: (r) => (
+        <button type="button" onClick={() => openOrSelect(r)} aria-label={`Open response from ${respondentLabel(r)}`} className="block min-w-0 text-left">
+          <RespondentCell response={r} />
+        </button>
+      ),
+    },
     ...(formNames ? [{
       key: 'form',
       header: 'Form',
       render: (r: IResponse) => <span className="block max-w-48 truncate" title={formNames[r.formId]}>{formNames[r.formId] ?? '—'}</span>,
     }] : []),
     { key: 'email', header: 'Email', render: (r) => detectRespondentIdentity(r.answers, fieldsByForm[r.formId]).email ?? '—' },
->>>>>>> Stashed changes
     { key: 'tags', header: 'Tags', render: (r) => <TagsCell tags={r.tags} /> },
     { key: 'assignee', header: 'Assignee', render: (r) => <AssigneeCell response={r} /> },
     { key: 'stage', header: 'Stage', render: (r) => <StageBadge stage={r.stage} /> },

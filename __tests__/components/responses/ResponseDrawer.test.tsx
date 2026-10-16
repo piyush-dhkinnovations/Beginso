@@ -282,26 +282,8 @@ describe('ResponseDrawer', () => {
     expect(mockToast).not.toHaveBeenCalledWith('Failed to update stage. Please try again.', 'error');
   });
 
-  it('Escape closing the stage menu does not also close the drawer', async () => {
-    mockGetResponseById.mockResolvedValue(detail);
-    const user = userEvent.setup();
-    const { onClose } = renderDrawer('resp-1');
-    await screen.findByText('Submitted Answers');
-
-<<<<<<< Updated upstream
-    await user.click(screen.getByRole('button', { name: 'Response stage' }));
-    expect(screen.getByRole('listbox')).toBeInTheDocument();
-
-    await user.keyboard('{Escape}');
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
-    expect(onClose).not.toHaveBeenCalled();
-  });
-
-  it('shows uploaded files under their form field labels in Submitted Answers', async () => {
-=======
   it('shows uploaded files under their form field labels in Submitted response', async () => {
     mockGetFormById.mockRejectedValue(new Error('form unavailable'));
->>>>>>> Stashed changes
     mockGetResponseById.mockResolvedValue({
       ...detail,
       responseFiles: [

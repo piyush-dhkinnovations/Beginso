@@ -35,8 +35,6 @@ export function AnalyticsStatCards({ overview, isLoading, isError = false, onRet
     { label: 'New', value: overview?.categoryCounts?.new ?? 0, icon: Sparkles },
   ];
 
-<<<<<<< Updated upstream
-=======
   const cardsView = sparse ? cards.map((c) => ({ ...c, chart: undefined, delta: undefined })) : cards;
 
   // Completion rate is views-based (OQ-3) - its delta is a change in points, only when both periods have one.
@@ -52,7 +50,6 @@ export function AnalyticsStatCards({ overview, isLoading, isError = false, onRet
         }
       : undefined;
 
->>>>>>> Stashed changes
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {cards.map((card) => {

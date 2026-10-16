@@ -1,13 +1,10 @@
 import type { Metadata } from 'next';
 import { CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
-<<<<<<< Updated upstream
-=======
 import { redirect } from 'next/navigation';
 import { FileText } from 'lucide-react';
 import { publicFormService } from '@/services/publicForm';
 import { Button } from '@/components/ui/Button';
->>>>>>> Stashed changes
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -18,13 +15,6 @@ export const metadata: Metadata = { title: 'Thank you!' };
 
 export default async function SuccessPage({ params, searchParams }: Props) {
   const { slug } = await params;
-<<<<<<< Updated upstream
-  const { title, message } = await searchParams;
-  const formTitle = title ? decodeURIComponent(title) : null;
-  const successMessage = message
-    ? decodeURIComponent(message)
-    : 'Your response has been submitted successfully.';
-=======
   const { title, message, embed, theme } = await searchParams;
   // PublicFormShell always sets ?title= when it routes here after a real submit. A bare visit (or a made-up slug) must
   // not claim success. ponytail: best-effort, a hand-built URL with a title for a real slug still renders.
@@ -43,7 +33,6 @@ export default async function SuccessPage({ params, searchParams }: Props) {
   const again = carried.size ? `/f/${slug}?${carried.toString()}` : `/f/${slug}`;
   const formTitle = decodeURIComponent(title);
   const successMessage = message ? decodeURIComponent(message) : 'Your response has been submitted successfully.';
->>>>>>> Stashed changes
 
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">

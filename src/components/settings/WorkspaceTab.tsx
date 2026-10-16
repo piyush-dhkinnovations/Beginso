@@ -68,15 +68,10 @@ export function WorkspaceTab({ onDirtyChange }: WorkspaceTabProps) {
     mutationFn: (name: string) => settingsService.updateWorkspace({ name }),
     onSuccess: (updated) => {
       queryClient.invalidateQueries({ queryKey: settingsKeys.workspace() });
-<<<<<<< Updated upstream
-      reset({ name: updated.name });
-      toast('Workspace updated.', 'success');
-=======
       // Show what the server actually stored. Falling back to the typed values hid a backend that dropped them.
       reset({ name: updated.name ?? values.name, description: updated.description ?? '', timezone: updated.timezone ?? 'UTC' });
       flashSaved();
       toast('Workspace settings saved.', 'success');
->>>>>>> Stashed changes
     },
     onError: () => toast('Failed to update workspace. Please try again.', 'error'),
   });

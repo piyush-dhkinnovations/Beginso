@@ -54,19 +54,6 @@ export function Sidebar({ groups, collapsed = false, header, footer, className, 
           {group.items.map((item) => {
             const Icon = item.icon;
             return (
-<<<<<<< Updated upstream
-              <Link
-                key={item.href}
-                href={item.href}
-                className="bg-nav-item"
-                aria-current={item.active ? "page" : undefined}
-                onClick={item.onClick}
-              >
-                {Icon && <Icon className="bg-icon" />}
-                <span className="bg-nav-label">{item.label}</span>
-                {typeof item.count === "number" && <span className="bg-count">{item.count}</span>}
-              </Link>
-=======
               <React.Fragment key={item.href}>
                 <Link
                   href={item.href}
@@ -98,7 +85,6 @@ export function Sidebar({ groups, collapsed = false, header, footer, className, 
                   </div>
                 )}
               </React.Fragment>
->>>>>>> Stashed changes
             );
           })}
         </React.Fragment>

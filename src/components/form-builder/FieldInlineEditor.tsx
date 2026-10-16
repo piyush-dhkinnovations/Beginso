@@ -1,12 +1,7 @@
 'use client';
 
-<<<<<<< Updated upstream
-import React, { useState } from 'react';
-import type { FormField } from '@/types/form';
-=======
 import React, { useEffect, useState } from 'react';
 import type { FormField, ImageAspectRatio, ImagePreviewPosition, ImagePreviewSize, UrlDisplay, UrlPreviewStyle } from '@/types/form';
->>>>>>> Stashed changes
 import { Input } from '@/components/ui/Input';
 import { Switch } from '@/components/ui/Switch';
 import { OptionsEditor } from './OptionsEditor';

@@ -2,11 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-<<<<<<< Updated upstream
-import { Home, FileText, Inbox, Users, History, Shield } from 'lucide-react';
-=======
 import { Home, FileText, Inbox, BarChart3, Users, History, Shield, LayoutTemplate, Trash2, Settings, Download } from 'lucide-react';
->>>>>>> Stashed changes
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { canManageMembers, canViewAudit } from '@/lib/roles';
@@ -57,18 +53,6 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }
   // rendered. Hidden until each page actually ships — re-add the item as each one lands, rather
   // than linking ahead of the page that would make it real. `inbox/` now exists (task 1.9,
   // same-PR rule: the nav item lands with the page, never before).
-<<<<<<< Updated upstream
-  const items = [
-    { label: 'Home', href: base, icon: Home },
-    { label: 'Forms', href: `${base}/forms`, icon: FileText },
-    { label: 'Inbox', href: `${base}/inbox`, icon: Inbox, count: stats?.unread },
-    // Every role — seeing what happened in a workspace you belong to is not manager-only
-    // (sprint-10 requirements.md §7.6). "Audit Log" is the role-gated counterpart (§7.7), failing
-    // closed on an undefined role exactly like "Team".
-    { label: 'Activity', href: `${base}/activity`, icon: History },
-    ...(canManageMembers(role) ? [{ label: 'Team', href: `${base}/team`, icon: Users }] : []),
-    ...(canViewAudit(role) ? [{ label: 'Audit Log', href: `${base}/audit`, icon: Shield }] : []),
-=======
   // A form's own data pages (/forms/:id/inbox|insights) belong to Responses; its other pages light Forms.
   const isFormDataRoute = /^\/forms\/[^/]+\/(inbox|insights)\/?$/.test(pathname);
   const isActive = (href: string) =>
@@ -119,7 +103,6 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }
     { items: primary },
     { label: 'Workspace', items: workspaceItems },
     ...(adminOnly.length > 0 ? [{ label: 'Admin', items: [...adminOnly.slice(0, 2), ...settings, ...adminOnly.slice(2)] }] : []),
->>>>>>> Stashed changes
   ];
 
   return (

@@ -2,12 +2,8 @@
 
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-<<<<<<< Updated upstream
-import { Home, FileText, LayoutTemplate, Table2, PieChart, Download, Settings, Plus, Share2 } from 'lucide-react';
-=======
 import { POLL_MS } from '@/hooks/useUnreadCount';
 import { Home, FileText, LayoutTemplate, Table2, BarChart3, Settings, Plus, Share2, Trash2, ClipboardList, Download } from 'lucide-react';
->>>>>>> Stashed changes
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { useBuilderStore } from '@/store/builderStore';
@@ -74,12 +70,6 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
     }
   };
 
-<<<<<<< Updated upstream
-  const isResponsesActive =
-    pathname.startsWith('/responses') || /^\/forms\/[^/]+\/responses(\/|$)/.test(pathname);
-  const isAnalyticsActive =
-    pathname.startsWith('/analytics') || /^\/forms\/[^/]+\/analytics(\/|$)/.test(pathname);
-=======
   // Blue count on "Shared with me" while someone's share is unseen (cleared when that page is opened).
   const { data: sharedUnread = 0 } = useQuery({
     queryKey: notificationKeys.unreadOfType('personal', 'form_shared'),
@@ -93,7 +83,6 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
   const isFormDataRoute = /^\/forms\/[^/]+\/(inbox|insights)\/?$/.test(pathname);
   const isResponsesActive = isFormDataRoute || /^\/(form-responses|inbox)(\/|$)/.test(pathname);
   const isInsightsActive = /^\/insights(\/|$)/.test(pathname);
->>>>>>> Stashed changes
 
   return (
     <Sidebar
@@ -103,10 +92,6 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
         {
           items: [
             { label: 'Home', href: '/dashboard', icon: Home, active: pathname === '/dashboard', onClick: guard('/dashboard') },
-<<<<<<< Updated upstream
-            { label: 'My Forms', href: '/forms', icon: FileText, active: pathname.startsWith('/forms') && !isInBuilder, onClick: guard('/forms') },
-            { label: 'Shared with me', href: '/shared', icon: Share2, active: pathname.startsWith('/shared'), onClick: guard('/shared') },
-=======
             { label: 'Forms', href: '/forms', icon: FileText, active: pathname.startsWith('/forms') && !isFormDataRoute, onClick: guard('/forms') },
             // Nothing to show until a form exists - hidden rather than left to render an empty state. Still shown
             // while loading (hasForms defaults true) and when deep-linked, so an active page never vanishes from its nav.
@@ -122,7 +107,6 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
           label: 'Library',
           items: [
             { label: 'Shared with me', href: '/shared', icon: Share2, count: sharedUnread > 0 ? sharedUnread : undefined, active: pathname.startsWith('/shared'), onClick: guard('/shared') },
->>>>>>> Stashed changes
             { label: 'Templates', href: '/templates', icon: LayoutTemplate, active: pathname.startsWith('/templates'), onClick: guard('/templates') },
             // Responses/Analytics/Reports have nothing to show until a form exists — hidden
             // rather than left to render their own all-zero/empty state, same reasoning as the
