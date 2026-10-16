@@ -75,7 +75,7 @@ export default function BuilderPageShell() {
 
   const { form, isLoading, formWorkspaceSlug, formsListHref, overviewHref, formRole } = useBuilderForm(id);
 
-  const { saveState, setSaveState, savedAt, handleRetrySave } = useBuilderAutosave();
+  const { saveState, setSaveState, savedAt, saveDetail, handleRetrySave } = useBuilderAutosave();
   useBuilderUndoShortcuts();
 
   const { showPublishModal, setShowPublishModal, handleStatusChange, handlePublishClick, handleChangeSetting, handleFixField, handlePreview } =
@@ -130,6 +130,7 @@ export default function BuilderPageShell() {
             dirty={dirty}
             isSaving={saveState === 'saving'}
             saveFailed={saveState === 'error'}
+            saveDetail={saveDetail}
             savedAt={savedAt}
             onRetrySave={handleRetrySave}
             status={status}

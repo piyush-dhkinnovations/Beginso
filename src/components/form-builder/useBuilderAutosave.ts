@@ -21,10 +21,19 @@ export function saveFormSnapshot(
   });
 }
 
+// The server's own reason for a rejected save ("Option value cannot be empty"), not just "Save failed".
+export function saveErrorDetail(err: unknown): string | null {
+  if (!isAxiosError(err)) return null;
+  const data = err.response?.data as { errors?: { message?: string }[]; message?: string } | undefined;
+  const detail = data?.errors?.find((e) => e?.message)?.message ?? (err.response?.status === 400 ? data?.message : undefined);
+  return detail ?? null;
+}
+
 export function useBuilderAutosave() {
   const { toast } = useToast();
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [saveDetail, setSaveDetail] = useState<string | null>(null);
   const idleTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const formId = useBuilderStore((state) => state.formId);
@@ -58,6 +67,7 @@ export function useBuilderAutosave() {
         await saveFormSnapshot(formId, { fields, formTitle, pages, branding, settings });
         markSaved();
         setSaveState('saved');
+        setSaveDetail(null);
         setSavedAt(new Date());
 
         // Reset save state back to idle after showing success indicator for 2 seconds
@@ -73,6 +83,7 @@ export function useBuilderAutosave() {
         } else {
           console.error('Autosave failed:', err);
         }
+        setSaveDetail(saveErrorDetail(err));
         setSaveState('error');
       }
     }, 2000);
@@ -149,12 +160,15 @@ export function useBuilderAutosave() {
       await saveFormSnapshot(current.formId, current);
       markSaved();
       setSaveState('saved');
+      setSaveDetail(null);
       setSavedAt(new Date());
-    } catch {
+    } catch (err) {
+      const detail = saveErrorDetail(err);
+      setSaveDetail(detail);
       setSaveState('error');
-      toast('Could not save. Please try again.', 'error');
+      toast(detail ? `Could not save: ${detail}` : 'Could not save. Please try again.', 'error');
     }
   }, [markSaved, toast]);
 
-  return { saveState, setSaveState, savedAt, handleRetrySave };
+  return { saveState, setSaveState, savedAt, saveDetail, handleRetrySave };
 }

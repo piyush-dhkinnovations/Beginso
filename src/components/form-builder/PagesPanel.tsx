@@ -164,7 +164,7 @@ export function PageSwitcher({
           ))}
         </div>
       )}
-      <p className="bg-caption text-(--text-muted)">Page structure is edited on a larger screen.</p>
+      <p className="bg-caption text-(--text-muted)">Pages can only be added, renamed or reordered on a larger screen. You can still edit your questions here.</p>
     </div>
   );
 }

@@ -70,6 +70,6 @@ describe('PageSwitcher', () => {
   it('hides the switcher for a single page but still explains structure editing is desktop-only', () => {
     render(<PageSwitcher pages={[pages[0]]} activePageId="p1" onSelectPage={vi.fn()} />);
     expect(screen.queryByRole('group', { name: 'Pages' })).not.toBeInTheDocument();
-    expect(screen.getByText('Page structure is edited on a larger screen.')).toBeInTheDocument();
+    expect(screen.getByText('Pages can only be added, renamed or reordered on a larger screen. You can still edit your questions here.')).toBeInTheDocument();
   });
 });

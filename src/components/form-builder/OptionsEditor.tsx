@@ -28,6 +28,7 @@ function OptionRow({
   row,
   disabled,
   duplicate,
+  empty,
   inputRef,
   onChange,
   onCommit,
@@ -37,6 +38,7 @@ function OptionRow({
   row: Row;
   disabled: boolean;
   duplicate: boolean;
+  empty: boolean;
   inputRef: (el: HTMLInputElement | null) => void;
   onChange: (value: string) => void;
   onCommit: () => void;
@@ -77,9 +79,9 @@ function OptionRow({
             onEnter();
           }
         }}
-        aria-invalid={duplicate || undefined}
-        title={duplicate ? 'Duplicate option' : undefined}
-        className={`flex-1 min-w-0 rounded-md border-2 ${duplicate ? 'border-(--warning-text)' : 'border-(--border-default)'} px-2.5 min-h-11 bg-body-sm bg-(--surface-card) outline-none focus:border-(--border-strong)`}
+        aria-invalid={empty || duplicate || undefined}
+        title={empty ? 'Option cannot be empty' : duplicate ? 'Duplicate option' : undefined}
+        className={`flex-1 min-w-0 rounded-md border-2 ${empty ? 'border-(--error-text)' : duplicate ? 'border-(--warning-text)' : 'border-(--border-default)'} px-2.5 min-h-11 bg-body-sm bg-(--surface-card) outline-none focus:border-(--border-strong)`}
       />
       <button
         type="button"
@@ -129,10 +131,24 @@ export function OptionsEditor({ fieldId, options, onUpdate }: OptionsEditorProps
 
   const commit = (next: Row[]) => {
     setRows(next);
+    // An empty option is rejected by the server (400) and would make every later autosave of the form fail, so it
+    // stays local, flagged inline, until it is filled in or deleted.
+    if (next.some((r) => !r.value.trim())) return;
     const values = next.map((r) => r.value);
     lastCommitted.current = values;
     onUpdate(fieldId, values);
   };
+
+  // Commit shortly after typing stops, not only on blur, so the last-typed option is never lost on a reload or a
+  // hard navigation while the header says "All changes saved".
+  useEffect(() => {
+    const committed = lastCommitted.current;
+    const unchanged = rows.length === committed.length && rows.every((r, i) => r.value === committed[i]);
+    if (unchanged || rows.some((r) => !r.value.trim())) return;
+    const t = setTimeout(() => commit(rows), 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- commit/onUpdate identity changes every render
+  }, [rows]);
 
   const handleAdd = () => {
     const next = [...rows, { id: crypto.randomUUID(), value: `Option ${rows.length + 1}` }];
@@ -158,6 +174,7 @@ export function OptionsEditor({ fieldId, options, onUpdate }: OptionsEditorProps
   const isDuplicate = (i: number) =>
     norm(rows[i].value) !== '' && rows.some((r, j) => j !== i && norm(r.value) === norm(rows[i].value));
   const hasDuplicates = rows.some((_, i) => isDuplicate(i));
+  const hasEmpty = rows.some((r) => !r.value.trim());
 
   return (
     <div className="flex flex-col gap-2">
@@ -170,6 +187,7 @@ export function OptionsEditor({ fieldId, options, onUpdate }: OptionsEditorProps
                 row={row}
                 disabled={rows.length <= 1}
                 duplicate={isDuplicate(index)}
+                empty={!row.value.trim()}
                 inputRef={(el) => {
                   inputRefs.current[index] = el;
                 }}
@@ -184,6 +202,11 @@ export function OptionsEditor({ fieldId, options, onUpdate }: OptionsEditorProps
           </SortableContext>
         </DndContext>
       </div>
+      {hasEmpty && (
+        <p role="alert" className="bg-caption font-semibold text-(--error-text)">
+          An option is empty. Fill it in or delete it; empty options are not saved.
+        </p>
+      )}
       {hasDuplicates && (
         <p role="alert" className="bg-caption font-semibold text-(--warning-text)">
           Some options have the same label. Respondents and reports cannot tell them apart.

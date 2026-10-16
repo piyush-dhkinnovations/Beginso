@@ -256,3 +256,21 @@ describe('FieldInlineEditor: file upload', () => {
     expect(onUpdate).toHaveBeenCalledWith(f.fieldId, { required: true });
   });
 });
+
+describe('FieldInlineEditor: date range', () => {
+  it('flags a reversed range inline and does not save it; a valid range is saved (QA A4-002)', () => {
+    const f = makeField('date', { minDate: '2026-01-01' });
+    const { onUpdate } = setup(f);
+    fireEvent.change(screen.getByLabelText('To'), { target: { value: '2026-06-30' } });
+    expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { maxDate: '2026-06-30' });
+
+    onUpdate.mockClear();
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: '2026-12-31' } }); // after To
+    expect(onUpdate).not.toHaveBeenCalled();
+    expect(screen.getByText('From cannot be after To. This range is not saved.')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('From'), { target: { value: '2026-02-01' } });
+    expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { minDate: '2026-02-01' });
+    expect(screen.queryByText(/This range is not saved/)).not.toBeInTheDocument();
+  });
+});

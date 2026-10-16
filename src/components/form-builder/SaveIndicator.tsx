@@ -10,13 +10,15 @@ export interface SaveIndicatorProps {
   dirty: boolean;
   saving: boolean;
   error: boolean;
+  /** Why the save failed, when the server said. */
+  detail?: string | null;
   savedAt: Date | null;
   onRetry: () => void;
 }
 
 type Label = 'error' | 'saving' | 'unsaved' | 'saved';
 
-export function SaveIndicator({ dirty, saving, error, savedAt, onRetry }: SaveIndicatorProps) {
+export function SaveIndicator({ dirty, saving, error, detail, savedAt, onRetry }: SaveIndicatorProps) {
   const label: Label = saving ? 'saving' : error ? 'error' : dirty ? 'unsaved' : 'saved';
 
   // Announce once the label has been stable for 500 ms (design.md §18) — not on every keystroke,
@@ -28,7 +30,7 @@ export function SaveIndicator({ dirty, saving, error, savedAt, onRetry }: SaveIn
   }, [label]);
 
   const text: Record<Label, string> = {
-    error: 'Save failed',
+    error: detail ? `Save failed: ${detail}` : 'Save failed',
     saving: 'Saving…',
     unsaved: 'Unsaved changes',
     saved: 'All changes saved',
@@ -43,7 +45,7 @@ export function SaveIndicator({ dirty, saving, error, savedAt, onRetry }: SaveIn
           </span>
         ) : label === 'error' ? (
           <span className="inline-flex items-center gap-1.5 text-(--error-text) font-medium">
-            <CloudAlert size={14} /> {text.error}
+            <CloudAlert size={14} /> <span className="max-w-64 truncate" title={text.error}>{text.error}</span>
           </span>
         ) : label === 'unsaved' ? (
           <span className="inline-flex items-center gap-1.5 text-(--warning-text) font-medium">
