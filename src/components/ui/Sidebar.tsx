@@ -61,6 +61,8 @@ export function Sidebar({ groups, collapsed = false, header, footer, className, 
                 <Link
                   href={item.href}
                   className="bg-nav-item"
+                  // The rail hides the label text, so the link would have no name or tooltip at all.
+                  {...(collapsed ? { title: item.label, "aria-label": item.label } : {})}
                   aria-current={item.active ? "page" : undefined}
                   onClick={item.onClick}
                 >

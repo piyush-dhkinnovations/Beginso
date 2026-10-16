@@ -1,5 +1,6 @@
 import type { ResponseAnswers } from '@/types/response';
 import type { ApproxLocation } from '@/types/settings';
+import type { FormField } from '@/types/form';
 
 // `{}` for an unresolved IP (private/local ranges, lookup failure) is indistinguishable from a
 // resolved-but-sparse location without checking every field — join whatever city/region/country
@@ -103,15 +104,42 @@ export interface RespondentIdentity {
   email?: string;
 }
 
+const str = (v: unknown): string | undefined => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
+const FULL_NAME_RE = /^(your |full |respondent |contact )?name\b/i;
+
 /**
- * Best-effort guess at "who submitted this" from a form's arbitrary answers — there is no
- * guaranteed name/email field, so this never throws and returns {} when nothing looks usable.
+ * Who submitted this response. The name comes ONLY from a name-labelled short-text field ("Full name",
+ * "Name", or "First name" + "Last name"); the email from an email field, or any email-shaped answer.
+ * An arbitrary answer ("Meeting", "No") is never a person. Without `fields` (still loading, or the
+ * lookup failed) no name is guessed; callers render "Anonymous".
  */
-export function detectRespondentIdentity(answers: ResponseAnswers): RespondentIdentity {
-  const values = Object.values(answers).filter(
-    (v): v is string => typeof v === 'string' && v.trim().length > 0
-  );
-  const email = values.find((v) => EMAIL_RE.test(v));
-  const label = values.find((v) => v !== email && v.trim().length <= 60);
-  return { label: label?.trim(), email: email?.match(EMAIL_RE)?.[0] };
+export function detectRespondentIdentity(answers: ResponseAnswers, fields?: FormField[]): RespondentIdentity {
+  const live = (fields ?? []).filter((f) => !f.deleted);
+  const answer = (f?: FormField) => (f ? str(answers[f.fieldId]) : undefined);
+  const emailField = live.find((f) => f.type === 'email' && answer(f));
+  const email = answer(emailField) ?? Object.values(answers).map(str).find((v) => v && EMAIL_RE.test(v));
+
+  const textFields = live.filter((f) => f.type === 'short_text' && answer(f));
+  const full = textFields.find((f) => FULL_NAME_RE.test(f.label.trim()));
+  const first = textFields.find((f) => /^first name\b/i.test(f.label.trim()));
+  const last = textFields.find((f) => /^(last|family) name\b/i.test(f.label.trim()));
+  const label = (answer(full) ?? [answer(first), answer(last)].filter(Boolean).join(' ')) || undefined;
+
+  return { label: label?.slice(0, 60), email: email?.match(EMAIL_RE)?.[0] };
+}
+
+/**
+ * Up to two initials (first and last word) for an avatar. Works on code points, so an emoji is never split
+ * into a broken surrogate; markup and symbols are ignored. Returns '' when there is no letter at all, so the
+ * caller can show a neutral icon.
+ */
+export function initialsOf(name?: string): string {
+  const letters = (name ?? '')
+    .replace(/<[^>]*>/g, ' ')
+    .split(/\s+/)
+    .map((word) => Array.from(word).find((ch) => /\p{L}/u.test(ch)))
+    .filter((ch): ch is string => !!ch);
+  if (letters.length === 0) return '';
+  const pair = letters.length > 1 ? letters[0] + letters[letters.length - 1] : letters[0];
+  return pair.toLocaleUpperCase();
 }

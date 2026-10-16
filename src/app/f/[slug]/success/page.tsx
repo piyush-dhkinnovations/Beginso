@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { FileText } from 'lucide-react';
 import { publicFormService } from '@/services/publicForm';
-import { FormUnavailable } from '@/components/public-form/FormUnavailable';
 import { Button } from '@/components/ui/Button';
 
 interface Props {
@@ -31,7 +30,9 @@ export default async function SuccessPage({ params, searchParams }: Props) {
   // not claim success. ponytail: best-effort, a hand-built URL with a title for a real slug still renders.
   if (!title) redirect(`/f/${slug}`);
   const lookup = await publicFormService.getFormSchema(slug).then((r) => r, () => ({ schema: undefined, userNote: undefined }));
-  if (lookup.schema === null && !lookup.userNote) return <FormUnavailable notFound />;
+  // The schema is only used to tint the check. A form that stopped accepting responses the moment this one was
+  // saved (response limit reached, closed mid-fill) has no public schema anymore, but the submit DID succeed, so
+  // never replace the thank-you with "Form not found"; just fall back to the default tint.
   // The form's own colour tints the check, so the thank-you feels like part of the form that was just filled in.
   const brand = lookup.schema?.branding?.primaryColor;
   const tint = brand && HEX.test(brand) ? brand : '#1d4ed8';

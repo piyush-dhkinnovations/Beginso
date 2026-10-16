@@ -12,6 +12,7 @@ import { fetchAllResponses } from '@/lib/fetchAllResponses';
 import { monthFetchRange, monthGridKeys, localDateKey } from '@/lib/calendarDates';
 import { responseKeys } from '@/lib/queryKeys';
 import { detectRespondentIdentity } from '@/lib/formatters';
+import { useFormFields } from '@/hooks/useFormFields';
 import { bx } from '@/lib/utils';
 import type { ResponseFilters, IResponse } from '@/types/response';
 
@@ -31,11 +32,16 @@ export interface ResponsesCalendarProps {
   initialDate?: Date;
 }
 
+function CalendarCellLabel({ response }: { response: IResponse }) {
+  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId));
+  return <span className="w-full truncate bg-caption text-(--text-primary)">{identity.label ?? identity.email ?? 'Response'}</span>;
+}
+
 /** One response's identity + full signal set — reused by both the mobile agenda list and the
  * "+N" day-overflow modal so they can't independently drift on what a calendar item shows
  * (requirements.md §7.4: "every view carries the same signals"). */
 export function CalendarItemRow({ response, onSelect }: { response: IResponse; onSelect: (id: string) => void }) {
-  const identity = detectRespondentIdentity(response.answers);
+  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId));
   const name = identity.label ?? identity.email ?? 'Anonymous';
   return (
     <button
@@ -203,9 +209,7 @@ export function ResponsesCalendar({ scope, formId, filters, timezone, onViewResp
                 >
                   <span className="bg-caption text-(--text-muted)">{dayNum}</span>
                   {items.slice(0, MAX_VISIBLE_PER_DAY).map((r) => (
-                    <span key={r._id} className="w-full truncate bg-caption text-(--text-primary)">
-                      {detectRespondentIdentity(r.answers).label ?? detectRespondentIdentity(r.answers).email ?? 'Response'}
-                    </span>
+                    <CalendarCellLabel key={r._id} response={r} />
                   ))}
                   {items.length > MAX_VISIBLE_PER_DAY && (
                     <span className="bg-caption text-(--text-link)">+{items.length - MAX_VISIBLE_PER_DAY}</span>

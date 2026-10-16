@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Home, FileText, Inbox, Users, History, Shield, LayoutTemplate, Trash2, Settings, Download } from 'lucide-react';
+import { Home, FileText, Inbox, BarChart3, Users, History, Shield, LayoutTemplate, Trash2, Settings, Download } from 'lucide-react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown';
@@ -80,7 +80,7 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role, 
         ? !isFormDataRoute
         : pathname.startsWith(href)
       : href === `${base}/form-responses`
-        ? isFormDataRoute || new RegExp(`^${base}/(form-responses|inbox|insights)(/|$)`).test(pathname)
+        ? isFormDataRoute || new RegExp(`^${base}/(form-responses|inbox)(/|$)`).test(pathname)
         : href === base
           ? pathname === base
           : pathname.startsWith(href);
@@ -95,6 +95,7 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role, 
     toItem({ label: 'Home', href: base, icon: Home }),
     toItem({ label: 'Forms', href: `${base}/forms`, icon: FileText }),
     toItem({ label: 'Responses', href: `${base}/form-responses`, icon: Inbox, count: stats?.unread }),
+    toItem({ label: 'Insights', href: `${base}/insights`, icon: BarChart3 }),
   ];
 
   // Settings is visible to every role (members reach their own notification setting there; the page only lists

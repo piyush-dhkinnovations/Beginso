@@ -33,7 +33,7 @@ import { useMembers } from '@/hooks/useMembers';
 import { useTags } from '@/hooks/useTags';
 import { useAuth } from '@/hooks/useAuth';
 import { formAccessKeys, noteKeys, responseKeys, workspaceKeys } from '@/lib/queryKeys';
-import { detectRespondentIdentity, shortId } from '@/lib/formatters';
+import { detectRespondentIdentity, initialsOf, shortId } from '@/lib/formatters';
 import { exportPayloadFromTarget } from '@/lib/reportExport';
 import { buildAnswerItems, isTopImage } from '@/lib/responseAnswers';
 import { hasCapability } from '@/lib/roles';
@@ -317,9 +317,9 @@ export function ResponseDrawer({
 
   if (!responseId) return null;
 
-  const identity = response ? detectRespondentIdentity(response.answers) : {};
+  const identity = response ? detectRespondentIdentity(response.answers, responseForm?.fields) : {};
   const hasIdentity = !!(identity.label || identity.email);
-  const initial = (identity.label ?? identity.email ?? '?').charAt(0).toUpperCase();
+  const initial = initialsOf(identity.label ?? identity.email).charAt(0) || '?';
   // A failed/absent form lookup falls back to plain label → value rows rather than blocking the answers.
   const answerItems = response ? buildAnswerItems(response.answers, response.responseFiles, responseForm?.fields, responseForm?.pages, fileFieldLabels) : [];
   const topImages = answerItems.filter(isTopImage);

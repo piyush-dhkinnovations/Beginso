@@ -1,6 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, within } from '@testing-library/react';
 
+// Respondent names come from the form's field definitions (not from guessing at answers), so the
+// field lookup is stubbed with a name and an email field matching the fixtures' answer keys.
+vi.mock('@/hooks/useFormFields', () => {
+  const fields = [
+    { fieldId: 'Name', type: 'short_text', label: 'Full name', required: false, deleted: false },
+    { fieldId: 'Email', type: 'email', label: 'Email', required: false, deleted: false },
+  ];
+  return { useFormFields: () => fields, useFormFieldsMap: () => ({ 'form-1': fields, f1: fields }) };
+});
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
