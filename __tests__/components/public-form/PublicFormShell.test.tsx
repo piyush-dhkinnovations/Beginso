@@ -414,3 +414,119 @@ describe('PublicFormShell layouts', () => {
     expect(screen.getByRole('heading', { level: 1 }).className).toContain('sr-only');
   });
 });
+
+describe('PublicFormShell: the form stops accepting responses while it is being filled in (QA A5-003)', () => {
+  async function submitWith(result: unknown) {
+    svc.submitForm.mockResolvedValue(result);
+    render(<PublicFormShell schema={schema()} slug="s" />);
+    await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+  }
+
+  it.each([
+    [{ ok: false, status: 410, code: 'FORM_CLOSED' }, /form was closed while you were filling it in/],
+    [{ ok: false, status: 410, code: 'FORM_CLOSE_DATE_PASSED' }, /closing date passed while you were filling it in/],
+    [{ ok: false, status: 410, code: 'FORM_RESPONSE_LIMIT_REACHED' }, /reached its response limit while you were filling it in/],
+    [{ ok: false, status: 410 }, /form was closed while you were filling it in/],
+    [{ ok: false, status: 403, message: 'Form is closed' }, /form was closed while you were filling it in/],
+    [{ ok: false, status: 404 }, /no longer available/],
+  ])('maps %j to its own message, never "Something went wrong"', async (result, message) => {
+    await submitWith(result);
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(message);
+    expect(alert).not.toHaveTextContent(/Something went wrong/);
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it('keeps what the respondent typed, so nothing is lost', async () => {
+    await submitWith({ ok: false, status: 410, code: 'FORM_CLOSED' });
+    await screen.findByRole('alert');
+    expect(screen.getByLabelText(/Name/)).toHaveValue('Asha');
+  });
+
+  it('a login-mode form that closed fails at the sign-in ticket first: the closed message, not "sign in again"', async () => {
+    mockAuth.mockReturnValue({ user: { email: 'me@x.co' }, isLoading: false });
+    svc.getSubmitTicket.mockRejectedValue({ response: { status: 410, data: { error: { code: 'FORM_CLOSED' } } } });
+    render(<PublicFormShell schema={schema({ settings: { accessMode: 'login' } as PublicFormSchema['settings'] })} slug="s" />);
+    await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/form was closed while you were filling it in/);
+    expect(alert).not.toHaveTextContent(/sign-in/);
+    expect(svc.submitForm).not.toHaveBeenCalled();
+  });
+
+  it('a bare 403 that does not say closed is not guessed to be closed', async () => {
+    await submitWith({ ok: false, status: 403, message: 'Forbidden' });
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Something went wrong/);
+  });
+
+  it('a 200 that could not be confirmed is not shown as a Thank-you', async () => {
+    await submitWith({ ok: false, status: 200, code: 'UNCONFIRMED' });
+    expect(await screen.findByRole('alert')).toHaveTextContent(/could not confirm that your response was received/);
+    expect(push).not.toHaveBeenCalled();
+  });
+});
+
+describe('PublicFormShell: field errors are shown, announced and focused (QA A5-004, A5-005)', () => {
+  it('marks the invalid input, ties it to its message, and moves focus to it', async () => {
+    render(<PublicFormShell schema={schema()} slug="s" />);
+    const input = screen.getByLabelText(/Name/);
+    expect(input).not.toHaveAttribute('aria-invalid');
+
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    const message = await screen.findByText('This field is required');
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+    expect(input).toHaveAttribute('aria-describedby', message.closest('[id]')!.id);
+    await waitFor(() => expect(input).toHaveFocus());
+  });
+
+  it('clears the invalid marking once the answer is fixed', async () => {
+    render(<PublicFormShell schema={schema()} slug="s" />);
+    const input = screen.getByLabelText(/Name/);
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    await waitFor(() => expect(input).toHaveAttribute('aria-invalid', 'true'));
+    await userEvent.type(input, 'Asha');
+    await waitFor(() => expect(input).not.toHaveAttribute('aria-invalid'));
+    expect(input).not.toHaveAttribute('aria-describedby');
+  });
+
+  it('on a multi-page form, Next with an empty required answer focuses that answer, not the Next button', async () => {
+    render(<PublicFormShell schema={twoPage()} slug="s" />);
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    const first = await screen.findByLabelText(/First/);
+    await waitFor(() => expect(first).toHaveFocus());
+    expect(first).toHaveAttribute('aria-invalid', 'true');
+  });
+
+  it('puts a server 422 message on its own field (matched by label) and focuses it', async () => {
+    svc.submitForm.mockResolvedValue({
+      ok: false,
+      status: 422,
+      message: 'Validation failed',
+      fieldErrors: [{ field: 'Name', message: 'Field "Name" must be at least 3 characters.' }],
+    });
+    render(<PublicFormShell schema={schema()} slug="s" />);
+    const input = screen.getByLabelText(/Name/);
+    await userEvent.type(input, 'Al');
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+
+    expect(await screen.findByText('Field "Name" must be at least 3 characters.')).toBeInTheDocument();
+    expect(input).toHaveAttribute('aria-invalid', 'true');
+    await waitFor(() => expect(input).toHaveFocus());
+    expect(screen.getByRole('button', { name: 'Submit' })).toBeEnabled();
+  });
+
+  it('falls back to the server message when a 422 names a field that is not on the form', async () => {
+    svc.submitForm.mockResolvedValue({
+      ok: false,
+      status: 422,
+      message: 'Phone is invalid',
+      fieldErrors: [{ field: 'A field that was renamed', message: 'Field is bad.' }],
+    });
+    render(<PublicFormShell schema={schema()} slug="s" />);
+    await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Phone is invalid/);
+  });
+});

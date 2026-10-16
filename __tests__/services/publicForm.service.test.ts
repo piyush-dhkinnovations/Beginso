@@ -137,4 +137,55 @@ describe('publicFormService', () => {
       expect(result).toEqual({ ok: false, status: 500, message: undefined });
     });
   });
+
+  describe('unavailable reasons and unconfirmed responses (QA A5-001, A5-004)', () => {
+    const mockFetch = (res: Record<string, unknown>) => (fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce(res);
+
+    it.each([
+      ['FORM_CLOSED', 'closed'],
+      ['FORM_CLOSE_DATE_PASSED', 'closeDate'],
+      ['FORM_RESPONSE_LIMIT_REACHED', 'limit'],
+    ])('a 410 with %s resolves to the %s reason, with no schema', async (code, reason) => {
+      mockFetch({ status: 410, ok: false, json: () => Promise.resolve({ error: { code } }) });
+      expect(await publicFormService.getFormSchema('abc')).toEqual({ schema: null, unavailable: reason });
+    });
+
+    it('a 410 with an unknown or missing code still means closed', async () => {
+      mockFetch({ status: 410, ok: false, json: () => Promise.reject(new Error('no body')) });
+      expect(await publicFormService.getFormSchema('abc')).toEqual({ schema: null, unavailable: 'closed' });
+    });
+
+    it('a 404 carries no reason: draft, archived and unknown links stay indistinguishable', async () => {
+      mockFetch({ status: 404, ok: false, json: () => Promise.reject(new Error('no body')) });
+      const r = await publicFormService.getFormSchema('abc');
+      expect(r.schema).toBeNull();
+      expect(r.unavailable).toBeUndefined();
+    });
+
+    const submit = () => publicFormService.submitForm('abc', { answers: [] } as unknown as SubmissionData, {});
+
+    it('a submit to a form that closed answers with its reason code', async () => {
+      mockFetch({ status: 410, ok: false, json: () => Promise.resolve({ message: 'closed', error: { code: 'FORM_CLOSED', message: 'closed' } }) });
+      expect(await submit()).toMatchObject({ ok: false, status: 410, code: 'FORM_CLOSED' });
+    });
+
+    it('passes the server field errors through, naming each field by label', async () => {
+      mockFetch({
+        status: 422,
+        ok: false,
+        json: () => Promise.resolve({ message: 'Validation failed', errors: [{ field: 'Phone', message: 'Field "Phone" is bad.' }, { nope: 1 }] }),
+      });
+      expect((await submit()).fieldErrors).toEqual([{ field: 'Phone', message: 'Field "Phone" is bad.' }]);
+    });
+
+    it('a 200 that is an HTML page is not treated as a stored response', async () => {
+      mockFetch({ status: 200, ok: true, headers: new Headers({ 'content-type': 'text/html; charset=utf-8' }), json: () => Promise.reject(new Error('html')) });
+      expect(await submit()).toEqual({ ok: false, status: 200, code: 'UNCONFIRMED' });
+    });
+
+    it('a normal JSON 200 is still success', async () => {
+      mockFetch({ status: 200, ok: true, headers: new Headers({ 'content-type': 'application/json' }), json: () => Promise.resolve({ success: true }) });
+      expect(await submit()).toMatchObject({ ok: true, status: 200 });
+    });
+  });
 });
