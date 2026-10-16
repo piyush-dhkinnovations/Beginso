@@ -54,6 +54,7 @@ export function Sidebar({ groups, collapsed = false, header, footer, className, 
           {group.items.map((item) => {
             const Icon = item.icon;
             return (
+<<<<<<< Updated upstream
               <Link
                 key={item.href}
                 href={item.href}
@@ -65,6 +66,39 @@ export function Sidebar({ groups, collapsed = false, header, footer, className, 
                 <span className="bg-nav-label">{item.label}</span>
                 {typeof item.count === "number" && <span className="bg-count">{item.count}</span>}
               </Link>
+=======
+              <React.Fragment key={item.href}>
+                <Link
+                  href={item.href}
+                  className="bg-nav-item"
+                  // The rail hides the label text, so the link would have no name or tooltip at all.
+                  {...(collapsed ? { title: item.label, "aria-label": item.label } : {})}
+                  aria-current={item.active ? "page" : undefined}
+                  onClick={item.onClick}
+                >
+                  {Icon && <Icon className="bg-icon" />}
+                  <span className="bg-nav-label">{item.label}</span>
+                  {typeof item.count === "number" && <span className="bg-count">{item.count}</span>}
+                </Link>
+                {!collapsed && !!item.subItems?.length && (
+                  // Guide line sits under the parent's icon centre (12px padding + 9px) so the list reads as nested under it.
+                  <div className="ml-5.25 mr-1 mt-0.5 mb-1.5 flex flex-col gap-1 border-l border-(--border-default) pl-3">
+                    {item.subItems.map((sub) => (
+                      <Link
+                        key={sub.href}
+                        href={sub.href}
+                        title={sub.label}
+                        aria-current={sub.active ? "page" : undefined}
+                        onClick={sub.onClick}
+                        className="block truncate rounded-md px-3 py-1.5 text-[13px] leading-5 font-medium text-(--text-secondary) hover:bg-(--surface-hover) hover:text-(--text-primary) aria-[current=page]:bg-(--surface-hover) aria-[current=page]:font-semibold aria-[current=page]:text-(--text-primary)"
+                      >
+                        {sub.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </React.Fragment>
+>>>>>>> Stashed changes
             );
           })}
         </React.Fragment>

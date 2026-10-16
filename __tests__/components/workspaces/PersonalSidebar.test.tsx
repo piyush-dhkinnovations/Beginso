@@ -135,9 +135,16 @@ describe('PersonalSidebar', () => {
   it('keeps Responses visible once forms exist', async () => {
     mockGetForms.mockResolvedValue({ forms: [{ _id: 'f1' }], total: 3, page: 1, limit: 1 });
     renderSidebar();
+<<<<<<< Updated upstream
     expect(await screen.findByText('Reports')).toBeInTheDocument();
     expect(screen.getByText('Analytics')).toBeInTheDocument();
     expect(screen.getByText('Responses')).toBeInTheDocument();
+=======
+    expect(await screen.findByText('Responses')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Insights' })).toHaveAttribute('href', '/insights');
+    // Sprint 14: Reports is the Exports tab inside Analytics, not a sidebar item, even with forms.
+    expect(screen.queryByText('Reports')).not.toBeInTheDocument();
+>>>>>>> Stashed changes
   });
 
   it('trusts the filtered forms count over analytics when they disagree — the real bug: a brand-new invited user\'s analytics.totalForms leaked a workspace form, so the sidebar kept showing Responses/Analytics/Reports for an account with zero real personal forms', async () => {
@@ -154,6 +161,14 @@ describe('PersonalSidebar', () => {
     expect(screen.queryByText('Responses')).not.toBeInTheDocument();
     expect(screen.queryByText('Analytics')).not.toBeInTheDocument();
     expect(screen.queryByText('Reports')).not.toBeInTheDocument();
+  });
+
+  it('lights Insights, not Responses, on /insights', async () => {
+    mockPathname.mockReturnValue('/insights');
+    renderSidebar();
+    await screen.findByText('Forms');
+    expect(screen.getByRole('link', { name: 'Insights' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByRole('link', { name: /^Responses$/ })?.getAttribute('aria-current') ?? null).toBeNull();
   });
 
   it('keeps Responses visible when already deep-linked onto it, even with zero forms', async () => {

@@ -2,7 +2,12 @@ import { Avatar } from '@/components/ui/Avatar';
 import { Tag } from '@/components/ui/Tag';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { MessageSquare, Paperclip } from 'lucide-react';
+<<<<<<< Updated upstream
 import { formatResponseDate, buildAnswerPreview, detectRespondentIdentity, shortId } from '@/lib/formatters';
+=======
+import { formatResponseDate, detectRespondentIdentity } from '@/lib/formatters';
+import { useFormFields } from '@/hooks/useFormFields';
+>>>>>>> Stashed changes
 import type { IResponse, ResponseTag } from '@/types/response';
 
 /**
@@ -13,7 +18,7 @@ import type { IResponse, ResponseTag } from '@/types/response';
  */
 
 export function RespondentCell({ response }: { response: IResponse }) {
-  const identity = detectRespondentIdentity(response.answers);
+  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId));
   const name = identity.label ?? identity.email ?? 'Anonymous';
   const reference = response.reference ?? `#${shortId(response._id)}`;
   const noteCount = response.noteCount ?? 0;

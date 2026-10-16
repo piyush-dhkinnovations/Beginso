@@ -10,6 +10,17 @@ import { render, screen } from '@testing-library/react';
 import { RespondentCell, TagsCell, AssigneeCell, SubmittedCell } from '@/components/responses/ResponseRow';
 import type { IResponse, ResponseTag } from '@/types/response';
 
+// Respondent names come from the form's field definitions (not from guessing at answers), so the
+// field lookup is stubbed with a name and an email field matching the fixtures' answer keys.
+vi.mock('@/hooks/useFormFields', () => {
+  const fields = [
+    { fieldId: 'Name', type: 'short_text', label: 'Full name', required: false, deleted: false },
+    { fieldId: 'Email', type: 'email', label: 'Email', required: false, deleted: false },
+  ];
+  return { useFormFields: () => fields, useFormFieldsMap: () => ({ 'form-1': fields, f1: fields }) };
+});
+
+
 const response: IResponse = {
   _id: 'resp-1',
   formId: 'form-1',

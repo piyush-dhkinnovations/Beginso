@@ -8,7 +8,12 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { Table, type TableColumn } from '@/components/ui/Table';
 import { StageBadge } from './StageBadge';
 import { RespondentCell, TagsCell, AssigneeCell, SubmittedCell } from './ResponseRow';
+<<<<<<< Updated upstream
 import { detectRespondentIdentity, shortId } from '@/lib/formatters';
+=======
+import { detectRespondentIdentity } from '@/lib/formatters';
+import { useFormFieldsMap } from '@/hooks/useFormFields';
+>>>>>>> Stashed changes
 import type { IResponse } from '@/types/response';
 
 interface ResponsesTableProps {
@@ -42,6 +47,50 @@ export function ResponsesTable({
 }: ResponsesTableProps) {
   const router = useRouter();
   const allSelected = responses.length > 0 && selectedIds.size === responses.length;
+<<<<<<< Updated upstream
+=======
+  // Checkboxes stay hidden until the user asks for them (double-click a row, or "Select" in the row menu) and
+  // go away again when the last row is deselected.
+  const selecting = selectedIds.size > 0;
+  const openTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // A single click opens the response; hold it briefly so a double-click can cancel it and select instead.
+  const openOrSelect = (r: IResponse) => {
+    if (selecting) {
+      onSelectRow(r._id, !selectedIds.has(r._id));
+      return;
+    }
+    if (openTimer.current) clearTimeout(openTimer.current);
+    openTimer.current = setTimeout(() => onViewResponse(r._id), 220);
+  };
+  const startSelecting = (r: IResponse) => {
+    if (openTimer.current) clearTimeout(openTimer.current);
+    onSelectRow(r._id, !selectedIds.has(r._id));
+  };
+
+  // ponytail: GET /api/responses has no sort parameter (always submittedAt desc), so this sorts only the
+  // loaded page (50 rows). Add a server-side `sort` param if inboxes routinely span pages.
+  const [sort, setSort] = useState<TableSort | undefined>();
+  const toggleSort = (key: string) =>
+    setSort((cur) => (cur?.key === key ? (cur.dir === 'asc' ? { key, dir: 'desc' } : undefined) : { key, dir: key === 'submitted' ? 'desc' : 'asc' }));
+  const fieldsByForm = useFormFieldsMap(responses.map((r) => r.formId));
+  const rows = useMemo(() => {
+    if (!sort) return responses;
+    const sign = sort.dir === 'asc' ? 1 : -1;
+    const value = (r: IResponse): string => {
+      if (sort.key === 'respondent') {
+        const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId]);
+        return (id.label ?? id.email ?? '').toLowerCase();
+      }
+      if (sort.key === 'stage') return (r.stage?.name ?? r.status ?? '').toLowerCase();
+      return r.submittedAt ?? '';
+    };
+    return [...responses].sort((a, b) => sign * value(a).localeCompare(value(b)));
+  }, [responses, sort, fieldsByForm]);
+  const respondentLabel = (r: IResponse) => {
+    const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId]);
+    return id.label ?? id.email ?? 'this respondent';
+  };
+>>>>>>> Stashed changes
 
   const emptyState = hasActiveFilters ? (
     <EmptyState
@@ -93,8 +142,17 @@ export function ResponsesTable({
         />
       ),
     },
+<<<<<<< Updated upstream
     { key: 'respondent', header: 'Respondent', render: (r) => <RespondentCell response={r} /> },
     { key: 'email', header: 'Email', render: (r) => detectRespondentIdentity(r.answers).email ?? '—' },
+=======
+    ...(formNames ? [{
+      key: 'form',
+      header: 'Form',
+      render: (r: IResponse) => <span className="block max-w-48 truncate" title={formNames[r.formId]}>{formNames[r.formId] ?? '—'}</span>,
+    }] : []),
+    { key: 'email', header: 'Email', render: (r) => detectRespondentIdentity(r.answers, fieldsByForm[r.formId]).email ?? '—' },
+>>>>>>> Stashed changes
     { key: 'tags', header: 'Tags', render: (r) => <TagsCell tags={r.tags} /> },
     { key: 'assignee', header: 'Assignee', render: (r) => <AssigneeCell response={r} /> },
     { key: 'stage', header: 'Stage', render: (r) => <StageBadge stage={r.stage} /> },

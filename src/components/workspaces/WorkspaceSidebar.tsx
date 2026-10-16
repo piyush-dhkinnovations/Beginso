@@ -2,7 +2,11 @@
 
 import { usePathname } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+<<<<<<< Updated upstream
 import { Home, FileText, Inbox, Users, History, Shield } from 'lucide-react';
+=======
+import { Home, FileText, Inbox, BarChart3, Users, History, Shield, LayoutTemplate, Trash2, Settings, Download } from 'lucide-react';
+>>>>>>> Stashed changes
 import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { canManageMembers, canViewAudit } from '@/lib/roles';
@@ -53,6 +57,7 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }
   // rendered. Hidden until each page actually ships — re-add the item as each one lands, rather
   // than linking ahead of the page that would make it real. `inbox/` now exists (task 1.9,
   // same-PR rule: the nav item lands with the page, never before).
+<<<<<<< Updated upstream
   const items = [
     { label: 'Home', href: base, icon: Home },
     { label: 'Forms', href: `${base}/forms`, icon: FileText },
@@ -63,6 +68,58 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role }
     { label: 'Activity', href: `${base}/activity`, icon: History },
     ...(canManageMembers(role) ? [{ label: 'Team', href: `${base}/team`, icon: Users }] : []),
     ...(canViewAudit(role) ? [{ label: 'Audit Log', href: `${base}/audit`, icon: Shield }] : []),
+=======
+  // A form's own data pages (/forms/:id/inbox|insights) belong to Responses; its other pages light Forms.
+  const isFormDataRoute = /^\/forms\/[^/]+\/(inbox|insights)\/?$/.test(pathname);
+  const isActive = (href: string) =>
+    href === `${base}/forms`
+      ? formContext
+        ? !isFormDataRoute
+        : pathname.startsWith(href)
+      : href === `${base}/form-responses`
+        ? isFormDataRoute || new RegExp(`^${base}/(form-responses|inbox)(/|$)`).test(pathname)
+        : href === base
+          ? pathname === base
+          : pathname.startsWith(href);
+  const toItem = (item: { label: string; href: string; icon: React.ComponentType<{ className?: string }>; count?: number }) => ({
+    ...item,
+    active: isActive(item.href),
+    onClick: guard(item.href),
+  });
+
+  // Primary: the four daily destinations (every role that can read the workspace can read Insights).
+  const primary = [
+    toItem({ label: 'Home', href: base, icon: Home }),
+    toItem({ label: 'Forms', href: `${base}/forms`, icon: FileText }),
+    toItem({ label: 'Responses', href: `${base}/form-responses`, icon: Inbox, count: stats?.unread }),
+    toItem({ label: 'Insights', href: `${base}/insights`, icon: BarChart3 }),
+  ];
+
+  // Settings is visible to every role (members reach their own notification setting there; the page only lists
+  // the sections the role can use) and still fails closed while the role is unknown.
+  const settings = role ? [toItem({ label: 'Settings', href: `${base}/settings`, icon: Settings })] : [];
+  const adminOnly = [
+    ...(canManageMembers(role) ? [toItem({ label: 'Team', href: `${base}/team`, icon: Users })] : []),
+    ...(canViewAudit(role) ? [toItem({ label: 'Audit log', href: `${base}/audit`, icon: Shield })] : []),
+    // Trash is an Owner/Admin surface (the server returns 403 to everyone else).
+    ...(canRestoreResponse(role) ? [toItem({ label: 'Trash', href: `${base}/trash`, icon: Trash2 })] : []),
+  ];
+
+  const workspaceItems = [
+    // Reviewers cannot create forms, so they get no Templates item.
+    ...(canViewTemplates(role) ? [toItem({ label: 'Templates', href: `${base}/templates`, icon: LayoutTemplate })] : []),
+    ...(canViewExports(role) ? [toItem({ label: 'Exports', href: `${base}/exports`, icon: Download })] : []),
+    // Seeing what happened in a workspace you belong to is not manager-only.
+    toItem({ label: 'Activity', href: `${base}/activity`, icon: History }),
+    // With no admin items, Settings belongs with the rest of the workspace group instead of a lone "Admin" label.
+    ...(adminOnly.length === 0 ? settings : []),
+  ];
+
+  const groups = [
+    { items: primary },
+    { label: 'Workspace', items: workspaceItems },
+    ...(adminOnly.length > 0 ? [{ label: 'Admin', items: [...adminOnly.slice(0, 2), ...settings, ...adminOnly.slice(2)] }] : []),
+>>>>>>> Stashed changes
   ];
 
   return (

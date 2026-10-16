@@ -35,6 +35,24 @@ export function AnalyticsStatCards({ overview, isLoading, isError = false, onRet
     { label: 'New', value: overview?.categoryCounts?.new ?? 0, icon: Sparkles },
   ];
 
+<<<<<<< Updated upstream
+=======
+  const cardsView = sparse ? cards.map((c) => ({ ...c, chart: undefined, delta: undefined })) : cards;
+
+  // Completion rate is views-based (OQ-3) - its delta is a change in points, only when both periods have one.
+  // The API rate is lifetime; in a selected range with no responses it would read 100%/stale, so show "—".
+  const rate = total > 0 ? overview?.completionRate : null;
+  const previousRate = previousOverview?.completionRate;
+  const rateDelta =
+    typeof rate === 'number' && typeof previousRate === 'number' && Math.round(rate) !== Math.round(previousRate)
+      ? {
+          label: `${rate > previousRate ? '↑' : '↓'} ${Math.abs(rate - previousRate).toFixed(1)} pts`,
+          direction: (rate > previousRate ? 'up' : 'down') as 'up' | 'down',
+          note: periodLabel,
+        }
+      : undefined;
+
+>>>>>>> Stashed changes
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {cards.map((card) => {

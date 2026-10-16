@@ -23,9 +23,21 @@ vi.mock('@/components/common/Toast', () => ({
 }));
 
 const mockGetResponseById = vi.fn();
+const FORM_WITH_NAME_FIELDS = {
+  _id: 'form-1',
+  title: 'Test form',
+  fields: [
+    { fieldId: 'Full Name', type: 'short_text', label: 'Full Name', required: false, deleted: false },
+    { fieldId: 'Email', type: 'email', label: 'Email', required: false, deleted: false },
+  ],
+};
 const mockUpdate = vi.fn();
 const mockDeleteResponse = vi.fn();
 const mockGetFileDownloadUrl = vi.fn();
+const mockGetFormById = vi.fn();
+vi.mock('@/services/forms', () => ({
+  formsService: { getFormById: (...args: unknown[]) => mockGetFormById(...args) },
+}));
 vi.mock('@/services/responses', () => ({
   responsesService: {
     getResponseById: (...args: unknown[]) => mockGetResponseById(...args),
@@ -75,6 +87,8 @@ function renderDrawer(
 
 describe('ResponseDrawer', () => {
   beforeEach(() => {
+    mockGetFormById.mockReset();
+    mockGetFormById.mockResolvedValue(FORM_WITH_NAME_FIELDS);
     mockToast.mockReset();
     mockGetResponseById.mockReset();
     mockUpdate.mockReset();
@@ -190,6 +204,7 @@ describe('ResponseDrawer', () => {
   });
 
   it('shows an explicit empty state when a response has no answers', async () => {
+    mockGetFormById.mockRejectedValue(new Error('form unavailable'));
     mockGetResponseById.mockResolvedValue({ ...detail, answers: {} });
     renderDrawer('resp-1');
 
@@ -273,6 +288,7 @@ describe('ResponseDrawer', () => {
     const { onClose } = renderDrawer('resp-1');
     await screen.findByText('Submitted Answers');
 
+<<<<<<< Updated upstream
     await user.click(screen.getByRole('button', { name: 'Response stage' }));
     expect(screen.getByRole('listbox')).toBeInTheDocument();
 
@@ -282,6 +298,10 @@ describe('ResponseDrawer', () => {
   });
 
   it('shows uploaded files under their form field labels in Submitted Answers', async () => {
+=======
+  it('shows uploaded files under their form field labels in Submitted response', async () => {
+    mockGetFormById.mockRejectedValue(new Error('form unavailable'));
+>>>>>>> Stashed changes
     mockGetResponseById.mockResolvedValue({
       ...detail,
       responseFiles: [

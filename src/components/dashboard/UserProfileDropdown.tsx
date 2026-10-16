@@ -9,6 +9,7 @@ import { settingsKeys } from '@/lib/queryKeys';
 
 import { ChevronDown, LogOut, Settings, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { initialsOf } from '@/lib/formatters';
 
 
 export function UserProfileDropdown() {
@@ -50,15 +51,7 @@ export function UserProfileDropdown() {
 
   const toggleDropdown = () => setIsOpen((prev) => !prev);
 
-  const getInitials = (name?: string) => {
-    if (!name) return 'U';
-    return name
-      .split(' ')
-      .map((part) => part[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const getInitials = (name?: string) => initialsOf(name) || 'U';
 
   const handleLogout = async () => {
     setIsOpen(false);

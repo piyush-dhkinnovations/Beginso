@@ -14,16 +14,6 @@ const COLUMNS = [
     title: "Resources",
     links: [
       { label: "Blog", href: "/blog" },
-      { label: "Documentation", href: "/docs" },
-      { label: "API reference", href: "/docs/api" },
-      { label: "Help centre", href: "/help" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { label: "About", href: "/about" },
-      { label: "Contact", href: "/contact" },
     ],
   },
   {
@@ -45,7 +35,11 @@ export default function Footer() {
   return (
     <footer className="bg-[var(--ink-900)] py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<<<<<<< Updated upstream
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-10">
+=======
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-8">
+>>>>>>> Stashed changes
           <div>
             <Wordmark height={32} force="dark" />
             <p className="text-[13px] text-white/60 mt-3">&copy; {currentYear} Beginso. All rights reserved.</p>

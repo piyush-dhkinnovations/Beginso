@@ -28,11 +28,11 @@ describe('Footer component', () => {
     expect(screen.getByText(new RegExp(currentYear))).toBeInTheDocument();
   });
 
-  it('renders the Product, Resources and Company columns', () => {
+  it('renders the Product, Resources and Legal columns', () => {
     render(<Footer />);
     expect(screen.getByText('Product')).toBeInTheDocument();
     expect(screen.getByText('Resources')).toBeInTheDocument();
-    expect(screen.getByText('Company')).toBeInTheDocument();
+    expect(screen.getByText('Legal')).toBeInTheDocument();
   });
 
   it('renders a working Privacy link', () => {
@@ -40,8 +40,10 @@ describe('Footer component', () => {
     expect(screen.getByRole('link', { name: /privacy/i })).toHaveAttribute('href', '/privacy');
   });
 
-  it('renders a working Contact link', () => {
+  // /docs, /docs/api, /help, /about and /contact have no page (they 404 in production), so the footer must not link them.
+  it('does not link to pages that do not exist', () => {
     render(<Footer />);
-    expect(screen.getByRole('link', { name: /contact/i })).toHaveAttribute('href', '/contact');
+    const hrefs = screen.getAllByRole('link').map((a) => a.getAttribute('href'));
+    for (const dead of ['/docs', '/docs/api', '/help', '/about', '/contact']) expect(hrefs).not.toContain(dead);
   });
 });

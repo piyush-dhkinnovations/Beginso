@@ -1,7 +1,12 @@
 'use client';
 
+<<<<<<< Updated upstream
 import React, { useState } from 'react';
 import type { FormField } from '@/types/form';
+=======
+import React, { useEffect, useState } from 'react';
+import type { FormField, ImageAspectRatio, ImagePreviewPosition, ImagePreviewSize, UrlDisplay, UrlPreviewStyle } from '@/types/form';
+>>>>>>> Stashed changes
 import { Input } from '@/components/ui/Input';
 import { Switch } from '@/components/ui/Switch';
 import { OptionsEditor } from './OptionsEditor';
@@ -68,6 +73,17 @@ function BlurField({
       onCommit(!allowEmpty && !trimmed ? defaultValue : trimmed);
     }
   };
+
+  // Commit shortly after the last keystroke too, not only on blur — otherwise the store stays
+  // clean while typing, the header says "All changes saved" and a reload/hard navigation loses
+  // the edit. A cleared required field is left alone until blur (it would revert to default).
+  useEffect(() => {
+    const trimmed = local.trim();
+    if (trimmed === defaultValue || (!allowEmpty && !trimmed)) return;
+    const t = setTimeout(() => onCommit(trimmed), 600);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- onCommit identity changes every render
+  }, [local, defaultValue, allowEmpty]);
 
   return (
     <Input

@@ -41,6 +41,14 @@ describe('WorkspaceSidebar', () => {
     });
   });
 
+  it('links Insights (a real page) and lights it instead of Responses on /w/[slug]/insights', () => {
+    mockPathname.mockReturnValue('/w/acme/insights');
+    renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc' });
+    expect(screen.getByRole('link', { name: 'Insights' })).toHaveAttribute('href', '/w/acme/insights');
+    expect(screen.getByRole('link', { name: 'Insights' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: /Responses/ })).not.toHaveAttribute('aria-current');
+  });
+
   // Real bug found and fixed: Templates/Responses/Analytics/Reports/Settings linked to routes
   // that don't exist under /w/[slug] (only forms/, team/, roles/ do) — dead links, always 404.
   // Removed until each page actually ships.
