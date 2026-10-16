@@ -1,14 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowRight, Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   ALL_TIME_SENTINEL,
   detectDateRangePreset,
-  normalizeDateRange,
+  isoToLocalDateInput,
+  localDayEndIso,
+  localDayStartIso,
   resolveDateRangePreset,
   resolveEffectiveDateRange,
+  validateDateRange,
 } from '@/lib/dateRange';
 import type { DateRangePreset } from '@/types/analytics';
 
@@ -33,14 +37,6 @@ interface DateRangeFilterProps {
   /** Render only part of the control so a page can place them apart — the preset chips below the
    * title, the custom range at the right of it. Default: both together. */
   part?: 'all' | 'presets' | 'range';
-}
-
-function toUtcStartOfDayIso(dateStr: string): string {
-  return `${dateStr}T00:00:00.000Z`;
-}
-
-function toUtcEndOfDayIso(dateStr: string): string {
-  return `${dateStr}T23:59:59.999Z`;
 }
 
 export function DateRangeFilter({ value, onChange, part = 'all' }: DateRangeFilterProps) {
@@ -74,14 +70,25 @@ export function DateRangeFilter({ value, onChange, part = 'all' }: DateRangeFilt
     apply(resolveDateRangePreset(next));
   }
 
+  // An inverted range is rejected with a message instead of being silently swapped or sent to the server.
+  const [rangeError, setRangeError] = useState<string | null>(null);
+
   function handleFromInputChange(raw: string) {
     if (!raw) return;
-    apply(normalizeDateRange(toUtcStartOfDayIso(raw), to ?? toUtcEndOfDayIso(raw)));
+    const nextFrom = localDayStartIso(raw);
+    const nextTo = to ?? localDayEndIso(raw);
+    const error = validateDateRange(nextFrom, nextTo);
+    setRangeError(error);
+    if (!error) apply({ from: nextFrom, to: nextTo });
   }
 
   function handleToInputChange(raw: string) {
     if (!raw) return;
-    apply(normalizeDateRange(from ?? toUtcStartOfDayIso(raw), toUtcEndOfDayIso(raw)));
+    const nextTo = localDayEndIso(raw);
+    const nextFrom = from ?? localDayStartIso(raw);
+    const error = validateDateRange(nextFrom, nextTo);
+    setRangeError(error);
+    if (!error) apply({ from: nextFrom, to: nextTo });
   }
 
   return (
@@ -113,7 +120,9 @@ export function DateRangeFilter({ value, onChange, part = 'all' }: DateRangeFilt
           <input
             type="date"
             aria-label="Custom range start date"
-            value={from ? from.slice(0, 10) : ''}
+            value={from ? isoToLocalDateInput(from) : ''}
+            max={to ? isoToLocalDateInput(to) : undefined}
+            aria-invalid={rangeError ? true : undefined}
             onChange={(e) => handleFromInputChange(e.target.value)}
             className="h-10 bg-transparent bg-body-sm text-(--text-primary) outline-none"
           />
@@ -121,12 +130,19 @@ export function DateRangeFilter({ value, onChange, part = 'all' }: DateRangeFilt
           <input
             type="date"
             aria-label="Custom range end date"
-            value={to ? to.slice(0, 10) : ''}
+            value={to ? isoToLocalDateInput(to) : ''}
+            min={from ? isoToLocalDateInput(from) : undefined}
+            aria-invalid={rangeError ? true : undefined}
             onChange={(e) => handleToInputChange(e.target.value)}
             className="h-10 bg-transparent bg-body-sm text-(--text-primary) outline-none"
           />
           {preset === 'custom' && <span className="bg-caption font-semibold text-(--accent-soft-text)">Custom</span>}
         </div>
+      )}
+      {rangeError && (
+        <p role="alert" className="basis-full bg-body-sm text-(--error-text)">
+          {rangeError}
+        </p>
       )}
     </div>
   );

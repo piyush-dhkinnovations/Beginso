@@ -25,7 +25,7 @@ describe('resolveDateRangePreset', () => {
     ['7d', 7],
     ['30d', 30],
     ['90d', 90],
-  ] as const)('%s spans exactly %d UTC days ending today, at UTC day boundaries', (preset, days) => {
+  ] as const)('%s spans exactly %d local days ending today, at local day boundaries', (preset, days) => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-08-10T15:30:00.000Z'));
 
@@ -36,17 +36,14 @@ describe('resolveDateRangePreset', () => {
     const fromDate = new Date(from as string);
     const toDate = new Date(to as string);
 
-    expect(fromDate.getUTCHours()).toBe(0);
-    expect(fromDate.getUTCMinutes()).toBe(0);
-    expect(toDate.getUTCHours()).toBe(23);
-    expect(toDate.getUTCMinutes()).toBe(59);
+    expect([fromDate.getHours(), fromDate.getMinutes()]).toEqual([0, 0]);
+    expect([toDate.getHours(), toDate.getMinutes()]).toEqual([23, 59]);
 
     const spanDays = Math.round((toDate.getTime() - fromDate.getTime() + 1) / (24 * 60 * 60 * 1000));
     expect(spanDays).toBe(days);
 
-    expect(toDate.getUTCFullYear()).toBe(2026);
-    expect(toDate.getUTCMonth()).toBe(7); // August
-    expect(toDate.getUTCDate()).toBe(10);
+    const now = new Date('2026-08-10T15:30:00.000Z');
+    expect([toDate.getFullYear(), toDate.getMonth(), toDate.getDate()]).toEqual([now.getFullYear(), now.getMonth(), now.getDate()]);
   });
 });
 
@@ -98,5 +95,37 @@ describe('resolvePreviousDateRange', () => {
 
   it('returns undefined/undefined for unparseable input rather than throwing', () => {
     expect(resolvePreviousDateRange('not-a-date', '2026-08-10T00:00:00.000Z')).toEqual({ from: undefined, to: undefined });
+  });
+});
+
+// A7-010: a "day" is the viewer's calendar day. Run in a fixed non-UTC zone so the test means something on any machine.
+describe('local-day bounds (A7-010)', () => {
+  const original = process.env.TZ;
+  afterEach(() => {
+    vi.useRealTimers();
+    if (original === undefined) delete process.env.TZ;
+    else process.env.TZ = original;
+  });
+
+  it('a response at 02:00 IST on the 16th falls inside "today" for someone in India', async () => {
+    process.env.TZ = 'Asia/Kolkata';
+    const { localDayStartIso, localDayEndIso, isoToLocalDateInput, validateDateRange } = await import('@/lib/dateRange');
+    expect(localDayStartIso('2026-10-16')).toBe('2026-10-15T18:30:00.000Z');
+    expect(localDayEndIso('2026-10-16')).toBe('2026-10-16T18:29:59.999Z');
+    const submitted = new Date('2026-10-15T20:30:00.000Z').getTime(); // 02:00 IST on the 16th
+    expect(submitted).toBeGreaterThanOrEqual(new Date(localDayStartIso('2026-10-16')).getTime());
+    expect(submitted).toBeLessThanOrEqual(new Date(localDayEndIso('2026-10-16')).getTime());
+    expect(isoToLocalDateInput('2026-10-15T18:30:00.000Z')).toBe('2026-10-16');
+    expect(validateDateRange(localDayStartIso('2026-10-16'), localDayEndIso('2026-10-10'))).toMatch(/on or after/);
+    expect(validateDateRange(localDayStartIso('2026-10-10'), localDayEndIso('2026-10-10'))).toBeNull();
+  });
+
+  it('presets end at the end of the local day and span whole local days', () => {
+    process.env.TZ = 'Asia/Kolkata';
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-16T21:00:00.000Z')); // already the 17th in India
+    const { from, to } = resolveDateRangePreset('7d');
+    expect(to).toBe('2026-10-17T18:29:59.999Z');
+    expect(from).toBe('2026-10-10T18:30:00.000Z');
   });
 });

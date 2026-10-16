@@ -1,0 +1,21 @@
+{
+ "status": 200,
+ "body": {
+  "success": true,
+  "overview": {
+   "formId": "6ad1dfc047e851641700db4a",
+   "title": "Pitch Plan",
+   "description": "Created from template: Pitch Plan",
+   "status": "published",
+   "workspaceId": null,
+   "responseCount": 0,
+   "responseCountThisWeek": 0,
+   "completionRate": 0,
+   "views": 1,
+   "templateId": "6a745e61ffc0a76b51a3a631",
+   "templateCategory": "advanced",
+   "createdAt": "2026-10-16T08:26:40.865Z",
+   "updatedAt": "2026-10-16T08:28:49.731Z"
+  }
+ }
+}

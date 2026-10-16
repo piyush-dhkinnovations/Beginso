@@ -8,16 +8,50 @@ const PRESET_DAYS: Record<Exclude<DateRangePreset, 'all' | 'custom'>, number> = 
   '90d': 90,
 };
 
-/** UTC day boundaries for a preset. `all`/`custom` have no fixed boundary — both come back undefined. */
+/**
+ * A "day" is the viewer's own calendar day, not a UTC day: for someone in India "today" starts at 00:00 IST, so a
+ * response submitted at 02:00 IST on the 16th belongs to the 16th, not to the 15th (A7-010). The bounds are sent as
+ * ISO instants, so the server filters on exactly the window the user picked.
+ */
+const pad = (n: number) => String(n).padStart(2, '0');
+
+/** Local start of the day for a YYYY-MM-DD input value, as an ISO instant. */
+export function localDayStartIso(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d, 0, 0, 0, 0).toISOString();
+}
+
+/** Local end of the day (23:59:59.999) for a YYYY-MM-DD input value, as an ISO instant. */
+export function localDayEndIso(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d, 23, 59, 59, 999).toISOString();
+}
+
+/** The YYYY-MM-DD a date input should show for an ISO instant, in the viewer's timezone. */
+export function isoToLocalDateInput(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** The message for a range the user cannot mean ("To" before "From"), or null when it is fine. */
+export function validateDateRange(from?: string, to?: string): string | null {
+  if (!from || !to) return null;
+  const f = new Date(from).getTime();
+  const t = new Date(to).getTime();
+  if (Number.isNaN(f) || Number.isNaN(t)) return 'Enter a valid date.';
+  return f > t ? 'The end date must be on or after the start date.' : null;
+}
+
+/** Local day boundaries for a preset. `all`/`custom` have no fixed boundary — both come back undefined. */
 export function resolveDateRangePreset(preset: DateRangePreset): { from?: string; to?: string } {
   if (preset === 'all' || preset === 'custom') return { from: undefined, to: undefined };
 
   const days = PRESET_DAYS[preset];
   const now = new Date();
 
-  const to = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
-  const from = new Date(to.getTime() - (days - 1) * DAY_MS);
-  from.setUTCHours(0, 0, 0, 0);
+  const to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  // setDate (not "minus N * 24h") so a daylight-saving change inside the window still lands on local midnight.
+  const from = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (days - 1), 0, 0, 0, 0);
 
   return { from: from.toISOString(), to: to.toISOString() };
 }

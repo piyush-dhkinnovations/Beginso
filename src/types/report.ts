@@ -32,6 +32,8 @@ export interface CreateReportPayload {
   format: ReportFormat;
   formId?: string;
   stageId?: string;
+  /** Response category to export (the backend's `status` filter). */
+  status?: 'new' | 'in_progress' | 'completed';
   search?: string;
   from?: string;
   to?: string;

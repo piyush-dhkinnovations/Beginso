@@ -10,27 +10,22 @@ export interface QuestionOptionWithPercentage extends QuestionOption {
 }
 
 /**
- * Percentages via the largest-remainder method — naive per-option rounding can drift the sum
- * away from 100 once there are more than a couple of options; this guarantees an exact 100 (for
- * any non-empty, non-all-zero input), comfortably inside Correctness Property 3's ±1 tolerance.
+ * Each option's share of the PEOPLE WHO ANSWERED, not of the ticks. For a single-choice question the two are the same;
+ * for a multi-select question they are not, and the shares can add up to more than 100 (50% / 50% / 50% is correct when
+ * two people each ticked all three). The API's own percentage wins; otherwise count / totalAnswered, falling back to
+ * the sum of counts only when totalAnswered is unknown (single-choice).
  */
-export function computeOptionPercentages(options: QuestionOption[]): QuestionOptionWithPercentage[] {
-  const total = options.reduce((sum, o) => sum + o.count, 0);
-  if (total === 0) return options.map((o) => ({ ...o, percentage: 0 }));
-
-  const raw = options.map((o) => (o.count / total) * 100);
-  const rounded = raw.map(Math.floor);
-  let remainder = 100 - rounded.reduce((a, b) => a + b, 0);
-
-  const byRemainingFraction = raw
-    .map((value, index) => ({ index, fraction: value - Math.floor(value) }))
-    .sort((a, b) => b.fraction - a.fraction);
-
-  for (let i = 0; i < byRemainingFraction.length && remainder > 0; i++, remainder--) {
-    rounded[byRemainingFraction[i].index] += 1;
-  }
-
-  return options.map((o, i) => ({ ...o, percentage: rounded[i] }));
+export function computeOptionPercentages(options: QuestionOption[], totalAnswered?: number): QuestionOptionWithPercentage[] {
+  const denominator = totalAnswered && totalAnswered > 0 ? totalAnswered : options.reduce((sum, o) => sum + o.count, 0);
+  return options.map((o) => ({
+    ...o,
+    percentage:
+      typeof o.percentage === 'number' && Number.isFinite(o.percentage)
+        ? Math.round(o.percentage)
+        : denominator > 0
+          ? Math.round((o.count / denominator) * 100)
+          : 0,
+  }));
 }
 
 interface QuestionBreakdownChartProps {
@@ -38,8 +33,11 @@ interface QuestionBreakdownChartProps {
 }
 
 export function QuestionBreakdownChart({ question }: QuestionBreakdownChartProps) {
-  const total = question.options.reduce((sum, o) => sum + o.count, 0);
-  const sorted = total > 0 ? computeOptionPercentages(question.options).sort((a, b) => b.count - a.count) : [];
+  const ticks = question.options.reduce((sum, o) => sum + o.count, 0);
+  const answered = question.totalAnswered ?? ticks;
+  const total = Math.max(ticks, answered);
+  const sorted = total > 0 ? computeOptionPercentages(question.options, question.totalAnswered).sort((a, b) => b.count - a.count) : [];
+  const multi = ticks > answered;
 
   return (
     <Card>
@@ -48,7 +46,11 @@ export function QuestionBreakdownChart({ question }: QuestionBreakdownChartProps
         <p className="bg-body-sm text-(--text-muted)">No answers yet in this range.</p>
       ) : (
         <>
-          <BarsChart horizontal data={toSegments(sorted.map((o) => ({ label: o.option, value: o.count })))} ariaLabel={`${question.label} — answer breakdown`} />
+          <p className="mb-2 bg-body-sm text-(--text-muted)">
+            {answered} {answered === 1 ? 'person' : 'people'} answered
+            {multi ? ' · each option is a share of those people, so the total can exceed 100%' : ''}
+          </p>
+          <BarsChart horizontal data={toSegments(sorted.map((o) => ({ label: o.option, value: o.count }))).map((seg, i) => ({ ...seg, percentage: sorted[i].percentage }))} ariaLabel={`${question.label} — answer breakdown`} />
           <table className="sr-only">
             <caption>{question.label} — answer breakdown</caption>
             <thead>

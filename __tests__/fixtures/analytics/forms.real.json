@@ -1,0 +1,243 @@
+{
+ "status": 200,
+ "body": {
+  "success": true,
+  "data": [
+   {
+    "formId": "6ad1dfc047e851641700db4a",
+    "title": "Pitch Plan",
+    "status": "published",
+    "totalResponses": 0,
+    "completionRate": 0,
+    "reviewedRate": 0,
+    "views": 1,
+    "templateCategory": "advanced",
+    "templateId": "6a745e61ffc0a76b51a3a631",
+    "sparkline": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "updatedAt": "2026-10-16T08:28:49.731Z"
+   },
+   {
+    "formId": "6ad0d76ecd9c0e59e9e881ef",
+    "title": "Event Registration",
+    "status": "draft",
+    "totalResponses": 0,
+    "completionRate": null,
+    "reviewedRate": 0,
+    "views": null,
+    "templateCategory": "Events",
+    "templateId": "6a745e61ffc0a76b51a3a6b9",
+    "sparkline": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "updatedAt": "2026-10-16T08:20:04.070Z"
+   },
+   {
+    "formId": "6ad0d725cd9c0e59e9e87b29",
+    "title": "Field Showcase (All Field Types)",
+    "status": "draft",
+    "totalResponses": 0,
+    "completionRate": null,
+    "reviewedRate": 0,
+    "views": null,
+    "templateCategory": "General",
+    "templateId": "6acca92df295cee123f9dbee",
+    "sparkline": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "updatedAt": "2026-10-15T13:37:41.898Z"
+   },
+   {
+    "formId": "6ad0d71dcd9c0e59e9e87976",
+    "title": "Master Comprehensive Template",
+    "status": "draft",
+    "totalResponses": 0,
+    "completionRate": null,
+    "reviewedRate": 0,
+    "views": null,
+    "templateCategory": "General",
+    "templateId": "6a745e61ffc0a76b51a3a6c9",
+    "sparkline": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "updatedAt": "2026-10-15T13:37:33.732Z"
+   },
+   {
+    "formId": "6ad0d715cd9c0e59e9e87819",
+    "title": "Job Application",
+    "status": "draft",
+    "totalResponses": 0,
+    "completionRate": null,
+    "reviewedRate": 0,
+    "views": null,
+    "templateCategory": "HR",
+    "templateId": "6a745e61ffc0a76b51a3a6ae",
+    "sparkline": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "updatedAt": "2026-10-15T13:37:25.574Z"
+   },
+   {
+    "formId": "6ad0d70dcd9c0e59e9e876f7",
+    "title": "Product Order Form",
+    "status": "draft",
+    "totalResponses": 0,
+    "completionRate": null,
+    "reviewedRate": 0,
+    "views": null,
+    "templateCategory": "Sales",
+    "templateId": "6a745e61ffc0a76b51a3a6c0",
+    "sparkline": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "updatedAt": "2026-10-15T13:37:17.666Z"
+   },
+   {
+    "formId": "6ad0d705cd9c0e59e9e875cc",
+    "title": "Customer Feedback Survey",
+    "status": "draft",
+    "totalResponses": 0,
+    "completionRate": null,
+    "reviewedRate": 0,
+    "views": null,
+    "templateCategory": "Feedback",
+    "templateId": "6a745e61ffc0a76b51a3a6a7",
+    "sparkline": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "updatedAt": "2026-10-15T13:37:09.760Z"
+   },
+   {
+    "formId": "6ad0d6fdcd9c0e59e9e8746f",
+    "title": "Pitch Plan",
+    "status": "draft",
+    "totalResponses": 0,
+    "completionRate": null,
+    "reviewedRate": 0,
+    "views": null,
+    "templateCategory": "advanced",
+    "templateId": "6a745e61ffc0a76b51a3a631",
+    "sparkline": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "updatedAt": "2026-10-15T13:37:01.597Z"
+   },
+   {
+    "formId": "6ad0d6f5cd9c0e59e9e87337",
+    "title": "Contact Information Form",
+    "status": "draft",
+    "totalResponses": 0,
+    "completionRate": null,
+    "reviewedRate": 0,
+    "views": null,
+    "templateCategory": "General",
+    "templateId": "6a745e61ffc0a76b51a3a69e",
+    "sparkline": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "updatedAt": "2026-10-15T13:36:53.462Z"
+   },
+   {
+    "formId": "6ad0d6edcd9c0e59e9e87225",
+    "title": "Event Registration",
+    "status": "draft",
+    "totalResponses": 0,
+    "completionRate": null,
+    "reviewedRate": 0,
+    "views": null,
+    "templateCategory": "Events",
+    "templateId": "6a745e61ffc0a76b51a3a6b9",
+    "sparkline": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "updatedAt": "2026-10-15T13:36:45.357Z"
+   },
+   {
+    "formId": "6ad0ba14cd9c0e59e9e4cac3",
+    "title": "Event Registration",
+    "status": "published",
+    "totalResponses": 0,
+    "completionRate": 0,
+    "reviewedRate": 0,
+    "views": 1,
+    "templateCategory": null,
+    "templateId": null,
+    "sparkline": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    "updatedAt": "2026-10-15T11:36:44.864Z"
+   }
+  ],
+  "total": 11,
+  "page": 1,
+  "limit": 50,
+  "totalPages": 1
+ }
+}

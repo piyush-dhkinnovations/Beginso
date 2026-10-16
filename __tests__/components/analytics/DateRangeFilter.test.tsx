@@ -48,8 +48,10 @@ describe('DateRangeFilter — uncontrolled (URL-owning) mode', () => {
 
     expect(mockReplace).toHaveBeenCalledTimes(1);
     const params = new URLSearchParams((mockReplace.mock.calls[0][0] as string).split('?')[1]);
-    expect(params.get('from')).toMatch(/T00:00:00\.000Z$/);
-    expect(params.get('to')).toMatch(/T23:59:59\.999Z$/);
+    const from = new Date(params.get('from') as string);
+    const to = new Date(params.get('to') as string);
+    expect([from.getHours(), from.getMinutes(), from.getSeconds(), from.getMilliseconds()]).toEqual([0, 0, 0, 0]);
+    expect([to.getHours(), to.getMinutes(), to.getSeconds(), to.getMilliseconds()]).toEqual([23, 59, 59, 999]);
   });
 
   it('clicking "All time" writes the from=all&to=all sentinel (round-trips through the URL)', () => {
@@ -77,17 +79,15 @@ describe('DateRangeFilter — uncontrolled (URL-owning) mode', () => {
     expect(screen.getByText('Custom')).toBeInTheDocument();
   });
 
-  it('swaps an inverted custom range before writing it to the URL (Requirement 3.4)', () => {
+  it('rejects an inverted custom range inline and does not touch the URL (A7-003)', () => {
     search = 'from=2026-08-01T00:00:00.000Z&to=2026-08-01T23:59:59.999Z';
     render(<DateRangeFilter />);
 
     fireEvent.change(screen.getByLabelText('Custom range start date'), { target: { value: '2026-08-15' } });
 
-    expect(mockReplace).toHaveBeenCalledTimes(1);
-    const params = new URLSearchParams((mockReplace.mock.calls[0][0] as string).split('?')[1]);
-    expect(new Date(params.get('from') as string).getTime()).toBeLessThanOrEqual(new Date(params.get('to') as string).getTime());
-    expect(params.get('from')).toContain('2026-08-01');
-    expect(params.get('to')).toContain('2026-08-15');
+    expect(mockReplace).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent(/end date must be on or after the start date/i);
+    expect(screen.getByLabelText('Custom range start date')).toHaveAttribute('aria-invalid', 'true');
   });
 });
 

@@ -11,13 +11,15 @@ export interface CompletionRateCardProps {
   delta?: { label: string; direction: 'up' | 'down' | 'flat'; note?: string };
   /** Scope noun for the helper line: "this form" (default) or "a form". */
   subject?: string;
+  /** Why there is no rate, shown as the "—" tooltip. Defaults to "Not enough views yet". */
+  unavailableReason?: string;
   /** Too few data points to trust a ring or delta: show the figure only. */
   sparse?: boolean;
 }
 
 // Sprint 14 (requirements 1.2, OQ-3): views-based completion rate. The helper line is the spec's
 // "X% of people who open this finish it"; a null rate is "—" with a "Not enough views yet" tooltip.
-export function CompletionRateCard({ rate, isLoading = false, delta, subject = 'this form', sparse = false }: CompletionRateCardProps) {
+export function CompletionRateCard({ rate, isLoading = false, delta, subject = 'this form', sparse = false, unavailableReason = 'Not enough views yet' }: CompletionRateCardProps) {
   const hasRate = typeof rate === 'number' && Number.isFinite(rate);
   const percent = hasRate ? Math.max(0, Math.min(100, Math.round(rate))) : null;
 
@@ -32,10 +34,10 @@ export function CompletionRateCard({ rate, isLoading = false, delta, subject = '
         isLoading ? (
           <span className="block h-8 w-16 animate-pulse rounded bg-skeleton" />
         ) : percent === null ? (
-          <Tooltip content="Not enough views yet">
+          <Tooltip content={unavailableReason}>
             <span tabIndex={0}>
               {'—'}
-              <span className="sr-only">Not enough views yet</span>
+              <span className="sr-only">{unavailableReason}</span>
             </span>
           </Tooltip>
         ) : (
@@ -43,7 +45,7 @@ export function CompletionRateCard({ rate, isLoading = false, delta, subject = '
         )
       }
       valueClassName={!isLoading && percent === null ? 'text-(--text-disabled)' : undefined}
-      note={!isLoading && percent !== null && sparse ? 'Not enough data to show a trend yet.' : !isLoading && percent !== null ? `${percent}% of people who open ${subject} finish it` : undefined}
+      note={!isLoading && percent !== null && sparse ? 'Not enough data to show a trend yet.' : !isLoading && percent !== null ? `${percent}% of people who open ${subject} finish it (all time)` : undefined}
       delta={isLoading || sparse ? undefined : delta}
       chart={isLoading ? undefined : chart}
     />

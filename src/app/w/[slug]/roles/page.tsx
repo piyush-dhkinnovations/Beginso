@@ -10,6 +10,9 @@ export default function RolesPage() {
     <div className="flex flex-col gap-4">
       <PageHeader title="Roles & Permissions" description="Read-only in this release — permission levels are fixed per role." />
       <RolesMatrix />
+      <p className="max-w-prose bg-body-sm text-(--text-muted)">
+        Editors can also see the workspace Activity feed and the member list (names and emails), even though they cannot open Team settings or the Audit Log.
+      </p>
     </div>
   );
 }

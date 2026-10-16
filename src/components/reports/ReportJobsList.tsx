@@ -35,6 +35,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [retryingJobId, setRetryingJobId] = useState<string | null>(null);
+  const [showExpired, setShowExpired] = useState(false);
   const previousStatusesRef = useRef<Map<string, ReportStatus>>(new Map());
 
   const jobsQuery = useQuery({
@@ -129,6 +130,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
     retryMutation.mutate({
       format: job.format,
       formId: job.formId,
+      status: job.responseStatus,
       from: job.from,
       to: job.to,
     });
@@ -206,6 +208,9 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
     );
   }
 
+  // Expired exports are gone for good (the file is deleted) - a wall of disabled rows hides the ones that matter (A9-012).
+  const expiredCount = jobs.filter((job) => job.status === 'expired').length;
+  const visibleJobs = showExpired ? jobs : jobs.filter((job) => job.status !== 'expired');
   const total = jobsQuery.data?.total ?? jobs.length;
   const limit = jobsQuery.data?.limit ?? REPORTS_PAGE_LIMIT;
 
@@ -225,7 +230,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
             </tr>
           </thead>
           <tbody>
-            {jobs.map((job, index) => (
+            {visibleJobs.map((job, index) => (
               // job._id ?? index is a safety net, not the primary key source — reportsService now
               // adapts the real backend `id` field (see docs/status/fix-log.md S5-03), so _id is
               // populated in the normal case; this only protects against an unexpected future gap.
@@ -236,10 +241,18 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
       </div>
 
       <div className="sm:hidden mx-5 flex flex-col gap-3">
-        {jobs.map((job, index) => (
+        {visibleJobs.map((job, index) => (
           <ReportJobRow key={job._id ?? index} job={job} onRetry={handleRetry} isRetrying={retryingJobId === job._id} formTitleById={formTitleById} variant="card" />
         ))}
       </div>
+
+      {expiredCount > 0 && (
+        <div className="px-5">
+          <Button variant="ghost" size="small" aria-expanded={showExpired} onClick={() => setShowExpired((v) => !v)}>
+            {showExpired ? 'Hide expired exports' : `Show ${expiredCount} expired ${expiredCount === 1 ? 'export' : 'exports'}`}
+          </Button>
+        </div>
+      )}
 
       <div className="px-5">
         <ListFooter page={page} pageSize={limit} total={total} noun="export" onPageChange={onPageChange} />

@@ -1,5 +1,6 @@
 'use client';
 
+import { completionRateUnavailableReason } from '@/lib/completionRate';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -164,10 +165,10 @@ export function FormsSummaryTable({
       // Sprint 14 (OQ-3): null = no counted views - "—" with a tooltip, never 0%.
       render: (form) =>
         form.completionRate === null || form.completionRate === undefined ? (
-          <Tooltip content="Not enough views yet">
+          <Tooltip content={completionRateUnavailableReason(form.totalResponses, form.views)}>
             <span tabIndex={0} className="bg-body-sm text-(--text-muted)">
               {'—'}
-              <span className="sr-only">Not enough views yet</span>
+              <span className="sr-only">{completionRateUnavailableReason(form.totalResponses, form.views)}</span>
             </span>
           </Tooltip>
         ) : (
