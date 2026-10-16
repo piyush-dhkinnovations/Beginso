@@ -58,7 +58,8 @@ const OVERVIEW_LABEL = 'bg-body-sm text-(--text-muted)';
 const META_ROW = 'flex items-center justify-between gap-3 py-2 border-b border-(--border-default) last:border-0 last:pb-0';
 const META_LABEL = 'flex items-center gap-1.5 shrink-0 bg-caption text-(--text-muted)';
 
-const ORIGIN_TOOLTIP = 'Anonymised origin hash — raw IPs are never stored.';
+export const ORIGIN_TOOLTIP =
+  "A private fingerprint of the sender's network. Two responses with the same ID came from the same network. Raw IP addresses are never stored.";
 
 /**
  * Sprint 12 (inbox-collaboration), requirements.md §9.1, design.md §6/§7/§15. Replaces

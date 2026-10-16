@@ -57,6 +57,8 @@ export interface IResponse {
    * fallback (kept in `lib/formatters.ts`), never a blank. */
   reference?: string;
   answers: ResponseAnswers;
+  /** Who submitted: the account email on a signed-in-only form, the address given on a tracked form, null on an open one. */
+  respondentEmail?: string | null;
   /** Null for a response with no `stageId` yet (unmigrated real data — the stage migration has
    * not been run against production). `StageBadge` already renders this as "Unknown stage"; any
    * new consumer of `.stage` must not assume it is present (real crash found in manual QA when

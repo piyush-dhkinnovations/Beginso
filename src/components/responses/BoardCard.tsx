@@ -26,7 +26,7 @@ export interface BoardCardProps {
  * drag (OQ-12 resolved: not required).
  */
 export function BoardCard({ response, stages, canAct, onView, onChangeStage }: BoardCardProps) {
-  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId));
+  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId), response.respondentEmail);
   const name = identity.label ?? identity.email ?? 'Anonymous';
   const reference = response.reference ?? `#${shortId(response._id)}`;
 

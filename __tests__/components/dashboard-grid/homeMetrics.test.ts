@@ -19,7 +19,8 @@ describe('personalMetrics', () => {
 
   it('derives KPI values and percentages', () => {
     const m = personalMetrics(counts, undefined, rows);
-    expect(m.totalForms).toMatchObject({ value: 4, percent: 25, sub: '1 published' });
+    // The ring is the published share, so the card says so (it used to read "1 published" beside an unexplained 25%).
+    expect(m.totalForms).toMatchObject({ value: 4, percent: 25, sub: '1 of 4 published' });
     expect(m.publishedForms).toMatchObject({ value: 1, sub: '/ 4', percent: 25 });
     expect(m.responsesThisMonth).toMatchObject({ value: 5, percent: 25, sub: 'of all responses' });
     expect(m.avgPerForm).toMatchObject({ value: '5.0' });

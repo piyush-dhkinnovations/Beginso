@@ -3,6 +3,7 @@
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import type { ConfirmDeleteState } from './useInboxSelection';
+import { DELETE_COPY } from '@/lib/responseCopy';
 
 interface Props {
   confirmDelete: ConfirmDeleteState | null;
@@ -17,11 +18,7 @@ export function DeleteResponsesModal({ confirmDelete, isDeleting, onClose, onCon
       isOpen={confirmDelete !== null}
       onClose={onClose}
       title={confirmDelete?.mode === 'bulk' ? `Delete ${confirmDelete.count} responses?` : 'Delete this response?'}
-      description={
-        confirmDelete?.mode === 'bulk'
-          ? 'You can undo this from the toast after deleting.'
-          : 'This will permanently delete the response and all uploaded files. This action cannot be undone.'
-      }
+      description={confirmDelete?.mode === 'bulk' ? DELETE_COPY.bulk : DELETE_COPY.single}
     >
       <div className="flex items-center justify-end gap-3 pt-2 border-t border-(--border-default)">
         <Button variant="secondary" onClick={onClose} disabled={isDeleting}>

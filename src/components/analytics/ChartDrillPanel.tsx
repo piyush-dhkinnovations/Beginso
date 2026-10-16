@@ -97,7 +97,7 @@ export function ChartDrillPanel({ isOpen, drill, onClose, formId, scope, field, 
           <>
             <ul className="flex flex-col divide-y divide-(--border-subtle)">
               {rows.map((r) => {
-                const who = detectRespondentIdentity(r.answers, formFields);
+                const who = detectRespondentIdentity(r.answers, formFields, r.respondentEmail);
                 const name = who.label ?? who.email ?? r.reference ?? shortId(r._id);
                 const answer = answerText(r, field);
                 return (

@@ -63,6 +63,22 @@ describe('useInboxMutations — bulk', () => {
     toastMock.mockReset();
   });
 
+  // QA A6-003: a whole batch could fail ("0 of 1 updated, 1 failed.") with no hint why, although the server said.
+  it('says why rows failed, using the reason the server gave', async () => {
+    const list: PaginatedResponsesResult = { data: [makeResponse('r1')], total: 1, page: 1, limit: 50, totalPages: 1 };
+    const { wrapper } = makeClientAndWrapper(list);
+    mockBulk.mockResolvedValueOnce({ succeeded: [], failed: [{ id: 'r1', reason: "This response's form has no workspace to resolve stages against" }], previous: [] });
+    const { result } = renderHook(() => useInboxMutations({ scope: 'personal' }), { wrapper });
+
+    act(() => {
+      result.current.bulk({ ids: ['r1'] }, { type: 'stage', stageId: 's2' });
+    });
+
+    await waitFor(() => expect(toastMock).toHaveBeenCalled());
+    expect(toastMock.mock.calls[0][0]).toBe("0 of 1 updated, 1 failed. This response's form has no workspace to resolve stages against.");
+    expect(toastMock.mock.calls[0][1]).toBe('warning');
+  });
+
   it('sends one request for a bulk stage change and optimistically patches the list', async () => {
     const list: PaginatedResponsesResult = { data: [makeResponse('r1'), makeResponse('r2')], total: 2, page: 1, limit: 50, totalPages: 1 };
     const { queryClient, wrapper } = makeClientAndWrapper(list);

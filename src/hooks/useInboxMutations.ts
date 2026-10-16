@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/Toast';
 import { responsesService, type UpdateResponsePayload } from '@/services/responses';
 import { responseKeys } from '@/lib/queryKeys';
-import { idsRemainingSelected } from '@/lib/bulkActions';
+import { describeBulkFailures, idsRemainingSelected } from '@/lib/bulkActions';
 import type {
   IResponse,
   PaginatedResponsesResult,
@@ -203,7 +203,7 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
           const failedCount = result.failed.length;
           const message =
             failedCount > 0 && attempted.length > 0
-              ? `${result.succeeded.length} of ${attempted.length} updated, ${failedCount} failed.`
+              ? `${result.succeeded.length} of ${attempted.length} updated, ${failedCount} failed.${describeBulkFailures(result.failed)}`
               : describeBulkAction(action, result.succeeded.length);
 
           if (isReversible(action) && result.previous.length > 0) {
