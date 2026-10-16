@@ -42,7 +42,10 @@ axiosInstance.interceptors.response.use(
           credentials: 'include',
           keepalive: true,
         }).catch(() => {}).finally(() => {
-          window.location.href = isSuspended ? '/login?reason=suspended' : '/login';
+          // Keep where the person was going, so signing in returns them there (an emailed invite link, for one).
+          const here = window.location.pathname + window.location.search;
+          const next = !isSuspended && here !== '/' && !/^\/(login|signup)/.test(here) ? `?next=${encodeURIComponent(here)}` : '';
+          window.location.href = isSuspended ? '/login?reason=suspended' : `/login${next}`;
         });
       }
     }

@@ -83,3 +83,41 @@ describe('axiosInstance cookie authentication', () => {
     expect(mockFetch).not.toHaveBeenCalled();
   });
 });
+
+describe('401 redirect keeps where the person was going', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  async function redirectFor(pathname: string, search: string) {
+    const assigned: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(() => Promise.resolve(new Response(null, { status: 204 }))));
+    vi.stubGlobal('window', {
+      location: {
+        pathname,
+        search,
+        set href(v: string) {
+          assigned.push(v);
+        },
+        get href() {
+          return '';
+        },
+      },
+    });
+    const axiosInstance = (await import('@/lib/axios')).default;
+    const rejected = (axiosInstance.interceptors.response as unknown as InterceptorManager).handlers[0].rejected;
+    await rejected({ response: { status: 401 }, config: { url: '/api/forms' } }).catch(() => {});
+    await new Promise((r) => setTimeout(r, 0));
+    vi.unstubAllGlobals();
+    return assigned[0];
+  }
+
+  it('adds ?next= for a page the person was on', async () => {
+    expect(await redirectFor('/invite/abc123', '')).toBe('/login?next=%2Finvite%2Fabc123');
+    expect(await redirectFor('/forms/1/inbox', '?tab=x')).toBe('/login?next=%2Fforms%2F1%2Finbox%3Ftab%3Dx');
+  });
+
+  it('does not loop when already on an auth page', async () => {
+    expect(await redirectFor('/login', '')).toBe('/login');
+  });
+});

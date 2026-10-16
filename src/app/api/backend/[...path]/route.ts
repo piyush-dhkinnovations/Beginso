@@ -23,6 +23,9 @@ const PUBLIC_AUTH_PATHS = new Set([
 const PUBLIC_DATA_PATHS = new Set([
   'api/templates/public',
 ]);
+// The invitation preview is public on the backend (a person opens the emailed link BEFORE signing in), so it must not be
+// stopped here with 401. Only the GET previews: accept needs a session and is never matched.
+const PUBLIC_INVITE_PREVIEW = /^api\/invitations\/(?:(?:preview|token)\/)?[A-Za-z0-9_-]{1,200}$/;
 const ALLOWED_API_ROOTS = new Set([
   // Sprint 14 (task 2.1) - GET /api/search lives under its own root. Same allowlist trap as every
   // root below: without this entry every search call 404s "Backend path is not allowed".
@@ -106,7 +109,7 @@ async function forward(request: NextRequest, pathParts: string[]): Promise<NextR
   const isSessionRequest = path === SESSION_PATH;
   const isLogoutRequest = path === LOGOUT_PATH;
   const isPublicAuthRequest = PUBLIC_AUTH_PATHS.has(path);
-  const isPublicDataRequest = PUBLIC_DATA_PATHS.has(path);
+  const isPublicDataRequest = PUBLIC_DATA_PATHS.has(path) || (request.method === 'GET' && PUBLIC_INVITE_PREVIEW.test(path));
   const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
   // Session probe (AuthProvider on every page load): "nobody is signed in" is a normal answer, not an
