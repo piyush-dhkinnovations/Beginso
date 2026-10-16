@@ -2,6 +2,8 @@
 
 import React, { createContext, useReducer, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { Alert } from '@/components/ui/Alert';
+import { Button } from '@/components/ui/Button';
 import { authService } from '@/services/auth';
 import { signOut } from 'firebase/auth';
 import { auth } from './firebase';
@@ -29,22 +31,28 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  /** The session check failed for a reason that says nothing about the session (server error, rate limit, network). */
+  sessionError: boolean;
 }
 
 type AuthAction =
   | { type: 'LOGIN'; payload: { user: User } }
   | { type: 'LOGOUT' }
+  | { type: 'SESSION_ERROR' }
   | { type: 'SET_LOADING'; payload: boolean };
 
 interface AuthContextValue extends AuthState {
   login: (redirectTo?: string) => Promise<void>;
   logout: () => Promise<void>;
+  /** Check the session again after a transient failure. */
+  retrySession: () => void;
 }
 
 const initialState: AuthState = {
   user: null,
   isAuthenticated: false,
   isLoading: true, // starts loading while verifying token
+  sessionError: false,
 };
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
@@ -55,6 +63,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         user: action.payload.user,
         isAuthenticated: true,
         isLoading: false,
+        sessionError: false,
       };
     case 'LOGOUT':
       return {
@@ -62,7 +71,10 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         user: null,
         isAuthenticated: false,
         isLoading: false,
+        sessionError: false,
       };
+    case 'SESSION_ERROR':
+      return { ...state, user: null, isAuthenticated: false, isLoading: false, sessionError: true };
     case 'SET_LOADING':
       return {
         ...state,
@@ -102,8 +114,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // `user` is null only because it is still unknown, and binding to null would wipe a valid list on every reload.
   const userId = state.user?.id ?? null;
   useEffect(() => {
-    if (!state.isLoading) bindRecentFormsUser(userId);
-  }, [userId, state.isLoading]);
+    // A failed session check is not a sign-out: the person is still who they were, so their list must survive it.
+    if (!state.isLoading && !state.sessionError) bindRecentFormsUser(userId);
+  }, [userId, state.isLoading, state.sessionError]);
 
   // The account's saved theme is the source of truth: when it differs from what this device has, adopt it (a new device
   // or browser then looks the way the person chose). Settings → Appearance writes both sides, so they normally agree
@@ -116,50 +129,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     applyTheme(savedTheme, variant);
   }, [savedTheme]);
 
+  // Only a 401/403 says the session is over. A server error, a rate limit or a dropped connection says nothing about it:
+  // ending the session there signed people out (and destroyed the real server session) whenever the API hiccuped.
+  const SESSION_CHECK_ATTEMPTS = 3;
+  const initAuth = useCallback(async () => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      let data;
+      for (let attempt = 1; ; attempt++) {
+        try {
+          data = await authService.probeSession();
+          break;
+        } catch (error: unknown) {
+          const status = (error as { response?: { status?: number } })?.response?.status;
+          if (status === 401 || status === 403) throw error;
+          if (attempt >= SESSION_CHECK_ATTEMPTS) {
+            // Keep the cookie and the session; let the person retry instead of being sent to /login.
+            dispatch({ type: 'SESSION_ERROR' });
+            return;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 600 * attempt));
+        }
+      }
+      if (!data?.user) {
+        // Signed out: a normal result. No cleanup calls needed - there is no session to end.
+        dispatch({ type: 'LOGOUT' });
+        if (matchesRoute(window.location.pathname, PROTECTED_PATHS)) router.replace('/login');
+        return;
+      }
+      // Clear any legacy Firebase LOCAL persistence after the HttpOnly backend
+      // session has been confirmed. Protected pages never need Firebase tokens.
+      await signOut(auth).catch(() => { });
+      dispatch({ type: 'LOGIN', payload: { user: data.user } });
+      // Session-restore half of the onboarding gate (login() has the other half). Only authenticated
+      // app routes are gated; /onboarding itself, auth pages, /f, /r, /invite stay untouched. `=== false`
+      // so an absent field (older accounts) counts as onboarded.
+      const path = window.location.pathname;
+      if (data.user.onboardingCompleted === false && path !== '/onboarding' && matchesRoute(path, PROTECTED_PATHS)) {
+        // Remember where they were going, so onboarding hands them back there (a template being applied, a form link...).
+        router.replace(`/onboarding?next=${encodeURIComponent(path + window.location.search)}`);
+      }
+    } catch (error: unknown) {
+      if (!['/verify-email', '/verification-code'].includes(window.location.pathname)) {
+        await signOut(auth).catch(() => { });
+      }
+      await authService.logout().catch(() => { });
+      dispatch({ type: 'LOGOUT' });
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      if (matchesRoute(window.location.pathname, PROTECTED_PATHS)) {
+        router.replace(status === 403 ? '/login?reason=suspended' : '/login');
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     // Start Firebase's local persistence setup while the user is reading/typing on
     // an auth page. Login/signup still await the same cached promise, but the work
     // is normally complete before the user selects the submit button.
     void authService.prepareFirebase().catch(() => { });
-
-    const initAuth = async () => {
-      dispatch({ type: 'SET_LOADING', payload: true });
-      try {
-        const data = await authService.probeSession();
-        if (!data?.user) {
-          // Signed out: a normal result. No cleanup calls needed - there is no session to end.
-          dispatch({ type: 'LOGOUT' });
-          if (matchesRoute(window.location.pathname, PROTECTED_PATHS)) router.replace('/login');
-          return;
-        }
-        // Clear any legacy Firebase LOCAL persistence after the HttpOnly backend
-        // session has been confirmed. Protected pages never need Firebase tokens.
-        await signOut(auth).catch(() => { });
-        dispatch({ type: 'LOGIN', payload: { user: data.user } });
-        // Session-restore half of the onboarding gate (login() has the other half). Only authenticated
-        // app routes are gated; /onboarding itself, auth pages, /f, /r, /invite stay untouched. `=== false`
-        // so an absent field (older accounts) counts as onboarded.
-        const path = window.location.pathname;
-        if (data.user.onboardingCompleted === false && path !== '/onboarding' && matchesRoute(path, PROTECTED_PATHS)) {
-          // Remember where they were going, so onboarding hands them back there (a template being applied, a form link...).
-          router.replace(`/onboarding?next=${encodeURIComponent(path + window.location.search)}`);
-        }
-      } catch (error: unknown) {
-        if (!['/verify-email', '/verification-code'].includes(window.location.pathname)) {
-          await signOut(auth).catch(() => { });
-        }
-        await authService.logout().catch(() => { });
-        dispatch({ type: 'LOGOUT' });
-        const status = (error as { response?: { status?: number } })?.response?.status;
-        if (matchesRoute(window.location.pathname, PROTECTED_PATHS)) {
-          router.replace(status === 403 ? '/login?reason=suspended' : '/login');
-        }
-      }
-    };
-
-    initAuth();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    void initAuth();
+  }, [initAuth]);
 
   const login = useCallback(async (redirectTo?: string) => {
     // POST /api/auth/session's `user` can be missing fields (e.g. `name`) that GET
@@ -199,6 +229,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(async () => {
     await Promise.allSettled([authService.logout(), signOut(auth)]);
+    // The next person to use this browser must not inherit this account's recent forms (the page is replaced right after,
+    // so the effect above would not get to run).
+    bindRecentFormsUser(null);
     dispatch({ type: 'LOGOUT' });
     // A soft Router transition can retain the protected dashboard shell from the
     // client cache even after the HttpOnly cookie is deleted. Replace the document
@@ -207,9 +240,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.replace('/login');
   }, []);
 
+  // Only evaluated after a failed check (client-side), so server rendering never reads window.
+  const showSessionError = state.sessionError && typeof window !== 'undefined' && matchesRoute(window.location.pathname, PROTECTED_PATHS);
+
   return (
-    <AuthContext.Provider value={{ ...state, login, logout }}>
-      {children}
+    <AuthContext.Provider value={{ ...state, login, logout, retrySession: () => void initAuth() }}>
+      {showSessionError ? (
+        <div className="flex min-h-screen items-center justify-center p-6">
+          <div className="flex w-full max-w-md flex-col gap-4">
+            <Alert variant="error" title="We couldn't check your sign-in">
+              Beginso is having trouble right now. You are still signed in. Try again in a moment.
+            </Alert>
+            <Button variant="primary" onClick={() => void initAuth()}>
+              Try again
+            </Button>
+          </div>
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 }

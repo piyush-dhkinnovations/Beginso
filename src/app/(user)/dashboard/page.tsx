@@ -14,6 +14,8 @@ import { personalDefaults, personalMetrics } from '@/components/dashboard-grid/p
 import { RecentActivitySection } from '@/components/dashboard/RecentActivitySection';
 import { ButtonLink } from '@/components/ui';
 import { ActionCard, Card, EmptyState, PageHeader, StatusBadge } from '@/components/ui';
+import { Alert } from '@/components/ui/Alert';
+import { Button } from '@/components/ui/Button';
 import { HomeBodySkeleton } from '@/components/ui/PageSkeletons';
 import type { FormStatus } from '@/types/form';
 
@@ -53,7 +55,7 @@ export default function DashboardPage() {
     enabled: !authLoading && isAuthenticated,
   });
 
-  const { data: formsData, isLoading: formsLoading } = useQuery({
+  const { data: formsData, isLoading: formsLoading, isError: formsError, refetch: refetchForms } = useQuery({
     queryKey: workspaceKeys.forms({ type: 'personal' }, { page: 1, limit: YOUR_FORMS_LIMIT }),
     // Real bug found and fixed: never told the backend this was a personal-space request, so it
     // fell back to the caller's default workspace and showed workspace forms here too
@@ -126,6 +128,14 @@ export default function DashboardPage() {
 
       {homeLoading ? (
         <HomeBodySkeleton />
+      ) : formsError && !formsData ? (
+        // A failed request is not "no forms": telling someone who has forms to create their first one is wrong.
+        <Card className="items-center gap-4 py-6">
+          <Alert variant="error" title="We couldn't load your forms">
+            Something went wrong on our side. Your forms are safe.
+          </Alert>
+          <Button onClick={() => void refetchForms()}>Try again</Button>
+        </Card>
       ) : !hasForms ? (
         <>
           <Card className="items-center py-6">

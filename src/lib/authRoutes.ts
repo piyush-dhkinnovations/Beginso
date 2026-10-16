@@ -9,5 +9,6 @@ export function matchesRoute(pathname: string, routes: readonly string[]): boole
 // it's ever handed to login()/router — a crafted `next=https://evil.example` or `next=//evil.com`
 // (protocol-relative) must never be honored (design.md §14/§19's open-redirect guard).
 export function sanitizeNextParam(value: string | null): string | undefined {
-  return value && /^\/(?!\/)/.test(value) ? value : undefined;
+  // One leading slash only. "//evil.com" is protocol-relative, and browsers treat "/\evil.com" the same way, so no backslash.
+  return value && /^\/(?![/\\])/.test(value) && !value.includes('\\') ? value : undefined;
 }

@@ -27,4 +27,13 @@ describe('sanitizeNextParam', () => {
   it('rejects a value with no leading slash', () => {
     expect(sanitizeNextParam('dashboard')).toBeUndefined();
   });
+
+  // A2-006: browsers read "/\" as "//", so a backslash must never get through.
+  it.each(['/\\evil.example.com', '/\\/evil.example.com', '/a\\b', '\\evil.example.com'])('rejects the backslash form %s', (value) => {
+    expect(sanitizeNextParam(value)).toBeUndefined();
+  });
+
+  it('still accepts an internal path with a query string', () => {
+    expect(sanitizeNextParam('/forms/1/inbox?tab=x')).toBe('/forms/1/inbox?tab=x');
+  });
 });
