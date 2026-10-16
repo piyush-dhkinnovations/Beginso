@@ -118,7 +118,9 @@ const FULL_NAME_RE = /^(your |full |respondent |contact )?name\b/i;
  */
 export function detectRespondentIdentity(answers: ResponseAnswers, fields?: FormField[], respondentEmail?: string | null): RespondentIdentity {
   const live = (fields ?? []).filter((f) => !f.deleted);
-  const answer = (f?: FormField) => (f ? str(answers[f.fieldId]) : undefined);
+  // The API returns answers keyed by the question's LABEL (it strips id-style keys), so that is the key to read. The field
+  // id is the fallback for data that still carries it. Looking up only by id found nothing on real responses.
+  const answer = (f?: FormField) => (f ? str(answers[f.label] ?? answers[f.fieldId]) : undefined);
   const emailField = live.find((f) => f.type === 'email' && answer(f));
   const email = str(respondentEmail) ?? answer(emailField) ?? Object.values(answers).map(str).find((v) => v && EMAIL_RE.test(v));
 
