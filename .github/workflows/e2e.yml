@@ -27,9 +27,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v7
         with:
-          # Not .nvmrc: the mock backend is started as `node e2e/mockServer.ts`, which needs a Node that runs TypeScript files
-          # directly (22.18+). Node 20 stops with ERR_UNKNOWN_FILE_EXTENSION. The same Node as local development.
-          node-version: 24
+          node-version-file: .nvmrc
           cache: npm
 
       - name: Install dependencies
