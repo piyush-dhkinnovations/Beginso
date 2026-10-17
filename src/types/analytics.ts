@@ -54,6 +54,12 @@ export interface QuestionBreakdown {
   /** People who answered this question; the denominator for every option percentage. */
   totalAnswered?: number;
   options: QuestionOption[];
+  /** Rating questions: average, top of the scale and how many gave each value. */
+  rating?: { count: number; average: number; max: number; distribution: { value: number; count: number; percentage: number }[] };
+  /** Number / currency questions. */
+  numeric?: { count: number; average: number; min: number; max: number; sum: number };
+  /** Yes/no questions: how many said each, and the share of yes. */
+  yesNo?: { yes: number; no: number; percentageYes: number };
 }
 
 export interface AnalyticsFormSummary {
