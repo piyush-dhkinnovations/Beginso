@@ -8,9 +8,8 @@ import { Sidebar } from '@/components/ui/Sidebar';
 import { WorkspaceContextSwitcher } from '@/components/workspaces/WorkspaceContextSwitcher';
 import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown';
 import { useBuilderStore } from '@/store/builderStore';
-import { dashboardService } from '@/services/dashboard';
 import { formsService } from '@/services/forms';
-import { dashboardKeys, notificationKeys, workspaceKeys } from '@/lib/queryKeys';
+import { notificationKeys, workspaceKeys } from '@/lib/queryKeys';
 import { notificationsService } from '@/services/notifications';
 import { StorageUsage } from '@/components/workspaces/StorageUsage';
 
@@ -37,30 +36,20 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
   const pathname = usePathname();
   const dirty = useBuilderStore((state) => state.dirty);
   const setPendingLeaveUrl = useBuilderStore((state) => state.setPendingLeaveUrl);
-  // Shares its cache with (user)/dashboard/page.tsx's identical query key — no extra request
-  // once the dashboard has loaded it. This sidebar only ever renders inside the already
-  // auth-protected (user)/ layout, so no separate auth gate is needed here. Defaults to "has
-  // forms" (item shown) until we actually know otherwise, so nav items don't flash
-  // hidden-then-visible while this loads.
-  const { data: analytics } = useQuery({
-    queryKey: dashboardKeys.analytics(),
-    queryFn: dashboardService.getAnalytics,
-  });
-  // Real bug found and fixed: `analytics.totalForms` leaks a workspace-owned form into its count
-  // for a brand-new user whose default workspace is the one they just joined via invite accept
-  // (formsService.getForms()'s own comment has the full root-cause) — this sidebar then kept
-  // Responses/Analytics/Reports visible for an account with zero real personal forms. `getForms`
-  // is already fixed to filter that leak out, so prefer its (small, cheap) count here instead of
-  // trusting the separate, still-contaminated analytics aggregate.
+  // This sidebar only ever renders inside the already auth-protected (user)/ layout, so no separate
+  // auth gate is needed here. Defaults to "has forms" (item shown) until we actually know otherwise,
+  // so nav items don't flash hidden-then-visible while this loads.
+  // Real bug found and fixed: `analytics.totalForms` (GET /api/dashboard/analytics) leaks a workspace-owned
+  // form into its count for a brand-new user whose default workspace is the one they just joined via invite
+  // accept (formsService.getForms()'s own comment has the full root-cause), so the sidebar kept
+  // Responses/Analytics/Reports visible for an account with zero real personal forms. `getForms` is already
+  // fixed to filter that leak out, so its (small, cheap) count is the only source here. The analytics
+  // aggregate used to be fetched on every page as a fallback for this one flag: one wasted request per page.
   const { data: personalForms } = useQuery({
     queryKey: workspaceKeys.forms({ type: 'personal' }, { page: 1, limit: 1 }),
     queryFn: () => formsService.getForms({ page: 1, limit: 1 }, { type: 'personal' }),
   });
-  const hasForms = personalForms
-    ? personalForms.total > 0
-    : analytics
-      ? analytics.totalForms > 0
-      : true;
+  const hasForms = personalForms ? personalForms.total > 0 : true;
   // Same guard src/components/dashboard/Sidebar.tsx already enforces — must be preserved by
   // whichever sidebar is actually mounted, since the confirm-leave modal
   // ((user)/forms/[id]/edit/page.tsx) only fires when something actually calls

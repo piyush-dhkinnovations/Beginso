@@ -31,15 +31,20 @@ export default function DiscoverTemplatesPage() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="rounded-(--bg-radius-md) border border-(--border-default) bg-(--surface-card) p-5 animate-pulse">
+          // Same footprint as the loaded page (category row, then three rows of cards): the footer used to
+          // jump down ~700px when the real cards arrived (layout shift 0.157 on desktop).
+          <div data-testid="templates-skeleton">
+            <div className="mb-14 h-9" aria-hidden="true" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <div key={i} className="min-h-85 rounded-(--bg-radius-md) border border-(--border-default) bg-(--surface-card) p-5 animate-pulse">
                 <div className="h-5 w-20 bg-(--surface-hover) rounded-full mb-3" />
                 <div className="h-5 bg-(--surface-hover) rounded w-3/5 mb-2" />
                 <div className="h-3 bg-(--surface-hover) rounded w-full mb-1.5" />
                 <div className="h-3 bg-(--surface-hover) rounded w-4/5" />
               </div>
             ))}
+            </div>
           </div>
         ) : error ? (
           <p className="text-center bg-body text-(--text-muted) py-16">
