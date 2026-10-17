@@ -18,6 +18,7 @@ import { useScoreCriteria } from '@/hooks/useScoreCriteria';
 import { responseActivityKeys } from '@/lib/queryKeys';
 import { formatResponseDate, shortId } from '@/lib/formatters';
 import type { ResponseDetail } from '@/types/response';
+import { fallbackStageId } from '@/lib/bulkActions';
 import type { StageRef } from '@/types/stage';
 import type { Tag } from '@/types/tag';
 import type { MemberListItem } from '@/types/team';
@@ -136,11 +137,11 @@ export function WorkflowSidebar({
             // exist without a workspace) — `status` is the raw field there, and its value lines
             // up 1:1 with PERSONAL_DEFAULT_STAGES' synthetic ids, so it's the correct fallback
             // rather than always reading as "Unknown stage."
-            value={response.stage?.id ?? (scope === 'personal' ? response.status ?? '' : '')}
+            value={response.stage?.id ?? (scope === 'personal' ? response.status ?? '' : fallbackStageId(stages, response.status))}
             disabled={isUpdating || stages.length === 0}
             onChange={(e) => onStageChange(e.target.value)}
           >
-            {!response.stage && scope !== 'personal' && <option value="">Unknown stage</option>}
+            {!response.stage && scope !== 'personal' && !fallbackStageId(stages, response.status) && <option value="">Unknown stage</option>}
             {stages.map((stage) => (
               <option key={stage.id} value={stage.id}>{stage.name}</option>
             ))}
