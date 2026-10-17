@@ -72,7 +72,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   const savedViews = useSavedViews({ scope, formId, filters, view, setFilters, role, clearSelection });
   const { activeViewId } = savedViews;
   const canExport = role !== undefined && hasCapability(role, 'responses:export');
-  const { runExport, exportCurrentFilter } = useInboxExports({ formId, filters });
+  const { runExport, exportCurrentFilter } = useInboxExports({ formId, filters, scope });
 
   const { form, formError, isFormError, refetchForm, stats, isStatsError, data, isLoading, isResponsesError, refetchResponses } =
     useResponsesData({ scope, formId, filters, page, pageLimit, setPage });

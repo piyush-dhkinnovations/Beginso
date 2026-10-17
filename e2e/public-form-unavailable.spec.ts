@@ -1,8 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Requirement 7 (Form Unavailable) — a 404 slug and a past-closeDate slug must
- * render the identical screen, never revealing which case applies.
+ * Requirement 7 (Form Unavailable). A draft, an archived form and a link that never existed are one indistinguishable 404, so a
+ * link never confirms that a draft exists. A form its OWNER closed, whose closing date has passed, or that reached its response
+ * limit says so (FIX-03): the respondent is told the real reason. These two groups are deliberately different screens.
  */
 
 test.describe('Public form — unavailable screen', () => {
@@ -12,10 +13,12 @@ test.describe('Public form — unavailable screen', () => {
     await expect(page.getByText('Check the link you were given, or contact the person who shared it.')).toBeVisible();
   });
 
-  test('a form past its closeDate shows the identical unavailable screen (client-side courtesy check)', async ({ page }) => {
+  test('a form past its closeDate says its closing date has passed (client-side courtesy check), unlike the 404 screen', async ({ page }) => {
     await page.goto('/f/mock-closed-date');
-    await expect(page.getByText('This form is not currently accepting responses.')).toBeVisible();
-    await expect(page.getByText('If you believe this is an error, please contact the form owner.')).toBeVisible();
+    await expect(page.getByText("This form's closing date has passed")).toBeVisible();
+    await expect(page.getByText('It stopped accepting responses on the date its owner set.', { exact: false })).toBeVisible();
+    await expect(page.getByText('Form not found')).not.toBeVisible();
+    await expect(page.locator('input, textarea, select')).toHaveCount(0);
   });
 
   test('a backend failure is not mislabeled as an unavailable form', async ({ page }) => {

@@ -38,7 +38,9 @@ export function ReportFormatCard({ format, title, description, onGenerate, isLoa
         style={{ backgroundColor: `color-mix(in srgb, ${tone.ink} 14%, var(--surface-card))`, color: tone.ink }}
       >
         <Icon size={24} strokeWidth={1.7} />
-        <span className="text-[10px] font-bold leading-none tracking-wide">{tone.label}</span>
+        {/* The icon carries the colour; the 10px label is plain primary text, because the tone ink on its own tinted tile failed the
+            4.5:1 contrast check in the light theme (QA A13-009). */}
+        <span className="text-[10px] font-bold leading-none tracking-wide text-(--text-primary)">{tone.label}</span>
       </span>
       <div className="min-w-48 flex-1">
         <h3 className="bg-body font-semibold text-(--text-primary)">{title}</h3>

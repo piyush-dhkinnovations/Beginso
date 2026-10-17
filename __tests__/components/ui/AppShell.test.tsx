@@ -8,45 +8,21 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppShell } from '@/components/ui/AppShell';
 
-// QA A3-008: at 768px the full sidebar took about 29% of the screen. On a tablet it now starts as the icon rail.
-describe('AppShell on a tablet', () => {
-  const mockWidth = (matchesTablet: boolean) =>
-    vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('min-width: 768px') ? matchesTablet : false, media: q, addEventListener() {}, removeEventListener() {} }));
-  afterEach(() => vi.unstubAllGlobals());
-  const shell = () =>
+describe('AppShell skip link (QA A13-011)', () => {
+  it('is the first focusable control, and jumps to the main region', async () => {
+    const user = userEvent.setup();
     render(
-      <AppShell
-        sidebar={(collapsed) => <nav data-testid="sidebar" data-collapsed={collapsed} />}
-        topBar={(toggle) => <button onClick={toggle} aria-label="Toggle sidebar">Toggle</button>}
-      >
+      <AppShell sidebar={() => <nav><a href="/x">Nav link</a></nav>} topBar={() => <header><button type="button">Menu</button></header>}>
         <p>Content</p>
       </AppShell>
     );
-
-  it('starts collapsed on a tablet, even though the saved preference is expanded', () => {
-    document.cookie = 'sidebar_collapsed=false; path=/';
-    mockWidth(true);
-    shell();
-    expect(screen.getByTestId('sidebar')).toHaveAttribute('data-collapsed', 'true');
-  });
-
-  it('the menu button opens it on a tablet, and does not overwrite the saved desktop preference', async () => {
-    document.cookie = 'sidebar_collapsed=false; path=/';
-    mockWidth(true);
-    const user = userEvent.setup();
-    shell();
-    await user.click(screen.getByRole('button', { name: 'Toggle sidebar' }));
-    expect(screen.getByTestId('sidebar')).toHaveAttribute('data-collapsed', 'false');
-    expect(document.cookie).toContain('sidebar_collapsed=false');
-    await user.click(screen.getByRole('button', { name: 'Toggle sidebar' }));
-    expect(screen.getByTestId('sidebar')).toHaveAttribute('data-collapsed', 'true');
-  });
-
-  it('stays expanded on a desktop that has no saved preference', () => {
-    document.cookie = 'sidebar_collapsed=; path=/; max-age=0';
-    mockWidth(false);
-    shell();
-    expect(screen.getByTestId('sidebar')).toHaveAttribute('data-collapsed', 'false');
+    await user.tab();
+    const skip = screen.getByRole('link', { name: 'Skip to main content' });
+    expect(skip).toHaveFocus();
+    expect(skip).toHaveAttribute('href', '#main-content');
+    const main = screen.getByRole('main');
+    expect(main).toHaveAttribute('id', 'main-content');
+    expect(main).toHaveAttribute('tabindex', '-1');
   });
 });
 

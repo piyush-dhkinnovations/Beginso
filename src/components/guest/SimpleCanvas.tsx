@@ -3,7 +3,7 @@
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Plus, Trash2, X } from 'lucide-react';
+import { GripVertical, Trash2, X } from 'lucide-react';
 import { Switch } from '@/components/ui/Switch';
 import { useBuilderStore } from '@/store/builderStore';
 import { brandButtonStyle, brandCardClass, brandPanelStyle, brandTypeStyle, brandWashStyle } from '@/lib/formTheme';
@@ -95,7 +95,8 @@ export function SimpleCanvas({ setTitle }: { setTitle: (t: string) => void }) {
   const formTitle = useBuilderStore((s) => s.formTitle);
   const branding = useBuilderStore((s) => s.branding);
   const activePageId = useBuilderStore((s) => s.activePageId);
-  const { setPageTitle, setPageDescription, setActivePageId, addField, reorderFields, addPage, deletePage } = useBuilderStore.getState();
+  const { setPageTitle, setPageDescription, setActivePageId, addField, reorderFields, deletePage } = useBuilderStore.getState();
+  const successMessage = useBuilderStore((s) => s.settings.successMessage ?? '');
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
   const sorted = [...pages].sort((a, b) => a.order - b.order);
@@ -103,7 +104,8 @@ export function SimpleCanvas({ setTitle }: { setTitle: (t: string) => void }) {
   const onDragEnd = (e: DragEndEvent) => {
     if (e.over && e.active.id !== e.over.id) reorderFields(String(e.active.id), String(e.over.id));
   };
-  const hasExtras = fields.some((f) => !f.deleted && f.logicRules?.length);
+  // A template can bring sections and conditional logic. They work when the form is filled in, but a guest cannot edit them.
+  const hasExtras = sorted.length > 1 || fields.some((f) => !f.deleted && f.logicRules?.length);
 
   return (
     <div className="min-h-full">
@@ -156,22 +158,31 @@ export function SimpleCanvas({ setTitle }: { setTitle: (t: string) => void }) {
                   </SortableContext>
                   {rows.length === 0 && (
                     <p className="rounded-lg border border-dashed border-(--border-strong) p-4 text-center bg-body-sm text-(--text-muted)">
-                      No questions in this section yet. <span className="hidden lg:inline">Pick a field on the left.</span><span className="lg:hidden">Use Add question below.</span>
+                      No questions in this section yet. Use Add question below.
                     </p>
                   )}
-                  <div className="lg:hidden"><AddQuestionButton onAdd={(t) => { setActivePageId(page.id); addField(t); }} /></div>
+                  <AddQuestionButton onAdd={(t) => { setActivePageId(page.id); addField(t); }} />
                 </section>
               );
             })}
           </DndContext>
-          <button type="button" onClick={() => { addPage(); }} className="flex min-h-11 items-center justify-center gap-2 self-start rounded-lg border border-dashed border-(--border-strong) px-4 bg-body-sm font-medium text-(--text-link) hover:bg-(--accent-soft)">
-            <Plus size={16} aria-hidden="true" />
-            Add section
-          </button>
           <span className="self-start rounded-md px-6 py-2.5 bg-body font-semibold" style={brandButtonStyle(branding)} aria-hidden="true">Submit</span>
         </div>
       </div>
-      {hasExtras && <p className="mx-auto mt-4 max-w-2xl bg-body-sm text-(--text-secondary)">More options (conditional logic, form limits) are available after you sign up.</p>}
+      <div className="mx-auto mt-4 flex max-w-2xl flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <label htmlFor="guest-success" className="bg-body-sm font-medium text-(--text-primary)">Message after someone submits</label>
+          <textarea
+            id="guest-success"
+            rows={2}
+            value={successMessage}
+            onChange={(e) => useBuilderStore.getState().setSettings({ successMessage: e.target.value })}
+            placeholder="Thanks, we received your response."
+            className="w-full rounded-md border border-(--border-default) bg-(--surface-card) p-3 bg-body-sm text-(--text-primary) focus:border-(--border-focus) focus:outline-none"
+          />
+        </div>
+        {hasExtras && <p className="bg-body-sm text-(--text-secondary)">More options (logic, multiple pages, settings) are available after you sign up.</p>}
+      </div>
       </div>
     </div>
   );

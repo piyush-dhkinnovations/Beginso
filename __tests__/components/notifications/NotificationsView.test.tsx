@@ -73,6 +73,20 @@ beforeEach(() => {
   list = { isLoading: false, isError: false, data: { pages: [{ items: [] }] }, hasNextPage: false, isFetchingNextPage: false, refetch: vi.fn(), fetchNextPage: vi.fn() };
 });
 
+describe('NotificationsView: the tabs control a real panel (QA A13-005)', () => {
+  it('every tab aria-controls an existing tabpanel labelled by the active tab', () => {
+    render(<NotificationsView scope="personal" />);
+    for (const tab of screen.getAllByRole('tab')) {
+      const id = tab.getAttribute('aria-controls');
+      expect(id).toBeTruthy();
+      const panel = document.getElementById(id as string);
+      expect(panel).not.toBeNull();
+      expect(panel).toHaveAttribute('role', 'tabpanel');
+    }
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', 'tab-all');
+  });
+});
+
 describe('NotificationsView', () => {
   it('shows the loading skeleton', () => {
     list = { ...list, isLoading: true, data: undefined };

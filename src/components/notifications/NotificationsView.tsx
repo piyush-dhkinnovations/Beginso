@@ -101,8 +101,10 @@ export function NotificationsView({ scope }: NotificationsViewProps) {
       <OfflineBanner />
       <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
 
-      <Tabs tabs={TABS} activeId={filter} onChange={changeTab} ariaLabel="Notification filters" />
+      <Tabs tabs={TABS} activeId={filter} onChange={changeTab} ariaLabel="Notification filters" panelId="notifications-panel" />
 
+      {/* The one list every tab filters: the panel the tabs control. */}
+      <div role="tabpanel" id="notifications-panel" aria-labelledby={`tab-${filter}`} className="flex flex-col gap-4">
       {listQuery.isLoading ? (
         <Card padded={false} aria-busy="true" aria-label="Loading notifications">
           <ul className="divide-y divide-(--border-default)">
@@ -162,6 +164,7 @@ export function NotificationsView({ scope }: NotificationsViewProps) {
           )}
         </>
       )}
+      </div>
     </div>
   );
 }
