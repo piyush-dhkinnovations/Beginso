@@ -8,6 +8,7 @@ vi.mock('@/components/ui/Toast', () => ({ useToast: () => ({ toast }) }));
 import { formsService } from '@/services/forms';
 import { useBuilderStore } from '@/store/builderStore';
 import { useBuilderAutosave, saveFormSnapshot } from '@/components/form-builder/useBuilderAutosave';
+import { setPendingEdit, hasPendingEdits, resetPendingEdits } from '@/lib/pendingEdits';
 import type { Form } from '@/types/form';
 
 const updateForm = formsService.updateForm as ReturnType<typeof vi.fn>;
@@ -197,6 +198,37 @@ describe('useBuilderAutosave - retry and flush', () => {
     const dirty = new Event('beforeunload', { cancelable: true });
     window.dispatchEvent(dirty);
     expect(dirty.defaultPrevented).toBe(true);
+  });
+
+  // QA D3-001. A page that is going away must (1) commit text typed in the last moments, (2) send it so it outlives the page.
+  it('on page hide: commits typed-but-uncommitted text first, then sends it with keepalive', async () => {
+    renderHook(() => useBuilderAutosave());
+    expect(store().dirty).toBe(false);
+    // An input holding text the debounce has not handed over yet.
+    setPendingEdit('blur:label', { flush: () => store().setFormTitle('Typed just now') });
+    await act(async () => {
+      window.dispatchEvent(new Event('pagehide'));
+    });
+    expect(updateForm).toHaveBeenCalledTimes(1);
+    expect(updateForm.mock.calls[0][1]).toMatchObject({ title: 'Typed just now' });
+    expect(updateForm.mock.calls[0][2]).toEqual({ keepalive: true });
+    resetPendingEdits();
+  });
+
+  it('an ordinary autosave keeps its exact call shape (no extra argument)', async () => {
+    await saveFormSnapshot('f9', { fields: [], formTitle: 'T', pages: [], branding: {}, settings: { honeypotEnabled: true } } as never);
+    expect(updateForm.mock.calls[0]).toHaveLength(2);
+  });
+
+  it('warns before unload while text is typed but not yet committed, even though the store is clean', () => {
+    renderHook(() => useBuilderAutosave());
+    expect(store().dirty).toBe(false);
+    setPendingEdit('blur:label', { flush: () => undefined });
+    expect(hasPendingEdits()).toBe(true);
+    const ev = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBe(true);
+    resetPendingEdits();
   });
 
   it('saves pending edits on unmount and removes its listeners', async () => {

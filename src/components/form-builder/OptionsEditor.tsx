@@ -18,6 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Plus, X } from 'lucide-react';
+import { setPendingEdit } from '@/lib/pendingEdits';
 
 interface Row {
   id: string;
@@ -149,6 +150,25 @@ export function OptionsEditor({ fieldId, options, onUpdate }: OptionsEditorProps
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- commit/onUpdate identity changes every render
   }, [rows]);
+
+  // Typed but not committed: either the debounce has not fired, or a row is empty and the list is held back. Both are unsaved
+  // work, so the header must not say "All changes saved" and leaving must warn (QA D3-001, D3-003).
+  const rowsRef = useRef(rows);
+  useEffect(() => {
+    rowsRef.current = rows;
+  });
+  const pendingKey = `options:${fieldId}`;
+  useEffect(() => {
+    const committed = lastCommitted.current;
+    const differs = !(rows.length === committed.length && rows.every((r, i) => r.value === committed[i]));
+    if (!differs) {
+      setPendingEdit(pendingKey, null);
+      return;
+    }
+    setPendingEdit(pendingKey, { flush: () => commit(rowsRef.current) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- commit is recreated every render; the ref carries the latest rows
+  }, [rows, pendingKey]);
+  useEffect(() => () => setPendingEdit(pendingKey, null), [pendingKey]);
 
   const handleAdd = () => {
     const next = [...rows, { id: crypto.randomUUID(), value: `Option ${rows.length + 1}` }];

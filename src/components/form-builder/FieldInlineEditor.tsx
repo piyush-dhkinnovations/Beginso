@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { setPendingEdit } from '@/lib/pendingEdits';
 import type { FormField, ImageAspectRatio, ImagePreviewPosition, ImagePreviewSize, UrlDisplay, UrlPreviewStyle } from '@/types/form';
 import { Input } from '@/components/ui/Input';
 import { Radio } from '@/components/ui/Radio';
@@ -76,6 +77,23 @@ function BlurField({
       onCommit(!allowEmpty && !trimmed ? defaultValue : trimmed);
     }
   };
+
+  // Typed but not yet committed: tell the builder, so the header says "Unsaved changes", the leave prompt is armed, and a
+  // page-hide can commit it first (QA D3-001). A cleared required field is not an edit (it reverts on blur).
+  const latest = useRef({ local, defaultValue, allowEmpty, onCommit });
+  useEffect(() => {
+    latest.current = { local, defaultValue, allowEmpty, onCommit };
+  });
+  const pendingKey = `blur:${id}`;
+  const typed = local.trim() !== defaultValue && (allowEmpty || !!local.trim());
+  useEffect(() => {
+    if (!typed) {
+      setPendingEdit(pendingKey, null);
+      return;
+    }
+    setPendingEdit(pendingKey, { flush: () => latest.current.onCommit(latest.current.local.trim()) });
+  }, [typed, pendingKey]);
+  useEffect(() => () => setPendingEdit(pendingKey, null), [pendingKey]);
 
   // Commit shortly after the last keystroke too, not only on blur — otherwise the store stays
   // clean while typing, the header says "All changes saved" and a reload/hard navigation loses

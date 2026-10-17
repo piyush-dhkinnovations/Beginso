@@ -40,7 +40,10 @@ describe('saveErrorDetail', () => {
 
   it('uses the message of a 400, but never leaks a 500 body', () => {
     expect(saveErrorDetail(axiosError(400, { message: 'minDate cannot be greater than maxDate' }))).toBe('minDate cannot be greater than maxDate');
-    expect(saveErrorDetail(axiosError(500, { message: 'stack trace at /srv/app.js' }))).toBeNull();
+    // A 500 now names the status (QA D3-002) but still never shows the body.
+    const detail = saveErrorDetail(axiosError(500, { message: 'stack trace at /srv/app.js' }));
+    expect(detail).toBe('Beginso had a problem saving (error 500)');
+    expect(detail).not.toMatch(/stack trace/);
   });
 
   it('returns null for a non-HTTP error', () => {
