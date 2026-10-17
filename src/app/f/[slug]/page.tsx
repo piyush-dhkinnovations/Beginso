@@ -24,6 +24,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { schema, unavailable } = await publicFormService.getFormSchema(slug).catch(() => ({ schema: null, unavailable: undefined }));
   // A closed form is not a page to index or share, and its tab says why instead of a generic "Form".
   if (unavailable) return { title: UNAVAILABLE_COPY[unavailable].title, robots: { index: false, follow: false } };
+  // The same for a closing date the page itself catches (the server had not said so yet): it was noindex in the body only after render.
+  if (schema && isPastCloseDate(schema.settings.closeDate)) return { title: UNAVAILABLE_COPY.closeDate.title, robots: { index: false, follow: false } };
   const description = schema?.pages?.[0]?.description;
 
   return {
@@ -70,6 +72,11 @@ export default async function PublicFormPage({ params, searchParams }: Props) {
   const { schema, userNote, unavailable } = result;
 
   // The owner closed it, its closing date passed, or its limit was reached: say which.
+  //
+  // HTTP status, decided (QA D4-001): these pages answer 200 although the API says 410. A Next.js page can answer 404 (notFound())
+  // but has no way to answer 410; the only route is the edge proxy asking the backend a second time on every public form view,
+  // which is a real cost on the respondents' hot path for a cosmetic gain. What matters to a crawler is covered instead: the
+  // title says why and the page is noindex (generateMetadata above). Draft, archived and unknown links stay a REAL 404.
   if (unavailable) return <FormUnavailable reason={unavailable} />;
 
   // Client-side courtesy only — the backend must independently reject submissions

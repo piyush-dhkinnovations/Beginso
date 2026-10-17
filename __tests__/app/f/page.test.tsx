@@ -73,6 +73,25 @@ describe('public form page: the tab title and indexing', () => {
     expect(meta.robots).toEqual({ index: false, follow: false });
   });
 
+  // Closed pages answer 200 on purpose (a Next.js page cannot answer 410); noindex is what keeps them out of search (QA D4-001).
+  it.each(['closed', 'closeDate', 'limit'] as const)('every closed state (%s) is noindex', async (reason) => {
+    getFormSchema.mockResolvedValue({ schema: null, unavailable: reason });
+    expect((await generateMetadata(props)).robots).toEqual({ index: false, follow: false });
+  });
+
+  it('a closing date the page catches itself is noindex too, with the closing-date title', async () => {
+    getFormSchema.mockResolvedValue(open({ closeDate: '2020-01-01T00:00:00.000Z' }));
+    const meta = await generateMetadata(props);
+    expect(meta.title).toBe("This form's closing date has passed");
+    expect(meta.robots).toEqual({ index: false, follow: false });
+  });
+
+  it('a draft or unknown link is a real 404, not a 200 page', async () => {
+    getFormSchema.mockResolvedValue({ schema: null });
+    await PublicFormPage(props).catch(() => undefined);
+    expect(notFound).toHaveBeenCalled();
+  });
+
   it('an open form keeps its own title', async () => {
     getFormSchema.mockResolvedValue(open());
     expect((await generateMetadata(props)).title).toBe('Contact');
