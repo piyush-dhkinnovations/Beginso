@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { Sidebar } from '@/components/ui/Sidebar';
 import { Home } from 'lucide-react';
 
@@ -29,14 +29,47 @@ describe('Sidebar component', () => {
 });
 
 describe('Sidebar (collapsed rail)', () => {
-  it('gives every icon-only link an accessible name and a tooltip', () => {
-    render(<Sidebar collapsed groups={[{ items: [{ label: 'Insights', href: '/insights', icon: Home }] }]} />);
-    const link = screen.getByRole('link', { name: 'Insights' });
-    expect(link).toHaveAttribute('title', 'Insights');
+  const rail = () => render(<Sidebar collapsed groups={[{ items: [{ label: 'Insights', href: '/insights', icon: Home }] }]} />);
+
+  it('gives every icon-only link an accessible name', () => {
+    rail();
+    expect(screen.getByRole('link', { name: 'Insights' })).toHaveAttribute('aria-label', 'Insights');
   });
 
-  it('adds neither when expanded (the visible label is the name)', () => {
-    render(<Sidebar groups={[{ items: [{ label: 'Insights', href: '/insights', icon: Home }] }]} />);
+  // QA A3-006: the native title never showed for a keyboard user. The label now appears on keyboard focus as well as hover.
+  it('shows the label on keyboard focus, and Esc hides it', () => {
+    rail();
+    const link = screen.getByRole('link', { name: 'Insights' });
+    expect(screen.queryByRole('tooltip', { hidden: true })).not.toBeInTheDocument();
+    fireEvent.focus(link);
+    expect(screen.getByRole('tooltip', { hidden: true })).toHaveTextContent('Insights');
+    fireEvent.keyDown(link, { key: 'Escape' });
+    expect(screen.queryByRole('tooltip', { hidden: true })).not.toBeInTheDocument();
+  });
+
+  it('shows the label on mouse hover and hides it on leave, and on blur', () => {
+    rail();
+    const link = screen.getByRole('link', { name: 'Insights' });
+    fireEvent.mouseEnter(link);
+    expect(screen.getByRole('tooltip', { hidden: true })).toHaveTextContent('Insights');
+    fireEvent.mouseLeave(link);
+    expect(screen.queryByRole('tooltip', { hidden: true })).not.toBeInTheDocument();
+    fireEvent.focus(link);
+    fireEvent.blur(link);
+    expect(screen.queryByRole('tooltip', { hidden: true })).not.toBeInTheDocument();
+  });
+
+  it('does not rely on a native title (it would show a second tooltip)', () => {
+    rail();
     expect(screen.getByRole('link', { name: 'Insights' })).not.toHaveAttribute('title');
+  });
+
+  it('adds none of this when expanded (the visible label is the name)', () => {
+    render(<Sidebar groups={[{ items: [{ label: 'Insights', href: '/insights', icon: Home }] }]} />);
+    const link = screen.getByRole('link', { name: 'Insights' });
+    expect(link).not.toHaveAttribute('title');
+    expect(link).not.toHaveAttribute('aria-label');
+    fireEvent.focus(link);
+    expect(screen.queryByRole('tooltip', { hidden: true })).not.toBeInTheDocument();
   });
 });
