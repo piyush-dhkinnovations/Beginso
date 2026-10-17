@@ -325,7 +325,7 @@ export function ResponseDrawer({
     // (requirements.md §9.3/B4.16); reuses the same `exportPayloadFromTarget` the Inbox's own
     // Export/BulkActionBar already build from, rather than a bespoke download call.
     reportsService
-      .createReport(exportPayloadFromTarget('csv', { ids: [response._id] }))
+      .createReport(exportPayloadFromTarget('csv', { ids: [response._id] }), scope)
       .then(() => toast(DOWNLOAD_QUEUED, 'success'))
       .catch(() => toast(DOWNLOAD_FAILED, 'error'));
   }

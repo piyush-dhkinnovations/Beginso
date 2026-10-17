@@ -14,6 +14,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ResponseDrawer } from '@/components/responses/ResponseDrawer';
 import { responseKeys } from '@/lib/queryKeys';
+import { reportsService } from '@/services/reports';
 import type { ResponseDetail } from '@/types/response';
 import type { StageRef } from '@/types/stage';
 
@@ -239,6 +240,18 @@ describe('ResponseDrawer', () => {
 
     expect(opener).toHaveFocus();
     opener.remove();
+  });
+
+  // QA D5-002: the single-response download went out under the personal scope too, so a workspace response answered "Form not found".
+  it('downloads a workspace response under that workspace scope', async () => {
+    mockGetResponseById.mockResolvedValue(detail);
+    const createReport = vi.spyOn(reportsService, 'createReport').mockResolvedValue({} as never);
+    const user = userEvent.setup();
+    renderDrawer('resp-1', vi.fn(), { scope: 'acme' });
+    await screen.findByText('Submitted response');
+    await user.click(screen.getByRole('button', { name: 'Download response' }));
+    expect(createReport).toHaveBeenCalledWith(expect.objectContaining({ format: 'csv', ids: ['resp-1'] }), 'acme');
+    createReport.mockRestore();
   });
 
   // QA A6-011: the parent re-creates onClose on every render. The focus effect depended on it, so each parent render
