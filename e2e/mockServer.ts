@@ -89,6 +89,17 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // The public form page tells the backend a visitor opened it (POST /api/public/:slug/view, answered 204 by the real backend).
+  // Without this the mock answered 404 and the browser logged a console error on every load.
+  if (req.method === 'POST' && url.pathname.split('/').filter(Boolean).join('/').match(/^api\/public\/[^/]+\/view$/)) {
+    for await (const _chunk of req) {
+      /* discard */
+    }
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   const match = url.pathname.match(/^\/api\/public\/([^/]+)(\/submit)?\/?$/);
 
   if (!match) {
