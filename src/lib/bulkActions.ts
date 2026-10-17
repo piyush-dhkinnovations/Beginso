@@ -31,3 +31,12 @@ export function describeBulkFailures(failed: readonly { reason?: string }[]): st
   const text = top[0].replace(/[.\s]+$/, '');
   return rest.length > 0 ? ` ${text}, and ${rest.length} other reason${rest.length === 1 ? '' : 's'}.` : ` ${text}.`;
 }
+
+/**
+ * The stage a response with no stage of its own is shown under: the first stage of the category its status names (a new response
+ * with no explicit stage is "New"). Older responses were created before a workspace response started in a default stage, so the
+ * drawer used to read "Unknown stage" for them (QA D5-007). Empty when the workspace has no stage in that category.
+ */
+export function fallbackStageId(stages: readonly { id: string; category: string }[], status: string | null | undefined): string {
+  return stages.find((s) => s.category === (status ?? 'new'))?.id ?? '';
+}

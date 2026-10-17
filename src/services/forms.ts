@@ -163,7 +163,7 @@ export const formsService = {
       },
     })),
 
-  updateForm: (id: string, payload: UpdateFormPayload) =>
+  updateForm: (id: string, payload: UpdateFormPayload, opts: { keepalive?: boolean } = {}) =>
     axiosInstance
       .patch<Form>(`/api/forms/${id}`, {
         ...payload,
@@ -171,7 +171,7 @@ export const formsService = {
         ...(payload.pages && payload.pages.length === 0 ? { pages: undefined } : {}),
         ...(payload.branding ? { branding: sanitizeBranding(payload.branding as Record<string, unknown>) } : {}),
         ...(payload.settings ? { settings: dropNulls(payload.settings) } : {}),
-      })
+      }, opts.keepalive ? { adapter: 'fetch', fetchOptions: { keepalive: true } } : undefined)
       .then((r) => r.data),
 
   // Sprint 13 (CF5.5) — BREAKING on the backend: this now moves the form to Trash (200 with `purgeAt`) instead

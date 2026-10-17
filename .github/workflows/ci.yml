@@ -1,0 +1,68 @@
+name: ci
+
+# Runs on every pull request to main and on every push to main. GitHub-hosted runner only: a pull request's code never runs on a
+# self-hosted machine. The one job is called "ci" so branch protection can require a single, stable check name.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# A newer push to the same branch cancels the run still in progress for the old one.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      # Dummy values, only so `next build` can run. Nothing here is a secret and none of it is used at runtime.
+      NEXT_PUBLIC_API_URL: https://api.example.invalid
+      NEXT_PUBLIC_APP_URL: https://app.example.invalid
+      NEXT_PUBLIC_FIREBASE_API_KEY: ci-dummy-api-key
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ci-dummy.firebaseapp.invalid
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ci-dummy-project
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ci-dummy.appspot.invalid
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "000000000000"
+      NEXT_PUBLIC_FIREBASE_APP_ID: 1:000000000000:web:ci-dummy
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # A merge once committed 15 files with unresolved conflict markers. Any tracked file with a marker line fails the run.
+      - name: Conflict markers
+        run: |
+          if git grep -nE '^(<<<<<<< |>>>>>>> |=======$)' -- . ':!*.md' ':!package-lock.json' ':!*.snap'; then
+            echo "::error::Unresolved merge-conflict markers found (lines above). Resolve them and push again."
+            exit 1
+          fi
+          echo "No conflict markers."
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build
+        run: npm run build

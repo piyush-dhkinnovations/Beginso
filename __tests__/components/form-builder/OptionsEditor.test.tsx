@@ -10,6 +10,37 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { OptionsEditor } from '@/components/form-builder/OptionsEditor';
+import { hasPendingEdits, flushPendingEdits, resetPendingEdits } from '@/lib/pendingEdits';
+
+// QA D3-001 / D3-003: an edit held back (typed, or blocked by an empty row) is unsaved work, so the builder must know about it.
+describe('OptionsEditor: typed-but-uncommitted options', () => {
+  it('an empty row blocks the save and counts as pending, until it is filled in', async () => {
+    resetPendingEdits();
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    render(<OptionsEditor fieldId="f1" options={['A', 'B']} onUpdate={onUpdate} />);
+    expect(hasPendingEdits()).toBe(false);
+    await user.clear(screen.getByDisplayValue('B'));
+    await waitFor(() => expect(hasPendingEdits()).toBe(true));
+    expect(onUpdate).not.toHaveBeenCalled();
+    await user.type(screen.getAllByRole('textbox')[1], 'Bee');
+    flushPendingEdits();
+    expect(onUpdate).toHaveBeenCalledWith('f1', ['A', 'Bee']);
+    resetPendingEdits();
+  });
+
+  it('flushing commits text typed inside the debounce window right away', async () => {
+    resetPendingEdits();
+    const user = userEvent.setup();
+    const onUpdate = vi.fn();
+    render(<OptionsEditor fieldId="f1" options={['A', 'B']} onUpdate={onUpdate} />);
+    await user.type(screen.getByDisplayValue('A'), 'x');
+    expect(hasPendingEdits()).toBe(true);
+    flushPendingEdits();
+    expect(onUpdate).toHaveBeenCalledWith('f1', ['Ax', 'B']);
+    resetPendingEdits();
+  });
+});
 
 describe('OptionsEditor', () => {
   it('renders one input per option', () => {
