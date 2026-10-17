@@ -168,9 +168,12 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
 
       if ('ids' in target) {
         if (action.type === 'delete') {
+          // Every query under the list key is visited, and not all of them are a page of rows: the stats entry, and the Board and
+          // Calendar queries (paged differently) share the prefix. Only a real page is filtered. Reading `.data.filter` on the others
+          // threw inside onMutate, so the request was never sent and the person saw "Failed to update responses" (QA D5-004).
           queryClient.setQueriesData<PaginatedResponsesResult>({ queryKey: listKey }, (old) =>
-            old
-              ? { ...old, data: old.data.filter((r) => !target.ids.includes(r._id)), total: Math.max(old.total - target.ids.length, 0) }
+            old && Array.isArray(old.data)
+              ? { ...old, data: old.data.filter((r) => !target.ids.includes(r._id)), total: Math.max((old.total ?? old.data.length) - target.ids.length, 0) }
               : old
           );
         } else {
