@@ -18,6 +18,15 @@ describe('formatStorage', () => {
     expect(formatStorage(320 * MB)).toBe('320 MB');
     expect(formatStorage(2048 * MB)).toBe('2.0 GB');
   });
+
+  it('keeps small usage visible: KB under 1 MB, one decimal under 10 MB', () => {
+    expect(formatStorage(0)).toBe('0 MB');
+    expect(formatStorage(63994)).toBe('62 KB');
+    expect(formatStorage(1)).toBe('1 KB');
+    expect(formatStorage(1.5 * MB)).toBe('1.5 MB');
+    expect(formatStorage(9.94 * MB)).toBe('9.9 MB');
+    expect(formatStorage(10 * MB)).toBe('10 MB');
+  });
 });
 
 describe('quota error codes', () => {

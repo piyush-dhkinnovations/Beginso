@@ -29,4 +29,9 @@ describe('Avatar component', () => {
     const { container } = render(<Avatar name="Priya Sharma" size="lg" />);
     expect(container.firstElementChild?.className).toMatch(/bg-avatar-lg/);
   });
+
+  it('shows a development-origin avatar by its path (the live site blocks http://localhost)', () => {
+    render(<Avatar name="Priya Sharma" src="http://localhost:3000/avatars/01.svg" />);
+    expect(screen.getByRole('img')).toHaveAttribute('src', '/avatars/01.svg');
+  });
 });
