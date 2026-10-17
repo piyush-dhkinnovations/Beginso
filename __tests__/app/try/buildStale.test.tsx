@@ -7,7 +7,6 @@ vi.mock('next/navigation', () => ({ useRouter: () => router }));
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ isAuthenticated: false }) }));
 vi.mock('@/components/form-builder/useBuilderUndoShortcuts', () => ({ useBuilderUndoShortcuts: () => undefined }));
 vi.mock('@/components/guest/SimpleCanvas', () => ({ SimpleCanvas: () => null, addQuestionToActive: vi.fn() }));
-vi.mock('@/components/guest/EditorPanels', () => ({ LeftPanel: () => null, RightPanel: () => null }));
 vi.mock('@/components/guest/DesignDrawer', () => ({ DesignDrawer: () => null }));
 vi.mock('@/components/guest/GuestPreviewOverlay', () => ({ GuestPreviewOverlay: () => null }));
 vi.mock('@/components/guest/GuestAccountModal', () => ({ CLAIM_PATH: '/forms/claim', GuestAccountModal: () => null }));

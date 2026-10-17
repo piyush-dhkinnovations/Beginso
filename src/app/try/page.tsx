@@ -95,7 +95,7 @@ export default function TryPage() {
 
         <div>
           <h1 className="bg-h2 text-(--text-primary)">What do you want to collect?</h1>
-          <p className="mt-1 bg-body-lg text-(--text-secondary)">Pick a starting point. You can change every question and the look in the editor. No account needed; you sign up when you save.</p>
+          <p className="mt-1 bg-body-lg text-(--text-secondary)">Pick a starting point. You can change every question and the look in the editor.</p>
         </div>
 
         {showChips && (
@@ -131,6 +131,7 @@ export default function TryPage() {
                 </li>
               ))}
             </ul>
+            <p className="bg-body-sm text-(--text-secondary)">No account needed. You sign up when you save.</p>
           </>
         )}
 

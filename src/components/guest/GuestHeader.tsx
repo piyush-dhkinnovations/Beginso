@@ -16,7 +16,7 @@ const STATUS_TEXT: Record<SaveStatus, string> = {
   stale: 'This draft changed in another tab. Reload to continue.',
 };
 
-// Wide (lg and up): logo | form name | save status | Save to my account, in one row (Design and Preview are side panels there).
+// Wide (lg and up): logo | form name | save status | Design | Preview | Save to my account, in one row.
 // Below lg the row would not fit (QA A10-001/A10-002: the Save button was clipped at 768 and the name input shrank to ~38px at
 // 390), so the header becomes: row 1 = logo + actions, row 2 = the form name at full width, row 3 = the save status.
 // Below md, Design and Preview move into one menu and the primary button reads just "Save".
@@ -40,7 +40,7 @@ export function GuestHeader(props: {
         </div>
         <div className="hidden min-w-0 flex-1 lg:block">{status}</div>
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <Button variant="secondary" size="small" className="hidden md:inline-flex lg:hidden" onClick={props.onDesign}>Design</Button>
+          <Button variant="secondary" size="small" className="hidden md:inline-flex" onClick={props.onDesign}>Design</Button>
           <Button variant="secondary" size="small" className="hidden gap-2 md:inline-flex" onClick={props.onPreview}><Eye size={16} aria-hidden="true" />Preview</Button>
           <details className="relative md:hidden">
             <summary className="flex min-h-11 min-w-11 cursor-pointer list-none items-center justify-center rounded-md border border-(--border-default)" aria-label="Design and preview">⋯</summary>

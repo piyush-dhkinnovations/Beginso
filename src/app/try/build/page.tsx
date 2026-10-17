@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBuilderUndoShortcuts } from '@/components/form-builder/useBuilderUndoShortcuts';
-import { SimpleCanvas, addQuestionToActive } from '@/components/guest/SimpleCanvas';
-import { LeftPanel, RightPanel } from '@/components/guest/EditorPanels';
+import { SimpleCanvas } from '@/components/guest/SimpleCanvas';
 import { DesignDrawer } from '@/components/guest/DesignDrawer';
 import { GuestHeader, type SaveStatus } from '@/components/guest/GuestHeader';
 import { GuestPreviewOverlay } from '@/components/guest/GuestPreviewOverlay';
@@ -125,16 +124,10 @@ export default function GuestBuilderPage() {
     <main className="flex h-dvh flex-col bg-(--bg-subtle)">
       <GuestHeader title={formTitle} onTitle={setTitle} status={saved} onReload={() => window.location.reload()} onDesign={() => setDesignOpen(true)} onPreview={() => setPreviewing(true)} onSave={save} />
 
-      <div className="flex min-h-0 flex-1">
-        <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-(--border-default) bg-(--surface-card) p-4 lg:block">
-          <LeftPanel onAdd={addQuestionToActive} />
-        </aside>
-        <div className="min-w-0 flex-1 overflow-y-auto">
-          <SimpleCanvas setTitle={setTitle} />
-        </div>
-        <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-(--border-default) bg-(--surface-card) p-4 lg:block">
-          <RightPanel onSave={save} />
-        </aside>
+      {/* Simple mode: the form is the editor. One centred canvas and one scrollbar; no field palette, no pages column. Design
+          opens as a drawer. */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <SimpleCanvas setTitle={setTitle} />
       </div>
 
       <DesignDrawer isOpen={designOpen} onClose={() => setDesignOpen(false)} />
