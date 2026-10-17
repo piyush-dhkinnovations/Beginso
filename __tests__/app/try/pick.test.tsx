@@ -39,3 +39,11 @@ describe('/try pick screen', () => {
     await waitFor(() => expect(loadDraft()).toBeNull());
   });
 });
+
+describe('/try pick screen: copy', () => {
+  it('says no account is needed under the grid, and keeps the heading', () => {
+    render(<TryPage />);
+    expect(screen.getByRole('heading', { name: 'What do you want to collect?' })).toBeTruthy();
+    expect(screen.getByText('No account needed. You sign up when you save.')).toBeTruthy();
+  });
+});

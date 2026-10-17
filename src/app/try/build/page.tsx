@@ -3,14 +3,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBuilderUndoShortcuts } from '@/components/form-builder/useBuilderUndoShortcuts';
-import { SimpleCanvas, addQuestionToActive } from '@/components/guest/SimpleCanvas';
-import { LeftPanel, RightPanel } from '@/components/guest/EditorPanels';
+import { SimpleCanvas } from '@/components/guest/SimpleCanvas';
 import { DesignDrawer } from '@/components/guest/DesignDrawer';
 import { GuestHeader, type SaveStatus } from '@/components/guest/GuestHeader';
 import { GuestPreviewOverlay } from '@/components/guest/GuestPreviewOverlay';
 import { CLAIM_PATH, GuestAccountModal } from '@/components/guest/GuestAccountModal';
 import { useBuilderStore } from '@/store/builderStore';
 import { useAuth } from '@/hooks/useAuth';
+import { authService } from '@/services/auth';
 import { DRAFT_STORAGE_KEY, hydrateBranding, isDraftPersistent, loadDraft, saveDraft, versionOfRaw } from '@/lib/guest/guestDraft';
 import { toPublicSchema } from '@/lib/guest/previewSchema';
 import { trackFunnel } from '@/lib/guest/funnel';
@@ -103,9 +103,17 @@ export default function GuestBuilderPage() {
 
   const schema = useMemo(() => toPublicSchema({ title: formTitle, pages, fields, branding, settings }), [formTitle, pages, fields, branding, settings]);
 
-  const save = () => {
+  const save = async () => {
     void persist();
     if (isAuthenticated) return router.push(CLAIM_PATH); // already signed in: nothing to sign up for
+    // This tab may have loaded before the person signed in somewhere else (another tab, the sign-in link in the gate): ask
+    // the server before showing the sign-up gate again. A failed check just falls through to the gate.
+    try {
+      const session = await authService.probeSession();
+      if (session?.user) return router.push(CLAIM_PATH);
+    } catch {
+      // not signed in, or the check failed: show the gate
+    }
     trackFunnel('guest_gate_shown');
     setAccountOpen(true);
   };
@@ -116,16 +124,10 @@ export default function GuestBuilderPage() {
     <main className="flex h-dvh flex-col bg-(--bg-subtle)">
       <GuestHeader title={formTitle} onTitle={setTitle} status={saved} onReload={() => window.location.reload()} onDesign={() => setDesignOpen(true)} onPreview={() => setPreviewing(true)} onSave={save} />
 
-      <div className="flex min-h-0 flex-1">
-        <aside className="hidden w-64 shrink-0 overflow-y-auto border-r border-(--border-default) bg-(--surface-card) p-4 lg:block">
-          <LeftPanel onAdd={addQuestionToActive} />
-        </aside>
-        <div className="min-w-0 flex-1 overflow-y-auto">
-          <SimpleCanvas setTitle={setTitle} />
-        </div>
-        <aside className="hidden w-80 shrink-0 overflow-y-auto border-l border-(--border-default) bg-(--surface-card) p-4 lg:block">
-          <RightPanel onSave={save} />
-        </aside>
+      {/* Simple mode: the form is the editor. One centred canvas and one scrollbar; no field palette, no pages column. Design
+          opens as a drawer. */}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <SimpleCanvas setTitle={setTitle} />
       </div>
 
       <DesignDrawer isOpen={designOpen} onClose={() => setDesignOpen(false)} />

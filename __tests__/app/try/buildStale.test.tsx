@@ -7,11 +7,12 @@ vi.mock('next/navigation', () => ({ useRouter: () => router }));
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ isAuthenticated: false }) }));
 vi.mock('@/components/form-builder/useBuilderUndoShortcuts', () => ({ useBuilderUndoShortcuts: () => undefined }));
 vi.mock('@/components/guest/SimpleCanvas', () => ({ SimpleCanvas: () => null, addQuestionToActive: vi.fn() }));
-vi.mock('@/components/guest/EditorPanels', () => ({ LeftPanel: () => null, RightPanel: () => null }));
 vi.mock('@/components/guest/DesignDrawer', () => ({ DesignDrawer: () => null }));
 vi.mock('@/components/guest/GuestPreviewOverlay', () => ({ GuestPreviewOverlay: () => null }));
 vi.mock('@/components/guest/GuestAccountModal', () => ({ CLAIM_PATH: '/forms/claim', GuestAccountModal: () => null }));
 vi.mock('@/lib/guest/funnel', () => ({ trackFunnel: vi.fn() }));
+const probeSession = vi.hoisted(() => vi.fn());
+vi.mock('@/services/auth', () => ({ authService: { probeSession: (...a: unknown[]) => probeSession(...a) } }));
 
 import GuestBuilderPage from '@/app/try/build/page';
 import { DRAFT_STORAGE_KEY, clearDraft, loadDraft, saveDraft } from '@/lib/guest/guestDraft';
