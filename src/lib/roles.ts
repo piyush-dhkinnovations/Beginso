@@ -12,6 +12,10 @@ export const ROLE_LABELS: Record<Role, string> = {
   reviewer: 'Reviewer',
 };
 
+/** The label for a role string of unknown origin (a switcher row, a header): the shared map, else the word with a capital. */
+export const roleLabel = (role: string | null | undefined): string | null =>
+  role ? (ROLE_LABELS as Record<string, string>)[role] ?? role.charAt(0).toUpperCase() + role.slice(1) : null;
+
 export interface CapabilityItem {
   key: string;
   label: string;

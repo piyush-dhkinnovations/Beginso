@@ -38,7 +38,9 @@ describe('ContextSwitcher — real dropdown (sprint-8, Day 2)', () => {
 
     expect(screen.getByRole('menuitem', { name: /Personal/ })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: /Acme Inc/ })).toBeInTheDocument();
-    expect(screen.getByText('owner')).toBeInTheDocument();
+    // The shared role labels (Owner / Admin / Editor / Reviewer), never the raw wire value.
+    expect(screen.getByText('Owner')).toBeInTheDocument();
+    expect(screen.queryByText('owner')).not.toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: /Beta Co/ })).toBeInTheDocument();
   });
 
