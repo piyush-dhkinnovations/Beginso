@@ -59,9 +59,13 @@ async function openBuilder(page: Page, formId = FORM_ID) {
 }
 
 test.describe('builder: typed text survives leaving the page', () => {
+  // Real HTTP to the mock backend, like the tab-close case: a request sent while the page reloads does not reliably reach Playwright's own
+  // route hooks (it did on Playwright 1.61, not on 1.64), but it always reaches a real server.
   test('typing then a reload 250 ms later keeps the edit, or asks first', async ({ page, context }) => {
-    const backend = await installBackend(context);
-    const input = await openBuilder(page);
+    const formId = 'e2e-reload-form';
+    await context.addCookies([{ name: 'beginso_session', value: 'e2e.jwt', url: 'http://localhost:3100' }]);
+    const serverLabel = async () => (await (await fetch(`http://localhost:3101/__e2e/forms/${formId}/label`)).text());
+    const input = await openBuilder(page, formId);
     let prompted = false;
     page.on('dialog', async (d) => {
       prompted = true;
@@ -70,8 +74,8 @@ test.describe('builder: typed text survives leaving the page', () => {
     await input.fill('Edited right before reload');
     await page.waitForTimeout(250);
     await page.reload();
-    await expect.poll(backend.label, { timeout: 15000 }).toBe('Edited right before reload');
-    expect(prompted || backend.label() === 'Edited right before reload').toBe(true);
+    await expect.poll(serverLabel, { timeout: 15000 }).toBe('Edited right before reload');
+    expect(prompted || (await serverLabel()) === 'Edited right before reload').toBe(true);
   });
 
   test('the header never says "All changes saved" while text is typed but not yet committed', async ({ page, context }) => {

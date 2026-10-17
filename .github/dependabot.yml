@@ -8,6 +8,10 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # 5.81.5 -> 5.104.x breaks 7 unit tests (data is not there when they read it). Upgrade by hand once understood, then delete this.
+      - dependency-name: "@tanstack/react-query"
+        update-types: ["version-update:semver-minor", "version-update:semver-patch"]
 
   - package-ecosystem: github-actions
     directory: /
