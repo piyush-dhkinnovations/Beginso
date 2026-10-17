@@ -105,7 +105,7 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
         {
           label: 'Library',
           items: [
-            { label: 'Shared with me', href: '/shared', icon: Share2, count: sharedUnread > 0 ? sharedUnread : undefined, active: pathname.startsWith('/shared'), onClick: guard('/shared') },
+            { label: 'Shared with me', href: '/shared', icon: Share2, count: sharedUnread > 0 ? sharedUnread : undefined, countLabel: 'new', active: pathname.startsWith('/shared'), onClick: guard('/shared') },
             { label: 'Templates', href: '/templates', icon: LayoutTemplate, active: pathname.startsWith('/templates'), onClick: guard('/templates') },
             // A5.1 / wireframe 31: always in the personal nav (an empty state explains it).
             { label: 'My Submissions', href: '/my-submissions', icon: ClipboardList, active: pathname.startsWith('/my-submissions'), onClick: guard('/my-submissions') },

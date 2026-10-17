@@ -4,7 +4,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { WorkspaceSidebar } from '@/components/workspaces/WorkspaceSidebar';
 import type { Role } from '@/types/workspace';
@@ -19,6 +19,10 @@ vi.mock('next/navigation', () => ({
 
 vi.mock('@/services/workspaces', () => ({
   workspacesService: { list: () => Promise.resolve([]) },
+}));
+
+vi.mock('@/services/responses', () => ({
+  responsesService: { getStats: () => Promise.resolve({ total: 77, unread: 70 }) },
 }));
 
 function renderSidebar(props: { slug: string; currentLabel: string; collapsed?: boolean; role?: Role }) {
@@ -41,6 +45,12 @@ describe('WorkspaceSidebar', () => {
       const link = screen.getByRole('link', { name: label });
       expect(link).toHaveAttribute('href', expect.stringContaining('/w/acme'));
     });
+  });
+
+  it('labels the Responses badge as unread, so 70 beside a dashboard total of 77 reads as a different number', async () => {
+    renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc' });
+    const link = await screen.findByRole('link', { name: 'Responses 70 unread' });
+    expect(within(link).getByText('70')).toHaveAttribute('title', '70 unread');
   });
 
   it('links Insights (a real page) and lights it instead of Responses on /w/[slug]/insights', () => {

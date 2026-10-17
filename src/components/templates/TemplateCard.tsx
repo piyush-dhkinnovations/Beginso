@@ -42,7 +42,7 @@ export function TemplateCard({ template, onUse, onPreview, isLoading, wide }: Te
         style={{ background: `linear-gradient(135deg, ${tint.surface}, var(--bg-subtle))` }}
       >
         <span
-          className="absolute left-3 top-3 inline-flex items-center rounded-full bg-(--surface-card) px-2.5 py-0.5 bg-caption font-semibold capitalize"
+          className="absolute left-3 top-3 z-10 inline-flex items-center rounded-full bg-(--surface-card) px-2.5 py-0.5 bg-caption font-semibold capitalize"
           style={{ color: tint.ink }}
         >
           {template.category}

@@ -9,6 +9,8 @@ export interface SidebarNavItem {
   icon?: React.ComponentType<{ className?: string }>;
   active?: boolean;
   count?: number;
+  /** What the number counts ("unread", "new"): shown as a tooltip and read out after the number, so a badge never looks like a total. */
+  countLabel?: string;
   /** Called before navigation; call event.preventDefault() to intercept it (e.g. an unsaved-
    * changes guard). Optional — omitting it leaves plain next/link navigation untouched. */
   onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
@@ -68,7 +70,21 @@ export function Sidebar({ groups, collapsed = false, header, footer, className, 
               >
                 {Icon && <Icon className="bg-icon" />}
                 <span className="bg-nav-label">{item.label}</span>
-                {typeof item.count === "number" && <span className="bg-count">{item.count}</span>}
+                {typeof item.count === "number" && (
+                  <>
+                    {/* Whitespace-only text nodes: ignored by the flex layout, but they keep "Responses 70 unread" from being read as one word. */}
+                    {" "}
+                    <span className="bg-count" title={item.countLabel ? `${item.count} ${item.countLabel}` : undefined}>
+                      {item.count}
+                      {item.countLabel && (
+                        <>
+                          {" "}
+                          <span className="sr-only">{item.countLabel}</span>
+                        </>
+                      )}
+                    </span>
+                  </>
+                )}
               </Link>
             );
             return (
