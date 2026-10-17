@@ -11,6 +11,7 @@ import { GuestPreviewOverlay } from '@/components/guest/GuestPreviewOverlay';
 import { CLAIM_PATH, GuestAccountModal } from '@/components/guest/GuestAccountModal';
 import { useBuilderStore } from '@/store/builderStore';
 import { useAuth } from '@/hooks/useAuth';
+import { authService } from '@/services/auth';
 import { DRAFT_STORAGE_KEY, hydrateBranding, isDraftPersistent, loadDraft, saveDraft, versionOfRaw } from '@/lib/guest/guestDraft';
 import { toPublicSchema } from '@/lib/guest/previewSchema';
 import { trackFunnel } from '@/lib/guest/funnel';
@@ -103,9 +104,17 @@ export default function GuestBuilderPage() {
 
   const schema = useMemo(() => toPublicSchema({ title: formTitle, pages, fields, branding, settings }), [formTitle, pages, fields, branding, settings]);
 
-  const save = () => {
+  const save = async () => {
     void persist();
     if (isAuthenticated) return router.push(CLAIM_PATH); // already signed in: nothing to sign up for
+    // This tab may have loaded before the person signed in somewhere else (another tab, the sign-in link in the gate): ask
+    // the server before showing the sign-up gate again. A failed check just falls through to the gate.
+    try {
+      const session = await authService.probeSession();
+      if (session?.user) return router.push(CLAIM_PATH);
+    } catch {
+      // not signed in, or the check failed: show the gate
+    }
     trackFunnel('guest_gate_shown');
     setAccountOpen(true);
   };

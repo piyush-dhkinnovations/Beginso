@@ -72,7 +72,7 @@ export default function TryPage() {
   const choose = (template: Template | null) => (existing ? setPending({ template }) : void start(template));
 
   const cards: { id: string; name: string; description: string; template: Template | null; labels: string[] }[] = [
-    { id: 'blank', name: 'Blank form', description: 'Start empty and add your own questions.', template: null, labels: ['Your name', 'Email address'] },
+    { id: 'blank', name: 'Blank form', description: 'Start empty and add your own questions.', template: null, labels: [] },
     ...visible.map((t) => ({ id: t._id, name: t.name, description: t.description, template: t, labels: t.fields.filter((f) => !f.deleted).map((f) => f.label) })),
   ];
 
