@@ -91,8 +91,15 @@ export default function RootLayout({
             <ToastProvider>{children}</ToastProvider>
           </AuthProvider>
         </QueryProvider>
-        <Analytics />
-        <SpeedInsights />
+        {/* Production only. In development both load a "debug" script from va.vercel-scripts.com, which our own Content-Security-Policy
+            blocks, so every dev page load (and every end-to-end run) logged two console errors that mean nothing in production, where
+            the scripts are served from this site. */}
+        {process.env.NODE_ENV === 'production' && (
+          <>
+            <Analytics />
+            <SpeedInsights />
+          </>
+        )}
       </body>
     </html>
   );
