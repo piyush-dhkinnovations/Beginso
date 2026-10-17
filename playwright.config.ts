@@ -21,6 +21,10 @@ export default defineConfig({
   workers: 4,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
+  // The suite runs on `next dev`, which compiles a route the first time it is visited. On a CI runner with four workers hitting the
+  // builder page at once that compile alone can take most of a minute, and the specs themselves wait up to 60s for the page: with
+  // Playwright's default 30s per test the first builder test timed out before its own wait could finish. A genuine hang still fails.
+  timeout: 90_000,
   reporter: 'list',
   use: {
     baseURL: `http://localhost:${APP_PORT}`,
