@@ -14,6 +14,9 @@ import type { FormBranding, FormField, FormPage, FormSettings } from '@/types/fo
 // is in flight would carry the old version and be refused as stale).
 let saveQueue: Promise<unknown> = Promise.resolve();
 
+// Under the browser's 64 KiB cap for a keepalive body, with room for the request's own headers.
+export const KEEPALIVE_BODY_LIMIT = 60_000;
+
 export const isFormStale = (err: unknown): boolean =>
   isAxiosError(err) && err.response?.status === 409 && (err.response.data as { error?: { code?: string } } | undefined)?.error?.code === 'FORM_STALE';
 
@@ -42,7 +45,11 @@ export function saveFormSnapshot(
       ...(own && store.contentVersion !== null ? { expectedContentVersion: store.contentVersion, saveId: crypto.randomUUID() } : {}),
     };
     // The extra argument is only passed for the page-closing save, so ordinary saves keep their exact call shape.
-    const send = () => (opts.keepalive ? formsService.updateForm(formId, payload, opts) : formsService.updateForm(formId, payload));
+    // A browser refuses a keepalive request whose body is over about 64 KiB (the request fails outright). A big form can pass that, so
+    // then the page-closing save goes out as an ordinary request instead (best effort: the leave prompt is what protects the edit,
+    // because the store stays dirty until a save is confirmed).
+    const keepalive = !!opts.keepalive && JSON.stringify(payload).length < KEEPALIVE_BODY_LIMIT;
+    const send = () => (keepalive ? formsService.updateForm(formId, payload, { keepalive: true }) : formsService.updateForm(formId, payload));
     try {
       let saved;
       try {

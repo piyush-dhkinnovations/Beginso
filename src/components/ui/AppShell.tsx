@@ -1,5 +1,6 @@
 "use client";
 
+import { useTablet } from "@/hooks/useTablet";
 import React, { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { bx } from "@/lib/utils";
@@ -46,7 +47,11 @@ export function AppShell({
   // Where the rail is forced (the builder) the menu button still has to work: it opens the full sidebar for
   // as long as the user wants it, without touching the saved preference.
   const [forceExpanded, setForceExpanded] = useState(false);
-  const collapsed = forceCollapsed ? !forceExpanded : preferCollapsed;
+  // On a tablet (768-1023px) the full sidebar would take about 29% of the screen, so it starts as the icon rail. The menu button
+  // opens it for as long as the person wants, without touching their saved desktop preference (QA A3-008).
+  const tablet = useTablet();
+  const [tabletExpanded, setTabletExpanded] = useState(false);
+  const collapsed = forceCollapsed ? !forceExpanded : tablet ? !tabletExpanded : preferCollapsed;
   const [internalMobileOpen, setInternalMobileOpen] = useState(false);
   const mobileOpen = controlledMobileOpen ?? internalMobileOpen;
   const handleMobileClose = onMobileClose ?? (() => setInternalMobileOpen(false));
@@ -67,7 +72,13 @@ export function AppShell({
     }
   };
   const toggleCollapsed = () =>
-    hideSidebar ? toggleMobile() : forceCollapsed ? setForceExpanded((prev) => !prev) : setCollapsed((prev) => !prev);
+    hideSidebar
+      ? toggleMobile()
+      : forceCollapsed
+        ? setForceExpanded((prev) => !prev)
+        : tablet
+          ? setTabletExpanded((prev) => !prev)
+          : setCollapsed((prev) => !prev);
 
   return (
     <div className={bx("flex flex-col min-h-screen", className)}>

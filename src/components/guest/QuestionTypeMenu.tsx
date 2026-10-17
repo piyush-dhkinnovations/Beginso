@@ -38,7 +38,8 @@ function TypeList({ onPick }: { onPick: (t: FieldType) => void }) {
   );
 }
 
-// Phone: one "+ Add question" button that opens a bottom sheet.
+// One "+ Add question" button. On a phone it opens a bottom sheet; on wider screens the same short list opens right under the
+// button (Esc closes it). Everything beyond the common types sits behind "More types".
 export function AddQuestionButton({ onAdd }: { onAdd: (t: FieldType) => void }) {
   const [open, setOpen] = useState(false);
   const narrow = useNarrow();
@@ -47,7 +48,7 @@ export function AddQuestionButton({ onAdd }: { onAdd: (t: FieldType) => void }) 
     setOpen(false);
   };
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" onKeyDown={(e) => e.key === 'Escape' && open && setOpen(false)}>
       <button
         type="button"
         aria-expanded={open}
@@ -56,6 +57,11 @@ export function AddQuestionButton({ onAdd }: { onAdd: (t: FieldType) => void }) 
       >
         + Add question
       </button>
+      {!narrow && open && (
+        <div className="rounded-lg border border-(--border-default) bg-(--surface-card) p-3 shadow-(--shadow-md)">
+          <TypeList onPick={pick} />
+        </div>
+      )}
       {narrow && (
         <Drawer isOpen={open} onClose={() => setOpen(false)} title="Add a question" placement="bottom">
           <TypeList onPick={pick} />

@@ -208,12 +208,19 @@ export function ResponseDrawer({
   }, [onClose]);
 
   const focusableSelector = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
-  const getFocusable = () => Array.from(drawerRef.current?.querySelectorAll<HTMLElement>(focusableSelector) ?? []);
+  // Only controls that are actually on screen. The mobile-only "Back" button is first in the DOM but display:none on desktop:
+  // focus() on it silently does nothing, so focus stayed on the row behind the drawer, and the Tab trap treated it as an edge
+  // (QA D5-005, found by inspecting the live page). checkVisibility() sees hidden ancestors too; an environment without it
+  // (an old browser, jsdom) counts everything as visible.
+  const getFocusable = () =>
+    Array.from(drawerRef.current?.querySelectorAll<HTMLElement>(focusableSelector) ?? []).filter((el) => el.checkVisibility?.() ?? true);
 
   useEffect(() => {
     if (!isDrawerOpen) return;
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    getFocusable()[0]?.focus();
+    // Focus moves into the drawer: its first control if the content is already there, else the drawer itself (it is
+    // focusable), so a keyboard user never stays on the row behind the overlay while the response is still loading (QA D5-005).
+    (getFocusable()[0] ?? drawerRef.current)?.focus();
     return () => {
       // The opener can have been re-rendered away (a list refetch); then there is nothing to return to.
       if (opener?.isConnected) opener.focus();
@@ -325,7 +332,7 @@ export function ResponseDrawer({
     // (requirements.md §9.3/B4.16); reuses the same `exportPayloadFromTarget` the Inbox's own
     // Export/BulkActionBar already build from, rather than a bespoke download call.
     reportsService
-      .createReport(exportPayloadFromTarget('csv', { ids: [response._id] }))
+      .createReport(exportPayloadFromTarget('csv', { ids: [response._id] }), scope)
       .then(() => toast(DOWNLOAD_QUEUED, 'success'))
       .catch(() => toast(DOWNLOAD_FAILED, 'error'));
   }
@@ -360,6 +367,7 @@ export function ResponseDrawer({
         aria-modal={displayMode === 'drawer' ? true : undefined}
         aria-labelledby="drawer-title"
         ref={drawerRef}
+        tabIndex={-1}
         className={cn(
           'relative flex w-full flex-col overflow-hidden border border-(--border-default) bg-(--surface-card)',
           displayMode === 'drawer'

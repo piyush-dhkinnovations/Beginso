@@ -9,7 +9,9 @@ import type { useInboxFilters } from '@/hooks/useInboxFilters';
 
 type Filters = ReturnType<typeof useInboxFilters>['filters'];
 
-export function useInboxExports({ formId, filters }: { formId?: string; filters: Filters }) {
+// `scope` is the workspace slug (or 'personal') the responses belong to. It used to be left out, so every export went out under the
+// personal scope and a workspace form answered "Form not found" (QA D5-002).
+export function useInboxExports({ formId, filters, scope = 'personal' }: { formId?: string; filters: Filters; scope?: string }) {
   const { toast } = useToast();
 
   function startExport(request: Promise<unknown>) {
@@ -19,7 +21,7 @@ export function useInboxExports({ formId, filters }: { formId?: string; filters:
   }
 
   return {
-    runExport: (target: BulkTarget) => startExport(reportsService.createReport(exportPayloadFromTarget('csv', target))),
-    exportCurrentFilter: () => startExport(reportsService.createReport(exportPayloadFromFilters('csv', formId, filters))),
+    runExport: (target: BulkTarget) => startExport(reportsService.createReport(exportPayloadFromTarget('csv', target), scope)),
+    exportCurrentFilter: () => startExport(reportsService.createReport(exportPayloadFromFilters('csv', formId, filters), scope)),
   };
 }

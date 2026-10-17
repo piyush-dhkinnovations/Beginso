@@ -215,6 +215,26 @@ describe('useBuilderAutosave - retry and flush', () => {
     resetPendingEdits();
   });
 
+  // A browser refuses a keepalive body over ~64 KiB, so a big form's closing save must fall back to an ordinary request, and the
+  // leave prompt must still warn (the store stays dirty until a save is confirmed).
+  it('a small form is sent with keepalive; a form over the browser limit falls back to an ordinary request', async () => {
+    const small = { fields: [], formTitle: 'T', pages: [], branding: {}, settings: { honeypotEnabled: true } } as never;
+    await saveFormSnapshot('f1', small, { keepalive: true });
+    expect(updateForm.mock.calls[0][2]).toEqual({ keepalive: true });
+
+    const bigFields = Array.from({ length: 80 }, (_, i) => ({ fieldId: `f${i}`, label: 'x'.repeat(900), type: 'short_text', required: false }));
+    await saveFormSnapshot('f2', { fields: bigFields, formTitle: 'T', pages: [], branding: {}, settings: { honeypotEnabled: true } } as never, { keepalive: true });
+    expect(updateForm.mock.calls[1]).toHaveLength(2);
+  });
+
+  it('when a big form cannot be sent with keepalive, the page still warns before leaving', () => {
+    renderHook(() => useBuilderAutosave());
+    act(() => store().setFormTitle('x'.repeat(70_000)));
+    const ev = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBe(true);
+  });
+
   it('an ordinary autosave keeps its exact call shape (no extra argument)', async () => {
     await saveFormSnapshot('f9', { fields: [], formTitle: 'T', pages: [], branding: {}, settings: { honeypotEnabled: true } } as never);
     expect(updateForm.mock.calls[0]).toHaveLength(2);
