@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertCircle, Send, Smile } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -122,6 +122,20 @@ export function NoteComposer({
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [error, setError] = useState<string | undefined>();
 
+  // Where the cursor must be once the next body update is in the DOM. Setting a controlled textarea's value moves its cursor to
+  // the end, so after an inserted new line or emoji the cursor is put back here, synchronously after React commits. (It used to be
+  // restored in requestAnimationFrame: text typed before that frame landed in the wrong place, giving a blank line and a joined
+  // "bc" instead of three lines when typing fast or on a slow machine.)
+  const pendingCursor = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (el && pendingCursor.current !== null) {
+      el.focus();
+      el.setSelectionRange(pendingCursor.current, pendingCursor.current);
+    }
+    pendingCursor.current = null;
+  }, [body]);
+
   // Grow with the text up to the textarea's max-height, shrink back after a send.
   useEffect(() => {
     const el = textareaRef.current;
@@ -138,10 +152,7 @@ export function NoteComposer({
     const end = el?.selectionEnd ?? body.length;
     setBody((b) => b.slice(0, start) + emoji + b.slice(end));
     setEmojiOpen(false);
-    requestAnimationFrame(() => {
-      el?.focus();
-      el?.setSelectionRange(start + emoji.length, start + emoji.length);
-    });
+    pendingCursor.current = start + emoji.length;
   }
 
   function handleChange(value: string) {
@@ -229,8 +240,8 @@ export function NoteComposer({
               const el = e.currentTarget;
               const start = el.selectionStart;
               const end = el.selectionEnd;
+              pendingCursor.current = start + 1;
               handleChange(`${body.slice(0, start)}\n${body.slice(end)}`);
-              requestAnimationFrame(() => el.setSelectionRange(start + 1, start + 1));
             } else {
               handleSubmit();
             }

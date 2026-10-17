@@ -38,6 +38,21 @@ describe('NoteComposer', () => {
     expect(box()).toHaveValue('a\nb\nc');
   });
 
+  it('puts the cursor right after an inserted new line immediately, not on a later animation frame (typing fast used to land in the wrong place)', () => {
+    render(<NoteComposer members={members} onSubmit={vi.fn()} />);
+    const el = box() as HTMLTextAreaElement;
+    fireEvent.change(el, { target: { value: 'ab' } });
+    el.setSelectionRange(1, 1);
+    fireEvent.keyDown(el, { key: 'Enter', shiftKey: true });
+    // No timers and no frames awaited: the cursor must already sit after the new line (index 2 of "a<newline>b").
+    expect(el).toHaveValue('a\nb');
+    expect(el.selectionStart).toBe(2);
+    expect(el.selectionEnd).toBe(2);
+    fireEvent.keyDown(el, { key: 'Enter', ctrlKey: true });
+    expect(el).toHaveValue('a\n\nb');
+    expect(el.selectionStart).toBe(3);
+  });
+
   it('rejects an empty note with an alert and does not call onSubmit', async () => {
     const onSubmit = vi.fn();
     render(<NoteComposer members={members} onSubmit={onSubmit} />);
