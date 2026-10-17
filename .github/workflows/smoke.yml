@@ -1,0 +1,56 @@
+name: smoke
+
+# After a deploy: plain curl requests against the live site and API. It never logs in and never writes anything. Run it by hand
+# first; the 30-minute timer then tells you when something stops answering. GitHub-hosted runner only.
+#
+# Repository VARIABLES to create (Settings > Secrets and variables > Actions > Variables; none of them is a secret):
+#   SMOKE_API_URL        e.g. https://backend-obp.dhkinnovations.com
+#   SMOKE_SITE_URL       e.g. https://www.beginso.com
+#   SMOKE_FORM_SLUG      the slug of a PUBLISHED, open form kept for this purpose (its /f/<slug> link)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
+
+concurrency:
+  group: smoke
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      API: ${{ vars.SMOKE_API_URL }}
+      SITE: ${{ vars.SMOKE_SITE_URL }}
+      SLUG: ${{ vars.SMOKE_FORM_SLUG }}
+    steps:
+      - name: The three variables are set
+        run: |
+          missing=0
+          [ -n "$API" ]  || { echo "::error::Repository variable SMOKE_API_URL is not set"; missing=1; }
+          [ -n "$SITE" ] || { echo "::error::Repository variable SMOKE_SITE_URL is not set"; missing=1; }
+          [ -n "$SLUG" ] || { echo "::error::Repository variable SMOKE_FORM_SLUG is not set"; missing=1; }
+          [ "$missing" = 0 ]
+
+      # Each check prints what it asked and what it got, and the run fails at the end if any of them was wrong.
+      - name: Check the live site and API
+        run: |
+          fail=0
+          status() { curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$1"; }
+          expect() { # expect <label> <url> <wanted status>
+            got=$(status "$2")
+            if [ "$got" = "$3" ]; then echo "ok   $1: $2 -> $got"; else echo "::error::$1: $2 -> $got (wanted $3)"; fail=1; fi
+          }
+          expect "API health"        "$API/api/health"          200
+          expect "site home"         "$SITE/"                   200
+          expect "robots.txt"        "$SITE/robots.txt"         200
+          expect "sitemap.xml"       "$SITE/sitemap.xml"        200
+          expect "published form"    "$SITE/f/$SLUG"            200
+          expect "unknown form link" "$SITE/f/does-not-exist-smoke-check" 404
+          if curl -s --max-time 20 "$SITE/" | grep -q "Beginso"; then echo "ok   site home mentions Beginso"; else echo "::error::site home does not contain 'Beginso'"; fail=1; fi
+          exit $fail
