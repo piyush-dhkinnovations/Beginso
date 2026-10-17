@@ -1,6 +1,7 @@
 import React from "react";
 import Link from "next/link";
 import { bx } from "@/lib/utils";
+import { RailTip } from "./RailTip";
 
 export interface SidebarNavItem {
   label: string;
@@ -56,20 +57,23 @@ export function Sidebar({ groups, collapsed = false, header, footer, className, 
           {group.label && <div className="bg-nav-group">{group.label}</div>}
           {group.items.map((item) => {
             const Icon = item.icon;
+            const link = (
+              <Link
+                href={item.href}
+                className="bg-nav-item"
+                // The rail hides the label text, so the link needs its own name; RailTip shows it on hover and on keyboard focus.
+                {...(collapsed ? { "aria-label": item.label } : {})}
+                aria-current={item.active ? "page" : undefined}
+                onClick={item.onClick}
+              >
+                {Icon && <Icon className="bg-icon" />}
+                <span className="bg-nav-label">{item.label}</span>
+                {typeof item.count === "number" && <span className="bg-count">{item.count}</span>}
+              </Link>
+            );
             return (
               <React.Fragment key={item.href}>
-                <Link
-                  href={item.href}
-                  className="bg-nav-item"
-                  // The rail hides the label text, so the link would have no name or tooltip at all.
-                  {...(collapsed ? { title: item.label, "aria-label": item.label } : {})}
-                  aria-current={item.active ? "page" : undefined}
-                  onClick={item.onClick}
-                >
-                  {Icon && <Icon className="bg-icon" />}
-                  <span className="bg-nav-label">{item.label}</span>
-                  {typeof item.count === "number" && <span className="bg-count">{item.count}</span>}
-                </Link>
+                {collapsed ? <RailTip label={item.label}>{link}</RailTip> : link}
                 {!collapsed && !!item.subItems?.length && (
                   // Guide line sits under the parent's icon centre (12px padding + 9px) so the list reads as nested under it.
                   <div className="ml-5.25 mr-1 mt-0.5 mb-1.5 flex flex-col gap-1 border-l border-(--border-default) pl-3">

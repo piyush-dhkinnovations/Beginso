@@ -71,6 +71,13 @@ export function AppShell({
 
   return (
     <div className={bx("flex flex-col min-h-screen", className)}>
+      {/* First focusable control on every app page: a keyboard user skips the top bar and the sidebar. Hidden until focused. */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-60 focus:rounded-md focus:bg-(--surface-card) focus:px-4 focus:py-2 focus:bg-body-sm focus:font-semibold focus:text-(--text-primary) focus:shadow-(--shadow-md) focus:outline-2 focus:outline-(--border-focus)"
+      >
+        Skip to main content
+      </a>
       <div className="sticky top-0 z-20">{topBar(toggleCollapsed, toggleMobile)}</div>
 
       {/* Off-canvas mobile drawer */}
@@ -124,6 +131,8 @@ export function AppShell({
           </aside>
         )}
         <main
+          id="main-content"
+          tabIndex={-1}
           className={bx(
             // sprint-11-v2a-hardening 5.1 — real bug found by the width pass: a flex item's
             // default min-width is `auto`, not 0, so this column refused to shrink below its
@@ -134,7 +143,7 @@ export function AppShell({
             // inside its container" exception. One shared fix here (every V2a/V1 page routes
             // through this single `<main>`), not five per-page patches.
             "flex-1 min-w-0 flex flex-col gap-4 w-full max-w-[1600px] mx-auto",
-            "px-4 pt-6 pb-16 md:px-8 md:pt-8 xl:px-12",
+            "px-4 pt-6 pb-16 md:px-8 md:pt-8 xl:px-12 focus:outline-none",
             contentClassName
           )}
         >

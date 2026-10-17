@@ -15,6 +15,25 @@ const tabs = [
   { id: 'share', label: 'Share' },
 ];
 
+describe('Tabs: aria-controls only points at a panel that exists (QA A13-005)', () => {
+  const tabs = [{ id: 'all', label: 'All' }, { id: 'unread', label: 'Unread' }];
+
+  it('writes no aria-controls unless the caller says which panel the tabs control', () => {
+    render(<Tabs tabs={tabs} activeId="all" onChange={() => undefined} />);
+    for (const t of screen.getAllByRole('tab')) expect(t).not.toHaveAttribute('aria-controls');
+  });
+
+  it('points every tab at the given panel id', () => {
+    render(<Tabs tabs={tabs} activeId="all" onChange={() => undefined} panelId="the-panel" />);
+    for (const t of screen.getAllByRole('tab')) expect(t).toHaveAttribute('aria-controls', 'the-panel');
+  });
+
+  it('accepts a function for one panel per tab', () => {
+    render(<Tabs tabs={tabs} activeId="all" onChange={() => undefined} panelId={(id) => `panel-${id}`} />);
+    expect(screen.getByRole('tab', { name: 'Unread' })).toHaveAttribute('aria-controls', 'panel-unread');
+  });
+});
+
 describe('Tabs component', () => {
   it('renders a tablist with the active tab aria-selected', () => {
     render(<Tabs tabs={tabs} activeId="settings" onChange={() => {}} />);

@@ -44,3 +44,10 @@ describe('ReportFormatCard', () => {
     expect(screen.getByRole('button', { name: /^Generate/ })).toBeDisabled();
   });
 });
+
+describe('ReportFormatCard badge (QA A13-009)', () => {
+  it('draws the 10px format label in primary text, not the tinted tone ink that failed the contrast check', () => {
+    render(<ReportFormatCard format="csv" title="CSV Export" description="d" onGenerate={vi.fn()} isLoading={false} />);
+    expect(screen.getByText('CSV').className).toMatch(/text-\(--text-primary\)/);
+  });
+});

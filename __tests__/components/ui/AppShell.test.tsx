@@ -8,6 +8,24 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AppShell } from '@/components/ui/AppShell';
 
+describe('AppShell skip link (QA A13-011)', () => {
+  it('is the first focusable control, and jumps to the main region', async () => {
+    const user = userEvent.setup();
+    render(
+      <AppShell sidebar={() => <nav><a href="/x">Nav link</a></nav>} topBar={() => <header><button type="button">Menu</button></header>}>
+        <p>Content</p>
+      </AppShell>
+    );
+    await user.tab();
+    const skip = screen.getByRole('link', { name: 'Skip to main content' });
+    expect(skip).toHaveFocus();
+    expect(skip).toHaveAttribute('href', '#main-content');
+    const main = screen.getByRole('main');
+    expect(main).toHaveAttribute('id', 'main-content');
+    expect(main).toHaveAttribute('tabindex', '-1');
+  });
+});
+
 describe('AppShell component', () => {
   it('renders the sidebar, top bar and content slots, and starts from initialCollapsed', () => {
     render(

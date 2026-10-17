@@ -9,7 +9,12 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/dashboard', '/forms', '/settings', '/w/', '/api/', '/f/', '/r/', '/invite/'],
+      // Every signed-in route (they redirect to /login when signed out) plus the API and per-form public pages.
+      disallow: [
+        '/dashboard', '/forms', '/settings', '/w/', '/api/', '/f/', '/r/', '/invite/',
+        '/insights', '/inbox', '/exports', '/responses', '/form-responses', '/analytics', '/reports', '/shared', '/trash',
+        '/search', '/notifications', '/workspaces', '/my-submissions', '/onboarding', '/templates',
+      ],
     },
     ...(origin ? { sitemap: `${origin}/sitemap.xml`, host: origin } : {}),
   };
