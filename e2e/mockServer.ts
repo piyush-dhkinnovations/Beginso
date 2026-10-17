@@ -22,6 +22,14 @@ import type { PublicFormSchema } from '../src/types/publicForm.ts';
  */
 const PORT = Number(process.env.E2E_MOCK_PORT ?? 3101);
 
+const builderForms = new Map<string, { label: string; version: number }>();
+const builderForm = (id: string, s: { label: string; version: number }) => ({
+  _id: id, workspaceId: null, title: 'E2E form', description: '', status: 'draft', schemaVersion: 1, responseCount: 0, contentVersion: s.version,
+  createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
+  pages: [{ id: 'p1', order: 0, title: 'E2E form' }], branding: {}, settings: { honeypotEnabled: true },
+  fields: [{ fieldId: 'f1', pageId: 'p1', label: s.label, type: 'short_text', required: false, deleted: false, order: 0 }],
+});
+
 function schemaFor(slug: string): PublicFormSchema {
   if (slug.includes('closed-date')) {
     return {
@@ -46,6 +54,41 @@ const server = http.createServer(async (req, res) => {
   }
 
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`);
+
+  // The Next.js edge guard (src/proxy.ts) asks the backend whether a session cookie is valid before it serves an app page.
+  // Builder specs set a fake session cookie; this stateless answer lets them through.
+  if (url.pathname === '/api/auth/me') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, user: { id: 'e2e-user', name: 'E2E User', email: 'e2e@example.com', onboardingCompleted: true } }));
+    return;
+  }
+
+  // The one stateful corner of this mock: a form the builder can load and save, so a spec can close a real tab mid-save and then
+  // ask what the server actually received (a request interrupted by a closing page never reaches Playwright's own route hooks).
+  // Keyed by form id, one id per spec, so parallel specs never share state.
+  const formMatch = url.pathname.match(/^\/api\/forms\/([^/]+)\/?$/);
+  const probe = url.pathname.match(/^\/__e2e\/forms\/([^/]+)\/label$/);
+  if (probe) {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end(builderForms.get(probe[1])?.label ?? 'Original question');
+    return;
+  }
+  if (formMatch && (req.method === 'GET' || req.method === 'PATCH')) {
+    const id = formMatch[1];
+    const state = builderForms.get(id) ?? { label: 'Original question', version: 1 };
+    if (req.method === 'PATCH') {
+      let raw = '';
+      for await (const chunk of req) raw += chunk;
+      const body = JSON.parse(raw || '{}') as { fields?: { label?: string }[] };
+      if (body.fields?.[0]?.label) state.label = body.fields[0].label;
+      state.version += 1;
+    }
+    builderForms.set(id, state);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(builderForm(id, state)));
+    return;
+  }
+
   const match = url.pathname.match(/^\/api\/public\/([^/]+)(\/submit)?\/?$/);
 
   if (!match) {

@@ -3,6 +3,7 @@ import { isAxiosError } from 'axios';
 import { formsService } from '@/services/forms';
 import { useBuilderStore } from '@/store/builderStore';
 import { useToast } from '@/components/ui/Toast';
+import { flushPendingEdits, hasPendingEdits } from '@/lib/pendingEdits';
 import type { FormBranding, FormField, FormPage, FormSettings } from '@/types/form';
 
 // Single source of truth for the PATCH payload shape — the debounced autosave, the
@@ -21,7 +22,10 @@ const gotNoReply = (err: unknown): boolean => isAxiosError(err) && !err.response
 
 export function saveFormSnapshot(
   formId: string,
-  snap: { fields: FormField[]; formTitle: string; pages: FormPage[]; branding: FormBranding; settings: FormSettings }
+  snap: { fields: FormField[]; formTitle: string; pages: FormPage[]; branding: FormBranding; settings: FormSettings },
+  // The page is going away: send with fetch keepalive so the browser finishes the request after the page is gone. A normal XHR is
+  // cancelled on unload, which is how an accepted "leave anyway" still lost the edit (QA D3-001).
+  opts: { keepalive?: boolean } = {}
 ) {
   const run = saveQueue.then(async () => {
     const store = useBuilderStore.getState();
@@ -37,15 +41,17 @@ export function saveFormSnapshot(
       // The same saveId on a retry tells the server "this is the save you may already have applied".
       ...(own && store.contentVersion !== null ? { expectedContentVersion: store.contentVersion, saveId: crypto.randomUUID() } : {}),
     };
+    // The extra argument is only passed for the page-closing save, so ordinary saves keep their exact call shape.
+    const send = () => (opts.keepalive ? formsService.updateForm(formId, payload, opts) : formsService.updateForm(formId, payload));
     try {
       let saved;
       try {
-        saved = await formsService.updateForm(formId, payload);
+        saved = await send();
       } catch (err) {
         // The reply may have been lost after the server applied the save. Retrying with the SAME version and saveId is
         // safe either way: if it was applied the server recognises the saveId and answers success, if not it applies it.
         if (!gotNoReply(err) || !payload.saveId) throw err;
-        saved = await formsService.updateForm(formId, payload);
+        saved = await send();
       }
       if (own && typeof saved?.contentVersion === 'number') useBuilderStore.getState().setContentVersion(saved.contentVersion);
       return saved;
@@ -84,10 +90,24 @@ export function reloadBuilder() {
 // The server's own reason for a rejected save ("Option value cannot be empty"), not just "Save failed".
 export function saveErrorDetail(err: unknown): string | null {
   if (!isAxiosError(err)) return null;
-  const data = err.response?.data as { errors?: { message?: string }[]; message?: string } | undefined;
-  const detail = data?.errors?.find((e) => e?.message)?.message ?? (err.response?.status === 400 ? data?.message : undefined);
-  return detail ?? null;
+  // No reply at all: offline, or Beginso cannot be reached. Say so instead of a bare "Save failed" (QA D3-002).
+  if (!err.response) return "Can't reach Beginso. Check your connection";
+  const status = err.response.status;
+  const data = err.response.data as { errors?: { message?: string }[]; message?: string; error?: { message?: string } } | undefined;
+  const detail = data?.errors?.find((e) => e?.message)?.message ?? (status < 500 ? (data?.error?.message ?? data?.message) : undefined);
+  if (detail) return detail;
+  if (status === 401 || status === 403) return 'You no longer have access to this form. Sign in again';
+  if (status === 413) return 'This form is too large to save';
+  if (status === 429) return 'Too many saves at once. Wait a moment and retry';
+  if (status >= 500) return `Beginso had a problem saving (error ${status})`;
+  return null;
 }
+
+// The form as it is in the store right now (not the render-time copy), for saves that run while the page is going away.
+const freshState = () => {
+  const s = useBuilderStore.getState();
+  return { dirty: s.dirty, fields: s.fields, formTitle: s.formTitle, pages: s.pages, formId: s.formId, branding: s.branding, settings: s.settings };
+};
 
 export function useBuilderAutosave() {
   const { toast } = useToast();
@@ -176,13 +196,16 @@ export function useBuilderAutosave() {
   // the last edits would otherwise be lost). Same save path as autosave.
   useEffect(() => {
     const flush = () => {
-      const c = saveStateRef.current;
+      // First commit anything typed in the last moments (a debounced input has not reached the store yet), THEN read the store:
+      // the ref above only catches up after a render, which does not happen while the page is closing.
+      flushPendingEdits();
+      const c = freshState();
       if (!c.dirty || !c.formId || c.formId === 'undefined') return;
       const hasEmptyChoice = c.fields.some(
         (f) => !f.deleted && (f.type === 'dropdown' || f.type === 'multiple_choice' || f.type === 'checkbox') && !f.options?.length
       );
       if (hasEmptyChoice) return;
-      saveFormSnapshot(c.formId, c).then(() => useBuilderStore.getState().markSaved()).catch(() => {});
+      saveFormSnapshot(c.formId, c, { keepalive: true }).then(() => useBuilderStore.getState().markSaved()).catch(() => {});
     };
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') flush();
@@ -198,7 +221,8 @@ export function useBuilderAutosave() {
   // Synchronous flush on unmount or tab close
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (saveStateRef.current.dirty && !reloadRequested) {
+      // Typed-but-uncommitted text counts: the store is not dirty until the debounce fires.
+      if ((useBuilderStore.getState().dirty || hasPendingEdits()) && !reloadRequested) {
         e.preventDefault();
         e.returnValue = 'You have unsaved changes.';
       }
@@ -209,7 +233,8 @@ export function useBuilderAutosave() {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
 
-      const current = saveStateRef.current;
+      flushPendingEdits();
+      const current = freshState();
       if (current.dirty && current.formId && current.formId !== 'undefined') {
         saveFormSnapshot(current.formId, current).catch(() => {});
       }

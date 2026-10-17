@@ -1,5 +1,6 @@
 'use client';
 
+import { usePendingEdits } from '@/lib/pendingEdits';
 import { useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -54,7 +55,10 @@ export default function BuilderPageShell() {
   const formId = useBuilderStore((state) => state.formId);
   const formTitle = useBuilderStore((state) => state.formTitle);
   const fields = useBuilderStore((state) => state.fields);
-  const dirty = useBuilderStore((state) => state.dirty);
+  // Typed-but-uncommitted text counts as unsaved too: the store is not dirty until a debounce fires (QA D3-001).
+  const storeDirty = useBuilderStore((state) => state.dirty);
+  const hasPending = usePendingEdits(); // always called: a hook must never sit behind a short-circuit
+  const dirty = storeDirty || hasPending;
   const branding = useBuilderStore((state) => state.branding);
   const settings = useBuilderStore((state) => state.settings);
   const status = useBuilderStore((state) => state.status);
