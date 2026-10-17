@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { User } from "lucide-react";
 import { bx } from "@/lib/utils";
 import { initialsOf } from "@/lib/formatters";
+import { localAvatarSrc } from "@/lib/avatarUrl";
 
 export interface AvatarProps extends React.HTMLAttributes<HTMLSpanElement> {
   src?: string;
@@ -25,8 +26,9 @@ const sizeClass: Record<NonNullable<AvatarProps["size"]>, string> = {
 // beginso-ui.css classes — see src/styles/beginso-ui.css §9 AVATARS. Plain <img>, not
 // next/image: .bg-avatar's fixed-size circle via a CSS custom property is simplest with a
 // standard <img>, and avatars are never the page's LCP element.
-export function Avatar({ src, name, alt, size = "default", square, className, ...props }: AvatarProps) {
+export function Avatar({ src: rawSrc, name, alt, size = "default", square, className, ...props }: AvatarProps) {
   const [failed, setFailed] = useState(false);
+  const src = localAvatarSrc(rawSrc);
   const showImage = src && !failed;
   const initials = initialsOf(name);
   return (

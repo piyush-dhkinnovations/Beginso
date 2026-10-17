@@ -120,4 +120,10 @@ describe('DangerZoneSection', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Delete account' }));
     expect(screen.getByTestId('delete-workspace-modal')).toBeInTheDocument();
   });
+
+  it('says "Export your data" once (the button), not as a heading plus an identical button', () => {
+    renderSection();
+    expect(screen.getAllByText('Export your data')).toHaveLength(1);
+    expect(screen.getByText(/Download a copy of your forms and responses first/)).toBeInTheDocument();
+  });
 });

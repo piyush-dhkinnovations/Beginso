@@ -171,4 +171,16 @@ describe('TimezoneSelect', () => {
     setup({ error: 'Pick a timezone' });
     expect(screen.getByText('Pick a timezone')).toBeInTheDocument();
   });
+
+  it('finds India by "kolkata" (Chrome still lists it as Calcutta) and ranks "india" ahead of Indiana', async () => {
+    setup();
+    await userEvent.click(box());
+    await userEvent.type(box(), 'kolkata');
+    expect(options().length).toBeGreaterThan(0);
+    expect(options()[0]).toHaveTextContent(/Kolkata|Calcutta/);
+    await userEvent.clear(box());
+    await userEvent.type(box(), 'india');
+    expect(options()[0]).toHaveTextContent(/Kolkata|Calcutta/);
+    expect(options()[0]).not.toHaveTextContent(/Indiana/);
+  });
 });

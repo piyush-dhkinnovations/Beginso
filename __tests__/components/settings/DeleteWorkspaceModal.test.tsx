@@ -128,4 +128,12 @@ describe('DeleteWorkspaceModal', () => {
     expect(mockLogout).not.toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it('is titled as an account deletion, and never shows a "Counting…" placeholder inside the warning', () => {
+    renderModal();
+    expect(screen.getByRole('dialog', { name: 'Delete your account?' })).toBeInTheDocument();
+    expect(screen.queryByText(/Counting/)).not.toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/will be destroyed/);
+    expect(screen.getByText(/Type your workspace name/)).toBeInTheDocument();
+  });
 });

@@ -28,8 +28,9 @@ interface Zone {
 
 // Friendly names people actually type (country / common name) that the IANA id does not contain.
 const ALIASES: Record<string, string> = {
-  'Asia/Kolkata': 'india mumbai delhi bangalore chennai ist',
-  'Asia/Calcutta': 'india mumbai delhi',
+  'Asia/Kolkata': 'india mumbai delhi bangalore chennai ist calcutta',
+  // Chrome still reports India as Asia/Calcutta: it must be found by the name people type today.
+  'Asia/Calcutta': 'india mumbai delhi bangalore chennai ist kolkata',
   'Asia/Dubai': 'uae emirates gulf',
   'Asia/Shanghai': 'china beijing',
   'Asia/Tokyo': 'japan',
@@ -108,7 +109,10 @@ export function TimezoneSelect({ id, label, value, onChange, onBlur, error }: Ti
     const q = query.trim().toLowerCase().replace(/\s+/g, ' ');
     if (!q) return zones;
     const terms = q.split(' ');
-    return zones.filter((z) => terms.every((t) => z.haystack.includes(t)));
+    const matches = zones.filter((z) => terms.every((t) => z.haystack.includes(t)));
+    // A whole-word hit on a friendly name ("india") outranks a substring hit in a city ("Indiana"). Array sort is stable.
+    const wholeWord = (z: Zone) => terms.every((t) => z.haystack.split(/[\s/_-]+/).includes(t));
+    return matches.sort((a, b) => Number(wholeWord(b)) - Number(wholeWord(a)));
   }, [zones, query]);
 
   const selectedIndex = !query ? results.findIndex((z) => z.id === value) : -1;
