@@ -183,7 +183,7 @@ export function ReportJobRow({ job, onRetry, isRetrying = false, formTitleById =
 
   return (
     <tr className="border-b border-(--border-subtle) last:border-0 transition-colors hover:bg-(--surface-hover)">
-      <td className="px-4 py-3">
+      <td className="w-full max-w-0 px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <FormTile title={title} />
           <div className="min-w-0">

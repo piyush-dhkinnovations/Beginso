@@ -218,7 +218,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
     <Card padded={false} className="gap-4 overflow-hidden pb-5">
       {header}
 
-      <div className="hidden sm:block mx-5 overflow-x-auto rounded-lg border border-(--border-default)">
+      <div className="hidden xl:block mx-5 overflow-x-auto rounded-lg border border-(--border-default)">
         <table className="w-full text-left">
           <thead>
             <tr className="bg-(--bg-subtle) border-b border-(--border-default) bg-caption font-semibold text-(--text-muted) uppercase tracking-wider">
@@ -240,7 +240,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
         </table>
       </div>
 
-      <div className="sm:hidden mx-5 flex flex-col gap-3">
+      <div className="xl:hidden mx-5 flex flex-col gap-3">
         {visibleJobs.map((job, index) => (
           <ReportJobRow key={job._id ?? index} job={job} onRetry={handleRetry} isRetrying={retryingJobId === job._id} formTitleById={formTitleById} variant="card" />
         ))}

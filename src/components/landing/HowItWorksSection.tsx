@@ -75,7 +75,7 @@ function StepCard({ index, step }: { index: number; step: (typeof STEPS)[number]
   return (
     <div
       ref={ref}
-      className={`reveal-up ${visible ? "is-visible" : ""} flex-1 rounded-(--bg-radius-md) border border-(--border-default) bg-(--surface-card) p-6 text-center`}
+      className={`reveal-up ${visible ? "is-visible" : ""} min-w-0 flex-1 rounded-(--bg-radius-md) border border-(--border-default) bg-(--surface-card) p-6 text-center`}
       style={{ "--reveal-delay": `${index * 80}ms` } as React.CSSProperties}
     >
       <Visual />
