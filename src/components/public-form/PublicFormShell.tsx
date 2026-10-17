@@ -392,12 +392,16 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   // jump to the earliest page that has one, and focus it. Returns false when none could be matched, so the caller can
   // fall back to showing the message as a banner.
   function applyServerFieldErrors(fieldErrors: SubmitFieldError[]): boolean {
-    const idByLabel = new Map<string, string>();
-    for (const f of schema.fields) if (!idByLabel.has(f.label)) idByLabel.set(f.label, f.fieldId);
+    // The field's id (sent by newer backends) is exact. A label is only trusted when exactly one field has it: with two questions
+    // both called "Comment", guessing would put the message on the wrong one, so that message goes to the banner instead.
+    const fieldIds = new Set(schema.fields.map((f) => f.fieldId));
+    const idsByLabel = new Map<string, string[]>();
+    for (const f of schema.fields) idsByLabel.set(f.label, [...(idsByLabel.get(f.label) ?? []), f.fieldId]);
     const mapped: Record<string, { type: string; message: string }> = {};
     const unmatched: string[] = [];
     for (const e of fieldErrors) {
-      const id = idByLabel.get(e.field);
+      const sameLabel = idsByLabel.get(e.field);
+      const id = e.fieldId && fieldIds.has(e.fieldId) ? e.fieldId : sameLabel?.length === 1 ? sameLabel[0] : undefined;
       if (id) {
         methods.setError(id, { type: 'server', message: e.message });
         mapped[id] = { type: 'server', message: e.message };

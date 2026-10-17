@@ -529,4 +529,43 @@ describe('PublicFormShell: field errors are shown, announced and focused (QA A5-
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/Phone is invalid/);
   });
+
+  describe('two questions with the same label', () => {
+    const twoComments = () => schema({}, [text('c1', 'Comment', { order: 0 }), text('c2', 'Comment', { order: 1 })]);
+
+    it('puts the 422 on the question the server names by id, not on the first with that label', async () => {
+      svc.submitForm.mockResolvedValue({
+        ok: false,
+        status: 422,
+        message: 'Validation failed',
+        fieldErrors: [{ field: 'Comment', fieldId: 'c2', message: 'Field "Comment" cannot exceed 5 characters.' }],
+      });
+      render(<PublicFormShell schema={twoComments()} slug="s" />);
+      const [first, second] = screen.getAllByLabelText(/Comment/);
+      await userEvent.type(first, 'ok');
+      await userEvent.type(second, 'far too long');
+      await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+
+      expect(await screen.findByText('Field "Comment" cannot exceed 5 characters.')).toBeInTheDocument();
+      expect(second).toHaveAttribute('aria-invalid', 'true');
+      expect(first).not.toHaveAttribute('aria-invalid');
+    });
+
+    it('without an id (an older backend) it does not guess: nothing is marked and the message shows as the banner', async () => {
+      svc.submitForm.mockResolvedValue({
+        ok: false,
+        status: 422,
+        message: 'Validation failed',
+        fieldErrors: [{ field: 'Comment', message: 'Field "Comment" cannot exceed 5 characters.' }],
+      });
+      render(<PublicFormShell schema={twoComments()} slug="s" />);
+      const [first, second] = screen.getAllByLabelText(/Comment/);
+      await userEvent.type(first, 'ok');
+      await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(/Validation failed|cannot exceed 5 characters/);
+      expect(first).not.toHaveAttribute('aria-invalid');
+      expect(second).not.toHaveAttribute('aria-invalid');
+    });
+  });
 });
