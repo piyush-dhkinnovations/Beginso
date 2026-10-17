@@ -247,11 +247,17 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
     // Personal shell (OQ-9 fixed defaults): `stageId` here is one of PERSONAL_DEFAULT_STAGES'
     // synthetic ids ('new'/'in_progress'/'completed'), not a real Stage document — sent as
     // `status` instead, which is exactly what those ids already are.
-    updateStage: (id: string, stageId: string) =>
-      updateMutation.mutate({
-        id,
-        payload: scope === 'personal' ? { status: stageId as 'new' | 'in_progress' | 'completed' } : { stageId },
-      }),
+    // Resolves to whether the save worked (a failure already toasts and rolls back): the Board's drag and drop waits on it.
+    updateStage: (id: string, stageId: string): Promise<boolean> =>
+      updateMutation
+        .mutateAsync({
+          id,
+          payload: scope === 'personal' ? { status: stageId as 'new' | 'in_progress' | 'completed' } : { stageId },
+        })
+        .then(
+          () => true,
+          () => false
+        ),
     updateAssignee: (id: string, assigneeId: string | null) => updateMutation.mutate({ id, payload: { assigneeId } }),
     updateTags: (id: string, tagIds: string[]) => updateMutation.mutate({ id, payload: { tagIds } }),
     isUpdating: updateMutation.isPending,
