@@ -77,6 +77,9 @@ interface RawQuestionsEnvelope {
       totalAnswered?: number;
       summary: {
         options?: { label: string; count: number; percentage?: number }[];
+        rating?: QuestionBreakdown['rating'];
+        numeric?: QuestionBreakdown['numeric'];
+        yesNo?: QuestionBreakdown['yesNo'];
       };
     }[];
   };
@@ -90,6 +93,10 @@ function toQuestionBreakdowns(raw: RawQuestionsEnvelope): { questions: QuestionB
       type: q.type,
       totalAnswered: q.totalAnswered,
       options: (q.summary.options ?? []).map((o) => ({ option: o.label, count: o.count, percentage: o.percentage })),
+      // Only on a backend that sends them (A7-008): an older one simply has none, and those questions stay out of the breakdown.
+      ...(q.summary.rating ? { rating: q.summary.rating } : {}),
+      ...(q.summary.numeric ? { numeric: q.summary.numeric } : {}),
+      ...(q.summary.yesNo ? { yesNo: q.summary.yesNo } : {}),
     })),
   };
 }

@@ -92,6 +92,30 @@ describe('analyticsService', () => {
     expect(result).toEqual({ bucket: 'day', points: [{ bucketStart: '2026-08-11', responses: 3 }] });
   });
 
+  it('getQuestions passes through the rating, numeric and yes/no summaries, and leaves them off when the backend sends none (QA A7-008)', async () => {
+    const rating = { count: 2, average: 4.5, max: 5, distribution: [{ value: 5, count: 1, percentage: 50 }] };
+    const numeric = { count: 2, average: 15, min: 10, max: 20, sum: 30 };
+    const yesNo = { yes: 1, no: 1, percentageYes: 50 };
+    vi.mocked(axiosInstance.get).mockResolvedValue({
+      data: {
+        success: true,
+        data: {
+          questions: [
+            { fieldId: 'r', label: 'Rate', type: 'rating', totalAnswered: 2, summary: { text: { sampleAnswers: ['5'] }, rating } },
+            { fieldId: 'n', label: 'Qty', type: 'number', totalAnswered: 2, summary: { text: { sampleAnswers: ['10'] }, numeric } },
+            { fieldId: 'y', label: 'Rec', type: 'yes_no', totalAnswered: 2, summary: { text: { sampleAnswers: ['Yes'] }, yesNo } },
+            { fieldId: 'old', label: 'Old backend', type: 'rating', totalAnswered: 1, summary: { text: { sampleAnswers: ['5'] } } },
+          ],
+        },
+      },
+    });
+    const { questions } = await analyticsService.getQuestions({ formId: 'f' });
+    expect(questions[0].rating).toEqual(rating);
+    expect(questions[1].numeric).toEqual(numeric);
+    expect(questions[2].yesNo).toEqual(yesNo);
+    expect(questions[3]).not.toHaveProperty('rating');
+  });
+
   it('getQuestions calls GET /api/analytics/questions with params and maps summary.options into {option, count}', async () => {
     // Real backend shape, confirmed live 12 Aug 2026 — wrapped in {success, data}, one entry per
     // field (including free-text fields this app filters out client-side by type), options keyed
