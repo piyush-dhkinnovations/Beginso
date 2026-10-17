@@ -121,7 +121,7 @@ export default function WorkspaceHomePage() {
                 <Link href={`/forms/new?ws=${encodeURIComponent(slug)}`}>
                   <Button variant="primary">
                     <Plus size={16} className="mr-1.5" />
-                    New Form
+                    Create Form
                   </Button>
                 </Link>
                 <Link href={`/w/${slug}/templates`}>

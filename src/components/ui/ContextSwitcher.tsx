@@ -3,6 +3,7 @@ import { bx } from "@/lib/utils";
 import { Menu } from "./Menu";
 import type { MenuItem } from "./Menu";
 import { Badge } from "./Badge";
+import { roleLabel } from "@/lib/roles";
 
 export interface ContextSwitcherWorkspace {
   id: string;
@@ -99,7 +100,7 @@ export function ContextSwitcher({
                   <ContextAvatar logo={workspace.logo} Icon={Building2} size="sm" />
                   <span className="truncate font-medium">{workspace.name}</span>
                 </span>
-                {workspace.role && <Badge>{workspace.role}</Badge>}
+                {workspace.role && <Badge>{roleLabel(workspace.role)}</Badge>}
               </span>
             ),
             onSelect: () => onSelect({ type: "workspace", workspace }),

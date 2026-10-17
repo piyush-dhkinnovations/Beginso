@@ -9,6 +9,7 @@ export const createWorkspaceSchema = z.object({
     .string()
     .trim()
     .min(1, 'Workspace name is required')
+    .min(2, 'Workspace name must be at least 2 characters')
     .max(100, 'Name must be 100 characters or less'),
 });
 

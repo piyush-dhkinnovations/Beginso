@@ -1,7 +1,7 @@
 'use client';
 
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -53,6 +53,9 @@ export function FormAccessPanel({ formId, formTitle, isOpen, onClose }: FormAcce
     enabled: isOpen,
   });
 
+  // Revoking cuts a person off at once, so it asks first (inline: a dialog inside this dialog would fight over focus).
+  const [revoking, setRevoking] = useState<FormAccessGrant | null>(null);
+
   const {
     register,
     handleSubmit,
@@ -66,6 +69,9 @@ export function FormAccessPanel({ formId, formTitle, isOpen, onClose }: FormAcce
   useEffect(() => {
     if (isOpen) {
       reset({ email: '', role: 'viewer' });
+      // Resets whenever the modal opens (the component stays mounted across opens): the same accepted exception DeleteWorkspaceModal uses.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRevoking(null);
       setTimeout(() => emailInputRef.current?.focus(), 50);
     }
   }, [isOpen, reset]);
@@ -85,6 +91,7 @@ export function FormAccessPanel({ formId, formTitle, isOpen, onClose }: FormAcce
     mutationFn: (grant: FormAccessGrant) => formAccessService.revoke(formId, grant.userId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: formAccessKeys.grants(formId) });
+      setRevoking(null);
       toast('Access revoked', 'success');
     },
     onError: (error) => toast(getFriendlyErrorMessage(error, { action: 'change access to this form', fallback: 'Access was not revoked. Please try again.' }), 'error'),
@@ -103,7 +110,7 @@ export function FormAccessPanel({ formId, formTitle, isOpen, onClose }: FormAcce
           variant="ghost"
           size="small"
           aria-label={`Revoke access for ${g.email}`}
-          onClick={() => revokeMutation.mutate(g)}
+          onClick={() => setRevoking(g)}
         >
           <X size={14} />
         </Button>
@@ -128,9 +135,9 @@ export function FormAccessPanel({ formId, formTitle, isOpen, onClose }: FormAcce
           />
 
           <Select id="form-access-role-select" label="Role" error={errors.role?.message} {...register('role')}>
-            <option value="member">Editor — can build and edit forms</option>
-            <option value="viewer">Reviewer — can review assigned responses</option>
-            <option value="admin">Admin — full workspace access</option>
+            <option value="member">Editor — can build and edit this form</option>
+            <option value="viewer">Reviewer — can review responses to this form</option>
+            <option value="admin">Admin — can manage this form</option>
           </Select>
 
           <div className="flex items-center justify-end gap-3">
@@ -142,6 +149,20 @@ export function FormAccessPanel({ formId, formTitle, isOpen, onClose }: FormAcce
             </Button>
           </div>
         </form>
+
+        {revoking && (
+          <Alert variant="warning" title={`Revoke access for ${revoking.email}?`}>
+            <p className="bg-body-sm">They will lose access to this form immediately.</p>
+            <div className="mt-2 flex items-center gap-2">
+              <Button type="button" variant="secondary" size="small" onClick={() => setRevoking(null)} disabled={revokeMutation.isPending}>
+                Keep access
+              </Button>
+              <Button type="button" variant="destructive" size="small" isLoading={revokeMutation.isPending} onClick={() => revokeMutation.mutate(revoking)}>
+                Revoke access
+              </Button>
+            </div>
+          </Alert>
+        )}
 
         {isError ? (
           <Alert variant="error" title="Could not load existing access. Try again.">

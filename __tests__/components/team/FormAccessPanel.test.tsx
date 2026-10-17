@@ -96,14 +96,34 @@ describe('FormAccessPanel', () => {
     expect(screen.getByLabelText('Email')).toHaveValue('');
   });
 
-  it('revoking a grant calls formAccessService.revoke immediately, no confirmation modal', async () => {
+  it('asks before revoking a grant: nothing is sent until "Revoke access" is confirmed', async () => {
     mockListGrants.mockResolvedValue([GRANT]);
     mockRevoke.mockResolvedValue(undefined);
     renderPanel();
 
     await userEvent.click(await screen.findByLabelText('Revoke access for sam@example.com'));
+    expect(screen.getByText('Revoke access for sam@example.com?')).toBeInTheDocument();
+    expect(mockRevoke).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('button', { name: 'Revoke access' }));
     await waitFor(() => expect(mockRevoke).toHaveBeenCalledWith('f1', 'u1'));
-    expect(screen.queryByRole('dialog', { name: /revoke/i })).not.toBeInTheDocument();
+  });
+
+  it('"Keep access" cancels the revoke without sending anything', async () => {
+    mockListGrants.mockResolvedValue([GRANT]);
+    renderPanel();
+
+    await userEvent.click(await screen.findByLabelText('Revoke access for sam@example.com'));
+    await userEvent.click(screen.getByRole('button', { name: 'Keep access' }));
+    expect(screen.queryByText('Revoke access for sam@example.com?')).not.toBeInTheDocument();
+    expect(mockRevoke).not.toHaveBeenCalled();
+  });
+
+  it('describes the roles for this one form, not the workspace', async () => {
+    mockListGrants.mockResolvedValue([]);
+    renderPanel();
+    await screen.findByLabelText('Email');
+    expect(screen.getByRole('option', { name: /Admin — can manage this form/ })).toBeInTheDocument();
+    expect(screen.queryByText(/full workspace access/)).not.toBeInTheDocument();
   });
 
   it('rejects an invalid email before submitting', async () => {

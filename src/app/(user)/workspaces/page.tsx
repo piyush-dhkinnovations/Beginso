@@ -8,7 +8,8 @@ import { Plus, Building2, Search } from 'lucide-react';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
 import { ROLE_LABELS } from '@/lib/roles';
-import { PageHeader, Button, Card, Badge, EmptyState } from '@/components/ui';
+import { PageHeader, Button, ButtonLink, Card, Badge, EmptyState } from '@/components/ui';
+import { LeaveWorkspaceModal } from '@/components/workspaces/LeaveWorkspaceModal';
 import { CardGridSkeleton } from '@/components/ui/PageSkeletons';
 
 // Wireframe Screen 32: All Workspaces (requirements.md §7.5, C1.8) — lists every workspace
@@ -18,6 +19,7 @@ export default function WorkspacesPage() {
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<'name' | 'last-used'>('last-used');
+  const [leaving, setLeaving] = useState<{ slug: string; name: string } | null>(null);
 
   const { data: workspaces, isLoading, isError, refetch } = useQuery({
     queryKey: workspaceKeys.list(),
@@ -118,32 +120,35 @@ export default function WorkspacesPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredWorkspaces.map((workspace) => (
-                <Link key={workspace.id} href={`/w/${workspace.slug}`} className="block h-full no-underline">
-                  <Card className="flex flex-col justify-between gap-4 h-full transition-shadow hover:shadow-(--shadow-hover) border border-(--border-default) hover:border-(--border-strong)">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="bg-body font-semibold text-(--text-primary)">{workspace.name}</h3>
-                        <Badge>{ROLE_LABELS[workspace.role]}</Badge>
-                      </div>
-                      {typeof workspace.memberCount === 'number' && (
-                        <p className="bg-caption text-(--text-muted)">
-                          {workspace.memberCount} member{workspace.memberCount !== 1 ? 's' : ''}
-                        </p>
-                      )}
+                <Card key={workspace.id} className="flex flex-col justify-between gap-4 h-full transition-shadow hover:shadow-(--shadow-hover) border border-(--border-default) hover:border-(--border-strong)">
+                  <Link href={`/w/${workspace.slug}`} className="flex flex-col gap-2 no-underline">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="bg-body font-semibold text-(--text-primary)">{workspace.name}</h3>
+                      <Badge>{ROLE_LABELS[workspace.role]}</Badge>
                     </div>
-                    <div className="flex justify-end pt-2 border-t border-(--border-default)">
-                      <span className="bg-btn bg-btn-secondary bg-btn-sm inline-flex items-center gap-1 bg-caption pointer-events-none">
-                        Open
-                      </span>
-                    </div>
-                  </Card>
-                </Link>
+                    {typeof workspace.memberCount === 'number' && (
+                      <p className="bg-caption text-(--text-muted)">
+                        {workspace.memberCount} member{workspace.memberCount !== 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </Link>
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-(--border-default)">
+                    {/* Any member can leave (the backend refuses the only owner). Not inside the card's link, so it is its own button. */}
+                    <Button variant="ghost" size="small" aria-label={`Leave ${workspace.name}`} onClick={() => setLeaving({ slug: workspace.slug, name: workspace.name })}>
+                      Leave
+                    </Button>
+                    <ButtonLink href={`/w/${workspace.slug}`} variant="secondary" size="small">
+                      Open
+                    </ButtonLink>
+                  </div>
+                </Card>
               ))}
             </div>
           )}
         </div>
       )}
 
+      <LeaveWorkspaceModal workspace={leaving} onClose={() => setLeaving(null)} />
     </div>
   );
 }

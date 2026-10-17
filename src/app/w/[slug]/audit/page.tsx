@@ -1,5 +1,6 @@
 'use client';
 
+import { disambiguateActors } from '@/lib/auditActors';
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -99,7 +100,7 @@ export default function AuditLogPage() {
 
   const hasNext = events.length >= PAGE_SIZE;
   const filtersActive = actorId !== '' || range !== 'all';
-  const actors = (membersQuery.data ?? []).map((m) => ({ id: m.userId, name: m.name }));
+  const actors = disambiguateActors((membersQuery.data ?? []).map((m) => ({ id: m.userId, name: m.name, email: m.email })));
 
   // Nothing recorded and nothing filtered: the filters would be controls over zero events.
   const isFirstRun = !auditQuery.isLoading && !auditQuery.isError && events.length === 0 && page === 1 && !filtersActive;
