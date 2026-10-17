@@ -168,6 +168,38 @@ describe('useInboxMutations — bulk', () => {
 // here at the pure-data level the hook's `undo()` builds its request from — the request always
 // carries exactly the `previous` entries returned by the original bulk call, for exactly those
 // ids, regardless of how many/which ids were involved.
+// QA D5-004: bulk delete showed "Failed to update responses" and sent NO request. Queries under the same key prefix that are not a
+// page of rows (stats, and the Board / Calendar queries) made the optimistic filter throw before the request could go out.
+describe('useInboxMutations: bulk delete with other cached queries under the list key', () => {
+  beforeEach(() => {
+    mockBulk.mockReset();
+    toastMock.mockReset();
+  });
+
+  it('still sends the delete request, and removes the rows from the real list', async () => {
+    const list: PaginatedResponsesResult = { data: [makeResponse('r1'), makeResponse('r2'), makeResponse('r3')], total: 3, page: 1, limit: 50, totalPages: 1 };
+    const { queryClient, wrapper } = makeClientAndWrapper(list);
+    // What else lives under ['responses', scope, formId]: stats (an object), and infinite-query data (pages, no top-level data).
+    queryClient.setQueryData([...responseKeys.all('acme', undefined), 'stats'], { total: 3, byStage: [] });
+    queryClient.setQueryData([...responseKeys.all('acme', undefined), { stageId: 's1' }, 'board'], { pages: [{ data: [makeResponse('r1')] }], pageParams: [1] });
+    mockBulk.mockResolvedValueOnce({ succeeded: ['r1', 'r2'], failed: [], previous: [{ id: 'r1' }, { id: 'r2' }] });
+
+    const { result } = renderHook(() => useInboxMutations({ scope: 'acme' }), { wrapper });
+    act(() => {
+      result.current.bulk({ ids: ['r1', 'r2'] }, { type: 'delete' });
+    });
+
+    await waitFor(() => expect(mockBulk).toHaveBeenCalledTimes(1));
+    expect(mockBulk).toHaveBeenCalledWith({ target: { ids: ['r1', 'r2'] }, action: { type: 'delete' }, previous: undefined }, 'acme');
+    await waitFor(() => expect(toastMock).toHaveBeenCalled());
+    expect(toastMock.mock.calls[0][0]).toBe('2 responses deleted.');
+    expect(toastMock.mock.calls[0][1]).toBe('success');
+    const after = queryClient.getQueryData<PaginatedResponsesResult>(responseKeys.all('acme', undefined));
+    expect(after?.data.map((r) => r._id)).toEqual(['r3']);
+    expect(after?.total).toBe(1);
+  });
+});
+
 describe('undo request shape (property)', () => {
   it('the restore target ids always equal the previous snapshot ids, 1:1', () => {
     fc.assert(
