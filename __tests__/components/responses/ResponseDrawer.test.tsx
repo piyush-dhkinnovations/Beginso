@@ -242,6 +242,62 @@ describe('ResponseDrawer', () => {
     opener.remove();
   });
 
+  // QA D5-005: opening by keyboard left focus on the row behind the overlay while the response was still loading.
+  it('moves focus into the drawer on open, even before the response has loaded', async () => {
+    mockGetResponseById.mockReturnValue(new Promise(() => {})); // never resolves: the loading state
+    const opener = document.createElement('button');
+    document.body.appendChild(opener);
+    opener.focus();
+
+    renderDrawer('resp-1');
+    const dialog = await screen.findByRole('dialog');
+    expect(opener).not.toHaveFocus();
+    expect(dialog.contains(document.activeElement)).toBe(true);
+    opener.remove();
+  });
+
+  // The real cause of D5-005, found on the live page: the first control in the DOM is the mobile-only Back button, display:none on
+  // desktop, and focus() on a hidden element does nothing. Focus must go to the first control that is actually visible.
+  it('skips a hidden first control (the mobile-only Back button) when moving focus into the drawer', async () => {
+    mockGetResponseById.mockResolvedValue(detail);
+    const original = HTMLElement.prototype.checkVisibility;
+    HTMLElement.prototype.checkVisibility = function (this: HTMLElement) {
+      return this.getAttribute('aria-label') !== 'Back';
+    };
+    try {
+      const opener = document.createElement('button');
+      document.body.appendChild(opener);
+      opener.focus();
+      renderDrawer('resp-1', vi.fn(), { onPrevious: vi.fn(), hasPrevious: true });
+      const dialog = await screen.findByRole('dialog');
+      await screen.findByText('Submitted response');
+      const hiddenBack = dialog.querySelector('[aria-label="Back"]');
+      expect(document.activeElement).not.toBe(hiddenBack);
+      expect(dialog.contains(document.activeElement)).toBe(true);
+      opener.remove();
+    } finally {
+      HTMLElement.prototype.checkVisibility = original;
+    }
+  });
+
+  // QA D5-007: a response with no stage of its own (every response created before it started in a default stage) read
+  // "Unknown stage" in the drawer. It now shows the stage of its status.
+  it('shows the stage of its status when the response has no stage of its own', async () => {
+    mockGetResponseById.mockResolvedValue({ ...detail, stage: null, status: 'new' });
+    renderDrawer('resp-1', vi.fn(), { scope: 'acme' });
+    await screen.findByText('Submitted response');
+    const select = screen.getByLabelText('Stage') as HTMLSelectElement;
+    expect(select.value).toBe('s-new');
+    expect(screen.queryByRole('option', { name: 'Unknown stage' })).not.toBeInTheDocument();
+  });
+
+  it('still says Unknown stage when the workspace has no stage in that category', async () => {
+    mockGetResponseById.mockResolvedValue({ ...detail, stage: null, status: 'in_progress' });
+    renderDrawer('resp-1', vi.fn(), { scope: 'acme' });
+    await screen.findByText('Submitted response');
+    expect(screen.getByRole('option', { name: 'Unknown stage' })).toBeInTheDocument();
+  });
+
   // QA D5-002: the single-response download went out under the personal scope too, so a workspace response answered "Form not found".
   it('downloads a workspace response under that workspace scope', async () => {
     mockGetResponseById.mockResolvedValue(detail);
