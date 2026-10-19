@@ -1,5 +1,6 @@
 'use client';
 
+import { CharCount } from '@/components/ui/CharCount';
 import { useState } from 'react';
 import { CheckCircle2, ExternalLink, MoreVertical, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -97,6 +98,7 @@ export function BuilderHeader({
       icon={icon}
       backLabel="Forms"
       title={
+        <>
         <input
           type="text"
           value={title ?? ''}
@@ -107,9 +109,12 @@ export function BuilderHeader({
           }}
           className="min-w-0 rounded border-b-2 border-transparent bg-transparent px-1 py-0.5 font-semibold text-(--text-primary) transition-colors focus:border-(--border-strong) focus:outline-none"
           placeholder="Untitled Form"
+          maxLength={100} // the server refuses a longer name
           title={title ?? ''}
           aria-label="Form name"
         />
+        {(title ?? '').length >= 80 && <CharCount id="form-name-count" length={(title ?? '').length} max={100} />}
+        </>
       }
       badge={<StatusBadge variant={status}>{STATUS_LABEL[status]}</StatusBadge>}
       // One SaveIndicator instance (one live region).

@@ -189,6 +189,7 @@ function ChartDrawerForm({ editing, onClose, formId, scope, fields, range, canSh
           label="Title"
           value={title}
           maxLength={80}
+          showCount
           onChange={(e) => {
             setTitle(e.target.value);
             setTitleTouched(true);

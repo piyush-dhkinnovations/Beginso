@@ -168,8 +168,6 @@ describe('Zustand builderStore Property Tests', () => {
     );
   });
 
-<<<<<<< Updated upstream
-=======
   it('addField opens the field it creates', () => {
     const store = useBuilderStore.getState();
     store.initForm(mockForm('test-form', 'My Form'));
@@ -210,7 +208,6 @@ describe('Zustand builderStore Property Tests', () => {
     expect(useBuilderStore.getState().fields[0].type).toBe('checkbox');
   });
 
->>>>>>> Stashed changes
   // ─── duplicateField: clones in-place, deep-copies arrays, drops logicRules ───
   it('duplicateField inserts a deep-cloned copy right after the original and drops its logicRules', () => {
     const store = useBuilderStore.getState();

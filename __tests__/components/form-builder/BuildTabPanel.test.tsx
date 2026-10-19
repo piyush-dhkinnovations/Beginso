@@ -68,12 +68,16 @@ describe('BuildTabPanel', () => {
 
   it('selecting a card sets the active field in the store and expands it', async () => {
     useBuilderStore.getState().addField('short_text');
+    useBuilderStore.getState().setActiveFieldId(null); // addField opens the new field; start closed
     renderPanel();
     const card = screen.getByRole('button', { name: /Select .* field/ });
     await userEvent.click(card);
     const id = useBuilderStore.getState().fields[0].fieldId;
     expect(useBuilderStore.getState().activeFieldId).toBe(id);
     expect(screen.getByPlaceholderText('Field label')).toBeInTheDocument();
+    await userEvent.click(card); // a second click on the open card closes it
+    expect(useBuilderStore.getState().activeFieldId).toBeNull();
+    expect(screen.queryByPlaceholderText('Field label')).not.toBeInTheDocument();
   });
 
   it('clicking the canvas background clears the selection', async () => {

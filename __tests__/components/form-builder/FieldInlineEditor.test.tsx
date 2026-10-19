@@ -24,6 +24,17 @@ describe('FieldInlineEditor: common controls', () => {
     expect(onUpdate).toHaveBeenCalledWith(f.fieldId, { label: 'Full name' });
   });
 
+  it('the label shows how many of its 100 characters are used, and stops at 100', async () => {
+    const f = makeField('short_text', { label: 'Name' });
+    setup(f);
+    expect(screen.getByText('4/100')).toBeInTheDocument();
+    const input = screen.getByPlaceholderText('Field label');
+    await userEvent.clear(input);
+    await userEvent.type(input, 'x'.repeat(120));
+    expect((input as HTMLInputElement).value).toHaveLength(100);
+    expect(screen.getByText('100/100')).toBeInTheDocument();
+  });
+
   it('commits shortly after typing stops, without needing a blur (so the edit is not lost on reload)', async () => {
     const f = makeField('short_text', { label: 'Name' });
     const { onUpdate } = setup(f);
