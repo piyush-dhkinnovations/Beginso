@@ -178,6 +178,36 @@ describe('Zustand builderStore Property Tests', () => {
     expect(useBuilderStore.getState().activeFieldId).toBe(useBuilderStore.getState().fields[1].fieldId);
   });
 
+  it('moveFieldToPage puts the field last on the other page, closes the gap, and undo brings it back', () => {
+    const store = useBuilderStore.getState();
+    store.initForm(mockForm('test-form', 'My Form'));
+    store.addPage();
+    const [p1, p2] = useBuilderStore.getState().pages.map((p) => p.id);
+    store.setActivePageId(p1);
+    store.addField('short_text');
+    store.addField('email');
+    store.addField('phone');
+    const [a, b, c] = useBuilderStore.getState().fields.map((f) => f.fieldId);
+    store.moveFieldToPage(a, p2);
+    const after = useBuilderStore.getState().fields;
+    expect(after.find((f) => f.fieldId === a)).toMatchObject({ pageId: p2, order: 0 });
+    expect([b, c].map((id) => after.find((f) => f.fieldId === id)!.order)).toEqual([0, 1]);
+    store.undo();
+    expect(useBuilderStore.getState().fields.find((f) => f.fieldId === a)).toMatchObject({ pageId: p1, order: 0 });
+  });
+
+  it('changeFieldType switches within a kind, keeps the id and options, and refuses other kinds', () => {
+    const store = useBuilderStore.getState();
+    store.initForm(mockForm('test-form', 'My Form'));
+    store.addField('dropdown');
+    const id = useBuilderStore.getState().fields[0].fieldId;
+    store.updateFieldOptions(id, ['A', 'B']);
+    store.changeFieldType(id, 'checkbox');
+    expect(useBuilderStore.getState().fields[0]).toMatchObject({ fieldId: id, type: 'checkbox', options: ['A', 'B'] });
+    store.changeFieldType(id, 'signature');
+    expect(useBuilderStore.getState().fields[0].type).toBe('checkbox');
+  });
+
   // ─── duplicateField: clones in-place, deep-copies arrays, drops logicRules ───
   it('duplicateField inserts a deep-cloned copy right after the original and drops its logicRules', () => {
     const store = useBuilderStore.getState();
