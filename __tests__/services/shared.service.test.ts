@@ -86,4 +86,11 @@ describe('sharedService', () => {
 
     expect(result).toEqual([]);
   });
+
+  it('list() keeps the logo or icon of the form that the backend sends, and leaves it off when it sends none', async () => {
+    mockGet.mockResolvedValueOnce({ data: { forms: [{ ...RAW_SHARE, branding: { logoUrl: 'https://x/y.png', iconName: null } }, RAW_SHARE] } });
+    const result = await sharedService.list();
+    expect(result[0].branding).toEqual({ logoUrl: 'https://x/y.png', iconName: null });
+    expect(result[1]).not.toHaveProperty('branding');
+  });
 });

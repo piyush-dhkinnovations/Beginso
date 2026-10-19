@@ -28,7 +28,7 @@ export function SharedFormCard({ item }: SharedFormCardProps) {
     <Link href={`/forms/${item.id}/inbox`} className="block h-full no-underline">
       <Card padded={false} className="h-full overflow-hidden transition-colors hover:border-(--border-strong)">
         <div className="flex items-start justify-between gap-3 px-4 pt-4">
-          <FormTile title={item.title} />
+          <FormTile title={item.title} logoUrl={item.branding?.logoUrl} iconName={item.branding?.iconName} />
           <SharedRoleBadge role={item.role} />
         </div>
         <div className="flex flex-1 flex-col gap-1 px-4 pt-3">

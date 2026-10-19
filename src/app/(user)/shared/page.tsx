@@ -108,7 +108,7 @@ export default function SharedWithMePage() {
       header: 'Form Title',
       render: (item) => (
         <div className="flex min-w-0 items-center gap-3">
-          <FormTile title={item.title} />
+          <FormTile title={item.title} logoUrl={item.branding?.logoUrl} iconName={item.branding?.iconName} />
           <div className="flex min-w-0 flex-col">
             <Link href={`/forms/${item.id}/inbox`} className="bg-body-sm truncate font-semibold text-(--text-primary) hover:underline">
               {item.title}

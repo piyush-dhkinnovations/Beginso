@@ -125,7 +125,7 @@ export function FormsSummaryTable({
       header: 'Form',
       render: (form) => (
         <div className="flex min-w-0 items-center gap-3">
-          <FormTile title={form.title} />
+          <FormTile title={form.title} logoUrl={form.branding?.logoUrl} iconName={form.branding?.iconName} />
           <Link href={`/forms/${form._id}/insights${wsQuery}`} className="bg-body-sm min-w-0 truncate font-semibold text-(--text-primary) hover:underline">
             {form.title}
           </Link>

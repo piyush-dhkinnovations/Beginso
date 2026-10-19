@@ -5,6 +5,7 @@
 // these flows (requirements.md §7.2, §7.4).
 import type { NotificationPreference } from '../../shared/types';
 import type { Role } from '@/types/workspace';
+import type { FormMark } from '@/types/form';
 
 export interface MemberListItem {
   membershipId: string;
@@ -78,6 +79,8 @@ export interface SharedFormItem {
    * never fabricated, when none of them did. */
   sharedByName?: string;
   workspaceName: string | null;
+  /** The form's logo / icon (absent on an older backend). */
+  branding?: FormMark;
   role: Exclude<Role, 'owner'>;
   accessLevel: 'read' | 'write';
   sharedAt: string;

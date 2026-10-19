@@ -112,6 +112,7 @@ interface RawFormsSummaryEnvelope {
     views?: number | null;
     reviewedRate?: number | null;
     templateCategory?: string | null;
+    branding?: { logoUrl?: string | null; iconName?: string | null };
   }[];
   total: number;
   page: number;
@@ -129,6 +130,7 @@ function toFormsSummaryResult(raw: RawFormsSummaryEnvelope): AnalyticsFormsSumma
       views: typeof item.views === 'number' ? item.views : null,
       reviewedRate: item.reviewedRate === undefined ? undefined : toRate(item.reviewedRate),
       templateCategory: item.templateCategory ?? null,
+      ...(item.branding ? { branding: item.branding } : {}),
     })),
     total: raw.total,
     page: raw.page,

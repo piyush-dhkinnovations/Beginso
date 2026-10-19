@@ -116,6 +116,22 @@ describe('analyticsService', () => {
     expect(questions[3]).not.toHaveProperty('rating');
   });
 
+  it('getFormsSummary keeps the logo or icon of each form so the table shows the same mark as the Forms list', async () => {
+    vi.mocked(axiosInstance.get).mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: [
+          { formId: 'f1', title: 'With logo', status: 'published', totalResponses: 5, completionRate: 40, branding: { logoUrl: 'https://x/y.png', iconName: null } },
+          { formId: 'f2', title: 'Without', status: 'draft', totalResponses: 0, completionRate: null },
+        ],
+        total: 2, page: 1, limit: 10,
+      },
+    });
+    const result = await analyticsService.getFormsSummary({});
+    expect(result.forms[0].branding).toEqual({ logoUrl: 'https://x/y.png', iconName: null });
+    expect(result.forms[1]).not.toHaveProperty('branding');
+  });
+
   it('getQuestions calls GET /api/analytics/questions with params and maps summary.options into {option, count}', async () => {
     // Real backend shape, confirmed live 12 Aug 2026 — wrapped in {success, data}, one entry per
     // field (including free-text fields this app filters out client-side by type), options keyed
