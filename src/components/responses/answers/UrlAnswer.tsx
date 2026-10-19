@@ -26,6 +26,7 @@ function Monogram({ domain, className }: { domain: string; className?: string })
   );
 }
 
+<<<<<<< Updated upstream
 type Settings = ReturnType<typeof urlSettings>;
 
 // Thumbnail box per "Preview size" and "aspect ratio". Large stacks the image above the text; small and medium sit beside it.
@@ -37,6 +38,19 @@ function thumbClass({ size, ratio }: { size: Settings['previewSize']; ratio: Set
 }
 
 function RichPreview({ href, domain, scope, framed, size, ratio }: { href: string; domain: string; scope: string; framed: boolean; size: Settings['previewSize']; ratio: Settings['aspectRatio'] }) {
+=======
+/** Extract a YouTube video ID from any known YouTube URL form, or null. */
+function youtubeId(href: string): string | null {
+  try {
+    const u = new URL(href);
+    if (u.hostname === 'youtu.be') return u.pathname.slice(1).split('?')[0] || null;
+    if (u.hostname.includes('youtube.com')) return u.searchParams.get('v');
+  } catch { /* ignore */ }
+  return null;
+}
+
+function RichPreview({ href, domain, scope, framed }: { href: string; domain: string; scope: string; framed: boolean }) {
+>>>>>>> Stashed changes
   const [imageFailed, setImageFailed] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ['link-preview', href],
@@ -45,10 +59,20 @@ function RichPreview({ href, domain, scope, framed, size, ratio }: { href: strin
     retry: false,
   });
 
+<<<<<<< Updated upstream
   const title = data?.title ?? domain;
   const image = data?.image && !imageFailed ? data.image : undefined;
   const stacked = framed && size === 'large';
   const thumb = thumbClass({ size, ratio }, framed);
+=======
+  const ytId = youtubeId(href);
+  // Use YouTube's public thumbnail CDN when the preview service returns no image
+  const ytThumb = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : undefined;
+
+  // Only show title when it adds information beyond the domain (avoids duplicate text)
+  const title = data?.title && data.title !== domain ? data.title : null;
+  const image = data?.image && !imageFailed ? data.image : (!imageFailed && ytThumb ? ytThumb : undefined);
+>>>>>>> Stashed changes
 
   return (
     <div className={cn('flex min-w-0 overflow-hidden', stacked && 'flex-col', framed ? 'rounded-lg border border-(--border-default) bg-(--surface-card)' : 'gap-3')}>
@@ -68,8 +92,9 @@ function RichPreview({ href, domain, scope, framed, size, ratio }: { href: strin
         <Monogram domain={domain} className={framed ? (stacked ? 'm-3 size-12' : 'm-3 size-12') : 'size-14'} />
       )}
       <div className={cn('flex min-w-0 flex-1 flex-col justify-center gap-0.5', framed && 'p-3')}>
-        <p className="line-clamp-2 bg-body-sm font-semibold text-(--text-primary)">{title}</p>
+        {title && <p className="line-clamp-2 bg-body-sm font-semibold text-(--text-primary)">{title}</p>}
         <p className="truncate bg-caption text-(--text-muted)">{domain}</p>
+        <p className="truncate bg-caption text-(--text-muted)" title={href}>{href}</p>
         <a {...LINK_PROPS} href={href} className="mt-1 inline-flex w-fit items-center gap-1 bg-body-sm font-medium text-(--text-link) hover:underline">
           Open website
           <ExternalLink size={13} aria-hidden="true" />
@@ -110,7 +135,7 @@ export function UrlAnswer({ value, field, scope }: UrlAnswerProps) {
         )}
       >
         <Monogram domain={domain} className="size-6" />
-        <span className="truncate bg-body-sm font-medium">{domain}</span>
+        <span className="truncate bg-body-sm font-medium">{href}</span>
         <ExternalLink size={13} className="shrink-0 text-(--text-muted)" aria-hidden="true" />
         <span className="sr-only">(opens in a new tab)</span>
       </a>
