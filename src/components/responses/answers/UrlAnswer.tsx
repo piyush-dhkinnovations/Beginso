@@ -26,7 +26,6 @@ function Monogram({ domain, className }: { domain: string; className?: string })
   );
 }
 
-<<<<<<< Updated upstream
 type Settings = ReturnType<typeof urlSettings>;
 
 // Thumbnail box per "Preview size" and "aspect ratio". Large stacks the image above the text; small and medium sit beside it.
@@ -37,8 +36,6 @@ function thumbClass({ size, ratio }: { size: Settings['previewSize']; ratio: Set
   return cn('shrink-0', size === 'small' ? 'w-20' : 'w-28 sm:w-40', shape ? cn(shape, 'self-start') : 'min-h-20');
 }
 
-function RichPreview({ href, domain, scope, framed, size, ratio }: { href: string; domain: string; scope: string; framed: boolean; size: Settings['previewSize']; ratio: Settings['aspectRatio'] }) {
-=======
 /** Extract a YouTube video ID from any known YouTube URL form, or null. */
 function youtubeId(href: string): string | null {
   try {
@@ -49,8 +46,7 @@ function youtubeId(href: string): string | null {
   return null;
 }
 
-function RichPreview({ href, domain, scope, framed }: { href: string; domain: string; scope: string; framed: boolean }) {
->>>>>>> Stashed changes
+function RichPreview({ href, domain, scope, framed, size, ratio }: { href: string; domain: string; scope: string; framed: boolean; size: Settings['previewSize']; ratio: Settings['aspectRatio'] }) {
   const [imageFailed, setImageFailed] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ['link-preview', href],
@@ -59,20 +55,15 @@ function RichPreview({ href, domain, scope, framed }: { href: string; domain: st
     retry: false,
   });
 
-<<<<<<< Updated upstream
-  const title = data?.title ?? domain;
-  const image = data?.image && !imageFailed ? data.image : undefined;
-  const stacked = framed && size === 'large';
-  const thumb = thumbClass({ size, ratio }, framed);
-=======
   const ytId = youtubeId(href);
   // Use YouTube's public thumbnail CDN when the preview service returns no image
   const ytThumb = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : undefined;
 
-  // Only show title when it adds information beyond the domain (avoids duplicate text)
+  // Only show title when it adds information beyond the domain (avoids duplicate text when preview fails)
   const title = data?.title && data.title !== domain ? data.title : null;
   const image = data?.image && !imageFailed ? data.image : (!imageFailed && ytThumb ? ytThumb : undefined);
->>>>>>> Stashed changes
+  const stacked = framed && size === 'large';
+  const thumb = thumbClass({ size, ratio }, framed);
 
   return (
     <div className={cn('flex min-w-0 overflow-hidden', stacked && 'flex-col', framed ? 'rounded-lg border border-(--border-default) bg-(--surface-card)' : 'gap-3')}>
@@ -89,7 +80,7 @@ function RichPreview({ href, domain, scope, framed }: { href: string; domain: st
           className={cn('object-cover', thumb)}
         />
       ) : (
-        <Monogram domain={domain} className={framed ? (stacked ? 'm-3 size-12' : 'm-3 size-12') : 'size-14'} />
+        <Monogram domain={domain} className={framed ? 'm-3 size-12' : 'size-14'} />
       )}
       <div className={cn('flex min-w-0 flex-1 flex-col justify-center gap-0.5', framed && 'p-3')}>
         {title && <p className="line-clamp-2 bg-body-sm font-semibold text-(--text-primary)">{title}</p>}
