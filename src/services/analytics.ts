@@ -1,5 +1,6 @@
 import axiosInstance from '@/lib/axios';
 import { workspaceHeaders } from '@/lib/workspaceHeaders';
+import type { StageCategory } from '@/types/stage';
 import type {
   AnalyticsOverview,
   AnalyticsFormSummary,
@@ -27,6 +28,8 @@ interface RawOverviewEnvelope {
     completionRate?: number | null;
     reviewedRate?: number | null;
     views?: number | null;
+    /** One row per stage that holds responses (empty stages are left out by the backend). */
+    stageDistribution?: { stageId: string; name: string; category: StageCategory; count: number }[];
     // `statusDistribution` duplicates completed/in_progress/new with percentages — the flat
     // fields above are simpler to consume and this app computes its own percentages anyway.
   };
@@ -54,6 +57,14 @@ function toAnalyticsOverview(raw: RawOverviewEnvelope): AnalyticsOverview {
     completionRate: toRate(raw.data.completionRate),
     reviewedRate: toRate(raw.data.reviewedRate),
     views: typeof raw.data.views === 'number' ? raw.data.views : null,
+    // A workspace's own stages (In Review, On Hold, Released...) used to be folded into three category totals and never named.
+    ...(Array.isArray(raw.data.stageDistribution) && raw.data.stageDistribution.length > 0
+      ? {
+          stageCounts: raw.data.stageDistribution
+            .filter((s) => s && typeof s.name === 'string' && typeof s.count === 'number')
+            .map((s) => ({ stageId: s.stageId, name: s.name, category: s.category, count: s.count })),
+        }
+      : {}),
   };
 }
 

@@ -116,20 +116,18 @@ describe('analyticsService', () => {
     expect(questions[3]).not.toHaveProperty('rating');
   });
 
-  it('getFormsSummary keeps the logo or icon of each form so the table shows the same mark as the Forms list', async () => {
+  it('getOverview keeps the per-stage counts the backend sends, and has none when it sends none', async () => {
+    const base = { total: 10, completed: 4, in_progress: 3, new: 3 };
     vi.mocked(axiosInstance.get).mockResolvedValueOnce({
-      data: {
-        success: true,
-        data: [
-          { formId: 'f1', title: 'With logo', status: 'published', totalResponses: 5, completionRate: 40, branding: { logoUrl: 'https://x/y.png', iconName: null } },
-          { formId: 'f2', title: 'Without', status: 'draft', totalResponses: 0, completionRate: null },
-        ],
-        total: 2, page: 1, limit: 10,
-      },
+      data: { success: true, data: { ...base, stageDistribution: [{ stageId: 's1', name: 'In Review', category: 'in_progress', count: 3, colour: 'info', percentage: 30 }] } },
     });
-    const result = await analyticsService.getFormsSummary({});
-    expect(result.forms[0].branding).toEqual({ logoUrl: 'https://x/y.png', iconName: null });
-    expect(result.forms[1]).not.toHaveProperty('branding');
+    const withStages = await analyticsService.getOverview({ formId: 'f' });
+    expect(withStages.stageCounts).toEqual([{ stageId: 's1', name: 'In Review', category: 'in_progress', count: 3 }]);
+
+    vi.mocked(axiosInstance.get).mockResolvedValueOnce({ data: { success: true, data: { ...base, stageDistribution: [] } } });
+    expect((await analyticsService.getOverview({ formId: 'f' })).stageCounts).toBeUndefined();
+    vi.mocked(axiosInstance.get).mockResolvedValueOnce({ data: { success: true, data: base } });
+    expect((await analyticsService.getOverview({ formId: 'f' })).stageCounts).toBeUndefined();
   });
 
   it('getQuestions calls GET /api/analytics/questions with params and maps summary.options into {option, count}', async () => {
