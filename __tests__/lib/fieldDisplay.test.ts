@@ -61,8 +61,10 @@ describe('validateImage', () => {
 
 describe('url helpers', () => {
   it('urlSettings defaults', () => {
-    expect(urlSettings()).toEqual({ style: 'rich', display: 'card' });
-    expect(urlSettings(field({ type: 'url', urlPreviewStyle: 'simple', urlDisplay: 'inline' }))).toEqual({ style: 'simple', display: 'inline' });
+    const dflt = { previewPosition: 'inline', aspectRatio: 'original', previewSize: 'medium' };
+    expect(urlSettings()).toEqual({ style: 'rich', display: 'card', ...dflt });
+    expect(urlSettings(field({ type: 'url', urlPreviewStyle: 'simple', urlDisplay: 'inline' }))).toEqual({ style: 'simple', display: 'inline', ...dflt });
+    expect(urlSettings(field({ type: 'url', urlPreviewPosition: 'top', urlAspectRatio: '16:9', urlPreviewSize: 'large' }))).toMatchObject({ previewPosition: 'top', aspectRatio: '16:9', previewSize: 'large' });
   });
 
   it('safeHttpUrl only allows http(s)', () => {

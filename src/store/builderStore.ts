@@ -231,7 +231,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       if (type === 'image_upload') {
         Object.assign(defaultField, { allowMultiple: false, previewPosition: 'top', aspectRatio: 'original', previewSize: 'large' });
       } else if (type === 'url') {
-        Object.assign(defaultField, { urlPreviewStyle: 'rich', urlDisplay: 'card' });
+        Object.assign(defaultField, { urlPreviewStyle: 'rich', urlDisplay: 'card', urlPreviewPosition: 'top', urlAspectRatio: 'original', urlPreviewSize: 'medium' });
       } else if (type === 'currency') {
         Object.assign(defaultField, { currency: 'INR' });
       }

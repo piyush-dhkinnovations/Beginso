@@ -56,11 +56,20 @@ export function validateImage(file: File, maxSizeMb: number): string | null {
 export interface UrlSettings {
   style: UrlPreviewStyle;
   display: UrlDisplay;
+  previewPosition: ImagePreviewPosition;
+  aspectRatio: ImageAspectRatio;
+  previewSize: ImagePreviewSize;
 }
 
 export function urlSettings(field?: FormField): UrlSettings {
   const f = field?.type === 'url' ? field : undefined;
-  return { style: f?.urlPreviewStyle ?? 'rich', display: f?.urlDisplay ?? 'card' };
+  return {
+    style: f?.urlPreviewStyle ?? 'rich',
+    display: f?.urlDisplay ?? 'card',
+    previewPosition: f?.urlPreviewPosition ?? 'inline',
+    aspectRatio: f?.urlAspectRatio ?? 'original',
+    previewSize: f?.urlPreviewSize ?? 'medium',
+  };
 }
 
 /** The parsed URL when `value` is a plain http(s) address, otherwise null. Anything else is shown as text, never as a link. */

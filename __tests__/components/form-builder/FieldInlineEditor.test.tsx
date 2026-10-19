@@ -188,9 +188,26 @@ describe('FieldInlineEditor: text-like fields', () => {
     expect(screen.getByRole('radio', { name: /Rich preview/ })).toBeChecked();
     await userEvent.click(screen.getByRole('radio', { name: /Compact link/ }));
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlPreviewStyle: 'compact' });
-    await userEvent.click(screen.getByRole('radio', { name: 'Inline with the answer' }));
+    await userEvent.click(screen.getAllByRole('radio', { name: 'Inline with the answer' })[1]);
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlDisplay: 'inline' });
-    expect(screen.getByText('Links: rich preview, displayed as card.')).toBeInTheDocument();
+    expect(screen.getByText('Links: rich preview, inline with the answer, original ratio, medium, displayed as card.')).toBeInTheDocument();
+  });
+
+  it('url fields choose preview position, aspect ratio and size like images do', async () => {
+    const f = makeField('url');
+    const { onUpdate } = setup(f);
+    await userEvent.click(screen.getByRole('radio', { name: 'Top of response (recommended)' }));
+    expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlPreviewPosition: 'top' });
+    await userEvent.click(screen.getByRole('radio', { name: '16:9 landscape' }));
+    expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlAspectRatio: '16:9' });
+    await userEvent.click(screen.getByRole('radio', { name: 'Large preview' }));
+    expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlPreviewSize: 'large' });
+  });
+
+  it('ratio and size only apply to a rich preview, so other styles do not show them', () => {
+    setup({ ...makeField('url'), urlPreviewStyle: 'compact' } as FormField);
+    expect(screen.queryByRole('radio', { name: '16:9 landscape' })).not.toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Top of response (recommended)' })).toBeInTheDocument();
   });
 });
 

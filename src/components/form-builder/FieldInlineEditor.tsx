@@ -499,6 +499,45 @@ function UrlDisplaySection({
         ]}
         onChange={(urlPreviewStyle) => set({ urlPreviewStyle })}
       />
+      <RadioSection<ImagePreviewPosition>
+        uid={uid}
+        name="position"
+        label="Preview position"
+        value={s.previewPosition}
+        options={[
+          { value: 'top', label: 'Top of response (recommended)' },
+          { value: 'inline', label: 'Inline with the answer' },
+        ]}
+        onChange={(urlPreviewPosition) => set({ urlPreviewPosition })}
+      />
+      {s.style === 'rich' && (
+        <>
+          <RadioSection<ImageAspectRatio>
+            uid={uid}
+            name="ratio"
+            label="Image aspect ratio"
+            value={s.aspectRatio}
+            options={[
+              { value: 'original', label: 'Original ratio' },
+              { value: '16:9', label: '16:9 landscape' },
+              { value: '1:1', label: '1:1 square' },
+            ]}
+            onChange={(urlAspectRatio) => set({ urlAspectRatio })}
+          />
+          <RadioSection<ImagePreviewSize>
+            uid={uid}
+            name="size"
+            label="Preview size"
+            value={s.previewSize}
+            options={[
+              { value: 'small', label: 'Small thumbnail' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'large', label: 'Large preview' },
+            ]}
+            onChange={(urlPreviewSize) => set({ urlPreviewSize })}
+          />
+        </>
+      )}
       <RadioSection<UrlDisplay>
         uid={uid}
         name="display"
@@ -511,7 +550,7 @@ function UrlDisplaySection({
         onChange={(urlDisplay) => set({ urlDisplay })}
       />
 
-      <ConfigSummary text={`Links: ${STYLE_LABEL[s.style]}, ${DISPLAY_LABEL[s.display]}.`} />
+      <ConfigSummary text={`Links: ${STYLE_LABEL[s.style]}, ${POSITION_LABEL[s.previewPosition].toLowerCase()}${s.style === 'rich' ? `, ${RATIO_LABEL[s.aspectRatio]}, ${SIZE_LABEL[s.previewSize]}` : ''}, ${DISPLAY_LABEL[s.display]}.`} />
     </div>
   );
 }
