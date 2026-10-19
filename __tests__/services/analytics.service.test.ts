@@ -116,6 +116,20 @@ describe('analyticsService', () => {
     expect(questions[3]).not.toHaveProperty('rating');
   });
 
+  it('getOverview keeps the per-stage counts the backend sends, and has none when it sends none', async () => {
+    const base = { total: 10, completed: 4, in_progress: 3, new: 3 };
+    vi.mocked(axiosInstance.get).mockResolvedValueOnce({
+      data: { success: true, data: { ...base, stageDistribution: [{ stageId: 's1', name: 'In Review', category: 'in_progress', count: 3, colour: 'info', percentage: 30 }] } },
+    });
+    const withStages = await analyticsService.getOverview({ formId: 'f' });
+    expect(withStages.stageCounts).toEqual([{ stageId: 's1', name: 'In Review', category: 'in_progress', count: 3 }]);
+
+    vi.mocked(axiosInstance.get).mockResolvedValueOnce({ data: { success: true, data: { ...base, stageDistribution: [] } } });
+    expect((await analyticsService.getOverview({ formId: 'f' })).stageCounts).toBeUndefined();
+    vi.mocked(axiosInstance.get).mockResolvedValueOnce({ data: { success: true, data: base } });
+    expect((await analyticsService.getOverview({ formId: 'f' })).stageCounts).toBeUndefined();
+  });
+
   it('getQuestions calls GET /api/analytics/questions with params and maps summary.options into {option, count}', async () => {
     // Real backend shape, confirmed live 12 Aug 2026 — wrapped in {success, data}, one entry per
     // field (including free-text fields this app filters out client-side by type), options keyed

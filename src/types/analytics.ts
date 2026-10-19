@@ -28,6 +28,9 @@ export interface AnalyticsOverview {
   completionRate?: number | null;
   reviewedRate?: number | null;
   views?: number | null;
+  /** One row per workspace stage that holds responses in this range (the backend leaves empty stages out). Absent on a personal form
+   * (no stages) or an older backend: the card then falls back to the three categories. */
+  stageCounts?: { stageId: string; name: string; category: StageCategory; count: number }[];
 }
 
 export interface AnalyticsTrendPoint {

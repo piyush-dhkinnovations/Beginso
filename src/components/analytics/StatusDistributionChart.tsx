@@ -69,31 +69,46 @@ export function StatusDistributionChart({ overview, isLoading, isError = false, 
   const categoryCounts = overview?.categoryCounts ?? { new: 0, in_progress: 0, completed: 0 };
   const percentOf = (count: number) => (total > 0 ? ((count / total) * 100).toFixed(1) : '0.0');
 
+  // One row per workspace stage when the backend sends stage counts (a workspace with In Review, On Hold, Released... used to see only
+  // the three category totals, as if it had three stages). Stages are grouped New -> In Progress -> Completed. Responses that are in no
+  // stage (older data) get their own row so the rows always add up to the total. Without stage counts (a personal form, an older
+  // backend) the three categories are shown, as before.
+  const stageRows = overview?.stageCounts?.length
+    ? [...overview.stageCounts].sort(
+        (a, b) => SEGMENT_ORDER.indexOf(a.category) - SEGMENT_ORDER.indexOf(b.category) || b.count - a.count || a.name.localeCompare(b.name),
+      )
+    : null;
+  const staged = stageRows?.reduce((sum, r) => sum + r.count, 0) ?? 0;
+  const rows: { key: string; label: string; count: number }[] = stageRows
+    ? [
+        ...stageRows.map((r) => ({ key: r.stageId, label: r.name, count: r.count })),
+        ...(total > staged ? [{ key: 'no-stage', label: 'No stage yet', count: total - staged }] : []),
+      ]
+    : SEGMENT_ORDER.map((c) => ({ key: c, label: CATEGORY_LABELS[c], count: categoryCounts[c] }));
+
   return (
     <Card>
       <h3 className="bg-h5 text-(--text-primary) font-bold mb-4">Status Distribution</h3>
       <div className="flex flex-col items-center gap-5">
-        {/* Three categories: a stacked bar, not a donut that would print the total twice. */}
+        {/* A stacked bar, not a donut that would print the total twice. */}
         <div
           role="img"
-          aria-label={`Status distribution: ${SEGMENT_ORDER.map((c) => `${categoryCounts[c]} ${CATEGORY_LABELS[c].toLowerCase()}`).join(', ')}`}
+          aria-label={`Status distribution: ${rows.map((r) => `${r.count} ${r.label.toLowerCase()}`).join(', ')}`}
           className="flex h-4 w-full gap-0.5 overflow-hidden rounded-full"
         >
-          {SEGMENT_ORDER.map((category, ci) =>
-            categoryCounts[category] > 0 ? <span key={category} style={{ flexGrow: categoryCounts[category], backgroundColor: seriesColor(ci) }} /> : null,
-          )}
+          {rows.map((row, ci) => (row.count > 0 ? <span key={row.key} style={{ flexGrow: row.count, backgroundColor: seriesColor(ci) }} /> : null))}
         </div>
 
         <div className="flex flex-col gap-2.5 w-full">
-          {SEGMENT_ORDER.map((category, ci) => (
-            <div key={category} className="flex items-center justify-between gap-6">
-              <span className="flex items-center gap-2">
+          {rows.map((row, ci) => (
+            <div key={row.key} className="flex items-center justify-between gap-6">
+              <span className="flex min-w-0 items-center gap-2">
                 <span aria-hidden="true" className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: seriesColor(ci) }} />
-                <span className="bg-body-sm font-medium text-(--text-secondary)">{CATEGORY_LABELS[category]}</span>
+                <span className="truncate bg-body-sm font-medium text-(--text-secondary)" title={row.label}>{row.label}</span>
               </span>
-              <span className="flex items-center gap-3">
-                <span className="bg-body-sm font-semibold text-(--text-primary)">{categoryCounts[category].toLocaleString()}</span>
-                <span className="bg-caption text-(--text-muted) w-12 text-right">{percentOf(categoryCounts[category])}%</span>
+              <span className="flex shrink-0 items-center gap-3">
+                <span className="bg-body-sm font-semibold text-(--text-primary)">{row.count.toLocaleString()}</span>
+                <span className="bg-caption text-(--text-muted) w-12 text-right">{percentOf(row.count)}%</span>
               </span>
             </div>
           ))}
@@ -110,11 +125,11 @@ export function StatusDistributionChart({ overview, isLoading, isError = false, 
           </tr>
         </thead>
         <tbody>
-          {SEGMENT_ORDER.map((category) => (
-            <tr key={category}>
-              <td>{CATEGORY_LABELS[category]}</td>
-              <td>{categoryCounts[category]}</td>
-              <td>{percentOf(categoryCounts[category])}%</td>
+          {rows.map((row) => (
+            <tr key={row.key}>
+              <td>{row.label}</td>
+              <td>{row.count}</td>
+              <td>{percentOf(row.count)}%</td>
             </tr>
           ))}
         </tbody>
