@@ -72,6 +72,14 @@ export function FieldCard({
     data: { from: 'canvas' },
   });
 
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+  // Opening a card (a new field, or a click) brings it into view; 'nearest' moves the page only when needed.
+  React.useEffect(() => {
+    if (!isActive) return;
+    const id = requestAnimationFrame(() => wrapperRef.current?.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' }));
+    return () => cancelAnimationFrame(id);
+  }, [isActive]);
+
   const config = FIELD_TYPE_CONFIG.find((cfg) => cfg.type === field.type);
   const optionCount = 'options' in field && Array.isArray(field.options) ? field.options.length : 0;
   const Icon = config ? config.icon : null;
@@ -106,7 +114,7 @@ export function FieldCard({
   return (
     // Outer wrapper keeps layout space and holds the drop-zone indicators.
     // It must NOT be the node that gets the dnd transform — only the inner card does.
-    <div className="flex flex-col gap-1.5" data-field-id={field.fieldId}>
+    <div ref={wrapperRef} className="flex flex-col gap-1.5" data-field-id={field.fieldId}>
       {insertIndicator === 'above' && <DropZoneCard />}
 
       <div

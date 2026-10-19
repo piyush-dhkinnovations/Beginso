@@ -52,6 +52,7 @@ function BlurField({
   allowEmpty = false,
   type = 'text',
   min,
+  maxLength,
   onCommit,
 }: {
   id: string;
@@ -61,6 +62,7 @@ function BlurField({
   allowEmpty?: boolean;
   type?: string;
   min?: number;
+  maxLength?: number;
   onCommit: (value: string) => void;
 }) {
   const [local, setLocal] = useState(defaultValue);
@@ -112,6 +114,8 @@ function BlurField({
       label={label}
       type={type}
       min={min}
+      maxLength={maxLength}
+      showCount
       value={local}
       placeholder={placeholder}
       onChange={(e) => setLocal(e.target.value)}
@@ -146,6 +150,7 @@ function LabelField({
         label=""
         defaultValue={label}
         placeholder="Field label"
+        maxLength={100} // the server refuses a longer label
         onCommit={(v) => onUpdate(fieldId, { label: v })}
       />
     </PanelSection>

@@ -1,6 +1,7 @@
 import React from "react";
 import { bx } from "@/lib/utils";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { CharCount } from "./CharCount";
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -8,6 +9,8 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   /** Positive live feedback (e.g. "Passwords match"): green border and message. An `error` wins over it. */
   success?: string;
   rightSlot?: React.ReactNode;
+  /** Show "used/limit" under the field. Needs `maxLength` and a controlled `value`. */
+  showCount?: boolean;
   /** Decorative icon inside the left edge (e.g. a search glass). */
   leftIcon?: React.ReactNode;
   id: string;
@@ -15,7 +18,8 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 
 // beginso-ui.css classes — see src/styles/beginso-ui.css §6 FORM FIELDS.
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, label, error, success, disabled, type = "text", id, rightSlot, leftIcon, style, ...props }, ref) => {
+  ({ className, label, error, success, disabled, type = "text", id, rightSlot, leftIcon, style, showCount, ...props }, ref) => {
+    const counted = showCount && props.maxLength !== undefined && typeof props.value === "string";
     return (
       <div className="bg-field">
         {label && (
@@ -35,7 +39,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             type={type}
             disabled={disabled}
             aria-invalid={!!error}
-            aria-describedby={error ? `${id}-error` : success ? `${id}-success` : undefined}
+            aria-describedby={error ? `${id}-error` : success ? `${id}-success` : counted ? `${id}-count` : undefined}
             className={bx("bg-input", error && "is-error", !error && success && "is-success", className)}
             // beginso-ui.css's ".bg-input-wrap .bg-input" rule always reserves 40px of left
             // padding for a *leading* icon (.bg-input-lead) this component doesn't have —
@@ -55,6 +59,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             <span className="bg-input-trail is-action">{rightSlot}</span>
           )}
         </div>
+        {counted && <CharCount id={`${id}-count`} length={(props.value as string).length} max={props.maxLength!} />}
         {!error && success && (
           <p id={`${id}-success`} role="status" className="flex items-center gap-1 bg-body-sm text-(--success-text)">
             <CheckCircle2 size={14} className="bg-icon" />

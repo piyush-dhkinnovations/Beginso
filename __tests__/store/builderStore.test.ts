@@ -168,6 +168,16 @@ describe('Zustand builderStore Property Tests', () => {
     );
   });
 
+  it('addField opens the field it creates', () => {
+    const store = useBuilderStore.getState();
+    store.initForm(mockForm('test-form', 'My Form'));
+    store.addField('short_text');
+    const { fields, activeFieldId } = useBuilderStore.getState();
+    expect(activeFieldId).toBe(fields[0].fieldId);
+    store.addField('dropdown');
+    expect(useBuilderStore.getState().activeFieldId).toBe(useBuilderStore.getState().fields[1].fieldId);
+  });
+
   // ─── duplicateField: clones in-place, deep-copies arrays, drops logicRules ───
   it('duplicateField inserts a deep-cloned copy right after the original and drops its logicRules', () => {
     const store = useBuilderStore.getState();

@@ -94,22 +94,8 @@ export default function BuilderPageShell() {
 
   const dnd = useBuilderDnd();
 
-  // Add-field sheet: append to the active page, expand the new card and scroll it into view
-  // (addField itself does not select the field it creates).
-  const handleAddFromSheet = (type: FieldType) => {
-    addField(type);
-    const state = useBuilderStore.getState();
-    const pageId = state.activePageId ?? state.pages[0]?.id;
-    const added = state.fields
-      .filter((f) => !f.deleted && f.pageId === pageId)
-      .sort((a, b) => a.order - b.order)
-      .pop();
-    if (!added) return;
-    setActiveFieldId(added.fieldId);
-    requestAnimationFrame(() =>
-      document.querySelector(`[data-field-id="${added.fieldId}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-    );
-  };
+  // Add-field sheet: append to the active page. The store opens the new card and FieldCard scrolls it into view.
+  const handleAddFromSheet = (type: FieldType) => addField(type);
 
   const toggleReorder = () => {
     setIsReordering((on) => !on);

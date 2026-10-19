@@ -248,6 +248,8 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       return {
         ...snapshot,
         fields: finalFields,
+        // The new field opens straight away; FieldCard scrolls it into view when it becomes active.
+        activeFieldId: defaultField.fieldId,
         dirty: true,
       };
     }),
