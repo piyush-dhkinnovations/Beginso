@@ -9,6 +9,7 @@ import { workspaceGeneralSchema, type WorkspaceGeneralFormValues } from '@/lib/s
 import { settingsService } from '@/services/settings';
 import { workspacesService } from '@/services/workspaces';
 import { settingsKeys, workspaceKeys } from '@/lib/queryKeys';
+import type { WorkspaceListItem } from '@/types/workspace';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/hooks/useAuth';
 import { Input } from '@/components/ui/Input';
@@ -91,8 +92,16 @@ export function WorkspaceTab({ onDirtyChange, scope, onDeleted }: WorkspaceTabPr
         scope
       ),
     onSuccess: (updated, values) => {
+      // Immediately reflect the saved logo — don't wait for the workspace query to refetch.
+      setLogo(updated.logoUrl ?? null);
+      // Patch the sidebar's list cache directly so the logo appears there without a full refetch.
+      if (scope) {
+        queryClient.setQueriesData<WorkspaceListItem[]>(
+          { queryKey: workspaceKeys.list() },
+          (old) => old?.map((w) => (w.slug === scope ? { ...w, logo: updated.logoUrl ?? null } : w))
+        );
+      }
       queryClient.invalidateQueries({ queryKey: settingsKeys.workspace() });
-      // Also refresh the list so the sidebar picks up the new logo immediately.
       queryClient.invalidateQueries({ queryKey: workspaceKeys.list() });
       // Show what the server actually stored. Falling back to the typed values hid a backend that dropped them.
       reset({ name: updated.name ?? values.name, description: updated.description ?? '', timezone: updated.timezone ?? 'UTC' });
