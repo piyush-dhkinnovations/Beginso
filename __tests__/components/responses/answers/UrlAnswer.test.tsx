@@ -84,4 +84,30 @@ describe('UrlAnswer', () => {
     expect(document.querySelector('img')).not.toBeInTheDocument();
     expect(screen.getByText('e')).toBeInTheDocument();
   });
+
+  const rich = (extra: Record<string, string>) => ({ type: 'url', urlPreviewStyle: 'rich', urlDisplay: 'card', ...extra }) as unknown as FormField;
+  const thumb = async () => waitFor(() => {
+    const el = document.querySelector('img');
+    expect(el).toBeInTheDocument();
+    return el!;
+  });
+
+  it('large size stacks the image above the text; the aspect ratio frames it', async () => {
+    renderUrl('https://example.com/', rich({ urlPreviewSize: 'large', urlAspectRatio: '16:9' }));
+    const img = await thumb();
+    expect(img.className).toContain('aspect-video');
+    expect(img.className).toContain('w-full');
+    expect(img.parentElement?.className).toContain('flex-col');
+  });
+
+  it('medium and small sit beside the text, small narrower; 1:1 is square', async () => {
+    const { unmount } = renderUrl('https://example.com/', rich({ urlPreviewSize: 'small', urlAspectRatio: '1:1' }));
+    const small = await thumb();
+    expect(small.className).toContain('w-20');
+    expect(small.className).toContain('aspect-square');
+    expect(small.parentElement?.className).not.toContain('flex-col');
+    unmount();
+    renderUrl('https://example.com/', rich({ urlPreviewSize: 'medium' }));
+    expect((await thumb()).className).toContain('w-28');
+  });
 });

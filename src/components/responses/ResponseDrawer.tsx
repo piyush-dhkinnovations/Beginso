@@ -36,7 +36,7 @@ import { formAccessKeys, noteKeys, responseKeys, tagKeys, workspaceKeys } from '
 import type { Tag } from '@/types/tag';
 import { detectRespondentIdentity, initialsOf, shortId } from '@/lib/formatters';
 import { exportPayloadFromTarget } from '@/lib/reportExport';
-import { buildAnswerItems, isTopImage } from '@/lib/responseAnswers';
+import { buildAnswerItems, isTopAnswer } from '@/lib/responseAnswers';
 import { DELETE_COPY, DOWNLOAD_FAILED, DOWNLOAD_QUEUED } from '@/lib/responseCopy';
 import { hasCapability } from '@/lib/roles';
 import { cn } from '@/lib/utils';
@@ -349,8 +349,8 @@ export function ResponseDrawer({
   const initial = initialsOf(identity.label ?? identity.email).charAt(0) || '?';
   // A failed/absent form lookup falls back to plain label → value rows rather than blocking the answers.
   const answerItems = response ? buildAnswerItems(response.answers, response.responseFiles, responseForm?.fields, responseForm?.pages, fileFieldLabels) : [];
-  const topImages = answerItems.filter(isTopImage);
-  const otherAnswers = answerItems.filter((item) => !isTopImage(item));
+  const topImages = answerItems.filter(isTopAnswer); // images and links set to "Top of response"
+  const otherAnswers = answerItems.filter((item) => !isTopAnswer(item));
 
   return (
     <div
@@ -502,7 +502,7 @@ export function ResponseDrawer({
             />
           ) : (
             <div className="grid gap-4 p-4 sm:p-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)]">
-              {/* Left: every answer, rendered per its field type. Images set to "Top of response" come first. */}
+              {/* Left: every answer, rendered per its field type. Images and links set to "Top of response" come first. */}
               <section className="@container min-w-0 self-start rounded-lg border border-(--border-default) bg-(--surface-card) px-4 py-4 sm:px-5">
                 <div className="mb-1">
                   <h3 className="bg-body font-semibold text-(--text-primary)">Submitted response</h3>

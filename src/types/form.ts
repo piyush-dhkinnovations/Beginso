@@ -99,6 +99,9 @@ export interface UrlField extends BaseField {
   type: 'url';
   urlPreviewStyle?: UrlPreviewStyle; // default 'rich'
   urlDisplay?: UrlDisplay;           // default 'card'
+  urlPreviewPosition?: ImagePreviewPosition; // default 'inline' (older forms keep their layout)
+  urlAspectRatio?: ImageAspectRatio;         // default 'original'; rich preview only
+  urlPreviewSize?: ImagePreviewSize;         // default 'medium'; rich preview only
 }
 
 export interface ImageUploadField extends BaseField {

@@ -4,7 +4,7 @@
  * Pure — no React — so the matching rules live in one place.
  */
 
-import { imageSettings } from '@/lib/fieldDisplay';
+import { imageSettings, safeHttpUrl, urlSettings } from '@/lib/fieldDisplay';
 import { buildAnswerKeyMap } from '@/lib/answerKeys';
 import type { FormField, FormPage } from '@/types/form';
 import type { AnswerValue, IResponseFile, ResponseAnswers } from '@/types/response';
@@ -93,3 +93,9 @@ export function buildAnswerItems(
 /** Images whose field is set to "Top of response" — rendered before the ordinary answers. */
 export const isTopImage = (item: AnswerItem): boolean =>
   item.field?.type === 'image_upload' && imageSettings(item.field).previewPosition === 'top' && item.files.length > 0;
+
+/** Links whose field is set to "Top of response". */
+export const isTopUrl = (item: AnswerItem): boolean =>
+  item.field?.type === 'url' && urlSettings(item.field).previewPosition === 'top' && safeHttpUrl(item.value) !== null;
+
+export const isTopAnswer = (item: AnswerItem): boolean => isTopImage(item) || isTopUrl(item);

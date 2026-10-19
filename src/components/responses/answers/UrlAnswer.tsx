@@ -26,7 +26,17 @@ function Monogram({ domain, className }: { domain: string; className?: string })
   );
 }
 
-function RichPreview({ href, domain, scope, framed }: { href: string; domain: string; scope: string; framed: boolean }) {
+type Settings = ReturnType<typeof urlSettings>;
+
+// Thumbnail box per "Preview size" and "aspect ratio". Large stacks the image above the text; small and medium sit beside it.
+function thumbClass({ size, ratio }: { size: Settings['previewSize']; ratio: Settings['aspectRatio'] }, framed: boolean): string {
+  const shape = ratio === '16:9' ? 'aspect-video' : ratio === '1:1' ? 'aspect-square' : '';
+  if (!framed) return cn('shrink-0 rounded-md', size === 'small' ? 'w-10' : size === 'large' ? 'w-24' : 'w-14', shape || 'aspect-square');
+  if (size === 'large') return cn('w-full', shape || 'max-h-72 min-h-32');
+  return cn('shrink-0', size === 'small' ? 'w-20' : 'w-28 sm:w-40', shape ? cn(shape, 'self-start') : 'min-h-20');
+}
+
+function RichPreview({ href, domain, scope, framed, size, ratio }: { href: string; domain: string; scope: string; framed: boolean; size: Settings['previewSize']; ratio: Settings['aspectRatio'] }) {
   const [imageFailed, setImageFailed] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ['link-preview', href],
@@ -37,11 +47,13 @@ function RichPreview({ href, domain, scope, framed }: { href: string; domain: st
 
   const title = data?.title ?? domain;
   const image = data?.image && !imageFailed ? data.image : undefined;
+  const stacked = framed && size === 'large';
+  const thumb = thumbClass({ size, ratio }, framed);
 
   return (
-    <div className={cn('flex min-w-0 overflow-hidden', framed ? 'rounded-lg border border-(--border-default) bg-(--surface-card)' : 'gap-3')}>
+    <div className={cn('flex min-w-0 overflow-hidden', stacked && 'flex-col', framed ? 'rounded-lg border border-(--border-default) bg-(--surface-card)' : 'gap-3')}>
       {isLoading ? (
-        <div aria-busy="true" className={cn('animate-pulse bg-(--bg-subtle)', framed ? 'w-28 shrink-0 sm:w-40' : 'size-14 rounded-md')} />
+        <div aria-busy="true" className={cn('animate-pulse bg-(--bg-subtle)', thumb, !stacked && framed && 'self-stretch')} />
       ) : image ? (
         // eslint-disable-next-line @next/next/no-img-element -- third-party thumbnail, intentionally not routed through next/image
         <img
@@ -50,10 +62,10 @@ function RichPreview({ href, domain, scope, framed }: { href: string; domain: st
           loading="lazy"
           referrerPolicy="no-referrer"
           onError={() => setImageFailed(true)}
-          className={cn('shrink-0 object-cover', framed ? 'w-28 sm:w-40' : 'size-14 rounded-md')}
+          className={cn('object-cover', thumb)}
         />
       ) : (
-        <Monogram domain={domain} className={framed ? 'm-3 size-12' : 'size-14'} />
+        <Monogram domain={domain} className={framed ? (stacked ? 'm-3 size-12' : 'm-3 size-12') : 'size-14'} />
       )}
       <div className={cn('flex min-w-0 flex-1 flex-col justify-center gap-0.5', framed && 'p-3')}>
         <p className="line-clamp-2 bg-body-sm font-semibold text-(--text-primary)">{title}</p>
@@ -72,7 +84,7 @@ export function UrlAnswer({ value, field, scope }: UrlAnswerProps) {
   // Not a plain web address (should not happen — the form validates it): shown as text, never as a link.
   if (!url) return <span className="break-all">{value}</span>;
 
-  const { style, display } = urlSettings(field);
+  const { style, display, previewSize, aspectRatio } = urlSettings(field);
   const domain = domainOf(url);
   const href = url.href;
 
@@ -105,5 +117,5 @@ export function UrlAnswer({ value, field, scope }: UrlAnswerProps) {
     );
   }
 
-  return <RichPreview href={href} domain={domain} scope={scope} framed={display === 'card'} />;
+  return <RichPreview href={href} domain={domain} scope={scope} framed={display === 'card'} size={previewSize} ratio={aspectRatio} />;
 }
