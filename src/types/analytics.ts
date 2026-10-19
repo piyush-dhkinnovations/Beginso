@@ -7,6 +7,7 @@
  */
 
 import type { StageCategory } from './stage';
+import type { FormMark } from '@/types/form';
 
 export interface GetAnalyticsParams {
   formId?: string;
@@ -79,6 +80,8 @@ export interface AnalyticsFormSummary {
   reviewedRate?: number | null;
   /** Source template category, null for forms not created from a template (BE 0.4). */
   templateCategory?: string | null;
+  /** The form's logo / icon, so this table shows the same mark as the Forms list. Absent on an older backend. */
+  branding?: FormMark;
 }
 
 export interface AnalyticsFormsSummaryResult {

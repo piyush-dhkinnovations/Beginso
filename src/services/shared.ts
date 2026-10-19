@@ -46,6 +46,7 @@ export const sharedService = {
         id: item.id,
         title: item.title,
         workspaceName: item.workspaceName,
+        ...(item.branding ? { branding: item.branding } : {}),
         role: item.role,
         accessLevel: item.accessLevel,
         sharedAt: item.sharedAt,

@@ -78,4 +78,11 @@ describe('MySubmissionsPage', () => {
     expect(await screen.findByText('We could not load your submissions.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
   });
+
+  it('shows the own logo of the form on its card', async () => {
+    mine.mockResolvedValue([row('s1', 'Kala Chasma Content', 'Received', { branding: { logoUrl: 'https://cdn.example.com/kala.png', iconName: null } })]);
+    const { container } = renderPage();
+    await screen.findByRole('link', { name: 'Kala Chasma Content' });
+    expect(container.querySelector('img[src="https://cdn.example.com/kala.png"]')).not.toBeNull();
+  });
 });

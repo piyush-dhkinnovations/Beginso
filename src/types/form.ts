@@ -325,6 +325,12 @@ export interface CreateFormResponse {
 
 // ─── Templates Gallery ────────────────────────────────────────────────────────
 
+/** The mark a form wears in lists: its uploaded logo, else its chosen icon (both optional). The same shape as `Form.branding`'s two fields. */
+export interface FormMark {
+  logoUrl?: string | null;
+  iconName?: string | null;
+}
+
 export interface Template {
   _id: string;
   name: string;
