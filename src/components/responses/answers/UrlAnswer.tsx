@@ -46,6 +46,19 @@ function youtubeId(href: string): string | null {
   return null;
 }
 
+/** Extract a Google Drive file ID from drive.google.com share/open/file URLs, or null. */
+function googleDriveId(href: string): string | null {
+  try {
+    const u = new URL(href);
+    if (!u.hostname.includes('drive.google.com') && !u.hostname.includes('docs.google.com')) return null;
+    // /file/d/{ID}/view  or  /open?id={ID}
+    const fileMatch = u.pathname.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
+    if (fileMatch) return fileMatch[1];
+    return u.searchParams.get('id');
+  } catch { /* ignore */ }
+  return null;
+}
+
 function RichPreview({ href, domain, scope, framed, size, ratio }: { href: string; domain: string; scope: string; framed: boolean; size: Settings['previewSize']; ratio: Settings['aspectRatio'] }) {
   const [imageFailed, setImageFailed] = useState(false);
   const { data, isLoading } = useQuery({
@@ -56,12 +69,17 @@ function RichPreview({ href, domain, scope, framed, size, ratio }: { href: strin
   });
 
   const ytId = youtubeId(href);
-  // Use YouTube's public thumbnail CDN when the preview service returns no image
-  const ytThumb = ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : undefined;
+  const driveId = googleDriveId(href);
+  // Platform-specific thumbnail CDNs — used when the preview service returns no image
+  const platformThumb = ytId
+    ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
+    : driveId
+    ? `https://drive.google.com/thumbnail?id=${driveId}&sz=w400`
+    : undefined;
 
   // Only show title when it adds information beyond the domain (avoids duplicate text when preview fails)
   const title = data?.title && data.title !== domain ? data.title : null;
-  const image = data?.image && !imageFailed ? data.image : (!imageFailed && ytThumb ? ytThumb : undefined);
+  const image = data?.image && !imageFailed ? data.image : (!imageFailed && platformThumb ? platformThumb : undefined);
   const stacked = framed && size === 'large';
   const thumb = thumbClass({ size, ratio }, framed);
 
