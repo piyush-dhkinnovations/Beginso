@@ -85,6 +85,14 @@ describe('useResponseRouting', () => {
     expect(getResponses).not.toHaveBeenCalled();
   });
 
+  it('steps to the neighbouring page in the same order as the table: oldest first sends order=asc (QA D8-006)', async () => {
+    search = 'responseId=c&page=2';
+    getResponses.mockResolvedValue({ data: [resp('d'), resp('e')] });
+    const { result } = renderHook(() => useResponseRouting(opts({ submittedOrder: 'asc' })));
+    await act(() => result.current.navigateResponse('next'));
+    expect(getResponses).toHaveBeenCalledWith({ formId: 'f1', stageId: 's1', order: 'asc', page: 3, limit: 50 }, 'acme');
+  });
+
   it('fetches the next page when moving past the last row', async () => {
     search = 'responseId=c&page=2';
     getResponses.mockResolvedValue({ data: [resp('d'), resp('e')] });

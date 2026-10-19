@@ -124,6 +124,8 @@ export interface GetResponsesParams extends ResponseFilters {
   /** Category filter (new | in_progress | completed). Sent for personal-shell stages, which have no Stage ids. */
   status?: 'new' | 'in_progress' | 'completed';
   sort?: string;
+  /** Submission order across ALL pages: 'asc' = oldest first. Omitted = newest first (the API default). */
+  order?: 'asc' | 'desc';
   page?: number;
   limit?: number;
   /** @deprecated legacy search param, superseded by `q` — kept only while callers migrate. */
