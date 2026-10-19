@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useBuilderUndoShortcuts } from '@/components/form-builder/useBuilderUndoShortcuts';
 import { SimpleCanvas } from '@/components/guest/SimpleCanvas';
@@ -63,12 +63,14 @@ export default function GuestBuilderPage() {
     });
   }, [router]);
 
-  const markStale = () => {
+  // Both use only refs (stable) and setSaved (stable setter) — useCallback([]) keeps them
+  // stable so the autosave/flush effects can include them in deps without re-arming on every render.
+  const markStale = useCallback(() => {
     stale.current = true;
     setSaved('stale');
-  };
+  }, []);
   // One save at a time: a debounced save and a hidden-tab save must not race each other into a false conflict.
-  const persist = () => {
+  const persist = useCallback(() => {
     const run = queue.current.then(async () => {
       if (stale.current) return;
       const s = useBuilderStore.getState();
@@ -79,7 +81,7 @@ export default function GuestBuilderPage() {
     });
     queue.current = run.catch(() => undefined);
     return run;
-  };
+  }, [markStale]);
   // Another tab saved (or cleared) the draft: its `storage` event fires here, and this tab's copy is out of date.
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
@@ -94,12 +96,12 @@ export default function GuestBuilderPage() {
     if (!ready) return;
     const t = setTimeout(() => void persist(), 800);
     return () => clearTimeout(t);
-  }, [ready, formTitle, fields, pages, branding, settings]);
+  }, [ready, formTitle, fields, pages, branding, settings, persist]);
   useEffect(() => {
     const flush = () => document.visibilityState === 'hidden' && ready && void persist();
     document.addEventListener('visibilitychange', flush);
     return () => document.removeEventListener('visibilitychange', flush);
-  });
+  }, [ready, persist]);
 
   const schema = useMemo(() => toPublicSchema({ title: formTitle, pages, fields, branding, settings }), [formTitle, pages, fields, branding, settings]);
 
