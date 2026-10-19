@@ -27,6 +27,8 @@ export interface ContextSwitcherProps {
   /** When omitted, renders Sprint 7's original inert trigger (no dropdown) — preserves the
    * existing "safe with no props" behavior for any caller not yet ready to wire real data. */
   onSelect?: (target: ContextSwitcherTarget) => void;
+  /** Called when the user clicks "View all workspaces" at the bottom of the dropdown. */
+  onViewAll?: () => void;
   /** Logo of the current workspace, shown in place of the icon. */
   currentLogo?: string | null;
   className?: string;
@@ -68,6 +70,7 @@ export function ContextSwitcher({
   currentMeta,
   workspaces = [],
   onSelect,
+  onViewAll,
   currentLogo,
   className,
   collapsed = false,
@@ -109,6 +112,16 @@ export function ContextSwitcher({
       ]
     : [];
 
+  const viewAllFooter = onViewAll ? (
+    <button
+      type="button"
+      onClick={onViewAll}
+      className="w-full px-3 py-2 text-left bg-caption font-medium text-(--text-link) hover:text-(--text-primary) hover:bg-(--surface-hover) transition-colors"
+    >
+      View all workspaces
+    </button>
+  ) : undefined;
+
   if (collapsed) {
     const compactContent = (
       <span className="flex items-center justify-center w-full h-full" title={triggerLabel}>
@@ -140,6 +153,7 @@ export function ContextSwitcher({
         triggerClassName={compactTriggerClassName}
         items={items}
         align="start"
+        footer={viewAllFooter}
       />
     );
   }
@@ -177,6 +191,7 @@ export function ContextSwitcher({
       triggerClassName={triggerClassName}
       containerClassName="w-full"
       items={items}
+      footer={viewAllFooter}
     />
   );
 }

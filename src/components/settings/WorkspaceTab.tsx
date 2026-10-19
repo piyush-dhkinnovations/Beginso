@@ -91,6 +91,8 @@ export function WorkspaceTab({ onDirtyChange, scope, onDeleted }: WorkspaceTabPr
       ),
     onSuccess: (updated, values) => {
       queryClient.invalidateQueries({ queryKey: settingsKeys.workspace() });
+      // Also refresh the list so the sidebar picks up the new logo immediately.
+      queryClient.invalidateQueries({ queryKey: workspaceKeys.list() });
       // Show what the server actually stored. Falling back to the typed values hid a backend that dropped them.
       reset({ name: updated.name ?? values.name, description: updated.description ?? '', timezone: updated.timezone ?? 'UTC' });
       flashSaved();

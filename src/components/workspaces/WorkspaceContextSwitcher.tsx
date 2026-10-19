@@ -57,6 +57,7 @@ export function WorkspaceContextSwitcher({ currentLabel = 'Personal', collapsed 
       currentLogo={current?.logo}
       workspaces={workspaces}
       onSelect={handleSelect}
+      onViewAll={() => router.push('/workspaces')}
       collapsed={collapsed}
     />
   );
