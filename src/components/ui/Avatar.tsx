@@ -5,6 +5,7 @@ import { User } from "lucide-react";
 import { bx } from "@/lib/utils";
 import { initialsOf } from "@/lib/formatters";
 import { localAvatarSrc } from "@/lib/avatarUrl";
+import { avatarHue } from "@/lib/avatarTone";
 
 export interface AvatarProps extends React.HTMLAttributes<HTMLSpanElement> {
   src?: string;
@@ -12,6 +13,8 @@ export interface AvatarProps extends React.HTMLAttributes<HTMLSpanElement> {
   alt?: string;
   size?: "xs" | "sm" | "default" | "lg" | "xl";
   square?: boolean;
+  /** "auto" (default): initials get a colour of their own, chosen from the name. "plain": the one accent colour. */
+  tone?: "auto" | "plain";
 }
 
 const sizeClass: Record<NonNullable<AvatarProps["size"]>, string> = {
@@ -26,13 +29,19 @@ const sizeClass: Record<NonNullable<AvatarProps["size"]>, string> = {
 // beginso-ui.css classes — see src/styles/beginso-ui.css §9 AVATARS. Plain <img>, not
 // next/image: .bg-avatar's fixed-size circle via a CSS custom property is simplest with a
 // standard <img>, and avatars are never the page's LCP element.
-export function Avatar({ src: rawSrc, name, alt, size = "default", square, className, ...props }: AvatarProps) {
+export function Avatar({ src: rawSrc, name, alt, size = "default", square, tone = "auto", className, style, ...props }: AvatarProps) {
   const [failed, setFailed] = useState(false);
   const src = localAvatarSrc(rawSrc);
   const showImage = src && !failed;
   const initials = initialsOf(name);
+  const hue = tone === "auto" && !showImage && initials ? avatarHue(name) : undefined;
   return (
-    <span className={bx("bg-avatar", sizeClass[size], square && "bg-avatar-square", className)} {...props}>
+    <span
+      className={bx("bg-avatar", sizeClass[size], square && "bg-avatar-square", className)}
+      data-tone={hue === undefined ? undefined : "auto"}
+      style={hue === undefined ? style : ({ ...style, "--av-h": hue } as React.CSSProperties)}
+      {...props}
+    >
       {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={src} alt={alt ?? name ?? ""} referrerPolicy="no-referrer" onError={() => setFailed(true)} />
