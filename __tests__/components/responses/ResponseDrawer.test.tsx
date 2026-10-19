@@ -13,8 +13,10 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ResponseDrawer } from '@/components/responses/ResponseDrawer';
-import { responseKeys } from '@/lib/queryKeys';
+import { responseKeys, tagKeys } from '@/lib/queryKeys';
 import { reportsService } from '@/services/reports';
+import { tagsService } from '@/services/tags';
+import { workspacesService } from '@/services/workspaces';
 import type { ResponseDetail } from '@/types/response';
 import type { StageRef } from '@/types/stage';
 
@@ -296,6 +298,32 @@ describe('ResponseDrawer', () => {
     renderDrawer('resp-1', vi.fn(), { scope: 'acme' });
     await screen.findByText('Submitted response');
     expect(screen.getByRole('option', { name: 'Unknown stage' })).toBeInTheDocument();
+  });
+
+  // QA D8-009: a tag created from the drawer had no chip until the drawer was reopened (the tag library is cached for minutes), and the
+  // picker stayed open. The new tag goes into the cached library at once and is added to the response.
+  it('creating a tag puts it in the cached tag library, adds it to the response, and closes the picker', async () => {
+    mockGetResponseById.mockResolvedValue(detail);
+    mockUpdate.mockResolvedValue({ ...detail, tags: [{ id: 't-new', name: 'Brand new', colour: 'neutral' }] });
+    vi.spyOn(workspacesService, 'list').mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role: 'owner' }] as never);
+    // The library starts empty and, once the tag exists on the server, the refetch returns it.
+    vi.spyOn(tagsService, 'list').mockResolvedValueOnce([]).mockResolvedValue([{ id: 't-new', name: 'Brand new', colour: 'neutral' }]);
+    const create = vi.spyOn(tagsService, 'create').mockResolvedValue({ id: 't-new', name: 'Brand new', colour: 'neutral' });
+    const user = userEvent.setup();
+    const { queryClient } = renderDrawer('resp-1', vi.fn(), { scope: 'acme' });
+    await screen.findByText('Submitted response');
+
+    await user.click(await screen.findByRole('button', { name: /Add tag/ }));
+    await user.type(screen.getByLabelText('Search tags'), 'Brand new');
+    await user.click(await screen.findByRole('button', { name: /Create/ }));
+
+    await waitFor(() => expect(create).toHaveBeenCalledWith('acme', { name: 'Brand new', colour: 'neutral' }));
+    await waitFor(() => expect(mockUpdate).toHaveBeenCalledWith('resp-1', { tagIds: ['t-new'] }, 'acme'));
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(await screen.findByLabelText('Remove tag Brand new')).toBeInTheDocument(); // the chip is there without reopening
+    await waitFor(() => expect(queryClient.getQueryData<{ id: string }[]>(tagKeys.list('acme'))?.map((t) => t.id)).toContain('t-new'));
+    expect(queryClient.getQueryData<{ id: string }[] | undefined>(tagKeys.list('acme'))?.map((t) => t.id) ?? ['(not cached)']).toContain('t-new');
+    create.mockRestore();
   });
 
   // QA D5-002: the single-response download went out under the personal scope too, so a workspace response answered "Form not found".

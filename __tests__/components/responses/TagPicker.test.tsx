@@ -75,4 +75,34 @@ describe('TagPicker', () => {
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
   });
+
+  // QA D8-009: a tag created in the drawer did not show as a chip until the drawer was reopened, and the picker stayed open.
+  it('shows a chip for a tag the response carries even when the cached library does not list it yet', () => {
+    render(
+      <TagPicker available={TAGS} selectedIds={['t9']} selectedTags={[{ id: 't9', name: 'Brand new' }]} canCreate onAdd={vi.fn()} onRemove={vi.fn()} onCreate={vi.fn()} />
+    );
+    expect(screen.getByText('Brand new')).toBeInTheDocument();
+    expect(screen.getByLabelText('Remove tag Brand new')).toBeInTheDocument();
+  });
+
+  it('closes after a tag is chosen', async () => {
+    const user = userEvent.setup();
+    const onAdd = vi.fn();
+    render(<TagPicker available={TAGS} selectedIds={[]} canCreate onAdd={onAdd} onRemove={vi.fn()} onCreate={vi.fn()} />);
+    await user.click(screen.getByRole('button', { name: /Add tag/ }));
+    await user.click(screen.getByRole('option', { name: 'Hot lead' }));
+    expect(onAdd).toHaveBeenCalledWith('t1');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
+
+  it('closes after a new tag is created', async () => {
+    const user = userEvent.setup();
+    const onCreate = vi.fn();
+    render(<TagPicker available={TAGS} selectedIds={[]} canCreate onAdd={vi.fn()} onRemove={vi.fn()} onCreate={onCreate} />);
+    await user.click(screen.getByRole('button', { name: /Add tag/ }));
+    await user.type(screen.getByLabelText('Search tags'), 'Brand new');
+    await user.click(screen.getByRole('button', { name: /Create/ }));
+    expect(onCreate).toHaveBeenCalledWith('Brand new');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+  });
 });

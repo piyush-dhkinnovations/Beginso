@@ -49,6 +49,14 @@ const ACTION_PHRASES: Record<string, string> = {
   'response.submit': 'received a response on',
   'response.delete': 'deleted a response on',
   'response.note_add': 'added a note on',
+  // Tagging, untagging, stage and assignee changes were shown as the raw action text ("response bulk tag"). The same actions are written
+  // for a single response and for a bulk selection, so the wording must not say "bulk" (QA D8-010).
+  'response.bulk_tag': 'tagged',
+  'response.bulk_untag': 'removed a tag from',
+  'response.bulk_stage': 'changed the stage of',
+  'response.bulk_assign': 'assigned',
+  'response.assign': 'assigned',
+  'response.score': 'scored',
   'response.stage_change': 'changed the stage of',
   'response.status_change': 'changed the status of',
   'response.offboard_unassign': 'unassigned responses from',

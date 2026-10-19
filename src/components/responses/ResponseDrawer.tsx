@@ -32,7 +32,8 @@ import { useInboxMutations } from '@/hooks/useInboxMutations';
 import { useMembers } from '@/hooks/useMembers';
 import { useTags } from '@/hooks/useTags';
 import { useAuth } from '@/hooks/useAuth';
-import { formAccessKeys, noteKeys, responseKeys, workspaceKeys } from '@/lib/queryKeys';
+import { formAccessKeys, noteKeys, responseKeys, tagKeys, workspaceKeys } from '@/lib/queryKeys';
+import type { Tag } from '@/types/tag';
 import { detectRespondentIdentity, initialsOf, shortId } from '@/lib/formatters';
 import { exportPayloadFromTarget } from '@/lib/reportExport';
 import { buildAnswerItems, isTopImage } from '@/lib/responseAnswers';
@@ -321,6 +322,10 @@ export function ResponseDrawer({
   const createTagMutation = useMutation({
     mutationFn: (name: string) => tagsService.create(scope, { name, colour: 'neutral' }),
     onSuccess: (tag) => {
+      // Put the new tag in the cached library right away (it is cached for minutes), then refresh it: the picker and every other list
+      // of tags see it without a reload (QA D8-009).
+      queryClient.setQueryData<Tag[]>(tagKeys.list(scope), (old) => (old && !old.some((t) => t.id === tag.id) ? [...old, tag] : old));
+      void queryClient.invalidateQueries({ queryKey: tagKeys.list(scope) });
       if (response) mutations.updateTags(response._id, [...(response.tags ?? []).map((t) => t.id), tag.id]);
     },
     onError: () => toast('Failed to create tag. Please try again.', 'error'),

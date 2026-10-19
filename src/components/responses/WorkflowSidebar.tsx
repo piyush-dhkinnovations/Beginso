@@ -160,6 +160,7 @@ export function WorkflowSidebar({
           <TagPicker
             available={tags}
             selectedIds={(response.tags ?? []).map((t) => t.id)}
+            selectedTags={response.tags ?? []}
             canCreate={canCreateTag}
             disabled={isUpdating}
             onAdd={onTagAdd}
