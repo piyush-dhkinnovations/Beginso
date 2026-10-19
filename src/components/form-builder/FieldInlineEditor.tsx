@@ -384,7 +384,7 @@ const POSITION_LABEL: Record<ImagePreviewPosition, string> = { top: 'Top of resp
 const RATIO_LABEL: Record<ImageAspectRatio, string> = { original: 'original ratio', '16:9': '16:9 landscape', '1:1': '1:1 square' };
 const SIZE_LABEL: Record<ImagePreviewSize, string> = { small: 'small thumbnail', medium: 'medium', large: 'large preview' };
 const STYLE_LABEL: Record<UrlPreviewStyle, string> = { rich: 'rich preview', compact: 'compact link', text: 'URL text only' };
-const DISPLAY_LABEL: Record<UrlDisplay, string> = { card: 'displayed as card', inline: 'inline with the answer' };
+const DISPLAY_LABEL: Record<UrlDisplay, string> = { card: 'card frame', inline: 'no frame' };
 
 function ImageDisplaySection({
   field,
@@ -499,17 +499,6 @@ function UrlDisplaySection({
         ]}
         onChange={(urlPreviewStyle) => set({ urlPreviewStyle })}
       />
-      <RadioSection<ImagePreviewPosition>
-        uid={uid}
-        name="position"
-        label="Preview position"
-        value={s.previewPosition}
-        options={[
-          { value: 'top', label: 'Top of response (recommended)' },
-          { value: 'inline', label: 'Inline with the answer' },
-        ]}
-        onChange={(urlPreviewPosition) => set({ urlPreviewPosition })}
-      />
       {s.style === 'rich' && (
         <>
           <RadioSection<ImageAspectRatio>
@@ -538,14 +527,25 @@ function UrlDisplaySection({
           />
         </>
       )}
+      <RadioSection<ImagePreviewPosition>
+        uid={uid}
+        name="position"
+        label="Preview position"
+        value={s.previewPosition}
+        options={[
+          { value: 'top', label: 'Top of response (recommended)' },
+          { value: 'inline', label: 'Inline with the answer' },
+        ]}
+        onChange={(urlPreviewPosition) => set({ urlPreviewPosition })}
+      />
       <RadioSection<UrlDisplay>
         uid={uid}
         name="display"
-        label="Response display"
+        label="Preview frame"
         value={s.display}
         options={[
-          { value: 'card', label: 'Preview card' },
-          { value: 'inline', label: 'Inline with the answer' },
+          { value: 'card', label: 'Card frame', description: 'Bordered card around the preview' },
+          { value: 'inline', label: 'No frame', description: 'Preview sits flush with the response' },
         ]}
         onChange={(urlDisplay) => set({ urlDisplay })}
       />
