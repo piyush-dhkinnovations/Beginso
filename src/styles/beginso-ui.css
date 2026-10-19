@@ -960,6 +960,10 @@ body {
   user-select: none;
 }
 .bg-avatar img { width: 100%; height: 100%; object-fit: cover; }
+/* A person's own colour (Avatar tone="auto", hue from the name in --av-h): a pale disc with dark text in light mode, a deep disc with pale
+   text in dark mode. Lightness is fixed, so every hue keeps well over 4.5:1 text contrast. */
+.bg-avatar[data-tone="auto"] { background-color: hsl(var(--av-h) 75% 90%); color: hsl(var(--av-h) 65% 24%); }
+[data-theme="dark"] .bg-avatar[data-tone="auto"] { background-color: hsl(var(--av-h) 38% 26%); color: hsl(var(--av-h) 85% 90%); }
 .bg-avatar-xs { --size: 24px; font-size: 10px; }
 .bg-avatar-sm { --size: 32px; font-size: 12px; }
 .bg-avatar-lg { --size: 48px; font-size: 16px; }
