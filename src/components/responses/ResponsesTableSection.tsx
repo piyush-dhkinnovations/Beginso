@@ -31,6 +31,8 @@ interface Props {
   onExport: (target: BulkTarget) => void;
   onClearFilters: () => void;
   onPageChange: (page: number) => void;
+  submittedOrder: 'asc' | 'desc';
+  onSubmittedOrderChange: (order: 'asc' | 'desc') => void;
   onViewResponse: (id: string) => void;
 }
 
@@ -42,7 +44,7 @@ interface Props {
  */
 export function ResponsesTableSection({
   responses, isLoading, selection, total, page, pageLimit, formId, formNames, hasActiveFilters, filterSummary, otherCount,
-  filters, stages, tags, members, role, isBulkRunning, onBulk, onExport, onClearFilters, onPageChange, onViewResponse,
+  filters, stages, tags, members, role, isBulkRunning, onBulk, onExport, onClearFilters, onPageChange, onViewResponse, submittedOrder, onSubmittedOrderChange,
 }: Props) {
   const { selectedIds, setSelectedIds, selectAllMatching, setSelectAllMatching, setConfirmDelete, clearSelection } = selection;
   return (
@@ -78,6 +80,9 @@ export function ResponsesTableSection({
         onClearFilters={onClearFilters}
         filterSummary={filterSummary}
         otherCount={otherCount}
+        totalMatching={total}
+        submittedOrder={submittedOrder}
+        onSubmittedOrderChange={onSubmittedOrderChange}
         onSelectAll={(checked) => {
           setSelectAllMatching(false);
           setSelectedIds(checked ? new Set(responses.map((r) => r._id)) : new Set());

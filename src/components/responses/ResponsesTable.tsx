@@ -35,6 +35,11 @@ interface ResponsesTableProps {
   formId?: string;
   /** form id → title. Present only on the all-forms view, where it adds a Form column. */
   formNames?: Record<string, string>;
+  /** How many responses match the filters across ALL pages. Respondent and Stage can only be sorted when every match is on screen. */
+  totalMatching?: number;
+  /** Submission order, applied by the server across every page (newest first by default). */
+  submittedOrder?: 'asc' | 'desc';
+  onSubmittedOrderChange?: (order: 'asc' | 'desc') => void;
 }
 
 export function ResponsesTable({
@@ -51,6 +56,9 @@ export function ResponsesTable({
   otherCount,
   formId,
   formNames,
+  totalMatching,
+  submittedOrder = 'desc',
+  onSubmittedOrderChange,
 }: ResponsesTableProps) {
   const router = useRouter();
   const allSelected = responses.length > 0 && selectedIds.size === responses.length;
@@ -72,25 +80,35 @@ export function ResponsesTable({
     onSelectRow(r._id, !selectedIds.has(r._id));
   };
 
-  // ponytail: GET /api/responses has no sort parameter (always submittedAt desc), so this sorts only the
-  // loaded page (50 rows). Add a server-side `sort` param if inboxes routinely span pages.
-  const [sort, setSort] = useState<TableSort | undefined>();
-  const toggleSort = (key: string) =>
-    setSort((cur) => (cur?.key === key ? (cur.dir === 'asc' ? { key, dir: 'desc' } : undefined) : { key, dir: key === 'submitted' ? 'desc' : 'asc' }));
+  // Submitted is sorted by the SERVER, across every page (QA D8-006: sorting only the 50 loaded rows gave a wrong order whenever a form
+  // had more than a page). Respondent and Stage have no server sort (the respondent's name is worked out from the answers in the
+  // browser), so they are offered only when every matching response is already on screen; otherwise the column is not sortable.
+  const everythingLoaded = totalMatching === undefined || totalMatching <= responses.length;
+  const [pageSort, setPageSort] = useState<TableSort | undefined>();
+  const activePageSort = everythingLoaded ? pageSort : undefined;
+  const sort: TableSort | undefined = activePageSort ?? { key: 'submitted', dir: submittedOrder };
+  const toggleSort = (key: string) => {
+    if (key === 'submitted') {
+      setPageSort(undefined);
+      onSubmittedOrderChange?.(submittedOrder === 'desc' ? 'asc' : 'desc');
+      return;
+    }
+    setPageSort((cur) => (cur?.key === key ? (cur.dir === 'asc' ? { key, dir: 'desc' } : undefined) : { key, dir: 'asc' }));
+  };
   const fieldsByForm = useFormFieldsMap(responses.map((r) => r.formId));
   const rows = useMemo(() => {
-    if (!sort) return responses;
-    const sign = sort.dir === 'asc' ? 1 : -1;
+    if (!activePageSort) return responses;
+    const sign = activePageSort.dir === 'asc' ? 1 : -1;
     const value = (r: IResponse): string => {
-      if (sort.key === 'respondent') {
+      if (activePageSort.key === 'respondent') {
         const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId], r.respondentEmail);
         return (id.label ?? id.email ?? '').toLowerCase();
       }
-      if (sort.key === 'stage') return (r.stage?.name ?? r.status ?? '').toLowerCase();
+      if (activePageSort.key === 'stage') return (r.stage?.name ?? r.status ?? '').toLowerCase();
       return r.submittedAt ?? '';
     };
     return [...responses].sort((a, b) => sign * value(a).localeCompare(value(b)));
-  }, [responses, sort, fieldsByForm]);
+  }, [responses, activePageSort, fieldsByForm]);
   const respondentLabel = (r: IResponse) => {
     const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId], r.respondentEmail);
     return id.label ?? id.email ?? 'this respondent';
@@ -150,7 +168,7 @@ export function ResponsesTable({
     {
       key: 'respondent',
       header: 'Respondent',
-      sortKey: 'respondent',
+      sortKey: everythingLoaded ? 'respondent' : undefined,
       // The real button gives the row its keyboard/screen-reader semantics; a click anywhere else on the row also opens it.
       render: (r) => (
         <button type="button" onClick={() => openOrSelect(r)} aria-label={`Open response from ${respondentLabel(r)}`} className="block min-w-0 text-left">
@@ -166,7 +184,7 @@ export function ResponsesTable({
     { key: 'email', header: 'Email', render: (r) => detectRespondentIdentity(r.answers, fieldsByForm[r.formId], r.respondentEmail).email ?? '—' },
     { key: 'tags', header: 'Tags', render: (r) => <TagsCell tags={r.tags} /> },
     { key: 'assignee', header: 'Assignee', render: (r) => <AssigneeCell response={r} /> },
-    { key: 'stage', header: 'Stage', sortKey: 'stage', render: (r) => <StageBadge stage={r.stage} status={r.status} /> },
+    { key: 'stage', header: 'Stage', sortKey: everythingLoaded ? 'stage' : undefined, render: (r) => <StageBadge stage={r.stage} status={r.status} /> },
     { key: 'submitted', header: 'Submitted', sortKey: 'submitted', render: (r) => <SubmittedCell response={r} /> },
     {
       key: 'actions',

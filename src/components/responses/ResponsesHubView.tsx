@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ResponsesBoard } from './ResponsesBoard';
@@ -52,6 +53,8 @@ interface ResponsesHubViewProps {
  */
 export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubViewProps) {
   const { filters, page, view, search, pageLimit, stages, stagesLoading, setFilters, setPage, setView, clear } = useInboxFilters({ scope });
+  // Oldest first or newest first by submission time: the server applies it to every page, so it is not part of the page's own sort.
+  const [submittedOrder, setSubmittedOrder] = useState<'asc' | 'desc'>('desc');
   const { data: members } = useMembers(scope === 'personal' ? undefined : scope);
   const { data: tags } = useTags(scope === 'personal' ? undefined : scope);
   const role = useWorkspaceRole(scope);
@@ -75,9 +78,9 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   const { runExport, exportCurrentFilter } = useInboxExports({ formId, filters, scope });
 
   const { form, formError, isFormError, refetchForm, stats, isStatsError, data, isLoading, isResponsesError, refetchResponses } =
-    useResponsesData({ scope, formId, filters, page, pageLimit, setPage });
+    useResponsesData({ scope, formId, filters, page, pageLimit, setPage, submittedOrder });
   const { responseId, responses, activeResponsePosition, openResponse, closeResponse, navigateResponse, expandResponse } = useResponseRouting({
-    scope, formId, filters, page, pageLimit, data,
+    scope, formId, filters, page, pageLimit, data, submittedOrder,
   });
   const fileFieldLabels = (form?.fields ?? [])
     .filter((field) => field.type === 'file_upload' && !field.deleted)
@@ -204,6 +207,11 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
               onBulk={(target, action) => mutations.bulk(target, action, { onSuccess: () => clearSelection() })}
               onExport={runExport}
               onClearFilters={clearAll}
+              submittedOrder={submittedOrder}
+              onSubmittedOrderChange={(order) => {
+                setSubmittedOrder(order);
+                setPage(1);
+              }}
               onPageChange={(p) => {
                 clearSelection();
                 setPage(p);
