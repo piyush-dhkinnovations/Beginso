@@ -67,6 +67,7 @@ export function WorkspaceTab({ onDirtyChange, scope, onDeleted }: WorkspaceTabPr
   useEffect(() => {
     if (workspace) {
       reset({ name: workspace.name, description: workspace.description ?? '', timezone: workspace.timezone ?? 'UTC' });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLogo(workspace.logoUrl ?? null);
     }
   }, [workspace, reset]);
