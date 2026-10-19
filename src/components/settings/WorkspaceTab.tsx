@@ -87,7 +87,7 @@ export function WorkspaceTab({ onDirtyChange, scope, onDeleted }: WorkspaceTabPr
   const updateMutation = useMutation({
     mutationFn: (values: WorkspaceGeneralFormValues) =>
       settingsService.updateWorkspace(
-        { name: values.name, description: values.description.trim(), timezone: values.timezone, logo },
+        { name: values.name, description: values.description.trim(), timezone: values.timezone, logoUrl: logo },
         scope
       ),
     onSuccess: (updated, values) => {

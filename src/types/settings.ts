@@ -50,7 +50,7 @@ export interface UpdateWorkspacePayload {
   name?: string;
   description?: string | null;
   timezone?: string;
-  logo?: string | null;
+  logoUrl?: string | null;
   branding?: Partial<FormBranding>;
   notificationPreferences?: Partial<NotificationPreferences>;
 }

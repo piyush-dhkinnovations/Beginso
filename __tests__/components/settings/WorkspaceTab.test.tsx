@@ -83,7 +83,7 @@ describe('WorkspaceTab', () => {
     fireEvent.change(nameInput, { target: { value: 'New Name' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
-    await waitFor(() => expect(mockUpdateWorkspace).toHaveBeenCalledWith({ name: 'New Name', description: '', timezone: 'UTC', logo: null }, undefined));
+    await waitFor(() => expect(mockUpdateWorkspace).toHaveBeenCalledWith({ name: 'New Name', description: '', timezone: 'UTC', logoUrl: null }, undefined));
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Workspace settings saved.', 'success'));
   });
 
