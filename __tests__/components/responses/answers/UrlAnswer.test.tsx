@@ -42,11 +42,11 @@ describe('UrlAnswer', () => {
     expect(mockPreview).not.toHaveBeenCalled();
   });
 
-  it('compact style shows the domain without www and the full href as title', () => {
+  it('compact style shows the full href as text and as the title attribute', () => {
     renderUrl('https://www.example.com/path', field('compact', 'inline'));
     const a = screen.getByRole('link');
     expect(a).toHaveAttribute('title', 'https://www.example.com/path');
-    expect(screen.getByText('example.com')).toBeInTheDocument();
+    expect(screen.getByText('https://www.example.com/path')).toBeInTheDocument();
     expect(mockPreview).not.toHaveBeenCalled();
   });
 

@@ -37,4 +37,9 @@ export const workspacesService = {
     axiosInstance
       .post('/api/workspaces', payload)
       .then((r) => unwrapEnvelope<Workspace>(r.data, 'workspace')),
+
+  // DELETE /api/workspaces/:slug — deletes the workspace (not the account). Owner-only.
+  // Backend endpoint is needed — see docs/backend-contract/api-reference.md §"Per-workspace delete".
+  delete: (slug: string): Promise<void> =>
+    axiosInstance.delete(`/api/workspaces/${slug}`).then(() => undefined),
 };

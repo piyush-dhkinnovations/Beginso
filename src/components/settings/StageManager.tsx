@@ -72,14 +72,14 @@ export function StageManager({ scope, onDirtyChange }: StageManagerProps) {
     onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'create stage', fallback: 'Failed to create stage. Please try again.' }), 'error'),
   });
 
-  const renameMutation = useMutation({
-    mutationFn: ({ id, name }: { id: string; name: string }) => stagesService.update(scope as string, id, { name }),
+  const updateMutation = useMutation({
+    mutationFn: ({ id, ...payload }: { id: string } & Partial<StageFormValues>) => stagesService.update(scope as string, id, payload),
     onSuccess: (_d, { name }) => {
       setEditingId(null);
       invalidate();
-      toast(`Stage renamed to "${name}".`, 'success');
+      toast(`Stage "${name}" updated.`, 'success');
     },
-    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'rename stage', fallback: 'Failed to rename stage. Please try again.' }), 'error'),
+    onError: (e) => toast(getFriendlyErrorMessage(e, { action: 'update stage', fallback: 'Failed to update stage. Please try again.' }), 'error'),
   });
 
   const deleteMutation = useMutation({
@@ -166,11 +166,11 @@ export function StageManager({ scope, onDirtyChange }: StageManagerProps) {
       header: 'Stage',
       render: (stage) =>
         editingId === stage.id ? (
-          <RenameRow
+          <EditRow
             stage={stage}
-            isSaving={renameMutation.isPending}
+            isSaving={updateMutation.isPending}
             onCancel={() => setEditingId(null)}
-            onSave={(name) => renameMutation.mutate({ id: stage.id, name })}
+            onSave={(values) => updateMutation.mutate({ id: stage.id, ...values })}
           />
         ) : (
           <span className="flex items-center gap-2">
@@ -195,7 +195,7 @@ export function StageManager({ scope, onDirtyChange }: StageManagerProps) {
       header: '',
       render: (stage) => (
         <div className="flex items-center justify-end gap-2">
-          <Button variant="ghost" size="small" onClick={() => setEditingId(stage.id)}>Rename</Button>
+          <Button variant="ghost" size="small" onClick={() => setEditingId(stage.id)}>Edit</Button>
           <Button
             variant="ghost"
             size="small"
@@ -290,7 +290,7 @@ export function StageManager({ scope, onDirtyChange }: StageManagerProps) {
   );
 }
 
-function RenameRow({
+function EditRow({
   stage,
   isSaving,
   onCancel,
@@ -299,19 +299,35 @@ function RenameRow({
   stage: Stage;
   isSaving: boolean;
   onCancel: () => void;
-  onSave: (name: string) => void;
+  onSave: (values: StageFormValues) => void;
 }) {
   const [name, setName] = useState(stage.name);
+  const [colour, setColour] = useState(stage.colour);
+  const [category, setCategory] = useState<StageCategory>(stage.category);
   return (
     <form
-      className="flex items-center gap-2"
+      className="flex flex-wrap items-end gap-2"
       onSubmit={(e) => {
         e.preventDefault();
-        if (name.trim()) onSave(name.trim());
+        if (name.trim()) onSave({ name: name.trim(), colour, category });
       }}
     >
-      <div className="w-full min-w-40 max-w-72">
-        <Input id={`rename-stage-${stage.id}`} aria-label="Stage name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+      <div className="min-w-36 max-w-56">
+        <Input id={`edit-stage-name-${stage.id}`} label="Name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+      </div>
+      <div className="min-w-28">
+        <Select id={`edit-stage-colour-${stage.id}`} label="Colour" value={colour} onChange={(e) => setColour(e.target.value as typeof colour)}>
+          {STAGE_COLOR_TOKENS.map((token) => (
+            <option key={token} value={token}>{token}</option>
+          ))}
+        </Select>
+      </div>
+      <div className="min-w-28">
+        <Select id={`edit-stage-category-${stage.id}`} label="Category" value={category} onChange={(e) => setCategory(e.target.value as StageCategory)}>
+          {(Object.keys(CATEGORY_LABELS) as StageCategory[]).map((cat) => (
+            <option key={cat} value={cat}>{CATEGORY_LABELS[cat]}</option>
+          ))}
+        </Select>
       </div>
       <Button type="submit" size="small" isLoading={isSaving}>Save</Button>
       <Button type="button" variant="ghost" size="small" onClick={onCancel}>Cancel</Button>

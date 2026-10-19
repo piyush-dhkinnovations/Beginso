@@ -41,6 +41,11 @@ export function CreateWorkspacePage() {
     onError: (error) => toast(getFriendlyErrorMessage(error, { fallback: 'Failed to create workspace. Please try again.' }), 'error'),
   });
 
+  const atLimit =
+    usage?.workspaceLimit !== undefined &&
+    usage.workspaceCount !== undefined &&
+    usage.workspaceCount >= usage.workspaceLimit;
+
   return (
     <SplitFlowLayout
       eyebrow="Create workspace"
@@ -53,6 +58,18 @@ export function CreateWorkspacePage() {
       onClose={() => (window.history.length > 1 ? router.back() : router.push('/workspaces'))}
     >
       <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="flex flex-col gap-6" noValidate>
+        {usage?.workspaceLimit !== undefined && usage.workspaceCount !== undefined && (
+          <div
+            role={atLimit ? 'alert' : undefined}
+            className={atLimit
+              ? 'rounded-lg border border-(--error-border) bg-(--error-surface) px-4 py-3 bg-body-sm text-(--error-text)'
+              : 'bg-caption text-(--text-muted)'}
+          >
+            {atLimit
+              ? `You've reached the limit of ${usage.workspaceLimit} workspaces. Delete an existing workspace before creating a new one.`
+              : `${usage.workspaceCount} of ${usage.workspaceLimit} workspaces used`}
+          </div>
+        )}
         <Input
           id="create-workspace-name-input"
           label="Workspace name"
@@ -61,14 +78,9 @@ export function CreateWorkspacePage() {
           error={errors.name?.message}
           {...register('name')}
         />
-        {usage?.workspaceLimit !== undefined && usage.workspaceCount !== undefined && (
-          <p className="text-sm text-(--text-muted)">
-            {usage.workspaceCount} of {usage.workspaceLimit} workspaces used
-          </p>
-        )}
-        <LogoChoice subject="workspace" value={logo} onChange={setLogo} disabled={mutation.isPending} />
+        <LogoChoice subject="workspace" value={logo} onChange={setLogo} disabled={mutation.isPending || atLimit} />
         <div>
-          <Button type="submit" variant="primary" isLoading={mutation.isPending} className="min-h-12 px-6">
+          <Button type="submit" variant="primary" isLoading={mutation.isPending} disabled={atLimit} className="min-h-12 px-6">
             Create workspace
             <ArrowRight size={18} className="ml-2" aria-hidden="true" />
           </Button>

@@ -544,8 +544,8 @@ function UrlDisplaySection({
         label="Preview frame"
         value={s.display}
         options={[
-          { value: 'card', label: 'Card frame', description: 'Bordered card around the preview' },
-          { value: 'inline', label: 'No frame', description: 'Preview sits flush with the response' },
+          { value: 'card', label: 'Card frame' },
+          { value: 'inline', label: 'No frame' },
         ]}
         onChange={(urlDisplay) => set({ urlDisplay })}
       />

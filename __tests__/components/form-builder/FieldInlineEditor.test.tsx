@@ -188,9 +188,9 @@ describe('FieldInlineEditor: text-like fields', () => {
     expect(screen.getByRole('radio', { name: /Rich preview/ })).toBeChecked();
     await userEvent.click(screen.getByRole('radio', { name: /Compact link/ }));
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlPreviewStyle: 'compact' });
-    await userEvent.click(screen.getAllByRole('radio', { name: 'Inline with the answer' })[1]);
+    await userEvent.click(screen.getByRole('radio', { name: 'No frame' }));
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlDisplay: 'inline' });
-    expect(screen.getByText('Links: rich preview, inline with the answer, original ratio, medium, displayed as card.')).toBeInTheDocument();
+    expect(screen.getByText('Links: rich preview, inline with the answer, original ratio, medium, card frame.')).toBeInTheDocument();
   });
 
   it('url fields choose preview position, aspect ratio and size like images do', async () => {
