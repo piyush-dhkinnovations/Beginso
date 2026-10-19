@@ -9,6 +9,7 @@ import { FIELD_TYPE_CONFIG } from './Toolbox';
 import { FieldInlineEditor } from './FieldInlineEditor';
 import { FieldLogicEditor } from './FieldLogicEditor';
 import { FieldPreview } from './FieldPreview';
+import { FieldMoveMenus } from './FieldMoveMenus';
 
 interface FieldCardProps {
   field: FormField;
@@ -198,6 +199,7 @@ export function FieldCard({
               ) : (
               // Hover-reveal on desktop; always visible below 1024px where there is no hover.
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 max-lg:opacity-100 transition-all shrink-0">
+                <FieldMoveMenus field={field} />
                 <button
                   type="button"
                   onClick={(e) => {
