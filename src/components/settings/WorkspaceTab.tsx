@@ -35,6 +35,10 @@ export function WorkspaceTab({ onDirtyChange, scope, onDeleted }: WorkspaceTabPr
   const { logout } = useAuth();
   const queryClient = useQueryClient();
   const [logo, setLogo] = useState<string | null>(null);
+  // Tracks the logo value last loaded from (or saved to) the server so we know when the user
+  // changed it without touching a form field (StickySaveBar hides when only RHF isDirty).
+  const [savedLogo, setSavedLogo] = useState<string | null>(null);
+  const logoDirty = logo !== savedLogo;
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [typedName, setTypedName] = useState('');
 
@@ -68,8 +72,10 @@ export function WorkspaceTab({ onDirtyChange, scope, onDeleted }: WorkspaceTabPr
   useEffect(() => {
     if (workspace) {
       reset({ name: workspace.name, description: workspace.description ?? '', timezone: workspace.timezone ?? 'UTC' });
+      const serverLogo = workspace.logoUrl ?? null;
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setLogo(workspace.logoUrl ?? null);
+      setSavedLogo(serverLogo);
+      setLogo(serverLogo);
     }
   }, [workspace, reset]);
 
@@ -81,8 +87,8 @@ export function WorkspaceTab({ onDirtyChange, scope, onDeleted }: WorkspaceTabPr
   }, [onDirtyChange]);
 
   useEffect(() => {
-    onDirtyChangeRef.current?.(isDirty);
-  }, [isDirty]);
+    onDirtyChangeRef.current?.(isDirty || logoDirty);
+  }, [isDirty, logoDirty]);
 
   const [saved, flashSaved] = useSavedFlash();
   const updateMutation = useMutation({
@@ -93,12 +99,14 @@ export function WorkspaceTab({ onDirtyChange, scope, onDeleted }: WorkspaceTabPr
       ),
     onSuccess: (updated, values) => {
       // Immediately reflect the saved logo — don't wait for the workspace query to refetch.
-      setLogo(updated.logoUrl ?? null);
+      const newLogo = updated.logoUrl ?? null;
+      setSavedLogo(newLogo);
+      setLogo(newLogo);
       // Patch the sidebar's list cache directly so the logo appears there without a full refetch.
       if (scope) {
         queryClient.setQueriesData<WorkspaceListItem[]>(
           { queryKey: workspaceKeys.list() },
-          (old) => old?.map((w) => (w.slug === scope ? { ...w, logo: updated.logoUrl ?? null } : w))
+          (old) => old?.map((w) => (w.slug === scope ? { ...w, logo: newLogo } : w))
         );
       }
       queryClient.invalidateQueries({ queryKey: settingsKeys.workspace() });
@@ -185,11 +193,11 @@ export function WorkspaceTab({ onDirtyChange, scope, onDeleted }: WorkspaceTabPr
         <LogoChoice subject="workspace" value={logo} onChange={setLogo} />
 
         <StickySaveBar
-          dirty={isDirty}
+          dirty={isDirty || logoDirty}
           saving={isSubmitting || updateMutation.isPending}
           saved={saved}
           subject="Workspace settings"
-          onDiscard={() => reset()}
+          onDiscard={() => { reset(); setLogo(savedLogo); }}
         />
       </form>
 

@@ -91,7 +91,7 @@ export default function GuestBuilderPage() {
     };
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
-  }, []);
+  }, [markStale]);
   useEffect(() => {
     if (!ready) return;
     const t = setTimeout(() => void persist(), 800);

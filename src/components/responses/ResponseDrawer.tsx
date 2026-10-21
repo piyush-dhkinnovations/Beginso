@@ -117,7 +117,7 @@ function DrawerErrorState({
         <Icon size={24} aria-hidden="true" />
       </span>
       <div className="space-y-1">
-        <h3 className="bg-body font-semibold font-semibold text-(--text-primary)">{heading}</h3>
+        <h3 className="bg-body font-semibold text-(--text-primary)">{heading}</h3>
         <p className="max-w-[42ch] bg-body-sm text-(--text-muted)">{body}</p>
       </div>
       <div className="flex items-center gap-2 pt-1">
@@ -226,7 +226,6 @@ export function ResponseDrawer({
       // The opener can have been re-rendered away (a list refetch); then there is nothing to return to.
       if (opener?.isConnected) opener.focus();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- getFocusable only reads a ref
   }, [isDrawerOpen]);
 
   useEffect(() => {
@@ -251,7 +250,6 @@ export function ResponseDrawer({
     };
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- getFocusable only reads a ref
   }, [isDrawerOpen]);
 
   const { data: response, error: responseError, isError, isFetching, isLoading, refetch } = useQuery({
