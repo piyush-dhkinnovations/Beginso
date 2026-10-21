@@ -1,6 +1,8 @@
 import { useCallback, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useMembers } from '@/hooks/useMembers';
+import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
+import { canViewAudit } from '@/lib/roles';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
 import type { WorkspaceEventItem } from '@/types/event';
@@ -9,13 +11,14 @@ import type { WorkspaceEventItem } from '@/types/event';
  * The profile picture to show next to an event's actor, or undefined (then their initials show). In order:
  *  1. the picture the backend sent with the event (works for every role);
  *  2. the member's own picture from the team list, matched by user id and then by email, for a backend that does not send one yet.
- *     That list is admin-only, so for anyone else it is simply empty and nothing here fails;
+ *     That list is admin-only, so it is only requested for someone allowed to read it (never a request that is bound to be refused);
  *  3. for an actor with no account that goes by the workspace's own name (the events the system records for the workspace itself),
  *     the workspace logo.
  */
 export function useEventAvatars(scope: string | undefined): (event: WorkspaceEventItem) => string | undefined {
   const enabled = !!scope && scope !== 'personal';
-  const { data: members } = useMembers(scope);
+  const role = useWorkspaceRole(scope ?? 'personal');
+  const { data: members } = useMembers(canViewAudit(role) ? scope : undefined);
   const { data: workspaces } = useQuery({
     queryKey: workspaceKeys.list(),
     queryFn: () => workspacesService.list(),

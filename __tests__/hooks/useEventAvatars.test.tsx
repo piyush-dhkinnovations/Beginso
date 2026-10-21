@@ -82,6 +82,35 @@ describe('useEventAvatars', () => {
     expect(result.current(event({ actorId: 'u1' }))).toBeUndefined();
   });
 
+  it.each(['member', 'editor', 'viewer', 'reviewer'])('never asks a %s for the team list (it would be refused), and still shows the picture sent with the event', async (role) => {
+    listWorkspaces.mockResolvedValue([{ ...WORKSPACES[0], role }]);
+    const { result } = mount();
+    // the workspace has loaded once its logo can be used
+    await waitFor(() => expect(result.current(event({ actorName: 'Kala Chashma Entertainment' }))).toBe('https://cdn.example.com/logo.png'));
+    expect(listMembers).not.toHaveBeenCalled();
+    expect(result.current(event({ actorAvatarUrl: 'https://cdn.example.com/from-event.png' }))).toBe('https://cdn.example.com/from-event.png');
+    expect(result.current(event({ actorId: 'u1' }))).toBeUndefined(); // no fallback for them, so initials
+  });
+
+  it('asks admins and owners for it (the fallback for a backend that sends no picture yet)', async () => {
+    for (const role of ['admin', 'owner']) {
+      listMembers.mockClear();
+      qc.clear();
+      listWorkspaces.mockResolvedValue([{ ...WORKSPACES[0], role }]);
+      const { result, unmount } = mount();
+      await waitFor(() => expect(result.current(event({ actorId: 'u1' }))).toBe('https://cdn.example.com/a/piyush.png'));
+      expect(listMembers).toHaveBeenCalled();
+      unmount();
+    }
+  });
+
+  it('does not ask until the role is known', async () => {
+    listWorkspaces.mockReturnValue(new Promise(() => {}));
+    mount();
+    await new Promise((r) => setTimeout(r, 30));
+    expect(listMembers).not.toHaveBeenCalled();
+  });
+
   it('does not ask for anything in the personal space', () => {
     mount('personal');
     renderHook(() => useEventAvatars(undefined), { wrapper });
