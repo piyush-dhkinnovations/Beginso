@@ -59,6 +59,30 @@ describe('ResponsesToolbar', () => {
     expect(onSearchChange).toHaveBeenCalledWith('');
   });
 
+  describe('in the calendar view', () => {
+    const views = [{ id: 'table', label: 'Table' }, { id: 'board', label: 'Board' }, { id: 'calendar', label: 'Calendar' }];
+    const draw = (view: string) => render(<ResponsesToolbar {...baseProps} viewOptions={views} view={view} onViewChange={vi.fn()} />);
+
+    it('has no Date filter and no all-months total (the calendar has its own month controls and count)', () => {
+      draw('calendar');
+      expect(screen.queryByRole('button', { name: 'Date' })).not.toBeInTheDocument();
+      expect(screen.queryByText('3 responses')).not.toBeInTheDocument();
+    });
+
+    it('keeps search, the other filters and the view switcher', () => {
+      draw('calendar');
+      expect(screen.getByPlaceholderText('Search responses…')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Show/ })).toBeInTheDocument();
+      expect(screen.getByRole('group', { name: 'Responses view' })).toBeInTheDocument();
+    });
+
+    it.each(['table', 'board'])('still has the Date filter and the total in the %s view', (view) => {
+      draw(view);
+      expect(screen.getByRole('button', { name: 'Date' })).toBeInTheDocument();
+      expect(screen.getByText('3 responses')).toBeInTheDocument();
+    });
+  });
+
   it('hides the Assignee button when members is undefined (personal shell, OQ-9)', () => {
     render(<ResponsesToolbar {...baseProps} members={undefined} />);
     expect(screen.queryByRole('button', { name: /Assignee/ })).not.toBeInTheDocument();
