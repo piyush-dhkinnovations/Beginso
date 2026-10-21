@@ -68,15 +68,14 @@ export function useResponseRouting({ scope, formId, filters, page, pageLimit, da
 
   function expandResponse(response: IResponse) {
     const returnTo = `${pathname}?${searchParams.toString()}`;
-    // Bug fix, Sprint 12 close-out: `scope` was never passed to the full-page view, which
-    // always fell back to its 'personal' default — a workspace response's Stage/prev-next
-    // context silently broke (wrong or empty stage list) the moment it was expanded.
-    const fullPageParams = new URLSearchParams({
-      formId: response.formId,
-      scope,
-      returnTo,
-    });
-    router.push(`/inbox/${response._id}?${fullPageParams.toString()}`);
+    const fullPageParams = new URLSearchParams({ formId: response.formId, returnTo });
+    // Workspace responses go to /w/[slug]/inbox/[id] so the WorkspaceShell (sidebar) is
+    // preserved — the (user)/inbox/[id] route uses PersonalShell regardless of ?scope=.
+    // Personal responses keep the old /inbox/[id] path (PersonalShell is correct there).
+    const base = scope !== 'personal'
+      ? `/w/${scope}/inbox/${response._id}`
+      : `/inbox/${response._id}`;
+    router.push(`${base}?${fullPageParams.toString()}`);
   }
 
   return { responseId, responses, activeResponsePosition, openResponse, closeResponse, navigateResponse, expandResponse };
