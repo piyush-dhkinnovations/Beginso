@@ -2,7 +2,6 @@
 
 import { GripVertical } from 'lucide-react';
 import { useDraggable } from '@dnd-kit/core';
-import { Card } from '@/components/ui/Card';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { ResponseSignals } from './ResponseSignals';
 import { detectRespondentIdentity, shortId } from '@/lib/formatters';
@@ -49,42 +48,37 @@ export function BoardCard({ response, stages, canAct, onView, onChangeStage }: B
 
   return (
     <div ref={setNodeRef} className={isDragging ? 'opacity-40' : undefined}>
-    <Card className="board-card @container flex flex-col gap-2">
-      <div className="flex items-start justify-between gap-2">
-        {canAct && (
+      <div className="board-card group flex flex-col gap-2 rounded-lg border border-(--border-default) bg-(--surface-card) p-3 shadow-sm transition-shadow hover:shadow-md">
+        <div className="flex items-start gap-1">
           <button
             type="button"
-            ref={setActivatorNodeRef}
-            {...listeners}
-            {...attributes}
-            aria-label={`Drag ${name}'s response to another stage`}
-            className="-ml-1 flex min-h-8 min-w-6 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-(--text-muted) hover:bg-(--surface-hover) active:cursor-grabbing"
+            className="min-w-0 flex-1 rounded-md py-0.5 text-left outline-none focus-visible:outline-2 focus-visible:outline-(--border-focus)"
+            aria-label={`Open response from ${name}`}
+            onClick={() => onView(response._id)}
           >
-            <GripVertical size={16} aria-hidden="true" />
+            <span className="block truncate bg-body-sm font-semibold text-(--text-primary)">{name}</span>
+            <span className="block bg-caption tabular-nums text-(--text-muted)">{reference}</span>
           </button>
-        )}
-        <button
-          type="button"
-          className="min-w-0 text-left"
-          aria-label={`Open response from ${name}`}
-          onClick={() => onView(response._id)}
-        >
-          <span className="block truncate bg-body-sm font-medium text-(--text-primary)">{name}</span>
-          <span className="block bg-caption text-(--text-muted)">{reference}</span>
-        </button>
 
-        {canAct && moveItems.length > 0 && (
-          <Menu
-            trigger="⋯"
-            triggerLabel={`Move ${name}'s response to a different stage`}
-            items={moveItems}
-            align="end"
-          />
-        )}
+          {canAct && (
+            <button
+              type="button"
+              ref={setActivatorNodeRef}
+              {...listeners}
+              {...attributes}
+              aria-label={`Drag ${name}'s response to another stage`}
+              className="flex min-h-8 min-w-6 shrink-0 cursor-grab touch-none items-center justify-center rounded-md text-(--text-muted) opacity-0 transition-opacity hover:bg-(--surface-hover) focus-visible:opacity-100 active:cursor-grabbing group-hover:opacity-100 [@media(hover:none)]:opacity-100"
+            >
+              <GripVertical size={16} aria-hidden="true" />
+            </button>
+          )}
+          {canAct && moveItems.length > 0 && (
+            <Menu trigger="⋯" triggerLabel={`Move ${name}'s response to a different stage`} items={moveItems} align="end" />
+          )}
+        </div>
+
+        <ResponseSignals response={response} density="card" />
       </div>
-
-      <ResponseSignals response={response} density="card" />
-    </Card>
     </div>
   );
 }

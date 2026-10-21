@@ -73,14 +73,44 @@ describe('ResponsesBoard', () => {
     expect(screen.queryByText(/drag a card here/i)).not.toBeInTheDocument();
   });
 
-  it('offers "Load more" instead of silently truncating a column with a second page', async () => {
-    mockGetResponses.mockImplementation((params: { stageId: string }) =>
+  const originalObserver = globalThis.IntersectionObserver;
+  const twoPages = () =>
+    mockGetResponses.mockImplementation((params: { stageId: string; page?: number }) =>
       params.stageId === 's0'
-        ? Promise.resolve({ data: [fixtureResponse('r1', STAGES[0])], total: 21, page: 1, limit: 20, totalPages: 2 })
+        ? Promise.resolve({ data: [fixtureResponse(`r${params.page ?? 1}`, STAGES[0])], total: 2, page: params.page ?? 1, limit: 1, totalPages: 2 })
         : Promise.resolve(EMPTY_PAGE)
     );
-    renderBoard();
-    await waitFor(() => expect(screen.getByText('Load more')).toBeInTheDocument());
+
+  it('loads the next page by itself when the end of a column comes into view', async () => {
+    const callbacks: ((e: { isIntersecting: boolean }[]) => void)[] = [];
+    vi.stubGlobal('IntersectionObserver', class {
+      constructor(cb: (e: { isIntersecting: boolean }[]) => void) { callbacks.push(cb); }
+      observe() {}
+      disconnect() {}
+      unobserve() {}
+    });
+    try {
+      twoPages();
+      renderBoard();
+      await screen.findByText('#r1');
+      expect(screen.queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
+      await waitFor(() => expect(callbacks.length).toBeGreaterThan(0));
+      callbacks.at(-1)!([{ isIntersecting: true }]);
+      await screen.findByText('#r2');
+    } finally {
+      vi.stubGlobal('IntersectionObserver', originalObserver);
+    }
+  });
+
+  it('keeps a "Load more" button where the browser cannot watch scrolling', async () => {
+    vi.stubGlobal('IntersectionObserver', undefined);
+    try {
+      twoPages();
+      renderBoard();
+      await waitFor(() => expect(screen.getByText('Load more')).toBeInTheDocument());
+    } finally {
+      vi.stubGlobal('IntersectionObserver', originalObserver);
+    }
   });
 
   it('shows the empty-pipeline state instead of columns when the workspace has no stages', () => {

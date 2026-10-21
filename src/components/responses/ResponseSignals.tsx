@@ -88,6 +88,7 @@ export function ResponseSignals({ response, density, className }: ResponseSignal
           no accessible representation at all in that density (caught by the viewSignals guard,
           task 3.5). */}
       <span
+        role="img"
         className="inline-flex min-w-0 items-center gap-1.5 shrink-0"
         aria-label={
           assignee ? `${assignee.name}${assignee.removed ? ' · no longer has access' : ''}` : 'Unassigned'

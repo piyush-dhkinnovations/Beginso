@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useDroppable } from '@dnd-kit/core';
 import { AlertCircle } from 'lucide-react';
@@ -58,18 +59,47 @@ export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onV
   const responses = [...arriving, ...fetched.filter((r) => !hiddenIds?.has(r._id))];
   const total = (data?.pages[0]?.total ?? 0) - leaving.length + arriving.length;
 
+  // Each column scrolls on its own and loads its next page as the end comes into view (no "Load more" to find). Where the browser
+  // has no IntersectionObserver the button stays as the fallback.
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const endRef = useRef<HTMLDivElement | null>(null);
+  const canObserve = typeof IntersectionObserver !== 'undefined';
+  useEffect(() => {
+    const end = endRef.current;
+    if (!canObserve || !end || !hasNextPage || isFetchingNextPage) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) void fetchNextPage();
+      },
+      { root: listRef.current, rootMargin: '240px' }
+    );
+    io.observe(end);
+    return () => io.disconnect();
+    // `responses.length` re-arms the observer after each page: a page too short to push the end out of view must load the next one.
+  }, [canObserve, hasNextPage, isFetchingNextPage, fetchNextPage, responses.length]);
+
   return (
-    <div className="board-column flex w-72 shrink-0 snap-start flex-col gap-2" role="listitem" aria-label={`${stage.name} column`}>
-      <div className="flex items-center justify-between gap-2 px-1">
+    <div
+      className="board-column flex h-full w-72 shrink-0 snap-start flex-col rounded-xl border border-(--border-subtle) bg-(--bg-subtle) p-2"
+      role="listitem"
+      aria-label={`${stage.name} column`}
+    >
+      <div className="flex shrink-0 items-center justify-between gap-2 px-1 pb-2">
         <StageBadge stage={stage} />
-        <span className="bg-caption text-(--text-muted)" aria-label={`${total} response${total === 1 ? '' : 's'}`}>
+        <span
+          className="min-w-6 rounded-full bg-(--surface-card) px-2 py-0.5 text-center bg-caption font-medium tabular-nums text-(--text-secondary)"
+          aria-label={`${total} response${total === 1 ? '' : 's'}`}
+        >
           {total}
         </span>
       </div>
 
       <div
-        ref={setNodeRef}
-        className={`flex min-h-16 flex-1 flex-col gap-2 rounded-lg transition-shadow${isOver ? ' ring-2 ring-(--action-primary) ring-offset-2' : ''}`}
+        ref={(el) => {
+          setNodeRef(el);
+          listRef.current = el;
+        }}
+        className={`flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain rounded-lg p-0.5 transition-shadow${isOver ? ' ring-2 ring-(--action-primary)' : ''}`}
         aria-busy={isLoading || undefined}
       >
         {isLoading &&
@@ -88,18 +118,24 @@ export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onV
         )}
 
         {!isLoading && !isError && responses.length === 0 && (
-          <p className="px-1 py-4 text-center bg-body-sm text-(--text-muted)">No responses in {stage.name}</p>
+          <p className="rounded-lg border border-dashed border-(--border-default) px-3 py-6 text-center bg-body-sm text-(--text-muted)">
+            No responses in {stage.name}
+          </p>
         )}
 
         {responses.map((r) => (
           <BoardCard key={r._id} response={r} stages={stages} canAct={canAct} onView={onViewResponse} onChangeStage={onChangeStage} />
         ))}
 
-        {hasNextPage && (
+        {hasNextPage && (canObserve ? (
+          <div ref={endRef} className="flex min-h-8 shrink-0 items-center justify-center bg-caption text-(--text-muted)" role="status">
+            {isFetchingNextPage ? 'Loading more…' : ''}
+          </div>
+        ) : (
           <Button variant="ghost" size="small" isLoading={isFetchingNextPage} onClick={() => void fetchNextPage()}>
             Load more
           </Button>
-        )}
+        ))}
       </div>
     </div>
   );

@@ -124,7 +124,9 @@ export function ResponsesBoard({
   return (
     <DndContext sensors={sensors} accessibility={{ announcements }} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={() => setDragging(null)}>
       <div
-        className="board-scroll flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 lg:snap-none"
+        // As tall as the room left under the page header, so each column scrolls inside it and the sideways scrollbar sits at the
+        // bottom of the screen where it can be seen, not at the end of a very long page.
+        className="board-scroll flex h-[calc(100dvh-22rem)] min-h-112 snap-x snap-mandatory items-stretch gap-3 overflow-x-auto pb-2 lg:snap-none"
         role="list"
         aria-label="Responses board"
       >
