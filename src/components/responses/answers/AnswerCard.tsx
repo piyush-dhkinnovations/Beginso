@@ -106,10 +106,10 @@ export function AnswerCard({ item, responseId, scope }: AnswerCardProps) {
 
   return (
     <div className={cn('min-w-0 border-b border-(--border-subtle) py-3', isWideAnswer(item) && '@2xl:col-span-2')}>
-      <h4 className="bg-caption font-medium text-(--text-muted)">
+      <h4 className="bg-body font-medium text-(--text-muted)">
         {item.number}. {item.label}
       </h4>
-      <div className={cn('mt-1 min-w-0 bg-body-sm text-(--text-primary) wrap-break-word whitespace-pre-wrap', inlineUrl && 'whitespace-normal')}>
+      <div className={cn('mt-1 min-w-0 text-sm leading-normal text-(--text-primary) wrap-break-word whitespace-pre-wrap', inlineUrl && 'whitespace-normal')}>
         {field?.type === 'image_upload' ? (
           item.files.length > 0 ? <ImageAnswer responseId={responseId} field={field} files={item.files} /> : <Empty />
         ) : field?.type === 'file_upload' || (!field && item.files.length > 0) ? (

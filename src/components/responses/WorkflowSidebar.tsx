@@ -53,11 +53,11 @@ export interface WorkflowSidebarProps {
   onOpenOriginal?: (id: string) => void;
 }
 
-const SECTION_LABEL = 'bg-caption font-semibold text-(--text-muted) uppercase tracking-wide';
+const SECTION_LABEL = 'bg-body-sm font-semibold text-(--text-muted) uppercase tracking-wide';
 const OVERVIEW_ROW = 'grid grid-cols-[5.5rem_minmax(0,1fr)] items-center gap-3';
 const OVERVIEW_LABEL = 'bg-body-sm text-(--text-muted)';
 const META_ROW = 'flex items-center justify-between gap-3 py-2 border-b border-(--border-default) last:border-0 last:pb-0';
-const META_LABEL = 'flex items-center gap-1.5 shrink-0 bg-caption text-(--text-muted)';
+const META_LABEL = 'flex items-center gap-1.5 shrink-0 bg-body-sm text-(--text-muted)';
 
 export const ORIGIN_TOOLTIP =
   "A private fingerprint of the sender's network. Two responses with the same ID came from the same network. Raw IP addresses are never stored.";
@@ -99,7 +99,7 @@ export function WorkflowSidebar({
   });
 
   const ipHash = response.ipHash ? response.ipHash.slice(0, 16) : null;
-  const { data: criteria = [] } = useScoreCriteria(scope);
+  const { data: criteria = [], isLoading: criteriaLoading } = useScoreCriteria(scope);
 
   return (
     <aside className="flex w-full min-w-0 flex-col gap-4">
@@ -169,7 +169,7 @@ export function WorkflowSidebar({
           />
         </div>
 
-        {scope !== 'personal' && (
+        {scope !== 'personal' && (criteriaLoading || criteria.length > 0) && (
           <div className={OVERVIEW_ROW}>
             <span className={OVERVIEW_LABEL}>Score</span>
             <ScoreCard responseId={response._id} criteria={criteria} disabled={!canScore} />
@@ -187,21 +187,23 @@ export function WorkflowSidebar({
             </span>
             <span className="bg-body-sm text-(--text-secondary) text-right">{formatResponseDate(response.submittedAt)}</span>
           </div>
-          <div className={META_ROW}>
-            <span className={META_LABEL} title={ORIGIN_TOOLTIP}>
-              <Shield size={13} aria-hidden="true" />
-              Origin
-            </span>
-            <code title={ORIGIN_TOOLTIP} className="font-mono bg-caption text-(--text-muted) break-all text-right">
-              {ipHash ?? '—'}
-            </code>
-          </div>
+          {ipHash && (
+            <div className={META_ROW}>
+              <span className={META_LABEL} title={ORIGIN_TOOLTIP}>
+                <Shield size={13} aria-hidden="true" />
+                Origin
+              </span>
+              <code title={ORIGIN_TOOLTIP} className="font-mono bg-body-sm text-(--text-muted) break-all text-right">
+                {ipHash}
+              </code>
+            </div>
+          )}
           <div className={META_ROW}>
             <span className={META_LABEL}>
               <Hash size={13} aria-hidden="true" />
               Reference ID
             </span>
-            <code className="font-mono bg-caption text-(--text-muted)">{response.reference ?? shortId(response._id)}</code>
+            <code className="font-mono bg-body-sm text-(--text-muted)">{response.reference ?? shortId(response._id)}</code>
           </div>
         </div>
       </Card>
@@ -211,7 +213,7 @@ export function WorkflowSidebar({
       {collaboration ? (
         <Card className="flex flex-col gap-3">
           <span className={SECTION_LABEL}>Activity</span>
-          <ActivityTimeline entries={activity} isLoading={activityLoading} isError={activityError} onRetry={() => void refetchActivity()} />
+          <ActivityTimeline entries={activity} stages={stages} isLoading={activityLoading} isError={activityError} onRetry={() => void refetchActivity()} />
         </Card>
       ) : (
         onShare && (

@@ -85,6 +85,15 @@ describe('UrlAnswer', () => {
     expect(screen.getByText('e')).toBeInTheDocument();
   });
 
+  it('never scrapes a sign-in-only host and shows a neutral Drive chip instead of "Page not found"', () => {
+    mockPreview.mockResolvedValue({ title: 'Page not found', image: null });
+    renderUrl('https://drive.google.com/file/d/16-OAlkOr72y7pOTilGnao_jw-zIQlixR/view?usp=drivesdk', field('rich', 'card'));
+    expect(mockPreview).not.toHaveBeenCalled();
+    expect(screen.queryByText('Page not found')).not.toBeInTheDocument();
+    expect(screen.getByText('Google Drive file')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Opens in a new tab/ })).toHaveAttribute('rel', 'noopener noreferrer nofollow');
+  });
+
   const rich = (extra: Record<string, string>) => ({ type: 'url', urlPreviewStyle: 'rich', urlDisplay: 'card', ...extra }) as unknown as FormField;
   const thumb = async () => waitFor(() => {
     const el = document.querySelector('img');

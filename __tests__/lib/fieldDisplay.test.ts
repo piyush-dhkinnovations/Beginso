@@ -5,6 +5,7 @@ import {
   urlSettings,
   safeHttpUrl,
   domainOf,
+  signInService,
   currencyOf,
   currencySymbol,
   formatCurrency,
@@ -81,6 +82,23 @@ describe('url helpers', () => {
     expect(domainOf(new URL('https://www.example.com/x'))).toBe('example.com');
     expect(domainOf(new URL('https://app.example.com'))).toBe('app.example.com');
   });
+});
+
+describe('signInService', () => {
+  it.each([
+    ['https://drive.google.com/file/d/abc/view', 'Google Drive'],
+    ['https://docs.google.com/document/d/abc', 'Google Docs'],
+    ['https://www.dropbox.com/s/x', 'Dropbox'],
+    ['https://team.notion.site/page', 'Notion'],
+    ['https://www.figma.com/file/x', 'Figma'],
+  ])('%s needs a sign-in (%s)', (href, service) => {
+    expect(signInService(new URL(href))).toBe(service);
+  });
+
+  it.each(['https://example.com/', 'https://notdropbox.com/', 'https://drive.google.com.evil.example/'])(
+    '%s is a public host',
+    (href) => expect(signInService(new URL(href))).toBeNull()
+  );
 });
 
 describe('currency', () => {
