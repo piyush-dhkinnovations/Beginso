@@ -3,9 +3,12 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   AlertCircle,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   Download,
+  FileSpreadsheet,
+  FileText,
   LockKeyhole,
   Maximize2,
   Minimize2,
@@ -17,7 +20,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/Toast';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import { Menu } from '@/components/ui/Menu';
 import { Tabs } from '@/components/ui/Tabs';
+import type { ReportFormat } from '@/types/report';
 import { SubmittedResponse } from './SubmittedResponse';
 import { ResponseViewToolbar } from './ResponseViewToolbar';
 import { useSubmittedResponse } from '@/hooks/useSubmittedResponse';
@@ -365,13 +370,14 @@ export function ResponseDrawer({
     onError: () => toast('Failed to create tag. Please try again.', 'error'),
   });
 
-  function downloadResponse() {
+  function downloadResponse(format: ReportFormat) {
     if (!response) return;
     // Response-level "Download" — single-response export through the export path, without notes
     // (requirements.md §9.3/B4.16); reuses the same `exportPayloadFromTarget` the Inbox's own
-    // Export/BulkActionBar already build from, rather than a bespoke download call.
+    // Export/BulkActionBar already build from, rather than a bespoke download call. The person picks the format
+    // (CSV or PDF, the two the Exports page offers) from the Download menu.
     reportsService
-      .createReport(exportPayloadFromTarget('csv', { ids: [response._id] }), scope)
+      .createReport(exportPayloadFromTarget(format, { ids: [response._id] }), scope)
       .then(() => toast(DOWNLOAD_QUEUED, 'success'))
       .catch(() => toast(DOWNLOAD_FAILED, 'error'));
   }
@@ -561,10 +567,22 @@ export function ResponseDrawer({
             )}
             {response && (
               <>
-                <Button variant="ghost" size="small" onClick={downloadResponse} aria-label="Download response" className="gap-1.5">
-                  <Download size={15} aria-hidden="true" />
-                  <span className="hidden lg:inline">Download</span>
-                </Button>
+                <Menu
+                  align="end"
+                  triggerLabel="Download response"
+                  triggerClassName="bg-btn bg-btn-ghost bg-btn-sm gap-1.5"
+                  trigger={
+                    <>
+                      <Download size={15} aria-hidden="true" />
+                      <span className="hidden lg:inline">Download</span>
+                      <ChevronDown size={13} aria-hidden="true" />
+                    </>
+                  }
+                  items={[
+                    { id: 'csv', label: 'Download as CSV', icon: <FileSpreadsheet size={15} />, onSelect: () => downloadResponse('csv') },
+                    { id: 'pdf', label: 'Download as PDF', icon: <FileText size={15} />, onSelect: () => downloadResponse('pdf') },
+                  ]}
+                />
                 <Button variant="ghost" size="small" onClick={() => setConfirmDeleteOpen(true)} aria-label="Delete response" className="gap-1.5 text-(--error-text)">
                   <Trash2 size={15} aria-hidden="true" />
                   <span className="hidden lg:inline">Delete</span>

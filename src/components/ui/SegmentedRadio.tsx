@@ -18,12 +18,14 @@ export interface SegmentedRadioProps {
   ariaLabel: string;
   /** Hide the text labels (icons only) below this width: they stay in the accessible name. */
   iconOnlyBelow?: "lg" | "md";
+  /** Fill the width of the parent, the options sharing it equally (e.g. inside a popover). */
+  fullWidth?: boolean;
   className?: string;
 }
 
 // A real radio group (one stop in the Tab order, arrow keys move AND select), for choices that are exclusive and apply at once -
 // unlike Segmented, whose buttons are independent toggles. Same look: beginso-ui.css "Segmented control".
-export function SegmentedRadio({ options, value, onChange, ariaLabel, iconOnlyBelow, className }: SegmentedRadioProps) {
+export function SegmentedRadio({ options, value, onChange, ariaLabel, iconOnlyBelow, fullWidth, className }: SegmentedRadioProps) {
   const refs = React.useRef<Record<string, HTMLButtonElement | null>>({});
 
   const select = (index: number) => {
@@ -58,7 +60,7 @@ export function SegmentedRadio({ options, value, onChange, ariaLabel, iconOnlyBe
   const hideLabel = iconOnlyBelow === "lg" ? "max-lg:sr-only" : iconOnlyBelow === "md" ? "max-md:sr-only" : "";
 
   return (
-    <div role="radiogroup" aria-label={ariaLabel} className={bx("bg-segmented", className)}>
+    <div role="radiogroup" aria-label={ariaLabel} className={bx("bg-segmented", fullWidth && "w-full", className)}>
       {options.map((o, index) => {
         const checked = o.id === value;
         return (
@@ -74,7 +76,7 @@ export function SegmentedRadio({ options, value, onChange, ariaLabel, iconOnlyBe
             title={o.title}
             onClick={() => onChange(o.id)}
             onKeyDown={(e) => onKeyDown(e, index)}
-            className="inline-flex items-center gap-1.5 max-md:min-h-10 max-md:min-w-10 max-md:justify-center"
+            className={bx("inline-flex items-center gap-1.5 max-md:min-h-10 max-md:min-w-10 max-md:justify-center", fullWidth && "flex-1 justify-center")}
           >
             {o.icon}
             <span className={hideLabel}>{o.label}</span>

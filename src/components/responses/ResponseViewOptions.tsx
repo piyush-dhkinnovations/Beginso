@@ -76,8 +76,9 @@ export function ResponseViewOptions({ view, onChange, useForAll, onUseForAll, on
           className="absolute right-0 top-full z-30 mt-2 flex w-72 max-w-[calc(100vw-2rem)] flex-col gap-4 rounded-lg border border-(--border-default) bg-(--surface-card) p-4 shadow-(--shadow-lg)"
         >
           <div className="flex flex-col gap-1.5">
-            <span id={`${panelId}-density`} className="bg-body-sm font-medium text-(--text-primary)">Density</span>
+            <span className="bg-body-sm font-medium text-(--text-primary)">Density</span>
             <SegmentedRadio
+              fullWidth
               ariaLabel="Density"
               value={view.density}
               onChange={(density) => onChange({ density: density as ResponseViewSettings['density'] })}
