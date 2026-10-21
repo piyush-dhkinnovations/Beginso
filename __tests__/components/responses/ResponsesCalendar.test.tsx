@@ -62,7 +62,7 @@ describe('ResponsesCalendar', () => {
     });
     renderCalendar('Asia/Kolkata');
 
-    await waitFor(() => expect(screen.getByLabelText(/2026-09-16, 1 response/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole('gridcell', { name: /^2026-09-16, 1 response/ })).toBeInTheDocument());
     expect(screen.queryByLabelText(/2026-09-15, 1 response/)).not.toBeInTheDocument();
   });
 

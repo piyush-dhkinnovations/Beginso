@@ -132,7 +132,6 @@ export function CalendarGrid({
                 }}
                 role="gridcell"
                 tabIndex={isTabbable ? 0 : -1}
-                aria-label={`${key}, ${items.length} response${items.length === 1 ? '' : 's'}`}
                 aria-current={isToday ? 'date' : undefined}
                 className={bx(
                   'flex min-h-32 min-w-0 cursor-pointer flex-col gap-1 p-1.5 text-left outline-none transition-colors hover:bg-(--surface-hover) focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-(--border-focus)',
@@ -151,6 +150,8 @@ export function CalendarGrid({
                   else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpenDay(key, items); }
                 }}
               >
+                {/* The cell's name is its visible text (WCAG 2.5.3), led by the full date and count so a screen reader starts there. */}
+                <span className="sr-only">{`${key}, ${items.length} response${items.length === 1 ? '' : 's'}`}</span>
                 <span
                   className={bx(
                     'inline-flex h-6 min-w-6 items-center justify-center self-start rounded-full px-1.5 bg-body-sm',

@@ -93,7 +93,7 @@ test.describe('Responses calendar', () => {
     const today = page.locator('[role=gridcell][aria-current=date]');
     await expect(today).toHaveCount(1);
     // the day number is a filled circle
-    const circle = today.locator('span').first();
+    const circle = today.locator('span:not(.sr-only)').first();
     expect(await circle.evaluate((el) => getComputedStyle(el).borderRadius)).not.toBe('0px');
 
     // cells are rectangles that tile: same width, and 7 across
@@ -205,7 +205,7 @@ test.describe('Responses calendar', () => {
     await page.keyboard.press('PageDown');
     const next = new Date(Date.UTC(Y, M + 1, 1));
     await expect(page.getByRole('heading', { name: new RegExp(`${new Intl.DateTimeFormat('en-GB', { month: 'long', timeZone: 'UTC' }).format(next)} ${next.getUTCFullYear()}`) })).toBeVisible();
-    const focused = await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '');
+    const focused = await page.evaluate(() => document.activeElement?.querySelector('.sr-only')?.textContent ?? '');
     expect(focused).toMatch(new RegExp(`^${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}-11,`));
     await page.keyboard.press('PageUp');
     await expect(page.getByRole('heading', { name: new RegExp(`${monthWord} ${Y}`) })).toBeVisible();
