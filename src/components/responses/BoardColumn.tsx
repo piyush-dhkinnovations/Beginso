@@ -1,6 +1,7 @@
 'use client';
 
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { useDroppable } from '@dnd-kit/core';
 import { AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -8,7 +9,8 @@ import { StageBadge } from './StageBadge';
 import { BoardCard } from './BoardCard';
 import { responsesService } from '@/services/responses';
 import { responseKeys } from '@/lib/queryKeys';
-import type { ResponseFilters } from '@/types/response';
+import { columnDropId } from '@/lib/boardDnd';
+import type { IResponse, ResponseFilters } from '@/types/response';
 import type { StageRef } from '@/types/stage';
 
 const COLUMN_PAGE_LIMIT = 20;
@@ -26,6 +28,10 @@ export interface BoardColumnProps {
   canAct: boolean;
   onViewResponse: (id: string) => void;
   onChangeStage: (responseId: string, stageId: string) => void;
+  /** Cards just dragged AWAY from this column whose move is still being saved: hidden at once instead of waiting for the refetch. */
+  hiddenIds?: ReadonlySet<string>;
+  /** Cards just dragged INTO this column whose move is still being saved: shown at once, on top. */
+  incoming?: readonly IResponse[];
 }
 
 /**
@@ -34,7 +40,8 @@ export interface BoardColumnProps {
  * so a column with more than a page of responses gets a "Load more" instead of silently
  * truncating.
  */
-export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onViewResponse, onChangeStage }: BoardColumnProps) {
+export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onViewResponse, onChangeStage, hiddenIds, incoming = [] }: BoardColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: columnDropId(stage.id), disabled: !canAct });
   const queryKey = [...responseKeys.list(scope, formId, { ...filters, stageId: stage.id }), 'board'];
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
@@ -45,8 +52,11 @@ export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onV
     getNextPageParam: (lastPage) => (lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined),
   });
 
-  const responses = data?.pages.flatMap((p) => p.data) ?? [];
-  const total = data?.pages[0]?.total ?? 0;
+  const fetched = data?.pages.flatMap((p) => p.data) ?? [];
+  const leaving = fetched.filter((r) => hiddenIds?.has(r._id));
+  const arriving = incoming.filter((r) => !fetched.some((f) => f._id === r._id));
+  const responses = [...arriving, ...fetched.filter((r) => !hiddenIds?.has(r._id))];
+  const total = (data?.pages[0]?.total ?? 0) - leaving.length + arriving.length;
 
   return (
     <div className="board-column flex w-72 shrink-0 snap-start flex-col gap-2" role="listitem" aria-label={`${stage.name} column`}>
@@ -57,7 +67,11 @@ export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onV
         </span>
       </div>
 
-      <div className="flex min-h-16 flex-col gap-2" aria-busy={isLoading || undefined}>
+      <div
+        ref={setNodeRef}
+        className={`flex min-h-16 flex-1 flex-col gap-2 rounded-lg transition-shadow${isOver ? ' ring-2 ring-(--action-primary) ring-offset-2' : ''}`}
+        aria-busy={isLoading || undefined}
+      >
         {isLoading &&
           Array.from({ length: SKELETON_CARDS }).map((_, i) => (
             <Skeleton key={i} variant="block" height={92} className="rounded-lg" />

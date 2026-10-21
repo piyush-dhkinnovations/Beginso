@@ -3,7 +3,6 @@
 import { usePendingEdits } from '@/lib/pendingEdits';
 import { useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import { useBuilderStore } from '@/store/builderStore';
@@ -94,22 +93,8 @@ export default function BuilderPageShell() {
 
   const dnd = useBuilderDnd();
 
-  // Add-field sheet: append to the active page, expand the new card and scroll it into view
-  // (addField itself does not select the field it creates).
-  const handleAddFromSheet = (type: FieldType) => {
-    addField(type);
-    const state = useBuilderStore.getState();
-    const pageId = state.activePageId ?? state.pages[0]?.id;
-    const added = state.fields
-      .filter((f) => !f.deleted && f.pageId === pageId)
-      .sort((a, b) => a.order - b.order)
-      .pop();
-    if (!added) return;
-    setActiveFieldId(added.fieldId);
-    requestAnimationFrame(() =>
-      document.querySelector(`[data-field-id="${added.fieldId}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-    );
-  };
+  // Add-field sheet: append to the active page. The store opens the new card and FieldCard scrolls it into view.
+  const handleAddFromSheet = (type: FieldType) => addField(type);
 
   const toggleReorder = () => {
     setIsReordering((on) => !on);
@@ -156,17 +141,7 @@ export default function BuilderPageShell() {
             icon={<FormLogoButton mark={branding} title={formTitle} canEdit={formRole !== 'viewer' && formRole !== 'reviewer'} onSave={(mark) => setBranding({ logoUrl: mark.logoUrl ?? undefined, iconName: mark.iconName ?? undefined})} />}
           />
 
-          {activeTab === 'settings' ? (
-            // Settings is an ordinary page, not part of the canvas: it scrolls with the page in a form-width column.
-            <div className="flex flex-col gap-4">
-              <Button variant="ghost" size="small" className="self-start" onClick={() => setActiveTab('build')}>
-                <ArrowLeft size={16} className="mr-1.5" aria-hidden="true" />
-                Back to editor
-              </Button>
-              <SettingsPanel settings={settings} status={status} slug={slug} onUpdate={setSettings} />
-            </div>
-          ) : (
-            // Unframed: tabs, then the field rail and canvas flow on the page itself, which scrolls as a whole.
+          {/* Unframed: tabs, then the field rail and canvas flow on the page itself, which scrolls as a whole. */}
             <div className="flex flex-col gap-4">
               <BuilderTabs
                 activeTab={activeTab}
@@ -177,7 +152,6 @@ export default function BuilderPageShell() {
                 onRedo={redo}
                 showShare={canSeeShare(formRole)}
                 fieldCount={liveFieldCount}
-                hideSettings
               />
 
               <div className="flex items-start gap-6">
@@ -205,10 +179,14 @@ export default function BuilderPageShell() {
                   <div className="min-w-0 flex-1">
                     <ShareView formId={formId} embedded onOpenPublish={handlePublishClick} />
                   </div>
+                ) : activeTab === 'settings' ? (
+                  // Settings is an ordinary page in a form-width column: it scrolls with the page.
+                  <div className="min-w-0 flex-1">
+                    <SettingsPanel settings={settings} status={status} slug={slug} onUpdate={setSettings} />
+                  </div>
                 ) : null}
               </div>
             </div>
-          )}
         </div>
       )}
 

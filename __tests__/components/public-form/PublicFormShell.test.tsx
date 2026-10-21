@@ -7,7 +7,10 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 const push = vi.fn();
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace: vi.fn() }) }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace: vi.fn() }), useSearchParams: () => new URLSearchParams() }));
+// The sign-in gate embeds the real login form, which reaches for Firebase.
+vi.mock('@/lib/firebase', () => ({ auth: {} }));
+vi.mock('firebase/auth', () => ({ signOut: vi.fn(), GoogleAuthProvider: vi.fn(), signInWithPopup: vi.fn() }));
 
 const mockAuth = vi.fn();
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => mockAuth() }));
@@ -260,6 +263,13 @@ describe('PublicFormShell preview mode', () => {
 describe('PublicFormShell access modes', () => {
   const tracked = () => schema({ settings: { accessMode: 'tracked' } as PublicFormSchema['settings'] });
 
+  it('tracked: asks for the email first, before the questions', () => {
+    render(<PublicFormShell schema={tracked()} slug="s" />);
+    const email = screen.getByLabelText(/Your email/);
+    const name = screen.getByLabelText(/Name/);
+    expect(email.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('tracked: refuses an invalid email before sending anything', async () => {
     render(<PublicFormShell schema={tracked()} slug="s" />);
     await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
@@ -301,7 +311,12 @@ describe('PublicFormShell access modes', () => {
   it('login: a signed-out visitor sees the gate instead of the form', () => {
     render(<PublicFormShell schema={login()} slug="s" />);
     expect(screen.getByText('Sign in to respond')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/login?next=%2Ff%2Fs');
+    // signing in happens on the gate itself; only creating an account goes to another page
+    expect(screen.getByLabelText('Email Address')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sign in with Google' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Sign in' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Create account' })).toHaveAttribute('href', '/signup?next=%2Ff%2Fs');
     expect(screen.queryByLabelText(/Name/)).not.toBeInTheDocument();
   });
 
@@ -528,5 +543,44 @@ describe('PublicFormShell: field errors are shown, announced and focused (QA A5-
     await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/Phone is invalid/);
+  });
+
+  describe('two questions with the same label', () => {
+    const twoComments = () => schema({}, [text('c1', 'Comment', { order: 0 }), text('c2', 'Comment', { order: 1 })]);
+
+    it('puts the 422 on the question the server names by id, not on the first with that label', async () => {
+      svc.submitForm.mockResolvedValue({
+        ok: false,
+        status: 422,
+        message: 'Validation failed',
+        fieldErrors: [{ field: 'Comment', fieldId: 'c2', message: 'Field "Comment" cannot exceed 5 characters.' }],
+      });
+      render(<PublicFormShell schema={twoComments()} slug="s" />);
+      const [first, second] = screen.getAllByLabelText(/Comment/);
+      await userEvent.type(first, 'ok');
+      await userEvent.type(second, 'far too long');
+      await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+
+      expect(await screen.findByText('Field "Comment" cannot exceed 5 characters.')).toBeInTheDocument();
+      expect(second).toHaveAttribute('aria-invalid', 'true');
+      expect(first).not.toHaveAttribute('aria-invalid');
+    });
+
+    it('without an id (an older backend) it does not guess: nothing is marked and the message shows as the banner', async () => {
+      svc.submitForm.mockResolvedValue({
+        ok: false,
+        status: 422,
+        message: 'Validation failed',
+        fieldErrors: [{ field: 'Comment', message: 'Field "Comment" cannot exceed 5 characters.' }],
+      });
+      render(<PublicFormShell schema={twoComments()} slug="s" />);
+      const [first, second] = screen.getAllByLabelText(/Comment/);
+      await userEvent.type(first, 'ok');
+      await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+
+      expect(await screen.findByRole('alert')).toHaveTextContent(/Validation failed|cannot exceed 5 characters/);
+      expect(first).not.toHaveAttribute('aria-invalid');
+      expect(second).not.toHaveAttribute('aria-invalid');
+    });
   });
 });

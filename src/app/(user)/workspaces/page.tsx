@@ -3,21 +3,40 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Building2, Search } from 'lucide-react';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
 import { ROLE_LABELS } from '@/lib/roles';
-import { PageHeader, Button, Card, Badge, EmptyState } from '@/components/ui';
+import { PageHeader, Button, ButtonLink, Card, Badge, EmptyState } from '@/components/ui';
+import { Modal } from '@/components/ui/Modal';
+import { useToast } from '@/components/ui/Toast';
+import { LeaveWorkspaceModal } from '@/components/workspaces/LeaveWorkspaceModal';
 import { CardGridSkeleton } from '@/components/ui/PageSkeletons';
+import type { WorkspaceListItem } from '@/types/workspace';
 
 // Wireframe Screen 32: All Workspaces (requirements.md §7.5, C1.8) — lists every workspace
 // the caller belongs to, with role, and is where "Create workspace" (PersonalSidebar's bottom action)
 // lands. Displays eyebrow, title, description, filter bar (search + sort), and card grid with "Open" affordance.
 export default function WorkspacesPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<'name' | 'last-used'>('last-used');
+  const [leaving, setLeaving] = useState<{ slug: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState<WorkspaceListItem | null>(null);
+  const [typedName, setTypedName] = useState('');
+
+  const deleteMutation = useMutation({
+    mutationFn: (slug: string) => workspacesService.delete(slug),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: workspaceKeys.list() });
+      toast('Workspace deleted.', 'success');
+      setDeleting(null);
+    },
+    onError: () => toast('Could not delete workspace. Please try again.', 'error'),
+  });
 
   const { data: workspaces, isLoading, isError, refetch } = useQuery({
     queryKey: workspaceKeys.list(),
@@ -118,32 +137,92 @@ export default function WorkspacesPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredWorkspaces.map((workspace) => (
-                <Link key={workspace.id} href={`/w/${workspace.slug}`} className="block h-full no-underline">
-                  <Card className="flex flex-col justify-between gap-4 h-full transition-shadow hover:shadow-(--shadow-hover) border border-(--border-default) hover:border-(--border-strong)">
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <h3 className="bg-body font-semibold text-(--text-primary)">{workspace.name}</h3>
-                        <Badge>{ROLE_LABELS[workspace.role]}</Badge>
-                      </div>
-                      {typeof workspace.memberCount === 'number' && (
-                        <p className="bg-caption text-(--text-muted)">
-                          {workspace.memberCount} member{workspace.memberCount !== 1 ? 's' : ''}
-                        </p>
-                      )}
+                <Card key={workspace.id} className="flex flex-col justify-between gap-4 h-full transition-shadow hover:shadow-(--shadow-hover) border border-(--border-default) hover:border-(--border-strong)">
+                  <Link href={`/w/${workspace.slug}`} className="flex flex-col gap-2 no-underline">
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="bg-body font-semibold text-(--text-primary)">{workspace.name}</h3>
+                      <Badge>{ROLE_LABELS[workspace.role]}</Badge>
                     </div>
-                    <div className="flex justify-end pt-2 border-t border-(--border-default)">
-                      <span className="bg-btn bg-btn-secondary bg-btn-sm inline-flex items-center gap-1 bg-caption pointer-events-none">
-                        Open
-                      </span>
-                    </div>
-                  </Card>
-                </Link>
+                    {typeof workspace.memberCount === 'number' && (
+                      <p className="bg-caption text-(--text-muted)">
+                        {workspace.memberCount} member{workspace.memberCount !== 1 ? 's' : ''}
+                      </p>
+                    )}
+                  </Link>
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-(--border-default)">
+                    {workspace.isOwner ? (
+                      <Button variant="ghost" size="small" aria-label={`Delete ${workspace.name}`} onClick={() => { setTypedName(''); setDeleting(workspace); }}>
+                        Delete
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="small" aria-label={`Leave ${workspace.name}`} onClick={() => setLeaving({ slug: workspace.slug, name: workspace.name })}>
+                        Leave
+                      </Button>
+                    )}
+                    <ButtonLink href={`/w/${workspace.slug}`} variant="secondary" size="small">
+                      Open
+                    </ButtonLink>
+                  </div>
+                </Card>
               ))}
             </div>
           )}
         </div>
       )}
 
+      <LeaveWorkspaceModal workspace={leaving} onClose={() => setLeaving(null)} />
+
+      {/* Per-workspace delete — only for owners */}
+      <Modal
+        isOpen={!!deleting}
+        onClose={() => setDeleting(null)}
+        title={deleting ? `Delete "${deleting.name}"?` : 'Delete workspace?'}
+      >
+        <div className="flex flex-col gap-4 pt-2">
+          {(deleting?.memberCount ?? 0) > 1 ? (
+            // Has other members — owner must transfer first
+            <div role="alert" className="rounded-md border border-(--error-border) bg-(--error-surface) p-3 bg-body-sm text-(--error-text)">
+              <p className="font-semibold">You are the only owner.</p>
+              <p className="mt-1">Transfer ownership to another member before deleting, or remove all other members first.</p>
+            </div>
+          ) : (
+            <>
+              <div role="alert" className="rounded-md border border-(--error-border) bg-(--error-surface) p-3 bg-body-sm text-(--error-text)">
+                <p className="font-semibold">This cannot be undone.</p>
+                <p className="mt-1">All forms, responses and files in this workspace will be permanently deleted.</p>
+              </div>
+              <div>
+                <label htmlFor="delete-ws-list-name" className="block bg-body-sm text-(--text-secondary) mb-1.5">
+                  Type <span className="font-semibold text-(--text-primary)">{deleting?.name}</span> to confirm
+                </label>
+                <input
+                  id="delete-ws-list-name"
+                  type="text"
+                  value={typedName}
+                  onChange={(e) => setTypedName(e.target.value)}
+                  placeholder={deleting?.name}
+                  disabled={deleteMutation.isPending}
+                  autoComplete="off"
+                  className="w-full bg-(--bg-page) text-(--text-primary) border border-(--border-strong) rounded-md px-3 py-2 bg-body focus:outline-none focus:border-(--border-focus) focus:ring-2 focus:ring-(--border-default) transition-colors"
+                />
+              </div>
+            </>
+          )}
+          <div className="flex items-center justify-end gap-3 pt-2 border-t border-(--border-subtle)">
+            <Button variant="secondary" onClick={() => setDeleting(null)} disabled={deleteMutation.isPending}>Cancel</Button>
+            {(deleting?.memberCount ?? 0) <= 1 && (
+              <Button
+                variant="destructive"
+                isLoading={deleteMutation.isPending}
+                disabled={typedName !== deleting?.name}
+                onClick={() => deleting && void deleteMutation.mutateAsync(deleting.slug).then(() => setDeleting(null))}
+              >
+                Delete workspace permanently
+              </Button>
+            )}
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -7,7 +7,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const mockUploadFile = vi.fn();
@@ -36,12 +36,14 @@ function renderUploader(props: Partial<React.ComponentProps<typeof AvatarUploade
   );
 }
 
+let confirmSpy: ReturnType<typeof vi.spyOn>;
+
 describe('AvatarUploader', () => {
   beforeEach(() => {
     mockUploadFile.mockReset();
     mockUpdateProfile.mockReset();
     mockToast.mockReset();
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    confirmSpy = vi.spyOn(window, 'confirm');
   });
 
   it('shows fallback initials when there is no avatarUrl', () => {
@@ -111,16 +113,28 @@ describe('AvatarUploader', () => {
     renderUploader({ avatarUrl: 'https://example.com/avatar.jpg' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    // An in-app dialog, never the browser's native confirm.
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(mockUpdateProfile).not.toHaveBeenCalled();
+    const dialog = await screen.findByRole('dialog', { name: 'Remove your profile photo?' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Remove photo' }));
 
     await waitFor(() => expect(mockUpdateProfile).toHaveBeenCalledWith({ avatarUrl: null }));
   });
 
-  it('does not remove the photo when the confirm is dismissed', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+  it('does not remove the photo when the dialog is dismissed with Keep photo', async () => {
     renderUploader({ avatarUrl: 'https://example.com/avatar.jpg' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Remove photo' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Remove your profile photo?' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Keep photo' }));
 
     expect(mockUpdateProfile).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('shows a localhost avatar saved during development by its path, so the live site does not block it', () => {
+    renderUploader({ avatarUrl: 'http://localhost:3000/avatars/01.svg' });
+    expect(document.querySelector('img')).toHaveAttribute('src', '/avatars/01.svg');
   });
 });

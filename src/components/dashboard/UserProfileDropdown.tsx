@@ -1,5 +1,6 @@
 'use client';
 
+import { localAvatarSrc } from '@/lib/avatarUrl';
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
@@ -97,7 +98,7 @@ export function UserProfileDropdown({ variant = 'avatar', collapsed = false }: U
           ) : profile?.avatarUrl && failedAvatar !== profile.avatarUrl ? (
             // referrerPolicy: Google's photo host rejects hot-linked requests that carry a Referer.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={profile.avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => setFailedAvatar(profile.avatarUrl ?? null)} className="h-full w-full object-cover" />
+            <img src={localAvatarSrc(profile.avatarUrl)} alt="" referrerPolicy="no-referrer" onError={() => setFailedAvatar(profile.avatarUrl ?? null)} className="h-full w-full object-cover" />
           ) : (
             getInitials(user?.name)
           )}

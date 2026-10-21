@@ -161,7 +161,7 @@ export function CriteriaManager({ scope, onDirtyChange }: CriteriaManagerProps) 
           />
         ) : (
           <span className="flex items-center gap-2">
-            <span className="bg-body-sm text-(--text-primary)">{criterion.label || 'Unnamed criterion'}</span>
+            <span className="bg-body-sm text-(--text-primary)">{criterion.label || (criterion.isDefault ? 'Overall score' : 'Unnamed criterion')}</span>
             {criterion.isDefault && <span className="bg-caption text-(--text-muted)">Default</span>}
           </span>
         ),

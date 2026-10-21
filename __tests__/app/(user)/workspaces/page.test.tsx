@@ -18,6 +18,9 @@ vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
 
+const mockLeave = vi.fn();
+vi.mock('@/services/team', () => ({ teamService: { leave: (...a: unknown[]) => mockLeave(...a) } }));
+
 const mockList = vi.fn();
 const mockCreate = vi.fn();
 vi.mock('@/services/workspaces', () => ({
@@ -69,6 +72,19 @@ describe('WorkspacesPage', () => {
 
     const link = await screen.findByRole('link', { name: /Acme Inc/ });
     expect(link).toHaveAttribute('href', '/w/acme');
+  });
+
+  it('offers Leave to an Editor (not only people who can manage the team) and leaves after confirmation (QA A9-007)', async () => {
+    mockLeave.mockReset();
+    mockLeave.mockResolvedValue(undefined);
+    mockList.mockResolvedValue([{ id: 'w1', name: 'Acme Inc', slug: 'acme', role: 'member' }]);
+    renderPage();
+
+    expect(await screen.findByText('Editor')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Leave Acme Inc' }));
+    expect(mockLeave).not.toHaveBeenCalled();
+    await userEvent.click(await screen.findByRole('button', { name: 'Leave workspace' }));
+    await waitFor(() => expect(mockLeave).toHaveBeenCalledWith('acme'));
   });
 
   it('shows an error state with retry on failure', async () => {

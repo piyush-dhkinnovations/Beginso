@@ -24,6 +24,17 @@ describe('FieldInlineEditor: common controls', () => {
     expect(onUpdate).toHaveBeenCalledWith(f.fieldId, { label: 'Full name' });
   });
 
+  it('the label shows how many of its 100 characters are used, and stops at 100', async () => {
+    const f = makeField('short_text', { label: 'Name' });
+    setup(f);
+    expect(screen.getByText('4/100')).toBeInTheDocument();
+    const input = screen.getByPlaceholderText('Field label');
+    await userEvent.clear(input);
+    await userEvent.type(input, 'x'.repeat(120));
+    expect((input as HTMLInputElement).value).toHaveLength(100);
+    expect(screen.getByText('100/100')).toBeInTheDocument();
+  });
+
   it('commits shortly after typing stops, without needing a blur (so the edit is not lost on reload)', async () => {
     const f = makeField('short_text', { label: 'Name' });
     const { onUpdate } = setup(f);
@@ -177,9 +188,26 @@ describe('FieldInlineEditor: text-like fields', () => {
     expect(screen.getByRole('radio', { name: /Rich preview/ })).toBeChecked();
     await userEvent.click(screen.getByRole('radio', { name: /Compact link/ }));
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlPreviewStyle: 'compact' });
-    await userEvent.click(screen.getByRole('radio', { name: 'Inline with the answer' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'No frame' }));
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlDisplay: 'inline' });
-    expect(screen.getByText('Links: rich preview, displayed as card.')).toBeInTheDocument();
+    expect(screen.getByText('Links: rich preview, inline with the answer, original ratio, medium, card frame.')).toBeInTheDocument();
+  });
+
+  it('url fields choose preview position, aspect ratio and size like images do', async () => {
+    const f = makeField('url');
+    const { onUpdate } = setup(f);
+    await userEvent.click(screen.getByRole('radio', { name: 'Top of response (recommended)' }));
+    expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlPreviewPosition: 'top' });
+    await userEvent.click(screen.getByRole('radio', { name: '16:9 landscape' }));
+    expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlAspectRatio: '16:9' });
+    await userEvent.click(screen.getByRole('radio', { name: 'Large preview' }));
+    expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlPreviewSize: 'large' });
+  });
+
+  it('ratio and size only apply to a rich preview, so other styles do not show them', () => {
+    setup({ ...makeField('url'), urlPreviewStyle: 'compact' } as FormField);
+    expect(screen.queryByRole('radio', { name: '16:9 landscape' })).not.toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'Top of response (recommended)' })).toBeInTheDocument();
   });
 });
 

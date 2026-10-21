@@ -57,6 +57,8 @@ export function buildFormColumns(s: FormsPageState, context: FormsContext): Tabl
       key: 'form',
       header: 'Form Title',
       sortKey: 'title',
+      // Takes whatever width the other columns leave and truncates the title (max-w-0 lets the cell shrink below its text).
+      className: 'w-full max-w-0',
       render: (form) => {
         const owner = ownerName(form);
         return (
@@ -94,6 +96,8 @@ export function buildFormColumns(s: FormsPageState, context: FormsContext): Tabl
     {
       key: 'owner',
       header: 'Owner',
+      // Just an avatar: hidden below 1024px so the table fits beside the sidebar rail instead of clipping its last column (QA A12-003).
+      className: 'max-lg:hidden',
       render: (form) => <OwnerMonogram name={ownerName(form)} brandColor={form.branding?.primaryColor} title={form.title} />,
     },
     {

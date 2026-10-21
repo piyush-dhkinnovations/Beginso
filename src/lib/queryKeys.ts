@@ -78,6 +78,12 @@ export const responseActivityKeys = {
   list: (scope: string, responseId: string) => ['responses', scope, 'detail', responseId, 'activity'] as const,
 };
 
+// Sprint 15: how a form's submitted response is laid out for the caller. Deliberately NOT under 'responses', so changing the
+// layout never refetches the response lists.
+export const responseViewKeys = {
+  form: (formId: string) => ['response-view', formId] as const,
+};
+
 export const dashboardKeys = {
   all: ['dashboard'] as const,
   // Personal Home has no scope in its key (unchanged); a workspace Home adds its slug.

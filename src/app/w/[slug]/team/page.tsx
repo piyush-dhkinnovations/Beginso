@@ -17,9 +17,9 @@ import { canManageMembers, canViewAudit } from '@/lib/roles';
 import { MemberTable } from '@/components/team/MemberTable';
 import { PendingInvitesTable } from '@/components/team/PendingInvitesTable';
 import { InviteMembersModal } from '@/components/team/InviteMembersModal';
+import { LeaveWorkspaceModal } from '@/components/workspaces/LeaveWorkspaceModal';
 import { Lock } from 'lucide-react';
 import { PageHeader, Card, Alert, Button, EmptyState } from '@/components/ui';
-import { Modal } from '@/components/ui/Modal';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useToast } from '@/components/ui/Toast';
 import type { MemberListItem, PendingInvitation } from '@/types/team';
@@ -103,19 +103,6 @@ export default function TeamPage() {
       toast('Ownership transferred. You are now an admin.', 'success');
     },
     onError: (error) => toast(getFriendlyErrorMessage(error), 'error'),
-  });
-
-  const leaveMutation = useMutation({
-    mutationFn: () => teamService.leave(slug),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: workspaceKeys.list() });
-      toast('You left the workspace.', 'success');
-      router.push('/workspaces');
-    },
-    onError: (error) => {
-      setIsLeaveOpen(false);
-      toast(getFriendlyErrorMessage(error), 'error');
-    },
   });
 
   const resendMutation = useMutation({
@@ -232,24 +219,11 @@ export default function TeamPage() {
         </Link>
       )}
 
-      <Modal
-        isOpen={isLeaveOpen}
-        onClose={() => setIsLeaveOpen(false)}
-        title="Leave this workspace?"
-        description="You will lose access to its forms and responses immediately. An owner or admin can invite you back."
-      >
-        <div className="flex items-center justify-end gap-3 pt-2 border-t border-(--border-default)">
-          <Button type="button" variant="secondary" onClick={() => setIsLeaveOpen(false)}>
-            Cancel
-          </Button>
-          <Button type="button" variant="destructive" isLoading={leaveMutation.isPending} onClick={() => leaveMutation.mutate()}>
-            Leave workspace
-          </Button>
-        </div>
-      </Modal>
+      <LeaveWorkspaceModal workspace={isLeaveOpen && currentWorkspace ? { slug, name: currentWorkspace.name } : null} onClose={() => setIsLeaveOpen(false)} />
 
       <InviteMembersModal
         workspaceId={slug}
+        existingEmails={(members ?? []).map((m) => m.email)}
         isOpen={isInviteModalOpen}
         onClose={() => setIsInviteModalOpen(false)}
       />

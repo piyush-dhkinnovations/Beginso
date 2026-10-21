@@ -9,12 +9,14 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ComponentProps } from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ResponseDrawer } from '@/components/responses/ResponseDrawer';
-import { responseKeys } from '@/lib/queryKeys';
+import { responseKeys, tagKeys } from '@/lib/queryKeys';
 import { reportsService } from '@/services/reports';
+import { tagsService } from '@/services/tags';
+import { workspacesService } from '@/services/workspaces';
 import type { ResponseDetail } from '@/types/response';
 import type { StageRef } from '@/types/stage';
 
@@ -24,6 +26,10 @@ vi.mock('@/lib/axios', () => {
   const ok = () => Promise.resolve({ data: [] });
   return { default: { get: ok, post: ok, put: ok, patch: ok, delete: ok } };
 });
+
+// The full-screen page shows the overview beside the card from 1024px up and as tabs below it; jsdom has no layout.
+let mockDesktop = false;
+vi.mock('@/hooks/useDesktop', () => ({ useDesktop: () => mockDesktop }));
 
 const mockToast = vi.fn();
 vi.mock('@/components/ui/Toast', () => ({
@@ -298,6 +304,32 @@ describe('ResponseDrawer', () => {
     expect(screen.getByRole('option', { name: 'Unknown stage' })).toBeInTheDocument();
   });
 
+  // QA D8-009: a tag created from the drawer had no chip until the drawer was reopened (the tag library is cached for minutes), and the
+  // picker stayed open. The new tag goes into the cached library at once and is added to the response.
+  it('creating a tag puts it in the cached tag library, adds it to the response, and closes the picker', async () => {
+    mockGetResponseById.mockResolvedValue(detail);
+    mockUpdate.mockResolvedValue({ ...detail, tags: [{ id: 't-new', name: 'Brand new', colour: 'neutral' }] });
+    vi.spyOn(workspacesService, 'list').mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role: 'owner' }] as never);
+    // The library starts empty and, once the tag exists on the server, the refetch returns it.
+    vi.spyOn(tagsService, 'list').mockResolvedValueOnce([]).mockResolvedValue([{ id: 't-new', name: 'Brand new', colour: 'neutral' }]);
+    const create = vi.spyOn(tagsService, 'create').mockResolvedValue({ id: 't-new', name: 'Brand new', colour: 'neutral' });
+    const user = userEvent.setup();
+    const { queryClient } = renderDrawer('resp-1', vi.fn(), { scope: 'acme' });
+    await screen.findByText('Submitted response');
+
+    await user.click(await screen.findByRole('button', { name: /Add tag/ }));
+    await user.type(screen.getByLabelText('Search tags'), 'Brand new');
+    await user.click(await screen.findByRole('button', { name: /Create/ }));
+
+    await waitFor(() => expect(create).toHaveBeenCalledWith('acme', { name: 'Brand new', colour: 'neutral' }));
+    await waitFor(() => expect(mockUpdate).toHaveBeenCalledWith('resp-1', { tagIds: ['t-new'] }, 'acme'));
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(await screen.findByLabelText('Remove tag Brand new')).toBeInTheDocument(); // the chip is there without reopening
+    await waitFor(() => expect(queryClient.getQueryData<{ id: string }[]>(tagKeys.list('acme'))?.map((t) => t.id)).toContain('t-new'));
+    expect(queryClient.getQueryData<{ id: string }[] | undefined>(tagKeys.list('acme'))?.map((t) => t.id) ?? ['(not cached)']).toContain('t-new');
+    create.mockRestore();
+  });
+
   // QA D5-002: the single-response download went out under the personal scope too, so a workspace response answered "Form not found".
   it('downloads a workspace response under that workspace scope', async () => {
     mockGetResponseById.mockResolvedValue(detail);
@@ -306,8 +338,92 @@ describe('ResponseDrawer', () => {
     renderDrawer('resp-1', vi.fn(), { scope: 'acme' });
     await screen.findByText('Submitted response');
     await user.click(screen.getByRole('button', { name: 'Download response' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Download as CSV' }));
     expect(createReport).toHaveBeenCalledWith(expect.objectContaining({ format: 'csv', ids: ['resp-1'] }), 'acme');
     createReport.mockRestore();
+  });
+
+  describe('download format', () => {
+    const open = async (scope = 'acme') => {
+      mockGetResponseById.mockResolvedValue(detail);
+      const user = userEvent.setup();
+      renderDrawer('resp-1', vi.fn(), { scope });
+      await screen.findByText('Submitted response');
+      return user;
+    };
+
+    it('asks which format before starting anything: CSV or PDF', async () => {
+      const createReport = vi.spyOn(reportsService, 'createReport').mockResolvedValue({} as never);
+      const user = await open();
+      const trigger = screen.getByRole('button', { name: 'Download response' });
+      expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
+      await user.click(trigger);
+      expect(screen.getAllByRole('menuitem').map((i) => i.textContent)).toEqual(['Download as CSV', 'Download as PDF']);
+      expect(createReport).not.toHaveBeenCalled(); // opening the menu is not a download
+      createReport.mockRestore();
+    });
+
+    it('opens above the drawer (the drawer sits at layer 80-85), not underneath it', async () => {
+      const user = await open();
+      await user.click(screen.getByRole('button', { name: 'Download response' }));
+      expect(screen.getByRole('menu').className).toMatch(/\bz-88\b/);
+    });
+
+    it('PDF requests a PDF of this one response, in the right scope, and says it is being prepared', async () => {
+      const createReport = vi.spyOn(reportsService, 'createReport').mockResolvedValue({} as never);
+      const user = await open('acme');
+      await user.click(screen.getByRole('button', { name: 'Download response' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Download as PDF' }));
+      expect(createReport).toHaveBeenCalledTimes(1);
+      expect(createReport).toHaveBeenCalledWith(expect.objectContaining({ format: 'pdf', ids: ['resp-1'] }), 'acme');
+      await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Preparing your download. It will appear on the Exports page when it is ready.', 'success'));
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument(); // the menu closes after choosing
+      createReport.mockRestore();
+    });
+
+    it('CSV still requests a CSV', async () => {
+      const createReport = vi.spyOn(reportsService, 'createReport').mockResolvedValue({} as never);
+      const user = await open('personal');
+      await user.click(screen.getByRole('button', { name: 'Download response' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Download as CSV' }));
+      expect(createReport).toHaveBeenCalledWith(expect.objectContaining({ format: 'csv', ids: ['resp-1'] }), 'personal');
+      createReport.mockRestore();
+    });
+
+    it('says so when it could not start, whichever format was chosen', async () => {
+      const createReport = vi.spyOn(reportsService, 'createReport').mockRejectedValue(new Error('500'));
+      const user = await open();
+      await user.click(screen.getByRole('button', { name: 'Download response' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Download as PDF' }));
+      await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Failed to start the download. Please try again.', 'error'));
+      createReport.mockRestore();
+    });
+
+    it('Escape closes the menu without closing the drawer or downloading', async () => {
+      const createReport = vi.spyOn(reportsService, 'createReport').mockResolvedValue({} as never);
+      mockGetResponseById.mockResolvedValue(detail);
+      const user = userEvent.setup();
+      const { onClose } = renderDrawer('resp-1');
+      await screen.findByText('Submitted response');
+      await user.click(screen.getByRole('button', { name: 'Download response' }));
+      expect(screen.getByRole('menu')).toBeInTheDocument();
+      await user.keyboard('{Escape}');
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+      expect(onClose).not.toHaveBeenCalled();
+      expect(createReport).not.toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: 'Download response' })).toHaveFocus();
+      createReport.mockRestore();
+    });
+
+    it('works from the keyboard: Enter opens it, arrows move, Enter chooses', async () => {
+      const createReport = vi.spyOn(reportsService, 'createReport').mockResolvedValue({} as never);
+      const user = await open();
+      screen.getByRole('button', { name: 'Download response' }).focus();
+      await user.keyboard('{Enter}');
+      await user.keyboard('{ArrowDown}{Enter}');
+      expect(createReport).toHaveBeenCalledWith(expect.objectContaining({ format: 'pdf' }), 'acme');
+      createReport.mockRestore();
+    });
   });
 
   // QA A6-011: the parent re-creates onClose on every render. The focus effect depended on it, so each parent render
@@ -578,7 +694,196 @@ describe('ResponseDrawer header on small screens', () => {
     expect(header.className).toMatch(/\bflex-wrap\b/);
     const nameRow = screen.getByRole('heading', { level: 2 }).closest('div.min-w-0.items-center, div.flex.min-w-0') as HTMLElement;
     expect(nameRow.className).toMatch(/max-sm:basis-full/);
-    const actions = screen.getByRole('button', { name: 'Download response' }).parentElement as HTMLElement;
+    const actions = screen.getByRole('button', { name: 'Download response' }).closest('div.shrink-0') as HTMLElement;
     expect(actions.className).toMatch(/max-sm:ml-auto/);
+  });
+});
+
+// Sprint 15: the drawer and the full-screen page share one "Submitted response" card with the layout switcher; the page
+// puts the overview beside it from 1024px up and moves the panels into tabs below.
+describe('ResponseDrawer layouts, full-screen page and keyboard', () => {
+  beforeEach(() => {
+    mockDesktop = false;
+    mockGetFormById.mockReset().mockResolvedValue(FORM_WITH_NAME_FIELDS);
+    mockGetResponseById.mockReset().mockResolvedValue(detail);
+    mockListGrants.mockReset().mockResolvedValue([]);
+  });
+
+  it('the drawer has the same card and the same switcher as the page', async () => {
+    renderDrawer('resp-1');
+    await screen.findByText('Submitted response');
+    expect(screen.getByRole('radiogroup', { name: 'Layout' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View options' })).toBeInTheDocument();
+    expect(screen.getByRole('searchbox', { name: 'Search in response' })).toBeInTheDocument();
+  });
+
+  it('search, layout and options live in a toolbar under the header, not inside the answers card', async () => {
+    renderDrawer('resp-1');
+    await screen.findByText('Submitted response');
+    const toolbar = screen.getByRole('toolbar', { name: 'Response view' });
+    const header = screen.getByRole('heading', { level: 2 }).closest('header') as HTMLElement;
+    expect(header.compareDocumentPosition(toolbar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy(); // under the header
+    expect(within(toolbar).getByRole('searchbox', { name: 'Search in response' })).toBeInTheDocument();
+    expect(within(toolbar).getByRole('radiogroup', { name: 'Layout' })).toBeInTheDocument();
+    expect(within(toolbar).getByRole('button', { name: 'View options' })).toBeInTheDocument();
+    const card = screen.getByRole('region', { name: 'Submitted response' });
+    expect(within(card).queryByRole('radiogroup')).not.toBeInTheDocument();
+    expect(within(card).queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(toolbar.contains(card)).toBe(false);
+  });
+
+  it('the options are behind a three-dot button that opens a popover', async () => {
+    const user = userEvent.setup();
+    renderDrawer('resp-1');
+    await screen.findByText('Submitted response');
+    const more = screen.getByRole('button', { name: 'View options' });
+    expect(more).toHaveTextContent(''); // an icon, not a word
+    expect(more).toHaveAttribute('aria-haspopup', 'true');
+    await user.click(more);
+    expect(screen.getByRole('switch', { name: 'Show empty answers' })).toBeInTheDocument();
+  });
+
+  it('the drawer keeps the overview in the same view, no tabs', async () => {
+    renderDrawer('resp-1', vi.fn(), { scope: 'acme' });
+    await screen.findByText('Submitted response');
+    expect(screen.getByText('Response overview')).toBeInTheDocument();
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+  });
+
+  describe('full-screen page', () => {
+    it('from 1024px up: the same two columns as the drawer - card and overview side by side, no tabs, no capped width', async () => {
+      mockDesktop = true;
+      renderDrawer('resp-1', vi.fn(), { displayMode: 'page', scope: 'acme' });
+      await screen.findByText('Submitted response');
+      expect(screen.getByText('Response overview')).toBeInTheDocument();
+      expect(await screen.findByText('Internal notes')).toBeInTheDocument();
+      expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+      const grid = screen.getByRole('region', { name: 'Submitted response' }).parentElement as HTMLElement;
+      expect(grid.className).toContain('grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)]'); // the card takes the width
+      expect(grid.className).not.toMatch(/max-w-/);
+      expect(grid.closest('[role="main"]')!.className).not.toMatch(/\b(border|bg-\(--surface-card\)|shadow)/); // not a box around the page
+    });
+
+    it('below 1024px: the panels move into tabs under the header', async () => {
+      renderDrawer('resp-1', vi.fn(), { displayMode: 'page', scope: 'acme' });
+      await screen.findByText('Submitted response');
+      const tabs = screen.getByRole('tablist', { name: 'Response sections' });
+      expect(within(tabs).getAllByRole('tab').map((t) => t.textContent)).toEqual(['Response', 'Details', 'Notes', 'Activity']);
+      expect(screen.getByRole('tab', { name: 'Response' })).toHaveAttribute('aria-selected', 'true');
+      expect(screen.queryByText('Response overview')).not.toBeInTheDocument();
+    });
+
+    it('below 1024px the toolbar belongs to the Response tab only', async () => {
+      const user = userEvent.setup();
+      renderDrawer('resp-1', vi.fn(), { displayMode: 'page', scope: 'acme' });
+      await screen.findByText('Submitted response');
+      expect(screen.getByRole('toolbar', { name: 'Response view' })).toBeInTheDocument();
+      await user.click(screen.getByRole('tab', { name: 'Details' }));
+      expect(screen.queryByRole('toolbar', { name: 'Response view' })).not.toBeInTheDocument();
+      await user.click(screen.getByRole('tab', { name: 'Response' }));
+      expect(screen.getByRole('toolbar', { name: 'Response view' })).toBeInTheDocument();
+    });
+
+    it('from 1024px up the toolbar sticks to the top of the page while the answers scroll', async () => {
+      mockDesktop = true;
+      renderDrawer('resp-1', vi.fn(), { displayMode: 'page', scope: 'acme' });
+      await screen.findByText('Submitted response');
+      expect(screen.getByRole('toolbar', { name: 'Response view' }).className).toMatch(/\bsticky\b/);
+    });
+
+    it('each tab shows its own panel', async () => {
+      const user = userEvent.setup();
+      renderDrawer('resp-1', vi.fn(), { displayMode: 'page', scope: 'acme' });
+      await screen.findByText('Submitted response');
+
+      await user.click(screen.getByRole('tab', { name: 'Details' }));
+      expect(screen.getByText('Response overview')).toBeInTheDocument();
+      expect(screen.getByText('Submission details')).toBeInTheDocument();
+      expect(screen.queryByText('Submitted response')).not.toBeInTheDocument();
+      expect(screen.queryByText('Internal notes')).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole('tab', { name: 'Notes' }));
+      expect(await screen.findByText('Internal notes')).toBeInTheDocument();
+      expect(screen.queryByText('Response overview')).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole('tab', { name: 'Activity' }));
+      expect(screen.getByText('Activity', { selector: 'span' })).toBeInTheDocument();
+      expect(screen.queryByText('Internal notes')).not.toBeInTheDocument();
+
+      await user.click(screen.getByRole('tab', { name: 'Response' }));
+      expect(screen.getByText('Submitted response')).toBeInTheDocument();
+    });
+
+    it('a personal form shared with nobody has no Notes or Activity tab', async () => {
+      renderDrawer('resp-1', vi.fn(), { displayMode: 'page' });
+      await screen.findByText('Submitted response');
+      await waitFor(() => expect(mockListGrants).toHaveBeenCalled());
+      await waitFor(() => expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Response', 'Details']));
+    });
+
+    it('keeps the header: previous / next, download, delete and the way out of full screen', async () => {
+      renderDrawer('resp-1', vi.fn(), {
+        displayMode: 'page',
+        scope: 'acme',
+        position: 3,
+        totalResponses: 1170,
+        hasPrevious: true,
+        hasNext: true,
+        collapseHref: '/w/acme/inbox?responseId=resp-1',
+      });
+      await screen.findByText('Submitted response');
+      expect(screen.getByText('3 of 1170')).toBeInTheDocument();
+      for (const name of ['Previous response', 'Next response', 'Download response', 'Delete response']) {
+        expect(screen.getByRole('button', { name })).toBeInTheDocument();
+      }
+      expect(screen.getByRole('link', { name: 'Return to response drawer' })).toBeInTheDocument();
+    });
+  });
+
+  describe('j and k move between responses', () => {
+    const nav = (extra: Partial<ComponentProps<typeof ResponseDrawer>> = {}) => {
+      const onNext = vi.fn();
+      const onPrevious = vi.fn();
+      renderDrawer('resp-1', vi.fn(), { position: 2, totalResponses: 5, hasPrevious: true, hasNext: true, onNext, onPrevious, ...extra });
+      return { onNext, onPrevious };
+    };
+
+    it('j goes next and k goes previous, and the buttons say so', async () => {
+      const { onNext, onPrevious } = nav();
+      await screen.findByText('Submitted response');
+      await userEvent.keyboard('j');
+      expect(onNext).toHaveBeenCalledOnce();
+      await userEvent.keyboard('k');
+      expect(onPrevious).toHaveBeenCalledOnce();
+      expect(screen.getByRole('button', { name: 'Next response' })).toHaveAttribute('title', 'Next response (j)');
+      expect(screen.getByRole('button', { name: 'Previous response' })).toHaveAttribute('title', 'Previous response (k)');
+    });
+
+    it('does nothing while typing in a field', async () => {
+      const { onNext, onPrevious } = nav();
+      await screen.findByText('Submitted response');
+      await userEvent.click(screen.getByRole('searchbox', { name: 'Search in response' }));
+      await userEvent.keyboard('jk');
+      expect(onNext).not.toHaveBeenCalled();
+      expect(onPrevious).not.toHaveBeenCalled();
+      expect(screen.getByRole('searchbox', { name: 'Search in response' })).toHaveValue('jk');
+    });
+
+    it('does nothing with a modifier key, or past the first and last response', async () => {
+      const { onNext } = nav({ hasNext: false, hasPrevious: false });
+      await screen.findByText('Submitted response');
+      await userEvent.keyboard('j');
+      await userEvent.keyboard('{Control>}j{/Control}');
+      expect(onNext).not.toHaveBeenCalled();
+    });
+
+    it('does nothing while a dialog is open on top (the delete confirmation)', async () => {
+      const { onNext } = nav();
+      await screen.findByText('Submitted response');
+      await userEvent.click(screen.getByRole('button', { name: 'Delete response' }));
+      await screen.findByText('Delete this response?');
+      await userEvent.keyboard('j');
+      expect(onNext).not.toHaveBeenCalled();
+    });
   });
 });

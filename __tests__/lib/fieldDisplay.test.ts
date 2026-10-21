@@ -5,6 +5,7 @@ import {
   urlSettings,
   safeHttpUrl,
   domainOf,
+  signInService,
   currencyOf,
   currencySymbol,
   formatCurrency,
@@ -61,8 +62,10 @@ describe('validateImage', () => {
 
 describe('url helpers', () => {
   it('urlSettings defaults', () => {
-    expect(urlSettings()).toEqual({ style: 'rich', display: 'card' });
-    expect(urlSettings(field({ type: 'url', urlPreviewStyle: 'simple', urlDisplay: 'inline' }))).toEqual({ style: 'simple', display: 'inline' });
+    const dflt = { previewPosition: 'inline', aspectRatio: 'original', previewSize: 'medium' };
+    expect(urlSettings()).toEqual({ style: 'rich', display: 'card', ...dflt });
+    expect(urlSettings(field({ type: 'url', urlPreviewStyle: 'simple', urlDisplay: 'inline' }))).toEqual({ style: 'simple', display: 'inline', ...dflt });
+    expect(urlSettings(field({ type: 'url', urlPreviewPosition: 'top', urlAspectRatio: '16:9', urlPreviewSize: 'large' }))).toMatchObject({ previewPosition: 'top', aspectRatio: '16:9', previewSize: 'large' });
   });
 
   it('safeHttpUrl only allows http(s)', () => {
@@ -79,6 +82,23 @@ describe('url helpers', () => {
     expect(domainOf(new URL('https://www.example.com/x'))).toBe('example.com');
     expect(domainOf(new URL('https://app.example.com'))).toBe('app.example.com');
   });
+});
+
+describe('signInService', () => {
+  it.each([
+    ['https://drive.google.com/file/d/abc/view', 'Google Drive'],
+    ['https://docs.google.com/document/d/abc', 'Google Docs'],
+    ['https://www.dropbox.com/s/x', 'Dropbox'],
+    ['https://team.notion.site/page', 'Notion'],
+    ['https://www.figma.com/file/x', 'Figma'],
+  ])('%s needs a sign-in (%s)', (href, service) => {
+    expect(signInService(new URL(href))).toBe(service);
+  });
+
+  it.each(['https://example.com/', 'https://notdropbox.com/', 'https://drive.google.com.evil.example/'])(
+    '%s is a public host',
+    (href) => expect(signInService(new URL(href))).toBeNull()
+  );
 });
 
 describe('currency', () => {

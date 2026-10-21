@@ -59,7 +59,7 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
     ? `${plural(counts.forms, 'form')} and ${plural(counts.responses, 'response')} will be destroyed, along with all uploaded files.`
     : countsFailed
       ? "We couldn't count what is in this account right now. Every form, response and file in it will be destroyed."
-      : 'Counting what will be destroyed…';
+      : 'Every form, response and file in this account will be destroyed.';
 
   useEffect(() => {
     if (isOpen) {
@@ -129,7 +129,7 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Delete account and workspace?"
+      title="Delete your account?"
     >
       <div className="flex flex-col gap-4 pt-2">
         <div role="alert" className="rounded-md border border-(--error-border) bg-(--error-surface) p-3 text-(--error-text) bg-body-sm">
@@ -149,7 +149,7 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
 
         <div>
           <label htmlFor="delete-workspace-name-input" className="block bg-body-sm text-(--text-secondary) mb-1.5">
-            Type <span className="font-semibold text-(--text-primary)">{workspaceName}</span> to confirm
+            Type your workspace name, <span className="font-semibold text-(--text-primary)">{workspaceName}</span>, to confirm
           </label>
           <input
             id="delete-workspace-name-input"

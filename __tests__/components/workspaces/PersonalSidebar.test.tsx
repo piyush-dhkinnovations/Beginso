@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PersonalSidebar } from '@/components/workspaces/PersonalSidebar';
 
@@ -156,6 +156,13 @@ describe('PersonalSidebar', () => {
     expect(await screen.findByText('Forms')).toBeInTheDocument();
     expect(screen.queryByText('Responses')).not.toBeInTheDocument();
     expect(screen.queryByText('Reports')).not.toBeInTheDocument();
+  });
+
+  it('does not fetch the dashboard analytics aggregate: one wasted request on every page, the forms count already answers "has forms"', async () => {
+    renderSidebar();
+    expect(await screen.findByText('Forms')).toBeInTheDocument();
+    await waitFor(() => expect(mockGetForms).toHaveBeenCalledTimes(1));
+    expect(mockGetAnalytics).not.toHaveBeenCalled();
   });
 
   it('lights Insights, not Responses, on /insights', async () => {

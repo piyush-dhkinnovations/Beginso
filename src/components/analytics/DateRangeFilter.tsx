@@ -102,7 +102,8 @@ export function DateRangeFilter({ value, onChange, part = 'all' }: DateRangeFilt
               aria-pressed={preset === p.value}
               onClick={() => selectPreset(p.value)}
               className={cn(
-                'px-4 min-h-10 rounded-full bg-body-sm font-semibold whitespace-nowrap transition-colors',
+                // A compact chip (32px; 40px on touch screens), not a button-sized pill.
+                'h-8 px-3 rounded-full bg-body-sm font-medium whitespace-nowrap transition-colors max-md:min-h-10',
                 preset === p.value
                   ? 'bg-(--action-primary) text-(--text-on-brand)'
                   : 'bg-(--surface-card) border border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)'
@@ -115,8 +116,8 @@ export function DateRangeFilter({ value, onChange, part = 'all' }: DateRangeFilt
       )}
 
       {part !== 'presets' && (
-        <div className="inline-flex items-center gap-2 rounded-lg border border-(--border-default) bg-(--surface-card) px-3">
-          <Calendar size={16} className="text-(--text-muted)" aria-hidden="true" />
+        <div className="inline-flex max-w-full items-center gap-2 rounded-lg border border-(--border-default) bg-(--surface-card) px-2.5">
+          <Calendar size={15} className="shrink-0 text-(--text-muted)" aria-hidden="true" />
           <input
             type="date"
             aria-label="Custom range start date"
@@ -124,9 +125,9 @@ export function DateRangeFilter({ value, onChange, part = 'all' }: DateRangeFilt
             max={to ? isoToLocalDateInput(to) : undefined}
             aria-invalid={rangeError ? true : undefined}
             onChange={(e) => handleFromInputChange(e.target.value)}
-            className="h-10 bg-transparent bg-body-sm text-(--text-primary) outline-none"
+            className="h-8 min-w-0 bg-transparent bg-body-sm text-(--text-primary) outline-none max-md:h-10"
           />
-          <ArrowRight size={14} className="text-(--text-disabled)" aria-label="to" />
+          <ArrowRight size={14} className="shrink-0 text-(--text-muted)" aria-label="to" />
           <input
             type="date"
             aria-label="Custom range end date"
@@ -134,7 +135,7 @@ export function DateRangeFilter({ value, onChange, part = 'all' }: DateRangeFilt
             min={from ? isoToLocalDateInput(from) : undefined}
             aria-invalid={rangeError ? true : undefined}
             onChange={(e) => handleToInputChange(e.target.value)}
-            className="h-10 bg-transparent bg-body-sm text-(--text-primary) outline-none"
+            className="h-8 min-w-0 bg-transparent bg-body-sm text-(--text-primary) outline-none max-md:h-10"
           />
           {preset === 'custom' && <span className="bg-caption font-semibold text-(--accent-soft-text)">Custom</span>}
         </div>

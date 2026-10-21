@@ -296,6 +296,11 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
       const candidate = respondentEmail.trim();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate)) {
         setEmailError('Please enter a valid email address.');
+        // The email is asked on the first page: take the respondent back to it.
+        setShowReview(false);
+        setCurrentPageIndex(0);
+        setQuestionIndex(0);
+        setTimeout(() => document.getElementById('respondent-email')?.focus(), 0);
         return;
       }
       setEmailError(null);
@@ -392,12 +397,16 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   // jump to the earliest page that has one, and focus it. Returns false when none could be matched, so the caller can
   // fall back to showing the message as a banner.
   function applyServerFieldErrors(fieldErrors: SubmitFieldError[]): boolean {
-    const idByLabel = new Map<string, string>();
-    for (const f of schema.fields) if (!idByLabel.has(f.label)) idByLabel.set(f.label, f.fieldId);
+    // The field's id (sent by newer backends) is exact. A label is only trusted when exactly one field has it: with two questions
+    // both called "Comment", guessing would put the message on the wrong one, so that message goes to the banner instead.
+    const fieldIds = new Set(schema.fields.map((f) => f.fieldId));
+    const idsByLabel = new Map<string, string[]>();
+    for (const f of schema.fields) idsByLabel.set(f.label, [...(idsByLabel.get(f.label) ?? []), f.fieldId]);
     const mapped: Record<string, { type: string; message: string }> = {};
     const unmatched: string[] = [];
     for (const e of fieldErrors) {
-      const id = idByLabel.get(e.field);
+      const sameLabel = idsByLabel.get(e.field);
+      const id = e.fieldId && fieldIds.has(e.fieldId) ? e.fieldId : sameLabel?.length === 1 ? sameLabel[0] : undefined;
       if (id) {
         methods.setError(id, { type: 'server', message: e.message });
         mapped[id] = { type: 'server', message: e.message };
@@ -611,13 +620,17 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   // Shown above the submit buttons: the Mode 2 email step, or who a Mode 3 respondent is submitting as.
   const accessExtra = (
     <>
-      {accessMode === 'tracked' ? (
-      <EmailStep value={respondentEmail} onChange={setRespondentEmail} error={emailError} disabled={isSubmitting} />
-    ) : null}
       {testControls}
     </>
   );
-  const hasAccessExtra = accessMode === 'tracked' || !!testControls;
+  const hasAccessExtra = !!testControls;
+  // Tracked mode: whose response this is, asked first like login mode's "Responding as", not after the questions.
+  const trackedEmail =
+    accessMode === 'tracked' && !showReview && currentPageIndex === 0 ? (
+      <div className="mb-6">
+        <EmailStep value={respondentEmail} onChange={setRespondentEmail} error={emailError} disabled={isSubmitting} />
+      </div>
+    ) : null;
 
   return (
     <LayoutFrame {...frameProps}>
@@ -639,6 +652,8 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
 
             </>
           )}
+
+          {trackedEmail}
 
           {/* Honeypot: real respondents never see or reach this; a bot's scripted fill-everything
               behavior does, and that value is passed through to the backend as-is (Requirement 6.5). */}

@@ -99,6 +99,9 @@ export interface UrlField extends BaseField {
   type: 'url';
   urlPreviewStyle?: UrlPreviewStyle; // default 'rich'
   urlDisplay?: UrlDisplay;           // default 'card'
+  urlPreviewPosition?: ImagePreviewPosition; // default 'inline' (older forms keep their layout)
+  urlAspectRatio?: ImageAspectRatio;         // default 'original'; rich preview only
+  urlPreviewSize?: ImagePreviewSize;         // default 'medium'; rich preview only
 }
 
 export interface ImageUploadField extends BaseField {
@@ -324,6 +327,12 @@ export interface CreateFormResponse {
 }
 
 // ─── Templates Gallery ────────────────────────────────────────────────────────
+
+/** The mark a form wears in lists: its uploaded logo, else its chosen icon (both optional). The same shape as `Form.branding`'s two fields. */
+export interface FormMark {
+  logoUrl?: string | null;
+  iconName?: string | null;
+}
 
 export interface Template {
   _id: string;

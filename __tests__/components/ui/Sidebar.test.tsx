@@ -9,6 +9,14 @@ import { Sidebar } from '@/components/ui/Sidebar';
 import { Home } from 'lucide-react';
 
 describe('Sidebar component', () => {
+  it('says what a count badge counts (tooltip and screen-reader text), so it is never mistaken for a total', () => {
+    render(<Sidebar groups={[{ items: [{ label: 'Responses', href: '/r', count: 70, countLabel: 'unread' }, { label: 'Plain', href: '/p', count: 3 }] }]} />);
+    expect(screen.getByRole('link', { name: 'Responses 70 unread' })).toBeInTheDocument();
+    expect(screen.getByText('70').closest('span')).toHaveAttribute('title', '70 unread');
+    // A badge without a label keeps its old, bare form.
+    expect(screen.getByRole('link', { name: 'Plain 3' })).toBeInTheDocument();
+  });
+
   it('renders group labels and nav items, marking the active one', () => {
     render(
       <Sidebar

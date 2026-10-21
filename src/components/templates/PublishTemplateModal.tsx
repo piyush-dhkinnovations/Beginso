@@ -58,7 +58,7 @@ function Body({ onClose, scope, formId, formTitle }: Omit<PublishTemplateModalPr
         if (!publish.isPending) publish.mutate();
       }}
     >
-      <Input id="template-name" label="Template name" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} autoFocus />
+      <Input id="template-name" label="Template name" value={name} onChange={(e) => setName(e.target.value)} maxLength={100} showCount autoFocus />
       <div className="flex items-center justify-end gap-3 pt-4 border-t border-(--border-subtle)">
         <Button type="button" variant="secondary" onClick={onClose} disabled={publish.isPending}>
           Cancel

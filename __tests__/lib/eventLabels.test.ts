@@ -7,6 +7,13 @@ describe('describeEventAction', () => {
     ['access.granted', 'granted access to'],
     ['form.trash', 'moved to Trash'],
     ['workspace.transfer_ownership', 'transferred ownership of'],
+    // QA D8-010: these used to read "response bulk tag" for a single tag on a single response.
+    ['response.bulk_tag', 'tagged'],
+    ['response.bulk_untag', 'removed a tag from'],
+    ['response.bulk_stage', 'changed the stage of'],
+    ['response.bulk_assign', 'assigned'],
+    ['response.assign', 'assigned'],
+    ['response.score', 'scored'],
   ])('maps %s', (action, phrase) => {
     expect(describeEventAction(action)).toBe(phrase);
   });

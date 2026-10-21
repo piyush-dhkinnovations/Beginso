@@ -37,7 +37,7 @@ function SubmissionCard({ s }: { s: MySubmission }) {
   return (
     <Card padded={false} className="relative flex-row items-stretch gap-4 overflow-hidden bg-none bg-(--surface-card) p-4 transition-colors hover:bg-(--surface-hover) has-focus-visible:shadow-(--shadow-focus)">
       <div className="flex flex-none items-center">
-        <FormTile title={s.formName} size={48} />
+        <FormTile title={s.formName} size={48} logoUrl={s.branding?.logoUrl} iconName={s.branding?.iconName} />
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">

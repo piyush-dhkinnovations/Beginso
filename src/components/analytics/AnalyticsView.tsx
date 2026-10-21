@@ -1,7 +1,8 @@
 'use client';
 
 import { keepPreviousInScope } from '@/lib/queryOptions';
-import { useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, FileText, LockKeyhole } from 'lucide-react';
@@ -40,6 +41,19 @@ import { chartsService } from '@/services/charts';
 import { ALL_TIME_SENTINEL, resolveEffectiveDateRange, resolveTrendBucket, resolvePreviousDateRange } from '@/lib/dateRange';
 import { computeChangePercent } from '@/lib/analyticsChange';
 import { browserTimezone } from '@/lib/calendarDates';
+import { FORM_HEADER_SLOT_ID } from '@/lib/formHeaderSlot';
+import {
+  parseStoredRange,
+  rangeToStored,
+  readStoredRangeRaw,
+  storedRangeKey,
+  storedToRange,
+  subscribeStoredRange,
+  writeStoredRange,
+} from '@/lib/storedDateRange';
+
+// Never changes: the header's slot is looked up once, in the DOM, and the page waits for hydration before using it.
+const subscribeNever = () => () => {};
 
 // ponytail: workspace-wide summary cards sum totalResponses across whatever page this fetches,
 // not a dedicated backend aggregate — accurate as long as the workspace has <= this many forms.
@@ -64,17 +78,56 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const { from, to, preset } = resolveEffectiveDateRange(searchParams.get('from'), searchParams.get('to'));
+  // Which range applies: the one in the URL (a shared or restored link says what it means); else the one this person last chose on
+  // this page, kept in the browser; else All time.
+  const storageKey = storedRangeKey(formId, scope);
+  const storedRaw = useSyncExternalStore(subscribeStoredRange, () => readStoredRangeRaw(storageKey), () => null);
+  const stored = parseStoredRange(storedRaw);
+  const urlFrom = searchParams.get('from');
+  const urlTo = searchParams.get('to');
+  const hasUrlRange = urlFrom !== null || urlTo !== null;
+  const { from, to, preset } = hasUrlRange || !stored ? resolveEffectiveDateRange(urlFrom, urlTo) : storedToRange(stored);
   const isAllTime = preset === 'all';
+  // Sprint 14 (requirements 1.3): "Compare to previous period" - drives every delta line. Defaults on
+  // (that is what the page already showed); off skips the previous-period queries entirely. Remembered with the range.
+  const compare = stored?.compare ?? true;
+
+  const rangeHref = (next: { from?: string; to?: string }) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('from', next.from ?? ALL_TIME_SENTINEL);
+    params.set('to', next.to ?? ALL_TIME_SENTINEL);
+    params.delete('page'); // a different range is a different list: back to its first page
+    return `${pathname}?${params.toString()}`;
+  };
+  const applyRange = (next: { from?: string; to?: string }) => {
+    // Remembered at once, so leaving before the URL has caught up still finds the choice.
+    writeStoredRange(storageKey, rangeToStored(next, compare));
+    router.replace(rangeHref(next));
+  };
+  function setCompare(next: boolean) {
+    writeStoredRange(storageKey, rangeToStored({ from, to }, next));
+  }
+
+  // Remember what is showing, so leaving this page and coming back finds it the same.
+  useEffect(() => {
+    if (hasUrlRange) writeStoredRange(storageKey, rangeToStored({ from, to }, compare));
+  }, [hasUrlRange, from, to, compare, storageKey]);
+
+  // Coming back with a bare URL and a remembered range: put it in the URL, so everything that reads the URL (a chart's own date
+  // filter, links) agrees with the page. The data above already uses it, so nothing is fetched twice.
+  const restoreHref = !hasUrlRange && stored && stored.preset !== 'all' ? rangeHref({ from, to }) : null;
+  useEffect(() => {
+    if (restoreHref) router.replace(restoreHref);
+  }, [restoreHref, router]);
+
+  // The form header's slot for this page's own controls (Filters, Add chart), so they share its row.
+  const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
+  const headerSlot = useSyncExternalStore(subscribeNever, () => document.getElementById(FORM_HEADER_SLOT_ID), () => null);
   const defaultBucket = resolveTrendBucket(from, to);
   const [bucketOverride, setBucketOverride] = useState<TrendBucket | null>(null);
   const bucket: TrendBucket = bucketOverride ?? defaultBucket;
   const timezone = browserTimezone();
   const range = { from, to };
-  // Sprint 14 (requirements 1.3): "Compare to previous period" - drives every delta line. Defaults on
-  // (that is what the page already showed); off skips the previous-period queries entirely.
-  const [compare, setCompare] = useState(true);
-
   const rawPage = Number(searchParams.get('page'));
   const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
 
@@ -151,11 +204,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
   // design.md §17: "no forms yet" and "no responses in this range" are different states - the second
   // keeps the page and offers to widen the range.
   function widenRange() {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('from', ALL_TIME_SENTINEL);
-    params.set('to', ALL_TIME_SENTINEL);
-    params.delete('page');
-    router.replace(`${pathname}?${params.toString()}`);
+    applyRange({});
   }
 
   const currentForms = formsSummaryQuery.data?.forms ?? [];
@@ -240,8 +289,8 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
     <FilterPopover summary={presetLabel}>
       <div className="flex flex-col gap-2">
         <span className="bg-overline text-(--text-muted)">Date range</span>
-        <DateRangeFilter part="presets" />
-        <DateRangeFilter part="range" />
+        <DateRangeFilter part="presets" value={{ from, to }} onChange={applyRange} />
+        <DateRangeFilter part="range" value={{ from, to }} onChange={applyRange} />
       </div>
       <Checkbox
         id="analytics-compare"
@@ -268,26 +317,34 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
     </FilterPopover>
   );
 
+  const formControls = (
+    <>
+      {filterPopover}
+      {canAddChart && (
+        <Button onClick={() => setAddChartOpen(true)}>
+          <Plus size={16} className="mr-1.5" aria-hidden="true" />
+          Add chart
+        </Button>
+      )}
+    </>
+  );
+
   return (
     // No animate-fade-in here: an opacity animation makes this a stacking context, which traps the position:fixed
     // ResponseDrawer (opened from a chart's drill panel) under the top bar, hiding its header. ResponsesHubView does the same.
     <div className={formId ? 'flex flex-col gap-6' : 'flex flex-col gap-4'}>
       {formId ? (
-        // Inside a form the shared form header already names the form and the tab, so there is no second page
-        // title here — just the page's own controls, right-aligned like on Responses.
+        // Inside a form the shared form header already names the form and the tab, so there is no second page title or
+        // second row of buttons here: Filters and Add chart go into that header's own row (next to Summary / Responses and
+        // Edit form). Only when the header is not on the page do they sit in a row of their own.
         <>
           <h1 className="sr-only">{title}</h1>
-          {!isFirstRun && (
-            <div className="flex flex-wrap items-center justify-end gap-3">
-              {filterPopover}
-              {canAddChart && (
-                <Button size="small" onClick={() => setAddChartOpen(true)}>
-                  <Plus size={14} className="mr-1.5" aria-hidden="true" />
-                  Add chart
-                </Button>
-              )}
-            </div>
-          )}
+          {!isFirstRun &&
+            (headerSlot ? (
+              createPortal(formControls, headerSlot)
+            ) : hydrated ? (
+              <div className="flex flex-wrap items-center justify-end gap-3">{formControls}</div>
+            ) : null)}
         </>
       ) : (
         <PageHeader

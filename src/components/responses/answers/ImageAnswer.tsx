@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronLeft, ChevronRight, ImageOff, X, ZoomIn } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download, ImageOff, X, ZoomIn } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { imageSettings } from '@/lib/fieldDisplay';
 import { useFileBlobUrls } from '@/hooks/useFileBlobUrls';
@@ -13,6 +13,7 @@ interface ImageAnswerProps {
   responseId: string;
   field?: FormField;
   files: IResponseFile[];
+  compact?: boolean;
 }
 
 // Smallest grid column per "Preview size" setting for several images; a single image is capped to this width
@@ -81,6 +82,20 @@ function Lightbox({ images, start, onClose }: { images: Shown[]; start: number; 
       <button ref={closeRef} type="button" onClick={onClose} aria-label="Close image viewer" className={cn(navClass, 'right-4 top-8')}>
         <X size={18} aria-hidden="true" />
       </button>
+      {/* A button (not a link) so the viewer's Tab trap reaches it. The URL is the already-fetched private file's blob:, so this is a local save. */}
+      <button
+        type="button"
+        aria-label={`Download ${current.name}`}
+        onClick={() => {
+          const a = document.createElement('a');
+          a.href = current.url;
+          a.download = current.name;
+          a.click();
+        }}
+        className={cn(navClass, 'right-20 top-8')}
+      >
+        <Download size={18} aria-hidden="true" />
+      </button>
       {count > 1 && (
         <>
           <button type="button" aria-label="Previous image" onClick={() => setIndex((i) => (i - 1 + count) % count)} className={cn(navClass, 'left-4')}>
@@ -104,8 +119,9 @@ function Lightbox({ images, start, onClose }: { images: Shown[]; start: number; 
   );
 }
 
-export function ImageAnswer({ responseId, field, files }: ImageAnswerProps) {
-  const s = imageSettings(field);
+export function ImageAnswer({ responseId, field, files, compact = false }: ImageAnswerProps) {
+  // The Table layout shows small thumbnails in a row; the full-size view is still one click away.
+  const s = compact ? { ...imageSettings(field), previewSize: 'small' as const } : imageSettings(field);
   const states = useFileBlobUrls(responseId, files.map((f) => f.id));
   const [openAt, setOpenAt] = useState<number | null>(null);
   const single = files.length === 1;
@@ -165,9 +181,11 @@ export function ImageAnswer({ responseId, field, files }: ImageAnswerProps) {
           );
         })}
       </ul>
-      <p className="bg-caption text-(--text-muted)">
-        {single ? 'Uploaded image' : `${files.length} uploaded images`} · Click to view full size
-      </p>
+      {!compact && (
+        <p className="bg-caption text-(--text-muted)">
+          {single ? 'Uploaded image' : `${files.length} uploaded images`} · Click to view full size
+        </p>
+      )}
       {openAt !== null && shown.length > 0 && <Lightbox images={shown} start={Math.min(openAt, shown.length - 1)} onClose={() => setOpenAt(null)} />}
     </div>
   );

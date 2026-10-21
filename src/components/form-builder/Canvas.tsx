@@ -180,7 +180,7 @@ export function Canvas({
                 field={field}
                 allFields={fields}
                 isActive={activeFieldId === field.fieldId}
-                onSelect={() => onFieldSelect(field.fieldId)}
+                onSelect={() => (activeFieldId === field.fieldId ? onFieldDeselect() : onFieldSelect(field.fieldId))}
                 onDelete={() => onFieldDelete(field.fieldId)}
                 onDuplicate={() => onFieldDuplicate(field.fieldId)}
                 onUpdate={onFieldUpdate}

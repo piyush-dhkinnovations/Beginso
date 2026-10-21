@@ -6,6 +6,7 @@ import { ContextSwitcher } from '@/components/ui';
 import type { ContextSwitcherTarget } from '@/components/ui';
 import { workspacesService } from '@/services/workspaces';
 import { searchKeys, workspaceKeys } from '@/lib/queryKeys';
+import { roleLabel } from '@/lib/roles';
 
 export interface WorkspaceContextSwitcherProps {
   currentLabel?: string;
@@ -30,7 +31,7 @@ export function WorkspaceContextSwitcher({ currentLabel = 'Personal', collapsed 
       ? 'Only you'
       : current
         ? [
-            current.role ? current.role.charAt(0).toUpperCase() + current.role.slice(1) : null,
+            roleLabel(current.role),
             typeof current.memberCount === 'number' ? `${current.memberCount} ${current.memberCount === 1 ? 'member' : 'members'}` : null,
           ]
             .filter(Boolean)
@@ -56,6 +57,7 @@ export function WorkspaceContextSwitcher({ currentLabel = 'Personal', collapsed 
       currentLogo={current?.logo}
       workspaces={workspaces}
       onSelect={handleSelect}
+      onViewAll={() => router.push('/workspaces')}
       collapsed={collapsed}
     />
   );

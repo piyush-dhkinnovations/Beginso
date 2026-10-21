@@ -53,6 +53,34 @@ function makeForm(fields: FormField[]): Form {
 }
 
 describe('QuestionBreakdownSection', () => {
+  it('shows rating, number and yes/no questions as summary cards, and lists unanswered ones with the empty questions (QA A7-008)', () => {
+    const rating = field({ fieldId: 'r1', type: 'rating', label: 'Rate us' });
+    const qty = field({ fieldId: 'n1', type: 'number', label: 'How many' });
+    const yn = field({ fieldId: 'y1', type: 'yes_no', label: 'Recommend' });
+    const silent = field({ fieldId: 'r2', type: 'rating', label: 'Rate support' });
+    const breakdown: QuestionBreakdown[] = [
+      { fieldId: 'r1', label: 'Rate us', options: [], rating: { count: 2, average: 4.5, max: 5, distribution: [1, 2, 3, 4, 5].map((value) => ({ value, count: value >= 4 ? 1 : 0, percentage: value >= 4 ? 50 : 0 })) } },
+      { fieldId: 'n1', label: 'How many', options: [], numeric: { count: 2, average: 15, min: 10, max: 20, sum: 30 } },
+      { fieldId: 'y1', label: 'Recommend', options: [], yesNo: { yes: 1, no: 1, percentageYes: 50 } },
+      { fieldId: 'r2', label: 'Rate support', options: [] },
+    ];
+    render(<QuestionBreakdownSection form={makeForm([rating, qty, yn, silent])} breakdown={breakdown} isLoading={false} />);
+
+    expect(screen.getByRole('heading', { name: 'Per-Question Breakdown' })).toBeInTheDocument();
+    expect(screen.getByText('4.5')).toBeInTheDocument(); // rating average
+    expect(screen.getByText('Lowest')).toBeInTheDocument(); // number card
+    expect(screen.getByText('said yes')).toBeInTheDocument(); // yes/no card
+    expect(screen.getByText(/1 question has no answers in this range/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText(/1 question has no answers in this range/));
+    expect(screen.getByText('Rate support')).toBeInTheDocument();
+  });
+
+  it('a form with only a rating question still gets the section (it used to be hidden: no choice fields)', () => {
+    const rating = field({ fieldId: 'r1', type: 'rating', label: 'Rate us' });
+    render(<QuestionBreakdownSection form={makeForm([rating])} breakdown={[]} isLoading={false} />);
+    expect(screen.getByRole('heading', { name: 'Per-Question Breakdown' })).toBeInTheDocument();
+  });
+
   it('renders nothing when the form has zero choice fields', () => {
     const { container } = render(
       <QuestionBreakdownSection form={makeForm([textField])} breakdown={[]} isLoading={false} />

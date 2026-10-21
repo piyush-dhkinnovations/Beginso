@@ -60,3 +60,49 @@ export function browserTimezone(): string {
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   return LEGACY_TIMEZONES[tz] ?? tz;
 }
+
+/** "Today" as 'YYYY-MM-DD' in the given IANA timezone: a late-evening visit in India is still that day, whatever UTC says. */
+export function todayKey(timeZone: string, now: Date = new Date()): string {
+  return localDateKey(now.toISOString(), timeZone);
+}
+
+/**
+ * The fetch window for a whole visible grid (full weeks): the days of the neighbouring months shown in its first and last rows
+ * get their responses too, so those cells are not half empty. Padded a day each side for the timezone offset, like
+ * `monthFetchRange`; `localDateKey` narrows to the exact day afterwards.
+ */
+export function gridFetchRange(keys: string[]): { from: string; to: string } {
+  const start = new Date(`${keys[0]}T00:00:00.000Z`);
+  start.setUTCDate(start.getUTCDate() - 1);
+  const end = new Date(`${keys[keys.length - 1]}T00:00:00.000Z`);
+  end.setUTCDate(end.getUTCDate() + 2);
+  return { from: start.toISOString(), to: end.toISOString() };
+}
+
+/** The clock time of an instant in the given timezone, in the viewer's own format (e.g. "2:32 PM" or "14:32"). */
+export function formatTimeInZone(iso: string, timeZone: string): string {
+  return new Intl.DateTimeFormat(undefined, { timeZone, hour: 'numeric', minute: '2-digit' }).format(new Date(iso));
+}
+
+/** "Saturday, 4 October 2026" (long) or "Sat, 4 Oct" (short) for a 'YYYY-MM-DD' key. Calendar dates have no timezone. */
+export function formatDayTitle(key: string, style: 'long' | 'short' = 'long'): string {
+  const date = new Date(`${key}T00:00:00.000Z`);
+  return new Intl.DateTimeFormat(
+    undefined,
+    style === 'long'
+      ? { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }
+      : { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }
+  ).format(date);
+}
+
+/** The twelve month names, January first, in the viewer's language. */
+export function monthNames(style: 'long' | 'short' = 'long'): string[] {
+  const fmt = new Intl.DateTimeFormat(undefined, { month: style, timeZone: 'UTC' });
+  return Array.from({ length: 12 }, (_, m) => fmt.format(new Date(Date.UTC(2000, m, 1))));
+}
+
+/** Short weekday names, Sunday first, matching `monthGridKeys`. */
+export function weekdayNames(style: 'short' | 'narrow' = 'short'): string[] {
+  const fmt = new Intl.DateTimeFormat(undefined, { weekday: style, timeZone: 'UTC' });
+  return Array.from({ length: 7 }, (_, d) => fmt.format(new Date(Date.UTC(2000, 0, 2 + d)))); // 2 Jan 2000 was a Sunday
+}

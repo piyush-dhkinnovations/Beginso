@@ -81,7 +81,7 @@ describe('WorkspaceHomePage (/w/[slug]/page)', () => {
     renderPage();
 
     expect(await screen.findByText('Welcome to your workspace!')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /Create Form/ })).toBeInTheDocument();
+    expect(screen.getAllByRole('link', { name: /Create Form/ }).length).toBeGreaterThan(0);
     expect(screen.getByRole('link', { name: /Browse Templates/ })).toBeInTheDocument();
   });
 

@@ -14,8 +14,9 @@ import {
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { Button } from '@/components/ui/Button';
-import { formatRelativeTime } from '@/lib/formatters';
+import { formatRelativeTime, formatResponseDate } from '@/lib/formatters';
 import type { ActivityEntry, ActivityType } from '@/types/activity';
+import type { StageRef } from '@/types/stage';
 
 const COLLAPSED_LIMIT = 10;
 
@@ -32,21 +33,34 @@ const TYPE_ICON: Partial<Record<string, typeof Workflow>> = {
   scored: CheckCircle2,
 };
 
-const TYPE_LABEL: Partial<Record<ActivityType, string>> = {
-  submitted: 'Submitted',
-  opened: 'Opened',
-  stage_changed: 'Stage changed',
-  status_change: 'Status changed',
-  assigned: 'Assigned',
-  unassigned: 'Unassigned',
-  tag_added: 'Tag added',
-  tag_removed: 'Tag removed',
-  note_added: 'Note added',
-  scored: 'Scored',
+const TYPE_VERB: Partial<Record<ActivityType, string>> = {
+  submitted: 'submitted this response',
+  opened: 'opened this response',
+  stage_changed: 'moved the stage',
+  status_change: 'changed the status',
+  assigned: 'assigned this response',
+  unassigned: 'unassigned this response',
+  tag_added: 'added',
+  tag_removed: 'removed',
+  note_added: 'added a note',
+  scored: 'scored this response',
 };
+
+function describe(entry: ActivityEntry, stages: readonly StageRef[]): string {
+  const verb = TYPE_VERB[entry.type] ?? entry.type;
+  if (entry.type === 'stage_changed') {
+    const name = (id?: string) => stages.find((s) => s.id === id)?.name;
+    const from = name(entry.fromStageId);
+    const to = name(entry.toStageId);
+    if (from && to) return `${verb} from ${from} to ${to}`;
+    if (to) return `${verb} to ${to}`;
+  }
+  return entry.detail ? `${verb} — ${entry.detail}` : verb;
+}
 
 export interface ActivityTimelineProps {
   entries: ActivityEntry[] | undefined;
+  stages?: readonly StageRef[];
   isLoading?: boolean;
   isError?: boolean;
   onRetry?: () => void;
@@ -58,7 +72,7 @@ export interface ActivityTimelineProps {
  * doesn't recognise, never throws — same non-exhaustive-union precedent as `NotificationBell`.
  * Collapses to the latest 10 with a "Show all" toggle once there's more than that.
  */
-export function ActivityTimeline({ entries, isLoading, isError, onRetry }: ActivityTimelineProps) {
+export function ActivityTimeline({ entries, stages = [], isLoading, isError, onRetry }: ActivityTimelineProps) {
   const [expanded, setExpanded] = useState(false);
 
   if (isLoading) {
@@ -98,7 +112,6 @@ export function ActivityTimeline({ entries, isLoading, isError, onRetry }: Activ
       <ol className="flex flex-col gap-3">
         {visible.map((entry) => {
           const Icon = TYPE_ICON[entry.type] ?? Workflow;
-          const label = TYPE_LABEL[entry.type] ?? entry.type;
           return (
             <li key={entry.id} className="flex items-start gap-2.5">
               <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--bg-subtle) text-(--text-muted)">
@@ -109,10 +122,9 @@ export function ActivityTimeline({ entries, isLoading, isError, onRetry }: Activ
                   <span className="font-medium">{entry.actorName}</span>
                   {entry.actorRemoved && <span className="text-(--text-muted)"> · no longer has access</span>}
                   {' '}
-                  {label.toLowerCase()}
-                  {entry.detail ? ` — ${entry.detail}` : ''}
+                  {describe(entry, stages)}
                 </p>
-                <p className="bg-caption text-(--text-muted)">{formatRelativeTime(entry.at)}</p>
+                <p className="bg-body-sm text-(--text-muted)" title={formatResponseDate(entry.at)}>{formatRelativeTime(entry.at)}</p>
               </div>
             </li>
           );

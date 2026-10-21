@@ -1,5 +1,6 @@
 import { publicFormSlug } from '@/lib/publicFormUrl';
 import { wouldCreateCycle } from '@/lib/logicGraph';
+import { convertField, convertibleTypes } from '@/lib/fieldConversion';
 import { create } from 'zustand';
 import type {
   Form,
@@ -54,6 +55,10 @@ export interface BuilderState {
   updateField: (fieldId: string, updates: Partial<FormField>) => void;
   softDeleteField: (fieldId: string) => void;
   setActiveFieldId: (fieldId: string | null) => void;
+  /** Move a field to the end of another page. */
+  moveFieldToPage: (fieldId: string, pageId: string) => void;
+  /** Switch a field to another type of the same kind (Dropdown -> Multiple choice), keeping its label, options and id. */
+  changeFieldType: (fieldId: string, type: FieldType) => void;
   undo: () => void;
   redo: () => void;
   markSaved: () => void;
@@ -226,7 +231,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       if (type === 'image_upload') {
         Object.assign(defaultField, { allowMultiple: false, previewPosition: 'top', aspectRatio: 'original', previewSize: 'large' });
       } else if (type === 'url') {
-        Object.assign(defaultField, { urlPreviewStyle: 'rich', urlDisplay: 'card' });
+        Object.assign(defaultField, { urlPreviewStyle: 'rich', urlDisplay: 'card', urlPreviewPosition: 'top', urlAspectRatio: 'original', urlPreviewSize: 'medium' });
       } else if (type === 'currency') {
         Object.assign(defaultField, { currency: 'INR' });
       }
@@ -248,6 +253,8 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       return {
         ...snapshot,
         fields: finalFields,
+        // The new field opens straight away; FieldCard scrolls it into view when it becomes active.
+        activeFieldId: defaultField.fieldId,
         dirty: true,
       };
     }),
@@ -394,6 +401,31 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   setActiveFieldId: (fieldId) =>
     set({
       activeFieldId: fieldId,
+    }),
+
+  moveFieldToPage: (fieldId, pageId) =>
+    set((state) => {
+      const field = state.fields.find((f) => f.fieldId === fieldId && !f.deleted);
+      if (!field || field.pageId === pageId || !state.pages.some((p) => p.id === pageId)) return {};
+      const snapshot = pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack);
+      const target = pageFields(state.fields, pageId).length;
+      const fields = state.fields.map((f) => (f.fieldId === fieldId ? ({ ...f, pageId, order: target } as FormField) : f));
+      // Close the gap the field left behind.
+      pageFields(fields, field.pageId)
+        .sort((a, b) => a.order - b.order)
+        .forEach((f, i) => {
+          f.order = i;
+        });
+      return { ...snapshot, fields, activeFieldId: null, dirty: true };
+    }),
+
+  changeFieldType: (fieldId, type) =>
+    set((state) => {
+      const field = state.fields.find((f) => f.fieldId === fieldId && !f.deleted);
+      if (!field || !convertibleTypes(field.type).includes(type)) return {};
+      const snapshot = pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack);
+      const fields = state.fields.map((f) => (f.fieldId === fieldId ? convertField(f, type, defaultLabelFor) : f));
+      return { ...snapshot, fields, dirty: true };
     }),
 
   undo: () =>

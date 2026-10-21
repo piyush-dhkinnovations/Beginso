@@ -17,11 +17,14 @@ interface Options {
   page: number;
   pageLimit: number;
   setPage: InboxFilters['setPage'];
+  /** Newest first (default) or oldest first, applied by the server across every page. */
+  submittedOrder?: 'asc' | 'desc';
 }
 
 /** Form, stats and paginated response-list queries, plus the out-of-range page clamp. */
-export function useResponsesData({ scope, formId, filters, page, pageLimit, setPage }: Options) {
-  const listKey = responseKeys.list(scope, formId, { ...filters, page, limit: pageLimit });
+export function useResponsesData({ scope, formId, filters, page, pageLimit, setPage, submittedOrder = 'desc' }: Options) {
+  const order = submittedOrder === 'asc' ? ({ order: 'asc' } as const) : {};
+  const listKey = responseKeys.list(scope, formId, { ...filters, ...order, page, limit: pageLimit });
   const replacePage = useCallback((nextPage: number) => setPage(nextPage), [setPage]);
 
   const {
@@ -52,7 +55,7 @@ export function useResponsesData({ scope, formId, filters, page, pageLimit, setP
     refetch: refetchResponses,
   } = useQuery({
     queryKey: listKey,
-    queryFn: () => responsesService.getResponses({ formId, ...filters, page, limit: pageLimit }, scope),
+    queryFn: () => responsesService.getResponses({ formId, ...filters, ...order, page, limit: pageLimit }, scope),
     placeholderData: keepPreviousInScope(listKey),
     // Polling stays on the list only (design.md §10/§20); must not clear selection or open detail —
     // neither selection nor the drawer's responseId lives in this query, so a refetch can't touch them.

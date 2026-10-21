@@ -17,6 +17,7 @@ import { reportsService } from '@/services/reports';
 import { reportKeys } from '@/lib/queryKeys';
 import { shouldPollReportJob } from '@/lib/reportPolling';
 import type { CreateReportPayload, PaginatedReportsResult, ReportJob, ReportStatus } from '@/types/report';
+import type { FormMark } from '@/types/form';
 
 const REPORTS_PAGE_LIMIT = 20;
 const POLL_INTERVAL_MS = 5_000;
@@ -27,11 +28,13 @@ interface ReportJobsListProps {
   /** formId -> form title, resolved from the forms list ReportsView already loads for its
    * dropdown — job objects only carry a raw `formId`, never a denormalized title. */
   formTitleById?: Map<string, string>;
+  /** formId -> the form's logo/icon (same forms list). */
+  formMarkById?: Map<string, FormMark | undefined>;
   /** 'personal' (default) or a workspace slug - Sprint 14, Exports lives inside Insights. */
   scope?: string;
 }
 
-export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), scope = 'personal' }: ReportJobsListProps) {
+export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), formMarkById = new Map(), scope = 'personal' }: ReportJobsListProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [retryingJobId, setRetryingJobId] = useState<string | null>(null);
@@ -218,7 +221,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
     <Card padded={false} className="gap-4 overflow-hidden pb-5">
       {header}
 
-      <div className="hidden sm:block mx-5 overflow-x-auto rounded-lg border border-(--border-default)">
+      <div className="hidden xl:block mx-5 overflow-x-auto rounded-lg border border-(--border-default)">
         <table className="w-full text-left">
           <thead>
             <tr className="bg-(--bg-subtle) border-b border-(--border-default) bg-caption font-semibold text-(--text-muted) uppercase tracking-wider">
@@ -234,15 +237,15 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
               // job._id ?? index is a safety net, not the primary key source — reportsService now
               // adapts the real backend `id` field (see docs/status/fix-log.md S5-03), so _id is
               // populated in the normal case; this only protects against an unexpected future gap.
-              <ReportJobRow key={job._id ?? index} job={job} onRetry={handleRetry} isRetrying={retryingJobId === job._id} formTitleById={formTitleById} />
+              <ReportJobRow key={job._id ?? index} job={job} onRetry={handleRetry} isRetrying={retryingJobId === job._id} formTitleById={formTitleById} formMarkById={formMarkById} />
             ))}
           </tbody>
         </table>
       </div>
 
-      <div className="sm:hidden mx-5 flex flex-col gap-3">
+      <div className="xl:hidden mx-5 flex flex-col gap-3">
         {visibleJobs.map((job, index) => (
-          <ReportJobRow key={job._id ?? index} job={job} onRetry={handleRetry} isRetrying={retryingJobId === job._id} formTitleById={formTitleById} variant="card" />
+          <ReportJobRow key={job._id ?? index} job={job} onRetry={handleRetry} isRetrying={retryingJobId === job._id} formTitleById={formTitleById} formMarkById={formMarkById} variant="card" />
         ))}
       </div>
 

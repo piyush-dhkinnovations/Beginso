@@ -49,13 +49,19 @@ test.describe('Public form — SSR render', () => {
     expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
   });
 
+  // The heading appears about 130-190 ms BEFORE the page's last requests finish and report their errors. The check used to read the
+  // error list the instant the heading was visible, so it passed or failed depending on that race (and, when it passed, it had not
+  // looked yet). It now waits for the network to go quiet, which is when every load-time error has been reported. Uncaught page
+  // exceptions count too. No sleep, and nothing is filtered out.
   test('browser console has zero errors on load', async ({ page }) => {
     const errors: string[] = [];
     page.on('console', (msg) => {
       if (msg.type() === 'error') errors.push(msg.text());
     });
+    page.on('pageerror', (err) => errors.push(`uncaught: ${err.message}`));
     await page.goto('/f/mock-valid');
     await expect(page.getByRole('heading', { name: 'About you' })).toBeVisible();
+    await page.waitForLoadState('networkidle');
     expect(errors).toEqual([]);
   });
 });
