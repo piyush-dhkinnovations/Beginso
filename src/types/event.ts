@@ -4,6 +4,10 @@
 export interface WorkspaceEventItem {
   id: string;
   actorName: string;
+  /** The actor's user id (empty for an actor with no account), email, and profile picture as the backend sent them. */
+  actorId?: string;
+  actorEmail?: string;
+  actorAvatarUrl?: string | null;
   action: string;
   targetType: string;
   targetId: string;

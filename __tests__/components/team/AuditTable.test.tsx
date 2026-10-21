@@ -3,7 +3,7 @@
  * Same assertion style RolesMatrix.test.tsx established.
  */
 import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { AuditTable } from '@/components/team/AuditTable';
 import type { WorkspaceEventItem } from '@/types/event';
 
@@ -59,5 +59,39 @@ describe('AuditTable', () => {
     rows.forEach((row) => expect(row).toHaveAttribute('aria-hidden', 'true'));
     // And a keyboard user tabbing through the page hits nothing inside the loading table.
     expect(within(container as unknown as HTMLElement).queryAllByRole('button')).toHaveLength(0);
+  });
+});
+
+describe('AuditTable actor avatars', () => {
+  it("shows the actor's picture beside their name, with the name still the row header", () => {
+    const { container } = render(<AuditTable events={[EVENT]} avatarOf={() => 'https://cdn.example.com/a/priya.png'} />);
+    const img = container.querySelector('img');
+    expect(img).not.toBeNull();
+    expect(img).toHaveAttribute('src', 'https://cdn.example.com/a/priya.png');
+    expect(img).toHaveAttribute('alt', ''); // decorative: the name is right beside it
+    expect(screen.getByRole('rowheader', { name: 'Priya Sharma' })).toBeInTheDocument(); // not read twice
+  });
+
+  it('shows their initials when there is no picture', () => {
+    const { container } = render(<AuditTable events={[EVENT]} avatarOf={() => undefined} />);
+    expect(container.querySelector('img')).toBeNull();
+    expect(within(screen.getByRole('rowheader')).getByText('PS')).toBeInTheDocument();
+  });
+
+  it('and when the picture cannot be loaded', () => {
+    const { container } = render(<AuditTable events={[EVENT]} avatarOf={() => 'https://cdn.example.com/missing.png'} />);
+    fireEvent.error(container.querySelector('img')!);
+    expect(container.querySelector('img')).toBeNull();
+    expect(within(screen.getByRole('rowheader')).getByText('PS')).toBeInTheDocument();
+  });
+
+  it("works without a lookup at all, and each row gets its own person's picture", () => {
+    const { container, rerender } = render(<AuditTable events={[EVENT]} />);
+    expect(container.querySelector('img')).toBeNull();
+    const second = { ...EVENT, id: 'e2', actorName: 'Chidi Okafor' };
+    rerender(<AuditTable events={[EVENT, second]} avatarOf={(e) => (e.actorName === 'Chidi Okafor' ? 'https://cdn.example.com/a/chidi.png' : undefined)} />);
+    const imgs = container.querySelectorAll('img');
+    expect(imgs).toHaveLength(1);
+    expect(imgs[0]).toHaveAttribute('src', 'https://cdn.example.com/a/chidi.png');
   });
 });

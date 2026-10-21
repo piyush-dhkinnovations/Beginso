@@ -13,11 +13,17 @@ import type { WorkspaceEventItem, AuditFilters } from '@/types/event';
 // in this codebase, so no consumer needs to change.
 interface RawWorkspaceEvent extends Omit<WorkspaceEventItem, 'actorName'> {
   actorName?: string;
-  actor?: { id?: string; name?: string; email?: string };
+  actor?: { id?: string; name?: string; email?: string; avatarUrl?: string | null };
 }
 
 function toEvent(raw: RawWorkspaceEvent): WorkspaceEventItem {
-  return { ...raw, actorName: raw.actorName ?? raw.actor?.name ?? raw.actor?.email ?? 'Unknown' };
+  return {
+    ...raw,
+    actorName: raw.actorName ?? raw.actor?.name ?? raw.actor?.email ?? 'Unknown',
+    actorId: raw.actorId ?? (raw.actor?.id || undefined),
+    actorEmail: raw.actorEmail ?? (raw.actor?.email || undefined),
+    actorAvatarUrl: raw.actorAvatarUrl ?? raw.actor?.avatarUrl ?? undefined,
+  };
 }
 
 function toEvents(raw: unknown): WorkspaceEventItem[] {
