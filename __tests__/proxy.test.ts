@@ -149,4 +149,55 @@ describe('Next.js Edge Proxy (auth guard)', () => {
     expect(res.headers.get('location')).toBeNull();
     expect(res.headers.get('set-cookie')).toBeNull();
   });
+
+  // ─── Legacy /inbox/<id>?scope=<slug> → /w/<slug>/inbox/<id> redirect ─────────
+  // Old links (notifications, emails, activity) used ?scope= on the personal route;
+  // workspace responses now live at /w/[slug]/inbox/[id] so the WorkspaceShell renders.
+
+  describe('Legacy workspace response links redirect to the workspace route', () => {
+    it('redirects /inbox/<id>?scope=<slug> to /w/<slug>/inbox/<id> with 308', async () => {
+      const res = await proxy(makeRequest('/inbox/resp-1?scope=acme', true));
+      expect(res.status).toBe(308);
+      const loc = res.headers.get('location') ?? '';
+      expect(loc).toContain('/w/acme/inbox/resp-1');
+      expect(loc).not.toContain('scope=');
+    });
+
+    it('forwards other query params (formId, returnTo) but drops scope', async () => {
+      const res = await proxy(makeRequest('/inbox/resp-1?scope=acme&formId=f1&returnTo=%2Fw%2Facme%2Finbox', true));
+      expect(res.status).toBe(308);
+      const loc = new URL(res.headers.get('location') ?? 'http://x');
+      expect(loc.pathname).toBe('/w/acme/inbox/resp-1');
+      expect(loc.searchParams.get('formId')).toBe('f1');
+      expect(loc.searchParams.get('returnTo')).toBeTruthy();
+      expect(loc.searchParams.has('scope')).toBe(false);
+    });
+
+    it('does not redirect /inbox/<id> without ?scope= (personal response)', async () => {
+      const res = await proxy(makeRequest('/inbox/resp-1', true));
+      expect(res.status).toBe(200);
+      expect(res.headers.get('location')).toBeNull();
+    });
+
+    it('does not redirect /inbox/<id>?scope=personal', async () => {
+      const res = await proxy(makeRequest('/inbox/resp-1?scope=personal', true));
+      expect(res.status).toBe(200);
+      expect(res.headers.get('location')).toBeNull();
+    });
+
+    it('unauthenticated legacy link goes to /login (not to the workspace route)', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
+      const res = await proxy(makeRequest('/inbox/resp-1?scope=acme', false));
+      expect(res.status).toBe(307);
+      expect(res.headers.get('location')).toContain('/login');
+    });
+
+    // Mutation check: removing the scope guard breaks the redirect.
+    it('mutation: without the scope guard /inbox/<id> would not redirect (confirms the guard is load-bearing)', async () => {
+      // A request without scope must NOT redirect — this test fails if we accidentally
+      // redirect all /inbox/<id> requests regardless of scope.
+      const res = await proxy(makeRequest('/inbox/resp-1', true));
+      expect(res.headers.get('location')).toBeNull();
+    });
+  });
 });

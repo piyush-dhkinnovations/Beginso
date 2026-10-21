@@ -99,8 +99,8 @@ export function ResponseDetailView({ id, scope }: Props) {
   const isSafeDrawerUrl = !!returnTo
     && (
       returnTo.startsWith('/inbox?')
-      || /^\/forms\/[^/]+\/responses\?/.test(returnTo)
-      || /^\/w\/[^/]+\/inbox\?/.test(returnTo)
+      || /^\/forms\/[^/]+\/(inbox|responses)\?/.test(returnTo)
+      || /^\/w\/[^/]+\/(inbox|form-responses)\?/.test(returnTo)
     )
     && returnToParams.get('responseId') === id;
   const drawerUrl = isSafeDrawerUrl ? returnTo : fallbackDrawerUrl;
