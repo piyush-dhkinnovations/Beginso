@@ -21,6 +21,7 @@ import { eventsService } from '@/services/events';
 import { activityKeys, dashboardKeys, workspaceKeys } from '@/lib/queryKeys';
 import { dashboardService } from '@/services/dashboard';
 import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
+import { useEventAvatars } from '@/hooks/useEventAvatars';
 import { canManageDashboard, canManageWorkspaceSettings } from '@/lib/roles';
 import { ActivityFeed } from '@/components/workspaces/ActivityFeed';
 import { PageHeader, Button, EmptyState, Card, Badge, Skeleton, QuickActionsBanner } from '@/components/ui';
@@ -37,6 +38,7 @@ export default function WorkspaceHomePage() {
   const context = { type: 'workspace' as const, workspaceId: slug };
   const [formToShare, setFormToShare] = useState<Form | null>(null);
   const role = useWorkspaceRole(slug);
+  const avatarOf = useEventAvatars(slug);
 
   // Same feed as /w/[slug]/activity, first five events.
   const activity = useQuery({
@@ -221,7 +223,7 @@ export default function WorkspaceHomePage() {
                 <p className="bg-caption text-(--text-muted)">Recent activity could not be loaded.</p>
               ) : (
                 <>
-                  <ActivityFeed events={activity.data ?? []} />
+                  <ActivityFeed events={activity.data ?? []} avatarOf={avatarOf} />
                   {(activity.data?.length ?? 0) > 0 && (
                     <Link href={`/w/${slug}/activity`} className="bg-body-sm font-semibold text-(--action-primary) hover:underline">
                       View all activity

@@ -8,6 +8,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import WorkspaceHomePage from '@/app/w/[slug]/page';
+import { eventsService } from '@/services/events';
 
 vi.mock('next/navigation', () => ({
   useParams: () => ({ slug: 'acme' }),
@@ -152,5 +153,17 @@ describe('WorkspaceHomePage (/w/[slug]/page)', () => {
 
     expect(await screen.findByText('Share access to Customer Survey')).toBeInTheDocument();
     expect(mockListGrants).toHaveBeenCalledWith('f42');
+  });
+  it('shows the picture of whoever acted in Recent Activity, not only initials', async () => {
+    mockGetForms.mockResolvedValue({
+      forms: [{ _id: 'f1', title: 'Survey', status: 'published', responseCount: 1, updatedAt: new Date().toISOString(), fields: [], pages: [], branding: {}, settings: { honeypotEnabled: true }, workspaceId: 'w1', schemaVersion: 1, createdAt: new Date().toISOString() }],
+      total: 1, page: 1, limit: 20,
+    });
+    vi.mocked(eventsService.listWorkspaceActivity).mockResolvedValueOnce([
+      { id: 'e1', actorName: 'Piyush Prajapat', actorAvatarUrl: 'https://cdn.example.com/p.png', action: 'export.csv', targetType: 'report', targetLabel: 'csv report', createdAt: new Date().toISOString() },
+    ] as never);
+    renderPage();
+    await screen.findByText('Piyush Prajapat');
+    expect(document.querySelector('img[src="https://cdn.example.com/p.png"]')).not.toBeNull();
   });
 });
