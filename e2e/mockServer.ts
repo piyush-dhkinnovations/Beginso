@@ -15,6 +15,7 @@ import type { PublicFormSchema } from '../src/types/publicForm.ts';
  *   contains "not-found"    -> GET returns 404
  *   contains "load-500"     -> GET returns 500
  *   contains "closed-date"  -> GET returns the mock schema with a past closeDate
+ *   contains "login-required" -> GET returns the mock schema as a members-only (accessMode 'login') form
  *   contains "submit-422"   -> POST .../submit returns 422
  *   contains "submit-429"   -> POST .../submit returns 429
  *   contains "submit-500"   -> POST .../submit returns 500
@@ -31,6 +32,10 @@ const builderForm = (id: string, s: { label: string; version: number }) => ({
 });
 
 function schemaFor(slug: string): PublicFormSchema {
+  // A members-only form: a visitor who is not signed in gets the sign-in gate instead of the questions.
+  if (slug.includes('login-required')) {
+    return { ...mockPublicFormSchema, title: 'Members only form', settings: { ...mockPublicFormSchema.settings, accessMode: 'login' } };
+  }
   if (slug.includes('closed-date')) {
     return {
       ...mockPublicFormSchema,
