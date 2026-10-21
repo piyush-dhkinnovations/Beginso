@@ -338,8 +338,92 @@ describe('ResponseDrawer', () => {
     renderDrawer('resp-1', vi.fn(), { scope: 'acme' });
     await screen.findByText('Submitted response');
     await user.click(screen.getByRole('button', { name: 'Download response' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Download as CSV' }));
     expect(createReport).toHaveBeenCalledWith(expect.objectContaining({ format: 'csv', ids: ['resp-1'] }), 'acme');
     createReport.mockRestore();
+  });
+
+  describe('download format', () => {
+    const open = async (scope = 'acme') => {
+      mockGetResponseById.mockResolvedValue(detail);
+      const user = userEvent.setup();
+      renderDrawer('resp-1', vi.fn(), { scope });
+      await screen.findByText('Submitted response');
+      return user;
+    };
+
+    it('asks which format before starting anything: CSV or PDF', async () => {
+      const createReport = vi.spyOn(reportsService, 'createReport').mockResolvedValue({} as never);
+      const user = await open();
+      const trigger = screen.getByRole('button', { name: 'Download response' });
+      expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
+      await user.click(trigger);
+      expect(screen.getAllByRole('menuitem').map((i) => i.textContent)).toEqual(['Download as CSV', 'Download as PDF']);
+      expect(createReport).not.toHaveBeenCalled(); // opening the menu is not a download
+      createReport.mockRestore();
+    });
+
+    it('opens above the drawer (the drawer sits at layer 80-85), not underneath it', async () => {
+      const user = await open();
+      await user.click(screen.getByRole('button', { name: 'Download response' }));
+      expect(screen.getByRole('menu').className).toMatch(/\bz-88\b/);
+    });
+
+    it('PDF requests a PDF of this one response, in the right scope, and says it is being prepared', async () => {
+      const createReport = vi.spyOn(reportsService, 'createReport').mockResolvedValue({} as never);
+      const user = await open('acme');
+      await user.click(screen.getByRole('button', { name: 'Download response' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Download as PDF' }));
+      expect(createReport).toHaveBeenCalledTimes(1);
+      expect(createReport).toHaveBeenCalledWith(expect.objectContaining({ format: 'pdf', ids: ['resp-1'] }), 'acme');
+      await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Preparing your download. It will appear on the Exports page when it is ready.', 'success'));
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument(); // the menu closes after choosing
+      createReport.mockRestore();
+    });
+
+    it('CSV still requests a CSV', async () => {
+      const createReport = vi.spyOn(reportsService, 'createReport').mockResolvedValue({} as never);
+      const user = await open('personal');
+      await user.click(screen.getByRole('button', { name: 'Download response' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Download as CSV' }));
+      expect(createReport).toHaveBeenCalledWith(expect.objectContaining({ format: 'csv', ids: ['resp-1'] }), 'personal');
+      createReport.mockRestore();
+    });
+
+    it('says so when it could not start, whichever format was chosen', async () => {
+      const createReport = vi.spyOn(reportsService, 'createReport').mockRejectedValue(new Error('500'));
+      const user = await open();
+      await user.click(screen.getByRole('button', { name: 'Download response' }));
+      await user.click(screen.getByRole('menuitem', { name: 'Download as PDF' }));
+      await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Failed to start the download. Please try again.', 'error'));
+      createReport.mockRestore();
+    });
+
+    it('Escape closes the menu without closing the drawer or downloading', async () => {
+      const createReport = vi.spyOn(reportsService, 'createReport').mockResolvedValue({} as never);
+      mockGetResponseById.mockResolvedValue(detail);
+      const user = userEvent.setup();
+      const { onClose } = renderDrawer('resp-1');
+      await screen.findByText('Submitted response');
+      await user.click(screen.getByRole('button', { name: 'Download response' }));
+      expect(screen.getByRole('menu')).toBeInTheDocument();
+      await user.keyboard('{Escape}');
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+      expect(onClose).not.toHaveBeenCalled();
+      expect(createReport).not.toHaveBeenCalled();
+      expect(screen.getByRole('button', { name: 'Download response' })).toHaveFocus();
+      createReport.mockRestore();
+    });
+
+    it('works from the keyboard: Enter opens it, arrows move, Enter chooses', async () => {
+      const createReport = vi.spyOn(reportsService, 'createReport').mockResolvedValue({} as never);
+      const user = await open();
+      screen.getByRole('button', { name: 'Download response' }).focus();
+      await user.keyboard('{Enter}');
+      await user.keyboard('{ArrowDown}{Enter}');
+      expect(createReport).toHaveBeenCalledWith(expect.objectContaining({ format: 'pdf' }), 'acme');
+      createReport.mockRestore();
+    });
   });
 
   // QA A6-011: the parent re-creates onClose on every render. The focus effect depended on it, so each parent render
@@ -610,7 +694,7 @@ describe('ResponseDrawer header on small screens', () => {
     expect(header.className).toMatch(/\bflex-wrap\b/);
     const nameRow = screen.getByRole('heading', { level: 2 }).closest('div.min-w-0.items-center, div.flex.min-w-0') as HTMLElement;
     expect(nameRow.className).toMatch(/max-sm:basis-full/);
-    const actions = screen.getByRole('button', { name: 'Download response' }).parentElement as HTMLElement;
+    const actions = screen.getByRole('button', { name: 'Download response' }).closest('div.shrink-0') as HTMLElement;
     expect(actions.className).toMatch(/max-sm:ml-auto/);
   });
 });

@@ -74,6 +74,21 @@ describe('SegmentedRadio', () => {
     expect(screen.getByRole('radio', { name: 'Table' })).toHaveAttribute('title', 'Rows like a table');
   });
 
+  it('fullWidth fills its parent and the options share the width equally', () => {
+    render(<SegmentedRadio ariaLabel="Density" options={OPTIONS.slice(0, 2)} value="grid" onChange={() => {}} fullWidth />);
+    expect(screen.getByRole('radiogroup', { name: 'Density' })).toHaveClass('w-full');
+    for (const radio of screen.getAllByRole('radio')) {
+      expect(radio).toHaveClass('flex-1');
+      expect(radio).toHaveClass('justify-center');
+    }
+  });
+
+  it('by default it only wraps its options', () => {
+    render(<SegmentedRadio ariaLabel="Layout" options={OPTIONS} value="grid" onChange={() => {}} />);
+    expect(screen.getByRole('radiogroup')).not.toHaveClass('w-full');
+    expect(screen.getByRole('radio', { name: 'Grid' })).not.toHaveClass('flex-1');
+  });
+
   it('keeps the label for assistive tech when icons only are shown on small screens', () => {
     render(<SegmentedRadio ariaLabel="Layout" options={OPTIONS} value="grid" onChange={() => {}} iconOnlyBelow="lg" />);
     expect(screen.getByRole('radio', { name: 'Grid' })).toBeInTheDocument();
