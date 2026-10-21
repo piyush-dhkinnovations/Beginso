@@ -135,15 +135,28 @@ describe('useResponseRouting', () => {
     expect(replace).not.toHaveBeenCalled();
   });
 
-  it('expandResponse opens the full page with form, scope and a return link', () => {
+  it('expandResponse goes to /w/[slug]/inbox/[id] for a workspace scope (preserves WorkspaceShell)', () => {
     search = 'page=2&responseId=b';
     const { result } = renderHook(() => useResponseRouting(opts()));
     act(() => result.current.expandResponse(resp('b')));
     const url = push.mock.calls[0][0] as string;
-    expect(url.startsWith('/inbox/b?')).toBe(true);
+    // Workspace responses must use the /w/ route so the layout shell matches.
+    expect(url.startsWith('/w/acme/inbox/b?')).toBe(true);
     const p = new URLSearchParams(url.split('?')[1]);
     expect(p.get('formId')).toBe('f1');
-    expect(p.get('scope')).toBe('acme');
+    // scope is now in the URL path, not the query string
+    expect(p.get('scope')).toBeNull();
     expect(p.get('returnTo')).toBe('/forms/f1/inbox?page=2&responseId=b');
+  });
+
+  it('expandResponse stays on /inbox/[id] for the personal scope (PersonalShell is correct there)', () => {
+    search = 'page=1&responseId=a';
+    const { result } = renderHook(() => useResponseRouting(opts({ scope: 'personal' })));
+    act(() => result.current.expandResponse(resp('a')));
+    const url = push.mock.calls[0][0] as string;
+    expect(url.startsWith('/inbox/a?')).toBe(true);
+    const p = new URLSearchParams(url.split('?')[1]);
+    expect(p.get('formId')).toBe('f1');
+    expect(p.get('scope')).toBeNull();
   });
 });
