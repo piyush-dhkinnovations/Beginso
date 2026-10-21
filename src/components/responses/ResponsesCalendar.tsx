@@ -54,7 +54,7 @@ export function CalendarItemRow({ response, onSelect }: { response: IResponse; o
  *
  * Always a calendar: a month with nothing in it still shows its days (the toolbar says so), never an empty-state in place of the grid.
  * Today / previous / next and the month picker move around. Stage, assignee and the rest are filtered by the page's own chips and
- * toolbar above, which already apply here. A day with one response opens it; a day with more opens its list. Arrow keys move
+ * toolbar above, which already apply here. Clicking a day opens its card (the date, the count and each response); a chip opens its response directly. Arrow keys move
  * between days.
  */
 export function ResponsesCalendar({ scope, formId, filters, timezone, onViewResponse, initialDate }: ResponsesCalendarProps) {
@@ -124,8 +124,7 @@ export function ResponsesCalendar({ scope, formId, filters, timezone, onViewResp
     setFocusedKey(today);
   }
   function openDay(key: string, items: IResponse[]) {
-    if (items.length === 1) onViewResponse(items[0]._id);
-    else if (items.length > 1) setOpenDayKey(key);
+    if (items.length > 0) setOpenDayKey(key); // a day card, even for one response; a chip opens its response directly
   }
 
   const toolbar = (
@@ -204,7 +203,7 @@ export function ResponsesCalendar({ scope, formId, filters, timezone, onViewResp
         isOpen={openDayKey !== null}
         onClose={() => setOpenDayKey(null)}
         title={openDayKey ? formatDayTitle(openDayKey) : ''}
-        description={openDayKey ? `${(byDay.get(openDayKey) ?? []).length} responses` : undefined}
+        description={openDayKey ? `${(byDay.get(openDayKey) ?? []).length} response${(byDay.get(openDayKey) ?? []).length === 1 ? '' : 's'}` : undefined}
       >
         <div className="flex flex-col gap-2">
           {(openDayKey ? byDay.get(openDayKey) ?? [] : []).map((r) => (

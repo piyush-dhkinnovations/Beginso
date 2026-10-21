@@ -280,12 +280,16 @@ describe('what a day shows', () => {
     expect(onView).toHaveBeenCalledWith('r4');
   });
 
-  it('a day with one response opens it directly; a day with none does nothing', async () => {
+  it('a day with one response opens its day card; a day with none does nothing', async () => {
     serve([response('solo', '2026-09-12T08:00:00.000Z')]);
     const user = userEvent.setup();
     draw();
     await within(cell('2026-09-12')).findByRole('button', { name: /Person solo/ });
     await user.click(cell('2026-09-12'));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('1 response')).toBeInTheDocument();
+    expect(onView).not.toHaveBeenCalled();
+    await user.click(within(dialog).getByRole('button', { name: /Person solo/ }));
     expect(onView).toHaveBeenCalledWith('solo');
     onView.mockClear();
     await user.click(cell('2026-09-13'));
@@ -349,7 +353,7 @@ describe('keyboard', () => {
     expect(cell('2026-11-30')).toHaveFocus();
   });
 
-  it('Enter opens a day: its single response directly, several as a list', async () => {
+  it('Enter opens the day card, for one response or several', async () => {
     serve([
       response('solo', '2026-09-12T08:00:00.000Z'),
       response('x', '2026-09-20T08:00:00.000Z'),
@@ -360,7 +364,8 @@ describe('keyboard', () => {
     await within(cell('2026-09-12')).findByRole('button', { name: /Person solo/ });
     cell('2026-09-12').focus();
     await user.keyboard('{Enter}');
-    expect(onView).toHaveBeenCalledWith('solo');
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+    await user.keyboard('{Escape}');
     cell('2026-09-20').focus();
     await user.keyboard('{Enter}');
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
