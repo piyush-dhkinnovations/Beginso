@@ -21,6 +21,8 @@ import { resolvePrefill } from '@/lib/embed/prefill';
 import { FormProgress } from './FormProgress';
 import { ReviewStep } from './ReviewStep';
 import { EmailStep } from './EmailStep';
+import { VerifyEmailButton, VerifyEmailNote, isEmailLike, isVerifiedFor } from './EmailVerifyControl';
+import { useEmailVerification } from '@/hooks/useEmailVerification';
 import { LoginGate } from './LoginGate';
 import { useAuth } from '@/hooks/useAuth';
 import { ShortTextRenderer } from './fields/ShortTextRenderer';
@@ -138,6 +140,12 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   // eslint-disable-next-line react-hooks/incompatible-library -- watch() must return live values every render for real-time logic evaluation (Requirement 5.1); this is inherent to RHF's watch() API, not a bug.
   const watchedValues = methods.watch();
   const hiddenFieldIds = evaluateLogicRules(schema.fields, watchedValues);
+
+  // Mode 2 ("with their email"): the form's own Email question IS the address. It is verified in place (a Verify button beside it);
+  // only a form with no Email question (published before that was required) falls back to a standalone "Your email" box.
+  const emailField = accessMode === 'tracked' ? schema.fields.find((f) => f.type === 'email' && !f.deleted) : undefined;
+  const typedEmail = emailField ? String(watchedValues[emailField.fieldId] ?? '') : respondentEmail;
+  const verification = useEmailVerification(slug, accessMode === 'tracked' && !previewMode, typedEmail);
   const hiddenFieldIdsKey = Array.from(hiddenFieldIds).sort().join(',');
 
   useEffect(() => {
@@ -291,16 +299,24 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
       return;
     }
 
-    // Mode 2: the address is required and checked BEFORE anything is sent.
+    // Mode 2: the address is required, and must be VERIFIED, before anything is sent.
+    let candidate = '';
     if (accessMode === 'tracked') {
-      const candidate = respondentEmail.trim();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate)) {
-        setEmailError('Please enter a valid email address.');
-        // The email is asked on the first page: take the respondent back to it.
+      candidate = (emailField ? String(values[emailField.fieldId] ?? '') : respondentEmail).trim();
+      const problem = !isEmailLike(candidate)
+        ? 'Please enter a valid email address.'
+        : !isVerifiedFor(verification, candidate)
+          ? 'Verify your email address to submit. Press Verify and open the link we send you.'
+          : null;
+      if (problem) {
+        // The email is asked on its own page: take the respondent back to it.
         setShowReview(false);
-        setCurrentPageIndex(0);
+        const page = emailField ? sortedPages.findIndex((p) => p.id === emailField.pageId) : 0;
+        setCurrentPageIndex(Math.max(0, page));
         setQuestionIndex(0);
-        setTimeout(() => document.getElementById('respondent-email')?.focus(), 0);
+        if (emailField) methods.setError(emailField.fieldId, { type: 'validate', message: problem });
+        else setEmailError(problem);
+        setTimeout(() => document.getElementById(emailField ? emailField.fieldId : 'respondent-email')?.focus(), 0);
         return;
       }
       setEmailError(null);
@@ -332,15 +348,16 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
 
       const result = await publicFormService.submitForm(
         slug,
-        { answers, ...(accessMode === 'tracked' ? { respondentEmail: respondentEmail.trim() } : {}) },
+        { answers, ...(accessMode === 'tracked' ? { respondentEmail: candidate } : {}) },
         files,
         honeypot,
-        { ticket }
+        { ticket, emailVerificationId: accessMode === 'tracked' ? (verification.verificationId ?? undefined) : undefined }
       );
 
       if (result.ok) {
         submittedRef.current = true;
         clearDraft(slug);
+        verification.clear();
         const params = new URLSearchParams(carryEmbedSearch(search));
         params.set('title', schema.title);
         if (schema.settings.successMessage) params.set('message', schema.settings.successMessage);
@@ -363,6 +380,10 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
       } else if (result.code === 'EMAIL_REQUIRED') {
         setEmailError(result.message ?? 'Please enter a valid email address.');
         setSubmitError(null);
+      } else if (result.code === 'EMAIL_NOT_VERIFIED') {
+        // The proof was used up or timed out: ask for a fresh one.
+        verification.clear();
+        setSubmitError('Your email needs to be verified again. Press Verify and open the new link we send you.');
       } else if (result.code === 'LOGIN_REQUIRED') {
         setSubmitError('Your sign-in has expired. Please sign in again to submit.');
       } else if (result.status === 429) {
@@ -528,6 +549,24 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
         );
       }
 
+      if (accessMode === 'tracked' && emailField && field.fieldId === emailField.fieldId) {
+        return (
+          <div key={field.fieldId} className={spanClass}>
+            <EmailRenderer
+              field={field}
+              control={methods.control}
+              register={methods.register}
+              trigger={methods.trigger}
+              setValue={methods.setValue}
+              error={fieldError}
+              disabled={isSubmitting}
+              verify={<VerifyEmailButton verification={verification} email={typedEmail} disabled={isSubmitting || previewMode} />}
+              verifyNote={<VerifyEmailNote verification={verification} email={typedEmail} />}
+            />
+          </div>
+        );
+      }
+
       const Renderer = RENDERER_MAP[field.type];
       return (
         <div key={field.fieldId} className={spanClass}>
@@ -626,9 +665,16 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   const hasAccessExtra = !!testControls;
   // Tracked mode: whose response this is, asked first like login mode's "Responding as", not after the questions.
   const trackedEmail =
-    accessMode === 'tracked' && !showReview && currentPageIndex === 0 ? (
+    accessMode === 'tracked' && !emailField && !showReview && currentPageIndex === 0 ? (
       <div className="mb-6">
-        <EmailStep value={respondentEmail} onChange={setRespondentEmail} error={emailError} disabled={isSubmitting} />
+        <EmailStep
+          value={respondentEmail}
+          onChange={setRespondentEmail}
+          error={emailError}
+          disabled={isSubmitting}
+          verify={<VerifyEmailButton verification={verification} email={respondentEmail} disabled={isSubmitting || previewMode} />}
+          note={<VerifyEmailNote verification={verification} email={respondentEmail} />}
+        />
       </div>
     ) : null;
 

@@ -19,6 +19,9 @@ const svc = vi.hoisted(() => ({
   recordView: vi.fn(),
   submitForm: vi.fn(),
   getSubmitTicket: vi.fn(),
+  requestEmailVerification: vi.fn(),
+  getEmailVerification: vi.fn(),
+  confirmEmailVerification: vi.fn(),
 }));
 vi.mock('@/services/publicForm', () => ({ publicFormService: svc }));
 
@@ -57,6 +60,8 @@ beforeEach(() => {
   svc.recordView.mockReset();
   svc.submitForm.mockReset().mockResolvedValue({ ok: true, status: 200 });
   svc.getSubmitTicket.mockReset().mockResolvedValue({ ticket: 'tkt', expiresInSeconds: 120 });
+  svc.requestEmailVerification.mockReset().mockResolvedValue({ verificationId: 'vid-1234567890123456789012' });
+  svc.getEmailVerification.mockReset().mockResolvedValue({ status: 'pending' });
   mockAuth.mockReset().mockReturnValue({ user: null, isLoading: false });
   window.scrollTo = vi.fn() as unknown as typeof window.scrollTo;
   sessionStorage.clear();
@@ -270,6 +275,27 @@ describe('PublicFormShell access modes', () => {
     expect(email.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  // The respondent presses Verify, opens the email and clicks the button: the next check of the request says verified.
+  async function verifyEmail(address: string, label: RegExp = /Your email/) {
+    await userEvent.type(screen.getByLabelText(label), address);
+    await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    await screen.findByText(/We sent a link to/);
+    svc.getEmailVerification.mockResolvedValue({ status: 'verified', email: address.trim().toLowerCase() });
+    window.dispatchEvent(new Event('focus')); // coming back to the tab checks at once, instead of waiting for the timer
+    await screen.findByText('Verified');
+  }
+
+  it('tracked: Verify stays off until the address looks like an email, and asks the backend to send the link', async () => {
+    render(<PublicFormShell schema={tracked()} slug="s" />);
+    const verify = screen.getByRole('button', { name: 'Verify' });
+    expect(verify).toBeDisabled();
+    await userEvent.type(screen.getByLabelText(/Your email/), 'a@b.co');
+    expect(verify).toBeEnabled();
+    await userEvent.click(verify);
+    expect(svc.requestEmailVerification).toHaveBeenCalledWith('s', 'a@b.co');
+    expect(await screen.findByText(/We sent a link to/)).toHaveTextContent('a@b.co');
+  });
+
   it('tracked: refuses an invalid email before sending anything', async () => {
     render(<PublicFormShell schema={tracked()} slug="s" />);
     await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
@@ -279,24 +305,104 @@ describe('PublicFormShell access modes', () => {
     expect(svc.submitForm).not.toHaveBeenCalled();
   });
 
-  it('tracked: sends the trimmed email outside the answers', async () => {
+  it('tracked: a valid but unverified email cannot be submitted', async () => {
     render(<PublicFormShell schema={tracked()} slug="s" />);
     await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
-    await userEvent.type(screen.getByLabelText(/Your email/), '  a@b.co ');
+    await userEvent.type(screen.getByLabelText(/Your email/), 'a@b.co');
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    expect(await screen.findByText(/Verify your email address to submit/)).toBeInTheDocument();
+    expect(svc.submitForm).not.toHaveBeenCalled();
+  });
+
+  it('tracked: after verifying, sends the trimmed email and the proof, outside the answers', async () => {
+    render(<PublicFormShell schema={tracked()} slug="s" />);
+    await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
+    await verifyEmail('  a@b.co ');
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
     await waitFor(() => expect(svc.submitForm).toHaveBeenCalled());
-    const data = svc.submitForm.mock.calls[0][1];
+    const [, data, , , opts] = svc.submitForm.mock.calls[0];
     expect(data.respondentEmail).toBe('a@b.co');
+    expect(opts.emailVerificationId).toBe('vid-1234567890123456789012');
     expect(data.answers.some((a: { fieldId: string }) => a.fieldId === 'respondent-email')).toBe(false);
+  });
+
+  it('tracked: changing the address after verifying drops the verification', async () => {
+    render(<PublicFormShell schema={tracked()} slug="s" />);
+    await verifyEmail('a@b.co');
+    await userEvent.type(screen.getByLabelText(/Your email/), 'x');
+    expect(screen.queryByText('Verified')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Verify' })).toBeEnabled();
+  });
+
+  it('tracked: says so when the verification email could not be sent', async () => {
+    svc.requestEmailVerification.mockRejectedValue(new Error('We could not send the verification email. Please try again.'));
+    render(<PublicFormShell schema={tracked()} slug="s" />);
+    await userEvent.type(screen.getByLabelText(/Your email/), 'a@b.co');
+    await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('could not send the verification email');
   });
 
   it('tracked: shows the server EMAIL_REQUIRED message against the email input', async () => {
     svc.submitForm.mockResolvedValue({ ok: false, status: 422, code: 'EMAIL_REQUIRED', message: 'Email needed' });
     render(<PublicFormShell schema={tracked()} slug="s" />);
     await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
-    await userEvent.type(screen.getByLabelText(/Your email/), 'a@b.co');
+    await verifyEmail('a@b.co');
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
     expect(await screen.findByText('Email needed')).toBeInTheDocument();
+  });
+
+  it('tracked: a proof the server no longer accepts asks for a fresh verification', async () => {
+    svc.submitForm.mockResolvedValue({ ok: false, status: 422, code: 'EMAIL_NOT_VERIFIED', message: 'Verify your email address before submitting' });
+    render(<PublicFormShell schema={tracked()} slug="s" />);
+    await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
+    await verifyEmail('a@b.co');
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    expect(await screen.findByText(/needs to be verified again/)).toBeInTheDocument();
+    expect(screen.queryByText('Verified')).not.toBeInTheDocument();
+  });
+
+  describe('when the form has its own Email question', () => {
+    const withEmail = () =>
+      schema(
+        { settings: { accessMode: 'tracked' } as PublicFormSchema['settings'] },
+        [text('name', 'Name', { required: true, order: 0 }), makeField({ fieldId: 'mail', label: 'Contact email', type: 'email', required: true, order: 1 })]
+      );
+
+    it('asks for the address once: no separate "Your email" box, and Verify sits beside the question', () => {
+      render(<PublicFormShell schema={withEmail()} slug="s" />);
+      expect(screen.queryByLabelText(/Your email/)).not.toBeInTheDocument();
+      expect(screen.getAllByLabelText(/email/i)).toHaveLength(1);
+      expect(screen.getByRole('button', { name: 'Verify' })).toBeInTheDocument();
+    });
+
+    it('verifies that question value and sends it as the respondent email as well as the answer', async () => {
+      render(<PublicFormShell schema={withEmail()} slug="s" />);
+      await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
+      await verifyEmail('Asha@Example.com', /Contact email/);
+      expect(svc.requestEmailVerification).toHaveBeenCalledWith('s', 'asha@example.com');
+      await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+      await waitFor(() => expect(svc.submitForm).toHaveBeenCalled());
+      const [, data, , , opts] = svc.submitForm.mock.calls[0];
+      expect(data.respondentEmail).toBe('Asha@Example.com');
+      expect(data.answers.find((a: { fieldId: string }) => a.fieldId === 'mail')?.value).toBe('Asha@Example.com');
+      expect(opts.emailVerificationId).toBeTruthy();
+    });
+
+    it('does not submit until that question is verified', async () => {
+      render(<PublicFormShell schema={withEmail()} slug="s" />);
+      await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
+      await userEvent.type(screen.getByLabelText(/Contact email/), 'asha@example.com');
+      await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+      expect(await screen.findByText(/Verify your email address to submit/)).toBeInTheDocument();
+      expect(svc.submitForm).not.toHaveBeenCalled();
+    });
+
+    it('the owner preview shows the Verify button but it does nothing', async () => {
+      render(<PublicFormShell schema={withEmail()} slug="s" previewMode />);
+      await userEvent.type(screen.getByLabelText(/Contact email/), 'asha@example.com');
+      expect(screen.getByRole('button', { name: 'Verify' })).toBeDisabled();
+      expect(svc.requestEmailVerification).not.toHaveBeenCalled();
+    });
   });
 
   const login = () => schema({ settings: { accessMode: 'login' } as PublicFormSchema['settings'] });

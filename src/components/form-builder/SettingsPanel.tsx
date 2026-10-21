@@ -34,13 +34,15 @@ export interface SettingsPanelProps {
   status: FormStatus;
   slug?: string;
   onUpdate: (updates: Partial<FormSettings>) => void;
+  /** Whether the form has an Email question. "Anyone with the link, with their email" verifies the address in it. Defaults to true. */
+  hasEmailField?: boolean;
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return <h2 className="bg-overline border-b border-(--border-default) pb-2 text-(--text-muted)">{children}</h2>;
 }
 
-export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPanelProps) {
+export function SettingsPanel({ settings, status, slug, onUpdate, hasEmailField = true }: SettingsPanelProps) {
   const { toast } = useToast();
 
   // ── Success message (commits on blur) ───────────────────────────────────────
@@ -110,9 +112,18 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
           <p className="bg-caption text-(--text-muted)">No email and no tracking — the quickest way for people to respond.</p>
         )}
         {settings.accessMode === 'tracked' && (
-          <p className="bg-caption text-(--text-muted)">
-            Respondents get an email link to view or correct their submission. The email never contains their answers.
-          </p>
+          <>
+            <p className="bg-caption text-(--text-muted)">
+              Respondents verify the email in your form&apos;s Email question: they press Verify beside it and tap the button in the email we send them.
+              After they submit, they get a link to view or correct their submission. The emails never contain their answers.
+            </p>
+            {!hasEmailField && (
+              <Alert variant="warning" title="Add an Email question to use this">
+                This option verifies the respondent&apos;s address in an Email question, and this form has none yet. Add at least one in the
+                Build tab, or the form cannot be published.
+              </Alert>
+            )}
+          </>
         )}
         {settings.accessMode === 'login' && (
           <>

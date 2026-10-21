@@ -172,7 +172,7 @@ export default function BuilderPageShell() {
                 ) : activeTab === 'settings' ? (
                   // Settings is an ordinary page in a form-width column: it scrolls with the page.
                   <div className="min-w-0 flex-1">
-                    <SettingsPanel settings={settings} status={status} slug={slug} onUpdate={setSettings} />
+                    <SettingsPanel settings={settings} status={status} slug={slug} onUpdate={setSettings} hasEmailField={fields.some((f) => !f.deleted && f.type === 'email')} />
                   </div>
                 ) : null}
               </div>

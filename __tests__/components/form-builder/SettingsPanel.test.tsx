@@ -30,9 +30,21 @@ describe('SettingsPanel: access mode', () => {
     expect(onUpdate).toHaveBeenCalledWith({ accessMode: 'tracked' });
   });
 
-  it('tracked mode says the email never contains answers', () => {
+  it('tracked mode explains the verification and that the emails never contain answers', () => {
     setup({ settings: { honeypotEnabled: true, accessMode: 'tracked' } });
-    expect(screen.getByText(/The email never contains their answers/)).toBeInTheDocument();
+    expect(screen.getByText(/press Verify beside it/)).toBeInTheDocument();
+    expect(screen.getByText(/The emails never contain their answers/)).toBeInTheDocument();
+    expect(screen.queryByText('Add an Email question to use this')).not.toBeInTheDocument();
+  });
+
+  it('tracked mode on a form with no Email question says to add one', () => {
+    setup({ settings: { honeypotEnabled: true, accessMode: 'tracked' }, hasEmailField: false });
+    expect(screen.getByText('Add an Email question to use this')).toBeInTheDocument();
+  });
+
+  it('other modes never ask for an Email question', () => {
+    setup({ settings: { honeypotEnabled: true, accessMode: 'open' }, hasEmailField: false });
+    expect(screen.queryByText('Add an Email question to use this')).not.toBeInTheDocument();
   });
 
   it('login mode warns about reduced completions', () => {
