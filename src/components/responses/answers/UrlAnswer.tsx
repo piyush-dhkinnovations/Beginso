@@ -12,6 +12,8 @@ interface UrlAnswerProps {
   value: string;
   field?: FormField;
   scope: string;
+  /** Compact chip for the Table layout. */
+  chip?: boolean;
 }
 
 // Opens in a new tab with no opener and no referrer. The site is only ever LINKED — never framed or embedded —
@@ -115,7 +117,7 @@ function RichPreview({ href, domain, service, scope, framed, size, ratio }: { hr
   );
 }
 
-export function UrlAnswer({ value, field, scope }: UrlAnswerProps) {
+export function UrlAnswer({ value, field, scope, chip = false }: UrlAnswerProps) {
   const url = safeHttpUrl(value);
   // Not a plain web address (should not happen — the form validates it): shown as text, never as a link.
   if (!url) return <span className="break-all">{value}</span>;
@@ -123,6 +125,25 @@ export function UrlAnswer({ value, field, scope }: UrlAnswerProps) {
   const { style, display, previewSize, aspectRatio } = urlSettings(field);
   const domain = domainOf(url);
   const href = url.href;
+
+  // The Table layout: one small chip, no preview request, no thumbnail. A sign-in host is named, never scraped.
+  if (chip) {
+    const service = signInService(url);
+    return (
+      <a
+        {...LINK_PROPS}
+        href={href}
+        title={href}
+        className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-(--border-default) bg-(--surface-card) py-0.5 pl-2 pr-2.5 text-(--text-primary) hover:text-(--text-link)"
+      >
+        <Globe size={13} className="shrink-0 text-(--text-muted)" aria-hidden="true" />
+        <span className="max-w-56 truncate bg-body-sm font-medium">{service ? `${service} file` : domain}</span>
+        <span className="bg-body-sm text-(--text-link)">Open</span>
+        <ExternalLink size={12} className="shrink-0 text-(--text-muted)" aria-hidden="true" />
+        <span className="sr-only">(opens in a new tab)</span>
+      </a>
+    );
+  }
 
   if (style === 'text') {
     return (

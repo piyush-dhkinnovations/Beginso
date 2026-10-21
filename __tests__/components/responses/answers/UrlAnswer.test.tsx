@@ -94,6 +94,45 @@ describe('UrlAnswer', () => {
     expect(screen.getByRole('link', { name: /Opens in a new tab/ })).toHaveAttribute('rel', 'noopener noreferrer nofollow');
   });
 
+  describe('chip (the Table layout)', () => {
+    const renderChip = (value: string) => {
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      return render(
+        <QueryClientProvider client={client}>
+          <UrlAnswer value={value} field={undefined} scope="acme" chip />
+        </QueryClientProvider>
+      );
+    };
+
+    it('is one small hardened link showing the host, with no preview request', () => {
+      renderChip('https://www.example.com/some/long/path');
+      const a = screen.getByRole('link');
+      expect(a).toHaveAttribute('href', 'https://www.example.com/some/long/path');
+      expect(a).toHaveAttribute('rel', 'noopener noreferrer nofollow');
+      expect(a).toHaveAttribute('target', '_blank');
+      expect(a).toHaveTextContent('example.com');
+      expect(a).toHaveTextContent('Open');
+      expect(mockPreview).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['https://drive.google.com/file/d/16-ZyXwVuTsRqPoNm/view', 'Google Drive file'],
+      ['https://docs.google.com/document/d/abc/edit', 'Google Docs file'],
+      ['https://www.dropbox.com/s/abc/file.pdf', 'Dropbox file'],
+      ['https://www.figma.com/file/abc', 'Figma file'],
+    ])('%s is named, never scraped, and never "Page not found"', (href, label) => {
+      renderChip(href);
+      expect(screen.getByRole('link')).toHaveTextContent(label);
+      expect(screen.queryByText(/Page not found/)).not.toBeInTheDocument();
+      expect(mockPreview).not.toHaveBeenCalled();
+    });
+
+    it('text that is not a web address is not a link', () => {
+      renderChip('javascript:alert(1)');
+      expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    });
+  });
+
   const rich = (extra: Record<string, string>) => ({ type: 'url', urlPreviewStyle: 'rich', urlDisplay: 'card', ...extra }) as unknown as FormField;
   const thumb = async () => waitFor(() => {
     const el = document.querySelector('img');

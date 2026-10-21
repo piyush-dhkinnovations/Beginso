@@ -17,7 +17,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/Toast';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
-import { AnswerCard } from './answers/AnswerCard';
+import { Tabs } from '@/components/ui/Tabs';
+import { SubmittedResponse } from './SubmittedResponse';
+import { ResponseViewToolbar } from './ResponseViewToolbar';
+import { useSubmittedResponse } from '@/hooks/useSubmittedResponse';
 import { StageBadge } from './StageBadge';
 import { NotesPanel } from './NotesPanel';
 import { WorkflowSidebar } from './WorkflowSidebar';
@@ -32,11 +35,12 @@ import { useInboxMutations } from '@/hooks/useInboxMutations';
 import { useMembers } from '@/hooks/useMembers';
 import { useTags } from '@/hooks/useTags';
 import { useAuth } from '@/hooks/useAuth';
+import { useDesktop } from '@/hooks/useDesktop';
 import { formAccessKeys, noteKeys, responseKeys, tagKeys, workspaceKeys } from '@/lib/queryKeys';
 import type { Tag } from '@/types/tag';
 import { detectRespondentIdentity, initialsOf, shortId } from '@/lib/formatters';
 import { exportPayloadFromTarget } from '@/lib/reportExport';
-import { buildAnswerItems, isTopAnswer } from '@/lib/responseAnswers';
+import { buildAnswerItems } from '@/lib/responseAnswers';
 import { DELETE_COPY, DOWNLOAD_FAILED, DOWNLOAD_QUEUED } from '@/lib/responseCopy';
 import { hasCapability } from '@/lib/roles';
 import { cn } from '@/lib/utils';
@@ -69,6 +73,12 @@ interface ResponseDrawerProps {
    * `/responses/[id]` page) simply doesn't render the callout's link as clickable-elsewhere. */
   onOpenResponse?: (id: string) => void;
 }
+
+type PageTab = 'response' | 'details' | 'notes' | 'activity';
+
+// Keys that are never a shortcut: anything typed into a field, and any chord with a modifier.
+const isTypingTarget = (el: EventTarget | null): boolean =>
+  el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName));
 
 function DrawerSkeleton() {
   return (
@@ -158,6 +168,8 @@ export function ResponseDrawer({
   const drawerRef = useRef<HTMLDivElement>(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [pageTab, setPageTab] = useState<PageTab>('response');
+  const isDesktop = useDesktop();
   const { user } = useAuth();
   const mutations = useInboxMutations({ scope, formId });
   const { data: members = [] } = useMembers(scope === 'personal' ? undefined : scope);
@@ -252,6 +264,25 @@ export function ResponseDrawer({
     return () => document.removeEventListener('keydown', handler);
   }, [isDrawerOpen]);
 
+  // j / k: next and previous response, like a mail list. Never while typing, never with a modifier, and not while a
+  // dialog (image viewer, delete confirmation) sits on top.
+  const navRef = useRef({ onPrevious, onNext, hasPrevious, hasNext });
+  useEffect(() => {
+    navRef.current = { onPrevious, onNext, hasPrevious, hasNext };
+  }, [onPrevious, onNext, hasPrevious, hasNext]);
+  useEffect(() => {
+    if (!responseId) return;
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.key !== 'j' && e.key !== 'k') || e.ctrlKey || e.metaKey || e.altKey || isTypingTarget(e.target)) return;
+      if (document.querySelector('[role="dialog"][aria-modal="true"]:not([aria-labelledby="drawer-title"])')) return;
+      const { onPrevious: prev, onNext: next, hasPrevious: canPrev, hasNext: canNext } = navRef.current;
+      if (e.key === 'j' && canNext) next?.();
+      if (e.key === 'k' && canPrev) prev?.();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [responseId]);
+
   const { data: response, error: responseError, isError, isFetching, isLoading, refetch } = useQuery({
     queryKey: responseKeys.detail(scope, responseId ?? ''),
     queryFn: () => responsesService.getResponseById(responseId as string, scope),
@@ -291,6 +322,11 @@ export function ResponseDrawer({
     queryFn: () => formsService.getFormById(response?.formId as string),
     enabled: !!response?.formId,
   });
+
+  // A failed/absent form lookup falls back to plain label → value rows rather than blocking the answers.
+  const answerItems = response ? buildAnswerItems(response.answers, response.responseFiles, responseForm?.fields, responseForm?.pages, fileFieldLabels) : [];
+  // The layout choice, the search and the arranged answers are shared by the toolbar under the header and the card below it.
+  const sr = useSubmittedResponse({ responseId, formId: formId ?? response?.formId, scope, items: answerItems, hasSchema: !!responseForm?.fields });
 
   // Opening a response marks it read for the caller via an explicit request (design.md §11.2:
   // "GET never mutates") — never as a side effect of the detail fetch above. Runs once per
@@ -345,10 +381,83 @@ export function ResponseDrawer({
   const identity = response ? detectRespondentIdentity(response.answers, responseForm?.fields, response.respondentEmail) : {};
   const hasIdentity = !!(identity.label || identity.email);
   const initial = initialsOf(identity.label ?? identity.email).charAt(0) || '?';
-  // A failed/absent form lookup falls back to plain label → value rows rather than blocking the answers.
-  const answerItems = response ? buildAnswerItems(response.answers, response.responseFiles, responseForm?.fields, responseForm?.pages, fileFieldLabels) : [];
-  const topImages = answerItems.filter(isTopAnswer); // images and links set to "Top of response"
-  const otherAnswers = answerItems.filter((item) => !isTopAnswer(item));
+  // Presentation only - the server enforces who may set the form-wide default.
+  const canSetFormDefault = role !== undefined && hasCapability(role, 'forms:edit');
+
+  const renderSidebar = (r: ResponseDetail, only?: 'details' | 'notes' | 'activity') => (
+    <WorkflowSidebar
+      response={r}
+      scope={scope}
+      stages={stages}
+      tags={tags}
+      members={members}
+      collaboration={showCollaboration}
+      only={only}
+      notes={
+        showCollaboration ? (
+          <NotesPanel
+            responseId={r._id}
+            scope={scope}
+            workspaceName={workspaceName}
+            currentUserId={user?.id ?? ''}
+            canDeleteAny={canDeleteAnyNote}
+          />
+        ) : undefined
+      }
+      onShare={isPersonal && collaborationSettled && !showCollaboration && grantFormId ? () => setShareOpen(true) : undefined}
+      canCreateTag={canCreateTag}
+      canScore={canCreateTag}
+      isUpdating={mutations.isUpdating}
+      onOpenOriginal={onOpenResponse}
+      onStageChange={(stageId) => mutations.updateStage(r._id, stageId)}
+      onAssigneeChange={(assigneeId) => mutations.updateAssignee(r._id, assigneeId)}
+      onTagAdd={(tagId) => mutations.updateTags(r._id, [...(r.tags ?? []).map((t) => t.id), tagId])}
+      onTagRemove={(tagId) => mutations.updateTags(r._id, (r.tags ?? []).map((t) => t.id).filter((id) => id !== tagId))}
+      onTagCreate={(name) => createTagMutation.mutate(name)}
+    />
+  );
+
+  // Below 1024px the full page moves the panels under the header as tabs.
+  const pageTabs: { id: PageTab; label: string }[] = [
+    { id: 'response', label: 'Response' },
+    { id: 'details', label: 'Details' },
+    ...(showCollaboration ? [{ id: 'notes' as const, label: 'Notes' }, { id: 'activity' as const, label: 'Activity' }] : []),
+  ];
+  const activeTab = pageTabs.some((t) => t.id === pageTab) ? pageTab : 'response';
+  // The toolbar only makes sense where the answers are on screen.
+  const showToolbar = !!response && !isError && (displayMode === 'drawer' || isDesktop || activeTab === 'response');
+
+  const renderBody = (r: ResponseDetail) => {
+    const card = <SubmittedResponse sr={sr} responseId={r._id} scope={scope} loading={formLoading} />;
+
+    if (displayMode === 'drawer') {
+      return (
+        <div className="grid gap-4 p-4 sm:p-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)]">
+          {card}
+          {renderSidebar(r)}
+        </div>
+      );
+    }
+
+    // Full screen, 1024px and up: the same two columns as the drawer - the response card takes the width, the overview sits beside it.
+    if (isDesktop) {
+      return (
+        <div className="grid w-full items-start gap-6 grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)]">
+          {card}
+          {renderSidebar(r)}
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-4">
+        <Tabs ariaLabel="Response sections" tabs={pageTabs} activeId={activeTab} onChange={(id) => setPageTab(id as PageTab)} panelId="response-tabpanel" />
+        <div role="tabpanel" id="response-tabpanel" aria-labelledby={`tab-${activeTab}`} className="min-w-0">
+          {activeTab === 'response' ? card : renderSidebar(r, activeTab)}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div
@@ -372,14 +481,17 @@ export function ResponseDrawer({
         ref={drawerRef}
         tabIndex={-1}
         className={cn(
-          'relative flex w-full flex-col overflow-hidden border border-(--border-default) bg-(--surface-card)',
+          'relative flex w-full flex-col',
           displayMode === 'drawer'
-            ? 'h-full border-y-0 border-r-0 shadow-(--shadow-lg) animate-slide-in-right lg:w-[80vw] lg:max-w-[1600px]'
-            : 'min-h-full rounded-lg shadow-(--shadow-sm)'
+            ? 'h-full overflow-hidden border border-y-0 border-r-0 border-(--border-default) bg-(--surface-card) shadow-(--shadow-lg) animate-slide-in-right lg:w-[80vw] lg:max-w-[1600px]'
+            // The full page is not a box: the header sits flat on the page, and the response card and the overview are the only
+            // cards, filling the width AppShell gives the page exactly as the drawer does. Nothing here clips overflow, so the card's
+            // toolbar sticks to the page's own scroll.
+            : 'gap-5'
         )}
       >
         {/* Below 640px the six action buttons (about 290px) left the name almost no room, so the header wraps: the respondent's name gets its own row and the actions sit under it. */}
-        <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-(--border-default) px-4 py-3 sm:px-6">
+        <header className={cn('flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-(--border-default)', displayMode === 'drawer' ? 'px-4 py-3 sm:px-6' : 'pb-4')}>
           <div className="flex min-w-0 items-center gap-3 max-sm:basis-full">
             {/* Full-screen sheet with a back chevron below 768px (requirements.md §9.1) — the
                 close/back control is the same handler either way, only the icon changes. */}
@@ -425,6 +537,7 @@ export function ResponseDrawer({
                   disabled={!hasPrevious}
                   className="gap-1 px-2"
                   aria-label="Previous response"
+                  title="Previous response (k)"
                 >
                   <ChevronLeft size={14} aria-hidden="true" />
                   <span className="hidden xl:inline">Previous</span>
@@ -439,6 +552,7 @@ export function ResponseDrawer({
                   disabled={!hasNext}
                   className="gap-1 px-2"
                   aria-label="Next response"
+                  title="Next response (j)"
                 >
                   <span className="hidden xl:inline">Next</span>
                   <ChevronRight size={14} aria-hidden="true" />
@@ -488,7 +602,21 @@ export function ResponseDrawer({
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto">
+        {/* Search, layout and view options: one slim bar under the header, above both columns, always in view. */}
+        {showToolbar && response && (
+          <ResponseViewToolbar
+            sr={sr}
+            responseId={response._id}
+            canSetFormDefault={canSetFormDefault}
+            className={
+              displayMode === 'drawer'
+                ? 'shrink-0 border-b border-(--border-default) bg-(--surface-card) px-4 py-2.5 sm:px-6'
+                : 'sticky top-0 z-20 bg-(--bg-page) py-2'
+            }
+          />
+        )}
+
+        <div className={cn('flex-1', displayMode === 'drawer' && 'overflow-y-auto')}>
           {isLoading ? (
             <DrawerSkeleton />
           ) : isError || !response ? (
@@ -499,66 +627,7 @@ export function ResponseDrawer({
               onClose={onClose}
             />
           ) : (
-            <div className="grid gap-4 p-4 sm:p-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)]">
-              {/* Left: every answer, rendered per its field type. Images and links set to "Top of response" come first. */}
-              <section className="@container min-w-0 self-start rounded-lg border border-(--border-default) bg-(--surface-card) px-4 py-4 sm:px-5">
-                <div className="mb-1">
-                  <h3 className="bg-body font-semibold text-(--text-primary)">Submitted response</h3>
-                  <p className="mt-0.5 bg-caption text-(--text-muted)">All answers provided by the respondent.</p>
-                </div>
-                {formLoading ? (
-                  <div className="flex flex-col gap-3 pt-3" aria-busy="true">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="h-10 animate-pulse rounded-md bg-(--bg-subtle)" />
-                    ))}
-                  </div>
-                ) : answerItems.length === 0 ? (
-                  <p className="py-6 text-center bg-body-sm text-(--text-muted)">No submitted answers.</p>
-                ) : (
-                  <div className="[&>*:last-child]:border-b-0">
-                    {topImages.map((item) => (
-                      <AnswerCard key={item.key} item={item} responseId={response._id} scope={scope} />
-                    ))}
-                    <div className="grid grid-cols-1 gap-x-8 @2xl:grid-cols-2">
-                      {otherAnswers.map((item) => (
-                        <AnswerCard key={item.key} item={item} responseId={response._id} scope={scope} />
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </section>
-
-              {/* Right: overview and submission details, with the internal notes directly beneath them. */}
-              <WorkflowSidebar
-                response={response}
-                scope={scope}
-                stages={stages}
-                tags={tags}
-                members={members}
-                collaboration={showCollaboration}
-                notes={
-                  showCollaboration ? (
-                    <NotesPanel
-                      responseId={response._id}
-                      scope={scope}
-                      workspaceName={workspaceName}
-                      currentUserId={user?.id ?? ''}
-                      canDeleteAny={canDeleteAnyNote}
-                    />
-                  ) : undefined
-                }
-                onShare={isPersonal && collaborationSettled && !showCollaboration && grantFormId ? () => setShareOpen(true) : undefined}
-                canCreateTag={canCreateTag}
-                canScore={canCreateTag}
-                isUpdating={mutations.isUpdating}
-                onOpenOriginal={onOpenResponse}
-                onStageChange={(stageId) => mutations.updateStage(response._id, stageId)}
-                onAssigneeChange={(assigneeId) => mutations.updateAssignee(response._id, assigneeId)}
-                onTagAdd={(tagId) => mutations.updateTags(response._id, [...(response.tags ?? []).map((t) => t.id), tagId])}
-                onTagRemove={(tagId) => mutations.updateTags(response._id, (response.tags ?? []).map((t) => t.id).filter((id) => id !== tagId))}
-                onTagCreate={(name) => createTagMutation.mutate(name)}
-              />
-            </div>
+            renderBody(response)
           )}
         </div>
       </div>

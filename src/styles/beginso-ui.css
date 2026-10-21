@@ -587,7 +587,8 @@ body {
   transition: background-color var(--micro) var(--ease), color var(--micro) var(--ease);
 }
 .bg-segmented button:hover { color: var(--text-primary); }
-.bg-segmented button[aria-pressed="true"] {
+.bg-segmented button[aria-pressed="true"],
+.bg-segmented button[aria-checked="true"] {
   background-color: var(--surface-card);
   color: var(--text-primary);
   box-shadow: var(--shadow-sm);

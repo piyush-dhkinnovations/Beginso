@@ -51,6 +51,8 @@ export interface WorkflowSidebarProps {
   /** Wired to the duplicate callout's "view original" link (task 5.5). Undefined = no
    * cross-response navigation available from this caller. */
   onOpenOriginal?: (id: string) => void;
+  /** Render one part only (the full-screen page's tabs below 1024px). Undefined = everything, stacked. */
+  only?: 'details' | 'notes' | 'activity';
 }
 
 const SECTION_LABEL = 'bg-body-sm font-semibold text-(--text-muted) uppercase tracking-wide';
@@ -86,6 +88,7 @@ export function WorkflowSidebar({
   onTagCreate,
   isUpdating,
   onOpenOriginal,
+  only,
 }: WorkflowSidebarProps) {
   const { data: activity, isLoading: activityLoading, isError: activityError, refetch: refetchActivity } = useQuery({
     queryKey: responseActivityKeys.list(scope, response._id),
@@ -101,8 +104,13 @@ export function WorkflowSidebar({
   const ipHash = response.ipHash ? response.ipHash.slice(0, 16) : null;
   const { data: criteria = [], isLoading: criteriaLoading } = useScoreCriteria(scope);
 
+  const showDetails = !only || only === 'details';
+  const showNotes = !only || only === 'notes';
+  const showActivity = !only || only === 'activity';
+
   return (
     <aside className="flex w-full min-w-0 flex-col gap-4">
+      {showDetails && (<>
       {response.editedAfterReviewAt && (
         <EditedAfterReviewCallout
           responseId={response._id}
@@ -207,10 +215,11 @@ export function WorkflowSidebar({
           </div>
         </div>
       </Card>
+      </>)}
 
-      {notes}
+      {showNotes && notes}
 
-      {collaboration ? (
+      {showActivity && (collaboration ? (
         <Card className="flex flex-col gap-3">
           <span className={SECTION_LABEL}>Activity</span>
           <ActivityTimeline entries={activity} stages={stages} isLoading={activityLoading} isError={activityError} onRetry={() => void refetchActivity()} />
@@ -228,7 +237,7 @@ export function WorkflowSidebar({
             </Button>
           </Card>
         )
-      )}
+      ))}
     </aside>
   );
 }
