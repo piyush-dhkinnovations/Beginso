@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useFormScope } from '@/hooks/useFormScope';
 import { formsService } from '@/services/forms';
 import { hasCapability } from '@/lib/roles';
+import { FORM_HEADER_SLOT_ID } from '@/lib/formHeaderSlot';
 
 const DATA_ROUTE_RE = /^\/forms\/[^/]+\/(inbox|insights)\/?$/;
 const STATUS_LABEL = { draft: 'Draft', published: 'Published', closed: 'Closed' } as const;
@@ -52,6 +53,8 @@ export function FormDataHeader() {
       actions={
         <>
           <Segmented options={MODES} value={mode} onChange={(id) => router.push(`/forms/${formId}/${id}${q}`)} ariaLabel="Form data view" />
+          {/* The page's own controls (Summary: Filters, Add chart) land here, so they share this row. `contents` makes them siblings of the buttons. */}
+          <div id={FORM_HEADER_SLOT_ID} className="contents" />
           {canEdit && (
             <ButtonLink variant="secondary" href={`/forms/${formId}/edit${q}`}>
               <Pencil size={16} className="mr-1.5" aria-hidden="true" />

@@ -36,10 +36,22 @@ describe('DateRangeFilter — uncontrolled (URL-owning) mode', () => {
     expect(screen.getByRole('button', { name: 'All time' })).toBeInTheDocument();
   });
 
-  it('defaults to "Last 30 days" (aria-pressed) when the URL has no from/to (Requirement 3.2)', () => {
+  it('defaults to "All time" (aria-pressed) when the URL has no from/to', () => {
     render(<DateRangeFilter />);
-    expect(screen.getByRole('button', { name: 'Last 30 days' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'All time' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Last 30 days' })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByRole('button', { name: 'Last 7 days' })).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('the preset chips are compact, not button-sized pills (32px, 40px on touch screens)', () => {
+    render(<DateRangeFilter part="presets" />);
+    for (const name of ['Last 7 days', 'Last 30 days', 'Last 90 days', 'All time']) {
+      const chip = screen.getByRole('button', { name });
+      expect(chip).toHaveClass('h-8');
+      expect(chip).toHaveClass('max-md:min-h-10');
+      expect(chip).not.toHaveClass('min-h-10');
+      expect(chip).not.toHaveClass('px-4');
+    }
   });
 
   it('clicking "Last 7 days" writes UTC day-boundary from/to params via router.replace', () => {

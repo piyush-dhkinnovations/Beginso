@@ -49,6 +49,7 @@ vi.mock('@/components/charts/EChartContainer', () => ({
 
 import { AnalyticsView } from '@/components/analytics/AnalyticsView';
 import { ToastProvider } from '@/components/ui/Toast';
+import { resolveDateRangePreset } from '@/lib/dateRange';
 
 const form = { _id: 'form-1', title: 'Customer Survey', fields: [] };
 const overview = { totalResponses: 10, statusCounts: { new: 4, in_progress: 3, completed: 3 } };
@@ -106,6 +107,9 @@ describe('AnalyticsView', () => {
     // Same mockResolvedValue serves both the current-period and previous-period forms-summary
     // calls (queryFn args differ only by date range) — current period: 10 responses; previous
     // period here also returns 10 (same fixture), so Change should show "—" (no change).
+    // A previous period only exists for a bounded range (All time, the default, has none), so a 30-day range is chosen.
+    const thirty = resolveDateRangePreset('30d');
+    search = `from=${encodeURIComponent(thirty.from!)}&to=${encodeURIComponent(thirty.to!)}`;
     renderView();
 
     await waitFor(() => expect(mockGetFormsSummary).toHaveBeenCalledTimes(2));

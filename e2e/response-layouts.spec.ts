@@ -54,6 +54,7 @@ const SYSTEM_VIEW = { layout: 'grid', density: 'comfortable', showEmpty: true, s
 interface Fake {
   puts: () => Record<string, unknown>[];
   detailGets: () => number;
+  reports: () => Record<string, unknown>[];
 }
 
 async function installBackend(context: BrowserContext, opts: { stress?: boolean } = {}): Promise<Fake> {
@@ -61,6 +62,7 @@ async function installBackend(context: BrowserContext, opts: { stress?: boolean 
   let personal: Record<string, unknown> | null = null;
   const puts: Record<string, unknown>[] = [];
   let detailGets = 0;
+  const reports: Record<string, unknown>[] = [];
 
   const fields = QUESTIONS.map(([label, type], i) => ({
     fieldId: `f${i + 1}`, pageId: 'p1', label, type, required: false, deleted: false, order: i, options: [],
@@ -115,6 +117,11 @@ async function installBackend(context: BrowserContext, opts: { stress?: boolean 
       const rows = [base(RESPONSE_ID, 'asha@example.com'), base('r2', 'ben@example.com')];
       return json({ success: true, data: rows, total: rows.length, page: 1, limit: 20, totalPages: 1 });
     }
+    if (path === 'api/reports' && req.method() === 'POST') {
+      const body = req.postDataJSON() as Record<string, unknown>;
+      reports.push(body);
+      return json({ success: true, report: { _id: 'rep1', format: body.format, status: 'pending', createdAt: '2026-10-21T10:00:00.000Z' } });
+    }
     if (path === 'api/responses/stats') return json({ total: 2, unread: 0 });
     if (path.startsWith('api/responses/') && path.endsWith('/activity')) return json({ success: true, activity: [] });
     if (path.startsWith('api/responses/') && path.endsWith('/notes')) return json({ success: true, notes: [] });
@@ -122,7 +129,7 @@ async function installBackend(context: BrowserContext, opts: { stress?: boolean 
     if (req.method() === 'GET' && /workspaces|notifications|members|stages|tags|views|link-preview/.test(path)) return json([]);
     return json({});
   });
-  return { puts: () => puts, detailGets: () => detailGets };
+  return { puts: () => puts, detailGets: () => detailGets, reports: () => reports };
 }
 
 const drawerUrl = `/forms/${FORM_ID}/inbox?responseId=${RESPONSE_ID}`;
@@ -241,11 +248,42 @@ test.describe('Submitted response layouts', () => {
     await expect(row).toBeFocused();
   });
 
-  test('the options popover and the search close with Escape without closing the drawer', async ({ page, context }) => {
+  test('Download asks for CSV or PDF, and asks for the one chosen', async ({ page, context }, testInfo) => {
+    const fake = await installBackend(context);
+    await openDrawer(page);
+    await page.getByRole('button', { name: 'Download response' }).click();
+    const menu = page.getByRole('menu', { name: 'Download response' });
+    await expect(menu.getByRole('menuitem')).toHaveText(['Download as CSV', 'Download as PDF']);
+    await menu.screenshot({ path: testInfo.outputPath('download-menu.png') });
+    expect(fake.reports()).toHaveLength(0); // opening the menu starts nothing
+
+    await menu.getByRole('menuitem', { name: 'Download as PDF' }).click();
+    await expect.poll(() => fake.reports().length).toBe(1);
+    expect(fake.reports()[0]).toMatchObject({ format: 'pdf' });
+    await expect(page.getByText(/Preparing your download/)).toBeVisible();
+    await expect(page.getByRole('menu')).toHaveCount(0);
+
+    await page.getByRole('button', { name: 'Download response' }).click();
+    await page.getByRole('menuitem', { name: 'Download as CSV' }).click();
+    await expect.poll(() => fake.reports().length).toBe(2);
+    expect(fake.reports()[1]).toMatchObject({ format: 'csv' });
+  });
+
+  test('the options popover and the search close with Escape without closing the drawer', async ({ page, context }, testInfo) => {
     await installBackend(context);
     await openDrawer(page);
     await page.getByRole('button', { name: 'View options' }).click();
     await expect(page.getByRole('group', { name: 'Response view options' })).toBeVisible();
+    await page.getByRole('group', { name: 'Response view options' }).screenshot({ path: testInfo.outputPath('options-popover.png') });
+    // Density is one control as wide as the popover, its two options sharing the width.
+    const density = page.getByRole('radiogroup', { name: 'Density' });
+    const [group, comfortable, compact] = await Promise.all([
+      density.boundingBox(),
+      density.getByRole('radio', { name: 'Comfortable' }).boundingBox(),
+      density.getByRole('radio', { name: 'Compact' }).boundingBox(),
+    ]);
+    expect(Math.abs(comfortable!.width - compact!.width)).toBeLessThan(2);
+    expect(comfortable!.width + compact!.width).toBeGreaterThan(group!.width - 12);
     await page.keyboard.press('Escape');
     await expect(page.getByRole('group', { name: 'Response view options' })).toHaveCount(0);
     await expect(page.getByRole('dialog')).toBeVisible();

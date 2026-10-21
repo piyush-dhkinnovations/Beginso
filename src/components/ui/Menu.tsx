@@ -191,8 +191,9 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
             overflowY: "auto",
           }}
           className={bx(
-            "bg-menu z-50",
-            isFullWidth ? "min-w-[200px]" : "min-w-[160px]",
+            // Above a drawer (scrim 80, panel 85) or a modal so a menu opened inside one is not hidden behind it; below toasts (90).
+            "bg-menu z-88",
+            isFullWidth ? "min-w-50" : "min-w-40",
             className
           )}
         >

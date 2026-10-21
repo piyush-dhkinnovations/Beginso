@@ -150,18 +150,22 @@ export function ResponsesToolbar({
         />
       )}
 
-      <FilterMenu
-        label="Date"
-        options={DATE_PRESETS.map((p) => ({ id: p.id, label: p.label }))}
-        selectedIds={filters.from || filters.to ? ['active'] : []}
-        valueLabel={dateValueLabel(filters)}
-        clearLabel="Any time"
-        onSelect={(id) => {
-          const preset = DATE_PRESETS.find((p) => p.id === id);
-          if (preset) onFilterChange({ from: startOfDaysAgo(preset.days).toISOString(), to: undefined });
-        }}
-        onClear={() => onFilterChange({ from: undefined, to: undefined })}
-      />
+      {/* The calendar picks its own window (the month on screen, with Today / previous / next and month and year pickers), so a
+          second date filter here would do nothing to it. */}
+      {view !== 'calendar' && (
+        <FilterMenu
+          label="Date"
+          options={DATE_PRESETS.map((p) => ({ id: p.id, label: p.label }))}
+          selectedIds={filters.from || filters.to ? ['active'] : []}
+          valueLabel={dateValueLabel(filters)}
+          clearLabel="Any time"
+          onSelect={(id) => {
+            const preset = DATE_PRESETS.find((p) => p.id === id);
+            if (preset) onFilterChange({ from: startOfDaysAgo(preset.days).toISOString(), to: undefined });
+          }}
+          onClear={() => onFilterChange({ from: undefined, to: undefined })}
+        />
+      )}
 
       {/* Duplicates are only flagged by default (nothing auto-hidden); test submissions never count anywhere and are
           hidden by default — these only change what is shown. */}
@@ -180,10 +184,13 @@ export function ResponsesToolbar({
         onClear={() => onFilterChange({ duplicate: undefined, includeTest: undefined })}
       />
 
-      <span className="ml-auto whitespace-nowrap bg-body-sm text-(--text-muted)">
-        {total} response{total === 1 ? '' : 's'}
-      </span>
-      {viewOptions && view && onViewChange && <Segmented options={viewOptions} value={view} onChange={onViewChange} ariaLabel="Responses view" />}
+      {/* The total is for every month; the calendar says how many are in the month on screen, and the stage chips above already give the counts. */}
+      {view !== 'calendar' && (
+        <span className="ml-auto whitespace-nowrap bg-body-sm text-(--text-muted)">
+          {total} response{total === 1 ? '' : 's'}
+        </span>
+      )}
+      {viewOptions && view && onViewChange && <Segmented className={view === 'calendar' ? 'ml-auto' : undefined} options={viewOptions} value={view} onChange={onViewChange} ariaLabel="Responses view" />}
     </Toolbar>
   );
 }
