@@ -19,6 +19,8 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Tabs } from '@/components/ui/Tabs';
 import { SubmittedResponse } from './SubmittedResponse';
+import { ResponseViewToolbar } from './ResponseViewToolbar';
+import { useSubmittedResponse } from '@/hooks/useSubmittedResponse';
 import { StageBadge } from './StageBadge';
 import { NotesPanel } from './NotesPanel';
 import { WorkflowSidebar } from './WorkflowSidebar';
@@ -321,6 +323,11 @@ export function ResponseDrawer({
     enabled: !!response?.formId,
   });
 
+  // A failed/absent form lookup falls back to plain label → value rows rather than blocking the answers.
+  const answerItems = response ? buildAnswerItems(response.answers, response.responseFiles, responseForm?.fields, responseForm?.pages, fileFieldLabels) : [];
+  // The layout choice, the search and the arranged answers are shared by the toolbar under the header and the card below it.
+  const sr = useSubmittedResponse({ responseId, formId: formId ?? response?.formId, scope, items: answerItems, hasSchema: !!responseForm?.fields });
+
   // Opening a response marks it read for the caller via an explicit request (design.md §11.2:
   // "GET never mutates") — never as a side effect of the detail fetch above. Runs once per
   // responseId, and only when the response is actually known unread (an absent `unread` field
@@ -374,8 +381,6 @@ export function ResponseDrawer({
   const identity = response ? detectRespondentIdentity(response.answers, responseForm?.fields, response.respondentEmail) : {};
   const hasIdentity = !!(identity.label || identity.email);
   const initial = initialsOf(identity.label ?? identity.email).charAt(0) || '?';
-  // A failed/absent form lookup falls back to plain label → value rows rather than blocking the answers.
-  const answerItems = response ? buildAnswerItems(response.answers, response.responseFiles, responseForm?.fields, responseForm?.pages, fileFieldLabels) : [];
   // Presentation only - the server enforces who may set the form-wide default.
   const canSetFormDefault = role !== undefined && hasCapability(role, 'forms:edit');
 
@@ -412,19 +417,18 @@ export function ResponseDrawer({
     />
   );
 
+  // Below 1024px the full page moves the panels under the header as tabs.
+  const pageTabs: { id: PageTab; label: string }[] = [
+    { id: 'response', label: 'Response' },
+    { id: 'details', label: 'Details' },
+    ...(showCollaboration ? [{ id: 'notes' as const, label: 'Notes' }, { id: 'activity' as const, label: 'Activity' }] : []),
+  ];
+  const activeTab = pageTabs.some((t) => t.id === pageTab) ? pageTab : 'response';
+  // The toolbar only makes sense where the answers are on screen.
+  const showToolbar = !!response && !isError && (displayMode === 'drawer' || isDesktop || activeTab === 'response');
+
   const renderBody = (r: ResponseDetail) => {
-    const card = (
-      <SubmittedResponse
-        key={r._id}
-        responseId={r._id}
-        items={answerItems}
-        formId={formId ?? r.formId}
-        scope={scope}
-        loading={formLoading}
-        hasSchema={!!responseForm?.fields}
-        canSetFormDefault={canSetFormDefault}
-      />
-    );
+    const card = <SubmittedResponse sr={sr} responseId={r._id} scope={scope} loading={formLoading} />;
 
     if (displayMode === 'drawer') {
       return (
@@ -435,29 +439,21 @@ export function ResponseDrawer({
       );
     }
 
-    // Full screen, 1024px and up: a readable card (max 820px) with the overview beside it, centred as a group. The overview stays in
-    // view and scrolls inside itself when it is taller than the screen.
+    // Full screen, 1024px and up: the same two columns as the drawer - the response card takes the width, the overview sits beside it.
     if (isDesktop) {
       return (
-        <div className="mx-auto grid w-full max-w-295 grid-cols-[minmax(0,820px)_20rem] justify-center gap-6 p-6">
+        <div className="grid w-full items-start gap-6 grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)]">
           {card}
-          <div className="sticky top-4 max-h-[calc(100dvh-2rem)] self-start overflow-y-auto">{renderSidebar(r)}</div>
+          {renderSidebar(r)}
         </div>
       );
     }
 
-    // Below 1024px the panels move under the header as tabs.
-    const tabs: { id: PageTab; label: string }[] = [
-      { id: 'response', label: 'Response' },
-      { id: 'details', label: 'Details' },
-      ...(showCollaboration ? [{ id: 'notes' as const, label: 'Notes' }, { id: 'activity' as const, label: 'Activity' }] : []),
-    ];
-    const active = tabs.some((t) => t.id === pageTab) ? pageTab : 'response';
     return (
-      <div className="flex flex-col gap-4 p-4 sm:p-6">
-        <Tabs ariaLabel="Response sections" tabs={tabs} activeId={active} onChange={(id) => setPageTab(id as PageTab)} panelId="response-tabpanel" />
-        <div role="tabpanel" id="response-tabpanel" aria-labelledby={`tab-${active}`} className="min-w-0">
-          {active === 'response' ? card : renderSidebar(r, active)}
+      <div className="flex flex-col gap-4">
+        <Tabs ariaLabel="Response sections" tabs={pageTabs} activeId={activeTab} onChange={(id) => setPageTab(id as PageTab)} panelId="response-tabpanel" />
+        <div role="tabpanel" id="response-tabpanel" aria-labelledby={`tab-${activeTab}`} className="min-w-0">
+          {activeTab === 'response' ? card : renderSidebar(r, activeTab)}
         </div>
       </div>
     );
@@ -485,15 +481,17 @@ export function ResponseDrawer({
         ref={drawerRef}
         tabIndex={-1}
         className={cn(
-          'relative flex w-full flex-col border border-(--border-default) bg-(--surface-card)',
+          'relative flex w-full flex-col',
           displayMode === 'drawer'
-            ? 'h-full overflow-hidden border-y-0 border-r-0 shadow-(--shadow-lg) animate-slide-in-right lg:w-[80vw] lg:max-w-[1600px]'
-            // No overflow clipping on the full page: the card's toolbar and the overview stick to the page's own scroll.
-            : 'min-h-full rounded-lg shadow-(--shadow-sm)'
+            ? 'h-full overflow-hidden border border-y-0 border-r-0 border-(--border-default) bg-(--surface-card) shadow-(--shadow-lg) animate-slide-in-right lg:w-[80vw] lg:max-w-[1600px]'
+            // The full page is not a box: the header sits flat on the page, and the response card and the overview are the only
+            // cards, filling the width AppShell gives the page exactly as the drawer does. Nothing here clips overflow, so the card's
+            // toolbar sticks to the page's own scroll.
+            : 'gap-5'
         )}
       >
         {/* Below 640px the six action buttons (about 290px) left the name almost no room, so the header wraps: the respondent's name gets its own row and the actions sit under it. */}
-        <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-(--border-default) px-4 py-3 sm:px-6">
+        <header className={cn('flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-(--border-default)', displayMode === 'drawer' ? 'px-4 py-3 sm:px-6' : 'pb-4')}>
           <div className="flex min-w-0 items-center gap-3 max-sm:basis-full">
             {/* Full-screen sheet with a back chevron below 768px (requirements.md §9.1) — the
                 close/back control is the same handler either way, only the icon changes. */}
@@ -603,6 +601,20 @@ export function ResponseDrawer({
             )}
           </div>
         </header>
+
+        {/* Search, layout and view options: one slim bar under the header, above both columns, always in view. */}
+        {showToolbar && response && (
+          <ResponseViewToolbar
+            sr={sr}
+            responseId={response._id}
+            canSetFormDefault={canSetFormDefault}
+            className={
+              displayMode === 'drawer'
+                ? 'shrink-0 border-b border-(--border-default) bg-(--surface-card) px-4 py-2.5 sm:px-6'
+                : 'sticky top-0 z-20 bg-(--bg-page) py-2'
+            }
+          />
+        )}
 
         <div className={cn('flex-1', displayMode === 'drawer' && 'overflow-y-auto')}>
           {isLoading ? (

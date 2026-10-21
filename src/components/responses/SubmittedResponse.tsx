@@ -1,38 +1,17 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { LayoutGrid, List, Search, Table2 } from 'lucide-react';
-import { Input } from '@/components/ui/Input';
-import { SegmentedRadio } from '@/components/ui/SegmentedRadio';
-import { useNarrow } from '@/hooks/useNarrow';
-import { useResponseView } from '@/hooks/useResponseView';
-import { arrangeAnswers, effectiveLayout } from '@/lib/responseView';
-import type { AnswerItem } from '@/lib/responseAnswers';
+import type { SubmittedResponseState } from '@/hooks/useSubmittedResponse';
 import { cn } from '@/lib/utils';
 import type { ResponseLayout } from '@/types/responseView';
 import { LAYOUTS } from './layouts';
-import { ResponseViewOptions } from './ResponseViewOptions';
 
 interface SubmittedResponseProps {
+  sr: SubmittedResponseState;
   responseId: string;
-  items: AnswerItem[];
-  formId: string | undefined;
   scope: string;
   /** The form definition is still loading: show a skeleton shaped like the chosen layout. */
   loading?: boolean;
-  /** False while the form definition is unavailable: then no answer can be called "from a removed question". */
-  hasSchema: boolean;
-  /** Editors only - shows "Set as form default" (the server enforces it as well). */
-  canSetFormDefault?: boolean;
 }
-
-const LAYOUT_OPTIONS: { id: ResponseLayout; label: string; title: string; icon: ReactNode }[] = [
-  { id: 'grid', label: 'Grid', title: 'Two columns', icon: <LayoutGrid size={14} aria-hidden="true" /> },
-  { id: 'list', label: 'List', title: 'One column', icon: <List size={14} aria-hidden="true" /> },
-  { id: 'table', label: 'Table', title: 'Rows like a table', icon: <Table2 size={14} aria-hidden="true" /> },
-];
-
-const LAYOUT_NAME: Record<ResponseLayout, string> = { grid: 'Grid', list: 'List', table: 'Table' };
 
 function LayoutSkeleton({ layout }: { layout: ResponseLayout }) {
   const rows = layout === 'grid' ? 6 : 4;
@@ -58,105 +37,28 @@ function LayoutSkeleton({ layout }: { layout: ResponseLayout }) {
   );
 }
 
-const isEditable = (el: EventTarget | null): boolean =>
-  el instanceof HTMLElement && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName));
-
 /**
- * The "Submitted response" card: the answers in the layout the person chose (Grid, List or Table), with a switcher, display
- * options and a search. Switching is instant - nothing here waits on the network.
+ * The "Submitted response" card: just the answers, in the layout the person chose. The controls (search, layout, options) are in
+ * the toolbar above, so the card stays quiet and the answers get all the room.
  */
-export function SubmittedResponse({ responseId, items, formId, scope, loading = false, hasSchema, canSetFormDefault = false }: SubmittedResponseProps) {
-  const narrow = useNarrow();
-  const rv = useResponseView({ formId, scope });
-  const { view } = rv;
-  const layout = effectiveLayout(view.layout, narrow);
+export function SubmittedResponse({ sr, responseId, scope, loading = false }: SubmittedResponseProps) {
+  const { layout, view, query, arranged, itemCount, revealEmpty, setRevealEmpty } = sr;
   const Layout = LAYOUTS[layout];
-
-  const [query, setQuery] = useState('');
-  const [revealEmpty, setRevealEmpty] = useState(false);
-  const [announce, setAnnounce] = useState('');
-  const searchRef = useRef<HTMLInputElement>(null);
-
-  // "/" jumps to the search, like most apps. Never while typing somewhere, never with a modifier key.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== '/' || e.ctrlKey || e.metaKey || e.altKey || isEditable(e.target)) return;
-      e.preventDefault();
-      searchRef.current?.focus();
-    };
-    document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, []);
-
-  const arranged = useMemo(
-    () => arrangeAnswers(items, { showEmpty: view.showEmpty || revealEmpty, query, hasSchema }),
-    [items, view.showEmpty, revealEmpty, query, hasSchema]
-  );
   const shared = { responseId, scope, showNumbers: view.showNumbers, density: view.density, query };
 
   return (
     <section aria-label="Submitted response" className="@container min-w-0 self-start rounded-lg border border-(--border-default) bg-(--surface-card)" data-layout={layout}>
-      <div className="sticky top-0 z-20 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-t-lg border-b border-(--border-subtle) bg-(--surface-card) px-4 py-3 sm:px-5">
-        <div className="min-w-0">
-          <h3 className="bg-body font-semibold text-(--text-primary)">Submitted response</h3>
-          <p className="mt-0.5 bg-body-sm text-(--text-muted)">
-            {loading || arranged.total === 0 ? 'All answers provided by the respondent.' : `${arranged.answered} of ${arranged.total} answered`}
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="w-48 max-md:w-full">
-            <Input
-              ref={searchRef}
-              id={`response-search-${responseId}`}
-              type="search"
-              aria-label="Search in response"
-              placeholder="Search in response"
-              leftIcon={<Search size={14} />}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Escape' && query) {
-                  // Clears the search; a second Escape (empty box) is left to close the drawer.
-                  e.stopPropagation();
-                  setQuery('');
-                }
-              }}
-              className="h-8"
-            />
-          </div>
-
-          {narrow ? (
-            <p className="bg-body-sm text-(--text-muted)">Shown as a list on small screens</p>
-          ) : (
-            <SegmentedRadio
-              ariaLabel="Layout"
-              iconOnlyBelow="lg"
-              value={view.layout}
-              onChange={(id) => {
-                rv.setView({ layout: id as ResponseLayout });
-                setAnnounce(`Layout: ${LAYOUT_NAME[id as ResponseLayout]}`);
-              }}
-              options={LAYOUT_OPTIONS.map(({ id, label, title, icon }) => ({ id, label, title, icon }))}
-            />
-          )}
-          <span role="status" aria-live="polite" className="sr-only">{announce}</span>
-
-          <ResponseViewOptions
-            view={view}
-            onChange={rv.setView}
-            useForAll={rv.useForAll}
-            onUseForAll={rv.setUseForAll}
-            onUseFormDefault={rv.hasPersonalChoice ? () => void rv.useFormDefault() : undefined}
-            onSetFormDefault={canSetFormDefault ? () => void rv.setAsFormDefault() : undefined}
-          />
-        </div>
+      <div className="border-b border-(--border-subtle) px-4 py-3 sm:px-5">
+        <h3 className="bg-body font-semibold text-(--text-primary)">Submitted response</h3>
+        <p className="mt-0.5 bg-body-sm text-(--text-muted)">
+          {loading || arranged.total === 0 ? 'All answers provided by the respondent.' : `${arranged.answered} of ${arranged.total} answered`}
+        </p>
       </div>
 
       <div className="px-4 pb-4 pt-1 sm:px-5">
         {loading ? (
           <LayoutSkeleton layout={layout} />
-        ) : items.length === 0 ? (
+        ) : itemCount === 0 ? (
           <p className="py-6 text-center bg-body-sm text-(--text-muted)">No submitted answers.</p>
         ) : (
           <>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import { SlidersHorizontal } from 'lucide-react';
+import { MoreHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { SegmentedRadio } from '@/components/ui/SegmentedRadio';
@@ -19,7 +19,7 @@ export interface ResponseViewOptionsProps {
   onSetFormDefault?: () => void;
 }
 
-/** Density, empty answers and question numbers, plus where the choice applies. A small popover, not a dialog. */
+/** Density, empty answers and question numbers, plus where the choice applies. Opened from a three-dot button in the toolbar. A small popover, not a dialog. */
 export function ResponseViewOptions({ view, onChange, useForAll, onUseForAll, onUseFormDefault, onSetFormDefault }: ResponseViewOptionsProps) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -57,14 +57,15 @@ export function ResponseViewOptions({ view, onChange, useForAll, onUseForAll, on
         ref={triggerRef}
         variant="secondary"
         size="small"
+        aria-label="View options"
+        title="View options"
         aria-haspopup="true"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
         onClick={() => setOpen((v) => !v)}
-        className="gap-1.5 max-md:min-h-10"
+        className="px-2 max-md:min-h-10 max-md:min-w-10"
       >
-        <SlidersHorizontal size={14} aria-hidden="true" />
-        Options
+        <MoreHorizontal size={16} aria-hidden="true" />
       </Button>
 
       {open && (

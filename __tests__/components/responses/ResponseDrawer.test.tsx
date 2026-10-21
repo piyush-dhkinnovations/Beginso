@@ -629,8 +629,34 @@ describe('ResponseDrawer layouts, full-screen page and keyboard', () => {
     renderDrawer('resp-1');
     await screen.findByText('Submitted response');
     expect(screen.getByRole('radiogroup', { name: 'Layout' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Options' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View options' })).toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: 'Search in response' })).toBeInTheDocument();
+  });
+
+  it('search, layout and options live in a toolbar under the header, not inside the answers card', async () => {
+    renderDrawer('resp-1');
+    await screen.findByText('Submitted response');
+    const toolbar = screen.getByRole('toolbar', { name: 'Response view' });
+    const header = screen.getByRole('heading', { level: 2 }).closest('header') as HTMLElement;
+    expect(header.compareDocumentPosition(toolbar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy(); // under the header
+    expect(within(toolbar).getByRole('searchbox', { name: 'Search in response' })).toBeInTheDocument();
+    expect(within(toolbar).getByRole('radiogroup', { name: 'Layout' })).toBeInTheDocument();
+    expect(within(toolbar).getByRole('button', { name: 'View options' })).toBeInTheDocument();
+    const card = screen.getByRole('region', { name: 'Submitted response' });
+    expect(within(card).queryByRole('radiogroup')).not.toBeInTheDocument();
+    expect(within(card).queryByRole('searchbox')).not.toBeInTheDocument();
+    expect(toolbar.contains(card)).toBe(false);
+  });
+
+  it('the options are behind a three-dot button that opens a popover', async () => {
+    const user = userEvent.setup();
+    renderDrawer('resp-1');
+    await screen.findByText('Submitted response');
+    const more = screen.getByRole('button', { name: 'View options' });
+    expect(more).toHaveTextContent(''); // an icon, not a word
+    expect(more).toHaveAttribute('aria-haspopup', 'true');
+    await user.click(more);
+    expect(screen.getByRole('switch', { name: 'Show empty answers' })).toBeInTheDocument();
   });
 
   it('the drawer keeps the overview in the same view, no tabs', async () => {
@@ -641,17 +667,17 @@ describe('ResponseDrawer layouts, full-screen page and keyboard', () => {
   });
 
   describe('full-screen page', () => {
-    it('from 1024px up: the card and the overview side by side, no tabs, the overview sticky', async () => {
+    it('from 1024px up: the same two columns as the drawer - card and overview side by side, no tabs, no capped width', async () => {
       mockDesktop = true;
       renderDrawer('resp-1', vi.fn(), { displayMode: 'page', scope: 'acme' });
       await screen.findByText('Submitted response');
       expect(screen.getByText('Response overview')).toBeInTheDocument();
       expect(await screen.findByText('Internal notes')).toBeInTheDocument();
       expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
-      const column = screen.getByText('Response overview').closest('div.sticky') as HTMLElement;
-      expect(column.className).toMatch(/\bsticky\b/);
-      expect(column.className).toMatch(/overflow-y-auto/); // scrolls inside itself when taller than the screen
-      expect(column.parentElement!.className).toMatch(/820px/); // the card is a readable width
+      const grid = screen.getByRole('region', { name: 'Submitted response' }).parentElement as HTMLElement;
+      expect(grid.className).toContain('grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)]'); // the card takes the width
+      expect(grid.className).not.toMatch(/max-w-/);
+      expect(grid.closest('[role="main"]')!.className).not.toMatch(/\b(border|bg-\(--surface-card\)|shadow)/); // not a box around the page
     });
 
     it('below 1024px: the panels move into tabs under the header', async () => {
@@ -661,6 +687,24 @@ describe('ResponseDrawer layouts, full-screen page and keyboard', () => {
       expect(within(tabs).getAllByRole('tab').map((t) => t.textContent)).toEqual(['Response', 'Details', 'Notes', 'Activity']);
       expect(screen.getByRole('tab', { name: 'Response' })).toHaveAttribute('aria-selected', 'true');
       expect(screen.queryByText('Response overview')).not.toBeInTheDocument();
+    });
+
+    it('below 1024px the toolbar belongs to the Response tab only', async () => {
+      const user = userEvent.setup();
+      renderDrawer('resp-1', vi.fn(), { displayMode: 'page', scope: 'acme' });
+      await screen.findByText('Submitted response');
+      expect(screen.getByRole('toolbar', { name: 'Response view' })).toBeInTheDocument();
+      await user.click(screen.getByRole('tab', { name: 'Details' }));
+      expect(screen.queryByRole('toolbar', { name: 'Response view' })).not.toBeInTheDocument();
+      await user.click(screen.getByRole('tab', { name: 'Response' }));
+      expect(screen.getByRole('toolbar', { name: 'Response view' })).toBeInTheDocument();
+    });
+
+    it('from 1024px up the toolbar sticks to the top of the page while the answers scroll', async () => {
+      mockDesktop = true;
+      renderDrawer('resp-1', vi.fn(), { displayMode: 'page', scope: 'acme' });
+      await screen.findByText('Submitted response');
+      expect(screen.getByRole('toolbar', { name: 'Response view' }).className).toMatch(/\bsticky\b/);
     });
 
     it('each tab shows its own panel', async () => {

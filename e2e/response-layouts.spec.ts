@@ -244,7 +244,7 @@ test.describe('Submitted response layouts', () => {
   test('the options popover and the search close with Escape without closing the drawer', async ({ page, context }) => {
     await installBackend(context);
     await openDrawer(page);
-    await page.getByRole('button', { name: 'Options' }).click();
+    await page.getByRole('button', { name: 'View options' }).click();
     await expect(page.getByRole('group', { name: 'Response view options' })).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByRole('group', { name: 'Response view options' })).toHaveCount(0);
@@ -262,7 +262,7 @@ test.describe('Submitted response layouts', () => {
   test('"Show empty answers" off hides the unanswered rows and says how many', async ({ page, context }) => {
     await installBackend(context);
     await openDrawer(page);
-    await page.getByRole('button', { name: 'Options' }).click();
+    await page.getByRole('button', { name: 'View options' }).click();
     await page.getByRole('switch', { name: 'Show empty answers' }).click();
     await expect(page.getByText('3 empty hidden.')).toBeVisible();
     await expect(card(page).getByText('Twitter page link')).toHaveCount(0);
@@ -284,7 +284,7 @@ async function axeViolations(page: Page, include: string) {
 }
 
 test.describe('Full-screen response page', () => {
-  for (const [width, height] of [[360, 800], [768, 1024], [1440, 900]] as const) {
+  for (const [width, height] of [[360, 800], [768, 1024], [1440, 900], [1920, 1080]] as const) {
     test(`${width}px: nothing scrolls sideways and the page has no accessibility violations`, async ({ page, context }, testInfo) => {
       await installBackend(context);
       await page.setViewportSize({ width, height });
@@ -299,10 +299,15 @@ test.describe('Full-screen response page', () => {
         await expect(page.getByRole('tablist')).toHaveCount(0);
         await expect(page.getByText('Response overview')).toBeVisible();
         const cardBox = (await card(page).boundingBox())!;
-        expect(cardBox.width).toBeLessThanOrEqual(822);
         expect(cardBox.width).toBeGreaterThan(500);
-        const overviewBox = (await page.getByText('Response overview').boundingBox())!;
-        expect(overviewBox.x).toBeGreaterThan(cardBox.x + cardBox.width - 1); // beside it, not under it
+        // The same two columns as the drawer, filling the page: the overview is 20 to 24rem wide and reaches the right edge of the
+        // page content, so no empty gutters are left around a narrow centred block.
+        const aside = (await page.locator('aside').filter({ hasText: 'Response overview' }).boundingBox())!;
+        expect(aside.width).toBeGreaterThanOrEqual(319);
+        expect(aside.width).toBeLessThanOrEqual(385);
+        expect(aside.x).toBeGreaterThan(cardBox.x + cardBox.width - 1); // beside the card, not under it
+        expect(aside.x + aside.width).toBeGreaterThan(width - 130);
+        expect(cardBox.width).toBeGreaterThan(aside.width * 1.8);
       } else {
         await expect(page.getByRole('tablist', { name: 'Response sections' })).toBeVisible();
         await expect(page.getByRole('tab')).toHaveCount(2); // personal form shared with nobody: Response, Details
@@ -313,7 +318,7 @@ test.describe('Full-screen response page', () => {
         expect(await layoutOf(page)).toBe('list');
         await expect(page.getByRole('radiogroup', { name: 'Layout' })).toHaveCount(0);
         await expect(page.getByText('Shown as a list on small screens')).toBeVisible();
-        const options = (await page.getByRole('button', { name: 'Options' }).boundingBox())!;
+        const options = (await page.getByRole('button', { name: 'View options' }).boundingBox())!;
         expect(options.height).toBeGreaterThanOrEqual(40);
       }
 
@@ -353,10 +358,8 @@ test.describe('Full-screen response page', () => {
     for (const name of ['Grid', 'List', 'Table']) {
       await page.getByRole('radio', { name }).click();
       expect(await page.evaluate(NO_SCROLL), `${name}: no horizontal scroll`).toBe(true);
-      const box = (await card(page).boundingBox())!;
       const overflowing = await card(page).evaluate((el) => el.scrollWidth > el.clientWidth + 1);
       expect(overflowing, `${name}: card content stays inside the card`).toBe(false);
-      expect(box.width).toBeLessThanOrEqual(822);
     }
   });
 });

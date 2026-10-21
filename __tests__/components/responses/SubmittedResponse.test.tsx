@@ -3,6 +3,9 @@ import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SubmittedResponse } from '@/components/responses/SubmittedResponse';
+import { ResponseViewToolbar } from '@/components/responses/ResponseViewToolbar';
+import { useSubmittedResponse } from '@/hooks/useSubmittedResponse';
+import type { AnswerItem } from '@/lib/responseAnswers';
 import type { ResponseViewConfig } from '@/types/responseView';
 import { SUBMITTED_ANSWERS, TOTAL_QUESTIONS, UNANSWERED, submittedItems } from '../../fixtures/submittedResponse';
 
@@ -28,11 +31,32 @@ const SYSTEM: ResponseViewConfig = {
 const items = submittedItems();
 let qc: QueryClient;
 
-function draw(props: Partial<React.ComponentProps<typeof SubmittedResponse>> = {}) {
+interface HarnessProps {
+  responseId?: string;
+  items?: AnswerItem[];
+  formId?: string;
+  scope?: string;
+  hasSchema?: boolean;
+  loading?: boolean;
+  canSetFormDefault?: boolean;
+}
+
+// The drawer's wiring: the toolbar sits above, the card below, both reading one shared state.
+function Harness({ responseId = 'r1', items: shown = items, formId = 'f1', scope = 'acme', hasSchema = true, loading = false, canSetFormDefault = false }: HarnessProps) {
+  const sr = useSubmittedResponse({ responseId, formId, scope, items: shown, hasSchema });
+  return (
+    <>
+      <ResponseViewToolbar sr={sr} responseId={responseId} canSetFormDefault={canSetFormDefault} />
+      <SubmittedResponse sr={sr} responseId={responseId} scope={scope} loading={loading} />
+    </>
+  );
+}
+
+function draw(props: HarnessProps = {}) {
   qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <SubmittedResponse responseId="r1" items={items} formId="f1" scope="acme" hasSchema {...props} />
+      <Harness {...props} />
     </QueryClientProvider>
   );
 }
@@ -132,7 +156,7 @@ describe('switching layouts', () => {
 });
 
 describe('options', () => {
-  const openOptions = async () => userEvent.click(screen.getByRole('button', { name: 'Options' }));
+  const openOptions = async () => userEvent.click(screen.getByRole('button', { name: 'View options' }));
 
   it('"Show empty answers" off hides the unanswered rows and says how many are hidden', async () => {
     draw();
@@ -179,7 +203,7 @@ describe('options', () => {
     expect(screen.getByRole('group', { name: 'Response view options' })).toBeInTheDocument();
     await userEvent.keyboard('{Escape}');
     expect(screen.queryByRole('group', { name: 'Response view options' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Options' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: 'View options' })).toHaveFocus();
     expect(onEscape).not.toHaveBeenCalled();
     document.removeEventListener('keydown', onEscape);
   });
@@ -312,7 +336,7 @@ describe('small screens', () => {
     narrow = false;
     rerender(
       <QueryClientProvider client={qc}>
-        <SubmittedResponse responseId="r1" items={items} formId="f1" scope="acme" hasSchema />
+        <Harness />
       </QueryClientProvider>
     );
     await waitFor(() => expect(layoutOf()).toBe('table'));
