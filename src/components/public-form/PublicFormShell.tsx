@@ -296,6 +296,11 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
       const candidate = respondentEmail.trim();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(candidate)) {
         setEmailError('Please enter a valid email address.');
+        // The email is asked on the first page: take the respondent back to it.
+        setShowReview(false);
+        setCurrentPageIndex(0);
+        setQuestionIndex(0);
+        setTimeout(() => document.getElementById('respondent-email')?.focus(), 0);
         return;
       }
       setEmailError(null);
@@ -615,13 +620,17 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   // Shown above the submit buttons: the Mode 2 email step, or who a Mode 3 respondent is submitting as.
   const accessExtra = (
     <>
-      {accessMode === 'tracked' ? (
-      <EmailStep value={respondentEmail} onChange={setRespondentEmail} error={emailError} disabled={isSubmitting} />
-    ) : null}
       {testControls}
     </>
   );
-  const hasAccessExtra = accessMode === 'tracked' || !!testControls;
+  const hasAccessExtra = !!testControls;
+  // Tracked mode: whose response this is, asked first like login mode's "Responding as", not after the questions.
+  const trackedEmail =
+    accessMode === 'tracked' && !showReview && currentPageIndex === 0 ? (
+      <div className="mb-6">
+        <EmailStep value={respondentEmail} onChange={setRespondentEmail} error={emailError} disabled={isSubmitting} />
+      </div>
+    ) : null;
 
   return (
     <LayoutFrame {...frameProps}>
@@ -643,6 +652,8 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
 
             </>
           )}
+
+          {trackedEmail}
 
           {/* Honeypot: real respondents never see or reach this; a bot's scripted fill-everything
               behavior does, and that value is passed through to the backend as-is (Requirement 6.5). */}

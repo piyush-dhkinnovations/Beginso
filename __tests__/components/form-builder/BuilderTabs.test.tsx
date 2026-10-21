@@ -7,14 +7,14 @@ const base = { activeTab: 'build' as const, onChange: vi.fn(), canUndo: true, ca
 const tabNames = () => screen.getAllByRole('tab').map((t) => t.textContent);
 
 describe('BuilderTabs', () => {
-  it('renders Build, Branding, Behaviour and Share as tabs, with the active one selected', () => {
+  it('renders Build, Branding, Share and Settings as tabs, with the active one selected', () => {
     render(<BuilderTabs {...base} activeTab="branding" />);
-    expect(tabNames()).toEqual(['Build', 'Branding', 'Behaviour', 'Share']);
+    expect(tabNames()).toEqual(['Build', 'Branding', 'Share', 'Settings']);
     expect(screen.getByRole('tab', { name: 'Branding' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: 'Build' })).toHaveAttribute('aria-selected', 'false');
   });
 
-  it('hides Share when not allowed and Behaviour when covered elsewhere', () => {
+  it('hides Share when not allowed and Settings when asked', () => {
     render(<BuilderTabs {...base} showShare={false} hideSettings />);
     expect(tabNames()).toEqual(['Build', 'Branding']);
   });

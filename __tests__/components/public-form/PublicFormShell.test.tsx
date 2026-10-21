@@ -260,6 +260,13 @@ describe('PublicFormShell preview mode', () => {
 describe('PublicFormShell access modes', () => {
   const tracked = () => schema({ settings: { accessMode: 'tracked' } as PublicFormSchema['settings'] });
 
+  it('tracked: asks for the email first, before the questions', () => {
+    render(<PublicFormShell schema={tracked()} slug="s" />);
+    const email = screen.getByLabelText(/Your email/);
+    const name = screen.getByLabelText(/Name/);
+    expect(email.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('tracked: refuses an invalid email before sending anything', async () => {
     render(<PublicFormShell schema={tracked()} slug="s" />);
     await userEvent.type(screen.getByLabelText(/Name/), 'Asha');

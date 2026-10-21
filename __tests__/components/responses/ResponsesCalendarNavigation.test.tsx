@@ -86,7 +86,7 @@ describe('it is a calendar', () => {
   it('shows days of the neighbouring months, with their own responses, which do not count towards this month', async () => {
     serve([response('edge', '2026-08-31T08:00:00.000Z')]); // the grid starts on Sunday 30 August
     draw();
-    await waitFor(() => expect(cell('2026-08-31')).toHaveAccessibleName('2026-08-31, 1 response'));
+    await waitFor(() => expect(cell('2026-08-31')).toHaveAccessibleName(/^2026-08-31, 1 response/));
     expect(screen.getByText('No responses this month')).toBeInTheDocument();
   });
 

@@ -4,7 +4,7 @@ import { Undo2, Redo2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 
-// Share & Embed is the fourth tab, after Settings (CF2.1). It is hidden for roles that cannot see it.
+// Settings is the last tab, after Share. Share is hidden for roles that cannot see it.
 export type BuilderTab = 'build' | 'branding' | 'settings' | 'share';
 
 interface BuilderTabsProps {
@@ -18,15 +18,15 @@ interface BuilderTabsProps {
   showShare?: boolean;
   /** Non-deleted field count; shown on the Build tab when above zero. */
   fieldCount?: number;
-  /** Hide the Behaviour tab: the form's top-level Settings tab already covers it. */
+  /** Hide the Settings tab. */
   hideSettings?: boolean;
 }
 
 const TABS: { id: BuilderTab; label: string }[] = [
   { id: 'build', label: 'Build' },
   { id: 'branding', label: 'Branding' },
-  { id: 'settings', label: 'Behaviour' },
   { id: 'share', label: 'Share' },
+  { id: 'settings', label: 'Settings' },
 ];
 
 export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onRedo, showShare = true, fieldCount = 0, hideSettings = false }: BuilderTabsProps) {
