@@ -38,7 +38,8 @@ export function PageHeader({
           {description && <p className="bg-body" style={{ color: "var(--text-muted)", margin: 0 }}>{description}</p>}
         </div>
         {actions && (
-          <div className={bx("bg-row", "bg-gap-3")}>{actions}</div>
+          // flex-wrap: on a narrow screen the buttons drop to a second line instead of being squeezed until their labels break.
+          <div className={bx("bg-row", "bg-gap-3", "flex-wrap")}>{actions}</div>
         )}
       </div>
     </div>
