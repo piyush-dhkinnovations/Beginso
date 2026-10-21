@@ -137,3 +137,32 @@ describe('eventsService', () => {
     expect(withNothing.actorName).toBe('Unknown');
   });
 });
+
+describe('eventsService actor avatars', () => {
+  beforeEach(() => {
+    mockGet.mockReset();
+  });
+
+  const raw = (actor: Record<string, unknown>) => ({
+    data: {
+      events: [
+        { id: 'e9', action: 'form.publish', targetType: 'form', targetId: 'f1', targetLabel: 'Survey', createdAt: '2026-10-21T10:00:00.000Z', actor },
+      ],
+    },
+  });
+
+  it("keeps the actor's id, email and picture next to their name", async () => {
+    mockGet.mockResolvedValueOnce(raw({ id: 'u1', name: 'Piyush', email: 'p@example.com', avatarUrl: 'https://cdn.example.com/a.png' }));
+    const [event] = await eventsService.listFormEvents('f1');
+    expect(event).toMatchObject({ actorName: 'Piyush', actorId: 'u1', actorEmail: 'p@example.com', actorAvatarUrl: 'https://cdn.example.com/a.png' });
+  });
+
+  it('has no picture (undefined) when the backend sends none or null, and no id for an actor without an account', async () => {
+    mockGet.mockResolvedValueOnce(raw({ id: '', name: 'Respondent', email: '', avatarUrl: null }));
+    const [event] = await eventsService.listFormEvents('f1');
+    expect(event.actorAvatarUrl).toBeUndefined();
+    expect(event.actorId).toBeUndefined();
+    expect(event.actorEmail).toBeUndefined();
+    expect(event.actorName).toBe('Respondent');
+  });
+});

@@ -1,3 +1,4 @@
+import { Avatar } from '@/components/ui/Avatar';
 import { describeEventAction, displayTargetLabel } from '@/lib/eventLabels';
 import { formatResponseDate } from '@/lib/formatters';
 import type { WorkspaceEventItem } from '@/types/event';
@@ -5,6 +6,8 @@ import type { WorkspaceEventItem } from '@/types/event';
 export interface AuditTableProps {
   events: WorkspaceEventItem[];
   isLoading?: boolean;
+  /** The actor's profile picture, if there is one; without it (or if it fails to load) their initials are shown. */
+  avatarOf?: (event: WorkspaceEventItem) => string | undefined;
 }
 
 const SKELETON_ROWS = 5;
@@ -15,18 +18,7 @@ const SKELETON_ROWS = 5;
 // Action and target read as one sentence ("downloaded a csv report"), so they share a column; the
 // actor cell is the row header so the row is announced by who did it. The origin hash is not
 // human-readable, so it is not shown at all.
-function Monogram({ name }: { name: string }) {
-  return (
-    <span
-      aria-hidden="true"
-      className="inline-flex h-7 w-7 flex-none items-center justify-center rounded-full bg-(--surface-active) bg-caption font-semibold text-(--accent-soft-text)"
-    >
-      {(name.trim()[0] ?? '?').toUpperCase()}
-    </span>
-  );
-}
-
-export function AuditTable({ events, isLoading }: AuditTableProps) {
+export function AuditTable({ events, isLoading, avatarOf }: AuditTableProps) {
   return (
     <div className="bg-table-wrap">
       <table className="bg-table">
@@ -61,7 +53,7 @@ export function AuditTable({ events, isLoading }: AuditTableProps) {
                     }}
                   >
                     <span className="flex items-center gap-2.5 font-medium text-(--text-primary)">
-                      <Monogram name={event.actorName} />
+                      <Avatar name={event.actorName} src={avatarOf?.(event)} alt="" size="sm" aria-hidden="true" className="flex-none" />
                       <span className="truncate">{event.actorName}</span>
                     </span>
                   </th>

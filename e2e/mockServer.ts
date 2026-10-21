@@ -40,6 +40,17 @@ function schemaFor(slug: string): PublicFormSchema {
   return mockPublicFormSchema;
 }
 
+// The workspace the e2e workspace-page specs open (role admin, so the Audit Log is open to them).
+const E2E_WORKSPACE = {
+  id: '507f1f77bcf86cd799439011',
+  name: 'Kala Chashma Entertainment',
+  slug: 'e2e-avatars-ws',
+  role: 'admin',
+  isOwner: false,
+  timezone: 'UTC',
+  logo: '/avatars/05.svg',
+};
+
 const server = http.createServer(async (req, res) => {
   // The GET schema fetch happens server-side (Next.js SSR, no CORS involved), but the
   // submit POST is a client-side browser fetch to a different port/origin — needs
@@ -60,6 +71,20 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/auth/me') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ success: true, user: { id: 'e2e-user', name: 'E2E User', email: 'e2e@example.com', onboardingCompleted: true } }));
+    return;
+  }
+
+  // A workspace's pages (/w/:slug/...) look the workspace up on the server before they paint (src/lib/workspaceServer.ts).
+  // One fixed e2e workspace is enough for the specs that need a workspace page; anything else is not found.
+  const workspaceMatch = url.pathname.match(/^\/api\/workspaces\/([^/]+)\/?$/);
+  if (workspaceMatch && req.method === 'GET') {
+    if (workspaceMatch[1] !== E2E_WORKSPACE.slug) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ message: 'Workspace not found' }));
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ workspace: E2E_WORKSPACE }));
     return;
   }
 

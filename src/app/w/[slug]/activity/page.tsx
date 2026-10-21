@@ -8,6 +8,7 @@ import { eventsService } from '@/services/events';
 import { activityKeys } from '@/lib/queryKeys';
 import { PageHeader, Alert, Button, Skeleton, FilterChips, FilterMenu, Toolbar } from '@/components/ui';
 import { formatRelativeTime } from '@/lib/formatters';
+import { useEventAvatars } from '@/hooks/useEventAvatars';
 import { ActivityFeed, ACTIVITY_CATEGORY_LABEL, categoryOf, type ActivityCategory } from '@/components/workspaces/ActivityFeed';
 
 const PAGE_SIZE = 20;
@@ -29,6 +30,7 @@ export default function WorkspaceActivityPage() {
   const [person, setPerson] = useState('');
   const [category, setCategory] = useState<ActivityCategory | ''>('');
 
+  const avatarOf = useEventAvatars(slug);
   const hasNext = (data?.length ?? 0) >= PAGE_SIZE;
 
   // Filters apply to the page already loaded (the events contract has no server-side filter; the Audit Log
@@ -97,6 +99,7 @@ export default function WorkspaceActivityPage() {
             )}
             <ActivityFeed
               events={visible}
+              avatarOf={avatarOf}
               emptyTitle={filtered ? `No activity ${filterName}` : undefined}
               emptyDescription={filtered ? `There ${otherEvents === 1 ? 'is 1 other event' : `are ${otherEvents} other events`} on this page.` : undefined}
               emptyActions={
