@@ -15,7 +15,17 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { sanitizeNextParam } from '@/lib/authRoutes';
 
-export function LoginForm() {
+interface LoginFormProps {
+  /**
+   * Where to land after signing in, for a form embedded in another page (the sign-in gate of a members-only form): it signs in right
+   * there and returns to that page. An internal path only. Without it the address comes from `?next=`, like the login page.
+   */
+  redirectTo?: string;
+  /** The text of the main button. */
+  submitLabel?: string;
+}
+
+export function LoginForm({ redirectTo, submitLabel = 'Log In' }: LoginFormProps = {}) {
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isEmailLoading, setIsEmailLoading] = useState(false);
@@ -25,7 +35,8 @@ export function LoginForm() {
   const router = useRouter();
   // Requirements §7.5.1: the Invite Accept page's sign-in link carries ?next=/invite/:token so
   // login() lands the user back there instead of the default destination.
-  const nextParam = sanitizeNextParam(useSearchParams().get('next'));
+  const searchNext = sanitizeNextParam(useSearchParams().get('next'));
+  const nextParam = redirectTo ? sanitizeNextParam(redirectTo) : searchNext;
 
   const isAnyLoading = isEmailLoading || isGoogleLoading;
 
@@ -179,7 +190,7 @@ export function LoginForm() {
         isLoading={isEmailLoading}
         disabled={isAnyLoading}
       >
-        Log In
+        {submitLabel}
       </Button>
 
       {/* Two rules either side of the label: no label background to clash with the card surface. */}
