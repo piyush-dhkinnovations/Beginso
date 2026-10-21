@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ExternalLink, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { domainOf, safeHttpUrl, urlSettings } from '@/lib/fieldDisplay';
+import { domainOf, safeHttpUrl, signInService, urlSettings } from '@/lib/fieldDisplay';
 import { responsesService } from '@/services/responses';
 import type { FormField } from '@/types/form';
 
@@ -59,13 +59,15 @@ function googleDriveId(href: string): string | null {
   return null;
 }
 
-function RichPreview({ href, domain, scope, framed, size, ratio }: { href: string; domain: string; scope: string; framed: boolean; size: Settings['previewSize']; ratio: Settings['aspectRatio'] }) {
+function RichPreview({ href, domain, service, scope, framed, size, ratio }: { href: string; domain: string; service: string | null; scope: string; framed: boolean; size: Settings['previewSize']; ratio: Settings['aspectRatio'] }) {
   const [imageFailed, setImageFailed] = useState(false);
+  // A sign-in host would only return its login or error page, so it is never scraped.
   const { data, isLoading } = useQuery({
     queryKey: ['link-preview', href],
     queryFn: () => responsesService.getLinkPreview(href, scope),
     staleTime: 60 * 60_000,
     retry: false,
+    enabled: !service,
   });
 
   const ytId = youtubeId(href);
@@ -78,7 +80,7 @@ function RichPreview({ href, domain, scope, framed, size, ratio }: { href: strin
     : undefined;
 
   // Only show title when it adds information beyond the domain (avoids duplicate text when preview fails)
-  const title = data?.title && data.title !== domain ? data.title : null;
+  const title = service ? `${service} file` : data?.title && data.title !== domain ? data.title : null;
   const image = data?.image && !imageFailed ? data.image : (!imageFailed && platformThumb ? platformThumb : undefined);
   const stacked = framed && size === 'large';
   const thumb = thumbClass({ size, ratio }, framed);
@@ -105,7 +107,7 @@ function RichPreview({ href, domain, scope, framed, size, ratio }: { href: strin
         <p className="truncate bg-caption text-(--text-muted)">{domain}</p>
         <p className="truncate bg-caption text-(--text-muted)" title={href}>{href}</p>
         <a {...LINK_PROPS} href={href} className="mt-1 inline-flex w-fit items-center gap-1 bg-body-sm font-medium text-(--text-link) hover:underline">
-          Open website
+          {service ? 'Opens in a new tab' : 'Open website'}
           <ExternalLink size={13} aria-hidden="true" />
         </a>
       </div>
@@ -151,5 +153,5 @@ export function UrlAnswer({ value, field, scope }: UrlAnswerProps) {
     );
   }
 
-  return <RichPreview href={href} domain={domain} scope={scope} framed={display === 'card'} size={previewSize} ratio={aspectRatio} />;
+  return <RichPreview href={href} domain={domain} service={signInService(url)} scope={scope} framed={display === 'card'} size={previewSize} ratio={aspectRatio} />;
 }

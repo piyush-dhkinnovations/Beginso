@@ -26,4 +26,7 @@ export interface ActivityEntry {
   actorRemoved?: boolean;
   at: string; // ISO 8601
   detail?: string;
+  /** stage_changed only. Not sent by the backend yet (it stores both ids but returns neither). */
+  fromStageId?: string;
+  toStageId?: string;
 }

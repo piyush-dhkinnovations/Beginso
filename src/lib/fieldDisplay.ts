@@ -87,6 +87,25 @@ export function domainOf(url: URL): string {
   return url.hostname.replace(/^www\./, '');
 }
 
+// Hosts that answer an anonymous server-side fetch with a sign-in or "not found" page, so a scraped title would be wrong.
+const SIGN_IN_HOSTS: [suffix: string, service: string][] = [
+  ['drive.google.com', 'Google Drive'],
+  ['docs.google.com', 'Google Docs'],
+  ['dropbox.com', 'Dropbox'],
+  ['onedrive.live.com', 'OneDrive'],
+  ['1drv.ms', 'OneDrive'],
+  ['sharepoint.com', 'SharePoint'],
+  ['notion.so', 'Notion'],
+  ['notion.site', 'Notion'],
+  ['figma.com', 'Figma'],
+];
+
+/** The service name when the link needs a sign-in to preview (Drive, Docs, Dropbox, ...), else null. */
+export function signInService(url: URL): string | null {
+  const host = url.hostname;
+  return SIGN_IN_HOSTS.find(([suffix]) => host === suffix || host.endsWith(`.${suffix}`))?.[1] ?? null;
+}
+
 // ─── Currency ────────────────────────────────────────────────────────────────
 
 export const CURRENCY_OPTIONS: { code: CurrencyCode; label: string; symbol: string }[] = [
