@@ -98,7 +98,7 @@ export function buildFormColumns(s: FormsPageState, context: FormsContext): Tabl
       header: 'Owner',
       // Just an avatar: hidden below 1024px so the table fits beside the sidebar rail instead of clipping its last column (QA A12-003).
       className: 'max-lg:hidden',
-      render: (form) => <OwnerMonogram name={ownerName(form)} brandColor={form.branding?.primaryColor} title={form.title} />,
+      render: (form) => <OwnerMonogram name={ownerName(form)} avatarUrl={form.owner?.avatarUrl} brandColor={form.branding?.primaryColor} title={form.title} />,
     },
     {
       key: 'status',

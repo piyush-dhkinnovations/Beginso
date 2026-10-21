@@ -14,19 +14,16 @@ import { AddFieldSheet } from '@/components/form-builder/AddFieldSheet';
 import { BrandingTabContent } from '@/components/form-builder/BrandingTabContent';
 import { ShareView } from '@/components/form-builder/ShareView';
 import { PublishModal } from '@/components/form-builder/PublishModal';
-import { CloseFormModal } from '@/components/form-builder/CloseFormModal';
 import { LeaveBuilderModal } from '@/components/form-builder/LeaveBuilderModal';
-import { DeleteFormModal } from '@/components/form-builder/DeleteFormModal';
 import { BuilderLoadingSkeleton } from '@/components/form-builder/BuilderLoadingSkeleton';
 import { BuildTabPanel } from '@/components/form-builder/BuildTabPanel';
 import { useBuilderForm } from '@/components/form-builder/useBuilderForm';
 import { reloadBuilder, useBuilderAutosave } from '@/components/form-builder/useBuilderAutosave';
 import { useBuilderUndoShortcuts } from '@/components/form-builder/useBuilderUndoShortcuts';
 import { useBuilderPublishFlow } from '@/components/form-builder/useBuilderPublishFlow';
-import { useBuilderFormMutations } from '@/components/form-builder/useBuilderFormMutations';
 import { useBuilderLeaveGuard } from '@/components/form-builder/useBuilderLeaveGuard';
 import { useBuilderDnd } from '@/components/form-builder/useBuilderDnd';
-import { canSeeShare, canPublishForm, canDeleteForm } from '@/lib/roles';
+import { canSeeShare, canPublishForm } from '@/lib/roles';
 import type { FieldType } from '@/types/form';
 
 const VALID_TABS: BuilderTab[] = ['build', 'branding', 'settings', 'share'];
@@ -76,7 +73,7 @@ export default function BuilderPageShell() {
   const canUndo = undoStack.length > 0;
   const canRedo = redoStack.length > 0;
 
-  const { form, isLoading, formWorkspaceSlug, formsListHref, overviewHref, formRole } = useBuilderForm(id);
+  const { isLoading, formWorkspaceSlug, formsListHref, overviewHref, formRole } = useBuilderForm(id);
 
   const { saveState, setSaveState, savedAt, saveDetail, handleRetrySave } = useBuilderAutosave();
   const stale = useBuilderStore((state) => state.stale);
@@ -85,9 +82,6 @@ export default function BuilderPageShell() {
 
   const { showPublishModal, setShowPublishModal, handleStatusChange, handlePublishClick, handleChangeSetting, handleFixField, handlePreview } =
     useBuilderPublishFlow({ id, setActiveTab, setSaveState });
-
-  const { showCloseModal, setShowCloseModal, showDeleteModal, setShowDeleteModal, closeMutation, deleteMutation } =
-    useBuilderFormMutations({ formWorkspaceSlug, formsListHref });
 
   const { showLeaveModal, handleBack, handleLeaveWithoutSaving, handleStay } = useBuilderLeaveGuard({ overviewHref, formsListHref });
 
@@ -132,11 +126,7 @@ export default function BuilderPageShell() {
             onPreview={handlePreview}
             canPublish={canPublishForm(formRole)}
             onPublish={handlePublishClick}
-            onClose={() => setShowCloseModal(true)}
-            canDelete={canDeleteForm(formRole)}
-            onDelete={() => setShowDeleteModal(true)}
             onBack={handleBack}
-            onOpenSettings={() => setActiveTab('settings')}
             // Same logo as Branding → Logo: it goes through the builder store, so it autosaves like every other edit.
             icon={<FormLogoButton mark={branding} title={formTitle} canEdit={formRole !== 'viewer' && formRole !== 'reviewer'} onSave={(mark) => setBranding({ logoUrl: mark.logoUrl ?? undefined, iconName: mark.iconName ?? undefined})} />}
           />
@@ -208,30 +198,11 @@ export default function BuilderPageShell() {
         onFixField={handleFixField}
       />
 
-      <CloseFormModal
-        isOpen={showCloseModal}
-        onClose={() => setShowCloseModal(false)}
-        onConfirm={() => closeMutation.mutate()}
-        isPending={closeMutation.isPending}
-      />
-
       <LeaveBuilderModal
         isOpen={showLeaveModal}
         formTitle={formTitle}
         onDiscard={handleLeaveWithoutSaving}
         onStay={handleStay}
-      />
-
-      <DeleteFormModal
-        isOpen={showDeleteModal}
-        formTitle={formTitle}
-        responseCount={form?.responseCount}
-        onClose={() => setShowDeleteModal(false)}
-        onConfirm={() => {
-          deleteMutation.mutate();
-          setShowDeleteModal(false);
-        }}
-        isDeleting={deleteMutation.isPending}
       />
     </>
   );

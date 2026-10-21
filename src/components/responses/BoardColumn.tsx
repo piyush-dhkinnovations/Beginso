@@ -59,9 +59,8 @@ export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onV
   const responses = [...arriving, ...fetched.filter((r) => !hiddenIds?.has(r._id))];
   const total = (data?.pages[0]?.total ?? 0) - leaving.length + arriving.length;
 
-  // Each column scrolls on its own and loads its next page as the end comes into view (no "Load more" to find). Where the browser
-  // has no IntersectionObserver the button stays as the fallback.
-  const listRef = useRef<HTMLDivElement | null>(null);
+  // The page scrolls, not the column: a column is as long as its cards, and loads its next page when its end comes into view (no
+  // "Load more" to find). Where the browser has no IntersectionObserver the button stays as the fallback.
   const endRef = useRef<HTMLDivElement | null>(null);
   const canObserve = typeof IntersectionObserver !== 'undefined';
   useEffect(() => {
@@ -71,7 +70,7 @@ export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onV
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) void fetchNextPage();
       },
-      { root: listRef.current, rootMargin: '240px' }
+      { rootMargin: '400px' }
     );
     io.observe(end);
     return () => io.disconnect();
@@ -80,7 +79,7 @@ export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onV
 
   return (
     <div
-      className="board-column flex h-full w-72 shrink-0 snap-start flex-col rounded-xl border border-(--border-subtle) bg-(--bg-subtle) p-2"
+      className="board-column flex w-72 shrink-0 snap-start flex-col rounded-xl border border-(--border-subtle) bg-(--bg-subtle) p-2"
       role="listitem"
       aria-label={`${stage.name} column`}
     >
@@ -95,11 +94,8 @@ export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onV
       </div>
 
       <div
-        ref={(el) => {
-          setNodeRef(el);
-          listRef.current = el;
-        }}
-        className={`flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain rounded-lg p-0.5 transition-shadow${isOver ? ' ring-2 ring-(--action-primary)' : ''}`}
+        ref={setNodeRef}
+        className={`flex min-h-24 flex-1 flex-col gap-2 rounded-lg p-0.5 transition-shadow${isOver ? ' ring-2 ring-(--action-primary)' : ''}`}
         aria-busy={isLoading || undefined}
       >
         {isLoading &&

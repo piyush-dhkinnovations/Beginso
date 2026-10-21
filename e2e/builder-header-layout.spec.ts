@@ -24,7 +24,6 @@ for (const size of SIZES) {
       title: header.getByRole('textbox', { name: 'Form name' }),
       status: header.getByText(/^(Draft|Published|Closed)$/),
       preview: header.getByRole('button', { name: 'Preview' }),
-      more: header.getByRole('button', { name: 'More form actions' }),
     };
     const boxes: Record<string, { x: number; y: number; width: number; height: number }> = {};
     for (const [key, locator] of Object.entries(parts)) {

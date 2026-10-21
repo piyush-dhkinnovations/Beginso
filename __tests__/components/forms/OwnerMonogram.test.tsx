@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { OwnerMonogram } from '@/components/forms/OwnerMonogram';
 
 describe('OwnerMonogram', () => {
@@ -34,5 +34,20 @@ describe('OwnerMonogram', () => {
     const el = screen.getByRole('img');
     expect(el.style.backgroundColor).not.toBe('not-a-colour');
     expect(el).toHaveStyle({ color: '#ffffff' });
+  });
+  it("shows the owner's picture when there is one, and the initials again if it cannot load", () => {
+    const { container } = render(<OwnerMonogram name="Ada Lovelace" avatarUrl="https://cdn.example.com/ada.png" title="T" />);
+    const img = container.querySelector('img')!;
+    expect(img).toHaveAttribute('src', 'https://cdn.example.com/ada.png');
+    expect(screen.queryByText('AL')).not.toBeInTheDocument();
+    fireEvent.error(img);
+    expect(container.querySelector('img')).toBeNull();
+    expect(screen.getByText('AL')).toBeInTheDocument();
+  });
+
+  it('shows initials when the owner has no picture', () => {
+    const { container } = render(<OwnerMonogram name="Ada Lovelace" avatarUrl={null} title="T" />);
+    expect(container.querySelector('img')).toBeNull();
+    expect(screen.getByText('AL')).toBeInTheDocument();
   });
 });

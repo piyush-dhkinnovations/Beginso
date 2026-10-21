@@ -16,11 +16,7 @@ function props(over: Partial<BuilderHeaderProps> = {}): BuilderHeaderProps {
     onTitleChange: vi.fn(),
     onPreview: vi.fn(),
     onPublish: vi.fn(),
-    onClose: vi.fn(),
-    canDelete: true,
-    onDelete: vi.fn(),
     onBack: vi.fn(),
-    onOpenSettings: vi.fn(),
     ...over,
   };
 }
@@ -106,30 +102,9 @@ describe('BuilderHeader', () => {
     expect(p.onBack).toHaveBeenCalled();
   });
 
-  it('the overflow menu has Form settings and Delete for a draft (no Close)', async () => {
-    const p = props();
-    render(<BuilderHeader {...p} />);
-    await userEvent.click(screen.getByRole('button', { name: 'More form actions' }));
-    expect(screen.queryByRole('menuitem', { name: 'Close form' })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('menuitem', { name: 'Form settings' }));
-    expect(p.onOpenSettings).toHaveBeenCalled();
-  });
-
-  it('a published form can be closed from the menu; deletion is owner-only', async () => {
-    const p = props({ status: 'published', canDelete: false });
-    render(<BuilderHeader {...p} />);
-    await userEvent.click(screen.getByRole('button', { name: 'More form actions' }));
-    expect(screen.queryByRole('menuitem', { name: 'Delete form' })).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('menuitem', { name: 'Close form' }));
-    expect(p.onClose).toHaveBeenCalled();
-  });
-
-  it('Delete form calls onDelete', async () => {
-    const p = props();
-    render(<BuilderHeader {...p} />);
-    await userEvent.click(screen.getByRole('button', { name: 'More form actions' }));
-    await userEvent.click(screen.getByRole('menuitem', { name: 'Delete form' }));
-    expect(p.onDelete).toHaveBeenCalled();
+  it('has no three-dot menu: settings is a tab, and closing or deleting live on the Forms list', () => {
+    render(<BuilderHeader {...props({ status: 'published' })} />);
+    expect(screen.queryByRole('button', { name: 'More form actions' })).not.toBeInTheDocument();
   });
 
   it('a failed save offers Retry', async () => {

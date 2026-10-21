@@ -124,9 +124,9 @@ export function ResponsesBoard({
   return (
     <DndContext sensors={sensors} accessibility={{ announcements }} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={() => setDragging(null)}>
       <div
-        // As tall as the room left under the page header, so each column scrolls inside it and the sideways scrollbar sits at the
-        // bottom of the screen where it can be seen, not at the end of a very long page.
-        className="board-scroll flex h-[calc(100dvh-22rem)] min-h-112 snap-x snap-mandatory items-stretch gap-3 overflow-x-auto pb-2 lg:snap-none"
+        // `relative` + `min-w-0`: the cards' screen-reader-only text is absolutely positioned and must be clipped with the board, or lanes
+        // far to the right push the whole page sideways (header and sidebar then slide out of place).
+        className="board-scroll relative flex min-w-0 max-w-full snap-x snap-mandatory items-stretch gap-3 overflow-x-auto pb-2 lg:snap-none"
         role="list"
         aria-label="Responses board"
       >

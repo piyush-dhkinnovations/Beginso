@@ -84,7 +84,7 @@ export function ResponsesLanding({ scope = 'personal' }: ResponsesLandingProps) 
         </div>
       ),
     },
-    { key: 'owner', header: 'Owner', render: (f) => <OwnerMonogram name={ownerOf(f)} brandColor={f.branding?.primaryColor} title={f.title} /> },
+    { key: 'owner', header: 'Owner', render: (f) => <OwnerMonogram name={ownerOf(f)} avatarUrl={f.owner?.avatarUrl} brandColor={f.branding?.primaryColor} title={f.title} /> },
     { key: 'status', header: 'Status', sortKey: 'status', render: (f) => <StatusBadge variant={STATUS_VARIANT[f.status]}>{FORM_STATUS_LABEL[f.status]}</StatusBadge> },
     { key: 'responses', header: 'Responses', sortKey: 'responses', render: (f) => <span className="bg-body-sm tabular-nums text-(--text-primary)">{f.responseCount}</span> },
     { key: 'updated', header: 'Updated', sortKey: 'updated', render: (f) => <span className="bg-body-sm text-(--text-secondary)">{formatUpdated(f.updatedAt)}</span> },

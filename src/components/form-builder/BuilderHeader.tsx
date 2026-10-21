@@ -2,9 +2,8 @@
 
 import { CharCount } from '@/components/ui/CharCount';
 import { useState } from 'react';
-import { CheckCircle2, ExternalLink, MoreVertical, Settings } from 'lucide-react';
+import { CheckCircle2, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { FormHeader } from '@/components/forms/FormHeader';
 import type { ReactNode } from 'react';
@@ -30,13 +29,7 @@ export interface BuilderHeaderProps {
   onTitleChange: (title: string) => void;
   onPreview: () => void;
   onPublish: () => void;
-  onClose: () => void;
-  /** The caller may delete (Owner only). Otherwise the action is not offered; the server enforces. */
-  canDelete: boolean;
-  onDelete: () => void;
   onBack: () => void;
-  /** Opens the Settings page of the builder (it is no longer a tab, so the ⋮ menu is its way in). */
-  onOpenSettings: () => void;
   /** The form's logo button (see FormLogoButton); omitted = the default document icon. */
   icon?: ReactNode;
 }
@@ -62,11 +55,7 @@ export function BuilderHeader({
   onTitleChange,
   onPreview,
   onPublish,
-  onClose,
-  canDelete,
-  onDelete,
   onBack,
-  onOpenSettings,
   icon,
 }: BuilderHeaderProps) {
   const [title, setTitle] = useState(formTitle || '');
@@ -84,13 +73,6 @@ export function BuilderHeader({
       setTitle(formTitle || '');
     }
   };
-
-  // Close/Delete are rare and destructive: they live in the ⋮ menu at every width.
-  const overflowItems: MenuItem[] = [
-    { id: 'settings', label: 'Form settings', icon: <Settings size={16} />, onSelect: onOpenSettings },
-    ...(status === 'published' ? [{ id: 'close', label: 'Close form', onSelect: onClose }] : []),
-    ...(canDelete ? [{ id: 'delete', label: 'Delete form', onSelect: onDelete, danger: true }] : []),
-  ];
 
   return (
     <FormHeader
@@ -138,10 +120,6 @@ export function BuilderHeader({
               {status === 'closed' ? 'Re-publish' : 'Publish'}
             </Button>
           ) : null}
-
-          {overflowItems.length > 0 && (
-            <Menu align="end" triggerLabel="More form actions" trigger={<MoreVertical size={18} aria-hidden="true" />} items={overflowItems} />
-          )}
         </>
       }
     />
