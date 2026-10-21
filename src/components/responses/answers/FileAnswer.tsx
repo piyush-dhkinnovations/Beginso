@@ -11,6 +11,8 @@ import type { IResponseFile } from '@/types/response';
 interface FileAnswerProps {
   responseId: string;
   file: IResponseFile;
+  /** One-line chip (the Table layout) instead of the full card. */
+  compact?: boolean;
 }
 
 // Only these formats can be previewed, and the blob is re-typed from this list — never from what the server or
@@ -26,7 +28,7 @@ const PREVIEWABLE: Record<string, string> = {
 
 const extensionOf = (name: string): string => (name.includes('.') ? name.split('.').pop()!.toLowerCase() : '');
 
-export function FileAnswer({ responseId, file }: FileAnswerProps) {
+export function FileAnswer({ responseId, file, compact = false }: FileAnswerProps) {
   const { toast } = useToast();
   const [busy, setBusy] = useState<'download' | 'preview' | null>(null);
   const ext = extensionOf(file.name);
@@ -54,6 +56,23 @@ export function FileAnswer({ responseId, file }: FileAnswerProps) {
     } finally {
       setBusy(null);
     }
+  }
+
+  if (compact) {
+    return (
+      <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-(--border-default) bg-(--surface-card) py-0.5 pl-2.5 pr-1">
+        <FileText size={13} className="shrink-0 text-(--text-muted)" aria-hidden="true" />
+        <span className="max-w-56 truncate bg-body-sm font-medium text-(--text-primary)" title={file.name}>{file.name}</span>
+        {previewType && (
+          <Button variant="ghost" size="small" onClick={() => void run('preview')} isLoading={busy === 'preview'} aria-label={`Preview ${file.name}`} className="px-1.5">
+            <Eye size={14} aria-hidden="true" />
+          </Button>
+        )}
+        <Button variant="ghost" size="small" onClick={() => void run('download')} isLoading={busy === 'download'} aria-label={`Download ${file.name}`} className="px-1.5">
+          <Download size={14} aria-hidden="true" />
+        </Button>
+      </span>
+    );
   }
 
   return (
