@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { signInWithEmailAndPassword, updatePassword, signOut } from 'firebase/auth';
@@ -24,6 +26,7 @@ interface ChangePasswordModalProps {
 
 export function ChangePasswordModal({ isOpen, onClose, email }: ChangePasswordModalProps) {
   const { toast } = useToast();
+  const [reveal, setReveal] = useState(false);
 
   const {
     register,
@@ -100,22 +103,29 @@ export function ChangePasswordModal({ isOpen, onClose, email }: ChangePasswordMo
         <Input
           id="new-password-settings"
           label="New password"
-          type="password"
+          type={reveal ? 'text' : 'password'}
           autoComplete="new-password"
           placeholder="At least 8 characters"
           error={errors.newPassword?.message}
+          rightSlot={
+            <button type="button" onClick={() => setReveal((r) => !r)} aria-label={reveal ? 'Hide passwords' : 'Show passwords'} aria-pressed={reveal}>
+              {reveal ? <EyeOff aria-hidden="true" className="size-4" /> : <Eye aria-hidden="true" className="size-4" />}
+            </button>
+          }
           disabled={isSubmitting}
           {...register('newPassword')}
         />
         <Input
           id="confirm-new-password-settings"
           label="Confirm new password"
-          type="password"
+          type={reveal ? 'text' : 'password'}
           autoComplete="new-password"
           error={errors.confirmNewPassword?.message}
           disabled={isSubmitting}
           {...register('confirmNewPassword')}
         />
+
+        <p className="bg-caption text-(--text-muted)">Use 8 to 128 characters.</p>
 
         <Button type="submit" isLoading={isSubmitting} className="mt-1">
           Update password

@@ -150,7 +150,7 @@ export function ScoreCard({ responseId, criteria, disabled }: ScoreCardProps) {
           <fieldset key={criterion.id} className="flex flex-col gap-2">
             <div className="flex items-center justify-between gap-2">
               <legend className="bg-body-sm font-semibold text-(--text-primary)">
-                {criterion.label || 'Unnamed criterion'}
+                {criterion.label || (criterion.isDefault ? 'Overall score' : 'Unnamed criterion')}
               </legend>
               {own !== undefined && (
                 <span className="shrink-0 rounded-md bg-(--accent-soft) px-2 py-0.5 bg-caption font-medium text-(--accent-soft-text)">

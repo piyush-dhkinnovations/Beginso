@@ -56,11 +56,20 @@ export function validateImage(file: File, maxSizeMb: number): string | null {
 export interface UrlSettings {
   style: UrlPreviewStyle;
   display: UrlDisplay;
+  previewPosition: ImagePreviewPosition;
+  aspectRatio: ImageAspectRatio;
+  previewSize: ImagePreviewSize;
 }
 
 export function urlSettings(field?: FormField): UrlSettings {
   const f = field?.type === 'url' ? field : undefined;
-  return { style: f?.urlPreviewStyle ?? 'rich', display: f?.urlDisplay ?? 'card' };
+  return {
+    style: f?.urlPreviewStyle ?? 'rich',
+    display: f?.urlDisplay ?? 'card',
+    previewPosition: f?.urlPreviewPosition ?? 'inline',
+    aspectRatio: f?.urlAspectRatio ?? 'original',
+    previewSize: f?.urlPreviewSize ?? 'medium',
+  };
 }
 
 /** The parsed URL when `value` is a plain http(s) address, otherwise null. Anything else is shown as text, never as a link. */
@@ -76,6 +85,25 @@ export function safeHttpUrl(value: unknown): URL | null {
 
 export function domainOf(url: URL): string {
   return url.hostname.replace(/^www\./, '');
+}
+
+// Hosts that answer an anonymous server-side fetch with a sign-in or "not found" page, so a scraped title would be wrong.
+const SIGN_IN_HOSTS: [suffix: string, service: string][] = [
+  ['drive.google.com', 'Google Drive'],
+  ['docs.google.com', 'Google Docs'],
+  ['dropbox.com', 'Dropbox'],
+  ['onedrive.live.com', 'OneDrive'],
+  ['1drv.ms', 'OneDrive'],
+  ['sharepoint.com', 'SharePoint'],
+  ['notion.so', 'Notion'],
+  ['notion.site', 'Notion'],
+  ['figma.com', 'Figma'],
+];
+
+/** The service name when the link needs a sign-in to preview (Drive, Docs, Dropbox, ...), else null. */
+export function signInService(url: URL): string | null {
+  const host = url.hostname;
+  return SIGN_IN_HOSTS.find(([suffix]) => host === suffix || host.endsWith(`.${suffix}`))?.[1] ?? null;
 }
 
 // ─── Currency ────────────────────────────────────────────────────────────────

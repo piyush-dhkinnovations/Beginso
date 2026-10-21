@@ -61,6 +61,8 @@ export function ReportsView({ scope = 'personal', embedded = false }: ReportsVie
   // `formTitle` — resolved here from the same forms list already loaded for the dropdown above,
   // rather than trusting a field the backend doesn't actually send (see docs/status/fix-log.md).
   const formTitleById = useMemo(() => new Map(forms.map((f) => [f._id, f.title])), [forms]);
+  // The same list gives each form's logo/icon, so an export row wears the same mark as the Forms list instead of a generic document.
+  const formMarkById = useMemo(() => new Map(forms.map((f) => [f._id, f.branding])), [forms]);
 
   const createReportMutation = useMutation({
     mutationFn: (payload: CreateReportPayload) => reportsService.createReport(payload, scope),
@@ -170,7 +172,7 @@ export function ReportsView({ scope = 'personal', embedded = false }: ReportsVie
       </div>
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <ReportJobsList page={jobsPage} onPageChange={goToJobsPage} formTitleById={formTitleById} scope={scope} />
+        <ReportJobsList page={jobsPage} onPageChange={goToJobsPage} formTitleById={formTitleById} formMarkById={formMarkById} scope={scope} />
         <ReportsSidebar scope={scope} />
       </div>
     </div>

@@ -70,6 +70,8 @@ function collapse(events: WorkspaceEventItem[]): Row[] {
 
 export interface ActivityFeedProps {
   events: WorkspaceEventItem[];
+  /** The actor's profile picture, if there is one; without it (or if it fails to load) their initials are shown. */
+  avatarOf?: (event: WorkspaceEventItem) => string | undefined;
   /** Shown instead of the default empty state when a filter, not the workspace, is why the list is empty. */
   emptyTitle?: string;
   emptyDescription?: string;
@@ -80,7 +82,7 @@ export interface ActivityFeedProps {
 // requirements.md §7.6 / design.md §6. Grouped by day, avatar + category icon per row, repeats collapsed,
 // form targets link to the form. `targetLabel` is a snapshot taken at event time (design.md §11.2), so a
 // renamed or deleted form still reads correctly here.
-export function ActivityFeed({ events, emptyTitle, emptyDescription, emptyActions }: ActivityFeedProps) {
+export function ActivityFeed({ events, avatarOf, emptyTitle, emptyDescription, emptyActions }: ActivityFeedProps) {
   if (events.length === 0) {
     return (
       <EmptyState illustration="team"
@@ -113,7 +115,7 @@ export function ActivityFeed({ events, emptyTitle, emptyDescription, emptyAction
               return (
                 <li key={event.id} className="flex items-center gap-3 px-4 py-3 border-b border-(--border-subtle) last:border-b-0 hover:bg-(--surface-hover)">
                   <div className="relative shrink-0">
-                    <Avatar name={event.actorName} size="sm" />
+                    <Avatar name={event.actorName} src={avatarOf?.(event) ?? undefined} alt="" size="sm" aria-hidden="true" />
                     <span className="absolute -bottom-1 -right-1 flex size-4.5 items-center justify-center rounded-full border border-(--border-default) bg-(--surface-card) text-(--text-muted)" aria-hidden="true">
                       <Icon size={10} />
                     </span>

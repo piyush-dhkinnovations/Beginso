@@ -12,5 +12,6 @@ export function usePublicTemplates() {
   return useQuery({
     queryKey: ['public-templates'],
     queryFn: templatesService.getPublicTemplates,
+    staleTime: 5 * 60_000, // templates are static — no need to refetch on every page visit
   });
 }

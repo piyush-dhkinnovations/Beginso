@@ -17,9 +17,10 @@ export interface FormSchemaResult {
   unavailable?: FormUnavailableReason;
 }
 
-/** One server-side validation message. The backend names the field by its LABEL, not its id. */
+/** One server-side validation message. `field` is the field's LABEL; `fieldId` (newer backends) says exactly which field when labels repeat. */
 export interface SubmitFieldError {
   field: string;
+  fieldId?: string;
   message: string;
 }
 

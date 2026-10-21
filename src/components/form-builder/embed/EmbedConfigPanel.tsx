@@ -108,7 +108,7 @@ export function EmbedConfigPanel({ config: c, onChange, fields }: Props) {
 
         {button && (
           <>
-            <Input id="embed-button-text" label="Button text" value={c.buttonText} maxLength={LIMITS.buttonText} onChange={(e) => onChange({ buttonText: e.target.value })} />
+            <Input id="embed-button-text" label="Button text" value={c.buttonText} maxLength={LIMITS.buttonText} showCount onChange={(e) => onChange({ buttonText: e.target.value })} />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-field">
                 <label htmlFor="embed-button-color" className="bg-label">Button colour</label>

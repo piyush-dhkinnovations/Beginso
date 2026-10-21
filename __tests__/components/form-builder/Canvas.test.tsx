@@ -59,6 +59,14 @@ describe('Canvas', () => {
     expect(onFieldSelect).toHaveBeenCalledWith(a.fieldId);
   });
 
+  it('clicking the card that is already open closes it', async () => {
+    const a = makeField('short_text', { label: 'Mine' });
+    const { onFieldSelect, onFieldDeselect } = setup([a], { activeFieldId: a.fieldId });
+    await userEvent.click(screen.getByRole('button', { name: 'Select Mine field' }));
+    expect(onFieldDeselect).toHaveBeenCalledTimes(1);
+    expect(onFieldSelect).not.toHaveBeenCalled();
+  });
+
   it('clicking the canvas background deselects, clicking a card does not', async () => {
     const a = makeField('short_text', { label: 'Mine' });
     const { onFieldDeselect } = setup([a]);

@@ -9,6 +9,9 @@ import { settingsService } from '@/services/settings';
 import { validateFile } from '@/lib/validateFile';
 import { initialsOf } from '@/lib/formatters';
 import { settingsKeys } from '@/lib/queryKeys';
+import { localAvatarSrc } from '@/lib/avatarUrl';
+import { Modal } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
 
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const AVATAR_MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB, Requirement 3.2
@@ -25,6 +28,7 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
   const queryClient = useQueryClient();
   const [fileError, setFileError] = useState<string | null>(null);
   const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
   // Persists an already-uploaded URL (or null, to remove it) — toasting/reverting on failure is
   // handled by the two callers below, not here, since "upload the file" and "save the URL" are
@@ -55,7 +59,7 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
   }
 
   async function handleRemove() {
-    if (!window.confirm('Remove your profile photo?')) return;
+    setConfirmRemove(false);
     try {
       await updateAvatarMutation.mutateAsync(null);
     } catch {
@@ -71,7 +75,7 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
         {avatarUrl && failedUrl !== avatarUrl ? (
           // referrerPolicy: Google's photo host rejects hot-linked requests that carry a Referer.
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="" referrerPolicy="no-referrer" onError={() => setFailedUrl(avatarUrl)} className="h-full w-full object-cover" />
+          <img src={localAvatarSrc(avatarUrl)} alt="" referrerPolicy="no-referrer" onError={() => setFailedUrl(avatarUrl)} className="h-full w-full object-cover" />
         ) : (
           getInitials(name)
         )}
@@ -101,7 +105,7 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
           {avatarUrl && (
             <button
               type="button"
-              onClick={handleRemove}
+              onClick={() => setConfirmRemove(true)}
               disabled={isBusy}
               aria-label="Remove photo"
               title="Remove photo"
@@ -113,6 +117,16 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
         </div>
         {fileError && <p className="bg-caption text-(--error-text)">{fileError}</p>}
       </div>
+      <Modal isOpen={confirmRemove} onClose={() => setConfirmRemove(false)} title="Remove your profile photo?">
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <Button type="button" variant="secondary" onClick={() => setConfirmRemove(false)}>
+            Keep photo
+          </Button>
+          <Button type="button" variant="destructive" onClick={() => void handleRemove()}>
+            Remove photo
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

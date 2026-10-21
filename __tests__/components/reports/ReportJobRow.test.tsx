@@ -128,4 +128,11 @@ describe('ReportJobRow', () => {
 
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Failed to download report. Please try again.', 'error'));
   });
+
+  it('shows the own logo of the form from the forms list, the same mark as the Forms page', () => {
+    const job = mockReportJob({ status: 'completed', formId: 'f-logo', formTitle: 'Kala Chasma' });
+    const marks = new Map([['f-logo', { logoUrl: 'https://cdn.example.com/kala.png' }]]);
+    const { container } = render(<table><tbody><ReportJobRow job={job} onRetry={vi.fn()} formMarkById={marks} /></tbody></table>);
+    expect(container.querySelector('img[src="https://cdn.example.com/kala.png"]')).not.toBeNull();
+  });
 });

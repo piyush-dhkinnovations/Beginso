@@ -138,9 +138,9 @@ describe('isWideAnswer', () => {
     expect(isWideAnswer(item({ field: field({ type: 'short_text' }), value: 'short' }))).toBe(false);
   });
 
-  it('is wide when the text is over 40 chars or has a newline, even without a field', () => {
-    expect(isWideAnswer(item({ value: 'x'.repeat(41) }))).toBe(true);
-    expect(isWideAnswer(item({ value: 'x'.repeat(40) }))).toBe(false);
+  it('is wide when the text is over 60 chars or has a newline, even without a field', () => {
+    expect(isWideAnswer(item({ value: 'x'.repeat(61) }))).toBe(true);
+    expect(isWideAnswer(item({ value: 'x'.repeat(60) }))).toBe(false);
     expect(isWideAnswer(item({ value: 'a\nb' }))).toBe(true);
   });
 });

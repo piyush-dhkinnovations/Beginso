@@ -86,7 +86,7 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
 
       <div className="flex flex-col gap-3">
         <div>
-          <p className="bg-body-sm font-semibold text-(--text-primary)">Export your data</p>
+          <p className="bg-body-sm text-(--text-secondary)">Download a copy of your forms and responses first.</p>
           {!jobId ? (
             <Button
               variant="secondary"
@@ -124,7 +124,7 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
         </div>
 
         <div className="border-t border-(--error-border) pt-3">
-          <p className="bg-body-sm font-semibold text-(--text-primary)">Delete account and workspace</p>
+          <p className="bg-body-sm font-semibold text-(--text-primary)">Delete your account</p>
           <Button
             variant="destructive"
             size="small"

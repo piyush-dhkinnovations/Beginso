@@ -58,6 +58,57 @@ vi.mock('@/services/auth', () => ({
 
 // ─── Tests ──────────────────────────────────────────────────────────────────
 
+describe('LoginForm embedded in another page', () => {
+  beforeEach(() => {
+    mockAuthLogin.mockReset().mockResolvedValue(undefined);
+    mockLogin.mockReset().mockResolvedValue(undefined);
+    mockSearchParams.current = new URLSearchParams();
+  });
+
+  const submit = async () => {
+    await userEvent.type(screen.getByLabelText(/email address/i), 'a@b.co');
+    await userEvent.type(screen.getByLabelText(/^password$/i), 'secret-pass-1');
+    await userEvent.click(screen.getByRole('button', { name: /^(log in|sign in)$/i }));
+    await waitFor(() => expect(mockLogin).toHaveBeenCalled());
+  };
+
+  it('returns to the page it sits on, not to ?next= or the dashboard', async () => {
+    mockSearchParams.current = new URLSearchParams({ next: '/dashboard' });
+    render(<LoginForm redirectTo="/f/my-form" />);
+    await submit();
+    expect(mockLogin).toHaveBeenCalledWith('/f/my-form');
+  });
+
+  it('refuses an address that leaves the site, and uses the default instead (never the ?next=)', async () => {
+    mockSearchParams.current = new URLSearchParams({ next: '/dashboard' });
+    render(<LoginForm redirectTo="//evil.example.com" />);
+    await submit();
+    expect(mockLogin).toHaveBeenCalledWith(undefined);
+  });
+
+  it.each(['/\\evil.example.com', 'https://evil.example.com', 'javascript:alert(1)'])('refuses %s', async (bad) => {
+    render(<LoginForm redirectTo={bad} />);
+    await submit();
+    expect(mockLogin).toHaveBeenCalledWith(undefined);
+  });
+
+  it('still reads ?next= on the login page itself (no redirectTo given)', async () => {
+    mockSearchParams.current = new URLSearchParams({ next: '/invite/abc' });
+    render(<LoginForm />);
+    await submit();
+    expect(mockLogin).toHaveBeenCalledWith('/invite/abc');
+  });
+
+  it('can label its button differently, and says Log In by default', () => {
+    const { unmount } = render(<LoginForm />);
+    expect(screen.getByRole('button', { name: 'Log In' })).toBeInTheDocument();
+    unmount();
+    render(<LoginForm submitLabel="Sign in" />);
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Log In' })).not.toBeInTheDocument();
+  });
+});
+
 describe('LoginForm component', () => {
   beforeEach(() => {
     mockAuthLogin.mockReset();

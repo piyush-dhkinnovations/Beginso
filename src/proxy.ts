@@ -52,6 +52,23 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
+  // Legacy redirect: /inbox/<id>?scope=<workspace-slug> → /w/<slug>/inbox/<id>?<rest>
+  // Old links (notifications, emails, activity) used ?scope= on the personal-inbox route;
+  // the workspace-scoped route now carries the slug in the URL so the right shell renders.
+  // Runs after the auth check so unauthenticated users get /login first (with the original
+  // URL preserved in ?next=, then this redirect fires on the way back in).
+  const inboxIdMatch = pathname.match(/^\/inbox\/([^/]+)$/);
+  if (inboxIdMatch) {
+    const scope = request.nextUrl.searchParams.get('scope');
+    if (scope && scope !== 'personal') {
+      const newUrl = new URL(`/w/${scope}/inbox/${inboxIdMatch[1]}`, request.url);
+      for (const [k, v] of request.nextUrl.searchParams.entries()) {
+        if (k !== 'scope') newUrl.searchParams.set(k, v);
+      }
+      return NextResponse.redirect(newUrl, { status: 308 });
+    }
+  }
+
   const response = NextResponse.next();
   return token && !sessionIsValid && !sessionIsUnknown ? clearInvalidSession(response) : response;
 }

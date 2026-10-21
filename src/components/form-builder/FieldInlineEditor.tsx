@@ -52,6 +52,7 @@ function BlurField({
   allowEmpty = false,
   type = 'text',
   min,
+  maxLength,
   onCommit,
 }: {
   id: string;
@@ -61,6 +62,7 @@ function BlurField({
   allowEmpty?: boolean;
   type?: string;
   min?: number;
+  maxLength?: number;
   onCommit: (value: string) => void;
 }) {
   const [local, setLocal] = useState(defaultValue);
@@ -112,6 +114,8 @@ function BlurField({
       label={label}
       type={type}
       min={min}
+      maxLength={maxLength}
+      showCount
       value={local}
       placeholder={placeholder}
       onChange={(e) => setLocal(e.target.value)}
@@ -146,6 +150,7 @@ function LabelField({
         label=""
         defaultValue={label}
         placeholder="Field label"
+        maxLength={100} // the server refuses a longer label
         onCommit={(v) => onUpdate(fieldId, { label: v })}
       />
     </PanelSection>
@@ -379,7 +384,7 @@ const POSITION_LABEL: Record<ImagePreviewPosition, string> = { top: 'Top of resp
 const RATIO_LABEL: Record<ImageAspectRatio, string> = { original: 'original ratio', '16:9': '16:9 landscape', '1:1': '1:1 square' };
 const SIZE_LABEL: Record<ImagePreviewSize, string> = { small: 'small thumbnail', medium: 'medium', large: 'large preview' };
 const STYLE_LABEL: Record<UrlPreviewStyle, string> = { rich: 'rich preview', compact: 'compact link', text: 'URL text only' };
-const DISPLAY_LABEL: Record<UrlDisplay, string> = { card: 'displayed as card', inline: 'inline with the answer' };
+const DISPLAY_LABEL: Record<UrlDisplay, string> = { card: 'card frame', inline: 'no frame' };
 
 function ImageDisplaySection({
   field,
@@ -494,19 +499,58 @@ function UrlDisplaySection({
         ]}
         onChange={(urlPreviewStyle) => set({ urlPreviewStyle })}
       />
+      {s.style === 'rich' && (
+        <>
+          <RadioSection<ImageAspectRatio>
+            uid={uid}
+            name="ratio"
+            label="Image aspect ratio"
+            value={s.aspectRatio}
+            options={[
+              { value: 'original', label: 'Original ratio' },
+              { value: '16:9', label: '16:9 landscape' },
+              { value: '1:1', label: '1:1 square' },
+            ]}
+            onChange={(urlAspectRatio) => set({ urlAspectRatio })}
+          />
+          <RadioSection<ImagePreviewSize>
+            uid={uid}
+            name="size"
+            label="Preview size"
+            value={s.previewSize}
+            options={[
+              { value: 'small', label: 'Small thumbnail' },
+              { value: 'medium', label: 'Medium' },
+              { value: 'large', label: 'Large preview' },
+            ]}
+            onChange={(urlPreviewSize) => set({ urlPreviewSize })}
+          />
+        </>
+      )}
+      <RadioSection<ImagePreviewPosition>
+        uid={uid}
+        name="position"
+        label="Preview position"
+        value={s.previewPosition}
+        options={[
+          { value: 'top', label: 'Top of response (recommended)' },
+          { value: 'inline', label: 'Inline with the answer' },
+        ]}
+        onChange={(urlPreviewPosition) => set({ urlPreviewPosition })}
+      />
       <RadioSection<UrlDisplay>
         uid={uid}
         name="display"
-        label="Response display"
+        label="Preview frame"
         value={s.display}
         options={[
-          { value: 'card', label: 'Preview card' },
-          { value: 'inline', label: 'Inline with the answer' },
+          { value: 'card', label: 'Card frame' },
+          { value: 'inline', label: 'No frame' },
         ]}
         onChange={(urlDisplay) => set({ urlDisplay })}
       />
 
-      <ConfigSummary text={`Links: ${STYLE_LABEL[s.style]}, ${DISPLAY_LABEL[s.display]}.`} />
+      <ConfigSummary text={`Links: ${STYLE_LABEL[s.style]}, ${POSITION_LABEL[s.previewPosition].toLowerCase()}${s.style === 'rich' ? `, ${RATIO_LABEL[s.aspectRatio]}, ${SIZE_LABEL[s.previewSize]}` : ''}, ${DISPLAY_LABEL[s.display]}.`} />
     </div>
   );
 }

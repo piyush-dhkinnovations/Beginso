@@ -15,6 +15,7 @@ import type { PublicFormSchema } from '../src/types/publicForm.ts';
  *   contains "not-found"    -> GET returns 404
  *   contains "load-500"     -> GET returns 500
  *   contains "closed-date"  -> GET returns the mock schema with a past closeDate
+ *   contains "login-required" -> GET returns the mock schema as a members-only (accessMode 'login') form
  *   contains "submit-422"   -> POST .../submit returns 422
  *   contains "submit-429"   -> POST .../submit returns 429
  *   contains "submit-500"   -> POST .../submit returns 500
@@ -31,6 +32,10 @@ const builderForm = (id: string, s: { label: string; version: number }) => ({
 });
 
 function schemaFor(slug: string): PublicFormSchema {
+  // A members-only form: a visitor who is not signed in gets the sign-in gate instead of the questions.
+  if (slug.includes('login-required')) {
+    return { ...mockPublicFormSchema, title: 'Members only form', settings: { ...mockPublicFormSchema.settings, accessMode: 'login' } };
+  }
   if (slug.includes('closed-date')) {
     return {
       ...mockPublicFormSchema,
@@ -39,6 +44,17 @@ function schemaFor(slug: string): PublicFormSchema {
   }
   return mockPublicFormSchema;
 }
+
+// The workspace the e2e workspace-page specs open (role admin, so the Audit Log is open to them).
+const E2E_WORKSPACE = {
+  id: '507f1f77bcf86cd799439011',
+  name: 'Kala Chashma Entertainment',
+  slug: 'e2e-avatars-ws',
+  role: 'admin',
+  isOwner: false,
+  timezone: 'UTC',
+  logo: '/avatars/05.svg',
+};
 
 const server = http.createServer(async (req, res) => {
   // The GET schema fetch happens server-side (Next.js SSR, no CORS involved), but the
@@ -60,6 +76,20 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/api/auth/me') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ success: true, user: { id: 'e2e-user', name: 'E2E User', email: 'e2e@example.com', onboardingCompleted: true } }));
+    return;
+  }
+
+  // A workspace's pages (/w/:slug/...) look the workspace up on the server before they paint (src/lib/workspaceServer.ts).
+  // One fixed e2e workspace is enough for the specs that need a workspace page; anything else is not found.
+  const workspaceMatch = url.pathname.match(/^\/api\/workspaces\/([^/]+)\/?$/);
+  if (workspaceMatch && req.method === 'GET') {
+    if (workspaceMatch[1] !== E2E_WORKSPACE.slug) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ message: 'Workspace not found' }));
+      return;
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ workspace: E2E_WORKSPACE }));
     return;
   }
 
@@ -86,6 +116,17 @@ const server = http.createServer(async (req, res) => {
     builderForms.set(id, state);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(builderForm(id, state)));
+    return;
+  }
+
+  // The public form page tells the backend a visitor opened it (POST /api/public/:slug/view, answered 204 by the real backend).
+  // Without this the mock answered 404 and the browser logged a console error on every load.
+  if (req.method === 'POST' && url.pathname.split('/').filter(Boolean).join('/').match(/^api\/public\/[^/]+\/view$/)) {
+    for await (const _chunk of req) {
+      /* discard */
+    }
+    res.writeHead(204);
+    res.end();
     return;
   }
 

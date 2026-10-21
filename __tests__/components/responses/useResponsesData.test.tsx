@@ -41,6 +41,12 @@ describe('useResponsesData', () => {
     expect(getResponses).toHaveBeenCalledWith({ formId: 'f1', stageId: 's1', page: 1, limit: 50 }, 'acme');
   });
 
+  it('asks the server for oldest first across all pages when the order is asc, and sends nothing for the default (QA D8-006)', async () => {
+    const { result } = setup({ submittedOrder: 'asc' });
+    await waitFor(() => expect(result.current.data).toBeDefined());
+    expect(getResponses).toHaveBeenCalledWith({ formId: 'f1', stageId: 's1', order: 'asc', page: 1, limit: 50 }, 'acme');
+  });
+
   it('does not load the form without a formId (all-forms inbox)', async () => {
     const { result } = setup({ formId: undefined });
     await waitFor(() => expect(result.current.data).toBeDefined());

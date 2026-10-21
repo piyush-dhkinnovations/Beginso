@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { ResponsesTable } from '@/components/responses/ResponsesTable';
 import type { IResponse } from '@/types/response';
 
@@ -128,5 +128,50 @@ describe('ResponsesTable', () => {
       <ResponsesTable {...baseProps} responses={responses} isLoading={false} selectedIds={new Set(['r1', 'r2'])} />
     );
     expect(screen.getByLabelText('Select all responses on this page')).toBeChecked();
+  });
+
+  describe('sorting (QA D8-006: it used to reorder only the loaded page)', () => {
+    const rows = [
+      makeResponse('a', { answers: { Name: 'Zed' }, stage: { id: 's2', name: 'Done', colour: 'success', category: 'completed' }, submittedAt: '2026-08-01T10:00:00.000Z' }),
+      makeResponse('b', { answers: { Name: 'Amy' }, submittedAt: '2026-08-02T10:00:00.000Z' }),
+    ];
+    const header = (name: string) => screen.getByRole('columnheader', { name: new RegExp(name) });
+    const order = () => screen.getAllByRole('row').slice(1).map((r) => within(r).getByRole('button', { name: /Open response from/ }).getAttribute('aria-label'));
+
+    it('Submitted shows the server order, and clicking it asks the server for the other direction', () => {
+      const onSubmittedOrderChange = vi.fn();
+      const { rerender } = render(
+        <ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} totalMatching={120} submittedOrder="desc" onSubmittedOrderChange={onSubmittedOrderChange} />
+      );
+      expect(header('Submitted')).toHaveAttribute('aria-sort', 'descending');
+      fireEvent.click(within(header('Submitted')).getByRole('button'));
+      expect(onSubmittedOrderChange).toHaveBeenCalledWith('asc');
+
+      rerender(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} totalMatching={120} submittedOrder="asc" onSubmittedOrderChange={onSubmittedOrderChange} />);
+      expect(header('Submitted')).toHaveAttribute('aria-sort', 'ascending');
+      fireEvent.click(within(header('Submitted')).getByRole('button'));
+      expect(onSubmittedOrderChange).toHaveBeenLastCalledWith('desc');
+    });
+
+    it('does not reorder the rows itself for Submitted: they stay in the order the server sent', () => {
+      render(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} totalMatching={120} submittedOrder="asc" onSubmittedOrderChange={vi.fn()} />);
+      expect(order()).toEqual(['Open response from Zed', 'Open response from Amy']);
+    });
+
+    it('Respondent and Stage cannot be sorted while more responses match than are on screen', () => {
+      render(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} totalMatching={120} submittedOrder="desc" onSubmittedOrderChange={vi.fn()} />);
+      expect(within(header('Respondent')).queryByRole('button')).toBeNull();
+      expect(within(header('Stage')).queryByRole('button')).toBeNull();
+      expect(within(header('Submitted')).getByRole('button')).toBeInTheDocument();
+    });
+
+    it('when every match is on screen, Respondent sorts the rows by name', () => {
+      render(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} totalMatching={2} submittedOrder="desc" onSubmittedOrderChange={vi.fn()} />);
+      fireEvent.click(within(header('Respondent')).getByRole('button'));
+      expect(header('Respondent')).toHaveAttribute('aria-sort', 'ascending');
+      expect(order()).toEqual(['Open response from Amy', 'Open response from Zed']);
+      // Submitted is no longer the active sort while a column sort is.
+      expect(header('Submitted')).toHaveAttribute('aria-sort', 'none');
+    });
   });
 });

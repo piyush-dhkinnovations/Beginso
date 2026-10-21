@@ -106,4 +106,17 @@ describe('FormsSummaryTable', () => {
     fireEvent.click(screen.getByRole('button', { name: /Next/ }));
     expect(onPageChange).toHaveBeenCalledWith(2);
   });
+
+  // The same form was a logo on the Forms list and a generic document here.
+  it('shows the own logo or icon of each form, the same mark as the Forms list', () => {
+    const data = mockFormsSummary({
+      forms: [
+        { _id: 'f-logo', title: 'Kala Chasma Content', status: 'published', totalResponses: 1170, completionRate: 50, branding: { logoUrl: 'https://cdn.example.com/kala.png' } },
+        { _id: 'f-plain', title: 'Plain', status: 'published', totalResponses: 3, completionRate: 50 },
+      ],
+    });
+    const { container } = render(<FormsSummaryTable data={data} isLoading={false} page={1} onPageChange={vi.fn()} />);
+    expect(container.querySelector('img[src="https://cdn.example.com/kala.png"]')).not.toBeNull();
+    expect(container.querySelectorAll('tbody img[src="https://cdn.example.com/kala.png"]')).toHaveLength(1);
+  });
 });

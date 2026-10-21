@@ -1,5 +1,6 @@
 'use client';
 
+import { disambiguateActors } from '@/lib/auditActors';
 import { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -12,6 +13,7 @@ import { canViewAudit } from '@/lib/roles';
 import { PageHeader, Card, Alert, Button, EmptyState } from '@/components/ui';
 import { AuditFilters, AUDIT_RANGE_LABEL } from '@/components/team/AuditFilters';
 import { AuditTable } from '@/components/team/AuditTable';
+import { useEventAvatars } from '@/hooks/useEventAvatars';
 import type { AuditFilters as AuditFilterValues } from '@/types/event';
 
 const PAGE_SIZE = 20;
@@ -25,6 +27,7 @@ type Range = NonNullable<AuditFilterValues['range']>;
 // array with no total (design.md §11.2), so Next appears only after a full page.
 export default function AuditLogPage() {
   const { slug } = useParams<{ slug: string }>();
+  const avatarOf = useEventAvatars(slug);
   const [actorId, setActorId] = useState('');
   const [range, setRange] = useState<Range>('all');
   const [page, setPage] = useState(1);
@@ -99,7 +102,7 @@ export default function AuditLogPage() {
 
   const hasNext = events.length >= PAGE_SIZE;
   const filtersActive = actorId !== '' || range !== 'all';
-  const actors = (membersQuery.data ?? []).map((m) => ({ id: m.userId, name: m.name }));
+  const actors = disambiguateActors((membersQuery.data ?? []).map((m) => ({ id: m.userId, name: m.name, email: m.email })));
 
   // Nothing recorded and nothing filtered: the filters would be controls over zero events.
   const isFirstRun = !auditQuery.isLoading && !auditQuery.isError && events.length === 0 && page === 1 && !filtersActive;
@@ -160,7 +163,7 @@ export default function AuditLogPage() {
           )
         ) : (
           <div className="flex flex-col gap-4">
-            <AuditTable events={events} />
+            <AuditTable events={events} avatarOf={avatarOf} />
             <div className="flex items-center justify-between border-t border-(--border-subtle) pt-3">
               <Button variant="secondary" size="small" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
                 Previous

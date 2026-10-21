@@ -1,5 +1,6 @@
 import axiosInstance from '@/lib/axios';
 import { workspaceHeaders } from '@/lib/workspaceHeaders';
+import type { StageCategory } from '@/types/stage';
 import type {
   AnalyticsOverview,
   AnalyticsFormSummary,
@@ -27,6 +28,8 @@ interface RawOverviewEnvelope {
     completionRate?: number | null;
     reviewedRate?: number | null;
     views?: number | null;
+    /** One row per stage that holds responses (empty stages are left out by the backend). */
+    stageDistribution?: { stageId: string; name: string; category: StageCategory; count: number }[];
     // `statusDistribution` duplicates completed/in_progress/new with percentages — the flat
     // fields above are simpler to consume and this app computes its own percentages anyway.
   };
@@ -54,6 +57,14 @@ function toAnalyticsOverview(raw: RawOverviewEnvelope): AnalyticsOverview {
     completionRate: toRate(raw.data.completionRate),
     reviewedRate: toRate(raw.data.reviewedRate),
     views: typeof raw.data.views === 'number' ? raw.data.views : null,
+    // A workspace's own stages (In Review, On Hold, Released...) used to be folded into three category totals and never named.
+    ...(Array.isArray(raw.data.stageDistribution) && raw.data.stageDistribution.length > 0
+      ? {
+          stageCounts: raw.data.stageDistribution
+            .filter((s) => s && typeof s.name === 'string' && typeof s.count === 'number')
+            .map((s) => ({ stageId: s.stageId, name: s.name, category: s.category, count: s.count })),
+        }
+      : {}),
   };
 }
 
@@ -77,6 +88,9 @@ interface RawQuestionsEnvelope {
       totalAnswered?: number;
       summary: {
         options?: { label: string; count: number; percentage?: number }[];
+        rating?: QuestionBreakdown['rating'];
+        numeric?: QuestionBreakdown['numeric'];
+        yesNo?: QuestionBreakdown['yesNo'];
       };
     }[];
   };
@@ -90,6 +104,10 @@ function toQuestionBreakdowns(raw: RawQuestionsEnvelope): { questions: QuestionB
       type: q.type,
       totalAnswered: q.totalAnswered,
       options: (q.summary.options ?? []).map((o) => ({ option: o.label, count: o.count, percentage: o.percentage })),
+      // Only on a backend that sends them (A7-008): an older one simply has none, and those questions stay out of the breakdown.
+      ...(q.summary.rating ? { rating: q.summary.rating } : {}),
+      ...(q.summary.numeric ? { numeric: q.summary.numeric } : {}),
+      ...(q.summary.yesNo ? { yesNo: q.summary.yesNo } : {}),
     })),
   };
 }
@@ -105,6 +123,7 @@ interface RawFormsSummaryEnvelope {
     views?: number | null;
     reviewedRate?: number | null;
     templateCategory?: string | null;
+    branding?: { logoUrl?: string | null; iconName?: string | null };
   }[];
   total: number;
   page: number;
@@ -122,6 +141,7 @@ function toFormsSummaryResult(raw: RawFormsSummaryEnvelope): AnalyticsFormsSumma
       views: typeof item.views === 'number' ? item.views : null,
       reviewedRate: item.reviewedRate === undefined ? undefined : toRate(item.reviewedRate),
       templateCategory: item.templateCategory ?? null,
+      ...(item.branding ? { branding: item.branding } : {}),
     })),
     total: raw.total,
     page: raw.page,

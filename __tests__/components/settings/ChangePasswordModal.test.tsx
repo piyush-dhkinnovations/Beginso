@@ -130,4 +130,20 @@ describe('ChangePasswordModal', () => {
     await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
     expect(mockNotifyPasswordChanged).not.toHaveBeenCalled();
   });
+
+  it('shows the length rule up front and can reveal both new-password fields', async () => {
+    const user = userEvent.setup();
+    render(<ChangePasswordModal isOpen onClose={vi.fn()} email="jordan@example.com" />);
+
+    expect(screen.getByText('Use 8 to 128 characters.')).toBeInTheDocument();
+    expect(screen.getByLabelText('New password')).toHaveAttribute('type', 'password');
+
+    await user.click(screen.getByRole('button', { name: 'Show passwords' }));
+    expect(screen.getByLabelText('New password')).toHaveAttribute('type', 'text');
+    expect(screen.getByLabelText('Confirm new password')).toHaveAttribute('type', 'text');
+    expect(screen.getByLabelText('Current password')).toHaveAttribute('type', 'password');
+
+    await user.click(screen.getByRole('button', { name: 'Hide passwords' }));
+    expect(screen.getByLabelText('New password')).toHaveAttribute('type', 'password');
+  });
 });

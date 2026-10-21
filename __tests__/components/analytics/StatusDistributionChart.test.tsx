@@ -77,4 +77,46 @@ describe('StatusDistributionChart', () => {
     expect(table.textContent).toContain('5');
     expect(table.textContent).toContain('50.0%');
   });
+
+  // The workspace own stages (In Review, On Hold, Released...) were folded into the three category totals and never shown.
+  describe('with the workspace own stages', () => {
+    const stageCounts = [
+      { stageId: 's-done', name: 'Released', category: 'completed' as const, count: 120 },
+      { stageId: 's-new', name: 'New', category: 'new' as const, count: 269 },
+      { stageId: 's-review', name: 'In Review', category: 'in_progress' as const, count: 300 },
+      { stageId: 's-hold', name: 'On Hold', category: 'in_progress' as const, count: 178 },
+      { stageId: 's-comp', name: 'Completed', category: 'completed' as const, count: 303 },
+    ];
+
+    it('shows one row per stage, grouped New, then In Progress, then Completed (largest first within a group)', () => {
+      const overview = mockAnalyticsOverview({ totalResponses: 1170, categoryCounts: { new: 269, in_progress: 478, completed: 423 }, stageCounts });
+      render(<StatusDistributionChart overview={overview} isLoading={false} />);
+      const labels = screen.getAllByRole('row').slice(1).map((r) => r.querySelector('td')?.textContent);
+      expect(labels).toEqual(['New', 'In Review', 'On Hold', 'Completed', 'Released']);
+      expect(screen.getAllByText('In Review').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('300').length).toBeGreaterThan(0);
+      expect(screen.getByRole('img')).toHaveAttribute('aria-label', expect.stringContaining('300 in review'));
+    });
+
+    it('puts responses that are in no stage in their own row, so the rows add up to the total', () => {
+      const overview = mockAnalyticsOverview({ totalResponses: 1200, categoryCounts: { new: 269, in_progress: 478, completed: 453 }, stageCounts });
+      render(<StatusDistributionChart overview={overview} isLoading={false} />);
+      const labels = screen.getAllByRole('row').slice(1).map((r) => r.querySelector('td')?.textContent);
+      expect(labels.at(-1)).toBe('No stage yet');
+      expect(screen.getAllByText('30').length).toBeGreaterThan(0); // 1200 - 1170
+    });
+
+    it('does not add a "No stage yet" row when every response is in a stage', () => {
+      const overview = mockAnalyticsOverview({ totalResponses: 1170, categoryCounts: { new: 269, in_progress: 478, completed: 423 }, stageCounts });
+      render(<StatusDistributionChart overview={overview} isLoading={false} />);
+      expect(screen.queryByText('No stage yet')).not.toBeInTheDocument();
+    });
+
+    it('falls back to the three categories when there are no stage counts (a personal form, or an older backend)', () => {
+      const overview = mockAnalyticsOverview({ totalResponses: 128, categoryCounts: { new: 42, in_progress: 36, completed: 50 } });
+      render(<StatusDistributionChart overview={overview} isLoading={false} />);
+      const labels = screen.getAllByRole('row').slice(1).map((r) => r.querySelector('td')?.textContent);
+      expect(labels).toEqual(['New', 'In Progress', 'Completed']);
+    });
+  });
 });

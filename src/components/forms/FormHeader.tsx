@@ -35,7 +35,9 @@ export function FormHeader({ onBack, backLabel, title, badge, meta, actions, ico
   return (
     <header className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+        {/* Below 640px the identity (back, icon, title, status) takes the whole first row, so the actions wrap onto their own row
+            instead of the icon being squeezed under the buttons (390px: the form icon covered Preview and the status badge). */}
+        <div className="flex min-w-0 flex-1 items-center gap-3 max-sm:basis-full sm:gap-4">
           {onBack && (
           <Button variant="ghost" size="small" onClick={onBack} aria-label={`Back to ${backLabel}`} title={`Back to ${backLabel}`} className="bg-btn-icon shrink-0">
             <ArrowLeft size={18} className="bg-icon" />

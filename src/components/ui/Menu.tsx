@@ -25,6 +25,8 @@ export interface MenuProps {
    * secondary-button trigger instead; every other caller is unaffected by the default. */
   triggerClassName?: string;
   containerClassName?: string;
+  /** Optional node rendered below all items, separated by a divider — used by ContextSwitcher for the "View all" link. */
+  footer?: React.ReactNode;
 }
 
 // beginso-ui.css classes — see src/styles/beginso-ui.css §14 OVERLAYS ("Dropdown menu").
@@ -40,7 +42,7 @@ interface MenuPosition {
   width?: number;
 }
 
-export function Menu({ trigger, triggerLabel, items, align = "start", className, triggerClassName, containerClassName }: MenuProps) {
+export function Menu({ trigger, triggerLabel, items, align = "start", className, triggerClassName, containerClassName, footer }: MenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [position, setPosition] = useState<MenuPosition | null>(null);
@@ -189,8 +191,9 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
             overflowY: "auto",
           }}
           className={bx(
-            "bg-menu z-50",
-            isFullWidth ? "min-w-[200px]" : "min-w-[160px]",
+            // Above a drawer (scrim 80, panel 85) or a modal so a menu opened inside one is not hidden behind it; below toasts (90).
+            "bg-menu z-88",
+            isFullWidth ? "min-w-50" : "min-w-40",
             className
           )}
         >
@@ -212,6 +215,11 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
               {item.shortcut && <kbd>{item.shortcut}</kbd>}
             </button>
           ))}
+          {footer && (
+            <div className="border-t border-(--border-subtle) mt-1 pt-1">
+              {footer}
+            </div>
+          )}
         </div>,
         document.body
       )}

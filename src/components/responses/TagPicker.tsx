@@ -11,6 +11,9 @@ export interface TagPickerProps {
   available: readonly Tag[];
   /** Ids of tags currently on the response. */
   selectedIds: readonly string[];
+  /** The tags on the response, as the response itself carries them. The chips come from here, so a tag created a moment ago shows up at
+   * once even though the cached workspace library does not list it yet (QA D8-009). Falls back to looking the ids up in `available`. */
+  selectedTags?: readonly { id: string; name: string }[];
   /** Whether the caller may create a new tag inline (OQ-5 default: any `responses:act` role). */
   canCreate: boolean;
   disabled?: boolean;
@@ -26,7 +29,7 @@ export interface TagPickerProps {
  * that full pattern is required by requirements.md §9.2) — every control here is still a real,
  * keyboard-operable `<button>`, Escape closes and returns focus to the trigger.
  */
-export function TagPicker({ available, selectedIds, canCreate, disabled, onAdd, onRemove, onCreate }: TagPickerProps) {
+export function TagPicker({ available, selectedIds, selectedTags, canCreate, disabled, onAdd, onRemove, onCreate }: TagPickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -41,7 +44,7 @@ export function TagPicker({ available, selectedIds, canCreate, disabled, onAdd, 
     return () => document.removeEventListener('mousedown', handleClick);
   }, [isOpen]);
 
-  const selected = available.filter((t) => selectedIds.includes(t.id));
+  const selected = selectedTags ?? available.filter((t) => selectedIds.includes(t.id));
   const matches = available.filter(
     (t) => !selectedIds.includes(t.id) && t.name.toLowerCase().includes(query.trim().toLowerCase())
   );
@@ -113,7 +116,7 @@ export function TagPicker({ available, selectedIds, canCreate, disabled, onAdd, 
               className="bg-menu-item"
               onClick={() => {
                 onAdd(tag.id);
-                setQuery('');
+                close();
               }}
             >
               {tag.name}
@@ -125,7 +128,7 @@ export function TagPicker({ available, selectedIds, canCreate, disabled, onAdd, 
               className="bg-menu-item"
               onClick={() => {
                 onCreate(query.trim());
-                setQuery('');
+                close();
               }}
             >
               Create &quot;{query.trim()}&quot;

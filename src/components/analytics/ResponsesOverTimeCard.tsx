@@ -6,11 +6,15 @@ import { toSegments } from '@/lib/chartSegments';
 import { Select } from '@/components/ui/Select';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { AnalyticsTrendPoint } from '@/types/analytics';
+import { formatBucketLabel } from './TrendChart';
 
 export type TrendBucket = 'day' | 'week';
 
 const label = (bucketStart: string, bucket: TrendBucket) => {
+  const week = /^(\d{4})-W(\d{2})$/.exec(bucketStart);
+  if (bucket === 'week' && week) return `Wk ${formatBucketLabel(bucketStart, bucket)} ${week[1]}`;
   const d = new Date(bucketStart);
+  if (Number.isNaN(d.getTime())) return bucketStart;
   // "03 Sep" — built from parts because the en-GB locale spells September "Sept".
   const text = `${String(d.getUTCDate()).padStart(2, '0')} ${d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })}`;
   return bucket === 'week' ? `Wk ${text}` : text;

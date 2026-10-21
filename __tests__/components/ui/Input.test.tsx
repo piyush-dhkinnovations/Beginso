@@ -9,6 +9,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 
 describe('Input component', () => {
   it('renders with a label when label prop is provided', () => {
@@ -73,5 +74,22 @@ describe('Input component', () => {
     render(<Input id="pw" type="password" rightSlot={<button type="button">Show</button>} />);
     const el = document.getElementById('pw') as HTMLInputElement;
     expect(el.style.paddingLeft).toBe('var(--space-3)');
+  });
+});
+
+describe('Input / Textarea character count', () => {
+  it('shows used/limit only when asked, with a limit and a controlled value', () => {
+    const { rerender } = render(<Input id="a" label="A" value="abc" maxLength={10} readOnly />);
+    expect(screen.queryByText('3/10')).not.toBeInTheDocument();
+    rerender(<Input id="a" label="A" value="abc" maxLength={10} showCount readOnly />);
+    expect(screen.getByText('3/10')).toBeInTheDocument();
+    expect(screen.getByLabelText('A')).toHaveAttribute('aria-describedby', 'a-count');
+    rerender(<Input id="a" label="A" value="abc" showCount readOnly />);
+    expect(screen.queryByText(/\/10/)).not.toBeInTheDocument();
+  });
+
+  it('Textarea counts too', () => {
+    render(<Textarea id="t" label="T" value="hello" maxLength={500} showCount readOnly />);
+    expect(screen.getByText('5/500')).toBeInTheDocument();
   });
 });

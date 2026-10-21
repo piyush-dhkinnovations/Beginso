@@ -13,6 +13,7 @@ import { reportsService } from '@/services/reports';
 import { FORMAT_ICON } from './ReportFormatCard';
 import { REPORT_STATUS_LABELS, type ReportJob, type ReportStatus } from '@/types/report';
 import { CATEGORY_LABELS } from '@/types/stage';
+import type { FormMark } from '@/types/form';
 
 const STATUS_BADGE_VARIANT: Record<ReportStatus, 'new' | 'completed' | 'closed' | 'draft'> = {
   queued: 'new',
@@ -78,12 +79,14 @@ interface ReportJobRowProps {
   onRetry: (job: ReportJob) => void;
   isRetrying?: boolean;
   formTitleById?: Map<string, string>;
+  /** formId -> the form's logo/icon, so an export row wears the same mark as the Forms list. */
+  formMarkById?: Map<string, FormMark | undefined>;
   /** `row` renders a `<tr>` for the desktop table; `card` renders a standalone stacked card for
    * narrow viewports. Both share the same download/retry logic below. */
   variant?: 'row' | 'card';
 }
 
-export function ReportJobRow({ job, onRetry, isRetrying = false, formTitleById = new Map(), variant = 'row' }: ReportJobRowProps) {
+export function ReportJobRow({ job, onRetry, isRetrying = false, formTitleById = new Map(), formMarkById = new Map(), variant = 'row' }: ReportJobRowProps) {
   const { toast } = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
@@ -183,9 +186,9 @@ export function ReportJobRow({ job, onRetry, isRetrying = false, formTitleById =
 
   return (
     <tr className="border-b border-(--border-subtle) last:border-0 transition-colors hover:bg-(--surface-hover)">
-      <td className="px-4 py-3">
+      <td className="w-full max-w-0 px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
-          <FormTile title={title} />
+          <FormTile title={title} logoUrl={job.formId ? formMarkById.get(job.formId)?.logoUrl : undefined} iconName={job.formId ? formMarkById.get(job.formId)?.iconName : undefined} />
           <div className="min-w-0">
             <p className="bg-body-sm font-semibold text-(--text-primary) truncate max-w-70">{title}</p>
             <p className="bg-caption text-(--text-muted) truncate max-w-70">{subtitle}</p>

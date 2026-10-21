@@ -133,7 +133,7 @@ export function SettingsView({ title, description, tabs, scope, labels, note }: 
         )}
         {visitedTabs.has('workspace') && (
           <div className={activeTab === 'workspace' ? '' : 'hidden'}>
-            <WorkspaceTab scope={scope} onDirtyChange={dirtyHandlers.workspace} />
+            <WorkspaceTab scope={scope} onDirtyChange={dirtyHandlers.workspace} onDeleted={scope ? () => router.push('/workspaces') : undefined} />
           </div>
         )}
         {visitedTabs.has('branding') && (

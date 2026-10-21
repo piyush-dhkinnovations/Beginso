@@ -7,6 +7,7 @@
  */
 
 import type { StageCategory } from './stage';
+import type { FormMark } from '@/types/form';
 
 export interface GetAnalyticsParams {
   formId?: string;
@@ -28,6 +29,9 @@ export interface AnalyticsOverview {
   completionRate?: number | null;
   reviewedRate?: number | null;
   views?: number | null;
+  /** One row per workspace stage that holds responses in this range (the backend leaves empty stages out). Absent on a personal form
+   * (no stages) or an older backend: the card then falls back to the three categories. */
+  stageCounts?: { stageId: string; name: string; category: StageCategory; count: number }[];
 }
 
 export interface AnalyticsTrendPoint {
@@ -54,6 +58,12 @@ export interface QuestionBreakdown {
   /** People who answered this question; the denominator for every option percentage. */
   totalAnswered?: number;
   options: QuestionOption[];
+  /** Rating questions: average, top of the scale and how many gave each value. */
+  rating?: { count: number; average: number; max: number; distribution: { value: number; count: number; percentage: number }[] };
+  /** Number / currency questions. */
+  numeric?: { count: number; average: number; min: number; max: number; sum: number };
+  /** Yes/no questions: how many said each, and the share of yes. */
+  yesNo?: { yes: number; no: number; percentageYes: number };
 }
 
 export interface AnalyticsFormSummary {
@@ -70,6 +80,8 @@ export interface AnalyticsFormSummary {
   reviewedRate?: number | null;
   /** Source template category, null for forms not created from a template (BE 0.4). */
   templateCategory?: string | null;
+  /** The form's logo / icon, so this table shows the same mark as the Forms list. Absent on an older backend. */
+  branding?: FormMark;
 }
 
 export interface AnalyticsFormsSummaryResult {

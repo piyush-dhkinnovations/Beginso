@@ -61,4 +61,9 @@ describe('SharedFormCard', () => {
     render(<SharedFormCard item={WORKSPACE_SHARE} />);
     expect(screen.getByRole('link')).toHaveAttribute('href', '/forms/f1/inbox');
   });
+
+  it('shows the own logo of the form (the same mark as the Forms list), not a generic icon', () => {
+    const { container } = render(<SharedFormCard item={{ ...WORKSPACE_SHARE, branding: { logoUrl: 'https://cdn.example.com/a.png' } }} />);
+    expect(container.querySelector('img[src="https://cdn.example.com/a.png"]')).not.toBeNull();
+  });
 });

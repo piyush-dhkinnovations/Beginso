@@ -119,7 +119,7 @@ export default function DashboardPage() {
             {!dashboard.editing && (
               <ButtonLink href="/forms/new" className="shrink-0">
                 <Plus size={16} className="mr-2" />
-                Create a form
+                Create Form
               </ButtonLink>
             )}
           </div>
@@ -148,7 +148,7 @@ export default function DashboardPage() {
                 <>
                   <ButtonLink href="/forms/new">
                     <Plus size={16} className="mr-2" />
-                    Create a form
+                    Create Form
                   </ButtonLink>
                   <ButtonLink href="/templates" variant="secondary">
                     Browse templates
@@ -207,7 +207,7 @@ export default function DashboardPage() {
               <section aria-labelledby="quick-actions-heading" className="flex flex-col gap-3">
                 <div className="flex min-h-8 items-center"><h2 id="quick-actions-heading" className="bg-h5 font-bold text-(--text-primary)">Quick actions</h2></div>
                 <div className="flex flex-col gap-3">
-                  <ActionCard href="/forms/new" title="Create a form" hint="Start from scratch" icon={<PlusCircle />} />
+                  <ActionCard href="/forms/new" title="Create Form" hint="Start from scratch" icon={<PlusCircle />} />
                   <ActionCard href="/templates" title="Browse templates" hint="Start with a proven structure" icon={<LayoutTemplate />} />
                 </div>
               </section>

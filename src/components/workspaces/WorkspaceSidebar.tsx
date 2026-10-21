@@ -84,7 +84,7 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role, 
         : href === base
           ? pathname === base
           : pathname.startsWith(href);
-  const toItem = (item: { label: string; href: string; icon: React.ComponentType<{ className?: string }>; count?: number }) => ({
+  const toItem = (item: { label: string; href: string; icon: React.ComponentType<{ className?: string }>; count?: number; countLabel?: string }) => ({
     ...item,
     active: isActive(item.href),
     onClick: guard(item.href),
@@ -94,7 +94,7 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role, 
   const primary = [
     toItem({ label: 'Home', href: base, icon: Home }),
     toItem({ label: 'Forms', href: `${base}/forms`, icon: FileText }),
-    toItem({ label: 'Responses', href: `${base}/form-responses`, icon: Inbox, count: stats?.unread }),
+    toItem({ label: 'Responses', href: `${base}/form-responses`, icon: Inbox, count: stats?.unread, countLabel: 'unread' }),
     toItem({ label: 'Insights', href: `${base}/insights`, icon: BarChart3 }),
   ];
 

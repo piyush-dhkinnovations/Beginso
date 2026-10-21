@@ -11,13 +11,15 @@ interface Options {
   scope: string;
   formId?: string;
   filters: Filters;
+  /** The table's submission order: stepping to the next/previous response across a page boundary must follow the same order. */
+  submittedOrder?: 'asc' | 'desc';
   page: number;
   pageLimit: number;
   data: { data: IResponse[]; totalPages: number; total: number } | undefined;
 }
 
 /** The drawer's `?responseId=` URL state: open/close, prev/next across pages, and expand-to-full-page. */
-export function useResponseRouting({ scope, formId, filters, page, pageLimit, data }: Options) {
+export function useResponseRouting({ scope, formId, filters, page, pageLimit, data, submittedOrder = 'desc' }: Options) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -50,7 +52,7 @@ export function useResponseRouting({ scope, formId, filters, page, pageLimit, da
       targetPage = page + (direction === 'previous' ? -1 : 1);
       if (targetPage < 1 || targetPage > data.totalPages) return;
       const adjacentPage = await responsesService.getResponses(
-        { formId, ...filters, page: targetPage, limit: pageLimit },
+        { formId, ...filters, ...(submittedOrder === 'asc' ? { order: 'asc' as const } : {}), page: targetPage, limit: pageLimit },
         scope
       );
       target = direction === 'previous' ? adjacentPage.data.at(-1) : adjacentPage.data[0];
@@ -66,15 +68,14 @@ export function useResponseRouting({ scope, formId, filters, page, pageLimit, da
 
   function expandResponse(response: IResponse) {
     const returnTo = `${pathname}?${searchParams.toString()}`;
-    // Bug fix, Sprint 12 close-out: `scope` was never passed to the full-page view, which
-    // always fell back to its 'personal' default — a workspace response's Stage/prev-next
-    // context silently broke (wrong or empty stage list) the moment it was expanded.
-    const fullPageParams = new URLSearchParams({
-      formId: response.formId,
-      scope,
-      returnTo,
-    });
-    router.push(`/inbox/${response._id}?${fullPageParams.toString()}`);
+    const fullPageParams = new URLSearchParams({ formId: response.formId, returnTo });
+    // Workspace responses go to /w/[slug]/inbox/[id] so the WorkspaceShell (sidebar) is
+    // preserved — the (user)/inbox/[id] route uses PersonalShell regardless of ?scope=.
+    // Personal responses keep the old /inbox/[id] path (PersonalShell is correct there).
+    const base = scope !== 'personal'
+      ? `/w/${scope}/inbox/${response._id}`
+      : `/inbox/${response._id}`;
+    router.push(`${base}?${fullPageParams.toString()}`);
   }
 
   return { responseId, responses, activeResponsePosition, openResponse, closeResponse, navigateResponse, expandResponse };
