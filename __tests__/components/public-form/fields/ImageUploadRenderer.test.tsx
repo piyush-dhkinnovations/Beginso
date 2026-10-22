@@ -69,10 +69,10 @@ describe('ImageUploadRenderer', () => {
   it('multi mode accumulates images, joins names, and hides the drop zone when full', async () => {
     setup(multi);
     await userEvent.upload(input(), img('a.png'));
-    expect(screen.getByRole('button', { name: /add images/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add 1 more image' })).toBeInTheDocument();
     await userEvent.upload(input(), img('b.webp', 'image/webp'));
     expect(readValues(screen.getByTestId('values'))).toEqual({ f1: 'a.png, b.webp' });
-    expect(screen.queryByRole('button', { name: /add images/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /add .* more images?/i })).not.toBeInTheDocument();
   });
 
   it('refuses images beyond the maximum count with a message, keeping the ones that fit', () => {

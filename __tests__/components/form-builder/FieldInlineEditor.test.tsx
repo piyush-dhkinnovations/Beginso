@@ -229,7 +229,7 @@ describe('FieldInlineEditor: image upload', () => {
     expect(screen.getByRole('radio', { name: 'Original ratio' })).toBeChecked();
     expect(screen.getByRole('radio', { name: 'Large preview' })).toBeChecked();
     expect(screen.getByText('JPG, PNG or WebP · up to 10 MB each.')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Maximum images')).not.toBeInTheDocument();
+    expect(screen.getByRole('spinbutton', { name: 'Maximum images' })).toHaveValue(1);
     expect(screen.getByText(/up to 1 image\./)).toBeInTheDocument();
   });
 
@@ -244,20 +244,15 @@ describe('FieldInlineEditor: image upload', () => {
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { previewSize: 'small' });
   });
 
-  it('allowing multiple reveals the max-images select (default 5) and writes numbers', async () => {
+  it('lets the form owner type the image limit and saves the number on blur', async () => {
     const f = makeField('image_upload', { allowMultiple: true } as never);
     const { onUpdate } = setup(f);
-    const select = screen.getByLabelText('Maximum images') as HTMLSelectElement;
-    expect(select.value).toBe('5');
-    await userEvent.selectOptions(select, '10');
-    expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { maxImages: 10 });
-  });
-
-  it('the multiple-images switch writes allowMultiple', async () => {
-    const f = makeField('image_upload');
-    const { onUpdate } = setup(f);
-    await userEvent.click(screen.getByRole('switch', { name: 'Allow multiple images' }));
-    expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { allowMultiple: true });
+    const input = screen.getByRole('spinbutton', { name: 'Maximum images' });
+    expect(input).toHaveValue(5);
+    await userEvent.clear(input);
+    await userEvent.type(input, '3');
+    await userEvent.tab();
+    expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { allowMultiple: true, maxImages: 3 });
   });
 });
 
