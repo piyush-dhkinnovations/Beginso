@@ -58,7 +58,9 @@ function vimeoVideo(href: string): { id: string; hash?: string } | null {
     const u = new URL(href);
     if (u.hostname !== 'vimeo.com' && !u.hostname.endsWith('.vimeo.com')) return null;
     const match = u.pathname.match(/^\/(?:video\/)?(\d+)(?:\/([a-zA-Z0-9]+))?/);
-    return match ? { id: match[1], hash: match[2] } : null;
+    // Vimeo's share links can carry the unlisted-video hash in the query string.
+    // It must be forwarded to the player or Vimeo may show “video does not exist”.
+    return match ? { id: match[1], hash: match[2] ?? u.searchParams.get('h') ?? undefined } : null;
   } catch { return null; }
 }
 
@@ -93,7 +95,7 @@ function RichPreview({ href, domain, service, scope, framed, size, ratio, small 
   const videoEmbedUrl = ytId
     ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(ytId)}?autoplay=1&rel=0`
     : vimeo
-      ? `https://player.vimeo.com/video/${encodeURIComponent(vimeo.id)}?autoplay=1${vimeo.hash ? `&h=${encodeURIComponent(vimeo.hash)}` : ''}`
+      ? `https://player.vimeo.com/video/${encodeURIComponent(vimeo.id)}${vimeo.hash ? `?h=${encodeURIComponent(vimeo.hash)}&autoplay=1` : '?autoplay=1'}`
       : null;
   const videoName = ytId ? 'YouTube' : 'Vimeo';
   const openVideo = () => setVideoOpen(true);
@@ -127,6 +129,11 @@ function RichPreview({ href, domain, service, scope, framed, size, ratio, small 
               <span aria-hidden="true" className="absolute inset-0 grid place-items-center bg-black/30 text-white">▶</span>
             </button>
           ) : <img src={image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setImageFailed(true)} className="size-12 shrink-0 rounded-md object-cover" />
+        ) : videoEmbedUrl ? (
+          <button type="button" onClick={openVideo} aria-label="Play video" className="group relative size-12 shrink-0 overflow-hidden rounded-md">
+            <Monogram domain={domain} className="size-full" />
+            <span aria-hidden="true" className="absolute inset-0 grid place-items-center bg-black/20 text-white transition-colors group-hover:bg-black/40"><span className="grid size-7 place-items-center rounded-full bg-black/65 text-sm">▶</span></span>
+          </button>
         ) : (
           <Monogram domain={domain} className="size-12" />
         )}
@@ -139,7 +146,7 @@ function RichPreview({ href, domain, service, scope, framed, size, ratio, small 
           </a>
         </div>
       </div>
-      {videoEmbedUrl && <Modal isOpen={videoOpen} onClose={() => setVideoOpen(false)} title={videoTitle} description={domain} size="lg">
+      {videoEmbedUrl && <Modal isOpen={videoOpen} onClose={() => setVideoOpen(false)} title={videoTitle} description={domain} size="xl">
         <div ref={playerRef} className="relative w-full overflow-hidden rounded-lg bg-black" style={{ aspectRatio: '16 / 9' }}>
           <iframe title={videoTitle} src={videoEmbedUrl} className="absolute inset-0 size-full" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
         </div>
@@ -169,19 +176,28 @@ function RichPreview({ href, domain, service, scope, framed, size, ratio, small 
           onError={() => setImageFailed(true)}
           className={cn('object-cover', thumb)}
         />
+      ) : videoEmbedUrl ? (
+        <button type="button" onClick={openVideo} aria-label="Play video" className={cn('group relative shrink-0 overflow-hidden rounded-md', framed ? 'm-3 size-12' : 'size-14')}>
+          <Monogram domain={domain} className="size-full" />
+          <span aria-hidden="true" className="absolute inset-0 grid place-items-center bg-black/20 text-white transition-colors group-hover:bg-black/40"><span className="grid size-8 place-items-center rounded-full bg-black/65 text-base">▶</span></span>
+        </button>
       ) : (
         <Monogram domain={domain} className={framed ? 'm-3 size-12' : 'size-14'} />
       )}
       <div className={cn('flex min-w-0 flex-1 flex-col justify-center gap-0.5', framed && 'p-3')}>
         {title && <p className="line-clamp-2 bg-body-sm font-semibold text-(--text-primary)">{title}</p>}
         <p className="truncate bg-caption text-(--text-muted)">{domain}</p>
-        <p className="truncate bg-caption text-(--text-muted)" title={href}>{href}</p>
+        {videoEmbedUrl ? (
+          <button type="button" onClick={openVideo} title={`Play ${videoName} video`} className="w-fit max-w-full truncate bg-caption text-left text-(--text-muted) hover:text-(--text-link) hover:underline">{href}</button>
+        ) : (
+          <p className="truncate bg-caption text-(--text-muted)" title={href}>{href}</p>
+        )}
         <a {...LINK_PROPS} href={href} className="mt-1 inline-flex w-fit items-center gap-1 bg-body-sm font-medium text-(--text-link) hover:underline">
           {service ? 'Opens in a new tab' : 'Open website'}
           <ExternalLink size={13} aria-hidden="true" />
         </a>
       </div>
-      {videoEmbedUrl && <Modal isOpen={videoOpen} onClose={() => setVideoOpen(false)} title={videoTitle} description={domain} size="lg">
+      {videoEmbedUrl && <Modal isOpen={videoOpen} onClose={() => setVideoOpen(false)} title={videoTitle} description={domain} size="xl">
         <div ref={playerRef} className="relative w-full overflow-hidden rounded-lg bg-black" style={{ aspectRatio: '16 / 9' }}>
           <iframe title={videoTitle} src={videoEmbedUrl} className="absolute inset-0 size-full" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
         </div>

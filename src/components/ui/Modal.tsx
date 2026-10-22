@@ -12,7 +12,7 @@ export interface ModalProps {
   title: string;
   description?: string;
   children: React.ReactNode;
-  size?: "default" | "lg";
+  size?: "default" | "lg" | "xl";
 }
 
 // beginso-ui.css classes — see src/styles/beginso-ui.css §14 OVERLAYS. Rendered via a portal
@@ -37,7 +37,7 @@ export function Modal({ isOpen, onClose, title, description, children, size = "d
         aria-modal="true"
         aria-labelledby="modal-title"
         ref={modalRef}
-        className={bx("bg-modal", size === "lg" && "bg-modal-lg")}
+        className={bx("bg-modal", size === "lg" && "bg-modal-lg", size === "xl" && "bg-modal-xl")}
       >
         <div className="bg-modal-head">
           <div>

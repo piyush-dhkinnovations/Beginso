@@ -1431,6 +1431,7 @@ body {
 }
 @keyframes bg-modal-in { from { opacity: 0; transform: translateY(12px) scale(0.98); } }
 .bg-modal-lg { max-width: 720px; }
+.bg-modal-xl { max-width: 900px; }
 .bg-modal-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-5) var(--space-5) 0; }
 .bg-modal-head h2 { font: 600 16px/24px var(--bg-font-sans); }
 .bg-modal-head p { font: var(--text-body-sm); color: var(--text-muted); margin-top: var(--space-1); }
