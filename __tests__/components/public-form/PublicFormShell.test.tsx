@@ -20,8 +20,7 @@ const svc = vi.hoisted(() => ({
   submitForm: vi.fn(),
   getSubmitTicket: vi.fn(),
   requestEmailVerification: vi.fn(),
-  getEmailVerification: vi.fn(),
-  confirmEmailVerification: vi.fn(),
+  checkEmailCode: vi.fn(),
 }));
 vi.mock('@/services/publicForm', () => ({ publicFormService: svc }));
 
@@ -61,7 +60,7 @@ beforeEach(() => {
   svc.submitForm.mockReset().mockResolvedValue({ ok: true, status: 200 });
   svc.getSubmitTicket.mockReset().mockResolvedValue({ ticket: 'tkt', expiresInSeconds: 120 });
   svc.requestEmailVerification.mockReset().mockResolvedValue({ verificationId: 'vid-1234567890123456789012' });
-  svc.getEmailVerification.mockReset().mockResolvedValue({ status: 'pending' });
+  svc.checkEmailCode.mockReset().mockResolvedValue({ state: 'verified', email: 'a@b.co' });
   mockAuth.mockReset().mockReturnValue({ user: null, isLoading: false });
   window.scrollTo = vi.fn() as unknown as typeof window.scrollTo;
   sessionStorage.clear();
@@ -267,198 +266,113 @@ describe('PublicFormShell preview mode', () => {
 
 describe('PublicFormShell access modes', () => {
   const tracked = () => schema({ settings: { accessMode: 'tracked' } as PublicFormSchema['settings'] });
+  const login = () => schema({ settings: { accessMode: 'login' } as PublicFormSchema['settings'] }); // the old name of the same gate
 
-  it('tracked: asks for the email first, before the questions', () => {
-    render(<PublicFormShell schema={tracked()} slug="s" />);
-    const email = screen.getByLabelText(/Your email/);
-    const name = screen.getByLabelText(/Name/);
-    expect(email.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  });
-
-  // The respondent presses Verify, opens the email and clicks the button: the next check of the request says verified.
-  async function verifyEmail(address: string, label: RegExp = /Your email/) {
-    await userEvent.type(screen.getByLabelText(label), address);
-    await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
-    await screen.findByText(/We sent a link to/);
-    svc.getEmailVerification.mockResolvedValue({ status: 'verified', email: address.trim().toLowerCase() });
-    window.dispatchEvent(new Event('focus')); // coming back to the tab checks at once, instead of waiting for the timer
-    await screen.findByText('Verified');
+  // The respondent types an address, gets a code, types it: the gate opens and the form is shown.
+  async function passTheGate(address = 'a@b.co') {
+    svc.requestEmailVerification.mockResolvedValue({ verificationId: 'vid-1234567890123456789012' });
+    svc.checkEmailCode.mockResolvedValue({ state: 'verified', email: address });
+    await userEvent.type(screen.getByLabelText('Email address'), address);
+    await userEvent.click(screen.getByRole('button', { name: 'Send code' }));
+    await userEvent.type(await screen.findByLabelText('6-digit code'), '123456');
+    await screen.findByLabelText(/Name/);
   }
 
-  it('tracked: Verify stays off until the address looks like an email, and asks the backend to send the link', async () => {
+  it('shows the email gate instead of the form, with the code and Google ways in', () => {
     render(<PublicFormShell schema={tracked()} slug="s" />);
-    const verify = screen.getByRole('button', { name: 'Verify' });
-    expect(verify).toBeDisabled();
-    await userEvent.type(screen.getByLabelText(/Your email/), 'a@b.co');
-    expect(verify).toBeEnabled();
-    await userEvent.click(verify);
-    expect(svc.requestEmailVerification).toHaveBeenCalledWith('s', 'a@b.co');
-    expect(await screen.findByText(/We sent a link to/)).toHaveTextContent('a@b.co');
+    expect(screen.getByText('Confirm your email to respond')).toBeInTheDocument();
+    expect(screen.getByLabelText('Email address')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Send code' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Continue with Google/ })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/Name/)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Password')).not.toBeInTheDocument(); // no password here
+    expect(screen.queryByRole('link', { name: /Create account/ })).not.toBeInTheDocument();
   });
 
-  it('tracked: refuses an invalid email before sending anything', async () => {
-    render(<PublicFormShell schema={tracked()} slug="s" />);
-    await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
-    await userEvent.type(screen.getByLabelText(/Your email/), 'nope');
-    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
-    expect(await screen.findByText('Please enter a valid email address.')).toBeInTheDocument();
-    expect(svc.submitForm).not.toHaveBeenCalled();
+  it('the old "login" mode is the same gate', () => {
+    render(<PublicFormShell schema={login()} slug="s" />);
+    expect(screen.getByText('Confirm your email to respond')).toBeInTheDocument();
   });
 
-  it('tracked: a valid but unverified email cannot be submitted', async () => {
+  it('shows a short wait while the sign-in state loads, not the form', () => {
+    mockAuth.mockReturnValue({ user: null, isLoading: true });
     render(<PublicFormShell schema={tracked()} slug="s" />);
-    await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
-    await userEvent.type(screen.getByLabelText(/Your email/), 'a@b.co');
-    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
-    expect(await screen.findByText(/Verify your email address to submit/)).toBeInTheDocument();
-    expect(svc.submitForm).not.toHaveBeenCalled();
+    expect(screen.getByRole('status')).toHaveTextContent('One moment');
+    expect(screen.queryByLabelText(/Name/)).not.toBeInTheDocument();
   });
 
-  it('tracked: after verifying, sends the trimmed email and the proof, outside the answers', async () => {
+  it('the owner preview is never gated', () => {
+    render(<PublicFormShell schema={tracked()} slug="s" previewMode />);
+    expect(screen.getByLabelText(/Name/)).toBeInTheDocument();
+    expect(screen.queryByText('Confirm your email to respond')).not.toBeInTheDocument();
+  });
+
+  it('after the code the form opens, with "Responding as" first and a way to change it', async () => {
+    const { container } = render(<PublicFormShell schema={tracked()} slug="s" />);
+    await passTheGate('a@b.co');
+    const who = screen.getByText('Responding as', { exact: false });
+    expect(container.querySelector('form')!.firstElementChild).toBe(who);
+    expect(who).toHaveTextContent('a@b.co');
+    await userEvent.click(screen.getByRole('button', { name: 'Change' }));
+    expect(screen.getByText('Confirm your email to respond')).toBeInTheDocument();
+  });
+
+  it('a code-verified respondent submits with the proof, and no address in the request', async () => {
     render(<PublicFormShell schema={tracked()} slug="s" />);
+    await passTheGate();
     await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
-    await verifyEmail('  a@b.co ');
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
     await waitFor(() => expect(svc.submitForm).toHaveBeenCalled());
     const [, data, , , opts] = svc.submitForm.mock.calls[0];
-    expect(data.respondentEmail).toBe('a@b.co');
-    expect(opts.emailVerificationId).toBe('vid-1234567890123456789012');
-    expect(data.answers.some((a: { fieldId: string }) => a.fieldId === 'respondent-email')).toBe(false);
+    expect(data).not.toHaveProperty('respondentEmail');
+    expect(opts).toEqual({ ticket: undefined, emailVerificationId: 'vid-1234567890123456789012' });
   });
 
-  it('tracked: changing the address after verifying drops the verification', async () => {
-    render(<PublicFormShell schema={tracked()} slug="s" />);
-    await verifyEmail('a@b.co');
-    await userEvent.type(screen.getByLabelText(/Your email/), 'x');
-    expect(screen.queryByText('Verified')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Verify' })).toBeEnabled();
-  });
-
-  it('tracked: says so when the verification email could not be sent', async () => {
-    svc.requestEmailVerification.mockRejectedValue(new Error('We could not send the verification email. Please try again.'));
-    render(<PublicFormShell schema={tracked()} slug="s" />);
-    await userEvent.type(screen.getByLabelText(/Your email/), 'a@b.co');
-    await userEvent.click(screen.getByRole('button', { name: 'Verify' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('could not send the verification email');
-  });
-
-  it('tracked: shows the server EMAIL_REQUIRED message against the email input', async () => {
-    svc.submitForm.mockResolvedValue({ ok: false, status: 422, code: 'EMAIL_REQUIRED', message: 'Email needed' });
-    render(<PublicFormShell schema={tracked()} slug="s" />);
-    await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
-    await verifyEmail('a@b.co');
-    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
-    expect(await screen.findByText('Email needed')).toBeInTheDocument();
-  });
-
-  it('tracked: a proof the server no longer accepts asks for a fresh verification', async () => {
-    svc.submitForm.mockResolvedValue({ ok: false, status: 422, code: 'EMAIL_NOT_VERIFIED', message: 'Verify your email address before submitting' });
-    render(<PublicFormShell schema={tracked()} slug="s" />);
-    await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
-    await verifyEmail('a@b.co');
-    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
-    expect(await screen.findByText(/needs to be verified again/)).toBeInTheDocument();
-    expect(screen.queryByText('Verified')).not.toBeInTheDocument();
-  });
-
-  describe('when the form has its own Email question', () => {
-    const withEmail = () =>
-      schema(
-        { settings: { accessMode: 'tracked' } as PublicFormSchema['settings'] },
-        [text('name', 'Name', { required: true, order: 0 }), makeField({ fieldId: 'mail', label: 'Contact email', type: 'email', required: true, order: 1 })]
-      );
-
-    it('asks for the address once: no separate "Your email" box, and Verify sits beside the question', () => {
-      render(<PublicFormShell schema={withEmail()} slug="s" />);
-      expect(screen.queryByLabelText(/Your email/)).not.toBeInTheDocument();
-      expect(screen.getAllByLabelText(/email/i)).toHaveLength(1);
-      expect(screen.getByRole('button', { name: 'Verify' })).toBeInTheDocument();
-    });
-
-    it('verifies that question value and sends it as the respondent email as well as the answer', async () => {
-      render(<PublicFormShell schema={withEmail()} slug="s" />);
-      await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
-      await verifyEmail('Asha@Example.com', /Contact email/);
-      expect(svc.requestEmailVerification).toHaveBeenCalledWith('s', 'asha@example.com');
-      await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
-      await waitFor(() => expect(svc.submitForm).toHaveBeenCalled());
-      const [, data, , , opts] = svc.submitForm.mock.calls[0];
-      expect(data.respondentEmail).toBe('Asha@Example.com');
-      expect(data.answers.find((a: { fieldId: string }) => a.fieldId === 'mail')?.value).toBe('Asha@Example.com');
-      expect(opts.emailVerificationId).toBeTruthy();
-    });
-
-    it('does not submit until that question is verified', async () => {
-      render(<PublicFormShell schema={withEmail()} slug="s" />);
-      await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
-      await userEvent.type(screen.getByLabelText(/Contact email/), 'asha@example.com');
-      await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
-      expect(await screen.findByText(/Verify your email address to submit/)).toBeInTheDocument();
-      expect(svc.submitForm).not.toHaveBeenCalled();
-    });
-
-    it('the owner preview shows the Verify button but it does nothing', async () => {
-      render(<PublicFormShell schema={withEmail()} slug="s" previewMode />);
-      await userEvent.type(screen.getByLabelText(/Contact email/), 'asha@example.com');
-      expect(screen.getByRole('button', { name: 'Verify' })).toBeDisabled();
-      expect(svc.requestEmailVerification).not.toHaveBeenCalled();
-    });
-  });
-
-  const login = () => schema({ settings: { accessMode: 'login' } as PublicFormSchema['settings'] });
-
-  it('login: shows a checking state while auth loads', () => {
-    mockAuth.mockReturnValue({ user: null, isLoading: true });
-    render(<PublicFormShell schema={login()} slug="s" />);
-    expect(screen.getByRole('status')).toHaveTextContent('Checking your sign-in');
-    expect(screen.queryByLabelText(/Name/)).not.toBeInTheDocument();
-  });
-
-  it('login: a signed-out visitor sees the gate instead of the form', () => {
-    render(<PublicFormShell schema={login()} slug="s" />);
-    expect(screen.getByText('Sign in to respond')).toBeInTheDocument();
-    // signing in happens on the gate itself; only creating an account goes to another page
-    expect(screen.getByLabelText('Email Address')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Sign in' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Sign in with Google' })).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: 'Sign in' })).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Create account' })).toHaveAttribute('href', '/signup?next=%2Ff%2Fs');
-    expect(screen.queryByLabelText(/Name/)).not.toBeInTheDocument();
-  });
-
-  it('login: the owner preview is never gated', () => {
-    render(<PublicFormShell schema={login()} slug="s" previewMode />);
-    expect(screen.getByLabelText(/Name/)).toBeInTheDocument();
-  });
-
-  it('login: a signed-in respondent submits with a one-shot ticket', async () => {
+  it('a signed-in respondent gets "Continue as ..." with no code, and submits with a one-shot ticket', async () => {
     mockAuth.mockReturnValue({ user: { email: 'me@x.co' }, isLoading: false });
-    render(<PublicFormShell schema={login()} slug="s" />);
-    expect(screen.getByText('me@x.co')).toBeInTheDocument();
+    render(<PublicFormShell schema={tracked()} slug="s" />);
+    expect(screen.queryByLabelText('Email address')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Continue as me@x.co' }));
+    expect(screen.getByText('Responding as', { exact: false })).toHaveTextContent('me@x.co');
     await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
     await waitFor(() => expect(svc.submitForm).toHaveBeenCalled());
-    expect(svc.submitForm.mock.calls[0][4]).toEqual({ ticket: 'tkt' });
+    expect(svc.submitForm.mock.calls[0][4]).toEqual({ ticket: 'tkt', emailVerificationId: undefined });
+    expect(svc.requestEmailVerification).not.toHaveBeenCalled();
   });
 
-  it('login: "Responding as" is the first thing in the form, above the title and every question', () => {
+  it('"Use a different email" lets a signed-in respondent use a code instead', async () => {
     mockAuth.mockReturnValue({ user: { email: 'me@x.co' }, isLoading: false });
-    const { container } = render(<PublicFormShell schema={login()} slug="s" />);
-    const who = screen.getByText('Responding as', { exact: false });
-    const form = container.querySelector('form')!;
-    expect(form.firstElementChild).toBe(who);
-    expect(who.compareDocumentPosition(screen.getByLabelText(/Name/)) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(who.compareDocumentPosition(screen.getByRole('button', { name: 'Submit' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    render(<PublicFormShell schema={tracked()} slug="s" />);
+    await userEvent.click(screen.getByRole('button', { name: 'Use a different email' }));
+    expect(screen.getByLabelText('Email address')).toBeInTheDocument();
   });
 
-  it('login: a failed ticket request stops the submission with a sign-in message', async () => {
+  it('a failed ticket request stops the submission with a sign-in message', async () => {
     mockAuth.mockReturnValue({ user: { email: 'me@x.co' }, isLoading: false });
     svc.getSubmitTicket.mockRejectedValue(new Error('401'));
-    render(<PublicFormShell schema={login()} slug="s" />);
+    render(<PublicFormShell schema={tracked()} slug="s" />);
+    await userEvent.click(screen.getByRole('button', { name: 'Continue as me@x.co' }));
     await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('could not confirm your sign-in');
     expect(svc.submitForm).not.toHaveBeenCalled();
+  });
+
+  it('a proof the server no longer accepts sends the respondent back to the gate, with their answers kept', async () => {
+    svc.submitForm.mockResolvedValue({ ok: false, status: 422, code: 'EMAIL_NOT_VERIFIED', message: 'Verify your email address before submitting' });
+    render(<PublicFormShell schema={tracked()} slug="s" />);
+    await passTheGate();
+    await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    expect(await screen.findByText(/Confirm your email again/)).toBeInTheDocument();
+    expect(screen.getByText('Confirm your email to respond')).toBeInTheDocument();
+    // passing the gate again brings the answer back: nothing was lost
+    svc.submitForm.mockResolvedValue({ ok: true, status: 200 });
+    await userEvent.type(screen.getByLabelText('Email address'), 'a@b.co');
+    await userEvent.click(screen.getByRole('button', { name: 'Send code' }));
+    await userEvent.type(await screen.findByLabelText('6-digit code'), '123456');
+    expect(await screen.findByLabelText(/Name/)).toHaveValue('Asha');
   });
 });
 
@@ -565,10 +479,11 @@ describe('PublicFormShell: the form stops accepting responses while it is being 
     expect(screen.getByLabelText(/Name/)).toHaveValue('Asha');
   });
 
-  it('a login-mode form that closed fails at the sign-in ticket first: the closed message, not "sign in again"', async () => {
+  it('a verified-email form that closed fails at the sign-in ticket first: the closed message, not "sign in again"', async () => {
     mockAuth.mockReturnValue({ user: { email: 'me@x.co' }, isLoading: false });
     svc.getSubmitTicket.mockRejectedValue({ response: { status: 410, data: { error: { code: 'FORM_CLOSED' } } } });
-    render(<PublicFormShell schema={schema({ settings: { accessMode: 'login' } as PublicFormSchema['settings'] })} slug="s" />);
+    render(<PublicFormShell schema={schema({ settings: { accessMode: 'tracked' } as PublicFormSchema['settings'] })} slug="s" />);
+    await userEvent.click(screen.getByRole('button', { name: 'Continue as me@x.co' }));
     await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
     const alert = await screen.findByRole('alert');

@@ -64,8 +64,6 @@ export interface Answer {
 /** The `data` part of the multipart/form-data submission. */
 export interface SubmissionData {
   answers: Answer[];
-  /** Mode 2 (tracked) only — the built-in "Your email" step, kept outside `answers` (OQ-4). Backend contract to confirm (BE 0.6). */
-  respondentEmail?: string;
 }
 
 // ─── Upload State ───────────────────────────────────────────────────────────────

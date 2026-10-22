@@ -34,15 +34,13 @@ export interface SettingsPanelProps {
   status: FormStatus;
   slug?: string;
   onUpdate: (updates: Partial<FormSettings>) => void;
-  /** Whether the form has an Email question. "Anyone with the link, with their email" verifies the address in it. Defaults to true. */
-  hasEmailField?: boolean;
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return <h2 className="bg-overline border-b border-(--border-default) pb-2 text-(--text-muted)">{children}</h2>;
 }
 
-export function SettingsPanel({ settings, status, slug, onUpdate, hasEmailField = true }: SettingsPanelProps) {
+export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPanelProps) {
   const { toast } = useToast();
 
   // ── Success message (commits on blur) ───────────────────────────────────────
@@ -98,41 +96,26 @@ export function SettingsPanel({ settings, status, slug, onUpdate, hasEmailField 
           Mode 1 (open) — that is what every pre-V2 form is. The new-form default is the backend's call
           (OQ-9); this control only reads and writes `settings.accessMode`. */}
       <PanelCard label="Who can respond" description="Choose who is allowed to submit this form.">
+        {/* A form stored as the old "login" mode is the same gate as "tracked" (the server reads it that way), so it shows as that. */}
         <Select
           id="access-mode"
           label="Who can respond"
-          value={settings.accessMode ?? 'open'}
+          value={settings.accessMode === 'tracked' || settings.accessMode === 'login' ? 'tracked' : 'open'}
           onChange={(e) => onUpdate({ accessMode: e.target.value as AccessMode })}
         >
           <option value="open">Anyone with the link</option>
-          <option value="tracked">Anyone with the link, with their email</option>
-          <option value="login">Signed-in Beginso users only</option>
+          <option value="tracked">Anyone with a verified email</option>
         </Select>
-        {(settings.accessMode ?? 'open') === 'open' && (
-          <p className="bg-caption text-(--text-muted)">No email and no tracking — the quickest way for people to respond.</p>
-        )}
-        {settings.accessMode === 'tracked' && (
+        {(settings.accessMode ?? 'open') === 'open' ? (
+          <p className="bg-caption text-(--text-muted)">No email and no tracking: the quickest way for people to respond.</p>
+        ) : (
           <>
             <p className="bg-caption text-(--text-muted)">
-              Respondents verify the email in your form&apos;s Email question: they press Verify beside it and tap the button in the email we send them.
-              After they submit, they get a link to view or correct their submission. The emails never contain their answers.
+              Before the form starts, people confirm their email with a 6-digit code we send them, or continue with Google. You see who
+              responded, and they can find their submission again. The emails never contain their answers.
             </p>
-            {!hasEmailField && (
-              <Alert variant="warning" title="Add an Email question to use this">
-                This option verifies the respondent&apos;s address in an Email question, and this form has none yet. Add at least one in the
-                Build tab, or the form cannot be published.
-              </Alert>
-            )}
-          </>
-        )}
-        {settings.accessMode === 'login' && (
-          <>
-            <p className="bg-caption text-(--text-muted)">
-              Respondents get a confirmation email and can also see their submission under My submissions after signing in. The email
-              never contains their answers.
-            </p>
-            <Alert variant="warning" title="Requiring login reduces completions">
-              People without an account have to sign up first. Use this for internal forms, not public ones.
+            <Alert variant="info" title="Fewer people may finish">
+              Asking for a verified email adds a step. Use it when you need to know who responded, not for a quick public poll.
             </Alert>
           </>
         )}

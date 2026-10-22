@@ -24,7 +24,10 @@ export interface SubmitFieldError {
   message: string;
 }
 
-export type EmailVerificationStatus = 'pending' | 'verified' | 'expired' | 'invalid';
+export type EmailCodeResult =
+  | { state: 'verified'; email?: string }
+  | { state: 'wrong'; attemptsLeft: number }
+  | { state: 'locked' | 'expired' | 'invalid' };
 
 export const publicFormService = {
   /**
@@ -65,9 +68,9 @@ export const publicFormService = {
   },
 
   /**
-   * Mode 2 (tracked): asks the backend to email a confirmation link to this address. Returns the id that proves, later, that this
-   * browser is the one that asked (it is sent with the submit; the link in the email is a different secret). Throws an Error
-   * whose message is safe to show.
+   * "Anyone, with a verified email": asks the backend to email a 6-digit code to this address. Returns the id that proves, later, that this
+   * browser is the one that asked (it is sent with the submit; the code in the email is a different secret). Throws an Error whose
+   * message is safe to show.
    */
   async requestEmailVerification(slug: string, email: string): Promise<{ verificationId: string }> {
     const res = await fetch(`${BASE}/api/public/${slug}/verify-email`, {
@@ -79,31 +82,27 @@ export const publicFormService = {
     if (!res.ok || !body?.verificationId) {
       throw new Error(
         res.status === 429
-          ? 'Too many emails were requested. Please wait a little and try again.'
-          : (body?.error?.message ?? body?.message ?? 'We could not send the verification email. Please try again.')
+          ? 'Too many codes were requested. Please wait a little and try again.'
+          : (body?.error?.message ?? body?.message ?? 'We could not send the code. Please try again.')
       );
     }
     return { verificationId: String(body.verificationId) };
   },
 
-  /** Polled while the respondent opens the email. `invalid` means the request is unknown here or already used. */
-  async getEmailVerification(slug: string, verificationId: string): Promise<{ status: EmailVerificationStatus; email?: string }> {
-    const res = await fetch(`${BASE}/api/public/${slug}/verify-email/${encodeURIComponent(verificationId)}`, { cache: 'no-store' });
-    if (!res.ok) throw new Error(`Could not check the verification: ${res.status}`);
-    const body = await res.json();
-    return { status: body.status as EmailVerificationStatus, email: typeof body.email === 'string' ? body.email : undefined };
-  },
-
-  /** The respondent opened the link from the email (the /confirm-email page). */
-  async confirmEmailVerification(token: string): Promise<'verified' | 'expired' | 'invalid'> {
-    const res = await fetch(`${BASE}/api/public/email-verification/confirm`, {
+  /** Checks the code the respondent typed. A wrong code is an answer (with the tries left), not an error; only a failure to ask throws. */
+  async checkEmailCode(slug: string, verificationId: string, code: string): Promise<EmailCodeResult> {
+    const res = await fetch(`${BASE}/api/public/${slug}/verify-email/${encodeURIComponent(verificationId)}/code`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ code }),
     });
-    if (res.status >= 500 || res.status === 429) throw new Error(`Could not confirm: ${res.status}`);
+    if (res.status >= 500) throw new Error('We could not check the code. Please try again.');
     const body = await res.json().catch(() => null);
-    return body?.state === 'verified' || body?.state === 'expired' ? body.state : 'invalid';
+    if (res.status === 429 && body?.state !== 'locked') throw new Error('Too many attempts. Please wait a little and try again.');
+    const state = body?.state;
+    if (state === 'verified') return { state, email: typeof body.email === 'string' ? body.email : undefined };
+    if (state === 'wrong') return { state, attemptsLeft: Number(body.attemptsLeft) || 0 };
+    return { state: state === 'locked' || state === 'expired' ? state : 'invalid' };
   },
 
   /**

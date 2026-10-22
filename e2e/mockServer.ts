@@ -16,7 +16,6 @@ import type { PublicFormSchema } from '../src/types/publicForm.ts';
  *   contains "load-500"     -> GET returns 500
  *   contains "closed-date"  -> GET returns the mock schema with a past closeDate
  *   contains "tracked-email" -> GET returns a short form in accessMode 'tracked' (the browser-side verify/submit calls are faked by the spec)
- *   contains "login-required" -> GET returns the mock schema as a members-only (accessMode 'login') form
  *   contains "submit-422"   -> POST .../submit returns 422
  *   contains "submit-429"   -> POST .../submit returns 429
  *   contains "submit-500"   -> POST .../submit returns 500
@@ -33,7 +32,7 @@ const builderForm = (id: string, s: { label: string; version: number }) => ({
 });
 
 function schemaFor(slug: string): PublicFormSchema {
-  // "Anyone with the link, with their email": a short form whose own Email question is verified in place.
+  // "Anyone, with a verified email": a short form behind the email gate.
   if (slug.includes('tracked-email')) {
     return {
       ...mockPublicFormSchema,
@@ -45,10 +44,6 @@ function schemaFor(slug: string): PublicFormSchema {
       ],
       settings: { ...mockPublicFormSchema.settings, accessMode: 'tracked' },
     };
-  }
-  // A members-only form: a visitor who is not signed in gets the sign-in gate instead of the questions.
-  if (slug.includes('login-required')) {
-    return { ...mockPublicFormSchema, title: 'Members only form', settings: { ...mockPublicFormSchema.settings, accessMode: 'login' } };
   }
   if (slug.includes('closed-date')) {
     return {

@@ -114,8 +114,6 @@ const nextConfig: NextConfig = {
       })),
       // Sprint 13 (A5.4): a signed-link URL must never leak through a referrer.
       { source: "/r/:path*", headers: [...securityHeaders.filter((h) => h.key !== "Referrer-Policy"), { key: "Referrer-Policy", value: "no-referrer" }] },
-      // The confirm-your-email link of a form that asks for the respondent's email: same rule.
-      { source: "/confirm-email/:path*", headers: [...securityHeaders.filter((h) => h.key !== "Referrer-Policy"), { key: "Referrer-Policy", value: "no-referrer" }] },
       { source: "/dev/ui/frame", headers: framePreviewHeaders },
       // Sprint 13: the form preview and the layout gallery embed this same-origin route in an
       // <iframe> (components/preview/PreviewFrame). Same narrow carve-out, same reasoning.
@@ -123,7 +121,7 @@ const nextConfig: NextConfig = {
       // The guest builder previews the logged-out draft in the same way (src/app/try/preview).
       { source: "/try/preview", headers: framePreviewHeaders },
       { source: "/f/:path*", headers: publicFormHeaders },
-      { source: "/((?!dev/ui/frame$)(?!forms/[^/]+/preview$)(?!try/preview$)(?!r/)(?!confirm-email/)(?!f/).*)", headers: securityHeaders },
+      { source: "/((?!dev/ui/frame$)(?!forms/[^/]+/preview$)(?!try/preview$)(?!r/)(?!f/).*)", headers: securityHeaders },
     ];
   },
 };

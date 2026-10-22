@@ -20,10 +20,7 @@ import { parseEmbedOptions, carryEmbedSearch } from '@/lib/embed/embedParams';
 import { resolvePrefill } from '@/lib/embed/prefill';
 import { FormProgress } from './FormProgress';
 import { ReviewStep } from './ReviewStep';
-import { EmailStep } from './EmailStep';
-import { VerifyEmailButton, VerifyEmailNote, isEmailLike, isVerifiedFor } from './EmailVerifyControl';
-import { useEmailVerification } from '@/hooks/useEmailVerification';
-import { LoginGate } from './LoginGate';
+import { EmailGate, type VerifiedIdentity } from './EmailGate';
 import { useAuth } from '@/hooks/useAuth';
 import { ShortTextRenderer } from './fields/ShortTextRenderer';
 import { LongTextRenderer } from './fields/LongTextRenderer';
@@ -101,12 +98,14 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   // Review-before-submit (D1.2). The review screen replaces the page body; values stay in RHF.
   const [showReview, setShowReview] = useState(false);
   // Access modes (Sprint 13, D1.1). The mode is read from the schema; the SERVER enforces it independently.
-  //   tracked → a built-in "Your email" input outside the answers.   login → a signed-in account, via ticket.
-  const accessMode = schema.settings.accessMode ?? 'open';
+  //   tracked → "Anyone, with a verified email": an email gate before the form (a 6-digit code, Google, or a Beginso sign-in).
+  // "login" is the old name of the same gate (signed-in accounts only); it now just has more ways in.
+  const accessMode = schema.settings.accessMode === 'login' ? 'tracked' : (schema.settings.accessMode ?? 'open');
   const { user: authUser, isLoading: authLoading } = useAuth();
   const [testState, setTestState] = useState<{ status: 'idle' | 'sending' | 'sent' | 'error'; message?: string }>({ status: 'idle' });
-  const [respondentEmail, setRespondentEmail] = useState('');
-  const [emailError, setEmailError] = useState<string | null>(null);
+  // Who the respondent proved to be, once they got past the email gate ("Anyone, with a verified email").
+  const [identity, setIdentity] = useState<VerifiedIdentity | null>(null);
+  const [gateNotice, setGateNotice] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewSubmitted, setPreviewSubmitted] = useState(false);
@@ -140,12 +139,6 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   // eslint-disable-next-line react-hooks/incompatible-library -- watch() must return live values every render for real-time logic evaluation (Requirement 5.1); this is inherent to RHF's watch() API, not a bug.
   const watchedValues = methods.watch();
   const hiddenFieldIds = evaluateLogicRules(schema.fields, watchedValues);
-
-  // Mode 2 ("with their email"): the form's own Email question IS the address. It is verified in place (a Verify button beside it);
-  // only a form with no Email question (published before that was required) falls back to a standalone "Your email" box.
-  const emailField = accessMode === 'tracked' ? schema.fields.find((f) => f.type === 'email' && !f.deleted) : undefined;
-  const typedEmail = emailField ? String(watchedValues[emailField.fieldId] ?? '') : respondentEmail;
-  const verification = useEmailVerification(slug, accessMode === 'tracked' && !previewMode, typedEmail);
   const hiddenFieldIdsKey = Array.from(hiddenFieldIds).sort().join(',');
 
   useEffect(() => {
@@ -299,29 +292,6 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
       return;
     }
 
-    // Mode 2: the address is required, and must be VERIFIED, before anything is sent.
-    let candidate = '';
-    if (accessMode === 'tracked') {
-      candidate = (emailField ? String(values[emailField.fieldId] ?? '') : respondentEmail).trim();
-      const problem = !isEmailLike(candidate)
-        ? 'Please enter a valid email address.'
-        : !isVerifiedFor(verification, candidate)
-          ? 'Verify your email address to submit. Press Verify and open the link we send you.'
-          : null;
-      if (problem) {
-        // The email is asked on its own page: take the respondent back to it.
-        setShowReview(false);
-        const page = emailField ? sortedPages.findIndex((p) => p.id === emailField.pageId) : 0;
-        setCurrentPageIndex(Math.max(0, page));
-        setQuestionIndex(0);
-        if (emailField) methods.setError(emailField.fieldId, { type: 'validate', message: problem });
-        else setEmailError(problem);
-        setTimeout(() => document.getElementById(emailField ? emailField.fieldId : 'respondent-email')?.focus(), 0);
-        return;
-      }
-      setEmailError(null);
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -330,9 +300,15 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
       const hp = methods.getValues('_hp');
       const honeypot = typeof hp === 'string' ? hp : '';
 
-      // Mode 3: a one-shot ticket proves the signed-in account without the browser ever holding a session token.
+      // Verified-email mode. A signed-in account is proven by a one-shot ticket (the browser never holds the session token); an address
+      // confirmed with a code is proven by the verification id this browser was given. The server takes the address from either one.
       let ticket: string | undefined;
-      if (accessMode === 'login') {
+      let emailVerificationId: string | undefined;
+      if (accessMode === 'tracked' && !identity) {
+        setSubmitError('Confirm your email first.');
+        return;
+      }
+      if (identity?.kind === 'account') {
         try {
           ticket = (await publicFormService.getSubmitTicket(slug)).ticket;
         } catch (err) {
@@ -344,20 +320,15 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
           setSubmitError(closed ? MID_FILL_COPY[closed] : 'We could not confirm your sign-in. Please sign in again and retry.');
           return;
         }
+      } else if (identity?.kind === 'code') {
+        emailVerificationId = identity.verificationId;
       }
 
-      const result = await publicFormService.submitForm(
-        slug,
-        { answers, ...(accessMode === 'tracked' ? { respondentEmail: candidate } : {}) },
-        files,
-        honeypot,
-        { ticket, emailVerificationId: accessMode === 'tracked' ? (verification.verificationId ?? undefined) : undefined }
-      );
+      const result = await publicFormService.submitForm(slug, { answers }, files, honeypot, { ticket, emailVerificationId });
 
       if (result.ok) {
         submittedRef.current = true;
         clearDraft(slug);
-        verification.clear();
         const params = new URLSearchParams(carryEmbedSearch(search));
         params.set('title', schema.title);
         if (schema.settings.successMessage) params.set('message', schema.settings.successMessage);
@@ -377,15 +348,10 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
         setSubmitError('We could not confirm that your response was received. Please check your connection and try again.');
       } else if (result.status === 422 && result.fieldErrors?.length && applyServerFieldErrors(result.fieldErrors)) {
         // handled: each message sits on its own field and focus is moving there
-      } else if (result.code === 'EMAIL_REQUIRED') {
-        setEmailError(result.message ?? 'Please enter a valid email address.');
-        setSubmitError(null);
-      } else if (result.code === 'EMAIL_NOT_VERIFIED') {
-        // The proof was used up or timed out: ask for a fresh one.
-        verification.clear();
-        setSubmitError('Your email needs to be verified again. Press Verify and open the new link we send you.');
-      } else if (result.code === 'LOGIN_REQUIRED') {
-        setSubmitError('Your sign-in has expired. Please sign in again to submit.');
+      } else if (result.code === 'EMAIL_NOT_VERIFIED' || result.code === 'LOGIN_REQUIRED') {
+        // The proof was used up, timed out, or the sign-in ended: back to the gate, with the answers kept on the page.
+        setIdentity(null);
+        setGateNotice('Your confirmation ran out. Confirm your email again to send your answers; nothing you typed is lost.');
       } else if (result.status === 429) {
         setSubmitError('Too many submissions from your connection. Please wait a minute and try again.');
       } else if ((result.status === 422 || result.status === 400) && result.message) {
@@ -549,24 +515,6 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
         );
       }
 
-      if (accessMode === 'tracked' && emailField && field.fieldId === emailField.fieldId) {
-        return (
-          <div key={field.fieldId} className={spanClass}>
-            <EmailRenderer
-              field={field}
-              control={methods.control}
-              register={methods.register}
-              trigger={methods.trigger}
-              setValue={methods.setValue}
-              error={fieldError}
-              disabled={isSubmitting}
-              verify={<VerifyEmailButton verification={verification} email={typedEmail} disabled={isSubmitting || previewMode} />}
-              verifyNote={<VerifyEmailNote verification={verification} email={typedEmail} />}
-            />
-          </div>
-        );
-      }
-
       const Renderer = RENDERER_MAP[field.type];
       return (
         <div key={field.fieldId} className={spanClass}>
@@ -604,23 +552,29 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
     question: guidedQuestion,
   };
 
-  // Mode 3: a visitor who is not signed in sees a sign-in gate INSTEAD of the form (the owner's preview is
-  // never gated). The server refuses an unauthenticated submission regardless.
-  if (accessMode === 'login' && !previewMode) {
+  // Verified-email mode: until the respondent has proven an address (a code, Google, or a Beginso sign-in) they see the email gate INSTEAD of
+  // the form. The owner's preview is never gated. The server refuses an unverified submission regardless.
+  if (accessMode === 'tracked' && !previewMode && !identity) {
     if (authLoading) {
       return (
         <LayoutFrame {...frameProps}>
-          <p role="status" className="p-6 bg-body text-(--text-muted)">Checking your sign-in…</p>
+          <p role="status" className="p-6 bg-body text-(--text-muted)">One moment…</p>
         </LayoutFrame>
       );
     }
-    if (!authUser) {
-      return (
-        <LayoutFrame {...frameProps}>
-          <LoginGate slug={slug} formTitle={schema.title} />
-        </LayoutFrame>
-      );
-    }
+    return (
+      <LayoutFrame {...frameProps}>
+        <EmailGate
+          slug={slug}
+          formTitle={schema.title}
+          notice={gateNotice}
+          onVerified={(who) => {
+            setGateNotice(null);
+            setIdentity(who);
+          }}
+        />
+      </LayoutFrame>
+    );
   }
 
   // Preview only: send the current answers through the real pipeline as an isTest response. Validation is the
@@ -663,28 +617,17 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
     </>
   );
   const hasAccessExtra = !!testControls;
-  // Tracked mode: whose response this is, asked first like login mode's "Responding as", not after the questions.
-  const trackedEmail =
-    accessMode === 'tracked' && !emailField && !showReview && currentPageIndex === 0 ? (
-      <div className="mb-6">
-        <EmailStep
-          value={respondentEmail}
-          onChange={setRespondentEmail}
-          error={emailError}
-          disabled={isSubmitting}
-          verify={<VerifyEmailButton verification={verification} email={respondentEmail} disabled={isSubmitting || previewMode} />}
-          note={<VerifyEmailNote verification={verification} email={respondentEmail} />}
-        />
-      </div>
-    ) : null;
-
   return (
     <LayoutFrame {...frameProps}>
         <form onSubmit={handleFormSubmit} noValidate className="p-6 md:p-8">
-          {/* Login mode: who the response will be recorded for, first thing in the form, before any question. */}
-          {accessMode === 'login' && authUser && (
+          {/* Verified-email mode: who the response will be recorded for, first thing in the form, before any question. */}
+          {identity && (
             <p className="bg-body-sm mb-4 text-(--text-muted)">
-              Responding as <strong className="text-(--text-primary)">{authUser.email}</strong>
+              Responding as{' '}
+              <strong className="text-(--text-primary)">{identity.kind === 'account' ? authUser?.email : identity.email}</strong>{' '}
+              <button type="button" className="font-semibold text-(--accent-soft-text) hover:underline" onClick={() => setIdentity(null)}>
+                Change
+              </button>
             </p>
           )}
           {!showReview && (
@@ -698,8 +641,6 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
 
             </>
           )}
-
-          {trackedEmail}
 
           {/* Honeypot: real respondents never see or reach this; a bot's scripted fill-everything
               behavior does, and that value is passed through to the backend as-is (Requirement 6.5). */}

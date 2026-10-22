@@ -30,27 +30,22 @@ describe('SettingsPanel: access mode', () => {
     expect(onUpdate).toHaveBeenCalledWith({ accessMode: 'tracked' });
   });
 
-  it('tracked mode explains the verification and that the emails never contain answers', () => {
+  it('offers two options only: anyone with the link, and anyone with a verified email', () => {
+    setup();
+    const options = Array.from((screen.getByLabelText('Who can respond') as HTMLSelectElement).options).map((o) => o.textContent);
+    expect(options).toEqual(['Anyone with the link', 'Anyone with a verified email']);
+  });
+
+  it('the verified-email option explains the code and Google, that answers are never emailed, and that fewer people may finish', () => {
     setup({ settings: { honeypotEnabled: true, accessMode: 'tracked' } });
-    expect(screen.getByText(/press Verify beside it/)).toBeInTheDocument();
+    expect(screen.getByText(/6-digit code we send them, or continue with Google/)).toBeInTheDocument();
     expect(screen.getByText(/The emails never contain their answers/)).toBeInTheDocument();
-    expect(screen.queryByText('Add an Email question to use this')).not.toBeInTheDocument();
+    expect(screen.getByText('Fewer people may finish')).toBeInTheDocument();
   });
 
-  it('tracked mode on a form with no Email question says to add one', () => {
-    setup({ settings: { honeypotEnabled: true, accessMode: 'tracked' }, hasEmailField: false });
-    expect(screen.getByText('Add an Email question to use this')).toBeInTheDocument();
-  });
-
-  it('other modes never ask for an Email question', () => {
-    setup({ settings: { honeypotEnabled: true, accessMode: 'open' }, hasEmailField: false });
-    expect(screen.queryByText('Add an Email question to use this')).not.toBeInTheDocument();
-  });
-
-  it('login mode warns about reduced completions', () => {
+  it('a form stored as the old "login" mode shows as the verified-email option', () => {
     setup({ settings: { honeypotEnabled: true, accessMode: 'login' } });
-    expect(screen.getByText('Requiring login reduces completions')).toBeInTheDocument();
-    expect(screen.getByText(/confirmation email and can also see their submission under My submissions/)).toBeInTheDocument();
+    expect((screen.getByLabelText('Who can respond') as HTMLSelectElement).value).toBe('tracked');
   });
 });
 
