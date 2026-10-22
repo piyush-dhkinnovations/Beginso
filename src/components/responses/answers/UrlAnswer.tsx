@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ExternalLink, Globe } from 'lucide-react';
+import { ExternalLink, Globe, Maximize2 } from 'lucide-react';
 import { bx, cn } from '@/lib/utils';
+import { Modal } from '@/components/ui/Modal';
 import { domainOf, safeHttpUrl, signInService, urlSettings } from '@/lib/fieldDisplay';
 import { responsesService } from '@/services/responses';
 import type { FormField } from '@/types/form';
@@ -43,10 +44,22 @@ function thumbClass({ size, ratio }: { size: Settings['previewSize']; ratio: Set
 function youtubeId(href: string): string | null {
   try {
     const u = new URL(href);
-    if (u.hostname === 'youtu.be') return u.pathname.slice(1).split('?')[0] || null;
-    if (u.hostname.includes('youtube.com')) return u.searchParams.get('v');
+    if (u.hostname === 'youtu.be') return u.pathname.slice(1).split('/')[0] || null;
+    if (u.hostname === 'youtube.com' || u.hostname.endsWith('.youtube.com')) {
+      if (u.pathname === '/watch') return u.searchParams.get('v');
+      return u.pathname.match(/^\/(?:embed|shorts|live)\/([^/?]+)/)?.[1] ?? null;
+    }
   } catch { /* ignore */ }
   return null;
+}
+
+function vimeoVideo(href: string): { id: string; hash?: string } | null {
+  try {
+    const u = new URL(href);
+    if (u.hostname !== 'vimeo.com' && !u.hostname.endsWith('.vimeo.com')) return null;
+    const match = u.pathname.match(/^\/(?:video\/)?(\d+)(?:\/([a-zA-Z0-9]+))?/);
+    return match ? { id: match[1], hash: match[2] } : null;
+  } catch { return null; }
 }
 
 /** Extract a Google Drive file ID from drive.google.com share/open/file URLs, or null. */
@@ -64,6 +77,8 @@ function googleDriveId(href: string): string | null {
 
 function RichPreview({ href, domain, service, scope, framed, size, ratio, small = false }: { href: string; domain: string; service: string | null; scope: string; framed: boolean; size: Settings['previewSize']; ratio: Settings['aspectRatio']; small?: boolean }) {
   const [imageFailed, setImageFailed] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(false);
+  const playerRef = useRef<HTMLDivElement>(null);
   // A sign-in host would only return its login or error page, so it is never scraped.
   const { data, isLoading } = useQuery({
     queryKey: ['link-preview', href],
@@ -74,6 +89,14 @@ function RichPreview({ href, domain, service, scope, framed, size, ratio, small 
   });
 
   const ytId = youtubeId(href);
+  const vimeo = vimeoVideo(href);
+  const videoEmbedUrl = ytId
+    ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(ytId)}?autoplay=1&rel=0`
+    : vimeo
+      ? `https://player.vimeo.com/video/${encodeURIComponent(vimeo.id)}?autoplay=1${vimeo.hash ? `&h=${encodeURIComponent(vimeo.hash)}` : ''}`
+      : null;
+  const videoName = ytId ? 'YouTube' : 'Vimeo';
+  const openVideo = () => setVideoOpen(true);
   const driveId = googleDriveId(href);
   // Platform-specific thumbnail CDNs — used when the preview service returns no image
   const platformThumb = ytId
@@ -84,6 +107,7 @@ function RichPreview({ href, domain, service, scope, framed, size, ratio, small 
 
   // Only show title when it adds information beyond the domain (avoids duplicate text when preview fails)
   const title = service ? `${service} file` : data?.title && data.title !== domain ? data.title : null;
+  const videoTitle = title ?? `${videoName} video`;
   const image = data?.image && !imageFailed ? data.image : (!imageFailed && platformThumb ? platformThumb : undefined);
   const stacked = framed && size === 'large';
   const thumb = thumbClass({ size, ratio }, framed);
@@ -91,12 +115,18 @@ function RichPreview({ href, domain, service, scope, framed, size, ratio, small 
   // The small card (Table layout): a thumbnail or monogram, the title and host, and Open. No full address line: it is in the link's title.
   if (small) {
     return (
+      <>
       <div className="flex w-full max-w-md min-w-0 items-center gap-3 overflow-hidden rounded-lg border border-(--border-default) bg-(--surface-card) p-2.5">
         {isLoading ? (
           <div aria-busy="true" className="size-12 shrink-0 animate-pulse rounded-md bg-(--bg-subtle)" />
         ) : image ? (
           // eslint-disable-next-line @next/next/no-img-element -- third-party thumbnail, intentionally not routed through next/image
-          <img src={image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setImageFailed(true)} className="size-12 shrink-0 rounded-md object-cover" />
+          videoEmbedUrl ? (
+            <button type="button" onClick={openVideo} aria-label="Play video" className="relative size-12 shrink-0 overflow-hidden rounded-md">
+              <img src={image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setImageFailed(true)} className="size-full object-cover" />
+              <span aria-hidden="true" className="absolute inset-0 grid place-items-center bg-black/30 text-white">▶</span>
+            </button>
+          ) : <img src={image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setImageFailed(true)} className="size-12 shrink-0 rounded-md object-cover" />
         ) : (
           <Monogram domain={domain} className="size-12" />
         )}
@@ -109,6 +139,16 @@ function RichPreview({ href, domain, service, scope, framed, size, ratio, small 
           </a>
         </div>
       </div>
+      {videoEmbedUrl && <Modal isOpen={videoOpen} onClose={() => setVideoOpen(false)} title={videoTitle} description={domain} size="lg">
+        <div ref={playerRef} className="relative w-full overflow-hidden rounded-lg bg-black" style={{ aspectRatio: '16 / 9' }}>
+          <iframe title={videoTitle} src={videoEmbedUrl} className="absolute inset-0 size-full" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <button type="button" onClick={() => playerRef.current?.requestFullscreen?.()} className="inline-flex items-center gap-2 text-(--text-link) hover:underline"><Maximize2 size={16} aria-hidden="true" /> Full screen</button>
+          <a {...LINK_PROPS} href={href} className="inline-flex items-center gap-1 text-(--text-link) hover:underline">Open on {videoName} <ExternalLink size={13} aria-hidden="true" /></a>
+        </div>
+      </Modal>}
+      </>
     );
   }
 
@@ -118,7 +158,10 @@ function RichPreview({ href, domain, service, scope, framed, size, ratio, small 
         <div aria-busy="true" className={cn('animate-pulse bg-(--bg-subtle)', thumb, !stacked && framed && 'self-stretch')} />
       ) : image ? (
         // eslint-disable-next-line @next/next/no-img-element -- third-party thumbnail, intentionally not routed through next/image
-        <img
+        videoEmbedUrl ? <button type="button" onClick={openVideo} aria-label="Play video" className={cn('group relative overflow-hidden bg-black', thumb, !stacked && framed && 'self-stretch')}>
+          <img src={image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setImageFailed(true)} className="size-full object-cover" />
+          <span aria-hidden="true" className="absolute inset-0 grid place-items-center bg-black/20 text-white transition-colors group-hover:bg-black/40"><span className="grid size-12 place-items-center rounded-full bg-black/65 text-xl">▶</span></span>
+        </button> : <img
           src={image}
           alt=""
           loading="lazy"
@@ -138,6 +181,15 @@ function RichPreview({ href, domain, service, scope, framed, size, ratio, small 
           <ExternalLink size={13} aria-hidden="true" />
         </a>
       </div>
+      {videoEmbedUrl && <Modal isOpen={videoOpen} onClose={() => setVideoOpen(false)} title={videoTitle} description={domain} size="lg">
+        <div ref={playerRef} className="relative w-full overflow-hidden rounded-lg bg-black" style={{ aspectRatio: '16 / 9' }}>
+          <iframe title={videoTitle} src={videoEmbedUrl} className="absolute inset-0 size-full" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowFullScreen />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <button type="button" onClick={() => playerRef.current?.requestFullscreen?.()} className="inline-flex items-center gap-2 text-(--text-link) hover:underline"><Maximize2 size={16} aria-hidden="true" /> Full screen</button>
+          <a {...LINK_PROPS} href={href} className="inline-flex items-center gap-1 text-(--text-link) hover:underline">Open on {videoName} <ExternalLink size={13} aria-hidden="true" /></a>
+        </div>
+      </Modal>}
     </div>
   );
 }

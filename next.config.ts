@@ -30,7 +30,14 @@ const connectSources = isDevelopment
       "https://*.firebaseio.com",
       "wss://*.firebaseio.com",
     ].filter(Boolean);
-const frameSources = ["'self'", firebaseAuthOrigin, "https://accounts.google.com"].filter(Boolean);
+const frameSources = [
+  "'self'",
+  firebaseAuthOrigin,
+  "https://accounts.google.com",
+  "https://www.youtube-nocookie.com",
+  "https://www.youtube.com",
+  "https://player.vimeo.com",
+].filter(Boolean);
 const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://apis.google.com https://maps.googleapis.com${isDevelopment ? " 'unsafe-eval'" : ""}`,
