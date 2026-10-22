@@ -12,6 +12,7 @@ import { PageHeader, Button, ButtonLink, Card, Badge, EmptyState } from '@/compo
 import { Modal } from '@/components/ui/Modal';
 import { useToast } from '@/components/ui/Toast';
 import { LeaveWorkspaceModal } from '@/components/workspaces/LeaveWorkspaceModal';
+import { WorkspaceLogo } from '@/components/workspaces/WorkspaceLogo';
 import { CardGridSkeleton } from '@/components/ui/PageSkeletons';
 import type { WorkspaceListItem } from '@/types/workspace';
 
@@ -138,16 +139,17 @@ export default function WorkspacesPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredWorkspaces.map((workspace) => (
                 <Card key={workspace.id} className="flex flex-col justify-between gap-4 h-full transition-shadow hover:shadow-(--shadow-hover) border border-(--border-default) hover:border-(--border-strong)">
-                  <Link href={`/w/${workspace.slug}`} className="flex flex-col gap-2 no-underline">
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="bg-body font-semibold text-(--text-primary)">{workspace.name}</h3>
-                      <Badge>{ROLE_LABELS[workspace.role]}</Badge>
+                  <Link href={`/w/${workspace.slug}`} className="flex items-start gap-3 no-underline">
+                    <WorkspaceLogo logo={workspace.logo} />
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <h3 className="bg-body line-clamp-2 break-words font-semibold text-(--text-primary)">{workspace.name}</h3>
+                      {typeof workspace.memberCount === 'number' && (
+                        <p className="bg-caption text-(--text-muted)">
+                          {workspace.memberCount} member{workspace.memberCount !== 1 ? 's' : ''}
+                        </p>
+                      )}
                     </div>
-                    {typeof workspace.memberCount === 'number' && (
-                      <p className="bg-caption text-(--text-muted)">
-                        {workspace.memberCount} member{workspace.memberCount !== 1 ? 's' : ''}
-                      </p>
-                    )}
+                    <Badge>{ROLE_LABELS[workspace.role]}</Badge>
                   </Link>
                   <div className="flex items-center justify-between gap-2 pt-2 border-t border-(--border-default)">
                     {workspace.isOwner ? (

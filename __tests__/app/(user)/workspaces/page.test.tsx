@@ -66,6 +66,19 @@ describe('WorkspacesPage', () => {
     expect(screen.queryByText('member')).not.toBeInTheDocument();
   });
 
+  it("shows each workspace's own logo on its card, and the BeginSo mark when it has none", async () => {
+    mockList.mockResolvedValue([
+      { id: 'w1', name: 'Acme Inc', slug: 'acme', role: 'owner', memberCount: 3, logo: 'https://cdn.example.com/acme.png' },
+      { id: 'w2', name: 'Beta Co', slug: 'beta', role: 'member', memberCount: 1, logo: null },
+    ]);
+    const { container } = renderPage();
+    await screen.findByText('Acme Inc');
+    const cards = Array.from(container.querySelectorAll('h3')).map((h) => h.closest('a')!);
+    expect(cards[0].querySelector('img')).toHaveAttribute('src', 'https://cdn.example.com/acme.png');
+    expect(cards[1].querySelector('img')).toHaveAttribute('src', '/favicon.svg');
+    expect(cards[0].querySelector('img')).toHaveAttribute('aria-hidden', 'true'); // decorative: the name is right beside it
+  });
+
   it('each card navigates to /w/:slug', async () => {
     mockList.mockResolvedValue([{ id: 'w1', name: 'Acme Inc', slug: 'acme', role: 'owner' }]);
     renderPage();
