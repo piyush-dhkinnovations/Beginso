@@ -40,7 +40,6 @@ function schemaFor(slug: string): PublicFormSchema {
       pages: [{ id: 'p1', order: 0, title: 'Verified email form' }],
       fields: [
         { fieldId: 'f-name', pageId: 'p1', type: 'short_text', label: 'Full name', required: true, deleted: false, order: 0 },
-        { fieldId: 'f-mail', pageId: 'p1', type: 'email', label: 'Email address', required: true, deleted: false, order: 1 },
       ],
       settings: { ...mockPublicFormSchema.settings, accessMode: 'tracked' },
     };
