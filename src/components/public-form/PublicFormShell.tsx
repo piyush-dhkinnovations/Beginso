@@ -348,10 +348,12 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
         setSubmitError('We could not confirm that your response was received. Please check your connection and try again.');
       } else if (result.status === 422 && result.fieldErrors?.length && applyServerFieldErrors(result.fieldErrors)) {
         // handled: each message sits on its own field and focus is moving there
-      } else if (result.code === 'EMAIL_NOT_VERIFIED' || result.code === 'LOGIN_REQUIRED') {
+      } else if (accessMode === 'tracked' && (result.code === 'EMAIL_NOT_VERIFIED' || result.code === 'LOGIN_REQUIRED')) {
         // The proof was used up, timed out, or the sign-in ended: back to the gate, with the answers kept on the page.
         setIdentity(null);
         setGateNotice('Your confirmation ran out. Confirm your email again to send your answers; nothing you typed is lost.');
+      } else if (result.code === 'LOGIN_REQUIRED') {
+        setSubmitError('Your sign-in has expired. Please sign in again to submit.');
       } else if (result.status === 429) {
         setSubmitError('Too many submissions from your connection. Please wait a minute and try again.');
       } else if ((result.status === 422 || result.status === 400) && result.message) {
