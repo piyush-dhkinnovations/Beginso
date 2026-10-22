@@ -46,7 +46,7 @@ export function Backdrop({ branding, previewMode, children }: { branding: Public
  *  the main website. A new tab, so it never replaces a form someone is half way through, and works inside an embed iframe. */
 function MadeWithBeginso() {
   return (
-    <div className="flex justify-end px-4 pb-5 md:px-10">
+    <div className="fixed bottom-4 right-4 z-50 md:bottom-6 md:right-6">
       <a
         href="/"
         target="_blank"

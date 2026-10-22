@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/Input';
 import { Radio } from '@/components/ui/Radio';
 import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
-import { CURRENCY_OPTIONS, IMAGE_MAX_COUNT_OPTIONS, currencyOf, imageSettings, urlSettings } from '@/lib/fieldDisplay';
+import { CURRENCY_OPTIONS, MAX_IMAGES_PER_FIELD, currencyOf, imageSettings, urlSettings } from '@/lib/fieldDisplay';
 import { OptionsEditor } from './OptionsEditor';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -396,6 +396,7 @@ function ImageDisplaySection({
   const uid = field.fieldId;
   const s = imageSettings(field);
   const set = (updates: Partial<Extract<FormField, { type: 'image_upload' }>>) => onUpdate(uid, updates as Partial<FormField>);
+  const [maxImagesInput, setMaxImagesInput] = useState(String(s.maxImages));
 
   return (
     <div className="flex flex-col gap-4 rounded-lg border border-(--border-default) p-4">
@@ -441,24 +442,24 @@ function ImageDisplaySection({
       />
 
       <PanelSection label="Uploads">
-        <div className="flex items-center justify-between py-1">
-          <label htmlFor={`${uid}-multiple`} className="bg-body-sm font-medium text-(--text-secondary) cursor-pointer">
-            Allow multiple images
-          </label>
-          <Switch id={`${uid}-multiple`} checked={s.allowMultiple} onChange={(allowMultiple) => set({ allowMultiple })} />
-        </div>
-        {s.allowMultiple && (
-          <Select
-            id={`${uid}-max-images`}
-            label="Maximum images"
-            value={String(s.maxImages)}
-            onChange={(e) => set({ maxImages: Number(e.target.value) })}
-          >
-            {IMAGE_MAX_COUNT_OPTIONS.map((n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </Select>
-        )}
+        <Input
+          id={`${uid}-max-images`}
+          label="Maximum images"
+          type="number"
+          min={1}
+          max={MAX_IMAGES_PER_FIELD}
+          step={1}
+          value={maxImagesInput}
+          onChange={(e) => setMaxImagesInput(e.target.value)}
+          onBlur={() => {
+            const entered = Number(maxImagesInput);
+            const maxImages = Number.isFinite(entered)
+              ? Math.min(MAX_IMAGES_PER_FIELD, Math.max(1, Math.floor(entered)))
+              : s.maxImages;
+            setMaxImagesInput(String(maxImages));
+            set({ allowMultiple: maxImages > 1, maxImages: maxImages > 1 ? maxImages : undefined });
+          }}
+        />
         <p className="bg-caption text-(--text-muted)">JPG, PNG or WebP · up to {s.maxSizeMb} MB each.</p>
       </PanelSection>
 

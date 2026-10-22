@@ -17,7 +17,7 @@ import type {
 
 export const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 export const IMAGE_ACCEPT = IMAGE_MIME_TYPES.join(',');
-export const IMAGE_MAX_COUNT_OPTIONS = [2, 5, 10] as const;
+export const MAX_IMAGES_PER_FIELD = 10;
 export const DEFAULT_IMAGE_MAX_MB = 10;
 
 export interface ImageSettings {

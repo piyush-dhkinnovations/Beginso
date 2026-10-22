@@ -74,7 +74,9 @@ export function ImageUploadRenderer({ field, setValue, trigger, error, disabled,
     commit(picked.filter((p) => p.id !== id));
   }
 
-  const full = settings.allowMultiple && picked.length >= settings.maxImages;
+  const full = picked.length >= settings.maxImages;
+  const remaining = settings.maxImages - picked.length;
+  const addLabel = `Add ${remaining} more image${remaining === 1 ? '' : 's'}`;
 
   return (
     <FieldShell fieldId={field.fieldId} label={field.label} required={field.required} helpText={field.helpText} error={error} inline={inline}>
@@ -89,7 +91,7 @@ export function ImageUploadRenderer({ field, setValue, trigger, error, disabled,
         onChange={(e) => addFiles(e.target.files)}
       />
 
-      {!full && (
+      {!full && picked.length === 0 && (
         <div
           role="button"
           tabIndex={0}
@@ -144,6 +146,28 @@ export function ImageUploadRenderer({ field, setValue, trigger, error, disabled,
               </button>
             </li>
           ))}
+          {!full && (
+            <li>
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  addFiles(e.dataTransfer.files);
+                }}
+                disabled={disabled}
+                aria-label={settings.allowMultiple ? addLabel : 'Replace image'}
+                className={cn(
+                  'flex aspect-square w-full flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-(--border-default) bg-(--surface-card) p-3 text-center transition-colors hover:border-(--border-strong)',
+                  disabled && 'cursor-not-allowed opacity-60'
+                )}
+              >
+                <ImagePlus size={22} className="text-(--text-disabled)" aria-hidden="true" />
+                <span className="bg-body-sm text-(--text-secondary)">{settings.allowMultiple ? addLabel : 'Replace image'}</span>
+              </button>
+            </li>
+          )}
         </ul>
       )}
     </FieldShell>
