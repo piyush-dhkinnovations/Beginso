@@ -22,7 +22,7 @@ vi.mock('@/components/responses/answers/ImageAnswer', () => ({
   },
 }));
 vi.mock('@/components/responses/answers/UrlAnswer', () => ({
-  UrlAnswer: (p: { value: string; chip?: boolean }) => {
+  UrlAnswer: (p: { value: string; small?: boolean }) => {
     urlProps(p);
     return <a href={p.value}>{p.value}</a>;
   },
@@ -100,13 +100,13 @@ describe('links people can act on', () => {
     expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });
 
-  it('passes the variant to links so the Table can show a chip', () => {
+  it('passes the variant to links so the Table can show a small card', () => {
     urlProps.mockClear();
     draw(item({ field: field({ type: 'url' }), value: 'https://a.example/x' }), 'compact');
-    expect(urlProps).toHaveBeenCalledWith(expect.objectContaining({ chip: true }));
+    expect(urlProps).toHaveBeenCalledWith(expect.objectContaining({ small: true }));
     urlProps.mockClear();
     draw(item({ field: field({ type: 'url' }), value: 'https://a.example/x' }), 'full');
-    expect(urlProps).toHaveBeenCalledWith(expect.objectContaining({ chip: false }));
+    expect(urlProps).toHaveBeenCalledWith(expect.objectContaining({ small: false }));
   });
 });
 

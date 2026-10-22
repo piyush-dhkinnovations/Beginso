@@ -7,7 +7,7 @@ import { submittedItems, TOTAL_QUESTIONS } from '../../fixtures/submittedRespons
 vi.mock('@/components/responses/answers/FileAnswer', () => ({ FileAnswer: () => <div /> }));
 vi.mock('@/components/responses/answers/ImageAnswer', () => ({ ImageAnswer: () => <div /> }));
 vi.mock('@/components/responses/answers/UrlAnswer', () => ({
-  UrlAnswer: ({ value, chip }: { value: string; chip?: boolean }) => <a href={value} data-chip={String(!!chip)}>{value}</a>,
+  UrlAnswer: ({ value, small }: { value: string; small?: boolean }) => <a href={value} data-small={String(!!small)}>{value}</a>,
 }));
 
 const items = submittedItems();
@@ -93,24 +93,38 @@ describe('List', () => {
 });
 
 describe('Table', () => {
-  it('is a real table: one row per question, label in a row header, 35% wide', () => {
+  it('is a real table: a header row, then one row per question with the question in a row header', () => {
     render(<LAYOUTS.table {...base} />);
     const table = screen.getByRole('table');
-    expect(within(table).getAllByRole('row')).toHaveLength(TOTAL_QUESTIONS);
+    expect(within(table).getAllByRole('row')).toHaveLength(TOTAL_QUESTIONS + 1);
     const header = within(table).getByRole('rowheader', { name: /Content Title/ });
-    expect(header).toHaveClass('w-[35%]');
     expect(header.closest('tr')).toHaveTextContent('Night Train');
   });
 
-  it('shows links as compact chips (not preview cards)', () => {
+  it('names its two columns, Question and Answer, so nobody has to guess', () => {
     render(<LAYOUTS.table {...base} />);
-    const chips = screen.getAllByRole('link').filter((a) => a.getAttribute('data-chip') !== null);
-    expect(chips.length).toBeGreaterThan(0);
-    expect(chips.every((a) => a.getAttribute('data-chip') === 'true')).toBe(true);
+    const table = screen.getByRole('table');
+    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Question', 'Answer']);
+  });
+
+  it('splits the width 30 / 70: the question column is 30%, the answer column 70%', () => {
+    const { container } = render(<LAYOUTS.table {...base} />);
+    const cols = container.querySelectorAll('colgroup > col');
+    expect(cols).toHaveLength(2);
+    expect(cols[0]).toHaveClass('w-[30%]');
+    expect(cols[1]).toHaveClass('w-[70%]');
+    expect(container.querySelector('table')).toHaveClass('table-fixed'); // so the columns keep those widths
+  });
+
+  it('shows links as small cards', () => {
+    render(<LAYOUTS.table {...base} />);
+    const links = screen.getAllByRole('link').filter((a) => a.getAttribute('data-small') !== null);
+    expect(links.length).toBeGreaterThan(0);
+    expect(links.every((a) => a.getAttribute('data-small') === 'true')).toBe(true);
   });
 
   it('Grid and List ask for the full link card instead', () => {
     render(<LAYOUTS.list {...base} />);
-    expect(screen.getAllByRole('link').filter((a) => a.getAttribute('data-chip') === 'true')).toHaveLength(0);
+    expect(screen.getAllByRole('link').filter((a) => a.getAttribute('data-small') === 'true')).toHaveLength(0);
   });
 });

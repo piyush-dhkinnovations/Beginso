@@ -15,7 +15,7 @@ vi.mock('@/components/ui/Toast', () => ({ useToast: () => ({ toast: vi.fn() }) }
 vi.mock('@/components/responses/answers/FileAnswer', () => ({ FileAnswer: () => <div /> }));
 vi.mock('@/components/responses/answers/ImageAnswer', () => ({ ImageAnswer: () => <div /> }));
 vi.mock('@/components/responses/answers/UrlAnswer', () => ({
-  UrlAnswer: ({ value, chip }: { value: string; chip?: boolean }) => <a href={value}>{chip ? 'chip:' : 'card:'}{value}</a>,
+  UrlAnswer: ({ value, small }: { value: string; small?: boolean }) => <a href={value}>{small ? 'small:' : 'card:'}{value}</a>,
 }));
 
 const svc = vi.hoisted(() => ({ get: vi.fn(), savePersonal: vi.fn(), clearPersonal: vi.fn(), saveFormDefault: vi.fn() }));
@@ -102,9 +102,9 @@ describe('switching layouts', () => {
 
     await userEvent.click(screen.getByRole('radio', { name: 'Table' }));
     expect(layoutOf()).toBe('table');
-    expect(within(card()).getAllByRole('row')).toHaveLength(TOTAL_QUESTIONS);
+    expect(within(card()).getAllByRole('row')).toHaveLength(TOTAL_QUESTIONS + 1); // plus the Question / Answer header row
     everyAnswer();
-    expect(card().textContent).toContain('chip:'); // links become chips in the Table...
+    expect(card().textContent).toContain('small:'); // links become small cards in the Table...
     expect(card().textContent).not.toContain('card:'); // ...and only there
 
     await userEvent.click(screen.getByRole('radio', { name: 'Grid' }));

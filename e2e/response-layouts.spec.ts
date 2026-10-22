@@ -169,7 +169,7 @@ test.describe('Submitted response layouts', () => {
     await page.getByRole('radio', { name: 'Table' }).click();
     await expect(card(page)).toHaveAttribute('data-layout', 'table');
     await expectEveryQuestion(page);
-    await expect(card(page).getByRole('row')).toHaveCount(QUESTIONS.length);
+    await expect(card(page).getByRole('row')).toHaveCount(QUESTIONS.length + 1); // plus the Question / Answer header row
     await page.screenshot({ path: testInfo.outputPath('drawer-table.png') });
 
     // Switching never refetched the response, and was saved (debounced).

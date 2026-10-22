@@ -94,25 +94,38 @@ describe('UrlAnswer', () => {
     expect(screen.getByRole('link', { name: /Opens in a new tab/ })).toHaveAttribute('rel', 'noopener noreferrer nofollow');
   });
 
-  describe('chip (the Table layout)', () => {
-    const renderChip = (value: string) => {
+  describe('small card (the Table layout)', () => {
+    const renderSmall = (value: string, f?: FormField) => {
       const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
       return render(
         <QueryClientProvider client={client}>
-          <UrlAnswer value={value} field={undefined} scope="acme" chip />
+          <UrlAnswer value={value} field={f} scope="acme" small />
         </QueryClientProvider>
       );
     };
 
-    it('is one small hardened link showing the host, with no preview request', () => {
-      renderChip('https://www.example.com/some/long/path');
-      const a = screen.getByRole('link');
-      expect(a).toHaveAttribute('href', 'https://www.example.com/some/long/path');
+    it('is the list card in a small size: title, host and one hardened Open link', async () => {
+      mockPreview.mockResolvedValue({ title: 'Destiny of a migrant', image: null });
+      renderSmall('https://vimeo.com/999576491?ts=0');
+      expect(await screen.findByText('Destiny of a migrant')).toBeInTheDocument();
+      expect(screen.getByText('vimeo.com')).toBeInTheDocument();
+      const a = screen.getByRole('link', { name: /Open website/ });
+      expect(a).toHaveAttribute('href', 'https://vimeo.com/999576491?ts=0');
       expect(a).toHaveAttribute('rel', 'noopener noreferrer nofollow');
       expect(a).toHaveAttribute('target', '_blank');
-      expect(a).toHaveTextContent('example.com');
-      expect(a).toHaveTextContent('Open');
-      expect(mockPreview).not.toHaveBeenCalled();
+      expect(screen.getAllByRole('link')).toHaveLength(1);
+    });
+
+    it('shows a monogram when the page has no thumbnail', async () => {
+      mockPreview.mockResolvedValue({ title: null, image: null });
+      renderSmall('https://example.com/page');
+      await waitFor(() => expect(screen.getByText('e')).toBeInTheDocument());
+    });
+
+    it('is the same small card whatever style the form owner chose for the question', async () => {
+      mockPreview.mockResolvedValue({ title: 'T', image: null });
+      renderSmall('https://example.com/', { type: 'url', urlPreviewStyle: 'text' } as unknown as FormField);
+      expect(await screen.findByRole('link', { name: /Open website/ })).toBeInTheDocument();
     });
 
     it.each([
@@ -121,14 +134,15 @@ describe('UrlAnswer', () => {
       ['https://www.dropbox.com/s/abc/file.pdf', 'Dropbox file'],
       ['https://www.figma.com/file/abc', 'Figma file'],
     ])('%s is named, never scraped, and never "Page not found"', (href, label) => {
-      renderChip(href);
-      expect(screen.getByRole('link')).toHaveTextContent(label);
+      renderSmall(href);
+      expect(screen.getByText(label)).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /Opens in a new tab/ })).toHaveAttribute('href', href);
       expect(screen.queryByText(/Page not found/)).not.toBeInTheDocument();
       expect(mockPreview).not.toHaveBeenCalled();
     });
 
     it('text that is not a web address is not a link', () => {
-      renderChip('javascript:alert(1)');
+      renderSmall('javascript:alert(1)');
       expect(screen.queryByRole('link')).not.toBeInTheDocument();
     });
   });

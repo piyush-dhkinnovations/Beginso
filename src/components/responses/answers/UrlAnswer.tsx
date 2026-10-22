@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ExternalLink, Globe } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { bx, cn } from '@/lib/utils';
 import { domainOf, safeHttpUrl, signInService, urlSettings } from '@/lib/fieldDisplay';
 import { responsesService } from '@/services/responses';
 import type { FormField } from '@/types/form';
@@ -12,17 +12,18 @@ interface UrlAnswerProps {
   value: string;
   field?: FormField;
   scope: string;
-  /** Compact chip for the Table layout. */
-  chip?: boolean;
+  /** A small card for the Table layout: the same card as the List layout, in a small size (thumbnail or monogram, title, host, Open). */
+  small?: boolean;
 }
 
 // Opens in a new tab with no opener and no referrer. The site is only ever LINKED — never framed or embedded —
 // and the link is only built for a plain http(s) address (anything else is shown as inert text).
 const LINK_PROPS = { target: '_blank', rel: 'noopener noreferrer nofollow', referrerPolicy: 'no-referrer' } as const;
 
+// bx, not cn: cn (tailwind-merge) takes the design system's bg-body-sm text style for a background colour and drops bg-(--accent-soft).
 function Monogram({ domain, className }: { domain: string; className?: string }) {
   return (
-    <span aria-hidden="true" className={cn('flex shrink-0 items-center justify-center rounded-md bg-(--accent-soft) bg-body-sm font-semibold uppercase text-(--accent-soft-text)', className)}>
+    <span aria-hidden="true" className={bx('flex shrink-0 items-center justify-center rounded-md bg-(--accent-soft) bg-body-sm font-semibold uppercase text-(--accent-soft-text)', className)}>
       {domain.charAt(0) || <Globe size={14} />}
     </span>
   );
@@ -61,7 +62,7 @@ function googleDriveId(href: string): string | null {
   return null;
 }
 
-function RichPreview({ href, domain, service, scope, framed, size, ratio }: { href: string; domain: string; service: string | null; scope: string; framed: boolean; size: Settings['previewSize']; ratio: Settings['aspectRatio'] }) {
+function RichPreview({ href, domain, service, scope, framed, size, ratio, small = false }: { href: string; domain: string; service: string | null; scope: string; framed: boolean; size: Settings['previewSize']; ratio: Settings['aspectRatio']; small?: boolean }) {
   const [imageFailed, setImageFailed] = useState(false);
   // A sign-in host would only return its login or error page, so it is never scraped.
   const { data, isLoading } = useQuery({
@@ -86,6 +87,30 @@ function RichPreview({ href, domain, service, scope, framed, size, ratio }: { hr
   const image = data?.image && !imageFailed ? data.image : (!imageFailed && platformThumb ? platformThumb : undefined);
   const stacked = framed && size === 'large';
   const thumb = thumbClass({ size, ratio }, framed);
+
+  // The small card (Table layout): a thumbnail or monogram, the title and host, and Open. No full address line: it is in the link's title.
+  if (small) {
+    return (
+      <div className="flex w-full max-w-md min-w-0 items-center gap-3 overflow-hidden rounded-lg border border-(--border-default) bg-(--surface-card) p-2.5">
+        {isLoading ? (
+          <div aria-busy="true" className="size-12 shrink-0 animate-pulse rounded-md bg-(--bg-subtle)" />
+        ) : image ? (
+          // eslint-disable-next-line @next/next/no-img-element -- third-party thumbnail, intentionally not routed through next/image
+          <img src={image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setImageFailed(true)} className="size-12 shrink-0 rounded-md object-cover" />
+        ) : (
+          <Monogram domain={domain} className="size-12" />
+        )}
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          {title && <p className="truncate bg-body-sm font-semibold text-(--text-primary)">{title}</p>}
+          <p className="truncate bg-caption text-(--text-muted)" title={href}>{domain}</p>
+          <a {...LINK_PROPS} href={href} className="inline-flex w-fit items-center gap-1 bg-body-sm font-medium text-(--text-link) hover:underline">
+            {service ? 'Opens in a new tab' : 'Open website'}
+            <ExternalLink size={13} aria-hidden="true" />
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn('flex min-w-0 overflow-hidden', stacked && 'flex-col', framed ? 'rounded-lg border border-(--border-default) bg-(--surface-card)' : 'gap-3')}>
@@ -117,7 +142,7 @@ function RichPreview({ href, domain, service, scope, framed, size, ratio }: { hr
   );
 }
 
-export function UrlAnswer({ value, field, scope, chip = false }: UrlAnswerProps) {
+export function UrlAnswer({ value, field, scope, small = false }: UrlAnswerProps) {
   const url = safeHttpUrl(value);
   // Not a plain web address (should not happen — the form validates it): shown as text, never as a link.
   if (!url) return <span className="break-all">{value}</span>;
@@ -126,24 +151,8 @@ export function UrlAnswer({ value, field, scope, chip = false }: UrlAnswerProps)
   const domain = domainOf(url);
   const href = url.href;
 
-  // The Table layout: one small chip, no preview request, no thumbnail. A sign-in host is named, never scraped.
-  if (chip) {
-    const service = signInService(url);
-    return (
-      <a
-        {...LINK_PROPS}
-        href={href}
-        title={href}
-        className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-(--border-default) bg-(--surface-card) py-0.5 pl-2 pr-2.5 text-(--text-primary) hover:text-(--text-link)"
-      >
-        <Globe size={13} className="shrink-0 text-(--text-muted)" aria-hidden="true" />
-        <span className="max-w-56 truncate bg-body-sm font-medium">{service ? `${service} file` : domain}</span>
-        <span className="bg-body-sm text-(--text-link)">Open</span>
-        <ExternalLink size={12} className="shrink-0 text-(--text-muted)" aria-hidden="true" />
-        <span className="sr-only">(opens in a new tab)</span>
-      </a>
-    );
-  }
+  // The Table layout always gets the small card, whatever style the form's owner chose for this link question.
+  if (small) return <RichPreview href={href} domain={domain} service={signInService(url)} scope={scope} framed size="small" ratio="1:1" small />;
 
   if (style === 'text') {
     return (

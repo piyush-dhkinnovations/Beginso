@@ -11,7 +11,7 @@ import { FileAnswer } from './FileAnswer';
 import { ImageAnswer } from './ImageAnswer';
 import { UrlAnswer } from './UrlAnswer';
 
-/** `full` fills the row (Grid, List). `compact` keeps one answer on one line of chips (Table). */
+/** `full` fills the row (Grid, List). `compact` is the Table layout: small cards and chips for links and files. */
 export type AnswerVariant = 'full' | 'compact';
 
 interface AnswerValueProps {
@@ -133,7 +133,7 @@ function renderValue(item: AnswerItem, scope: string, variant: AnswerVariant, qu
         <span className={cn('font-serif italic', compact ? 'text-lg' : 'text-2xl')}>{String(value)}</span>
       );
     case 'url':
-      return <UrlAnswer value={String(value)} field={field} scope={scope} chip={compact} />;
+      return <UrlAnswer value={String(value)} field={field} scope={scope} small={compact} />;
     case 'email': {
       const text = String(value).trim();
       return EMAIL.test(text) ? (
