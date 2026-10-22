@@ -1,3 +1,4 @@
+import { repairPageRefs } from '@/lib/builderPages';
 import { publicFormSlug } from '@/lib/publicFormUrl';
 import { wouldCreateCycle } from '@/lib/logicGraph';
 import { convertField, convertibleTypes } from '@/lib/fieldConversion';
@@ -168,8 +169,9 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       const defaultPageId = pages[0].id;
 
       // Backfill pageId on any field that predates the pages feature.
-      const fields = (form.fields || []).map((f) =>
-        f.pageId ? f : ({ ...f, pageId: defaultPageId } as FormField)
+      const fields = repairPageRefs(
+        (form.fields || []).map((f) => (f.pageId ? f : ({ ...f, pageId: defaultPageId } as FormField))),
+        pages
       );
 
       return {
@@ -692,7 +694,11 @@ export const useBuilderStore = create<BuilderState>((set) => ({
         f.order = idx;
       });
 
-      const untouched = state.fields.filter((f) => f.deleted || (f.pageId !== targetPage.id && f.pageId !== pageId));
+      // Soft-deleted fields of the removed page cannot keep pointing at it: they are still sent on save, and the server refuses a field whose
+      // page does not exist ("Field pageId ... does not exist in pages"), which made every save after a page delete fail.
+      const untouched = state.fields
+        .filter((f) => f.deleted || (f.pageId !== targetPage.id && f.pageId !== pageId))
+        .map((f) => (f.pageId === pageId ? ({ ...f, pageId: targetPage.id } as FormField) : f));
       const finalFields = [...mergedPageFields, ...untouched];
 
       const nextActivePageId = state.activePageId === pageId ? targetPage.id : state.activePageId;

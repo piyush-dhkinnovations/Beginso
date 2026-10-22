@@ -1,3 +1,4 @@
+import { repairPageRefs } from '@/lib/builderPages';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { isAxiosError } from 'axios';
 import { formsService } from '@/services/forms';
@@ -36,7 +37,8 @@ export function saveFormSnapshot(
     // Once another tab/person has saved first, nothing more is sent: the next save would overwrite their work.
     if (own && store.stale) throw new Error('This form changed elsewhere; reload before saving.');
     const payload = {
-      fields: snap.fields,
+      // Never send a field that points at a page that is gone (the server refuses the whole save): this also heals a form that is already stuck.
+      fields: repairPageRefs(snap.fields, snap.pages),
       title: snap.formTitle,
       pages: snap.pages,
       branding: snap.branding,
