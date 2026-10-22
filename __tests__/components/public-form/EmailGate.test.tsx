@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 vi.mock('@/lib/firebase', () => ({ auth: {} }));
@@ -18,6 +18,7 @@ const onVerified = vi.fn();
 const mount = (notice?: string) => render(<EmailGate slug="my form" formTitle="Film submissions" notice={notice} onVerified={onVerified} />);
 
 beforeEach(() => {
+  sessionStorage.clear();
   onVerified.mockReset();
   login.mockReset().mockResolvedValue(undefined);
   loginWithGoogle.mockReset().mockResolvedValue(undefined);
@@ -25,6 +26,12 @@ beforeEach(() => {
   svc.requestEmailVerification.mockReset().mockResolvedValue({ verificationId: 'vid-1234567890123456789012' });
   svc.checkEmailCode.mockReset().mockResolvedValue({ state: 'verified', email: 'a@b.co' });
 });
+
+// The code boxes: click the first and type; each digit moves on to the next.
+async function typeCode(code: string) {
+  await userEvent.click(await screen.findByLabelText('Digit 1 of 6'));
+  await userEvent.keyboard(code);
+}
 
 async function sendCodeTo(address: string) {
   await userEvent.type(screen.getByLabelText('Email address'), address);
@@ -56,33 +63,71 @@ describe('EmailGate', () => {
     expect(svc.requestEmailVerification).toHaveBeenCalledWith('my form', 'a@b.co');
     expect(await screen.findByRole('heading', { name: 'Enter your code' })).toBeInTheDocument();
     expect(screen.getByText('a@b.co')).toBeInTheDocument();
-    expect(screen.getByLabelText('6-digit code')).toHaveAttribute('autocomplete', 'one-time-code');
+    expect(screen.getByRole('group', { name: '6-digit code' })).toBeInTheDocument();
+    expect(screen.getAllByLabelText(/^Digit \d of 6$/)).toHaveLength(6);
+    expect(screen.getByLabelText('Digit 1 of 6')).toHaveAttribute('autocomplete', 'one-time-code');
+    expect(screen.getByLabelText('Digit 1 of 6')).toHaveFocus();
   });
 
   it('checks the code by itself on the sixth digit and hands the proof up', async () => {
     mount();
     await sendCodeTo('a@b.co');
-    await userEvent.type(await screen.findByLabelText('6-digit code'), '123456');
+    await typeCode('123456');
     await waitFor(() => expect(svc.checkEmailCode).toHaveBeenCalledWith('my form', 'vid-1234567890123456789012', '123456'));
     expect(onVerified).toHaveBeenCalledWith({ kind: 'code', email: 'a@b.co', verificationId: 'vid-1234567890123456789012' });
   });
 
-  it('only digits go in, and never more than six', async () => {
+  it('only digits go in, one per box', async () => {
     mount();
     await sendCodeTo('a@b.co');
-    const input = await screen.findByLabelText('6-digit code');
-    await userEvent.type(input, '12ab34-5678');
-    expect(input).toHaveValue('123456');
+    await userEvent.click(await screen.findByLabelText('Digit 1 of 6'));
+    await userEvent.keyboard('1a2-3');
+    expect(['Digit 1 of 6', 'Digit 2 of 6', 'Digit 3 of 6', 'Digit 4 of 6'].map((n) => (screen.getByLabelText(n) as HTMLInputElement).value)).toEqual(['1', '2', '3', '']);
+  });
+
+  it('a pasted code fills all six boxes, spaces and dashes and all', async () => {
+    mount();
+    await sendCodeTo('a@b.co');
+    await userEvent.click(await screen.findByLabelText('Digit 1 of 6'));
+    await userEvent.paste('482 913');
+    await waitFor(() => expect(svc.checkEmailCode).toHaveBeenCalledWith('my form', 'vid-1234567890123456789012', '482913'));
+    expect(onVerified).toHaveBeenCalled();
+  });
+
+  it('a code pasted into a later box still replaces the whole code', async () => {
+    mount();
+    await sendCodeTo('a@b.co');
+    await userEvent.click(await screen.findByLabelText('Digit 4 of 6'));
+    await userEvent.paste('482913');
+    await waitFor(() => expect(svc.checkEmailCode).toHaveBeenCalledWith('my form', 'vid-1234567890123456789012', '482913'));
+  });
+
+  it('an autofill of the whole code into the first box spreads across the boxes', async () => {
+    mount();
+    await sendCodeTo('a@b.co');
+    fireEvent.change(await screen.findByLabelText('Digit 1 of 6'), { target: { value: '482913' } });
+    await waitFor(() => expect(svc.checkEmailCode).toHaveBeenCalledWith('my form', 'vid-1234567890123456789012', '482913'));
+  });
+
+  it('Backspace steps back to the previous box and clears it', async () => {
+    mount();
+    await sendCodeTo('a@b.co');
+    await userEvent.click(await screen.findByLabelText('Digit 1 of 6'));
+    await userEvent.keyboard('12');
+    await userEvent.keyboard('{Backspace}'); // box 3 is empty: clears box 2 and moves there
+    expect((screen.getByLabelText('Digit 2 of 6') as HTMLInputElement).value).toBe('');
+    expect(screen.getByLabelText('Digit 2 of 6')).toHaveFocus();
+    expect((screen.getByLabelText('Digit 1 of 6') as HTMLInputElement).value).toBe('1');
   });
 
   it('says how many tries are left after a wrong code, and clears the box', async () => {
     svc.checkEmailCode.mockResolvedValue({ state: 'wrong', attemptsLeft: 4 });
     mount();
     await sendCodeTo('a@b.co');
-    const input = await screen.findByLabelText('6-digit code');
-    await userEvent.type(input, '000000');
+    await typeCode('000000');
     expect(await screen.findByText('That code is not right. 4 tries left.')).toBeInTheDocument();
-    expect(input).toHaveValue('');
+    expect(screen.getByLabelText('Digit 1 of 6')).toHaveValue('');
+    await waitFor(() => expect(screen.getByLabelText('Digit 1 of 6')).toHaveFocus()); // ready to type again
     expect(onVerified).not.toHaveBeenCalled();
   });
 
@@ -94,7 +139,7 @@ describe('EmailGate', () => {
     svc.checkEmailCode.mockResolvedValue({ state });
     mount();
     await sendCodeTo('a@b.co');
-    await userEvent.type(await screen.findByLabelText('6-digit code'), '000000');
+    await typeCode('000000');
     expect(await screen.findByText(text)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Send a new code/ })).toBeInTheDocument();
   });
@@ -121,11 +166,21 @@ describe('EmailGate', () => {
     expect(screen.getByLabelText('Email address')).toBeInTheDocument();
   });
 
-  it('Google signs in and comes back to this same form', async () => {
+  it('after Google the reload goes straight in as that account: no "Continue as" screen', async () => {
+    sessionStorage.setItem('beginso:gate-google:my form', '1');
+    mockAuth.mockReturnValue({ user: { email: 'me@x.co' }, login });
+    mount();
+    expect(screen.queryByRole('button', { name: /Continue as/ })).not.toBeInTheDocument();
+    await waitFor(() => expect(onVerified).toHaveBeenCalledWith({ kind: 'account' }));
+    expect(sessionStorage.getItem('beginso:gate-google:my form')).toBeNull(); // used once
+  });
+
+  it('signing in with Google leaves the one-time flag, then goes to this same form', async () => {
     mount();
     await userEvent.click(screen.getByRole('button', { name: /Continue with Google/ }));
     await waitFor(() => expect(login).toHaveBeenCalledWith('/f/my%20form'));
     expect(loginWithGoogle).toHaveBeenCalled();
+    expect(sessionStorage.getItem('beginso:gate-google:my form')).toBe('1');
   });
 
   it('a signed-in account continues in one click, with no code; "Use a different email" opens the code step', async () => {

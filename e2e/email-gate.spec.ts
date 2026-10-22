@@ -91,11 +91,13 @@ test.describe('Email gate', () => {
     expect(fake.requested).toEqual(['asha@example.com']);
     await page.screenshot({ path: testInfo.outputPath('gate-code.png') });
 
-    await page.getByLabel('6-digit code').fill('000000');
+    await page.getByLabel('Digit 1 of 6').click();
+    await page.keyboard.type('000000');
     await expect(page.getByText('That code is not right. 4 tries left.')).toBeVisible();
     await expect(page.getByLabel('Full name')).toHaveCount(0);
 
-    await page.getByLabel('6-digit code').fill(CODE); // the sixth digit sends it: no button to press
+    await page.getByLabel('Digit 1 of 6').click();
+    await page.keyboard.type(CODE); // the sixth digit sends it: no button to press
     await expect(page.getByLabel('Full name')).toBeVisible();
     await expect(page.getByText('Responding as')).toContainText('asha@example.com');
 
@@ -120,13 +122,50 @@ test.describe('Email gate', () => {
     expect(fake.requested).toHaveLength(0);
   });
 
+  test('a pasted code fills all six boxes and goes in', async ({ page, context }) => {
+    await fakeBackend(context);
+    await signedOut(page);
+    await openGate(page);
+    await page.getByLabel('Email address').fill('asha@example.com');
+    await page.getByRole('button', { name: 'Send code' }).click();
+    const first = page.getByLabel('Digit 1 of 6');
+    await first.focus();
+    // a real paste: the browser's paste event with the code on the clipboard
+    await first.evaluate((el, code) => {
+      const data = new DataTransfer();
+      data.setData('text', code);
+      el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+    }, ` ${CODE.slice(0, 3)} ${CODE.slice(3)} `);
+    await expect(page.getByLabel('Full name')).toBeVisible();
+  });
+
+  test('the six boxes sit in one row, are touch sized, and fit at 390px', async ({ page, context }) => {
+    await page.setViewportSize({ width: 390, height: 800 });
+    await fakeBackend(context);
+    await signedOut(page);
+    await openGate(page);
+    await page.getByLabel('Email address').fill('asha@example.com');
+    await page.getByRole('button', { name: 'Send code' }).click();
+    await expect(page.getByLabel('Digit 6 of 6')).toBeVisible();
+    const boxes = [];
+    for (let i = 1; i <= 6; i += 1) boxes.push((await page.getByLabel(`Digit ${i} of 6`).boundingBox())!);
+    for (const b of boxes) {
+      expect(b.height).toBeGreaterThanOrEqual(44);
+      expect(b.width).toBeGreaterThanOrEqual(36);
+      expect(Math.abs(b.y - boxes[0].y)).toBeLessThan(2);
+    }
+    expect(boxes[5].x + boxes[5].width).toBeLessThanOrEqual(390);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+  });
+
   test('"Change" under Responding as goes back to the gate', async ({ page, context }) => {
     await fakeBackend(context);
     await signedOut(page);
     await openGate(page);
     await page.getByLabel('Email address').fill('asha@example.com');
     await page.getByRole('button', { name: 'Send code' }).click();
-    await page.getByLabel('6-digit code').fill(CODE);
+    await page.getByLabel('Digit 1 of 6').click();
+    await page.keyboard.type(CODE);
     await expect(page.getByLabel('Full name')).toBeVisible();
     await page.getByRole('button', { name: 'Change' }).click();
     await expect(page.getByRole('heading', { name: 'Confirm your email to respond' })).toBeVisible();

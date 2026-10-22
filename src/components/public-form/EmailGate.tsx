@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Mail } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { CodeInput } from '@/components/ui/CodeInput';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { authService } from '@/services/auth';
 import { useAuth } from '@/hooks/useAuth';
@@ -26,6 +27,17 @@ export interface EmailGateProps {
 }
 
 const RESEND_AFTER_S = 30;
+// Set just before the Google sign-in (which reloads the page onto this form): the reload then goes straight in as that account.
+const googleFlagKey = (slug: string) => `beginso:gate-google:${slug}`;
+function takeGoogleFlag(slug: string): boolean {
+  try {
+    const hit = sessionStorage.getItem(googleFlagKey(slug)) === '1';
+    if (hit) sessionStorage.removeItem(googleFlagKey(slug));
+    return hit;
+  } catch {
+    return false;
+  }
+}
 const isEmailLike = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 
 export function EmailGate({ slug, formTitle, notice, onVerified }: EmailGateProps) {
@@ -39,8 +51,16 @@ export function EmailGate({ slug, formTitle, notice, onVerified }: EmailGateProp
   const [error, setError] = useState<string | null>(null);
   const [sentAt, setSentAt] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
-  const codeRef = useRef<HTMLInputElement | null>(null);
   const emailRef = useRef<HTMLInputElement | null>(null);
+  // Back from the Google sign-in: no "Continue as ..." screen, straight into the form.
+  const [fromGoogle] = useState(() => takeGoogleFlag(slug));
+  const handedOn = useRef(false);
+  useEffect(() => {
+    if (fromGoogle && user && !handedOn.current) {
+      handedOn.current = true;
+      onVerified({ kind: 'account' });
+    }
+  }, [fromGoogle, user, onVerified]);
 
   // Resend is offered again 30 seconds after the last email.
   useEffect(() => {
@@ -65,7 +85,6 @@ export function EmailGate({ slug, formTitle, notice, onVerified }: EmailGateProp
       setSentAt(Date.now());
       setNow(Date.now());
       setStep('code');
-      setTimeout(() => codeRef.current?.focus(), 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'We could not send the code. Please try again.');
     } finally {
@@ -88,7 +107,6 @@ export function EmailGate({ slug, formTitle, notice, onVerified }: EmailGateProp
       else if (r.state === 'locked') setError('Too many wrong codes. Send a new code to try again.');
       else if (r.state === 'expired') setError('That code has expired. Send a new one.');
       else setError('That code no longer works. Send a new one.');
-      if (r.state === 'wrong') codeRef.current?.focus();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'We could not check the code. Please try again.');
     } finally {
@@ -96,18 +114,17 @@ export function EmailGate({ slug, formTitle, notice, onVerified }: EmailGateProp
     }
   }
 
-  function onCodeChange(raw: string) {
-    const digits = raw.replace(/\D/g, '').slice(0, 6);
-    setCode(digits);
-    if (digits.length === 6 && !busy) void checkCode(digits); // no button to press: the sixth digit sends it
-  }
-
   async function google() {
     setBusy('google');
     setError(null);
     try {
       await authService.loginWithGoogle();
-      // The account is now signed in; the page reloads onto this same form and offers "Continue as ...".
+      // The account is now signed in; the page reloads onto this same form and goes straight in (see fromGoogle).
+      try {
+        sessionStorage.setItem(googleFlagKey(slug), '1');
+      } catch {
+        /* a private window: the reload then offers "Continue as ..." instead */
+      }
       await login(`/f/${encodeURIComponent(slug)}`);
     } catch (err) {
       setBusy(null);
@@ -116,6 +133,13 @@ export function EmailGate({ slug, formTitle, notice, onVerified }: EmailGateProp
   }
 
   const signedIn = !!user && !useOther;
+  if (fromGoogle && user) {
+    return (
+      <p role="status" className="p-6 text-center bg-body text-(--text-muted)">
+        Signing you in…
+      </p>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center gap-5 p-6 md:p-8" role="region" aria-label="Confirm your email">
@@ -188,20 +212,14 @@ export function EmailGate({ slug, formTitle, notice, onVerified }: EmailGateProp
           </>
         ) : (
           <>
-            <Input
-              ref={codeRef}
-              id="gate-code"
+            <CodeInput
               label="6-digit code"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              autoComplete="one-time-code"
-              maxLength={6}
-              placeholder="123456"
               value={code}
-              onChange={(e) => onCodeChange(e.target.value)}
-              error={error ?? undefined}
+              onChange={setCode}
+              onComplete={(v) => void checkCode(v)}
+              error={error}
               disabled={busy === 'check'}
-              className="text-center tracking-[0.4em]"
+              autoFocus
             />
             <Button type="button" className="w-full min-h-11" isLoading={busy === 'check'} disabled={code.length !== 6 || busy !== null} onClick={() => void checkCode(code)}>
               Continue

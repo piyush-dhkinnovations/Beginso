@@ -274,7 +274,8 @@ describe('PublicFormShell access modes', () => {
     svc.checkEmailCode.mockResolvedValue({ state: 'verified', email: address });
     await userEvent.type(screen.getByLabelText('Email address'), address);
     await userEvent.click(screen.getByRole('button', { name: 'Send code' }));
-    await userEvent.type(await screen.findByLabelText('6-digit code'), '123456');
+    await userEvent.click(await screen.findByLabelText('Digit 1 of 6'));
+    await userEvent.keyboard('123456');
     await screen.findByLabelText(/Name/);
   }
 
@@ -371,7 +372,8 @@ describe('PublicFormShell access modes', () => {
     svc.submitForm.mockResolvedValue({ ok: true, status: 200 });
     await userEvent.type(screen.getByLabelText('Email address'), 'a@b.co');
     await userEvent.click(screen.getByRole('button', { name: 'Send code' }));
-    await userEvent.type(await screen.findByLabelText('6-digit code'), '123456');
+    await userEvent.click(await screen.findByLabelText('Digit 1 of 6'));
+    await userEvent.keyboard('123456');
     expect(await screen.findByLabelText(/Name/)).toHaveValue('Asha');
   });
 });
