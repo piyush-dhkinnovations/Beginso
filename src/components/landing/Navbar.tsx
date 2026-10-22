@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/Button";
 import { Menu, X } from "lucide-react";
@@ -16,8 +17,14 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const { isAuthenticated } = useAuth();
+  const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+
+  // These section links only exist on the landing page. From the template gallery (or
+  // any other route using this shared navbar), a bare hash points at a missing element.
+  const navHref = (href: string) =>
+    href.startsWith("#") && pathname !== "/" ? `/${href}` : href;
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 40);
@@ -63,13 +70,13 @@ export default function Navbar() {
 
           <nav className="hidden md:flex items-center gap-8">
             {NAV_LINKS.map((link) => (
-              <a
+              <Link
                 key={link.name}
-                href={link.href}
+                href={navHref(link.href)}
                 className="bg-body-sm text-(--text-secondary) hover:text-(--text-primary) transition-colors font-medium"
               >
                 {link.name}
-              </a>
+              </Link>
             ))}
           </nav>
 
@@ -114,14 +121,14 @@ export default function Navbar() {
         >
           <nav className="flex flex-col gap-1">
             {NAV_LINKS.map((link) => (
-              <a
+              <Link
                 key={link.name}
-                href={link.href}
+                href={navHref(link.href)}
                 className="min-h-11 flex items-center bg-body text-(--text-primary) font-medium"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 {link.name}
-              </a>
+              </Link>
             ))}
           </nav>
           <div className="mt-6 border-t border-(--border-default) pt-6">
