@@ -1,7 +1,11 @@
 name: ci
 
 # Runs on every pull request to main and on every push to main. GitHub-hosted runner only: a pull request's code never runs on a
-# self-hosted machine. The one job is called "ci" so branch protection can require a single, stable check name.
+# self-hosted machine.
+#
+# The checks run side by side (static checks, unit tests, build) instead of one after another, so the run takes as long as the slowest
+# of them, not the sum. The last job is called "ci" and waits for all of them, so branch protection can still require a single, stable
+# check name.
 on:
   pull_request:
     branches: [main]
@@ -16,23 +20,14 @@ concurrency:
 permissions:
   contents: read
 
-jobs:
-  ci:
-    name: ci
-    runs-on: ubuntu-latest
-    timeout-minutes: 25
-    env:
-      # Dummy values, only so `next build` can run. Nothing here is a secret and none of it is used at runtime.
-      NEXT_PUBLIC_API_URL: https://api.example.invalid
-      NEXT_PUBLIC_APP_URL: https://app.example.invalid
-      NEXT_PUBLIC_FIREBASE_API_KEY: ci-dummy-api-key
-      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ci-dummy.firebaseapp.invalid
-      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ci-dummy-project
-      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ci-dummy.appspot.invalid
-      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "000000000000"
-      NEXT_PUBLIC_FIREBASE_APP_ID: 1:000000000000:web:ci-dummy
-      NEXT_TELEMETRY_DISABLED: "1"
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
 
+jobs:
+  static:
+    name: type check and lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Check out the code
         uses: actions/checkout@v7
@@ -44,7 +39,7 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       # A merge once committed 15 files with unresolved conflict markers. Any tracked file with a marker line fails the run.
       - name: Conflict markers
@@ -61,8 +56,74 @@ jobs:
       - name: Lint
         run: npm run lint
 
+  unit:
+    name: unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
       - name: Unit tests
         run: npm test
 
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      # Dummy values, only so `next build` can run. Nothing here is a secret and none of it is used at runtime.
+      NEXT_PUBLIC_API_URL: https://api.example.invalid
+      NEXT_PUBLIC_APP_URL: https://app.example.invalid
+      NEXT_PUBLIC_FIREBASE_API_KEY: ci-dummy-api-key
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ci-dummy.firebaseapp.invalid
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ci-dummy-project
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ci-dummy.appspot.invalid
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "000000000000"
+      NEXT_PUBLIC_FIREBASE_APP_ID: 1:000000000000:web:ci-dummy
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      # Next keeps what it compiled last time here; restoring it makes an unchanged build much faster. A cache miss only costs time.
+      - name: Restore the Next build cache
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: next-build-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'next.config.ts') }}
+          restore-keys: |
+            next-build-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
       - name: Build
         run: npm run build
+
+  # The one check branch protection requires. It passes only when every job above passed.
+  ci:
+    name: ci
+    needs: [static, unit, build]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: All checks passed
+        run: |
+          echo "static=${{ needs.static.result }} unit=${{ needs.unit.result }} build=${{ needs.build.result }}"
+          test "${{ needs.static.result }}" = "success" && test "${{ needs.unit.result }}" = "success" && test "${{ needs.build.result }}" = "success"

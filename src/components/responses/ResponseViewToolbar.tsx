@@ -63,6 +63,7 @@ export function ResponseViewToolbar({ sr, responseId, canSetFormDefault = false,
           onKeyDown={(e) => {
             if (e.key === 'Escape' && query) {
               // Clears the search; a second Escape (empty box) is left to close the drawer.
+              e.preventDefault();
               e.stopPropagation();
               setQuery('');
             }

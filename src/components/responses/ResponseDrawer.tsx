@@ -249,6 +249,10 @@ export function ResponseDrawer({
     if (!isDrawerOpen) return;
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        // Something inside (a popover, a menu, the search, an image viewer) already used this Escape and said so with preventDefault: only
+        // that closes. stopPropagation cannot say it, because React and this listener both sit on the document, so the order they run
+        // in decided whether the drawer closed too (it did, now and then, in a production build).
+        if (e.defaultPrevented) return;
         onCloseRef.current();
         return;
       }

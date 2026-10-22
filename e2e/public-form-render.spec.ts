@@ -54,6 +54,9 @@ test.describe('Public form — SSR render', () => {
   // looked yet). It now waits for the network to go quiet, which is when every load-time error has been reported. Uncaught page
   // exceptions count too. No sleep, and nothing is filtered out.
   test('browser console has zero errors on load', async ({ page }) => {
+    // A production build adds Vercel's analytics and speed-insights scripts. They are served by Vercel's edge, so here they are 404s that
+    // say nothing about the page: answer them like Vercel does, so every other error still counts.
+    await page.route('**/_vercel/**', (route) => route.fulfill({ status: 200, contentType: 'application/javascript', body: '' }));
     const errors: string[] = [];
     page.on('console', (msg) => {
       if (msg.type() === 'error') errors.push(msg.text());

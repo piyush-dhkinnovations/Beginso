@@ -12,6 +12,10 @@ import { defineConfig, devices } from '@playwright/test';
 const APP_PORT = Number(process.env.E2E_PORT ?? 3100);
 const MOCK_PORT = Number(process.env.E2E_MOCK_PORT ?? 3101);
 const reuseExistingServer = process.env.E2E_REUSE_SERVER === '1';
+// E2E_PROD=1 runs the suite against a production build (`next start` on the output of `next build`, built with the same NEXT_DIST_DIR and
+// NEXT_PUBLIC_API_URL below) instead of `next dev`. Dev compiles every route the first time a test visits it, which is most of the suite's
+// time on a CI runner; a built app has nothing to compile. CI uses it. Locally the default stays dev, which needs no build.
+const prod = process.env.E2E_PROD === '1';
 
 export default defineConfig({
   testDir: './e2e',
@@ -45,7 +49,7 @@ export default defineConfig({
     {
       // Launch Node directly so Playwright can terminate the server process tree
       // reliably on Windows after the tests finish.
-      command: `node node_modules/next/dist/bin/next dev -p ${APP_PORT}`,
+      command: `node node_modules/next/dist/bin/next ${prod ? 'start' : 'dev'} -p ${APP_PORT}`,
       url: `http://localhost:${APP_PORT}`,
       env: { NEXT_PUBLIC_API_URL: `http://localhost:${MOCK_PORT}`, NEXT_DIST_DIR: '.next-e2e' },
       reuseExistingServer,

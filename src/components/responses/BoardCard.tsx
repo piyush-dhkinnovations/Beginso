@@ -53,9 +53,10 @@ export function BoardCard({ response, stages, canAct, onView, onChangeStage }: B
           <button
             type="button"
             className="min-w-0 flex-1 rounded-md py-0.5 text-left outline-none focus-visible:outline-2 focus-visible:outline-(--border-focus)"
-            aria-label={`Open response from ${name}`}
             onClick={() => onView(response._id)}
           >
+            {/* The button's name is its visible text (WCAG 2.5.3), led by what it does: "Open response from Ada Lovelace #1169". */}
+            <span className="sr-only">Open response from </span>
             <span className="block truncate bg-body-sm font-semibold text-(--text-primary)">{name}</span>
             <span className="block bg-caption tabular-nums text-(--text-muted)">{reference}</span>
           </button>

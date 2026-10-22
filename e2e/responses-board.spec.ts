@@ -62,7 +62,7 @@ const column = (page: Page, name: string) => page.getByRole('listitem', { name: 
 async function openBoard(page: Page) {
   await page.goto(`/forms/${FORM_ID}/inbox?view=board`);
   await expect(column(page, 'New')).toBeVisible({ timeout: 60000 });
-  await expect(page.getByRole('button', { name: 'Open response from Person new 1', exact: true })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole('button', { name: new RegExp('^Open response from Person new 1( |$)') })).toBeVisible({ timeout: 30000 });
 }
 const NO_SCROLL = () => document.documentElement.scrollWidth <= window.innerWidth + 1;
 
@@ -96,9 +96,9 @@ test.describe('Responses board', () => {
 
     await page.mouse.move(700, 500);
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    await expect(page.getByRole('button', { name: 'Open response from Person new 21', exact: true })).toBeAttached({ timeout: 15000 });
+    await expect(page.getByRole('button', { name: new RegExp('^Open response from Person new 21( |$)') })).toBeAttached({ timeout: 15000 });
     await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
-    await expect(page.getByRole('button', { name: 'Open response from Person new 45', exact: true })).toBeAttached({ timeout: 15000 });
+    await expect(page.getByRole('button', { name: new RegExp('^Open response from Person new 45( |$)') })).toBeAttached({ timeout: 15000 });
     expect([...new Set(fake.pagesAsked())]).toEqual([1, 2, 3]);
   });
 

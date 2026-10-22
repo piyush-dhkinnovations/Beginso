@@ -172,10 +172,11 @@ test.describe('Submitted response layouts', () => {
     await expect(card(page).getByRole('row')).toHaveCount(QUESTIONS.length);
     await page.screenshot({ path: testInfo.outputPath('drawer-table.png') });
 
-    // Switching never refetched the response, and was saved (debounced, once for the final choice).
+    // Switching never refetched the response, and was saved (debounced).
     expect(fake.detailGets()).toBe(detailBefore);
-    await expect.poll(() => fake.puts().length, { timeout: 5000 }).toBeGreaterThan(0);
-    expect(fake.puts().at(-1)).toMatchObject({ layout: 'table' });
+    // The save is debounced, so a pause after "List" (a screenshot, a slow runner) can let a save for "List" go out first: wait for the LAST
+    // save to be the final choice, instead of for any save.
+    await expect.poll(() => fake.puts().at(-1)?.layout, { timeout: 5000 }).toBe('table');
 
     await page.reload();
     await expect(card(page)).toHaveAttribute('data-layout', 'table', { timeout: 30000 });

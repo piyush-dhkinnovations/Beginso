@@ -40,6 +40,7 @@ function Lightbox({ images, start, onClose }: { images: Shown[]; start: number; 
     closeRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.preventDefault();
         e.stopPropagation();
         onClose();
       } else if (e.key === 'ArrowLeft' && count > 1) {

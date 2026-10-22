@@ -2,6 +2,9 @@ name: e2e
 
 # The Playwright suite (public form, builder reload loss, shell accessibility, tablet sidebar). It runs the app against a small mock
 # backend (e2e/mockServer.ts), so it needs no real service and no secrets. GitHub-hosted runner only.
+#
+# It runs against a production build (`next start`), not `next dev`: dev compiles every route the first time a test opens it, which was
+# most of the suite's time. The build is made here with the mock backend's address baked in (the same values playwright.config.ts uses).
 on:
   pull_request:
     branches: [main]
@@ -20,6 +23,20 @@ jobs:
     name: e2e
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      E2E_PROD: "1"
+      # Baked into the build; must match E2E_MOCK_PORT's default in playwright.config.ts.
+      NEXT_PUBLIC_API_URL: http://localhost:3101
+      NEXT_DIST_DIR: .next-e2e
+      # Dummy values, only so the app can start. Nothing here is a secret.
+      NEXT_PUBLIC_APP_URL: http://localhost:3100
+      NEXT_PUBLIC_FIREBASE_API_KEY: ci-dummy-api-key
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ci-dummy.firebaseapp.invalid
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ci-dummy-project
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ci-dummy.appspot.invalid
+      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: "000000000000"
+      NEXT_PUBLIC_FIREBASE_APP_ID: 1:000000000000:web:ci-dummy
     steps:
       - name: Check out the code
         uses: actions/checkout@v7
@@ -31,11 +48,40 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
+
+      # The browser download is the slow part; it is cached per Playwright version. The system libraries it needs are not part of the
+      # cache, so they are installed on every run (a few seconds).
+      - name: Find the Playwright version
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the Chromium cache
+        id: browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
 
       # Chromium only: it is the only browser the suite uses.
       - name: Install Chromium
+        if: steps.browsers.outputs.cache-hit != 'true'
         run: npx playwright install --with-deps chromium
+
+      - name: Install Chromium's system libraries
+        if: steps.browsers.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Restore the Next build cache
+        uses: actions/cache@v4
+        with:
+          path: .next-e2e/cache
+          key: next-e2e-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'next.config.ts') }}
+          restore-keys: |
+            next-e2e-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
+      - name: Build the app for the tests
+        run: npm run build
 
       - name: Playwright tests
         run: npx playwright test

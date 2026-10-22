@@ -47,7 +47,8 @@ export function ResponseViewOptions({ view, onChange, useForAll, onUseForAll, on
       className="relative"
       onKeyDown={(e) => {
         if (e.key === 'Escape' && open) {
-          // Only this popover closes - not the drawer behind it.
+          // Only this popover closes - not the drawer behind it (which checks defaultPrevented).
+          e.preventDefault();
           e.stopPropagation();
           close();
         }

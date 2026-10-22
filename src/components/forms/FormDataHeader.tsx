@@ -1,5 +1,6 @@
 'use client';
 
+import { useHydrated } from '@/hooks/useHydrated';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Pencil } from 'lucide-react';
@@ -32,11 +33,16 @@ export function FormDataHeader() {
   const ws = useSearchParams().get('ws') ?? (scope && scope !== 'personal' ? scope : null);
   const show = DATA_ROUTE_RE.test(pathname);
 
-  const { data: form } = useQuery({
+  const { data: cachedForm } = useQuery({
     queryKey: ['form', formId],
     queryFn: () => formsService.getFormById(formId),
     enabled: show && !!formId,
   });
+
+  // The title may already be in the query cache when the page loads, but the server could not know it: show the same "…" on both until
+  // hydration is done, or React discards the server HTML ("Hydration failed").
+  const hydrated = useHydrated();
+  const form = hydrated ? cachedForm : undefined;
 
   if (!show) return null;
 
