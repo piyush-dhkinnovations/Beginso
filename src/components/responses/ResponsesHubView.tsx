@@ -125,7 +125,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   const scopedTags = scope === 'personal' ? undefined : tags;
   const changeFilter = (patch: Parameters<typeof setFilters>[0]) => {
     clearSelection();
-    setFilters(patch, { resetPage: true });
+    setFilters(patch, { resetPage: true, shallow: true });
   };
   const clearAll = () => {
     clearSelection();

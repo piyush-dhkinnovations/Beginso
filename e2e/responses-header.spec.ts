@@ -131,3 +131,33 @@ test('on a narrower screen the stage tabs that do not fit go into More, and the 
   await page.getByRole('menuitem', { name: /^Rejected/ }).click();
   await expect(page.getByRole('button', { name: /^Rejected/, pressed: true })).toBeVisible();
 });
+
+test('searching: every letter typed stays in the box, the list is asked for once, and the page is not fetched again', async ({ page, context }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installBackend(context);
+  const asked: string[] = [];
+  const rsc: string[] = [];
+  page.on('request', (req) => {
+    const url = new URL(req.url());
+    if (url.pathname.endsWith('/api/responses') && url.searchParams.get('q')) asked.push(url.searchParams.get('q')!);
+    // (the sidebar's links prefetch their own pages in a production build: only the page being searched counts)
+    if (url.searchParams.has('_rsc') && url.pathname.endsWith('/inbox')) rsc.push(url.pathname + url.search);
+  });
+  await page.goto(`/forms/${FORM_ID}/inbox`);
+  await expect(page.getByText('harsh.vora@example.com').first()).toBeVisible({ timeout: 60000 });
+  rsc.length = 0;
+
+  const box = page.getByLabel('Search responses');
+  // Typed at a person's pace, with a pause in the middle long enough for the first part to be sent while more is still being typed.
+  await box.pressSequentially('hars', { delay: 90 });
+  await page.waitForTimeout(400);
+  await box.pressSequentially('h vora', { delay: 90 });
+  await expect(box).toHaveValue('harsh vora');
+  await expect(page).toHaveURL(/q=harsh\+vora|q=harsh%20vora/);
+  await expect.poll(() => asked.at(-1)).toBe('harsh vora');
+  // Nothing was lost to the address catching up, and the page itself was never asked for again.
+  await page.waitForTimeout(500);
+  await expect(box).toHaveValue('harsh vora');
+  expect(rsc).toEqual([]);
+  expect(asked.length).toBeLessThanOrEqual(3);
+});

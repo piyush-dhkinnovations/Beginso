@@ -34,16 +34,23 @@ export function useInboxFilters({ scope }: UseInboxFiltersOptions) {
   const view = normalizeViewMode(searchParams.get('view'));
   const PAGE_LIMIT_CONST = PAGE_LIMIT;
 
+  // `shallow` changes the address without asking the server for the page again (Next keeps useSearchParams in step with it). Typing in the
+  // search box and picking a filter only change what the browser asks the API for, so they do not need the page round trip a router
+  // call makes.
   const replace = useCallback(
-    (next: URLSearchParams) => router.replace(`${pathname}?${next.toString()}`),
+    (next: URLSearchParams, shallow = false) => {
+      const url = `${pathname}?${next.toString()}`;
+      if (shallow && typeof window !== 'undefined') window.history.replaceState(null, '', url);
+      else router.replace(url);
+    },
     [pathname, router]
   );
 
   const setFilters = useCallback(
-    (patch: Partial<ResponseFilters & { page: number; view: InboxViewMode; search: string }>, opts?: { resetPage?: boolean }) => {
+    (patch: Partial<ResponseFilters & { page: number; view: InboxViewMode; search: string }>, opts?: { resetPage?: boolean; shallow?: boolean }) => {
       let next = applyInboxFilterPatch(searchParams, patch);
       if (opts?.resetPage && !('page' in patch)) next = applyInboxFilterPatch(next, { page: 1 });
-      replace(next);
+      replace(next, opts?.shallow);
     },
     [replace, searchParams]
   );

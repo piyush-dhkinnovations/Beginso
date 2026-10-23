@@ -84,13 +84,16 @@ export function ResponsesToolbar({
 }: ResponsesToolbarProps) {
   const [inputValue, setInputValue] = useState(search);
   const [syncedSearch, setSyncedSearch] = useState(search);
-  const debounced = useDebounce(inputValue, 300);
+  // A short pause after typing, so the list is asked for once per word, not once per key.
+  const debounced = useDebounce(inputValue, 250);
 
   // External URL change (e.g. a "Clear search" link elsewhere) — adjust state during
   // render rather than in an effect, per https://react.dev/learn/you-might-not-need-an-effect.
+  // Only when it is not the search this box itself just sent: while typing, the address catches up a moment behind the box, and
+  // taking the older value back would drop the letters typed in between.
   if (search !== syncedSearch) {
     setSyncedSearch(search);
-    setInputValue(search);
+    if (search !== debounced) setInputValue(search);
   }
 
   useEffect(() => {
