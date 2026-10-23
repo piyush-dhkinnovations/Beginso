@@ -95,6 +95,9 @@ const publicFormHeaders = securityHeaders
   .map((h) => (h.key === "Content-Security-Policy" ? { ...h, value: h.value.replace("frame-ancestors 'none'", "frame-ancestors *") } : h));
 
 const nextConfig: NextConfig = {
+  experimental: {
+    agentUpgrade: "security",
+  },
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   poweredByHeader: false,
   // Default bottom-left position sits directly on top of the mobile nav drawer, which also
