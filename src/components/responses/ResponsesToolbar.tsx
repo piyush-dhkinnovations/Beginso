@@ -7,6 +7,7 @@ import { Toolbar } from '@/components/ui/Toolbar';
 import { FilterMenu } from '@/components/ui/FilterMenu';
 import { Segmented } from '@/components/ui/Segmented';
 import { useDebounce } from '@/hooks/useDebounce';
+import { RESPONSES_TOOLBAR_SLOT_ID } from '@/lib/responsesToolbarSlot';
 import type { ResponseFilters } from '@/types/response';
 import type { StageRef } from '@/types/stage';
 import type { MemberListItem } from '@/types/team';
@@ -189,6 +190,8 @@ export function ResponsesToolbar({
         }
         onClear={() => onFilterChange({ duplicate: undefined, includeTest: undefined })}
       />
+
+      {view === 'calendar' && <div id={RESPONSES_TOOLBAR_SLOT_ID} className="contents" />}
 
       {viewControls}
 

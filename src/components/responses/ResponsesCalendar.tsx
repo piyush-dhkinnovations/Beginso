@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -12,9 +13,12 @@ import { CalendarToolbar } from './calendar/CalendarToolbar';
 import { fetchAllResponses } from '@/lib/fetchAllResponses';
 import { formatDayTitle, gridFetchRange, localDateKey, monthGridKeys, todayKey } from '@/lib/calendarDates';
 import { responseKeys } from '@/lib/queryKeys';
+import { RESPONSES_TOOLBAR_SLOT_ID } from '@/lib/responsesToolbarSlot';
 import { detectRespondentIdentity } from '@/lib/formatters';
 import { useFormFields } from '@/hooks/useFormFields';
 import type { ResponseFilters, IResponse } from '@/types/response';
+
+const subscribeNever = () => () => {};
 
 export interface ResponsesCalendarProps {
   scope: string;
@@ -59,6 +63,7 @@ export function CalendarItemRow({ response, onSelect }: { response: IResponse; o
  */
 export function ResponsesCalendar({ scope, formId, filters, timezone, onViewResponse, initialDate }: ResponsesCalendarProps) {
   const today = todayKey(timezone);
+  const slot = useSyncExternalStore(subscribeNever, () => document.getElementById(RESPONSES_TOOLBAR_SLOT_ID), () => null);
   const [cursor, setCursor] = useState(() => {
     if (initialDate) return { year: initialDate.getUTCFullYear(), month: initialDate.getUTCMonth() };
     return { year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) - 1 };
@@ -127,7 +132,7 @@ export function ResponsesCalendar({ scope, formId, filters, timezone, onViewResp
     if (items.length > 0) setOpenDayKey(key); // a day card, even for one response; a chip opens its response directly
   }
 
-  const toolbar = (
+  const controls = (
     <CalendarToolbar
       year={cursor.year}
       month={cursor.month}
@@ -142,6 +147,9 @@ export function ResponsesCalendar({ scope, formId, filters, timezone, onViewResp
       onJump={jumpTo}
     />
   );
+
+  // In the filter bar (after Show) when it has made room for them; in place otherwise.
+  const toolbar = slot ? createPortal(controls, slot) : controls;
 
   if (isError) {
     return (

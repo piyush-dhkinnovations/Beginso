@@ -221,4 +221,22 @@ test.describe('Responses calendar', () => {
     expect(await page.evaluate(NO_SCROLL)).toBe(true);
     await page.screenshot({ path: testInfo.outputPath('calendar-390.png') });
   });
+
+  test('Today, previous / next and the month sit in the filter bar after Show, not on a row of their own', async ({ page, context }, testInfo) => {
+    await installBackend(context);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openCalendar(page);
+    const box = async (loc: ReturnType<Page['locator']>) => (await loc.first().boundingBox())!;
+    const search = await box(page.getByLabel('Search responses'));
+    const show = await box(page.getByRole('button', { name: /^Show/ }));
+    const today = await box(page.getByRole('button', { name: 'Today' }));
+    const month = await box(page.getByRole('heading', { name: new RegExp(`${monthWord} ${Y}`) }).or(page.getByRole('button', { name: new RegExp(`${monthWord} ${Y}`) })));
+    const calendar = await box(page.getByRole('button', { name: 'Calendar', exact: true }).or(page.getByRole('radio', { name: 'Calendar' })));
+    // Same row as Search and Show, to the right of Show, and to the left of the Table / Board / Calendar switcher.
+    expect(Math.abs(today.y + today.height / 2 - (search.y + search.height / 2))).toBeLessThan(40);
+    expect(today.x).toBeGreaterThan(show.x + show.width);
+    expect(month.x).toBeGreaterThan(today.x);
+    expect(month.x + month.width).toBeLessThan(calendar.x);
+    await page.screenshot({ path: testInfo.outputPath('calendar-bar.png'), clip: { x: 0, y: 0, width: 1440, height: 320 } });
+  });
 });
