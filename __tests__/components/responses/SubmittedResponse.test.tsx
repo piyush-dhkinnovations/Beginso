@@ -3,7 +3,7 @@ import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SubmittedResponse } from '@/components/responses/SubmittedResponse';
-import { ResponseViewToolbar } from '@/components/responses/ResponseViewToolbar';
+import { ResponseSearch } from '@/components/responses/ResponseViewControls';
 import { useSubmittedResponse } from '@/hooks/useSubmittedResponse';
 import type { AnswerItem } from '@/lib/responseAnswers';
 import type { ResponseViewConfig } from '@/types/responseView';
@@ -41,13 +41,13 @@ interface HarnessProps {
   canSetFormDefault?: boolean;
 }
 
-// The drawer's wiring: the toolbar sits above, the card below, both reading one shared state.
+// The drawer's wiring: the search sits in the top bar, the layout controls in the card's own header, both reading one shared state.
 function Harness({ responseId = 'r1', items: shown = items, formId = 'f1', scope = 'acme', hasSchema = true, loading = false, canSetFormDefault = false }: HarnessProps) {
   const sr = useSubmittedResponse({ responseId, formId, scope, items: shown, hasSchema });
   return (
     <>
-      <ResponseViewToolbar sr={sr} responseId={responseId} canSetFormDefault={canSetFormDefault} />
-      <SubmittedResponse sr={sr} responseId={responseId} scope={scope} loading={loading} />
+      <ResponseSearch sr={sr} responseId={responseId} />
+      <SubmittedResponse sr={sr} responseId={responseId} scope={scope} loading={loading} canSetFormDefault={canSetFormDefault} />
     </>
   );
 }

@@ -4,6 +4,7 @@ import type { SubmittedResponseState } from '@/hooks/useSubmittedResponse';
 import { cn } from '@/lib/utils';
 import type { ResponseLayout } from '@/types/responseView';
 import { LAYOUTS } from './layouts';
+import { ResponseLayoutControls } from './ResponseViewControls';
 
 interface SubmittedResponseProps {
   sr: SubmittedResponseState;
@@ -11,6 +12,8 @@ interface SubmittedResponseProps {
   scope: string;
   /** The form definition is still loading: show a skeleton shaped like the chosen layout. */
   loading?: boolean;
+  /** Editors only - shows "Set as form default" in the view options (the server enforces it as well). */
+  canSetFormDefault?: boolean;
 }
 
 function LayoutSkeleton({ layout }: { layout: ResponseLayout }) {
@@ -38,21 +41,24 @@ function LayoutSkeleton({ layout }: { layout: ResponseLayout }) {
 }
 
 /**
- * The "Submitted response" card: just the answers, in the layout the person chose. The controls (search, layout, options) are in
- * the toolbar above, so the card stays quiet and the answers get all the room.
+ * The "Submitted response" card: the answers, in the layout the person chose. The layout switcher and the view options sit at the right
+ * end of the card's header, right above what they change, and the header stays at the top while the answers scroll. Search is in the top bar.
  */
-export function SubmittedResponse({ sr, responseId, scope, loading = false }: SubmittedResponseProps) {
+export function SubmittedResponse({ sr, responseId, scope, loading = false, canSetFormDefault = false }: SubmittedResponseProps) {
   const { layout, view, query, arranged, itemCount, revealEmpty, setRevealEmpty } = sr;
   const Layout = LAYOUTS[layout];
   const shared = { responseId, scope, showNumbers: view.showNumbers, density: view.density, query };
 
   return (
     <section aria-label="Submitted response" className="@container min-w-0 self-start rounded-lg border border-(--border-default) bg-(--surface-card)" data-layout={layout}>
-      <div className="border-b border-(--border-subtle) px-4 py-3 sm:px-5">
-        <h3 className="bg-body font-semibold text-(--text-primary)">Submitted response</h3>
-        <p className="mt-0.5 bg-body-sm text-(--text-muted)">
-          {loading || arranged.total === 0 ? 'All answers provided by the respondent.' : `${arranged.answered} of ${arranged.total} answered`}
-        </p>
+      <div className="sticky top-0 z-10 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-t-lg border-b border-(--border-subtle) bg-(--surface-card) px-4 py-3 sm:px-5">
+        <div className="min-w-0">
+          <h3 className="bg-body font-semibold text-(--text-primary)">Submitted response</h3>
+          <p className="mt-0.5 bg-body-sm text-(--text-muted)">
+            {loading || arranged.total === 0 ? 'All answers provided by the respondent.' : `${arranged.answered} of ${arranged.total} answered`}
+          </p>
+        </div>
+        <ResponseLayoutControls sr={sr} canSetFormDefault={canSetFormDefault} />
       </div>
 
       <div className="px-4 pb-4 pt-1 sm:px-5">

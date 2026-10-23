@@ -717,19 +717,23 @@ describe('ResponseDrawer layouts, full-screen page and keyboard', () => {
     expect(screen.getByRole('searchbox', { name: 'Search in response' })).toBeInTheDocument();
   });
 
-  it('search, layout and options live in a toolbar under the header, not inside the answers card', async () => {
+  it('search is in the top bar; the layout switcher and the options are at the right end of the Submitted response header', async () => {
     renderDrawer('resp-1');
     await screen.findByText('Submitted response');
-    const toolbar = screen.getByRole('toolbar', { name: 'Response view' });
     const header = screen.getByRole('heading', { level: 2 }).closest('header') as HTMLElement;
-    expect(header.compareDocumentPosition(toolbar) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy(); // under the header
-    expect(within(toolbar).getByRole('searchbox', { name: 'Search in response' })).toBeInTheDocument();
-    expect(within(toolbar).getByRole('radiogroup', { name: 'Layout' })).toBeInTheDocument();
-    expect(within(toolbar).getByRole('button', { name: 'View options' })).toBeInTheDocument();
+    expect(within(header).getByRole('searchbox', { name: 'Search in response' })).toBeInTheDocument();
+    expect(within(header).queryByRole('radiogroup')).not.toBeInTheDocument();
+    expect(screen.queryByRole('toolbar', { name: 'Response view' })).not.toBeInTheDocument(); // no separate bar any more
+
     const card = screen.getByRole('region', { name: 'Submitted response' });
-    expect(within(card).queryByRole('radiogroup')).not.toBeInTheDocument();
+    expect(within(card).getByRole('radiogroup', { name: 'Layout' })).toBeInTheDocument();
+    expect(within(card).getByRole('button', { name: 'View options' })).toBeInTheDocument();
     expect(within(card).queryByRole('searchbox')).not.toBeInTheDocument();
-    expect(toolbar.contains(card)).toBe(false);
+    // the controls are in the card's header, to the right of the title, and the header sticks while the answers scroll
+    const cardHeader = within(card).getByRole('heading', { name: 'Submitted response' }).closest('div[class*="sticky"]') as HTMLElement;
+    expect(cardHeader).not.toBeNull();
+    expect(cardHeader).toContainElement(within(card).getByRole('radiogroup', { name: 'Layout' }));
+    expect(cardHeader.className).toContain('justify-between');
   });
 
   it('the options are behind a three-dot button that opens a popover', async () => {
@@ -773,22 +777,24 @@ describe('ResponseDrawer layouts, full-screen page and keyboard', () => {
       expect(screen.queryByText('Response overview')).not.toBeInTheDocument();
     });
 
-    it('below 1024px the toolbar belongs to the Response tab only', async () => {
+    it('below 1024px the search belongs to the Response tab only', async () => {
       const user = userEvent.setup();
       renderDrawer('resp-1', vi.fn(), { displayMode: 'page', scope: 'acme' });
       await screen.findByText('Submitted response');
-      expect(screen.getByRole('toolbar', { name: 'Response view' })).toBeInTheDocument();
+      expect(screen.getByRole('searchbox', { name: 'Search in response' })).toBeInTheDocument();
       await user.click(screen.getByRole('tab', { name: 'Details' }));
-      expect(screen.queryByRole('toolbar', { name: 'Response view' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('searchbox', { name: 'Search in response' })).not.toBeInTheDocument();
       await user.click(screen.getByRole('tab', { name: 'Response' }));
-      expect(screen.getByRole('toolbar', { name: 'Response view' })).toBeInTheDocument();
+      expect(screen.getByRole('searchbox', { name: 'Search in response' })).toBeInTheDocument();
     });
 
-    it('from 1024px up the toolbar sticks to the top of the page while the answers scroll', async () => {
+    it('from 1024px up the Submitted response header (title, layout switcher, options) sticks to the top while the answers scroll', async () => {
       mockDesktop = true;
       renderDrawer('resp-1', vi.fn(), { displayMode: 'page', scope: 'acme' });
       await screen.findByText('Submitted response');
-      expect(screen.getByRole('toolbar', { name: 'Response view' }).className).toMatch(/\bsticky\b/);
+      const card = screen.getByRole('region', { name: 'Submitted response' });
+      const header = within(card).getByRole('radiogroup', { name: 'Layout' }).closest('div[class*="sticky"]') as HTMLElement;
+      expect(header.className).toMatch(/\bsticky\b/);
     });
 
     it('each tab shows its own panel', async () => {

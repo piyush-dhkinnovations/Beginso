@@ -24,7 +24,7 @@ import { Menu } from '@/components/ui/Menu';
 import { Tabs } from '@/components/ui/Tabs';
 import type { ReportFormat } from '@/types/report';
 import { SubmittedResponse } from './SubmittedResponse';
-import { ResponseViewToolbar } from './ResponseViewToolbar';
+import { ResponseSearch } from './ResponseViewControls';
 import { useSubmittedResponse } from '@/hooks/useSubmittedResponse';
 import { StageBadge } from './StageBadge';
 import { NotesPanel } from './NotesPanel';
@@ -434,11 +434,11 @@ export function ResponseDrawer({
     ...(showCollaboration ? [{ id: 'notes' as const, label: 'Notes' }, { id: 'activity' as const, label: 'Activity' }] : []),
   ];
   const activeTab = pageTabs.some((t) => t.id === pageTab) ? pageTab : 'response';
-  // The toolbar only makes sense where the answers are on screen.
-  const showToolbar = !!response && !isError && (displayMode === 'drawer' || isDesktop || activeTab === 'response');
+  // The search only makes sense where the answers are on screen.
+  const showSearch = !!response && !isError && (displayMode === 'drawer' || isDesktop || activeTab === 'response');
 
   const renderBody = (r: ResponseDetail) => {
-    const card = <SubmittedResponse sr={sr} responseId={r._id} scope={scope} loading={formLoading} />;
+    const card = <SubmittedResponse sr={sr} responseId={r._id} scope={scope} loading={formLoading} canSetFormDefault={canSetFormDefault} />;
 
     if (displayMode === 'drawer') {
       return (
@@ -537,6 +537,14 @@ export function ResponseDrawer({
               {/* "Edited after review" indicator — Sprint 13 (A5.2), space reserved, not built. */}
             </div>
           </div>
+          {/* Search sits in the top bar, between the name and the actions; below 640px it takes its own row under the name. The action buttons keep their words only from 1536px: the drawer is 80% of the screen, and with the search here the words no longer fit before that. */}
+          {showSearch && response && (
+            <ResponseSearch
+              sr={sr}
+              responseId={response._id}
+              className="min-w-40 flex-1 sm:max-w-xs max-sm:order-last max-sm:basis-full"
+            />
+          )}
           <div className="flex shrink-0 items-center gap-1.5 max-sm:ml-auto">
             {position !== undefined && totalResponses !== undefined && (
               <div className="flex items-center gap-1">
@@ -550,7 +558,7 @@ export function ResponseDrawer({
                   title="Previous response (k)"
                 >
                   <ChevronLeft size={14} aria-hidden="true" />
-                  <span className="hidden xl:inline">Previous</span>
+                  <span className="hidden 2xl:inline">Previous</span>
                 </Button>
                 <span className="hidden min-w-16 px-1 text-center bg-body-sm text-(--text-muted) md:inline">
                   {position} of {totalResponses}
@@ -564,7 +572,7 @@ export function ResponseDrawer({
                   aria-label="Next response"
                   title="Next response (j)"
                 >
-                  <span className="hidden xl:inline">Next</span>
+                  <span className="hidden 2xl:inline">Next</span>
                   <ChevronRight size={14} aria-hidden="true" />
                 </Button>
               </div>
@@ -578,7 +586,7 @@ export function ResponseDrawer({
                   trigger={
                     <>
                       <Download size={15} aria-hidden="true" />
-                      <span className="hidden lg:inline">Download</span>
+                      <span className="hidden 2xl:inline">Download</span>
                       <ChevronDown size={13} aria-hidden="true" />
                     </>
                   }
@@ -589,7 +597,7 @@ export function ResponseDrawer({
                 />
                 <Button variant="ghost" size="small" onClick={() => setConfirmDeleteOpen(true)} aria-label="Delete response" className="gap-1.5 text-(--error-text)">
                   <Trash2 size={15} aria-hidden="true" />
-                  <span className="hidden lg:inline">Delete</span>
+                  <span className="hidden 2xl:inline">Delete</span>
                 </Button>
               </>
             )}
@@ -623,20 +631,6 @@ export function ResponseDrawer({
             )}
           </div>
         </header>
-
-        {/* Search, layout and view options: one slim bar under the header, above both columns, always in view. */}
-        {showToolbar && response && (
-          <ResponseViewToolbar
-            sr={sr}
-            responseId={response._id}
-            canSetFormDefault={canSetFormDefault}
-            className={
-              displayMode === 'drawer'
-                ? 'shrink-0 border-b border-(--border-default) bg-(--surface-card) px-4 py-2.5 sm:px-6'
-                : 'sticky top-0 z-20 bg-(--bg-page) py-2'
-            }
-          />
-        )}
 
         <div className={cn('flex-1', displayMode === 'drawer' && 'overflow-y-auto')}>
           {isLoading ? (
