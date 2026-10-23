@@ -33,6 +33,19 @@ beforeEach(() => {
   useBuilderStore.getState().initForm(form(1));
 });
 
+describe('a save never sends a field that points at a page that is gone', () => {
+  it('moves it to the first page first, which also heals a form that is already stuck on "does not exist in pages"', async () => {
+    updateForm.mockResolvedValue({ contentVersion: 2 });
+    const s = snap();
+    const stuck = [{ fieldId: 'f-live', pageId: s.pages[0].id, label: 'Live', type: 'short_text', required: false, deleted: false, order: 0 }, { fieldId: 'f-orphan', pageId: 'removed-page', label: 'Old', type: 'short_text', required: false, deleted: true, order: 1 }];
+    await saveFormSnapshot('f1', { ...s, fields: stuck as never });
+    const sent = updateForm.mock.calls[0][1];
+    const ids = new Set(sent.pages.map((p: { id: string }) => p.id));
+    expect(sent.fields.every((f: { pageId: string }) => ids.has(f.pageId))).toBe(true);
+    expect(sent.fields.find((f: { fieldId: string }) => f.fieldId === 'f-orphan').pageId).toBe(s.pages[0].id);
+  });
+});
+
 describe('versioned saves (QA A4b-002)', () => {
   it('sends the version it is based on plus a saveId, and adopts the version the server returns', async () => {
     updateForm.mockResolvedValue({ contentVersion: 2 });

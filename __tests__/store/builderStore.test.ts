@@ -404,6 +404,28 @@ describe('Zustand builderStore Property Tests', () => {
     expect(unchangedB.logicRules![0].targetFieldId).toBe(c.fieldId);
   });
 
+  // ─── deletePage: no field may keep pointing at the page that was removed (the server refuses the save) ───
+  it('deletePage moves the soft-deleted fields of the removed page too, so every field still points at a page that exists', () => {
+    const store = useBuilderStore.getState();
+    store.initForm(mockForm('test-form', 'My Form'));
+    store.addPage();
+    const [first, second] = useBuilderStore.getState().pages;
+    store.setActivePageId(second.id);
+    store.addField('short_text');
+    store.addField('email');
+    const [, secondField] = useBuilderStore.getState().fields.filter((f) => f.pageId === second.id);
+    store.softDeleteField(secondField.fieldId); // soft-deleted: it stays in the array, still pointing at the second page
+
+    store.deletePage(second.id);
+
+    const { fields, pages } = useBuilderStore.getState();
+    const ids = new Set(pages.map((p) => p.id));
+    expect(fields.length).toBe(2);
+    expect(fields.every((f) => ids.has(f.pageId))).toBe(true);
+    expect(fields.every((f) => f.pageId === first.id)).toBe(true);
+    expect(fields.some((f) => f.deleted)).toBe(true); // the soft-deleted one is still there, now on a page that exists
+  });
+
   // ─── deletePage: order must stay contiguous, or a later addPage collides ───
   it('deletePage renumbers remaining pages so a later addPage cannot collide on order', () => {
     const store = useBuilderStore.getState();
