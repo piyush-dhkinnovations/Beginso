@@ -63,4 +63,26 @@ describe('Menu component', () => {
     await user.click(screen.getByRole('menuitem', { name: 'Edit' }));
     expect(onSelect).not.toHaveBeenCalled();
   });
+
+  it('a heading is a label between items: not a menu item, skipped by the arrow keys', async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    render(
+      <Menu
+        trigger="Actions"
+        triggerLabel="Actions menu"
+        items={[
+          { id: 'h', label: 'My views', heading: true, onSelect },
+          { id: 'a', label: 'First', onSelect },
+          { id: 'b', label: 'Second', onSelect },
+        ]}
+      />
+    );
+    await user.click(screen.getByRole('button', { name: 'Actions menu' }));
+    expect(screen.getByText('My views')).toBeInTheDocument();
+    expect(screen.getAllByRole('menuitem').map((el) => el.textContent)).toEqual(['First', 'Second']);
+    expect(screen.getByRole('menuitem', { name: 'First' })).toHaveFocus();
+    await user.click(screen.getByText('My views'));
+    expect(onSelect).not.toHaveBeenCalled();
+  });
 });

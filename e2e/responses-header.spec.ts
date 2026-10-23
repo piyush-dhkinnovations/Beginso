@@ -22,6 +22,10 @@ async function installBackend(context: BrowserContext) {
     if (path === 'api/responses' && req.method() === 'GET') return json({ success: true, data: rows, total: rows.length, page: 1, limit: 50, totalPages: 1 });
     if (path === 'api/responses/stats') return json({ total: rows.length, unread: 4 });
     if (path === 'api/workspaces') return json({ success: true, workspaces: [{ id: '507f1f77bcf86cd799439011', slug: 'e2e-avatars-ws', name: 'E2E', role: 'admin', isOwner: false, memberCount: 2, timezone: 'UTC', logo: null }], total: 1 });
+    if (path === 'api/workspaces/e2e-avatars-ws/stages') {
+      const names = ['New', 'In Review', 'On Progress', 'On Hold', 'Released', 'Rejected'];
+      return json({ success: true, stages: names.map((name, i) => ({ id: `st${i}`, name, colour: 'neutral', category: i === 0 ? 'new' : i < 4 ? 'in_progress' : 'completed', order: i, isDefault: i === 0 })) });
+    }
     if (path === 'api/views' && req.method() === 'GET') {
       const view = (id: string, name: string, filters: object) => ({ id, name, ownerId: 'e2e-user', ownerName: 'E2E User', visibility: 'personal', formId: FORM_ID, filters, viewMode: 'table', createdAt: '2026-10-01T00:00:00.000Z' });
       return json({ success: true, views: [view('v1', 'test', { duplicate: true }), view('v2', 'fgdf', { unread: true })] });
@@ -106,4 +110,24 @@ test('saved views: switching from one view to another replaces its filters, and 
   await page.getByRole('menuitem', { name: 'All responses' }).click();
   await expect(page).not.toHaveURL(/unread=1/);
   await expect(page.getByRole('button', { name: 'Saved views: All responses' })).toBeVisible();
+});
+
+test('on a narrower screen the stage tabs that do not fit go into More, and the picked one stays visible', async ({ page, context }, testInfo) => {
+  await page.setViewportSize({ width: 960, height: 800 });
+  await installBackend(context);
+  await page.goto(`/forms/${FORM_ID}/inbox?ws=e2e-avatars-ws`);
+  const picker = page.getByRole('button', { name: /^Saved views:/ });
+  await expect(picker).toBeVisible({ timeout: 60000 });
+  const more = page.getByRole('button', { name: /^More filters/ });
+  await expect(more).toBeVisible();
+  // The tabs and the saved-view picker share a line, and nothing makes the page scroll sideways.
+  const all = (await page.getByRole('button', { name: /^All/ }).first().boundingBox())!;
+  const pick = (await picker.boundingBox())!;
+  expect(Math.abs(all.y + all.height / 2 - (pick.y + pick.height / 2))).toBeLessThan(30);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('responses-narrow.png'), clip: { x: 0, y: 0, width: 960, height: 330 } });
+
+  await more.click();
+  await page.getByRole('menuitem', { name: /^Rejected/ }).click();
+  await expect(page.getByRole('button', { name: /^Rejected/, pressed: true })).toBeVisible();
 });

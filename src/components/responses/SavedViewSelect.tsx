@@ -86,9 +86,9 @@ export function SavedViewSelect({
           }
           items={[
             { id: '__all', label: 'All responses', icon: check(!activeViewId), onSelect: onClearApplied },
-            ...(myViews.length > 0 ? [{ id: '__my', label: 'My views', disabled: true, onSelect: () => {} }] : []),
+            ...(myViews.length > 0 ? [{ id: '__my', label: 'My views', heading: true, onSelect: () => {} }] : []),
             ...myViews.map(viewItem),
-            ...(teamViews.length > 0 ? [{ id: '__team', label: 'Team views', disabled: true, onSelect: () => {} }] : []),
+            ...(teamViews.length > 0 ? [{ id: '__team', label: 'Team views', heading: true, onSelect: () => {} }] : []),
             ...teamViews.map(viewItem),
           ]}
         />

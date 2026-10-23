@@ -12,6 +12,8 @@ export interface MenuItem {
   danger?: boolean;
   disabled?: boolean;
   shortcut?: string;
+  /** A label for the items after it ("My views"): not a button, not focusable, not clickable. */
+  heading?: boolean;
 }
 
 export interface MenuProps {
@@ -53,7 +55,7 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
   const isFullWidth = containerClassName?.includes("w-full") ?? false;
 
   const enabledIndexes = items.reduce<number[]>((acc, item, i) => {
-    if (!item.disabled) acc.push(i);
+    if (!item.disabled && !item.heading) acc.push(i);
     return acc;
   }, []);
 
@@ -197,7 +199,11 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
             className
           )}
         >
-          {items.map((item, i) => (
+          {items.map((item, i) => item.heading ? (
+            <div key={item.id} role="presentation" className="px-3 pb-1 pt-2 bg-body-sm font-semibold text-(--text-muted)">
+              {item.label}
+            </div>
+          ) : (
             <button
               key={item.id}
               ref={(el) => {

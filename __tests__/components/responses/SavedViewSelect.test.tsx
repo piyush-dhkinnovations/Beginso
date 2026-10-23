@@ -39,7 +39,11 @@ describe('SavedViewSelect', () => {
     render(<SavedViewSelect {...baseProps} />);
     await user.click(screen.getByRole('button', { name: 'Saved views: All responses' }));
     const labels = screen.getAllByRole('menuitem').map((el) => el.textContent?.trim());
-    expect(labels).toEqual(['All responses', 'My views', 'My shortlist', 'Team views', 'Needs screening']);
+    // The group names are labels, not menu items: nothing to click or tab to.
+    expect(labels).toEqual(['All responses', 'My shortlist', 'Needs screening']);
+    expect(screen.getByText('My views')).toBeInTheDocument();
+    expect(screen.getByText('Team views')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'My views' })).not.toBeInTheDocument();
   });
 
   it('names the applied view on the button and marks it in the list', async () => {

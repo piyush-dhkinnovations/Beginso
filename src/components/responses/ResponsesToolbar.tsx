@@ -189,13 +189,16 @@ export function ResponsesToolbar({
 
       {activeFilters}
 
-      {/* The total is for every month; the calendar says how many are in the month on screen, and the stage chips above already give the counts. */}
-      {view !== 'calendar' && (
-        <span className="ml-auto whitespace-nowrap bg-body-sm text-(--text-muted)">
-          {total} response{total === 1 ? '' : 's'}
-        </span>
-      )}
-      {viewOptions && view && onViewChange && <Segmented className={view === 'calendar' ? 'ml-auto' : undefined} options={viewOptions} value={view} onChange={onViewChange} ariaLabel="Responses view" />}
+      {/* The count and the layout switcher stay together on the right, and wrap together when the bar is too narrow for one line. */}
+      <div className="ml-auto flex items-center gap-3">
+        {/* The total is for every month; the calendar says how many are in the month on screen, and the stage chips above already give the counts. */}
+        {view !== 'calendar' && (
+          <span className="whitespace-nowrap bg-body-sm text-(--text-muted)">
+            {total} response{total === 1 ? '' : 's'}
+          </span>
+        )}
+        {viewOptions && view && onViewChange && <Segmented options={viewOptions} value={view} onChange={onViewChange} ariaLabel="Responses view" />}
+      </div>
     </Toolbar>
   );
 }
