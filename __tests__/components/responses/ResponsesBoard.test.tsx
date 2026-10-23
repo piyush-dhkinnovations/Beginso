@@ -5,9 +5,11 @@ import { ResponsesBoard } from '@/components/responses/ResponsesBoard';
 import type { StageRef } from '@/types/stage';
 import type { IResponse } from '@/types/response';
 
+vi.mock('@/components/ui/Toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
+
 const mockGetResponses = vi.fn();
 vi.mock('@/services/responses', () => ({
-  responsesService: { getResponses: (...args: unknown[]) => mockGetResponses(...args) },
+  responsesService: { getResponses: (...args: unknown[]) => mockGetResponses(...args), placeOnBoard: vi.fn() },
 }));
 
 const STAGES: StageRef[] = Array.from({ length: 6 }, (_, i) => ({

@@ -78,7 +78,7 @@ describe('same signals in every view', () => {
 
   it('Board', () => {
     const { container } = render(
-      <BoardCard response={FIXTURE} stages={[FIXTURE.stage!]} canAct={false} onView={vi.fn()} onChangeStage={vi.fn()} />
+      <BoardCard response={FIXTURE} stages={[FIXTURE.stage!]} stageId={FIXTURE.stage!.id} canAct={false} onView={vi.fn()} onChangeStage={vi.fn()} />
     );
     expectAllSignals(container);
   });

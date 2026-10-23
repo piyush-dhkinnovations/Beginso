@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type MutableRefObject } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useDroppable } from '@dnd-kit/core';
 import { AlertCircle } from 'lucide-react';
@@ -10,7 +10,8 @@ import { StageBadge } from './StageBadge';
 import { BoardCard } from './BoardCard';
 import { responsesService } from '@/services/responses';
 import { responseKeys } from '@/lib/queryKeys';
-import { columnDropId } from '@/lib/boardDnd';
+import { columnDropId, type DropPlace } from '@/lib/boardDnd';
+import type { BoardCardConfig } from '@/lib/boardCard';
 import type { IResponse, ResponseFilters } from '@/types/response';
 import type { StageRef } from '@/types/stage';
 
@@ -31,8 +32,16 @@ export interface BoardColumnProps {
   onChangeStage: (responseId: string, stageId: string) => void;
   /** Cards just dragged AWAY from this column whose move is still being saved: hidden at once instead of waiting for the refetch. */
   hiddenIds?: ReadonlySet<string>;
-  /** Cards just dragged INTO this column whose move is still being saved: shown at once, on top. */
-  incoming?: readonly IResponse[];
+  /** Cards just dragged INTO this column whose move is still being saved: shown at once, at the place they were dropped (the top when none). */
+  incoming?: readonly { response: IResponse; place?: { afterId?: string; beforeId?: string } }[];
+  /** What each card shows (the headline question and extra lines). */
+  config?: BoardCardConfig;
+  /** Cards can be dropped between other cards (a single form's board). */
+  positional?: boolean;
+  /** While a card is dragged over this column: where it would land, so a line can be drawn there. */
+  indicator?: DropPlace | null;
+  /** The board reads each column's cards, top to bottom, from here when a card is dropped. */
+  idsRef?: MutableRefObject<Record<string, string[]>>;
 }
 
 /**
@@ -41,23 +50,36 @@ export interface BoardColumnProps {
  * so a column with more than a page of responses gets a "Load more" instead of silently
  * truncating.
  */
-export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onViewResponse, onChangeStage, hiddenIds, incoming = [] }: BoardColumnProps) {
+export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onViewResponse, onChangeStage, hiddenIds, incoming = [], config, positional = false, indicator, idsRef }: BoardColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: columnDropId(stage.id), disabled: !canAct });
   const queryKey = [...responseKeys.list(scope, formId, { ...filters, stageId: stage.id }), 'board'];
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey,
     queryFn: ({ pageParam }) =>
-      responsesService.getResponses({ formId, ...filters, stageId: stage.id, page: pageParam, limit: COLUMN_PAGE_LIMIT }, scope),
+      // sort=board: cards placed by hand in their order, the rest newest first on top.
+      responsesService.getResponses({ formId, ...filters, stageId: stage.id, page: pageParam, limit: COLUMN_PAGE_LIMIT, sort: 'board' }, scope),
     initialPageParam: 1,
     getNextPageParam: (lastPage) => (lastPage.page < lastPage.totalPages ? lastPage.page + 1 : undefined),
   });
 
   const fetched = data?.pages.flatMap((p) => p.data) ?? [];
   const leaving = fetched.filter((r) => hiddenIds?.has(r._id));
-  const arriving = incoming.filter((r) => !fetched.some((f) => f._id === r._id));
-  const responses = [...arriving, ...fetched.filter((r) => !hiddenIds?.has(r._id))];
+  // Every card being moved is taken out of where it was fetched (in this column or another) and put in at its new place, so a card
+  // dropped elsewhere in the same column moves at once too.
+  const arriving = incoming;
+  const responses = fetched.filter((r) => !hiddenIds?.has(r._id));
+  for (const { response, place } of arriving) {
+    const after = place?.afterId ? responses.findIndex((r) => r._id === place.afterId) : -1;
+    const before = place?.beforeId ? responses.findIndex((r) => r._id === place.beforeId) : -1;
+    const at = after !== -1 ? after + 1 : before !== -1 ? before : place?.afterId ? responses.length : 0;
+    responses.splice(at, 0, response);
+  }
   const total = (data?.pages[0]?.total ?? 0) - leaving.length + arriving.length;
+  const ids = responses.map((r) => r._id).join(',');
+  useEffect(() => {
+    if (idsRef) idsRef.current[stage.id] = ids ? ids.split(',') : [];
+  }, [idsRef, stage.id, ids]);
 
   // The page scrolls, not the column: a column is as long as its cards, and loads its next page when its end comes into view (no
   // "Load more" to find). Where the browser has no IntersectionObserver the button stays as the fallback.
@@ -120,7 +142,18 @@ export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onV
         )}
 
         {responses.map((r) => (
-          <BoardCard key={r._id} response={r} stages={stages} canAct={canAct} onView={onViewResponse} onChangeStage={onChangeStage} />
+          <BoardCard
+            key={r._id}
+            response={r}
+            stages={stages}
+            stageId={stage.id}
+            canAct={canAct}
+            onView={onViewResponse}
+            onChangeStage={onChangeStage}
+            config={config}
+            positional={positional}
+            line={indicator?.beforeId === r._id ? 'above' : indicator?.afterId === r._id && !indicator.beforeId ? 'below' : undefined}
+          />
         ))}
 
         {hasNextPage && (canObserve ? (

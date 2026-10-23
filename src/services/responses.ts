@@ -140,6 +140,13 @@ export const responsesService = {
         };
       }),
 
+  /**
+   * Puts a Board card at a chosen place in its column (the stage change itself is `update`). Name the card that ends up directly
+   * above (`afterId`) or directly below (`beforeId`); neither puts it at the top.
+   */
+  placeOnBoard: (id: string, place: { afterId?: string; beforeId?: string }, scope?: string) =>
+    axiosInstance.post(`/api/responses/${id}/board-position`, place, { headers: workspaceHeaders(scope) }).then(() => undefined),
+
   getResponseById: (id: string, scope?: string) =>
     axiosInstance
       .get<DetailEnvelope>(`/api/responses/${id}`, { headers: workspaceHeaders(scope) })

@@ -7,6 +7,8 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { FORM_HEADER_SLOT_ID } from '@/lib/formHeaderSlot';
 import { ResponsesBoard } from './ResponsesBoard';
+import { BoardCardSettings } from './BoardCardSettings';
+import { useBoardCardConfig } from '@/lib/boardCard';
 import { ResponsesCalendar } from './ResponsesCalendar';
 import { ResponsesToolbar } from './ResponsesToolbar';
 import { ActiveFilterChips } from './ActiveFilterChips';
@@ -74,6 +76,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   });
   const formNames = formId ? undefined : Object.fromEntries((allForms?.forms ?? []).map((f) => [f._id, f.title]));
   const { user } = useAuth();
+  const [cardConfig, setCardConfig] = useBoardCardConfig(formId);
   // Inside a form, Export sits in the form header beside Edit form (its slot), so the filter row keeps only what shapes the list.
   const headerSlot = useSyncExternalStore(subscribeNever, () => document.getElementById(FORM_HEADER_SLOT_ID), () => null);
 
@@ -188,6 +191,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
             viewOptions={VIEW_TABS}
             view={view}
             onViewChange={(id) => setView(id as InboxViewMode)}
+            viewControls={view === 'board' && formId ? <BoardCardSettings scope={scope} formId={formId} fields={form?.fields} config={cardConfig} onChange={setCardConfig} /> : undefined}
             activeFilters={
               <ActiveFilterChips
                 filters={filters}
@@ -246,6 +250,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
               stagesLoading={stagesLoading}
               role={role}
               onViewResponse={openResponse}
+              cardConfig={cardConfig}
               onChangeStage={(id, stageId) => mutations.updateStage(id, stageId)}
             />
           )}
