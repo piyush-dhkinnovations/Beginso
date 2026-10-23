@@ -52,8 +52,13 @@ function Step({ n, title, children }: { n: number; title: string; children: Reac
   );
 }
 
-/** One pickable preview: fixed-height frame so every tile lines up, name + size underneath. */
-function Tile({ name, size, onPick, children }: { name: string; size: WidgetWidth; onPick: () => void; children: ReactNode }) {
+// A chart is as tall as it needs to be (a donut with its legend is about 340px), far more than the preview frame. It is drawn at this scale so
+// the WHOLE card fits, not a corner of it. CSS zoom (unlike transform) shrinks the space it takes too, so the frame follows its height. The frame has
+// no rounding: it would clip the corners of the scaled-down (so smaller-radius) card inside it.
+const CHART_PREVIEW_ZOOM = 0.62;
+
+/** One pickable preview: name + size underneath. A look is drawn in a fixed-height frame so every tile lines up; a chart is drawn whole, scaled down. */
+function Tile({ name, size, onPick, scaled = false, children }: { name: string; size: WidgetWidth; onPick: () => void; scaled?: boolean; children: ReactNode }) {
   return (
     <button
       type="button"
@@ -61,7 +66,13 @@ function Tile({ name, size, onPick, children }: { name: string; size: WidgetWidt
       aria-label={`Add ${name}`}
       className="group flex min-w-0 flex-col gap-2 rounded-2xl p-1.5 text-left transition-colors hover:bg-(--surface-hover) focus-visible:outline-2 focus-visible:outline-(--action-primary)"
     >
-      <span className="pointer-events-none relative block h-44 overflow-hidden rounded-2xl *:h-full">{children}</span>
+      {scaled ? (
+        <span className="pointer-events-none relative block overflow-hidden">
+          <span className="block" style={{ zoom: CHART_PREVIEW_ZOOM }} data-testid="scaled-preview">{children}</span>
+        </span>
+      ) : (
+        <span className="pointer-events-none relative block h-44 overflow-hidden rounded-2xl *:h-full">{children}</span>
+      )}
       <span className="flex items-center justify-between gap-2 px-1">
         <span className="truncate bg-body-sm font-semibold text-(--text-primary)">{name}</span>
         <span className="flex flex-none items-center gap-1 text-xs text-(--text-muted)">
@@ -148,9 +159,9 @@ export function AddWidgetDrawer({ isOpen, onClose, metrics, onAdd }: Props) {
               </Tile>
             </div>
           ) : m && !isKpi(m) ? (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2">
               {chartsFor(m).map((chart) => (
-                <Tile key={chart} name={CHART_LABEL[chart]} size={chartWidth(chart)} onPick={() => add({ w: chartWidth(chart), config: { type: 'chart', chart, metric } })}>
+                <Tile key={chart} name={CHART_LABEL[chart]} size={chartWidth(chart)} scaled onPick={() => add({ w: chartWidth(chart), config: { type: 'chart', chart, metric } })}>
                   <ChartWidget chart={chart} metric={m} />
                 </Tile>
               ))}

@@ -75,6 +75,17 @@ describe('AddWidgetDrawer', () => {
     expect(screen.getByTestId('kpi-20')).toBeInTheDocument();
   });
 
+  it('draws each chart whole and scaled down, so a tall chart is not cut off by the preview frame; the card looks keep their fixed frame', async () => {
+    const user = userEvent.setup();
+    setup();
+    expect(screen.queryAllByTestId('scaled-preview')).toHaveLength(0); // the first metric is a plain number: card looks only
+    await user.click(screen.getByRole('radio', { name: 'By status' }));
+    const previews = screen.getAllByTestId('scaled-preview');
+    expect(previews.length).toBeGreaterThan(0);
+    for (const p of previews) expect((p as HTMLElement).style.zoom).toBe('0.62');
+    expect(screen.getByTestId('chart-donut').closest('[data-testid="scaled-preview"]')).not.toBeNull();
+  });
+
   it('adds a KPI with the default width, mixed tone, then closes', async () => {
     const user = userEvent.setup();
     const { onAdd, onClose } = setup();
