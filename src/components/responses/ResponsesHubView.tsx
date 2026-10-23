@@ -145,7 +145,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         members={members}
         role={role}
         onApply={savedViews.applyView}
-        onClearApplied={savedViews.clearAppliedView}
+        onClearApplied={savedViews.showAllResponses}
         onRename={savedViews.renameView}
         onDelete={savedViews.deleteView}
       />

@@ -65,6 +65,33 @@ describe('applyView', () => {
   });
 });
 
+describe('switching between views', () => {
+  // The URL-backed setter only changes the keys it is given, so the second view must name every key it does not use as cleared.
+  it('clears every filter the new view does not set, so the previous view leaves nothing behind', () => {
+    const { result, setFilters } = setup();
+    act(() => result.current.applyView(saved('a', { filters: { stageId: 's1', assigneeId: 'me' } })));
+    act(() => result.current.applyView(saved('b', { filters: { unread: true } })));
+    const patch = setFilters.mock.calls.at(-1)![0];
+    expect(patch).toMatchObject({ unread: true, view: 'board' });
+    for (const key of ['stageId', 'assigneeId', 'tagIds', 'duplicate', 'includeTest', 'from', 'to', 'q', 'field', 'value', 'granularity']) {
+      expect(patch, key).toHaveProperty(key, undefined);
+    }
+    expect(result.current.activeViewId).toBe('b');
+  });
+
+  it('"All responses" drops the applied view and its filters', () => {
+    const { result, setFilters, clearSelection } = setup();
+    act(() => result.current.applyView(saved('a')));
+    act(() => result.current.showAllResponses());
+    expect(result.current.activeViewId).toBeUndefined();
+    expect(clearSelection).toHaveBeenCalledTimes(2);
+    const patch = setFilters.mock.calls.at(-1)![0];
+    expect(patch).toHaveProperty('stageId', undefined);
+    expect(patch).toHaveProperty('unread', undefined);
+    expect(setFilters.mock.calls.at(-1)![1]).toEqual({ resetPage: true });
+  });
+});
+
 describe('saveView', () => {
   it('saves with the active view mode and filters, then activates it', async () => {
     svc.create.mockResolvedValue(saved('new'));

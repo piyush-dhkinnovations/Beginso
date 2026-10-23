@@ -9,6 +9,13 @@ import type { SavedView } from '@/types/savedView';
 import type { useInboxFilters } from '@/hooks/useInboxFilters';
 import type { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
 
+// Every filter a saved view can hold. Applying a view starts from all of these cleared: the filter setter merges, so a view that does
+// not mention (say) a stage would otherwise keep the stage the previous view had set.
+const NO_FILTERS = {
+  stageId: undefined, tagIds: undefined, assigneeId: undefined, unread: undefined, duplicate: undefined, includeTest: undefined,
+  from: undefined, to: undefined, q: undefined, field: undefined, value: undefined, granularity: undefined,
+};
+
 type InboxFilters = ReturnType<typeof useInboxFilters>;
 
 interface Options {
@@ -44,7 +51,14 @@ export function useSavedViews({ scope, formId, filters, view, setFilters, role, 
   function applyView(savedView: SavedView) {
     setActiveViewId(savedView.id);
     clearSelection();
-    setFilters({ ...savedView.filters, view: savedView.viewMode }, { resetPage: true });
+    setFilters({ ...NO_FILTERS, ...savedView.filters, view: savedView.viewMode }, { resetPage: true });
+  }
+
+  /** "All responses" in the picker: no view applied and none of its filters left behind. */
+  function showAllResponses() {
+    setActiveViewId(undefined);
+    clearSelection();
+    setFilters(NO_FILTERS, { resetPage: true });
   }
 
   function clearAppliedView() {
@@ -96,5 +110,5 @@ export function useSavedViews({ scope, formId, filters, view, setFilters, role, 
       .catch(() => toast('Failed to delete the view. Please try again.', 'error'));
   }
 
-  return { views, saveViewOpen, setSaveViewOpen, activeViewId, canCreateTeamView, applyView, clearAppliedView, saveView, renameView, deleteView };
+  return { views, saveViewOpen, setSaveViewOpen, activeViewId, canCreateTeamView, applyView, clearAppliedView, showAllResponses, saveView, renameView, deleteView };
 }

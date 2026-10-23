@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, ChevronDown } from 'lucide-react';
+import { Check, ChevronDown, MoreHorizontal } from 'lucide-react';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { Alert } from '@/components/ui/Alert';
 import { Input } from '@/components/ui/Input';
@@ -95,7 +95,8 @@ export function SavedViewSelect({
 
         {activeView && (
           <Menu
-            trigger="⋯"
+            trigger={<MoreHorizontal size={16} aria-hidden="true" />}
+            triggerClassName="bg-btn bg-btn-ghost bg-btn-sm"
             triggerLabel={`Manage the "${activeView.name}" saved view`}
             items={menuItems(activeView)}
           />

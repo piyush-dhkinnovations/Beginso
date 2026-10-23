@@ -21,6 +21,11 @@ async function installBackend(context: BrowserContext) {
     if (path === 'api/auth/me') return json({ success: true, user: { id: 'e2e-user', name: 'E2E User', email: 'e2e@example.com', onboardingCompleted: true } });
     if (path === 'api/responses' && req.method() === 'GET') return json({ success: true, data: rows, total: rows.length, page: 1, limit: 50, totalPages: 1 });
     if (path === 'api/responses/stats') return json({ total: rows.length, unread: 4 });
+    if (path === 'api/workspaces') return json({ success: true, workspaces: [{ id: '507f1f77bcf86cd799439011', slug: 'e2e-avatars-ws', name: 'E2E', role: 'admin', isOwner: false, memberCount: 2, timezone: 'UTC', logo: null }], total: 1 });
+    if (path === 'api/views' && req.method() === 'GET') {
+      const view = (id: string, name: string, filters: object) => ({ id, name, ownerId: 'e2e-user', ownerName: 'E2E User', visibility: 'personal', formId: FORM_ID, filters, viewMode: 'table', createdAt: '2026-10-01T00:00:00.000Z' });
+      return json({ success: true, views: [view('v1', 'test', { duplicate: true }), view('v2', 'fgdf', { unread: true })] });
+    }
     if (path === `api/forms/${FORM_ID}`) return json({ _id: FORM_ID, title: 'Avatar form', fields: [], pages: [], status: 'published', workspaceId: null });
     if (req.method() === 'GET' && /workspaces|notifications|members|stages|tags|views/.test(path)) return json([]);
     return json({});
@@ -68,4 +73,37 @@ test('an active filter is a chip in the search bar, and the stage is not repeate
   const c = (await chip.boundingBox())!;
   expect(Math.abs(c.y + c.height / 2 - (search.y + search.height / 2))).toBeLessThan(16);
   await page.screenshot({ path: testInfo.outputPath('responses-filtered.png'), clip: { x: 0, y: 0, width: 1440, height: 340 } });
+});
+
+test('saved views: switching from one view to another replaces its filters, and the row does not move', async ({ page, context }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installBackend(context);
+  await page.goto(`/forms/${FORM_ID}/inbox?ws=e2e-avatars-ws`);
+  const picker = page.getByRole('button', { name: /^Saved views:/ });
+  await expect(picker).toBeVisible({ timeout: 60000 });
+  const before = (await picker.boundingBox())!;
+
+  await picker.click();
+  await page.getByRole('menuitem', { name: 'test', exact: true }).click();
+  await expect(page).toHaveURL(/duplicate=1/);
+  await expect(page.getByRole('button', { name: /^Saved views: test/ })).toBeVisible();
+  // The manage button appears: it must not push the row up or down.
+  const manage = page.getByRole('button', { name: /Manage the "test" saved view/ });
+  await expect(manage).toBeVisible();
+  const after = (await page.getByRole('button', { name: /^Saved views:/ }).boundingBox())!;
+  expect(Math.abs(after.y - before.y), 'picker moved when the manage button appeared').toBeLessThan(1);
+  expect(Math.abs((await manage.boundingBox())!.height - after.height)).toBeLessThan(1);
+  await page.screenshot({ path: testInfo.outputPath('views-applied.png'), clip: { x: 700, y: 60, width: 740, height: 160 } });
+
+  await page.getByRole('button', { name: /^Saved views:/ }).click();
+  await page.screenshot({ path: testInfo.outputPath('views-menu.png'), clip: { x: 900, y: 60, width: 540, height: 340 } });
+  await page.getByRole('menuitem', { name: 'fgdf', exact: true }).click();
+  await expect(page).toHaveURL(/unread=1/);
+  await expect(page).not.toHaveURL(/duplicate=1/);
+  await expect(page.getByRole('button', { name: /^Saved views: fgdf/ })).toBeVisible();
+
+  await page.getByRole('button', { name: /^Saved views:/ }).click();
+  await page.getByRole('menuitem', { name: 'All responses' }).click();
+  await expect(page).not.toHaveURL(/unread=1/);
+  await expect(page.getByRole('button', { name: 'Saved views: All responses' })).toBeVisible();
 });
