@@ -35,7 +35,10 @@ function supports(v: KpiVariant, d: KpiData): boolean {
   return true;
 }
 
-const ALL = Array.from({ length: 20 }, (_, i) => (i + 1) as KpiVariant);
+// Looks that are no longer offered when adding a widget: each is too close to one that stays (Icon + change, Icon badge, Trend + note, Icon + value,
+// Comparison, Mini donut). They are only hidden here - KpiCard still draws them, so a dashboard that already uses one keeps working.
+const NOT_OFFERED: KpiVariant[] = [7, 11, 12, 13, 15, 16];
+const ALL = Array.from({ length: 20 }, (_, i) => (i + 1) as KpiVariant).filter((v) => !NOT_OFFERED.includes(v));
 
 function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
   return (

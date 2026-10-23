@@ -50,11 +50,23 @@ describe('AddWidgetDrawer', () => {
 
   it('only offers looks the metric has data for', () => {
     setup();
-    for (const v of [1, 2, 7, 11, 13, 17]) expect(screen.getByTestId(`kpi-${v}`)).toBeInTheDocument();
+    for (const v of [1, 2, 17]) expect(screen.getByTestId(`kpi-${v}`)).toBeInTheDocument();
     for (const v of [3, 4, 8, 14, 19, 20]) expect(screen.queryByTestId(`kpi-${v}`)).not.toBeInTheDocument();
   });
 
-  it('offers every look for a fully populated metric', async () => {
+  it('no longer offers the six looks that were too close to others, even for a fully populated metric', async () => {
+    const user = userEvent.setup();
+    setup();
+    await user.click(screen.getByRole('radio', { name: 'Rich' }));
+    for (const v of [7, 11, 12, 13, 15, 16]) expect(screen.queryByTestId(`kpi-${v}`)).not.toBeInTheDocument();
+    for (const name of ['Icon + change', 'Icon badge', 'Trend + note', 'Icon + value', 'Comparison', 'Mini donut']) {
+      expect(screen.queryByRole('button', { name: `Add ${name}` })).not.toBeInTheDocument();
+    }
+    // the other fourteen are all still there
+    for (const v of [1, 2, 3, 4, 5, 6, 8, 9, 10, 14, 17, 18, 19, 20]) expect(screen.getByTestId(`kpi-${v}`)).toBeInTheDocument();
+  });
+
+  it('offers every remaining look for a fully populated metric', async () => {
     const user = userEvent.setup();
     setup();
     await user.click(screen.getByRole('radio', { name: 'Rich' }));
