@@ -43,8 +43,29 @@ test('the status badge is on the title line and Export is in the header row besi
   // Export is level with Edit form, to its left.
   expect(Math.abs(exportBtn.y - edit.y)).toBeLessThan(8);
   expect(exportBtn.x).toBeLessThan(edit.x);
+  // The stage tabs sit on a rule, directly under the title row, and the search bar follows on one line with the layout switcher.
+  const tab = await box(page.getByRole('button', { name: /^All/ }));
+  const search = await box(page.getByLabel('Search responses'));
+  const tableTab = await box(page.getByRole('radio', { name: 'Table' }).or(page.getByRole('button', { name: 'Table' })));
+  expect(tab.y).toBeGreaterThan(title.y);
+  expect(Math.abs(search.y + search.height / 2 - (tableTab.y + tableTab.height / 2))).toBeLessThan(14);
   // The table (its first row) starts high on a 900px screen.
   const row = await box(page.getByText('harsh.vora@example.com'));
   expect(row.y).toBeLessThan(330);
   await page.screenshot({ path: testInfo.outputPath('responses-header.png'), clip: { x: 0, y: 0, width: 1440, height: 340 } });
+});
+
+test('an active filter is a chip in the search bar, and the stage is not repeated as a chip', async ({ page, context }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installBackend(context);
+  await page.goto(`/forms/${FORM_ID}/inbox?duplicate=1&unread=1`);
+  await expect(page.getByText('harsh.vora@example.com').first()).toBeVisible({ timeout: 60000 });
+  const chip = page.getByRole('button', { name: 'Remove filter: Duplicates only' });
+  await expect(chip).toBeVisible();
+  // "Unread only" is the Unread tab, so no chip repeats it.
+  await expect(page.getByText('Unread only')).toHaveCount(0);
+  const search = (await page.getByLabel('Search responses').boundingBox())!;
+  const c = (await chip.boundingBox())!;
+  expect(Math.abs(c.y + c.height / 2 - (search.y + search.height / 2))).toBeLessThan(16);
+  await page.screenshot({ path: testInfo.outputPath('responses-filtered.png'), clip: { x: 0, y: 0, width: 1440, height: 340 } });
 });

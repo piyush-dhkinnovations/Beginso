@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Select } from '@/components/ui/Select';
+import { Check, ChevronDown } from 'lucide-react';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { Alert } from '@/components/ui/Alert';
 import { Input } from '@/components/ui/Input';
@@ -61,6 +61,9 @@ export function SavedViewSelect({
 
   if (views.length === 0 && !activeViewId) return null;
 
+  const check = (on: boolean) => (on ? <Check size={14} aria-hidden="true" /> : <span className="inline-block w-3.5" />);
+  const viewItem = (v: SavedView) => ({ id: v.id, label: v.name, icon: check(v.id === activeViewId), onSelect: () => onApply(v) });
+
   const menuItems = (view: SavedView): MenuItem[] => {
     if (!canManageView(view, currentUserId, role)) return [];
     return [
@@ -72,35 +75,23 @@ export function SavedViewSelect({
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        <Select
-          id="saved-view-select"
-          aria-label="Saved views"
-          value={activeViewId ?? ''}
-          onChange={(e) => {
-            if (!e.target.value) {
-              onClearApplied();
-              return;
-            }
-            const view = views.find((v) => v.id === e.target.value);
-            if (view) onApply(view);
-          }}
-        >
-          <option value="">All responses</option>
-          {myViews.length > 0 && (
-            <optgroup label="My views">
-              {myViews.map((v) => (
-                <option key={v.id} value={v.id}>{v.name}</option>
-              ))}
-            </optgroup>
-          )}
-          {teamViews.length > 0 && (
-            <optgroup label="Team views">
-              {teamViews.map((v) => (
-                <option key={v.id} value={v.id}>{v.name}</option>
-              ))}
-            </optgroup>
-          )}
-        </Select>
+        <Menu
+          triggerLabel={`Saved views: ${activeView?.name ?? 'All responses'}`}
+          triggerClassName="bg-btn bg-btn-secondary bg-btn-sm"
+          trigger={
+            <>
+              <span className="max-w-40 truncate">{activeView?.name ?? 'All responses'}</span>
+              <ChevronDown size={14} aria-hidden="true" />
+            </>
+          }
+          items={[
+            { id: '__all', label: 'All responses', icon: check(!activeViewId), onSelect: onClearApplied },
+            ...(myViews.length > 0 ? [{ id: '__my', label: 'My views', disabled: true, onSelect: () => {} }] : []),
+            ...myViews.map(viewItem),
+            ...(teamViews.length > 0 ? [{ id: '__team', label: 'Team views', disabled: true, onSelect: () => {} }] : []),
+            ...teamViews.map(viewItem),
+          ]}
+        />
 
         {activeView && (
           <Menu

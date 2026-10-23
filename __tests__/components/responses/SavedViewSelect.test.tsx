@@ -34,19 +34,37 @@ const baseProps = {
 };
 
 describe('SavedViewSelect', () => {
-  it('groups My views and Team views separately', () => {
+  it('lists All responses, then My views and Team views as separate groups', async () => {
+    const user = userEvent.setup();
     render(<SavedViewSelect {...baseProps} />);
-    const select = screen.getByLabelText('Saved views') as HTMLSelectElement;
-    const groups = Array.from(select.querySelectorAll('optgroup')).map((g) => g.label);
-    expect(groups).toEqual(['My views', 'Team views']);
+    await user.click(screen.getByRole('button', { name: 'Saved views: All responses' }));
+    const labels = screen.getAllByRole('menuitem').map((el) => el.textContent?.trim());
+    expect(labels).toEqual(['All responses', 'My views', 'My shortlist', 'Team views', 'Needs screening']);
+  });
+
+  it('names the applied view on the button and marks it in the list', async () => {
+    const user = userEvent.setup();
+    render(<SavedViewSelect {...baseProps} activeViewId="v1" />);
+    await user.click(screen.getByRole('button', { name: 'Saved views: My shortlist' }));
+    expect(screen.getByRole('menuitem', { name: 'My shortlist' }).querySelector('svg')).not.toBeNull();
   });
 
   it('applying a view fires onApply with that view', async () => {
     const user = userEvent.setup();
     const onApply = vi.fn();
     render(<SavedViewSelect {...baseProps} onApply={onApply} />);
-    await user.selectOptions(screen.getByLabelText('Saved views'), 'v1');
+    await user.click(screen.getByRole('button', { name: /saved views/i }));
+    await user.click(screen.getByRole('menuitem', { name: 'My shortlist' }));
     expect(onApply).toHaveBeenCalledWith(MY_VIEW);
+  });
+
+  it('choosing All responses clears the applied view', async () => {
+    const user = userEvent.setup();
+    const onClearApplied = vi.fn();
+    render(<SavedViewSelect {...baseProps} activeViewId="v1" onClearApplied={onClearApplied} />);
+    await user.click(screen.getByRole('button', { name: /saved views/i }));
+    await user.click(screen.getByRole('menuitem', { name: 'All responses' }));
+    expect(onClearApplied).toHaveBeenCalled();
   });
 
   it('shows the stale-filter notice for a view referencing a deleted stage', () => {

@@ -37,6 +37,7 @@ export function ResponsesCountChips({ stats, stages, filters, onFilterChange }: 
       chips={chips}
       activeId={activeId}
       ariaLabel="Filter responses"
+      variant="tabs"
       onChange={(id) => {
         if (id === 'all') onFilterChange({ stageId: undefined, unread: undefined });
         else if (id === 'unread') onFilterChange({ stageId: undefined, unread: true });

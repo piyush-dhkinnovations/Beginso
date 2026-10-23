@@ -9,6 +9,8 @@ export interface ActiveFilterChipsProps {
   onClearAll: () => void;
   /** Chart drill-down chip text, e.g. "Satisfaction: Very satisfied" - resolved by the caller from the form. */
   fieldChipLabel?: string;
+  /** Filters the page already shows somewhere else (the stage tabs), so no chip repeats them. */
+  omit?: readonly (keyof ResponseFilters)[];
 }
 
 /**
@@ -16,26 +18,27 @@ export interface ActiveFilterChipsProps {
  * chips + 'Clear all'." Reads the stage name from `stages` for the stage chip so it never shows a
  * raw id.
  */
-export function ActiveFilterChips({ filters, stages, onRemove, onClearAll, fieldChipLabel }: ActiveFilterChipsProps) {
-  const chips: { key: keyof ResponseFilters; label: string }[] = [];
+export function ActiveFilterChips({ filters, stages, onRemove, onClearAll, fieldChipLabel, omit = [] }: ActiveFilterChipsProps) {
+  const all: { key: keyof ResponseFilters; label: string }[] = [];
 
   if (filters.stageId) {
     const stage = stages.find((s) => s.id === filters.stageId);
-    chips.push({ key: 'stageId', label: `Stage: ${stage?.name ?? 'Unknown stage'}` });
+    all.push({ key: 'stageId', label: `Stage: ${stage?.name ?? 'Unknown stage'}` });
   }
   if (filters.assigneeId) {
-    chips.push({
+    all.push({
       key: 'assigneeId',
       label: `Assignee: ${filters.assigneeId === 'unassigned' ? 'Unassigned' : filters.assigneeId === 'me' ? 'Me' : filters.assigneeId}`,
     });
   }
-  if (filters.tagIds?.length) chips.push({ key: 'tagIds', label: `Tags: ${filters.tagIds.length}` });
-  if (filters.unread) chips.push({ key: 'unread', label: 'Unread only' });
-  if (filters.duplicate) chips.push({ key: 'duplicate', label: 'Duplicates only' });
-  if (filters.from || filters.to) chips.push({ key: 'from', label: 'Date range' });
-  if (filters.field) chips.push({ key: 'field', label: fieldChipLabel ?? 'Chart filter' });
-  if (filters.q) chips.push({ key: 'q', label: `Search: "${filters.q}"` });
+  if (filters.tagIds?.length) all.push({ key: 'tagIds', label: `Tags: ${filters.tagIds.length}` });
+  if (filters.unread) all.push({ key: 'unread', label: 'Unread only' });
+  if (filters.duplicate) all.push({ key: 'duplicate', label: 'Duplicates only' });
+  if (filters.from || filters.to) all.push({ key: 'from', label: 'Date range' });
+  if (filters.field) all.push({ key: 'field', label: fieldChipLabel ?? 'Chart filter' });
+  if (filters.q) all.push({ key: 'q', label: `Search: "${filters.q}"` });
 
+  const chips = all.filter((c) => !omit.includes(c.key));
   if (chips.length === 0) return null;
 
   return (

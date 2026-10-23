@@ -171,10 +171,10 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         <NoResponsesYet formId={formId} />
       ) : (
         <>
-          {/* Inside a form the form header already names the page, so the count chips and the page actions share one row. */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          {/* The stage tabs sit on a rule under the page header; inside a form the saved-view picker and Save view share their row. */}
+          <div className="flex flex-wrap items-end justify-between gap-x-4 border-b border-(--border-default)">
             <ResponsesCountChips stats={isStatsError ? undefined : stats} stages={stages} filters={filters} onFilterChange={changeFilter} />
-            {formId && headerActions && <div className="flex flex-wrap items-center gap-3">{headerActions}</div>}
+            {formId && headerActions && <div className="flex flex-wrap items-center gap-3 pb-1.5">{headerActions}</div>}
           </div>
 
           <ResponsesToolbar
@@ -188,16 +188,18 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
             viewOptions={VIEW_TABS}
             view={view}
             onViewChange={(id) => setView(id as InboxViewMode)}
-          />
-
-          <ActiveFilterChips
-            filters={filters}
-            stages={stages}
-            fieldChipLabel={fieldChipLabel}
-            onRemove={(key) =>
-              setFilters(key === 'field' ? { field: undefined, value: undefined, granularity: undefined } : { [key]: undefined }, { resetPage: true })
+            activeFilters={
+              <ActiveFilterChips
+                filters={filters}
+                stages={stages}
+                fieldChipLabel={fieldChipLabel}
+                omit={['stageId', 'unread', 'q']}
+                onRemove={(key) =>
+                  setFilters(key === 'field' ? { field: undefined, value: undefined, granularity: undefined } : { [key]: undefined }, { resetPage: true })
+                }
+                onClearAll={clearAll}
+              />
             }
-            onClearAll={clearAll}
           />
 
           {view === 'table' && (

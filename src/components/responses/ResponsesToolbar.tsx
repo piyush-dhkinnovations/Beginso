@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Toolbar } from '@/components/ui/Toolbar';
@@ -27,6 +27,8 @@ interface ResponsesToolbarProps {
   viewOptions?: { id: string; label: string }[];
   view?: string;
   onViewChange?: (id: string) => void;
+  /** The removable chips for what is filtered right now: they sit in this bar, after the filter buttons, not on a row of their own. */
+  activeFilters?: ReactNode;
 }
 
 const DATE_PRESETS = [
@@ -74,6 +76,7 @@ export function ResponsesToolbar({
   viewOptions,
   view,
   onViewChange,
+  activeFilters,
 }: ResponsesToolbarProps) {
   const [inputValue, setInputValue] = useState(search);
   const [syncedSearch, setSyncedSearch] = useState(search);
@@ -183,6 +186,8 @@ export function ResponsesToolbar({
         }
         onClear={() => onFilterChange({ duplicate: undefined, includeTest: undefined })}
       />
+
+      {activeFilters}
 
       {/* The total is for every month; the calendar says how many are in the month on screen, and the stage chips above already give the counts. */}
       {view !== 'calendar' && (
