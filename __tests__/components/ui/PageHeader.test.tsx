@@ -25,4 +25,10 @@ describe('PageHeader component', () => {
     render(<PageHeader title="Dashboard" />);
     expect(screen.queryByLabelText('Breadcrumb')).not.toBeInTheDocument();
   });
+
+  it('puts a title addon on the title line, not on a line of its own', () => {
+    render(<PageHeader title="Contest" titleAddon={<span>Published</span>} />);
+    const heading = screen.getByRole('heading', { name: 'Contest' });
+    expect(heading.parentElement).toContainElement(screen.getByText('Published'));
+  });
 });

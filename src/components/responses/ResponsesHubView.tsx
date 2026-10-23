@@ -1,8 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { Button } from '@/components/ui/Button';
+import { FORM_HEADER_SLOT_ID } from '@/lib/formHeaderSlot';
 import { ResponsesBoard } from './ResponsesBoard';
 import { ResponsesCalendar } from './ResponsesCalendar';
 import { ResponsesToolbar } from './ResponsesToolbar';
@@ -30,6 +33,8 @@ import { useWorkspaceTimezone } from '@/hooks/useWorkspaceTimezone';
 import { useAuth } from '@/hooks/useAuth';
 import { hasCapability } from '@/lib/roles';
 import type { InboxViewMode } from '@/lib/inboxFilters';
+
+const subscribeNever = () => () => {};
 
 const VIEW_TABS = [
   { id: 'table', label: 'Table' },
@@ -69,6 +74,8 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   });
   const formNames = formId ? undefined : Object.fromEntries((allForms?.forms ?? []).map((f) => [f._id, f.title]));
   const { user } = useAuth();
+  // Inside a form, Export sits in the form header beside Edit form (its slot), so the filter row keeps only what shapes the list.
+  const headerSlot = useSyncExternalStore(subscribeNever, () => document.getElementById(FORM_HEADER_SLOT_ID), () => null);
 
   const selection = useInboxSelection();
   const { clearSelection, confirmDelete, setConfirmDelete } = selection;
@@ -122,11 +129,12 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
     clear();
   };
 
+  const exportInHeader = !!formId && !!headerSlot && canExport;
   const headerActions =
-    scope !== 'personal' || canExport ? (
+    scope !== 'personal' || (canExport && !exportInHeader) ? (
       <ResponsesHeaderActions
         isWorkspace={scope !== 'personal'}
-        canExport={canExport}
+        canExport={canExport && !exportInHeader}
         onExport={exportCurrentFilter}
         onSaveView={() => savedViews.setSaveViewOpen(true)}
         views={savedViews.views ?? []}
@@ -147,7 +155,14 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
     // Keeping this container out of an animated opacity stacking context is important:
     // ResponseDrawer is position:fixed, and must be able to layer above the fixed TopNav.
     // AppShell owns page width (CLAUDE.md) — this component sets none of its own.
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
+      {exportInHeader && headerSlot &&
+        createPortal(
+          <Button variant="secondary" onClick={exportCurrentFilter}>
+            Export
+          </Button>,
+          headerSlot,
+        )}
       {!formId && (
         <PageHeader title="All responses" description={headerFacts} actions={headerActions} />
       )}

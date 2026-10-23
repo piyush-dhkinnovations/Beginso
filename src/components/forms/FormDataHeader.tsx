@@ -54,7 +54,7 @@ export function FormDataHeader() {
     <PageHeader
       breadcrumb={[{ label: 'Responses', href: ws ? `/w/${ws}/form-responses` : '/form-responses' }, { label: form?.title ?? '…' }]}
       title={form?.title ?? '…'}
-      description={form ? <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge> : undefined}
+      titleAddon={form ? <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge> : undefined}
       actionsAlign="center"
       actions={
         <>

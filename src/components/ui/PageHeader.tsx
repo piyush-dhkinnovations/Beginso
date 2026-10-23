@@ -8,6 +8,8 @@ export interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
   description?: React.ReactNode;
   breadcrumb?: BreadcrumbItem[];
   actions?: React.ReactNode;
+  /** Sits on the title's line, right after it (a status badge), instead of taking a line of its own under it. */
+  titleAddon?: React.ReactNode;
   /** Vertical alignment of the actions against the title block. Default `start` (top edge);
    * `center` lines buttons up with the middle of the title + description. */
   actionsAlign?: "start" | "center";
@@ -24,6 +26,7 @@ export function PageHeader({
   description,
   breadcrumb,
   actions,
+  titleAddon,
   actionsAlign = "start",
   className,
   ...props
@@ -34,7 +37,14 @@ export function PageHeader({
       <div className={bx("bg-row", "bg-gap-4", "flex-wrap")} style={{ justifyContent: "space-between", alignItems: actionsAlign === "center" ? "center" : "flex-start" }}>
         <div className={bx("bg-stack", "bg-gap-1")}>
           {eyebrow && <span className="bg-overline">{eyebrow}</span>}
-          <h1 className="bg-h2">{title}</h1>
+          {titleAddon ? (
+            <div className={bx("bg-row", "bg-gap-3", "flex-wrap")}>
+              <h1 className="bg-h2">{title}</h1>
+              {titleAddon}
+            </div>
+          ) : (
+            <h1 className="bg-h2">{title}</h1>
+          )}
           {description && <p className="bg-body" style={{ color: "var(--text-muted)", margin: 0 }}>{description}</p>}
         </div>
         {actions && (
