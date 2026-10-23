@@ -44,7 +44,7 @@ describe('Home loading', () => {
   it('while the forms list loads: the real header plus ONE skeleton region, and nothing else', () => {
     queries({ analytics: { data: ANALYTICS, isLoading: false }, forms: { data: undefined, isLoading: true } });
     render(<DashboardPage />);
-    expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^Welcome back/ })).toBeInTheDocument();
     expect(screen.getAllByRole('status')).toHaveLength(1);
     expect(screen.queryByText('Create your first form')).not.toBeInTheDocument();
   });
@@ -86,7 +86,7 @@ describe('Home loading', () => {
 
   it("the route's loading.tsx is the same header and the same skeleton", () => {
     render(<Loading />);
-    expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /^Welcome back/ })).toBeInTheDocument();
     expect(screen.getAllByRole('status')).toHaveLength(1);
     expect(screen.getByText('Personal space')).toBeInTheDocument();
   });

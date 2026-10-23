@@ -1,5 +1,6 @@
 'use client';
 
+import { WELCOME_DESCRIPTION, welcomeTitle } from '@/lib/welcome';
 import { usePathname } from 'next/navigation';
 import { RouteLoading } from '@/components/errors/RouteLoading';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -12,7 +13,7 @@ export default function Loading() {
   if (!isHome) return <RouteLoading />;
   return (
     <div className="flex w-full flex-col gap-4">
-      <PageHeader title="Home" />
+      <PageHeader title={welcomeTitle()} description={WELCOME_DESCRIPTION} />
       <HomeBodySkeleton />
     </div>
   );

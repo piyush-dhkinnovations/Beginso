@@ -9,6 +9,8 @@
 // Real data wiring (actual form list per workspace) is done via the existing workspaceKeys.forms
 // query key factory, scoped to this workspace context.
 
+import { useAuth } from '@/hooks/useAuth';
+import { WELCOME_DESCRIPTION, welcomeTitle } from '@/lib/welcome';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -22,7 +24,7 @@ import { activityKeys, dashboardKeys, workspaceKeys } from '@/lib/queryKeys';
 import { dashboardService } from '@/services/dashboard';
 import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
 import { useEventAvatars } from '@/hooks/useEventAvatars';
-import { canManageDashboard, canManageWorkspaceSettings } from '@/lib/roles';
+import { canManageDashboard, canManageWorkspaceSettings, canViewTemplates } from '@/lib/roles';
 import { ActivityFeed } from '@/components/workspaces/ActivityFeed';
 import { PageHeader, Button, EmptyState, Card, Badge, Skeleton, QuickActionsBanner } from '@/components/ui';
 import { HomeBodySkeleton } from '@/components/ui/PageSkeletons';
@@ -38,6 +40,7 @@ export default function WorkspaceHomePage() {
   const context = { type: 'workspace' as const, workspaceId: slug };
   const [formToShare, setFormToShare] = useState<Form | null>(null);
   const role = useWorkspaceRole(slug);
+  const { user } = useAuth();
   const avatarOf = useEventAvatars(slug);
 
   // Same feed as /w/[slug]/activity, first five events.
@@ -85,7 +88,7 @@ export default function WorkspaceHomePage() {
   if (isLoading || (!error && !isEmpty && dashboard.loading)) {
     return (
       <div className="flex flex-col gap-4 w-full">
-        <PageHeader title="Home" />
+        <PageHeader title={welcomeTitle(user?.name)} description={WELCOME_DESCRIPTION} />
         <HomeBodySkeleton />
       </div>
     );
@@ -95,9 +98,7 @@ export default function WorkspaceHomePage() {
   if (error) {
     return (
       <div className="flex flex-col gap-4 w-full">
-        <PageHeader
-          title="Home"
-        />
+        <PageHeader title={welcomeTitle(user?.name)} description={WELCOME_DESCRIPTION} />
         <Card role="alert" className="flex items-center justify-between gap-4">
           <div>
             <p className="bg-body-sm font-semibold text-(--text-primary)">Unable to load workspace data</p>
@@ -114,25 +115,18 @@ export default function WorkspaceHomePage() {
   return (
     <div className="flex flex-col gap-4 w-full">
       <PageHeader
-        title="Home"
+        title={welcomeTitle(user?.name)}
+        description={WELCOME_DESCRIPTION}
         actions={
-          <div className="flex flex-wrap items-center justify-end gap-2.5">
+          <div className="flex flex-wrap items-center justify-end gap-2">
             {!isEmpty && dashboard.toolbar}
             {!dashboard.editing && (
-              <>
-                <Link href={`/forms/new?ws=${encodeURIComponent(slug)}`}>
-                  <Button variant="primary">
-                    <Plus size={16} className="mr-1.5" />
-                    Create Form
-                  </Button>
-                </Link>
-                <Link href={`/w/${slug}/templates`}>
-                  <Button variant="secondary">
-                    <LayoutTemplate size={16} className="mr-1.5" />
-                    Templates
-                  </Button>
-                </Link>
-              </>
+              <Link href={`/forms/new?ws=${encodeURIComponent(slug)}`}>
+                <Button variant="primary">
+                  <Plus size={16} className="mr-2" />
+                  Create Form
+                </Button>
+              </Link>
             )}
           </div>
         }
@@ -166,6 +160,7 @@ export default function WorkspaceHomePage() {
             icon={<Table />}
             actions={[
               { label: 'All responses', href: `/w/${slug}/inbox`, icon: <Table /> },
+              ...(canViewTemplates(role) ? [{ label: 'Templates', href: `/w/${slug}/templates`, icon: <LayoutTemplate /> }] : []),
               ...(canManageWorkspaceSettings(role) ? [{ label: 'Branding', href: `/w/${slug}/settings?tab=branding`, icon: <Settings /> }] : []),
               { label: 'Exports', href: `/w/${slug}/exports`, icon: <Download /> },
             ]}

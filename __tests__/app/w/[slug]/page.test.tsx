@@ -39,6 +39,8 @@ vi.mock('@/services/formAccess', () => ({
   },
 }));
 
+vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ user: { name: 'Piyush Prajapat' }, isLoading: false, isAuthenticated: true }) }));
+
 vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: vi.fn() }),
 }));
@@ -165,5 +167,27 @@ describe('WorkspaceHomePage (/w/[slug]/page)', () => {
     renderPage();
     await screen.findByText('Piyush Prajapat');
     expect(document.querySelector('img[src="https://cdn.example.com/p.png"]')).not.toBeNull();
+  });
+  it('welcomes the person by first name, with the one-line description, instead of just "Home"', async () => {
+    mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 20 });
+    renderPage();
+    expect(await screen.findByRole('heading', { name: 'Welcome back, Piyush' })).toBeInTheDocument();
+    expect(screen.getByText('Your forms and activity at a glance.')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Home' })).not.toBeInTheDocument();
+  });
+  it('has one header button, Create Form (Customize aside); Templates is a Quick action, not a third header button', async () => {
+    mockGetForms.mockResolvedValue({
+      forms: [{ _id: 'f1', title: 'Customer Survey', status: 'published', responseCount: 42, updatedAt: new Date().toISOString(), fields: [], pages: [], branding: {}, settings: { honeypotEnabled: true }, workspaceId: 'w1', schemaVersion: 1, createdAt: new Date().toISOString() }],
+      total: 1, page: 1, limit: 20,
+    });
+    renderPage();
+    await screen.findByText('Total Forms'); // the page itself, not its loading skeleton (which has the same heading)
+    expect(screen.getByRole('heading', { name: 'Welcome back, Piyush' })).toBeInTheDocument();
+    // Create Form is the header's button (and "Templates" is no longer one beside it): its only link left is the Quick action
+    expect(screen.getAllByRole('link', { name: /Create Form/ }).length).toBeGreaterThan(0);
+    const templates = await screen.findAllByRole('link', { name: /Templates/ });
+    expect(templates).toHaveLength(1);
+    expect(templates[0]).toHaveAttribute('href', '/w/acme/templates');
+    expect(templates[0].closest('a')!.querySelector('button')).toBeNull(); // a Quick action link, not a button inside a link
   });
 });

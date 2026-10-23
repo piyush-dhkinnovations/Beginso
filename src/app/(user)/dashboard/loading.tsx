@@ -1,3 +1,4 @@
+import { WELCOME_DESCRIPTION, welcomeTitle } from '@/lib/welcome';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { HomeBodySkeleton } from '@/components/ui/PageSkeletons';
 
@@ -5,7 +6,7 @@ import { HomeBodySkeleton } from '@/components/ui/PageSkeletons';
 export default function Loading() {
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader eyebrow="Personal space" title="Home" />
+      <PageHeader eyebrow="Personal space" title={welcomeTitle()} description={WELCOME_DESCRIPTION} />
       <HomeBodySkeleton />
     </div>
   );

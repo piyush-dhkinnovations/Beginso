@@ -149,11 +149,11 @@ describe('route-level loading files', () => {
   it('the workspace Home gets the Home skeleton; every other workspace page the generic one', () => {
     pathname.value = '/w/acme';
     const home = render(<WorkspaceLoading />);
-    expect(screen.getByRole('heading', { name: 'Home' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Welcome back' })).toBeInTheDocument();
     home.unmount();
     pathname.value = '/w/acme/forms';
     render(<WorkspaceLoading />);
-    expect(screen.queryByRole('heading', { name: 'Home' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Welcome back' })).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toBeInTheDocument();
   });
 });

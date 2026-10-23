@@ -80,6 +80,7 @@ export function useCustomDashboard({ scope, defaults, metrics, canEdit = true, e
     onError: () => toast("Couldn't reset the dashboard. Try again.", 'error'),
   });
 
+  // Same size as the buttons beside it in the page header (Create Form, Templates): a small Customize next to full-size ones looked mismatched.
   const toolbar = canEdit ? (
     <div className="flex flex-wrap items-center justify-end gap-2">
       {editing ? (
@@ -90,13 +91,13 @@ export function useCustomDashboard({ scope, defaults, metrics, canEdit = true, e
             align="end"
             items={[{ id: 'reset', label: 'Reset to default', icon: <RotateCcw size={16} />, disabled: reset.isPending || !data, onSelect: () => reset.mutate() }]}
           />
-          <Button variant="secondary" size="small" onClick={() => setAdding(true)}><Plus size={16} className="sm:mr-1" /><span className="hidden sm:inline">Add widget</span><span className="sr-only sm:hidden">Add widget</span></Button>
-          <Button variant="secondary" size="small" onClick={() => setDraft(null)}>Cancel</Button>
-          <Button size="small" onClick={() => save.mutate(draft)} disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save'}</Button>
+          <Button variant="secondary" onClick={() => setAdding(true)}><Plus size={16} className="sm:mr-2" /><span className="hidden sm:inline">Add widget</span><span className="sr-only sm:hidden">Add widget</span></Button>
+          <Button variant="secondary" onClick={() => setDraft(null)}>Cancel</Button>
+          <Button onClick={() => save.mutate(draft)} disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save'}</Button>
         </>
       ) : (
-        <Button variant="secondary" size="small" onClick={() => setDraft(saved)} disabled={isLoading} aria-label="Customize dashboard">
-          <SlidersHorizontal size={16} className="sm:mr-1" /><span className="hidden sm:inline">Customize</span>
+        <Button variant="secondary" onClick={() => setDraft(saved)} disabled={isLoading} aria-label="Customize dashboard">
+          <SlidersHorizontal size={16} className="sm:mr-2" /><span className="hidden sm:inline">Customize</span>
         </Button>
       )}
     </div>

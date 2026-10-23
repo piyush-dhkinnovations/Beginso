@@ -115,4 +115,12 @@ describe('DashboardPage analytics integration', () => {
 
     expect(screen.queryByText('Total forms')).not.toBeInTheDocument();
   });
+  it('welcomes the person by first name, with a one-line description, instead of just "Home"', () => {
+    mockUseQuery.mockImplementation(() => ({ data: { forms: [], total: 0, page: 1, limit: 5 }, isLoading: false }));
+    render(<DashboardPage />);
+    expect(screen.getByRole('heading', { name: 'Welcome back, Dashboard' })).toBeInTheDocument(); // the mocked user is "Dashboard User"
+    expect(screen.getByText('Your forms and activity at a glance.')).toBeInTheDocument();
+    expect(screen.getByText('Personal space')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Home' })).not.toBeInTheDocument();
+  });
 });

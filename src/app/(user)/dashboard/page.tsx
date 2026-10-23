@@ -9,6 +9,7 @@ import { formsService } from '@/services/forms';
 import { useResponseTrend } from '@/hooks/useResponseTrend';
 import { dashboardKeys, workspaceKeys } from '@/lib/queryKeys';
 import { formatRelativeTime } from '@/lib/formatters';
+import { WELCOME_DESCRIPTION, welcomeTitle } from '@/lib/welcome';
 import { useCustomDashboard } from '@/components/dashboard-grid/CustomDashboard';
 import { personalDefaults, personalMetrics } from '@/components/dashboard-grid/personalHome';
 import { RecentActivitySection } from '@/components/dashboard/RecentActivitySection';
@@ -44,7 +45,7 @@ const HOW_IT_WORKS = [
 // (split graphs where the data supports one), then two columns — "Your forms" on the left, quick
 // actions and recent activity on the right. All cards share the Tinted surface (.bg-card).
 export default function DashboardPage() {
-  const { isLoading: authLoading, isAuthenticated } = useAuth();
+  const { user, isLoading: authLoading, isAuthenticated } = useAuth();
 
   const { data: analytics, isLoading: analyticsLoading, isError, refetch } = useQuery({
     queryKey: dashboardKeys.analytics(),
@@ -112,7 +113,8 @@ export default function DashboardPage() {
     <div className="flex flex-col gap-6">
       <PageHeader
         eyebrow="Personal space"
-        title="Home"
+        title={welcomeTitle(user?.name)}
+        description={WELCOME_DESCRIPTION}
         actions={
           <div className="flex flex-wrap items-center justify-end gap-2">
             {hasForms && dashboard.toolbar}
