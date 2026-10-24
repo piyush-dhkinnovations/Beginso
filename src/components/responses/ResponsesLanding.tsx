@@ -35,7 +35,7 @@ interface ResponsesLandingProps {
   scope?: string;
 }
 
-// The sidebar's "Responses" destination: pick a form, then land on its Summary / Responses page
+// The sidebar's "Responses" destination: pick a form, then land on its Insights / Responses page
 // (/forms/:id/inbox). Forms that have responses come first; empty drafts sit behind them.
 export function ResponsesLanding({ scope = 'personal' }: ResponsesLandingProps) {
   const isWorkspace = scope !== 'personal';

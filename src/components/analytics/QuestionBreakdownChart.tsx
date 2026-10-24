@@ -51,7 +51,7 @@ export function QuestionBreakdownChart({ question }: QuestionBreakdownChartProps
             {multi ? ' · each option is a share of those people, so the total can exceed 100%' : ''}
           </p>
           <BarsChart horizontal data={toSegments(sorted.map((o) => ({ label: o.option, value: o.count }))).map((seg, i) => ({ ...seg, percentage: sorted[i].percentage }))} ariaLabel={`${question.label} — answer breakdown`} />
-          <table className="sr-only">
+          <div className="sr-only"><table>
             <caption>{question.label} — answer breakdown</caption>
             <thead>
               <tr>
@@ -69,7 +69,7 @@ export function QuestionBreakdownChart({ question }: QuestionBreakdownChartProps
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </>
       )}
     </Card>

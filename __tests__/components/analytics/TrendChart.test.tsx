@@ -64,7 +64,7 @@ describe('TrendChart', () => {
     // The SVG line chart is role=img with the same accessible name the old canvas chart had.
     expect(screen.getByRole('group', { name: 'Response trend over time' })).toBeInTheDocument();
 
-    const table = document.querySelector('table.sr-only') as HTMLTableElement;
+    const table = document.querySelector('.sr-only table') as HTMLTableElement;
     expect(table.querySelectorAll('tbody tr')).toHaveLength(data.points.length);
     expect(table.textContent).toContain(String(data.points[0].responses));
   });

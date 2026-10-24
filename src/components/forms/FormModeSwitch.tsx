@@ -4,13 +4,13 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Segmented } from '@/components/ui/Segmented';
 
 const MODES = [
-  { id: 'insights', label: 'Summary' },
+  { id: 'insights', label: 'Insights' },
   { id: 'inbox', label: 'Responses' },
 ];
 
 /**
- * The Summary / Responses switch of a form's data pages. It sits in the form header on Summary, and on the Responses page it sits on
- * the line of the stage tabs (beside the saved views), so the header keeps only the form's own actions.
+ * The Insights / Responses switch of a form's data pages: the first control of the header's second row on both pages. (Insights is the
+ * page of charts and graphs; it carries the same name as the sidebar's Insights and the address /insights.)
  */
 export function FormModeSwitch({ formId, ws }: { formId: string; ws: string | null }) {
   const router = useRouter();

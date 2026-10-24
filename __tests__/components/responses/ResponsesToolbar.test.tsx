@@ -19,7 +19,6 @@ const baseProps = {
   search: '',
   filters: {},
   stages: STAGES,
-  total: 3,
   onSearchChange: vi.fn(),
   onFilterChange: vi.fn(),
 };
@@ -60,26 +59,23 @@ describe('ResponsesToolbar', () => {
   });
 
   describe('in the calendar view', () => {
-    const views = [{ id: 'table', label: 'Table' }, { id: 'board', label: 'Board' }, { id: 'calendar', label: 'Calendar' }];
-    const draw = (view: string) => render(<ResponsesToolbar {...baseProps} viewOptions={views} view={view} onViewChange={vi.fn()} />);
+    const draw = (view: string) => render(<ResponsesToolbar {...baseProps} view={view} />);
 
-    it('has no Date filter and no all-months total (the calendar has its own month controls and count)', () => {
+    it('has no Date filter (the calendar has its own month controls)', () => {
       draw('calendar');
       expect(screen.queryByRole('button', { name: 'Date' })).not.toBeInTheDocument();
-      expect(screen.queryByText('3 responses')).not.toBeInTheDocument();
     });
 
-    it('keeps search, the other filters and the view switcher', () => {
+    it('keeps search and the other filters, and leaves room for the own controls of the calendar', () => {
       draw('calendar');
       expect(screen.getByPlaceholderText('Search responses…')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /Show/ })).toBeInTheDocument();
-      expect(screen.getByRole('group', { name: 'Responses view' })).toBeInTheDocument();
+      expect(document.getElementById('responses-toolbar-slot')).not.toBeNull();
     });
 
-    it.each(['table', 'board'])('still has the Date filter and the total in the %s view', (view) => {
+    it.each(['table', 'board'])('still has the Date filter in the %s view', (view) => {
       draw(view);
       expect(screen.getByRole('button', { name: 'Date' })).toBeInTheDocument();
-      expect(screen.getByText('3 responses')).toBeInTheDocument();
     });
   });
 
@@ -127,11 +123,8 @@ describe('ResponsesToolbar', () => {
     expect(onFilterChange).toHaveBeenCalledWith({ from: expect.any(String), to: undefined });
   });
 
-  it('renders the count label in singular and plural form', () => {
-    const { rerender } = render(<ResponsesToolbar {...baseProps} total={1} />);
-    expect(screen.getByText('1 response')).toBeInTheDocument();
-
-    rerender(<ResponsesToolbar {...baseProps} total={5} />);
-    expect(screen.getByText('5 responses')).toBeInTheDocument();
+  it('puts what it is given at its right end (the saved views and Save view)', () => {
+    render(<ResponsesToolbar {...baseProps} trailing={<button>Save view</button>} />);
+    expect(screen.getByRole('button', { name: 'Save view' }).parentElement).toHaveClass('ml-auto');
   });
 });

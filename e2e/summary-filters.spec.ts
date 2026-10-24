@@ -61,7 +61,7 @@ const centreY = async (l: ReturnType<Page['locator']>) => {
   return b.y + b.height / 2;
 };
 
-test.describe('Summary page header and filters', () => {
+test.describe('Insights page header and filters', () => {
   test('opens on All time, and the first request asks for no date window', async ({ page, context }) => {
     const fake = await installBackend(context);
     await openSummary(page);
@@ -70,12 +70,13 @@ test.describe('Summary page header and filters', () => {
     expect(fake.overviewRequests()[0]).toEqual({ from: null, to: null });
   });
 
-  test('Filters, Add chart, Summary / Responses and Edit form are one row (no second row of buttons)', async ({ page, context }, testInfo) => {
+  test('Filters and Add chart sit in the second row of the header beside the Insights / Responses switch, Edit form in the first, all one size', async ({ page, context }, testInfo) => {
     await installBackend(context);
     await page.setViewportSize({ width: 1440, height: 900 });
     await openSummary(page);
-    const ys = await Promise.all([centreY(trigger(page)), centreY(addChart(page)), centreY(editForm(page)), centreY(modeSwitch(page))]);
-    for (const y of ys) expect(Math.abs(y - ys[0])).toBeLessThan(4);
+    const ys = await Promise.all([centreY(trigger(page)), centreY(addChart(page)), centreY(modeSwitch(page))]);
+    for (const y of ys) expect(Math.abs(y - ys[0])).toBeLessThan(6); // one row, with the switch
+    expect(await centreY(editForm(page)), 'Edit form is in the row above').toBeLessThan(ys[0] - 20);
     // the same height as the neighbouring buttons, not a taller or a smaller one
     const [filters, add, edit] = await Promise.all([trigger(page).boundingBox(), addChart(page).boundingBox(), editForm(page).boundingBox()]);
     expect(Math.abs(filters!.height - edit!.height)).toBeLessThan(3);
@@ -139,7 +140,7 @@ test.describe('Summary page header and filters', () => {
     await expect(page).not.toHaveURL(/from=/); // the Responses page has no date window of its own
 
     const before = fake.overviewRequests().length;
-    await modeSwitch(page).getByRole('button', { name: 'Summary' }).click();
+    await modeSwitch(page).getByRole('button', { name: 'Insights' }).click();
     await expect(trigger(page)).toContainText('Last 30 days', { timeout: 30000 });
     await expect(page).toHaveURL(/from=.*&to=/); // put back in the URL
     await page.waitForTimeout(500);

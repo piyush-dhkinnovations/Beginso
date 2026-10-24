@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
-import { X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/Input';
 import { Toolbar } from '@/components/ui/Toolbar';
 import { FilterMenu } from '@/components/ui/FilterMenu';
-import { Segmented } from '@/components/ui/Segmented';
 import { useDebounce } from '@/hooks/useDebounce';
 import { RESPONSES_TOOLBAR_SLOT_ID } from '@/lib/responsesToolbarSlot';
 import type { ResponseFilters } from '@/types/response';
@@ -21,13 +20,14 @@ interface ResponsesToolbarProps {
   members?: MemberListItem[];
   /** Workspace tag library; undefined/empty hides the Tags button. */
   tags?: Tag[];
-  total: number;
   onSearchChange: (v: string) => void;
   onFilterChange: (patch: Partial<ResponseFilters>) => void;
   /** View switcher (Table · Board · Calendar · Chart) lives on this bar when provided. */
-  viewOptions?: { id: string; label: string }[];
+  /** Controls for the right end of the bar (the saved views and Save view). */
+  trailing?: ReactNode;
+  /** Lets the bar take the width left in the row it sits in (the form header's). */
+  className?: string;
   view?: string;
-  onViewChange?: (id: string) => void;
   /** The removable chips for what is filtered right now: they sit in this bar, after the filter buttons, not on a row of their own. */
   activeFilters?: ReactNode;
 }
@@ -64,19 +64,18 @@ function dateValueLabel(filters: ResponseFilters): string | undefined {
 
 /**
  * One --bg-subtle bar: search, named Tags / Assignee / Date / Show filter buttons (each shows its active
- * value and closes after a selection), and the view switcher. Stage and Unread are the count chips above it.
+ * value and closes after a selection). Stage and Unread are the count chips; the count and Table / Board / Calendar are the view switch.
  */
 export function ResponsesToolbar({
   search,
   filters,
   members,
   tags,
-  total,
   onSearchChange,
   onFilterChange,
-  viewOptions,
+  trailing,
+  className,
   view,
-  onViewChange,
   activeFilters,
 }: ResponsesToolbarProps) {
   const [inputValue, setInputValue] = useState(search);
@@ -108,12 +107,14 @@ export function ResponsesToolbar({
   const showSelected = [filters.duplicate && 'duplicate', filters.includeTest && 'tests'].filter(Boolean) as string[];
 
   return (
-    <Toolbar>
+    <Toolbar className={className}>
       <div className="min-w-50 max-w-sm flex-1">
         <Input
           id="responses-search"
           placeholder="Search responses…"
           aria-label="Search responses"
+          className="h-9!"
+          leftIcon={<Search size={16} aria-hidden="true" />}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           rightSlot={
@@ -196,15 +197,7 @@ export function ResponsesToolbar({
       {activeFilters}
 
       {/* The count and the layout switcher stay together on the right, and wrap together when the bar is too narrow for one line. */}
-      <div className="ml-auto flex items-center gap-3">
-        {/* The total is for every month; the calendar says how many are in the month on screen, and the stage chips above already give the counts. */}
-        {view !== 'calendar' && (
-          <span className="whitespace-nowrap bg-body-sm text-(--text-muted)">
-            {total} response{total === 1 ? '' : 's'}
-          </span>
-        )}
-        {viewOptions && view && onViewChange && <Segmented options={viewOptions} value={view} onChange={onViewChange} ariaLabel="Responses view" />}
-      </div>
+      {trailing && <div className="ml-auto flex flex-wrap items-center gap-3">{trailing}</div>}
     </Toolbar>
   );
 }

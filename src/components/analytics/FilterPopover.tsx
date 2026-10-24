@@ -48,7 +48,7 @@ export function FilterPopover({ summary, children }: FilterPopoverProps) {
         // bx, not cn: cn (tailwind-merge) reads bg-btn and bg-btn-secondary as two background colours and drops bg-btn, which is
         // what gives the button its layout and height. shrink-0 + nowrap: in a crowded row the button keeps one line (icon, label,
         // range, arrow) and the row wraps instead.
-        className={bx('bg-btn bg-btn-secondary shrink-0 whitespace-nowrap', open && 'bg-(--surface-hover)')}
+        className={bx('bg-btn bg-btn-secondary bg-btn-sm shrink-0 whitespace-nowrap', open && 'bg-(--surface-hover)')}
       >
         <SlidersHorizontal size={15} className="text-(--text-muted)" aria-hidden="true" />
         Filters

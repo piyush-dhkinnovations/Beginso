@@ -41,7 +41,7 @@ import { chartsService } from '@/services/charts';
 import { ALL_TIME_SENTINEL, resolveEffectiveDateRange, resolveTrendBucket, resolvePreviousDateRange } from '@/lib/dateRange';
 import { computeChangePercent } from '@/lib/analyticsChange';
 import { browserTimezone } from '@/lib/calendarDates';
-import { FORM_HEADER_SLOT_ID } from '@/lib/formHeaderSlot';
+import { FORM_SUBHEADER_SLOT_ID } from '@/lib/formHeaderSlot';
 import {
   parseStoredRange,
   rangeToStored,
@@ -122,7 +122,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
 
   // The form header's slot for this page's own controls (Filters, Add chart), so they share its row.
   const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
-  const headerSlot = useSyncExternalStore(subscribeNever, () => document.getElementById(FORM_HEADER_SLOT_ID), () => null);
+  const headerSlot = useSyncExternalStore(subscribeNever, () => document.getElementById(FORM_SUBHEADER_SLOT_ID), () => null);
   const defaultBucket = resolveTrendBucket(from, to);
   const [bucketOverride, setBucketOverride] = useState<TrendBucket | null>(null);
   const bucket: TrendBucket = bucketOverride ?? defaultBucket;
@@ -318,15 +318,15 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
   );
 
   const formControls = (
-    <>
+    <div className="ml-auto flex flex-wrap items-center gap-3">
       {filterPopover}
       {canAddChart && (
-        <Button onClick={() => setAddChartOpen(true)}>
-          <Plus size={16} className="mr-1.5" aria-hidden="true" />
+        <Button size="small" onClick={() => setAddChartOpen(true)}>
+          <Plus size={14} className="mr-1.5" aria-hidden="true" />
           Add chart
         </Button>
       )}
-    </>
+    </div>
   );
 
   return (
@@ -335,8 +335,8 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
     <div className={formId ? 'flex flex-col gap-6' : 'flex flex-col gap-4'}>
       {formId ? (
         // Inside a form the shared form header already names the form and the tab, so there is no second page title or
-        // second row of buttons here: Filters and Add chart go into that header's own row (next to Summary / Responses and
-        // Edit form). Only when the header is not on the page do they sit in a row of their own.
+        // second row of buttons here: Filters and Add chart go into the header's second row (beside the Insights / Responses
+        // switch). Only when the header is not on the page do they sit in a row of their own.
         <>
           <h1 className="sr-only">{title}</h1>
           {!isFirstRun &&

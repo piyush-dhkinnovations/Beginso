@@ -148,7 +148,7 @@ describe('QuestionBreakdownSection', () => {
     ];
     render(<QuestionBreakdownSection form={makeForm([dropdownField])} breakdown={breakdown} isLoading={false} />);
 
-    const table = document.querySelector('table.sr-only') as HTMLTableElement;
+    const table = document.querySelector('.sr-only table') as HTMLTableElement;
     const rows = Array.from(table.querySelectorAll('tbody tr')).map((r) => r.textContent);
     expect(rows[0]).toContain('Friend');
     expect(rows[0]).toContain('75%');

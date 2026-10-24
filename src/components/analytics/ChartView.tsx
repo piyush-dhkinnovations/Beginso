@@ -62,7 +62,7 @@ export function ChartView({ def, field, buckets, onSelect, height }: ChartViewPr
   return (
     <>
       {chart}
-      <table className="sr-only">
+      <div className="sr-only"><table>
         <caption>{def.title}</caption>
         <thead>
           <tr>
@@ -80,7 +80,7 @@ export function ChartView({ def, field, buckets, onSelect, height }: ChartViewPr
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </>
   );
 }

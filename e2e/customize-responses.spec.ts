@@ -242,37 +242,59 @@ test.describe('Customize responses', () => {
   });
 });
 
-test.describe('The Responses header line', () => {
-  test('Summary / Responses sits on the stage tabs line beside the saved views; Customize is an icon; the header keeps Customize, Export and Edit form in that order', async ({ page, context }, testInfo) => {
+test.describe('The Responses page top layout', () => {
+  test('three rows: title and actions, the switch with the search bar, then the stage pills with the view switch', async ({ page, context }, testInfo) => {
     await installBackend(context, 'admin');
     await open(page);
     const box = async (loc: ReturnType<Page['locator']>) => (await loc.first().boundingBox())!;
-    const tab = await box(page.getByRole('button', { name: /^All\b/ }));
-    const mode = await box(page.getByRole('group', { name: 'Form data view' }));
-    // the switch is on the line of the stage tabs, to the right of them
-    expect(Math.abs(mode.y + mode.height / 2 - (tab.y + tab.height / 2))).toBeLessThan(24);
-    expect(mode.x).toBeGreaterThan(tab.x + 300);
-    // the header: Customize (icon only), then Export, then Edit form
-    const customizeBtn = await box(page.getByRole('button', { name: 'Customize responses' }));
+    const crumb = await box(page.getByRole('navigation', { name: 'Breadcrumb' }));
     const exportBtn = await box(page.getByRole('button', { name: 'Export', exact: true }));
     const edit = await box(page.getByRole('link', { name: 'Edit form' }));
-    expect(customizeBtn.x).toBeLessThan(exportBtn.x);
+    const customizeBtn = await box(page.getByRole('button', { name: 'Customize responses' }));
+    const mode = await box(page.getByRole('group', { name: 'Form data view' }));
+    const views = await box(page.getByRole('group', { name: 'Responses view' }));
+    const pill = await box(page.getByRole('button', { name: /^All/, pressed: true }));
+    const search = await box(page.getByLabel('Search responses'));
+
+    // row 1: where you are (title is the last crumb), then Export, Edit and Customize in that order, all level
+    expect(Math.abs(crumb.y + crumb.height / 2 - (exportBtn.y + exportBtn.height / 2))).toBeLessThan(12);
     expect(exportBtn.x).toBeLessThan(edit.x);
-    expect(customizeBtn.width).toBeLessThan(60); // an icon, not a labelled button
-    expect(await page.getByRole('button', { name: 'Customize responses' }).innerText()).toBe('');
-    // nothing in the header row is higher or lower than its neighbours
-    expect(Math.abs(customizeBtn.y - exportBtn.y)).toBeLessThan(2);
+    expect(edit.x).toBeLessThan(customizeBtn.x);
     expect(Math.abs(exportBtn.y - edit.y)).toBeLessThan(2);
-    await page.screenshot({ path: testInfo.outputPath('header-line.png'), clip: { x: 0, y: 0, width: 1440, height: 300 } });
+    expect(Math.abs(edit.y - customizeBtn.y)).toBeLessThan(2);
+    expect(exportBtn.height).toBeLessThan(40); // compact buttons
+    expect(await page.getByRole('button', { name: 'Customize responses' }).innerText()).toBe('Customize');
+    // row 2: the Insights / Responses switch, then the search bar, level
+    expect(mode.y).toBeGreaterThan(edit.y + edit.height);
+    expect(Math.abs(mode.y + mode.height / 2 - (search.y + search.height / 2))).toBeLessThan(12);
+    expect(mode.x).toBeLessThan(search.x);
+    // row 3: the stage pills at the left, the Table / Board / Calendar switch at the right, level
+    expect(pill.y).toBeGreaterThan(mode.y + mode.height - 2);
+    expect(Math.abs(pill.y + pill.height / 2 - (views.y + views.height / 2))).toBeLessThan(12);
+    expect(pill.x).toBeLessThan(views.x);
+    expect(search.height).toBe(36);
+    expect(await page.getByRole('button', { name: 'Table' }).getAttribute('aria-pressed')).toBe('true');
+    await page.screenshot({ path: testInfo.outputPath('top-layout.png'), clip: { x: 0, y: 0, width: 1440, height: 380 } });
   });
 
-  test('on Summary the switch stays in the header', async ({ page, context }) => {
+  test('the saved-view picker and Save view are at the right end of the search bar', async ({ page, context }) => {
+    await installBackend(context, 'admin');
+    await open(page);
+    const search = (await page.getByLabel('Search responses').boundingBox())!;
+    const picker = (await page.getByRole('button', { name: /^Saved views:/ }).or(page.getByRole('button', { name: 'Save view' })).first().boundingBox())!;
+    expect(Math.abs(picker.y + picker.height / 2 - (search.y + search.height / 2))).toBeLessThan(24);
+    expect(picker.x).toBeGreaterThan(search.x + search.width);
+  });
+
+  test('the Insights page has the same two rows: the switch, and Filters and Add chart on its right', async ({ page, context }) => {
     await installBackend(context, 'admin');
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto(`/forms/${FORM_ID}/insights?ws=${WS}`);
     await expect(page.getByRole('group', { name: 'Form data view' })).toBeVisible({ timeout: 60000 });
     const mode = (await page.getByRole('group', { name: 'Form data view' }).boundingBox())!;
     const edit = (await page.getByRole('link', { name: 'Edit form' }).boundingBox())!;
-    expect(Math.abs(mode.y + mode.height / 2 - (edit.y + edit.height / 2))).toBeLessThan(20);
+    expect(mode.y).toBeGreaterThan(edit.y + edit.height - 2);
+    expect(mode.x).toBeLessThan(edit.x);
+    await expect(page.getByRole('button', { name: 'Insights' })).toHaveAttribute('aria-pressed', 'true');
   });
 });

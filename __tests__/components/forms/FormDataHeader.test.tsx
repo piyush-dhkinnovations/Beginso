@@ -57,20 +57,33 @@ describe('FormDataHeader', () => {
     expect(screen.getByRole('heading', { name: '…' })).toBeInTheDocument();
   });
 
-  it('on Responses the switch is not in the header (the page puts it on the line of the stage tabs); on Summary it is (trailing slash tolerated)', async () => {
+  it('has the Insights / Responses switch in its second row on both pages, with the current one marked (trailing slash tolerated)', async () => {
     const { unmount } = renderHeader();
     await screen.findByRole('heading', { name: 'Survey' });
-    expect(screen.queryByRole('group', { name: 'Form data view' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Responses' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Insights' })).toHaveAttribute('aria-pressed', 'false');
     unmount();
 
     nav.pathname = '/forms/f1/insights/';
     renderHeader();
     await screen.findByRole('heading', { name: 'Survey' });
-    expect(screen.getByRole('button', { name: 'Summary' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Insights' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'Responses' })).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('on Summary, switching view navigates to the Responses page', async () => {
+  it('is two compact rows: the title in the breadcrumb line with the status, then the switch with a place for the controls of the page', async () => {
+    const { container } = renderHeader();
+    const title = await screen.findByRole('heading', { name: 'Survey' });
+    const row1 = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(row1).toContainElement(title); // the title is the last crumb, not a big heading of its own
+    expect(screen.getByText('Published')).toBeInTheDocument();
+    expect(container.querySelector('#form-data-header-slot')).not.toBeNull(); // Export
+    expect(container.querySelector('#form-data-header-end-slot')).not.toBeNull(); // Customize
+    expect(container.querySelector('#form-data-subheader-slot')).not.toBeNull(); // count and view buttons, or Filters and Add chart
+    expect(screen.getByRole('link', { name: 'Edit form' })).toHaveTextContent('Edit');
+  });
+
+  it('on Insights, switching view navigates to the Responses page', async () => {
     nav.pathname = '/forms/f1/insights';
     renderHeader();
     await screen.findByRole('heading', { name: 'Survey' });

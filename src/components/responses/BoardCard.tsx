@@ -32,7 +32,7 @@ export interface BoardCardProps {
 }
 
 /**
- * One response on the Board: a drag handle at the front, the headline (the respondent, or the question chosen in "Card fields"),
+ * One response on the Board: a drag handle at the front, the headline (the respondent, or the question chosen in Customize),
  * the reference, and the shared `ResponseSignals`. The handle is the only draggable part (QA D8-008): the
  * rest of the card stays a plain click target and a touch screen can still scroll the board. The card is also a drop target, so a
  * dragged card can be placed above or below it.

@@ -50,7 +50,7 @@ export function ResponsesOverTimeCard({ points, isLoading, bucket, onBucketChang
       ) : (
         <>
           <BarsChart data={toSegments(data)} height={210} ariaLabel="Responses over time" />
-          <table className="sr-only">
+          <div className="sr-only"><table>
             <caption>Responses per {bucket}</caption>
             <thead>
               <tr><th>Period</th><th>Responses</th></tr>
@@ -60,7 +60,7 @@ export function ResponsesOverTimeCard({ points, isLoading, bucket, onBucketChang
                 <tr key={`${d.label}-${i}`}><td>{d.label}</td><td>{d.value}</td></tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </>
       )}
     </ChartCard>

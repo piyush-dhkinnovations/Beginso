@@ -36,9 +36,9 @@ export function CalendarToolbar({ year, month, monthLabel, count, loading, timez
         </Button>
       </div>
 
-      <div className="min-w-0">
+      <div className="flex h-9 min-w-0 items-center gap-2">
         <CalendarMonthPicker year={year} month={month} label={monthLabel} onJump={onJump} />
-        <p className="bg-body-sm text-(--text-muted)">
+        <p className="truncate bg-body-sm text-(--text-muted)">
           {loading ? 'Loading…' : count === 0 ? <span>No responses this month</span> : `${count} response${count === 1 ? '' : 's'}`}
           {' · '}
           <span title="The days and times on this calendar are in this timezone">{timezone.replace(/_/g, ' ')}</span>

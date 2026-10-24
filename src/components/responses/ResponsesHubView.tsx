@@ -2,16 +2,16 @@
 
 import { useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
-import { useSearchParams } from 'next/navigation';
 import { SlidersHorizontal } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { FORM_HEADER_SLOT_ID } from '@/lib/formHeaderSlot';
+import { FORM_HEADER_END_SLOT_ID, FORM_HEADER_SLOT_ID, FORM_SUBHEADER_SLOT_ID } from '@/lib/formHeaderSlot';
+import { Download } from 'lucide-react';
 import { ResponsesBoard } from './ResponsesBoard';
 import { ResponsesCustomizeDrawer } from './ResponsesCustomizeDrawer';
-import { FormModeSwitch } from '@/components/forms/FormModeSwitch';
+import { ResponsesViewSwitch } from './ResponsesViewSwitch';
 import { RespondentFromProvider } from './RespondentFromContext';
 import { ResponsesCalendar } from './ResponsesCalendar';
 import { ResponsesToolbar } from './ResponsesToolbar';
@@ -42,12 +42,6 @@ import { canActOnResponses, canConfigureResponses, hasCapability } from '@/lib/r
 import type { InboxViewMode } from '@/lib/inboxFilters';
 
 const subscribeNever = () => () => {};
-
-const VIEW_TABS = [
-  { id: 'table', label: 'Table' },
-  { id: 'board', label: 'Board' },
-  { id: 'calendar', label: 'Calendar' },
-];
 
 interface ResponsesHubViewProps {
   /** Undefined for the all-forms view reached from the sidebar's "Inbox" link. */
@@ -90,10 +84,10 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   });
   const formNames = formId ? undefined : Object.fromEntries((allForms?.forms ?? []).map((f) => [f._id, f.title]));
   const { user } = useAuth();
-  // The workspace the form's links carry: the address's own, else the form's scope.
-  const wsParam = useSearchParams().get('ws');
   // Inside a form, Export sits in the form header beside Edit form (its slot), so the filter row keeps only what shapes the list.
   const headerSlot = useSyncExternalStore(subscribeNever, () => document.getElementById(FORM_HEADER_SLOT_ID), () => null);
+  const headerEndSlot = useSyncExternalStore(subscribeNever, () => document.getElementById(FORM_HEADER_END_SLOT_ID), () => null);
+  const subheaderSlot = useSyncExternalStore(subscribeNever, () => document.getElementById(FORM_SUBHEADER_SLOT_ID), () => null);
 
   const selection = useInboxSelection();
   const { clearSelection, confirmDelete, setConfirmDelete } = selection;
@@ -149,8 +143,9 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   };
 
   const exportInHeader = !!formId && !!headerSlot && canExport;
-  const modeSwitch = formId ? <FormModeSwitch formId={formId} ws={wsParam ?? (scope !== 'personal' ? scope : null)} /> : null;
-  const customizeInHeader = !!formId && !!headerSlot && canConfigure;
+  const customizeInHeader = !!formId && !!headerEndSlot && canConfigure;
+  // Inside a form the search bar sits in the header's second row, beside the Insights / Responses switch; on the all-forms view it stays on the page.
+  const barInHeader = !!formId && !!subheaderSlot;
   const headerActions =
     scope !== 'personal' || (canExport && !exportInHeader) ? (
       <ResponsesHeaderActions
@@ -172,28 +167,59 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
       />
     ) : undefined;
 
+  const searchBar = (
+    <ResponsesToolbar
+      search={search}
+      filters={filters}
+      members={scopedMembers}
+      tags={scopedTags}
+      onSearchChange={(v) => changeFilter({ q: v || undefined })}
+      onFilterChange={changeFilter}
+      trailing={formId ? headerActions : undefined}
+      view={view}
+      className={barInHeader ? 'min-w-0 flex-1' : undefined}
+      activeFilters={
+        <ActiveFilterChips
+          filters={filters}
+          stages={stages}
+          fieldChipLabel={fieldChipLabel}
+          omit={['stageId', 'unread', 'q']}
+          onRemove={(key) =>
+            setFilters(key === 'field' ? { field: undefined, value: undefined, granularity: undefined } : { [key]: undefined }, { resetPage: true })
+          }
+          onClearAll={clearAll}
+        />
+      }
+    />
+  );
+
   return (
     // Keeping this container out of an animated opacity stacking context is important:
     // ResponseDrawer is position:fixed, and must be able to layer above the fixed TopNav.
     // AppShell owns page width (CLAUDE.md) — this component sets none of its own.
     <RespondentFromProvider value={formId ? setup.respondentFrom : 'auto'}>
     <div className="flex flex-col gap-3">
-      {(exportInHeader || customizeInHeader) && headerSlot &&
+      {/* The form header's own spots (lib/formHeaderSlot.ts): Export, then Edit form, then Customize. */}
+      {exportInHeader &&
+        headerSlot &&
         createPortal(
-          <>
-            {customizeInHeader && (
-              <Button variant="secondary" aria-label="Customize responses" title="Customize responses" onClick={() => setCustomizeOpen(true)}>
-                <SlidersHorizontal size={16} aria-hidden="true" />
-              </Button>
-            )}
-            {exportInHeader && (
-              <Button variant="secondary" onClick={exportCurrentFilter}>
-                Export
-              </Button>
-            )}
-          </>,
+          <Button variant="secondary" size="small" onClick={exportCurrentFilter}>
+            <Download size={14} className="mr-1.5" aria-hidden="true" />
+            Export
+          </Button>,
           headerSlot,
         )}
+      {customizeInHeader &&
+        headerEndSlot &&
+        createPortal(
+          // Reads "Customize"; its name is "Customize responses" for a screen reader (it contains the visible word).
+          <Button variant="secondary" size="small" aria-label="Customize responses" onClick={() => setCustomizeOpen(true)}>
+            <SlidersHorizontal size={14} className="mr-1.5" aria-hidden="true" />
+            Customize
+          </Button>,
+          headerEndSlot,
+        )}
+
       {!formId && (
         <PageHeader title="All responses" description={headerFacts} actions={headerActions} />
       )}
@@ -201,49 +227,19 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
       {formId && setupQuery.isLoading ? (
         <Skeleton variant="block" height={240} className="rounded-xl" />
       ) : isFirstRun ? (
-        <>
-          {/* No tabs to carry it yet, but Summary must still be one click away. */}
-          {modeSwitch && <div className="flex justify-end">{modeSwitch}</div>}
-          <NoResponsesYet formId={formId} />
-        </>
+        <NoResponsesYet formId={formId} />
       ) : (
         <>
-          {/* The stage tabs sit on a rule under the page header. Inside a form the same line carries, on the right, the Summary / Responses
-              switch, the saved-view picker and Save view, all centred on the height of the tabs. */}
-          <div className="flex flex-wrap items-end justify-between gap-x-4 border-b border-(--border-default)">
-            <ResponsesCountChips stats={isStatsError ? undefined : stats} stages={stages} filters={filters} onFilterChange={changeFilter} />
-            {formId && (
-              <div className="flex min-h-10 flex-wrap items-center gap-3 pb-px">
-                {modeSwitch}
-                {headerActions}
-              </div>
-            )}
-          </div>
+          {/* The search bar (inside a form it sits in the header, beside the Insights / Responses switch), then the stages as pills with
+              their counts at the left and the count and Table / Board / Calendar at the right. */}
+          {barInHeader ? createPortal(searchBar, subheaderSlot as HTMLElement) : searchBar}
 
-          <ResponsesToolbar
-            search={search}
-            filters={filters}
-            members={scopedMembers}
-            tags={scopedTags}
-            total={data?.total ?? 0}
-            onSearchChange={(v) => changeFilter({ q: v || undefined })}
-            onFilterChange={changeFilter}
-            viewOptions={VIEW_TABS}
-            view={view}
-            onViewChange={(id) => setView(id as InboxViewMode)}
-            activeFilters={
-              <ActiveFilterChips
-                filters={filters}
-                stages={stages}
-                fieldChipLabel={fieldChipLabel}
-                omit={['stageId', 'unread', 'q']}
-                onRemove={(key) =>
-                  setFilters(key === 'field' ? { field: undefined, value: undefined, granularity: undefined } : { [key]: undefined }, { resetPage: true })
-                }
-                onClearAll={clearAll}
-              />
-            }
-          />
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+            <div className="min-w-0 flex-1 basis-72">
+              <ResponsesCountChips stats={isStatsError ? undefined : stats} stages={stages} filters={filters} onFilterChange={changeFilter} />
+            </div>
+            <ResponsesViewSwitch total={data?.total ?? 0} view={view} onViewChange={(id) => setView(id as InboxViewMode)} />
+          </div>
 
           {view === 'table' && (
             <ResponsesTableSection

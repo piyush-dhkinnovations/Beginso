@@ -113,7 +113,7 @@ export function TrendChart({ data, isLoading, isError = false, onRetry, isAllTim
         height={CHART_HEIGHT}
         ariaLabel="Response trend over time"
       />
-      <table className="sr-only">
+      <div className="sr-only"><table>
         <caption>Responses per {data?.bucket === 'week' ? 'week (labelled by the Monday it starts)' : 'day'}</caption>
         <thead>
           <tr>
@@ -129,7 +129,7 @@ export function TrendChart({ data, isLoading, isError = false, onRetry, isAllTim
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </Card>
   );
 }

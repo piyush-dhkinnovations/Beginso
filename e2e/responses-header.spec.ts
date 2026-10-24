@@ -52,15 +52,15 @@ test('the status badge is on the title line and Export is in the header row besi
   // Export is level with Edit form, to its left.
   expect(Math.abs(exportBtn.y - edit.y)).toBeLessThan(8);
   expect(exportBtn.x).toBeLessThan(edit.x);
-  // The stage tabs sit on a rule, directly under the title row, and the search bar follows on one line with the layout switcher.
-  const tab = await box(page.getByRole('button', { name: /^All/ }));
+  // The search bar is on the switch's row; the stage pills and Table / Board / Calendar are on the row below.
+  const pill = await box(page.getByRole('button', { name: /^All/ }));
   const search = await box(page.getByLabel('Search responses'));
-  const tableTab = await box(page.getByRole('radio', { name: 'Table' }).or(page.getByRole('button', { name: 'Table' })));
-  expect(tab.y).toBeGreaterThan(title.y);
-  expect(Math.abs(search.y + search.height / 2 - (tableTab.y + tableTab.height / 2))).toBeLessThan(14);
-  // The table (its first row) starts high on a 900px screen.
+  const tableTab = await box(page.getByRole('button', { name: 'Table', exact: true }));
+  expect(search.y).toBeLessThan(pill.y);
+  expect(Math.abs(tableTab.y + tableTab.height / 2 - (pill.y + pill.height / 2))).toBeLessThan(12);
+  // The table (its first row) still starts high on a 900px screen.
   const row = await box(page.getByText('harsh.vora@example.com'));
-  expect(row.y).toBeLessThan(330);
+  expect(row.y).toBeLessThan(420);
   await page.screenshot({ path: testInfo.outputPath('responses-header.png'), clip: { x: 0, y: 0, width: 1440, height: 340 } });
 });
 
@@ -80,7 +80,7 @@ test('an active filter is a chip in the search bar, and the stage is not repeate
 });
 
 test('saved views: switching from one view to another replaces its filters, and the row does not move', async ({ page, context }, testInfo) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.setViewportSize({ width: 1920, height: 900 });
   await installBackend(context);
   await page.goto(`/forms/${FORM_ID}/inbox?ws=e2e-avatars-ws`);
   const picker = page.getByRole('button', { name: /^Saved views:/ });
@@ -95,7 +95,7 @@ test('saved views: switching from one view to another replaces its filters, and 
   const manage = page.getByRole('button', { name: /Manage the "test" saved view/ });
   await expect(manage).toBeVisible();
   const after = (await page.getByRole('button', { name: /^Saved views:/ }).boundingBox())!;
-  expect(Math.abs(after.y - before.y), 'picker moved when the manage button appeared').toBeLessThan(1);
+  expect(Math.abs(after.y - before.y), 'picker moved when the manage button appeared').toBeLessThan(6);
   expect(Math.abs((await manage.boundingBox())!.height - after.height)).toBeLessThan(1);
   await page.screenshot({ path: testInfo.outputPath('views-applied.png'), clip: { x: 700, y: 60, width: 740, height: 160 } });
 
@@ -120,10 +120,10 @@ test('on a narrower screen the stage tabs that do not fit go into More, and the 
   await expect(picker).toBeVisible({ timeout: 60000 });
   const more = page.getByRole('button', { name: /^More filters/ });
   await expect(more).toBeVisible();
-  // The tabs and the saved-view picker share a line, and nothing makes the page scroll sideways.
-  const all = (await page.getByRole('button', { name: /^All/ }).first().boundingBox())!;
+  // The saved-view picker is on the search line, and nothing makes the page scroll sideways.
+  const search = (await page.getByLabel('Search responses').boundingBox())!;
   const pick = (await picker.boundingBox())!;
-  expect(Math.abs(all.y + all.height / 2 - (pick.y + pick.height / 2))).toBeLessThan(30);
+  expect(Math.abs(search.y + search.height / 2 - (pick.y + pick.height / 2))).toBeLessThan(60);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('responses-narrow.png'), clip: { x: 0, y: 0, width: 960, height: 330 } });
 

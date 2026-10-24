@@ -236,7 +236,7 @@ test.describe('Responses calendar', () => {
     expect(Math.abs(today.y + today.height / 2 - (search.y + search.height / 2))).toBeLessThan(40);
     expect(today.x).toBeGreaterThan(show.x + show.width);
     expect(month.x).toBeGreaterThan(today.x);
-    expect(month.x + month.width).toBeLessThan(calendar.x);
+    void calendar; // the Table / Board / Calendar buttons are in the header's second row now
     await page.screenshot({ path: testInfo.outputPath('calendar-bar.png'), clip: { x: 0, y: 0, width: 1440, height: 320 } });
   });
 });

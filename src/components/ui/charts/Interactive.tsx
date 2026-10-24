@@ -236,8 +236,10 @@ export function BarsChart({
   const plotH = height - PAD.top - PAD.bottom;
   const band = data.length > 0 ? plotW / data.length : plotW;
   const y = (v: number) => PAD.top + plotH - (v / axis.max) * plotH;
-  const bw = Math.max(6, Math.min(40, band * 0.62));
+  // A bar never gets wider than its slot: with hundreds of days they stay thin separate lines, not one solid block.
+  const bw = Math.max(1, Math.min(40, band * (band < 6 ? 0.7 : 0.62)));
   const show = labelIndices(data.length, Math.max(2, Math.floor(plotW / 54)));
+  const labelChars = Math.max(3, Math.floor(plotW / Math.max(show.size, 1) / 6.2)); // the room one shown label has, so a date is never cut to "08–"
   return (
     <Wrap nav={nav}>
       <svg width={w} height={height} role="group" aria-label={ariaLabel}>
@@ -253,9 +255,9 @@ export function BarsChart({
           return (
             <g key={d.key} {...nav.itemProps(i)}>
               <rect x={cx - band / 2} y={PAD.top} width={band} height={plotH} fill={on ? 'var(--surface-hover)' : 'transparent'} />
-              <rect x={cx - bw / 2} y={y(d.count)} width={bw} height={Math.max(y(0) - y(d.count), d.count > 0 ? 2 : 0)} rx={Math.min(5, bw / 2)} fill={colorOf(i)} stroke={on ? 'var(--text-primary)' : 'none'} strokeWidth={2} />
+              <rect x={cx - bw / 2} y={y(d.count)} width={bw} height={Math.max(y(0) - y(d.count), d.count > 0 ? 2 : 0)} rx={Math.min(5, bw / 2)} fill={colorOf(i)} stroke={on && bw >= 4 ? 'var(--text-primary)' : 'none'} strokeWidth={2} />
               {band >= 34 && <text x={cx} y={y(d.count) - 5} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--text-primary)" aria-hidden="true">{d.text}</text>}
-              {show.has(i) && <text x={cx} y={height - 10} textAnchor="middle" fontSize="11" fill="var(--text-muted)" aria-hidden="true">{clip(d.label, Math.max(3, Math.floor((band * Math.min(2, Math.ceil(data.length / show.size))) / 6.2)))}</text>}
+              {show.has(i) && <text x={cx} y={height - 10} textAnchor="middle" fontSize="11" fill="var(--text-muted)" aria-hidden="true">{clip(d.label, labelChars)}</text>}
             </g>
           );
         })}

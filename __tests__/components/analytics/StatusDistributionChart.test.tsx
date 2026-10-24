@@ -72,7 +72,7 @@ describe('StatusDistributionChart', () => {
     expect(screen.getAllByText('30.0%').length).toBeGreaterThan(0); // In Progress: 3/10
     expect(screen.getAllByText('20.0%').length).toBeGreaterThan(0); // Completed: 2/10
 
-    const table = document.querySelector('table.sr-only') as HTMLTableElement;
+    const table = document.querySelector('.sr-only table') as HTMLTableElement;
     expect(table.textContent).toContain('New');
     expect(table.textContent).toContain('5');
     expect(table.textContent).toContain('50.0%');

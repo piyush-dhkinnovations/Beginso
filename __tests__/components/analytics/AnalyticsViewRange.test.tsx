@@ -32,7 +32,7 @@ vi.mock('@/hooks/useWorkspaceRole', () => ({ useWorkspaceRole: () => 'owner' }))
 
 import { AnalyticsView } from '@/components/analytics/AnalyticsView';
 import { ToastProvider } from '@/components/ui/Toast';
-import { FORM_HEADER_SLOT_ID } from '@/lib/formHeaderSlot';
+import { FORM_SUBHEADER_SLOT_ID } from '@/lib/formHeaderSlot';
 import { storedRangeKey } from '@/lib/storedDateRange';
 
 const overview = { totalResponses: 10, statusCounts: { new: 4, in_progress: 3, completed: 3 } };
@@ -59,7 +59,7 @@ beforeEach(() => {
   mockReplace.mockReset();
   mockGetOverview.mockReset().mockResolvedValue(overview);
 });
-afterEach(() => document.getElementById(FORM_HEADER_SLOT_ID)?.remove());
+afterEach(() => document.getElementById(FORM_SUBHEADER_SLOT_ID)?.remove());
 
 describe('opening the page', () => {
   it('shows All time when nothing was chosen, and asks the server for everything', async () => {
@@ -217,9 +217,9 @@ describe('the workspace-wide Insights page', () => {
 });
 
 describe('where the controls sit', () => {
-  it('in the form header\'s own row when it is there: Filters and Add chart next to Summary / Responses and Edit form', async () => {
+  it('in the form header\'s own row when it is there: Filters and Add chart next to Insights / Responses and Edit form', async () => {
     const slot = document.createElement('div');
-    slot.id = FORM_HEADER_SLOT_ID;
+    slot.id = FORM_SUBHEADER_SLOT_ID;
     document.body.appendChild(slot);
     const { container } = draw();
     await waitFor(() => expect(within(slot).getByRole('button', { name: /^Filters/ })).toBeInTheDocument());
@@ -229,15 +229,14 @@ describe('where the controls sit', () => {
     expect(within(container).queryByRole('button', { name: 'Add chart' })).not.toBeInTheDocument();
   });
 
-  it('Add chart is the same size as the other header buttons, not a small one', async () => {
+  it('Add chart and Filters are the same compact size as the other header buttons (Export, Edit form)', async () => {
     const slot = document.createElement('div');
-    slot.id = FORM_HEADER_SLOT_ID;
+    slot.id = FORM_SUBHEADER_SLOT_ID;
     document.body.appendChild(slot);
     draw();
     const add = await within(slot).findByRole('button', { name: 'Add chart' });
-    expect(add).not.toHaveClass('bg-btn-sm');
-    expect(trigger()).toHaveClass('bg-btn'); // Filters is a regular-size button too
-    expect(trigger()).not.toHaveClass('min-h-10');
+    expect(add).toHaveClass('bg-btn-sm');
+    expect(trigger()).toHaveClass('bg-btn', 'bg-btn-sm');
   });
 
   it('without the header (the page on its own) they still appear, in a row of their own', async () => {

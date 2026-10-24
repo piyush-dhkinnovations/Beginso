@@ -115,7 +115,7 @@ export function StatusDistributionChart({ overview, isLoading, isError = false, 
         </div>
       </div>
 
-      <table className="sr-only">
+      <div className="sr-only"><table>
         <caption>Response status distribution</caption>
         <thead>
           <tr>
@@ -133,7 +133,7 @@ export function StatusDistributionChart({ overview, isLoading, isError = false, 
             </tr>
           ))}
         </tbody>
-      </table>
+      </table></div>
     </Card>
   );
 }

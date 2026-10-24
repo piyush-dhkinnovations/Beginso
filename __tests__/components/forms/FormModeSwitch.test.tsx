@@ -12,19 +12,19 @@ describe('FormModeSwitch', () => {
     nav.push.mockReset();
   });
 
-  it('marks Responses on the Responses page and Summary on the Summary page (trailing slash tolerated)', () => {
+  it('marks Responses on the Responses page and Insights on the Insights page (trailing slash tolerated)', () => {
     const { unmount } = render(<FormModeSwitch formId="f1" ws={null} />);
     expect(screen.getByRole('button', { name: 'Responses' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Summary' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'Insights' })).toHaveAttribute('aria-pressed', 'false');
     unmount();
     nav.pathname = '/forms/f1/insights/';
     render(<FormModeSwitch formId="f1" ws={null} />);
-    expect(screen.getByRole('button', { name: 'Summary' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Insights' })).toHaveAttribute('aria-pressed', 'true');
   });
 
   it('goes to the other page, and keeps the workspace in the address', async () => {
     render(<FormModeSwitch formId="f1" ws="acme" />);
-    await userEvent.click(screen.getByRole('button', { name: 'Summary' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Insights' }));
     expect(nav.push).toHaveBeenCalledWith('/forms/f1/insights?ws=acme');
   });
 });
