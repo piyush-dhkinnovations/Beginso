@@ -39,10 +39,32 @@ function token(color) {
   if (l >= 0.2) return 'var(--text-secondary)';
   return 'var(--text-primary)';
 }
+function removeComments(svg) {
+  let previous;
+  do {
+    previous = svg;
+    const output = [];
+    let cursor = 0;
+    let start = svg.indexOf('<!--');
+    while (start !== -1) {
+      const end = svg.indexOf('-->', start + 4);
+      output.push(svg.slice(cursor, start));
+      if (end === -1) {
+        cursor = svg.length;
+        break;
+      }
+      cursor = end + 3;
+      start = svg.indexOf('<!--', cursor);
+    }
+    output.push(svg.slice(cursor));
+    svg = output.join('');
+  } while (svg !== previous);
+  return svg;
+}
+
 function tokenise(svg) {
-  return svg
+  return removeComments(svg)
     .replace(/<\?xml[^>]*\?>/g, '')
-    .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/<title>[\s\S]*?<\/title>/g, '')
     .replace(/\s(width|height)="[^"]*"/g, (m, k, off) => (off < 400 ? '' : m)) // root size only
     .replace(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g, (m) => token(m) ?? m)
