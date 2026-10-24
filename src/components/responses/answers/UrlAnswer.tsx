@@ -68,7 +68,7 @@ function vimeoVideo(href: string): { id: string; hash?: string } | null {
 function googleDriveId(href: string): string | null {
   try {
     const u = new URL(href);
-    if (!u.hostname.includes('drive.google.com') && !u.hostname.includes('docs.google.com')) return null;
+    if (u.hostname !== 'drive.google.com' && u.hostname !== 'docs.google.com') return null;
     // /file/d/{ID}/view  or  /open?id={ID}
     const fileMatch = u.pathname.match(/\/d\/([a-zA-Z0-9_-]{10,})/);
     if (fileMatch) return fileMatch[1];

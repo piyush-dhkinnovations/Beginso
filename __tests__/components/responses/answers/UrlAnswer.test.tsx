@@ -94,6 +94,16 @@ describe('UrlAnswer', () => {
     expect(screen.getByRole('link', { name: /Opens in a new tab/ })).toHaveAttribute('rel', 'noopener noreferrer nofollow');
   });
 
+  it.each([
+    'https://docs.google.com.evil.example/document/d/1234567890/edit',
+    'https://notdrive.google.com/file/d/1234567890/view',
+  ])('does not use a Google Drive thumbnail for deceptive host %s', async (href) => {
+    mockPreview.mockResolvedValue({ title: null, image: null });
+    renderUrl(href, field('rich', 'card'));
+    await waitFor(() => expect(document.querySelector('[aria-busy="true"]')).not.toBeInTheDocument());
+    expect(document.querySelector('img')).not.toBeInTheDocument();
+  });
+
   describe('small card (the Table layout)', () => {
     const renderSmall = (value: string, f?: FormField) => {
       const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
