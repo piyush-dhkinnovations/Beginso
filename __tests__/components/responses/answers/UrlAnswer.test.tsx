@@ -94,6 +94,19 @@ describe('UrlAnswer', () => {
     expect(screen.getByRole('link', { name: /Opens in a new tab/ })).toHaveAttribute('rel', 'noopener noreferrer nofollow');
   });
 
+  it.each([
+    'https://drive.google.com.evil.example/file/d/16-OAlkOr72y7pOTilGnao_jw-zIQlixR/view',
+    'https://evil.example/drive.google.com/file/d/16-OAlkOr72y7pOTilGnao_jw-zIQlixR/view',
+    'https://evil.example/?next=drive.google.com&id=16-OAlkOr72y7pOTilGnao_jw-zIQlixR',
+  ])('does not treat %s as a Google Drive URL', async (href) => {
+    mockPreview.mockResolvedValue({ title: null, image: null });
+    renderUrl(href, field('rich', 'card'));
+    await waitFor(() => expect(document.querySelector('[aria-busy="true"]')).not.toBeInTheDocument());
+    expect(screen.queryByText('Google Drive file')).not.toBeInTheDocument();
+    expect(document.querySelector('img')).not.toBeInTheDocument();
+    expect(mockPreview).toHaveBeenCalledWith(href, 'acme');
+  });
+
   describe('small card (the Table layout)', () => {
     const renderSmall = (value: string, f?: FormField) => {
       const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
