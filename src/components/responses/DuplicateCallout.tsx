@@ -27,7 +27,7 @@ export function DuplicateCallout({ duplicateOfId, scope, onOpenOriginal }: Dupli
     queryFn: () => responsesService.getResponseById(duplicateOfId, scope),
   });
 
-  const label = original ? `#${original.reference ?? shortId(original._id)}` : `#${shortId(duplicateOfId)}`;
+  const label = original ? (original.reference ?? `#${shortId(original._id)}`) : `#${shortId(duplicateOfId)}`;
 
   return (
     <div className="flex items-center gap-2 rounded-md border border-(--warning-border) bg-(--warning-surface) px-3 py-2 bg-body-sm text-(--text-secondary)">

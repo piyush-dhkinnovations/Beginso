@@ -2,7 +2,7 @@
 
 import { formatRelativeTime } from '@/lib/formatters';
 import type { ReactNode } from 'react';
-import { CalendarDays, Hash, Share2, Shield } from 'lucide-react';
+import { CalendarDays, Hash, Share2 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/Card';
 import { Select } from '@/components/ui/Select';
@@ -61,9 +61,6 @@ const OVERVIEW_LABEL = 'bg-body-sm text-(--text-muted)';
 const META_ROW = 'flex items-center justify-between gap-3 py-2 border-b border-(--border-default) last:border-0 last:pb-0';
 const META_LABEL = 'flex items-center gap-1.5 shrink-0 bg-body-sm text-(--text-muted)';
 
-export const ORIGIN_TOOLTIP =
-  "A private fingerprint of the sender's network. Two responses with the same ID came from the same network. Raw IP addresses are never stored.";
-
 /**
  * Sprint 12 (inbox-collaboration), requirements.md §9.1, design.md §6/§7/§15. Replaces
  * `MetadataSidebar` — a component width (260px on desktop, per the wireframe), not a page width.
@@ -101,7 +98,6 @@ export function WorkflowSidebar({
     refetchOnWindowFocus: true,
   });
 
-  const ipHash = response.ipHash ? response.ipHash.slice(0, 16) : null;
   const { data: criteria = [], isLoading: criteriaLoading } = useScoreCriteria(scope);
 
   const showDetails = !only || only === 'details';
@@ -195,17 +191,6 @@ export function WorkflowSidebar({
             </span>
             <span className="bg-body-sm text-(--text-secondary) text-right">{formatResponseDate(response.submittedAt)}</span>
           </div>
-          {ipHash && (
-            <div className={META_ROW}>
-              <span className={META_LABEL} title={ORIGIN_TOOLTIP}>
-                <Shield size={13} aria-hidden="true" />
-                Origin
-              </span>
-              <code title={ORIGIN_TOOLTIP} className="font-mono bg-body-sm text-(--text-muted) break-all text-right">
-                {ipHash}
-              </code>
-            </div>
-          )}
           <div className={META_ROW}>
             <span className={META_LABEL}>
               <Hash size={13} aria-hidden="true" />

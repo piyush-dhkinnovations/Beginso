@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { describeBulkFailures } from '@/lib/bulkActions';
 import { DELETE_COPY, DOWNLOAD_QUEUED, RETENTION_DAYS, SUBMISSION_NOT_FOUND } from '@/lib/responseCopy';
-import { ORIGIN_TOOLTIP } from '@/components/responses/WorkflowSidebar';
 import { detectRespondentIdentity } from '@/lib/formatters';
 
 describe('describeBulkFailures', () => {
@@ -34,10 +33,6 @@ describe('response inbox copy matches what the system really does (QA A6-005, A6
   it('the missing-submission message covers both reasons it can be missing, without picking one', () => {
     expect(SUBMISSION_NOT_FOUND.hint).toMatch(/removed/);
     expect(SUBMISSION_NOT_FOUND.hint).toMatch(/different account/);
-  });
-  it('the Origin tooltip says what the ID is for', () => {
-    expect(ORIGIN_TOOLTIP).toMatch(/same network/);
-    expect(ORIGIN_TOOLTIP).toMatch(/never stored/);
   });
 });
 

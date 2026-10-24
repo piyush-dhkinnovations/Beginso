@@ -526,7 +526,7 @@ export function ResponseDrawer({
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <h2 id="drawer-title" className="truncate bg-h5 text-(--text-primary)">
-                  {response ? (identity.label ?? identity.email ?? `Response #${response.reference ?? shortId(response._id)}`) : 'Response Details'}
+                  {response ? (identity.label ?? identity.email ?? `Response ${response.reference ?? `#${shortId(response._id)}`}`) : 'Response Details'}
                 </h2>
                 {response && <StageBadge stage={response.stage} status={response.status} />}
               </div>
