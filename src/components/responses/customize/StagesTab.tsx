@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input';
 import { Radio } from '@/components/ui/Radio';
 import { Menu } from '@/components/ui/Menu';
 import { Select } from '@/components/ui/Select';
-import { bx } from '@/lib/utils';
+import { StageDot } from '../StageDot';
 import { STAGE_COLOR_TOKENS, CATEGORY_LABELS, type StageCategory, type StageColorToken, type StageRef } from '@/types/stage';
 import { addStage, copyStages, moveStage, removeStage, type Draft } from './draft';
 import { MAX_FORM_STAGES } from './limits';
@@ -22,19 +22,7 @@ interface StagesTabProps {
   workspaceStages: readonly StageRef[];
 }
 
-/** The dot's own colour: the same one the stage's badge text uses, so the dot and the badge always match. */
-const DOT: Record<StageColorToken, string> = {
-  neutral: 'bg-(--text-muted)',
-  primary: 'bg-(--action-primary)',
-  info: 'bg-(--info-text)',
-  success: 'bg-(--success-text)',
-  warning: 'bg-(--warning-text)',
-  error: 'bg-(--error-text)',
-};
-
-const Dot = ({ colour, size = 12 }: { colour: StageColorToken; size?: number }) => (
-  <span aria-hidden="true" className={bx('inline-block shrink-0 rounded-full', DOT[colour])} style={{ width: size, height: size }} />
-);
+const Dot = StageDot;
 
 const COLOUR_LABEL: Record<StageColorToken, string> = {
   neutral: 'Grey',

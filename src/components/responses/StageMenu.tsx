@@ -3,6 +3,7 @@
 import { Check, ChevronDown } from 'lucide-react';
 import { Menu } from '@/components/ui/Menu';
 import { StageBadge } from './StageBadge';
+import { StageDot } from './StageDot';
 import type { IResponse } from '@/types/response';
 import type { StageRef } from '@/types/stage';
 
@@ -31,10 +32,16 @@ export function StageMenu({ response, stages, onChange }: StageMenuProps) {
           <ChevronDown size={12} className="text-(--text-muted)" aria-hidden="true" />
         </>
       }
+      // Each stage with its colour dot, the one the response is in ticked at the end.
       items={stages.map((s) => ({
         id: s.id,
-        label: s.name,
-        icon: s.id === currentId ? <Check size={14} aria-hidden="true" /> : <span className="inline-block w-3.5" />,
+        label: (
+          <span className="flex min-w-0 flex-1 items-center justify-between gap-3">
+            <span className="truncate">{s.name}</span>
+            {s.id === currentId && <Check size={14} className="shrink-0" aria-hidden="true" />}
+          </span>
+        ),
+        icon: <StageDot colour={s.colour} />,
         onSelect: () => {
           if (s.id !== currentId) onChange(response._id, s.id);
         },

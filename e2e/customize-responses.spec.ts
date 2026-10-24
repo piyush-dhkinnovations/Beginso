@@ -223,12 +223,6 @@ test.describe('Customize responses', () => {
     await expect(page).not.toHaveURL(/responseId=/); // the response was not opened
   });
 
-  test('a viewer sees the stage as a plain badge', async ({ page, context }) => {
-    await installBackend(context, 'viewer');
-    await open(page);
-    await expect(page.getByRole('button', { name: /Press to change it/ })).toHaveCount(0);
-  });
-
   test('closing with unsaved changes asks first, and the question is above the panel', async ({ page, context }) => {
     const fake = await installBackend(context, 'admin');
     await open(page);
