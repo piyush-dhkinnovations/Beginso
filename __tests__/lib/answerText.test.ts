@@ -1,25 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { answerFor, answerLine, cardFields, parseBoardCard, DEFAULT_BOARD_CARD } from '@/lib/boardCard';
+import { answerFor, answerLine, textFields } from '@/lib/answerText';
 import type { FormField } from '@/types/form';
 
 const field = (fieldId: string, label: string, type: FormField['type'] = 'short_text', deleted = false) =>
   ({ fieldId, label, type, pageId: 'p', required: false, deleted, order: 0 }) as FormField;
 
-describe('parseBoardCard', () => {
-  it('is the default for nothing, for junk and for the wrong shape', () => {
-    expect(parseBoardCard('')).toEqual(DEFAULT_BOARD_CARD);
-    expect(parseBoardCard(null)).toEqual(DEFAULT_BOARD_CARD);
-    expect(parseBoardCard('{not json')).toEqual(DEFAULT_BOARD_CARD);
-    expect(parseBoardCard('{"title":42,"extras":"x"}')).toEqual(DEFAULT_BOARD_CARD);
-  });
-
-  it('keeps a valid choice and ignores anything else stored with it', () => {
-    expect(parseBoardCard('{"title":"f1"}')).toEqual({ title: 'f1' });
-    expect(parseBoardCard('{"title":"f1","extras":["f2"]}')).toEqual({ title: 'f1' });
-  });
-});
-
-describe('cardFields', () => {
+describe('textFields', () => {
   it('leaves out deleted questions and the ones that are not text (signature, uploads)', () => {
     const fields = [
       field('a', 'Name'),
@@ -29,8 +15,8 @@ describe('cardFields', () => {
       field('e', 'Pic', 'image_upload'),
       field('f', 'Budget', 'number'),
     ];
-    expect(cardFields(fields).map((f) => f.fieldId)).toEqual(['a', 'f']);
-    expect(cardFields(undefined)).toEqual([]);
+    expect(textFields(fields).map((f) => f.fieldId)).toEqual(['a', 'f']);
+    expect(textFields(undefined)).toEqual([]);
   });
 });
 

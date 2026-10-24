@@ -176,25 +176,3 @@ test.describe('Board: dropping a card between others', () => {
     expect(grip.y - card.y).toBeLessThan(16);
   });
 });
-
-test.describe('Board: card fields', () => {
-  test('Card fields chooses the headline, and the choice is kept', async ({ page, context }, testInfo) => {
-    await installBackend(context);
-    await openBoard(page);
-    await expect(page.getByRole('button', { name: /Open response from\s*Asha Rao/ })).toBeVisible();
-
-    await page.getByRole('button', { name: /Card fields/ }).click();
-    await page.getByLabel('Title', { exact: true }).selectOption({ label: 'Title of the film' });
-    // The preview shows the card as it will look while choosing.
-    await expect(page.getByRole('group', { name: 'Card preview' }).getByText('Monsoon Road')).toBeVisible();
-    await page.screenshot({ path: testInfo.outputPath('card-fields-dialog.png') });
-    await page.getByRole('button', { name: 'Done' }).click();
-
-    await expect(page.getByRole('button', { name: /Open response from\s*Monsoon Road/ })).toBeVisible();
-    await page.screenshot({ path: testInfo.outputPath('card-fields.png'), clip: { x: 0, y: 150, width: 1000, height: 500 } });
-
-    // Kept for this form in this browser.
-    await page.reload();
-    await expect(page.getByRole('button', { name: /Open response from\s*Monsoon Road/ })).toBeVisible({ timeout: 60000 });
-  });
-});

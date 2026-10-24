@@ -31,6 +31,8 @@ export interface TableProps<T> {
   onRowDoubleClick?: (row: T) => void;
   /** ~48px rows instead of the default ~63px. */
   dense?: boolean;
+  /** Even tighter rows (~36px), for lists people want more of on one screen. Wins over `dense`. */
+  compact?: boolean;
   /** Whole row is a click target. Keyboard access must come from a real link/button inside the row
    * (a click that lands on any inner a/button/input is left to that element). */
   onRowClick?: (row: T) => void;
@@ -58,13 +60,14 @@ export function Table<T>({
   stickyFirstColumn,
   onRowDoubleClick,
   dense,
+  compact,
   onRowClick,
   sort,
   onSortChange,
 }: TableProps<T>) {
   return (
     <div className="bg-table-wrap">
-      <table className={bx("bg-table", "bg-table-stack", stickyFirstColumn && "bg-table-sticky", dense && "[&_td]:!py-2 [&_th]:!py-2", className)}>
+      <table className={bx("bg-table", "bg-table-stack", stickyFirstColumn && "bg-table-sticky", compact ? "[&_td]:!py-1 [&_th]:!py-1.5" : dense && "[&_td]:!py-2 [&_th]:!py-2", className)}>
         <thead>
           <tr className="group">
             {columns.map((col) => (

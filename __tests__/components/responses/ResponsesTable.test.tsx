@@ -9,6 +9,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { ResponsesTable } from '@/components/responses/ResponsesTable';
 import type { IResponse } from '@/types/response';
+import { DEFAULT_RESPONSE_SETUP } from '@/types/responseSetup';
 
 // Respondent names come from the form's field definitions (not from guessing at answers), so the
 // field lookup is stubbed with a name and an email field matching the fixtures' answer keys.
@@ -51,6 +52,44 @@ const baseProps = {
   onViewResponse: vi.fn(),
   onDeleteResponse: vi.fn(),
 };
+
+describe('ResponsesTable: the columns chosen in Customize', () => {
+  const rows = [makeResponse('r1', { answers: { Name: 'Asha', Film: 'Monsoon Road' } })];
+  const heads = () => screen.getAllByRole('columnheader').map((h) => h.textContent?.replace(/\s+/g, ' ').trim());
+
+  it('shows the standard columns when no setup is given', () => {
+    render(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} formId="form-1" />);
+    expect(heads()).toEqual(['Respondent', 'Email', 'Tags', 'Assignee', 'Stage', 'Submitted', '']);
+  });
+
+  it('shows the chosen columns in the chosen order, with the actions menu always last', () => {
+    const setup = { ...DEFAULT_RESPONSE_SETUP, tableColumns: ['stage', 'respondent', 'notes'] };
+    render(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} formId="form-1" setup={setup} />);
+    expect(heads()).toEqual(['Stage', 'Respondent', 'Notes', '']);
+  });
+
+  it('a question can be a column, headed by the question, and a deleted question is simply left out', () => {
+    const setup = { ...DEFAULT_RESPONSE_SETUP, tableColumns: ['respondent', 'q:Email', 'q:gone'] };
+    render(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} formId="form-1" setup={setup} />);
+    expect(heads()).toEqual(['Respondent', 'Email', '']);
+  });
+
+  it('with more than the standard columns the table scrolls sideways inside its frame; compact rows are tighter', () => {
+    const setup = { ...DEFAULT_RESPONSE_SETUP, tableColumns: ['respondent', 'email', 'tags', 'assignee', 'stage', 'submitted', 'score', 'notes'], rowHeight: 'compact' as const };
+    const { container } = render(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} formId="form-1" setup={setup} />);
+    const table = container.querySelector('table')!;
+    expect(table.className).toContain('w-max');
+    expect(table.className).toContain('min-w-full');
+    expect(table.className).toContain('[&_td]:!py-1');
+    expect(table.className).toContain('bg-table-sticky');
+  });
+
+  it('the all-forms view always shows the standard columns, whatever a form chose', () => {
+    const setup = { ...DEFAULT_RESPONSE_SETUP, tableColumns: ['stage'] };
+    render(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} formNames={{ 'form-1': 'Survey' }} setup={setup} />);
+    expect(heads()).toEqual(['Respondent', 'Form', 'Email', 'Tags', 'Assignee', 'Stage', 'Submitted', '']);
+  });
+});
 
 describe('ResponsesTable', () => {
   it('renders skeleton rows when isLoading', () => {

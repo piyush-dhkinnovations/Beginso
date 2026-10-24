@@ -15,13 +15,15 @@ export interface DrawerProps {
   /** Desktop width in px (default 480 via CSS). Always capped to the viewport, so phones get a full-screen sheet. */
   width?: number;
   children: React.ReactNode;
+  /** Pinned under the scrolling body (Cancel / Save). */
+  footer?: React.ReactNode;
 }
 
 // beginso-ui.css classes — see src/styles/beginso-ui.css §14 OVERLAYS ("Drawer"). .bg-drawer
 // self-positions (fixed, right:0) rather than relying on .bg-scrim's flex-centering the way
 // .bg-modal does, so the backdrop is a plain sibling, not a wrapping parent. Focus trap shared
 // with Modal via useFocusTrap; rendered via a portal for the same clipping reason.
-export function Drawer({ isOpen, onClose, title, description, placement = "right", width, children }: DrawerProps) {
+export function Drawer({ isOpen, onClose, title, description, placement = "right", width, children, footer }: DrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
   useFocusTrap(isOpen, onClose, drawerRef);
 
@@ -55,6 +57,7 @@ export function Drawer({ isOpen, onClose, title, description, placement = "right
         <div className="bg-modal-body" style={{ flex: 1, overflowY: "auto" }}>
           {children}
         </div>
+        {footer && <div className="bg-modal-foot">{footer}</div>}
       </div>
     </>,
     document.body

@@ -51,6 +51,8 @@ const RAW_CAPABILITIES: readonly CapabilityGroup[] = [
       { key: 'forms:create', label: 'Create form', roles: ['owner', 'admin', 'member'] },
       { key: 'forms:edit', label: 'Edit form', roles: ['owner', 'admin', 'member'] },
       { key: 'forms:publish', label: 'Publish form', roles: ['owner', 'admin'] },
+      // The Responses page's own stages, table columns and board card ("Customize"). The server enforces it (forms:configure).
+      { key: 'forms:configure', label: 'Customize how responses are shown', roles: ['owner', 'admin'] },
       { key: 'forms:delete', label: 'Delete form', roles: ['owner'] },
     ],
   },
@@ -123,6 +125,10 @@ export function canDeleteForm(role: Role | undefined): boolean {
 // capabilities, matching this file's own canManageMembers/canViewAudit precedent.
 export function canActOnResponses(role: Role | undefined): boolean {
   return role !== undefined && hasCapability(role, 'responses:act');
+}
+
+export function canConfigureResponses(role: Role | undefined): boolean {
+  return role !== undefined && hasCapability(role, 'forms:configure');
 }
 
 export function canManageStages(role: Role | undefined): boolean {

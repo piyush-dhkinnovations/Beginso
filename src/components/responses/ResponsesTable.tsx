@@ -8,9 +8,10 @@ import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Table, type TableColumn, type TableSort } from '@/components/ui/Table';
 import { Menu } from '@/components/ui/Menu';
-import { StageBadge } from './StageBadge';
-import { RespondentCell, TagsCell, AssigneeCell, SubmittedCell } from './ResponseRow';
+import { RespondentCell } from './ResponseRow';
+import { ResponseColumnCell, columnLabel } from './ResponseColumnCell';
 import { detectRespondentIdentity } from '@/lib/formatters';
+import { DEFAULT_RESPONSE_SETUP, DEFAULT_TABLE_COLUMNS, type ResponseSetupValues } from '@/types/responseSetup';
 import { useFormFieldsMap } from '@/hooks/useFormFields';
 import type { IResponse } from '@/types/response';
 
@@ -40,6 +41,8 @@ interface ResponsesTableProps {
   /** Submission order, applied by the server across every page (newest first by default). */
   submittedOrder?: 'asc' | 'desc';
   onSubmittedOrderChange?: (order: 'asc' | 'desc') => void;
+  /** The form's columns and look (Customize). Absent on the all-forms view, which always shows the standard columns. */
+  setup?: ResponseSetupValues;
 }
 
 export function ResponsesTable({
@@ -59,7 +62,9 @@ export function ResponsesTable({
   totalMatching,
   submittedOrder = 'desc',
   onSubmittedOrderChange,
+  setup,
 }: ResponsesTableProps) {
+  const { tableColumns, rowHeight, wrap, respondentFrom } = formNames || !setup ? DEFAULT_RESPONSE_SETUP : setup;
   const router = useRouter();
   const allSelected = responses.length > 0 && selectedIds.size === responses.length;
   // Checkboxes stay hidden until the user asks for them (double-click a row, or "Select" in the row menu) and
@@ -96,21 +101,22 @@ export function ResponsesTable({
     setPageSort((cur) => (cur?.key === key ? (cur.dir === 'asc' ? { key, dir: 'desc' } : undefined) : { key, dir: 'asc' }));
   };
   const fieldsByForm = useFormFieldsMap(responses.map((r) => r.formId));
+  const fields = formId ? fieldsByForm[formId] : undefined;
   const rows = useMemo(() => {
     if (!activePageSort) return responses;
     const sign = activePageSort.dir === 'asc' ? 1 : -1;
     const value = (r: IResponse): string => {
       if (activePageSort.key === 'respondent') {
-        const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId], r.respondentEmail);
+        const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId], r.respondentEmail, respondentFrom);
         return (id.label ?? id.email ?? '').toLowerCase();
       }
       if (activePageSort.key === 'stage') return (r.stage?.name ?? r.status ?? '').toLowerCase();
       return r.submittedAt ?? '';
     };
     return [...responses].sort((a, b) => sign * value(a).localeCompare(value(b)));
-  }, [responses, activePageSort, fieldsByForm]);
+  }, [responses, activePageSort, fieldsByForm, respondentFrom]);
   const respondentLabel = (r: IResponse) => {
-    const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId], r.respondentEmail);
+    const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId], r.respondentEmail, respondentFrom);
     return id.label ?? id.email ?? 'this respondent';
   };
 
@@ -165,27 +171,36 @@ export function ResponsesTable({
         />
       ),
     }] : []),
-    {
-      key: 'respondent',
-      header: 'Respondent',
-      sortKey: everythingLoaded ? 'respondent' : undefined,
-      // The real button gives the row its keyboard/screen-reader semantics; a click anywhere else on the row also opens it.
-      render: (r) => (
-        <button type="button" onClick={() => openOrSelect(r)} aria-label={`Open response from ${respondentLabel(r)}`} className="block min-w-0 text-left">
-          <RespondentCell response={r} />
-        </button>
-      ),
-    },
-    ...(formNames ? [{
-      key: 'form',
-      header: 'Form',
-      render: (r: IResponse) => <span className="block max-w-48 truncate" title={formNames[r.formId]}>{formNames[r.formId] ?? '—'}</span>,
-    }] : []),
-    { key: 'email', header: 'Email', render: (r) => detectRespondentIdentity(r.answers, fieldsByForm[r.formId], r.respondentEmail).email ?? '—' },
-    { key: 'tags', header: 'Tags', render: (r) => <TagsCell tags={r.tags} /> },
-    { key: 'assignee', header: 'Assignee', render: (r) => <AssigneeCell response={r} /> },
-    { key: 'stage', header: 'Stage', sortKey: everythingLoaded ? 'stage' : undefined, render: (r) => <StageBadge stage={r.stage} status={r.status} /> },
-    { key: 'submitted', header: 'Submitted', sortKey: 'submitted', render: (r) => <SubmittedCell response={r} /> },
+    ...tableColumns.flatMap((key): TableColumn<IResponse>[] => {
+      const header = columnLabel(key, fields);
+      if (header === undefined) return []; // a question that has since been deleted
+      const sortable = key === 'respondent' ? everythingLoaded : key === 'stage' ? everythingLoaded : key === 'submitted';
+      const column: TableColumn<IResponse> = {
+        key,
+        header,
+        sortKey: sortable ? (key === 'respondent' || key === 'stage' || key === 'submitted' ? key : undefined) : undefined,
+        render: (r) => {
+          if (key !== 'respondent') return <ResponseColumnCell columnKey={key} response={r} fields={fieldsByForm[r.formId]} respondentFrom={respondentFrom} wrap={wrap} />;
+          // The real button gives the row its keyboard/screen-reader semantics; a click anywhere else on the row also opens it.
+          return (
+            <button type="button" onClick={() => openOrSelect(r)} aria-label={`Open response from ${respondentLabel(r)}`} className="block min-w-0 text-left">
+              <RespondentCell response={r} />
+            </button>
+          );
+        },
+      };
+      // The standard table puts the form's name right after the respondent on the all-forms view.
+      return key === 'respondent' && formNames
+        ? [
+            column,
+            {
+              key: 'form',
+              header: 'Form',
+              render: (r: IResponse) => <span className="block max-w-48 truncate" title={formNames[r.formId]}>{formNames[r.formId] ?? '—'}</span>,
+            },
+          ]
+        : [column];
+    }),
     {
       key: 'actions',
       header: '',
@@ -215,6 +230,9 @@ export function ResponsesTable({
       emptyState={emptyState}
       stickyFirstColumn
       dense
+      compact={rowHeight === 'compact'}
+      // More columns than the page is wide: the table scrolls sideways inside its frame and the first column stays put.
+      className={tableColumns.length > DEFAULT_TABLE_COLUMNS.length || tableColumns.some((k) => k.startsWith('q:')) ? 'w-max min-w-full' : undefined}
       sort={sort}
       onSortChange={toggleSort}
       onRowClick={openOrSelect}

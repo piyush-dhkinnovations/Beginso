@@ -113,6 +113,19 @@ describe('applyInboxFilterPatch', () => {
   });
 });
 
+describe('applyInboxFilterPatch: the view a form opens in', () => {
+  it('writes no view for the default view, whichever it is', () => {
+    expect(applyInboxFilterPatch(new URLSearchParams(), { view: 'table' }).has('view')).toBe(false);
+    expect(applyInboxFilterPatch(new URLSearchParams(), { view: 'board' }, 'board').has('view')).toBe(false);
+  });
+
+  it('writes the view when it is not the default, so a form that opens as Board can still be switched to Table', () => {
+    expect(applyInboxFilterPatch(new URLSearchParams(), { view: 'board' }).get('view')).toBe('board');
+    expect(applyInboxFilterPatch(new URLSearchParams(), { view: 'table' }, 'board').get('view')).toBe('table');
+    expect(applyInboxFilterPatch(new URLSearchParams('view=table'), { view: 'board' }, 'board').has('view')).toBe(false);
+  });
+});
+
 describe('normalizeViewMode', () => {
   it.each([
     ['board', 'board'],

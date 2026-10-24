@@ -30,8 +30,6 @@ interface ResponsesToolbarProps {
   onViewChange?: (id: string) => void;
   /** The removable chips for what is filtered right now: they sit in this bar, after the filter buttons, not on a row of their own. */
   activeFilters?: ReactNode;
-  /** Controls that belong to the current view only (the Board's "Card fields"), after the filter buttons. */
-  viewControls?: ReactNode;
 }
 
 const DATE_PRESETS = [
@@ -80,7 +78,6 @@ export function ResponsesToolbar({
   view,
   onViewChange,
   activeFilters,
-  viewControls,
 }: ResponsesToolbarProps) {
   const [inputValue, setInputValue] = useState(search);
   const [syncedSearch, setSyncedSearch] = useState(search);
@@ -195,8 +192,6 @@ export function ResponsesToolbar({
       />
 
       {view === 'calendar' && <div id={RESPONSES_TOOLBAR_SLOT_ID} className="contents" />}
-
-      {viewControls}
 
       {activeFilters}
 

@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ResponseDrawer } from '@/components/responses/ResponseDrawer';
 import { formsService } from '@/services/forms';
 import { responsesService } from '@/services/responses';
-import { useStages } from '@/hooks/useStages';
+import { useFormStages } from '@/hooks/useResponseSetup';
 import { responseKeys } from '@/lib/queryKeys';
 import { parseInboxFiltersFromParams } from '@/lib/inboxFilters';
 import type { IResponse } from '@/types/response';
@@ -39,7 +39,7 @@ export function ResponseDetailView({ id, scope }: Props) {
     enabled: !!formId,
   });
 
-  const { data: stages = [] } = useStages(scope === 'personal' ? undefined : scope);
+  const { stages = [] } = useFormStages(scope === 'personal' ? undefined : scope, formId);
 
   const returnToParams = returnTo?.includes('?')
     ? new URLSearchParams(returnTo.slice(returnTo.indexOf('?') + 1))

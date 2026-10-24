@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import { detectRespondentIdentity } from '@/lib/formatters';
 import { formatTimeInZone, weekdayNames } from '@/lib/calendarDates';
 import { useFormFields } from '@/hooks/useFormFields';
+import { useRespondentFrom } from '../RespondentFromContext';
 import { bx } from '@/lib/utils';
 import type { IResponse } from '@/types/response';
 import { chipClass, stageOf } from './stageChip';
@@ -12,7 +13,7 @@ export const MAX_VISIBLE_PER_DAY = 3;
 
 /** One response on its day: a chip in its stage's colour with the respondent and the time. Opens the response. */
 function CalendarChip({ response, timezone, onOpen }: { response: IResponse; timezone: string; onOpen: (id: string) => void }) {
-  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId), response.respondentEmail);
+  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId), response.respondentEmail, useRespondentFrom());
   const name = identity.label ?? identity.email ?? 'Response';
   const stage = stageOf(response);
   const time = formatTimeInZone(response.submittedAt as string, timezone);

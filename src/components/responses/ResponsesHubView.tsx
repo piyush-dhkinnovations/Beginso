@@ -2,13 +2,15 @@
 
 import { useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
+import { SlidersHorizontal } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { FORM_HEADER_SLOT_ID } from '@/lib/formHeaderSlot';
 import { ResponsesBoard } from './ResponsesBoard';
-import { BoardCardSettings } from './BoardCardSettings';
-import { useBoardCardConfig } from '@/lib/boardCard';
+import { ResponsesCustomizeDrawer } from './ResponsesCustomizeDrawer';
+import { RespondentFromProvider } from './RespondentFromContext';
 import { ResponsesCalendar } from './ResponsesCalendar';
 import { ResponsesToolbar } from './ResponsesToolbar';
 import { ActiveFilterChips } from './ActiveFilterChips';
@@ -27,13 +29,14 @@ import { useResponseRouting } from './useResponseRouting';
 import { deriveInboxViewModel } from './inboxViewModel';
 import { formsService } from '@/services/forms';
 import { useInboxFilters } from '@/hooks/useInboxFilters';
+import { setupValues, useResponseSetup } from '@/hooks/useResponseSetup';
 import { useInboxMutations } from '@/hooks/useInboxMutations';
 import { useMembers } from '@/hooks/useMembers';
 import { useTags } from '@/hooks/useTags';
 import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
 import { useWorkspaceTimezone } from '@/hooks/useWorkspaceTimezone';
 import { useAuth } from '@/hooks/useAuth';
-import { hasCapability } from '@/lib/roles';
+import { canConfigureResponses, hasCapability } from '@/lib/roles';
 import type { InboxViewMode } from '@/lib/inboxFilters';
 
 const subscribeNever = () => () => {};
@@ -59,9 +62,16 @@ interface ResponsesHubViewProps {
  * `useInboxMutations`; data, selection, saved views, exports and drawer routing each have their own hook.
  */
 export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubViewProps) {
-  const { filters, page, view, search, pageLimit, stages, stagesLoading, setFilters, setPage, setView, clear } = useInboxFilters({ scope });
+  const { filters, page, view, search, pageLimit, stages, stagesLoading, setFilters, setPage, setView, clear } = useInboxFilters({ scope, formId });
+  // How this form's page is set up in Customize (defaults until it loads, and on the all-forms views).
+  const setupQuery = useResponseSetup(formId);
+  const setup = setupValues(setupQuery.data);
   // Oldest first or newest first by submission time: the server applies it to every page, so it is not part of the page's own sort.
-  const [submittedOrder, setSubmittedOrder] = useState<'asc' | 'desc'>('desc');
+  // The form's chosen order until the person clicks the column header themselves.
+  const [pickedOrder, setPickedOrder] = useState<'asc' | 'desc' | null>(null);
+  const submittedOrder = pickedOrder ?? (setup.sort === 'oldest' ? 'asc' : 'desc');
+  const setSubmittedOrder = setPickedOrder;
+  const [customizeOpen, setCustomizeOpen] = useState(false);
   const { data: members } = useMembers(scope === 'personal' ? undefined : scope);
   const { data: tags } = useTags(scope === 'personal' ? undefined : scope);
   const role = useWorkspaceRole(scope);
@@ -76,7 +86,6 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   });
   const formNames = formId ? undefined : Object.fromEntries((allForms?.forms ?? []).map((f) => [f._id, f.title]));
   const { user } = useAuth();
-  const [cardConfig, setCardConfig] = useBoardCardConfig(formId);
   // Inside a form, Export sits in the form header beside Edit form (its slot), so the filter row keeps only what shapes the list.
   const headerSlot = useSyncExternalStore(subscribeNever, () => document.getElementById(FORM_HEADER_SLOT_ID), () => null);
 
@@ -85,6 +94,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   const savedViews = useSavedViews({ scope, formId, filters, view, setFilters, role, clearSelection });
   const { activeViewId } = savedViews;
   const canExport = role !== undefined && hasCapability(role, 'responses:export');
+  const canConfigure = !!formId && canConfigureResponses(role);
   const { runExport, exportCurrentFilter } = useInboxExports({ formId, filters, scope });
 
   const { form, formError, isFormError, refetchForm, stats, isStatsError, data, isLoading, isResponsesError, refetchResponses } =
@@ -133,6 +143,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   };
 
   const exportInHeader = !!formId && !!headerSlot && canExport;
+  const customizeInHeader = !!formId && !!headerSlot && canConfigure;
   const headerActions =
     scope !== 'personal' || (canExport && !exportInHeader) ? (
       <ResponsesHeaderActions
@@ -158,19 +169,32 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
     // Keeping this container out of an animated opacity stacking context is important:
     // ResponseDrawer is position:fixed, and must be able to layer above the fixed TopNav.
     // AppShell owns page width (CLAUDE.md) — this component sets none of its own.
+    <RespondentFromProvider value={formId ? setup.respondentFrom : 'auto'}>
     <div className="flex flex-col gap-3">
-      {exportInHeader && headerSlot &&
+      {(exportInHeader || customizeInHeader) && headerSlot &&
         createPortal(
-          <Button variant="secondary" onClick={exportCurrentFilter}>
-            Export
-          </Button>,
+          <>
+            {customizeInHeader && (
+              <Button variant="secondary" onClick={() => setCustomizeOpen(true)}>
+                <SlidersHorizontal size={16} className="mr-1.5" aria-hidden="true" />
+                Customize
+              </Button>
+            )}
+            {exportInHeader && (
+              <Button variant="secondary" onClick={exportCurrentFilter}>
+                Export
+              </Button>
+            )}
+          </>,
           headerSlot,
         )}
       {!formId && (
         <PageHeader title="All responses" description={headerFacts} actions={headerActions} />
       )}
 
-      {isFirstRun ? (
+      {formId && setupQuery.isLoading ? (
+        <Skeleton variant="block" height={240} className="rounded-xl" />
+      ) : isFirstRun ? (
         <NoResponsesYet formId={formId} />
       ) : (
         <>
@@ -191,7 +215,6 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
             viewOptions={VIEW_TABS}
             view={view}
             onViewChange={(id) => setView(id as InboxViewMode)}
-            viewControls={view === 'board' && formId ? <BoardCardSettings scope={scope} formId={formId} fields={form?.fields} config={cardConfig} onChange={setCardConfig} /> : undefined}
             activeFilters={
               <ActiveFilterChips
                 filters={filters}
@@ -208,6 +231,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
 
           {view === 'table' && (
             <ResponsesTableSection
+              setup={formId ? setup : undefined}
               responses={responses}
               isLoading={isLoading}
               selection={selection}
@@ -250,7 +274,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
               stagesLoading={stagesLoading}
               role={role}
               onViewResponse={openResponse}
-              cardConfig={cardConfig}
+              cardTitle={setup.cardTitle}
               onChangeStage={(id, stageId) => mutations.updateStage(id, stageId)}
             />
           )}
@@ -288,6 +312,18 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         onExpand={expandResponse}
         onClose={closeResponse}
       />
+
+      {formId && canConfigure && (
+        <ResponsesCustomizeDrawer
+          isOpen={customizeOpen}
+          onClose={() => setCustomizeOpen(false)}
+          formId={formId}
+          scope={scope}
+          fields={form?.fields}
+          responseCount={stats?.total}
+        />
+      )}
     </div>
+    </RespondentFromProvider>
   );
 }

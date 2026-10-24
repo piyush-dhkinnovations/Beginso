@@ -5,7 +5,8 @@ import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { ResponseSignals } from './ResponseSignals';
 import { detectRespondentIdentity, shortId } from '@/lib/formatters';
-import { answerFor, cardFields, DEFAULT_BOARD_CARD, type BoardCardConfig } from '@/lib/boardCard';
+import { answerFor, textFields } from '@/lib/answerText';
+import { useRespondentFrom } from './RespondentFromContext';
 import { cardDropId } from '@/lib/boardDnd';
 import { useFormFields } from '@/hooks/useFormFields';
 import { bx } from '@/lib/utils';
@@ -22,8 +23,8 @@ export interface BoardCardProps {
   canAct: boolean;
   onView: (id: string) => void;
   onChangeStage: (responseId: string, stageId: string) => void;
-  /** What the card shows: its headline question. */
-  config?: BoardCardConfig;
+  /** The question that headlines the card, or `auto` (the respondent's name, else their email). Set in Customize. */
+  cardTitle?: string;
   /** Other cards may be dropped above or below this one (a single form's board; not the all-forms board). */
   positional?: boolean;
   /** Draws the drop line while a card is being dragged to just above or just below this one. */
@@ -36,12 +37,11 @@ export interface BoardCardProps {
  * rest of the card stays a plain click target and a touch screen can still scroll the board. The card is also a drop target, so a
  * dragged card can be placed above or below it.
  */
-export function BoardCard({ response, stages, stageId, canAct, onView, onChangeStage, config = DEFAULT_BOARD_CARD, positional = false, line }: BoardCardProps) {
+export function BoardCard({ response, stages, stageId, canAct, onView, onChangeStage, cardTitle = 'auto', positional = false, line }: BoardCardProps) {
   const fields = useFormFields(response.formId);
-  const identity = detectRespondentIdentity(response.answers, fields, response.respondentEmail);
+  const identity = detectRespondentIdentity(response.answers, fields, response.respondentEmail, useRespondentFrom());
   const auto = identity.label ?? identity.email ?? 'Anonymous';
-  const live = cardFields(fields);
-  const titleField = config.title === 'auto' ? undefined : live.find((f) => f.fieldId === config.title);
+  const titleField = cardTitle === 'auto' ? undefined : textFields(fields).find((f) => f.fieldId === cardTitle);
   // A response that left the headline question blank falls back to who it is from, so no card is ever nameless.
   const name = (titleField && answerFor(response.answers, fields, titleField)) || auto;
   const reference = response.reference ?? `#${shortId(response._id)}`;

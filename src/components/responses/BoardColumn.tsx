@@ -11,7 +11,6 @@ import { BoardCard } from './BoardCard';
 import { responsesService } from '@/services/responses';
 import { responseKeys } from '@/lib/queryKeys';
 import { columnDropId, type DropPlace } from '@/lib/boardDnd';
-import type { BoardCardConfig } from '@/lib/boardCard';
 import type { IResponse, ResponseFilters } from '@/types/response';
 import type { StageRef } from '@/types/stage';
 
@@ -34,8 +33,8 @@ export interface BoardColumnProps {
   hiddenIds?: ReadonlySet<string>;
   /** Cards just dragged INTO this column whose move is still being saved: shown at once, at the place they were dropped (the top when none). */
   incoming?: readonly { response: IResponse; place?: { afterId?: string; beforeId?: string } }[];
-  /** What each card shows (the headline question and extra lines). */
-  config?: BoardCardConfig;
+  /** The question that headlines each card, or `auto`. */
+  cardTitle?: string;
   /** Cards can be dropped between other cards (a single form's board). */
   positional?: boolean;
   /** While a card is dragged over this column: where it would land, so a line can be drawn there. */
@@ -50,7 +49,7 @@ export interface BoardColumnProps {
  * so a column with more than a page of responses gets a "Load more" instead of silently
  * truncating.
  */
-export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onViewResponse, onChangeStage, hiddenIds, incoming = [], config, positional = false, indicator, idsRef }: BoardColumnProps) {
+export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onViewResponse, onChangeStage, hiddenIds, incoming = [], positional = false, indicator, idsRef, cardTitle }: BoardColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: columnDropId(stage.id), disabled: !canAct });
   const queryKey = [...responseKeys.list(scope, formId, { ...filters, stageId: stage.id }), 'board'];
 
@@ -150,7 +149,7 @@ export function BoardColumn({ scope, formId, filters, stage, stages, canAct, onV
             canAct={canAct}
             onView={onViewResponse}
             onChangeStage={onChangeStage}
-            config={config}
+            cardTitle={cardTitle}
             positional={positional}
             line={indicator?.beforeId === r._id ? 'above' : indicator?.afterId === r._id && !indicator.beforeId ? 'below' : undefined}
           />

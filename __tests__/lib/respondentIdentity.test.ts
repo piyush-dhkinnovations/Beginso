@@ -93,3 +93,27 @@ describe('detectRespondentIdentity on the real API shape: UUID field ids, label-
     expect(detectRespondentIdentity({ 'Full name': 'By label', '3f2b8c1e-5a6d-4f0e-9b7a-1c2d3e4f5a6b': 'By id' }, REAL_FIELDS).label).toBe('By label');
   });
 });
+
+describe('detectRespondentIdentity: the question chosen to name the respondent', () => {
+  const fields = [f('n', 'short_text', 'Full name'), f('film', 'short_text', 'Title of the film'), f('e', 'email', 'Email')];
+  const answers = { 'Full name': 'Alice Pro', 'Title of the film': 'Monsoon Road', Email: 'alice@example.com' };
+
+  it('uses that answer as the name, and still finds the email', () => {
+    expect(detectRespondentIdentity(answers, fields, null, 'film')).toEqual({ label: 'Monsoon Road', email: 'alice@example.com' });
+  });
+
+  it('`auto`, nothing, or a question that is gone keeps the detection', () => {
+    expect(detectRespondentIdentity(answers, fields, null, 'auto').label).toBe('Alice Pro');
+    expect(detectRespondentIdentity(answers, fields).label).toBe('Alice Pro');
+    expect(detectRespondentIdentity(answers, fields, null, 'deleted-question').label).toBe('Alice Pro');
+  });
+
+  it('a chosen question the response left blank falls back to the detected name', () => {
+    expect(detectRespondentIdentity({ 'Full name': 'Alice Pro' }, fields, null, 'film').label).toBe('Alice Pro');
+  });
+
+  it('a chosen question can hold a number', () => {
+    const withNumber = [...fields, f('n2', 'number', 'Entry number')];
+    expect(detectRespondentIdentity({ 'Entry number': 42 }, withNumber, null, 'n2').label).toBe('42');
+  });
+});

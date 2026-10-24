@@ -13,12 +13,14 @@ export interface ModalProps {
   description?: string;
   children: React.ReactNode;
   size?: "default" | "lg" | "xl";
+  /** Opened from inside a drawer: shown above it (a drawer's own layer is 85, toasts are 90). */
+  overDrawer?: boolean;
 }
 
 // beginso-ui.css classes — see src/styles/beginso-ui.css §14 OVERLAYS. Rendered via a portal
 // (react-dom's createPortal) so it's never clipped by an ancestor's overflow: hidden — the
 // previous implementation rendered inline. Focus trap shared with Drawer via useFocusTrap.
-export function Modal({ isOpen, onClose, title, description, children, size = "default" }: ModalProps) {
+export function Modal({ isOpen, onClose, title, description, children, size = "default", overDrawer }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(isOpen, onClose, modalRef);
 
@@ -28,6 +30,7 @@ export function Modal({ isOpen, onClose, title, description, children, size = "d
     <div
       role="presentation"
       className="bg-scrim"
+      style={overDrawer ? { zIndex: 86 } : undefined}
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}

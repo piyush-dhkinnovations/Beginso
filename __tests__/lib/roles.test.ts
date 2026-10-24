@@ -16,6 +16,7 @@ import {
   canActOnResponses,
   canManageStages,
   canManageTags,
+  canConfigureResponses,
 } from '@/lib/roles';
 import type { Role } from '@/types/workspace';
 
@@ -142,6 +143,18 @@ describe('tags:manage / canManageTags', () => {
 
   it('fails closed when the role is not yet known', () => {
     expect(canManageTags(undefined)).toBe(false);
+  });
+});
+
+describe('canConfigureResponses', () => {
+  it('is for the owner and admins only, and fails closed while the role is unknown', () => {
+    expect(canConfigureResponses('owner')).toBe(true);
+    expect(canConfigureResponses('admin')).toBe(true);
+    expect(canConfigureResponses('member')).toBe(false);
+    expect(canConfigureResponses('editor')).toBe(false);
+    expect(canConfigureResponses('viewer')).toBe(false);
+    expect(canConfigureResponses('reviewer')).toBe(false);
+    expect(canConfigureResponses(undefined)).toBe(false);
   });
 });
 

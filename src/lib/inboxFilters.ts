@@ -98,7 +98,9 @@ export function parseInboxFiltersFromParams(
  * "filter state lives in the URL"). Returns a new URLSearchParams; does not mutate the input. */
 export function applyInboxFilterPatch(
   current: URLSearchParams,
-  patch: Partial<ResponseFilters & { page: number; view: InboxViewMode; search: string }>
+  patch: Partial<ResponseFilters & { page: number; view: InboxViewMode; search: string }>,
+  // The view the page opens in when the address names none (a form can open as Board or Calendar). Only a view other than this one is written.
+  defaultView: InboxViewMode = 'table'
 ): URLSearchParams {
   const next = new URLSearchParams(current.toString());
   const set = (key: string, value: string | undefined | null) => {
@@ -123,7 +125,7 @@ export function applyInboxFilterPatch(
   if ('granularity' in patch) set('granularity', patch.granularity);
   if ('search' in patch) set('search', patch.search);
   if ('page' in patch) set('page', patch.page ? String(patch.page) : undefined);
-  if ('view' in patch) set('view', patch.view && patch.view !== 'table' ? patch.view : undefined);
+  if ('view' in patch) set('view', patch.view && patch.view !== defaultView ? patch.view : undefined);
 
   return next;
 }

@@ -49,6 +49,7 @@ import { buildAnswerItems } from '@/lib/responseAnswers';
 import { DELETE_COPY, DOWNLOAD_FAILED, DOWNLOAD_QUEUED } from '@/lib/responseCopy';
 import { hasCapability } from '@/lib/roles';
 import { cn } from '@/lib/utils';
+import { useRespondentFrom } from './RespondentFromContext';
 import { workspacesService } from '@/services/workspaces';
 import type { ResponseDetail } from '@/types/response';
 import type { StageRef } from '@/types/stage';
@@ -175,6 +176,7 @@ export function ResponseDrawer({
   const [shareOpen, setShareOpen] = useState(false);
   const [pageTab, setPageTab] = useState<PageTab>('response');
   const isDesktop = useDesktop();
+  const respondentFrom = useRespondentFrom();
   const { user } = useAuth();
   const mutations = useInboxMutations({ scope, formId });
   const { data: members = [] } = useMembers(scope === 'personal' ? undefined : scope);
@@ -388,7 +390,7 @@ export function ResponseDrawer({
 
   if (!responseId) return null;
 
-  const identity = response ? detectRespondentIdentity(response.answers, responseForm?.fields, response.respondentEmail) : {};
+  const identity = response ? detectRespondentIdentity(response.answers, responseForm?.fields, response.respondentEmail, respondentFrom) : {};
   const hasIdentity = !!(identity.label || identity.email);
   const initial = initialsOf(identity.label ?? identity.email).charAt(0) || '?';
   // Presentation only - the server enforces who may set the form-wide default.

@@ -12,7 +12,6 @@ import { BoardColumn } from './BoardColumn';
 import { canActOnResponses } from '@/lib/roles';
 import { columnKeyboardCoordinates, isCardDrop, isSamePlace, placeNear, stageIdOfDrop, type DropPlace } from '@/lib/boardDnd';
 import { responsesService } from '@/services/responses';
-import type { BoardCardConfig } from '@/lib/boardCard';
 import { responseKeys } from '@/lib/queryKeys';
 import type { IResponse, ResponseFilters } from '@/types/response';
 import type { StageRef } from '@/types/stage';
@@ -31,8 +30,8 @@ export interface ResponsesBoardProps {
   onViewResponse: (id: string) => void;
   /** May return a promise that resolves to false when the save failed: a dragged card then goes back to its column. */
   onChangeStage: (responseId: string, stageId: string) => void | Promise<boolean>;
-  /** What each card shows (chosen per form in "Card fields"). */
-  cardConfig?: BoardCardConfig;
+  /** The question that headlines each card, or `auto` (Customize → Board card). */
+  cardTitle?: string;
 }
 
 /**
@@ -50,7 +49,7 @@ export function ResponsesBoard({
   role,
   onViewResponse,
   onChangeStage,
-  cardConfig,
+  cardTitle,
 }: ResponsesBoardProps) {
   const canAct = canActOnResponses(role);
   const sensors = useSensors(
@@ -219,7 +218,7 @@ export function ResponsesBoard({
             onChangeStage={onChangeStage}
             hiddenIds={new Set(liveMoves.map((m) => m.response._id))}
             incoming={liveMoves.filter((m) => m.to === stage.id).map((m) => ({ response: { ...m.response, stage }, place: m.place }))}
-            config={cardConfig}
+            cardTitle={cardTitle}
             positional={positional}
             indicator={indicator?.stageId === stage.id ? indicator : null}
             idsRef={idsRef}

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useStages } from '@/hooks/useStages';
+import { useFormStages, useResponseSetup } from '@/hooks/useResponseSetup';
 import { normalizeResponsePage, clampResponsePage } from '@/lib/responseList';
 import { applyInboxFilterPatch, normalizeViewMode, parseInboxFiltersFromParams, type InboxViewMode } from '@/lib/inboxFilters';
 import type { ResponseFilters } from '@/types/response';
@@ -12,6 +12,8 @@ const PAGE_LIMIT = 50;
 export interface UseInboxFiltersOptions {
   /** Workspace slug, or 'personal' for the personal shell (OQ-1). */
   scope: string;
+  /** The form whose responses these are: its own stages and the view it opens in. Undefined on the all-forms views. */
+  formId?: string;
 }
 
 /**
@@ -19,11 +21,13 @@ export interface UseInboxFiltersOptions {
  * normalizes the legacy `?status=` param (held until stages load, per requirements.md §7.1), and
  * exposes the page/view/search state `ResponsesHubView` used to hold inline.
  */
-export function useInboxFilters({ scope }: UseInboxFiltersOptions) {
+export function useInboxFilters({ scope, formId }: UseInboxFiltersOptions) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { data: stages, isLoading: stagesLoading } = useStages(scope === 'personal' ? undefined : scope);
+  const { stages, isLoading: stagesLoading } = useFormStages(scope === 'personal' ? undefined : scope, formId);
+  const { data: setup } = useResponseSetup(formId);
+  const defaultView = setup?.setup.opensAs ?? 'table';
 
   const { filters, legacyStatusPending } = useMemo(
     () => parseInboxFiltersFromParams(searchParams, stages),
@@ -31,7 +35,8 @@ export function useInboxFilters({ scope }: UseInboxFiltersOptions) {
   );
 
   const page = normalizeResponsePage(searchParams.get('page'));
-  const view = normalizeViewMode(searchParams.get('view'));
+  const viewParam = searchParams.get('view');
+  const view = viewParam === null ? defaultView : normalizeViewMode(viewParam);
   const PAGE_LIMIT_CONST = PAGE_LIMIT;
 
   // `shallow` changes the address without asking the server for the page again (Next keeps useSearchParams in step with it). Typing in the
@@ -48,11 +53,11 @@ export function useInboxFilters({ scope }: UseInboxFiltersOptions) {
 
   const setFilters = useCallback(
     (patch: Partial<ResponseFilters & { page: number; view: InboxViewMode; search: string }>, opts?: { resetPage?: boolean; shallow?: boolean }) => {
-      let next = applyInboxFilterPatch(searchParams, patch);
-      if (opts?.resetPage && !('page' in patch)) next = applyInboxFilterPatch(next, { page: 1 });
+      let next = applyInboxFilterPatch(searchParams, patch, defaultView);
+      if (opts?.resetPage && !('page' in patch)) next = applyInboxFilterPatch(next, { page: 1 }, defaultView);
       replace(next, opts?.shallow);
     },
-    [replace, searchParams]
+    [replace, searchParams, defaultView]
   );
 
   const clear = useCallback(() => {

@@ -1,6 +1,7 @@
 import type { ResponseAnswers } from '@/types/response';
 import type { ApproxLocation } from '@/types/settings';
 import { buildAnswerKeyMap } from '@/lib/answerKeys';
+import { answerLine } from '@/lib/answerText';
 import type { FormField } from '@/types/form';
 
 // `{}` for an unresolved IP (private/local ranges, lookup failure) is indistinguishable from a
@@ -114,10 +115,13 @@ const FULL_NAME_RE = /^(your |full |respondent |contact )?name\b/i;
  * An arbitrary answer ("Meeting", "No") is never a person. Without `fields` (still loading, or the
  * lookup failed) no name is guessed; callers render "Anonymous".
  *
+ * `respondentFrom` is a question id chosen for the form ("Respondent name comes from" in Customize): its answer is the name, whatever it is
+ * called. `auto` or absent keeps the detection above.
+ *
  * `respondentEmail` is the address the server recorded (the account email on a signed-in-only form, the address given on a
  * tracked form). It is authoritative, so it wins over anything guessed from the answers.
  */
-export function detectRespondentIdentity(answers: ResponseAnswers, fields?: FormField[], respondentEmail?: string | null): RespondentIdentity {
+export function detectRespondentIdentity(answers: ResponseAnswers, fields?: FormField[], respondentEmail?: string | null, respondentFrom?: string): RespondentIdentity {
   const live = (fields ?? []).filter((f) => !f.deleted);
   // The API returns answers keyed by the question's LABEL (it strips id-style keys), so that is the key to read. The field
   // id is the fallback for data that still carries it. Looking up only by id found nothing on real responses.
@@ -130,7 +134,9 @@ export function detectRespondentIdentity(answers: ResponseAnswers, fields?: Form
   const full = textFields.find((f) => FULL_NAME_RE.test(f.label.trim()));
   const first = textFields.find((f) => /^first name\b/i.test(f.label.trim()));
   const last = textFields.find((f) => /^(last|family) name\b/i.test(f.label.trim()));
-  const label = (answer(full) ?? [answer(first), answer(last)].filter(Boolean).join(' ')) || undefined;
+  const chosen = respondentFrom && respondentFrom !== 'auto' ? live.find((f) => f.fieldId === respondentFrom) : undefined;
+  const chosenName = chosen ? answerLine(answers[keys.get(chosen) ?? chosen.label] ?? answers[chosen.fieldId]) : undefined;
+  const label = (chosenName ?? answer(full) ?? [answer(first), answer(last)].filter(Boolean).join(' ')) || undefined;
 
   return { label: label?.slice(0, 60), email: email?.match(EMAIL_RE)?.[0] };
 }

@@ -86,6 +86,9 @@ export interface IResponse {
   lastEditedByRespondentAt?: string | null;
   /** Uncertain (design.md §13) — cuttable (B6, requirements.md §7.10). */
   score?: { average: number; count: number } | null;
+  /** What the list endpoint sends for the "Average score" column (null/absent = not scored). */
+  scoreAverage?: number | null;
+  scoreCount?: number;
   ipHash?: string;            // SHA-256(rawIP), never the raw IP — absent when the backend
                                // couldn't resolve a client IP for this submission
   submittedAt: string;        // ISO 8601

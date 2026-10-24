@@ -16,6 +16,7 @@ import { responseKeys } from '@/lib/queryKeys';
 import { RESPONSES_TOOLBAR_SLOT_ID } from '@/lib/responsesToolbarSlot';
 import { detectRespondentIdentity } from '@/lib/formatters';
 import { useFormFields } from '@/hooks/useFormFields';
+import { useRespondentFrom } from './RespondentFromContext';
 import type { ResponseFilters, IResponse } from '@/types/response';
 
 const subscribeNever = () => () => {};
@@ -37,7 +38,7 @@ export interface ResponsesCalendarProps {
  * day dialog so they can't independently drift on what a calendar item shows
  * (requirements.md §7.4: "every view carries the same signals"). */
 export function CalendarItemRow({ response, onSelect }: { response: IResponse; onSelect: (id: string) => void }) {
-  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId), response.respondentEmail);
+  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId), response.respondentEmail, useRespondentFrom());
   const name = identity.label ?? identity.email ?? 'Anonymous';
   return (
     <button

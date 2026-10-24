@@ -4,6 +4,7 @@ import { Tooltip } from '@/components/ui/Tooltip';
 import { MessageSquare, Paperclip } from 'lucide-react';
 import { formatResponseDate, detectRespondentIdentity } from '@/lib/formatters';
 import { useFormFields } from '@/hooks/useFormFields';
+import { useRespondentFrom } from './RespondentFromContext';
 import type { IResponse, ResponseTag } from '@/types/response';
 
 /**
@@ -14,7 +15,7 @@ import type { IResponse, ResponseTag } from '@/types/response';
  */
 
 export function RespondentCell({ response }: { response: IResponse }) {
-  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId), response.respondentEmail);
+  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId), response.respondentEmail, useRespondentFrom());
   const name = identity.label ?? identity.email ?? 'Anonymous';
   const noteCount = response.noteCount ?? 0;
   const attachmentCount = response.attachmentCount ?? 0;

@@ -4,12 +4,15 @@ import { ListFooter } from '@/components/ui/ListFooter';
 import { ResponsesTable } from './ResponsesTable';
 import { BulkActionBar, type BulkActionBarProps } from './BulkActionBar';
 import type { IResponse, BulkTarget } from '@/types/response';
+import type { ResponseSetupValues } from '@/types/responseSetup';
 import type { useInboxSelection } from './useInboxSelection';
 
 type BulkBarProps = BulkActionBarProps;
 type Selection = ReturnType<typeof useInboxSelection>;
 
 interface Props {
+  /** The form's columns and look (Customize); absent on the all-forms view. */
+  setup?: ResponseSetupValues;
   responses: IResponse[];
   isLoading: boolean;
   selection: Selection;
@@ -43,7 +46,7 @@ interface Props {
  * single `data` query.
  */
 export function ResponsesTableSection({
-  responses, isLoading, selection, total, page, pageLimit, formId, formNames, hasActiveFilters, filterSummary, otherCount,
+  setup, responses, isLoading, selection, total, page, pageLimit, formId, formNames, hasActiveFilters, filterSummary, otherCount,
   filters, stages, tags, members, role, isBulkRunning, onBulk, onExport, onClearFilters, onPageChange, onViewResponse, submittedOrder, onSubmittedOrderChange,
 }: Props) {
   const { selectedIds, setSelectedIds, selectAllMatching, setSelectAllMatching, setConfirmDelete, clearSelection } = selection;
@@ -71,6 +74,7 @@ export function ResponsesTableSection({
       />
 
       <ResponsesTable
+        setup={setup}
         responses={responses}
         isLoading={isLoading}
         selectedIds={selectedIds}

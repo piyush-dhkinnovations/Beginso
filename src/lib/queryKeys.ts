@@ -42,6 +42,10 @@ export const responseKeys = {
 };
 
 // Sprint 12, design.md §10 — workspace-namespaced from creation, teamKeys' own precedent.
+export const responseSetupKeys = {
+  form: (formId: string) => ['response-setup', formId] as const,
+};
+
 export const stageKeys = {
   list: (scope: string) => ['stages', scope] as const,
 };

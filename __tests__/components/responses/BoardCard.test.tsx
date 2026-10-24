@@ -43,13 +43,13 @@ describe('BoardCard', () => {
   });
 
   it('headlines the chosen question', () => {
-    card({ config: { title: 't' } });
+    card({ cardTitle: 't' });
     expect(screen.getByRole('button', { name: /Open response from\s*Monsoon Road/ })).toBeInTheDocument();
     expect(screen.queryByText('Drama')).not.toBeInTheDocument();
   });
 
   it('falls back to who it is from when the chosen question was left blank', () => {
-    card({ config: { title: 't' } }, { ...RESPONSE, answers: { 'Full name': 'Asha Rao' } } as IResponse);
+    card({ cardTitle: 't' }, { ...RESPONSE, answers: { 'Full name': 'Asha Rao' } } as IResponse);
     expect(screen.getByText('Asha Rao')).toBeInTheDocument();
   });
 
