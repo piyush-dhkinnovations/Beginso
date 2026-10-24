@@ -21,6 +21,7 @@ describe('build-illustrations', () => {
         resolve(fixture, 'src/components/illustrations/illustrations.generated.ts'),
         'utf8',
       );
+      expect(generated).toContain('<svg');
       expect(generated).not.toContain('<!--');
     } finally {
       rmSync(fixture, { recursive: true, force: true });
