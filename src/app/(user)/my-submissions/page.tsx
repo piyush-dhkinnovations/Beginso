@@ -110,7 +110,7 @@ export default function MySubmissionsPage() {
           </Button>
         </Alert>
       ) : query.isLoading ? (
-        <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true">
+        <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3 min-[120rem]:grid-cols-4 min-[150rem]:grid-cols-5" aria-busy="true">
           {[0, 1, 2].map((i) => (
             <li key={i}>
               <Skeleton variant="block" width="100%" height={150} />
@@ -161,7 +161,7 @@ export default function MySubmissionsPage() {
               }
             />
           ) : (
-            <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
+            <ul className="m-0 grid list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3 min-[120rem]:grid-cols-4 min-[150rem]:grid-cols-5">
               {visible.map((s) => (
                 <li key={s.id}>
                   <SubmissionCard s={s} />

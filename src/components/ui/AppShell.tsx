@@ -24,10 +24,11 @@ export interface AppShellProps {
 
 // Composes Sidebar + TopBar + a content region. Geometry derived from the V2 wireframe:
 // TopBar full-bleed (height 56px), Sidebar left-docked (width 220-240px / 64px rail).
-// Content pane owns the app's page width in this one place: 16/32/48px horizontal padding
-// at <768/768-1279/>=1280px, 24/32px top padding below/above 768px, 64px bottom padding so
-// the last element never sits flush against the viewport, capped at 1600px and centred so a
-// dashboard uses the width it has without a table row running edge-to-edge on an ultrawide.
+// Content pane owns the app's page width in this one place: 16/24/32/40px horizontal padding
+// at <768/768-1279/1280-1919/>=1920px, 24/32px top padding below/above 768px, 64px bottom padding so
+// the last element never sits flush against the viewport, capped at 1600px (2400px from a 1920px
+// screen, 3600px from a 2560px one, so a 2K or a curved ultrawide monitor is used, not left with
+// empty sides: a table shows all its columns) and centred beyond that.
 // Pages render straight into this — no per-page max-w/mx-auto wrapper.
 // Collapse state follows the existing sidebar_collapsed cookie pattern.
 // Supports mobile off-canvas drawer with focus trap and backdrop (task 3.3).
@@ -153,8 +154,8 @@ export function AppShell({
             // scroll bug on every such screen, not just the two with a documented "scrolls
             // inside its container" exception. One shared fix here (every V2a/V1 page routes
             // through this single `<main>`), not five per-page patches.
-            "flex-1 min-w-0 flex flex-col gap-4 w-full max-w-[1600px] mx-auto",
-            "px-4 pt-6 pb-16 md:px-8 md:pt-8 xl:px-12 focus:outline-none",
+            "flex-1 min-w-0 flex flex-col gap-4 w-full max-w-[1600px] min-[120rem]:max-w-[2400px] min-[160rem]:max-w-[3600px] mx-auto",
+            "px-4 pt-6 pb-16 md:px-6 md:pt-8 xl:px-8 min-[120rem]:px-10 focus:outline-none",
             contentClassName
           )}
         >

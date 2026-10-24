@@ -90,8 +90,11 @@ Test files live under `__tests__/`, mirroring `src/`'s structure; the glob is `*
 **Permission checks belong on the server.** Hiding UI is not authorization. A frontend gate is a convenience; the corresponding backend requirement must be recorded in the spec.
 
 **Pages never set their own width.** `AppShell` owns the content container —
-48px horizontal padding at ≥1280, 32px at tablet, 16px on mobile, 64px
-bottom, max-width 1600px. A page component returns its content directly and
+32px horizontal padding at ≥1280, 40px at ≥1920 (2K), 24px at tablet, 16px on
+mobile, 64px bottom, max-width 1600px (2400px from a 1920px screen, 3600px
+from a 2560px one, so a curved ultrawide shows a table's whole width). Use
+`min-[120rem]:` / `min-[150rem]:` (rem, so Tailwind sorts them after `xl:`)
+for wide-screen steps, never `min-[1920px]:`. A page component returns its content directly and
 sets no `max-w-`, `mx-auto` or `container` class.
 
 The only narrow columns permitted: a settings-style **form** at 640px, an

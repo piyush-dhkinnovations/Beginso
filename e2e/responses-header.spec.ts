@@ -161,3 +161,18 @@ test('searching: every letter typed stays in the box, the list is asked for once
   expect(rsc).toEqual([]);
   expect(asked.length).toBeLessThanOrEqual(3);
 });
+
+test('on a curved ultrawide screen the responses table spans the screen and every column is in view', async ({ page, context }, testInfo) => {
+  await page.setViewportSize({ width: 3440, height: 1440 });
+  await installBackend(context);
+  await page.goto(`/forms/${FORM_ID}/inbox`);
+  await expect(page.getByText('harsh.vora@example.com').first()).toBeVisible({ timeout: 60000 });
+  const table = (await page.getByRole('table').boundingBox())!;
+  expect(table.width).toBeGreaterThan(3000);
+  for (const name of ['Respondent', 'Email', 'Tags', 'Assignee', 'Stage', 'Submitted']) {
+    const header = (await page.getByRole('columnheader', { name: new RegExp(name, 'i') }).first().boundingBox())!;
+    expect(header.x + header.width, `${name} is inside the screen`).toBeLessThanOrEqual(3440);
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath('table-ultrawide.png') });
+});

@@ -136,7 +136,7 @@ export default function WorkspacesPage() {
               }
             />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 min-[120rem]:grid-cols-4 min-[150rem]:grid-cols-5">
               {filteredWorkspaces.map((workspace) => (
                 <Card key={workspace.id} className="flex flex-col justify-between gap-4 h-full transition-shadow hover:shadow-(--shadow-hover) border border-(--border-default) hover:border-(--border-strong)">
                   <Link href={`/w/${workspace.slug}`} className="flex items-start gap-3 no-underline">

@@ -249,7 +249,7 @@ export default function SharedWithMePage() {
           ) : view === 'list' ? (
             <Table columns={columns} rows={rows} rowKey={(item) => item.id} dense onRowClick={(item) => router.push(`/forms/${item.id}/inbox`)} />
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 min-[120rem]:grid-cols-4 min-[150rem]:grid-cols-5">
               {rows.map((share) => (
                 <SharedFormCard key={share.id} item={share} />
               ))}

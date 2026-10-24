@@ -189,7 +189,7 @@ export default function TemplatesPage({ scope = 'personal' }: TemplatesPageProps
                   <h2 id="workspace-templates-heading" className="bg-h5 font-semibold text-(--text-primary)">
                     {workspaceName} templates
                   </h2>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 min-[120rem]:grid-cols-4 min-[150rem]:grid-cols-5">
                     {workspaceVisible.map((template) => (
                       <TemplateCard
                         key={template._id}
@@ -207,7 +207,7 @@ export default function TemplatesPage({ scope = 'personal' }: TemplatesPageProps
                   <h2 id="beginso-templates-heading" className="bg-h5 font-semibold text-(--text-primary)">
                     Beginso templates
                   </h2>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 min-[120rem]:grid-cols-4 min-[150rem]:grid-cols-5">
                     {builtInVisible.map((template, index) => (
                       <TemplateCard
                         key={`${template._id}-${index}`}
