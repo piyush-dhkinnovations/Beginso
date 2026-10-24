@@ -5,6 +5,7 @@ import { reportsService } from '@/services/reports';
 import { exportPayloadFromFilters, exportPayloadFromTarget } from '@/lib/reportExport';
 import { useToast } from '@/components/ui/Toast';
 import type { BulkTarget } from '@/types/response';
+import type { ReportFormat } from '@/types/report';
 import type { useInboxFilters } from '@/hooks/useInboxFilters';
 
 type Filters = ReturnType<typeof useInboxFilters>['filters'];
@@ -21,7 +22,7 @@ export function useInboxExports({ formId, filters, scope = 'personal' }: { formI
   }
 
   return {
-    runExport: (target: BulkTarget) => startExport(reportsService.createReport(exportPayloadFromTarget('csv', target), scope)),
-    exportCurrentFilter: () => startExport(reportsService.createReport(exportPayloadFromFilters('csv', formId, filters), scope)),
+    runExport: (target: BulkTarget, format: ReportFormat = 'csv') => startExport(reportsService.createReport(exportPayloadFromTarget(format, target), scope)),
+    exportCurrentFilter: (format: ReportFormat = 'csv') => startExport(reportsService.createReport(exportPayloadFromFilters(format, formId, filters), scope)),
   };
 }

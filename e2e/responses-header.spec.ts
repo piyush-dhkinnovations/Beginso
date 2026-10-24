@@ -176,3 +176,32 @@ test('on a curved ultrawide screen the responses table spans the screen and ever
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('table-ultrawide.png') });
 });
+
+test('Export follows the selection: nothing chosen exports what the filters match, chosen rows export exactly those (PDF too)', async ({ page, context }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installBackend(context);
+  const posts: { format?: string; ids?: string[]; formId?: string }[] = [];
+  await context.route('**/api/backend/api/reports', async (route) => {
+    if (route.request().method() === 'POST') {
+      posts.push(route.request().postDataJSON());
+      return route.fulfill({ status: 202, contentType: 'application/json', body: JSON.stringify({ success: true, report: { id: 'rep1' } }) });
+    }
+    return route.fallback();
+  });
+  await page.goto(`/forms/${FORM_ID}/inbox?ws=e2e-avatars-ws`);
+  await expect(page.getByText('harsh.vora@example.com').first()).toBeVisible({ timeout: 60000 });
+
+  await page.getByRole('button', { name: 'Export', exact: true }).click();
+  await page.getByRole('menuitem', { name: 'Spreadsheet (CSV)' }).click();
+  await expect.poll(() => posts.length).toBe(1);
+  expect(posts[0].ids).toBeUndefined();
+  expect(posts[0].format).toBe('csv');
+
+  // A selection starts from a row's actions menu; the second row is r1.
+  await page.getByRole('button', { name: /^Actions for response from/ }).nth(1).click();
+  await page.getByRole('menuitem', { name: 'Select' }).click();
+  await page.getByRole('button', { name: 'Export 1 selected' }).click();
+  await page.getByRole('menuitem', { name: 'PDF' }).click();
+  await expect.poll(() => posts.length).toBe(2);
+  expect(posts[1]).toMatchObject({ format: 'pdf', ids: ['r1'] });
+});

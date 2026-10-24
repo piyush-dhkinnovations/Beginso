@@ -45,8 +45,9 @@ describe('ResponsesHeaderActions', () => {
     const onSaveView = vi.fn();
     render(<ResponsesHeaderActions {...base} isWorkspace canExport onExport={onExport} onSaveView={onSaveView} />);
     await userEvent.click(screen.getByRole('button', { name: 'Export' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: /Spreadsheet/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Save view' }));
-    expect(onExport).toHaveBeenCalledTimes(1);
+    expect(onExport).toHaveBeenCalledWith('csv');
     expect(onSaveView).toHaveBeenCalledTimes(1);
   });
 });

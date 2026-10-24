@@ -8,7 +8,6 @@ import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { FORM_HEADER_END_SLOT_ID, FORM_HEADER_SLOT_ID, FORM_SUBHEADER_SLOT_ID } from '@/lib/formHeaderSlot';
-import { Download } from 'lucide-react';
 import { ResponsesBoard } from './ResponsesBoard';
 import { ResponsesCustomizeDrawer } from './ResponsesCustomizeDrawer';
 import { ResponsesViewSwitch } from './ResponsesViewSwitch';
@@ -21,6 +20,8 @@ import { ResponseDrawer } from './ResponseDrawer';
 import { SaveViewModal } from './SaveViewModal';
 import { ResponsesTableSection } from './ResponsesTableSection';
 import { ResponsesHeaderActions } from './ResponsesHeaderActions';
+import { ExportMenu } from './ExportMenu';
+import type { ReportFormat } from '@/types/report';
 import { DeleteResponsesModal } from './DeleteResponsesModal';
 import { FormLoadError, NoResponsesYet, ResponsesListError } from './ResponsesLoadErrors';
 import { useInboxSelection } from './useInboxSelection';
@@ -142,6 +143,13 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
     clear();
   };
 
+  // Export follows the list: responses chosen in it are exactly what is exported; with none chosen it is everything the filters match.
+  const selectedCount = selection.selectAllMatching ? (data?.total ?? 0) : selection.selectedIds.size;
+  const exportSelectionOrFilter = (format: ReportFormat) => {
+    if (selection.selectAllMatching) return runExport({ filter: filters, formId }, format);
+    if (selection.selectedIds.size > 0) return runExport({ ids: [...selection.selectedIds] }, format);
+    return exportCurrentFilter(format);
+  };
   const exportInHeader = !!formId && !!headerSlot && canExport;
   const customizeInHeader = !!formId && !!headerEndSlot && canConfigure;
   // Inside a form the search bar sits in the header's second row, beside the Insights / Responses switch; on the all-forms view it stays on the page.
@@ -151,7 +159,9 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
       <ResponsesHeaderActions
         isWorkspace={scope !== 'personal'}
         canExport={canExport && !exportInHeader}
-        onExport={exportCurrentFilter}
+        onExport={exportSelectionOrFilter}
+        selectedCount={selectedCount}
+        allMatching={selection.selectAllMatching}
         onSaveView={() => savedViews.setSaveViewOpen(true)}
         views={savedViews.views ?? []}
         currentUserId={user?.id ?? ''}
@@ -203,10 +213,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
       {exportInHeader &&
         headerSlot &&
         createPortal(
-          <Button variant="secondary" size="small" onClick={exportCurrentFilter}>
-            <Download size={14} className="mr-1.5" aria-hidden="true" />
-            Export
-          </Button>,
+          <ExportMenu selectedCount={selectedCount} allMatching={selection.selectAllMatching} onExport={exportSelectionOrFilter} />,
           headerSlot,
         )}
       {customizeInHeader &&
