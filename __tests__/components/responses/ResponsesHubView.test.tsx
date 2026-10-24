@@ -59,6 +59,12 @@ describe('ResponsesHubView query and pagination states', () => {
     mockGetStats.mockReset().mockResolvedValue({ total: 0, unread: 0, byStage: [], byCategory: { new: 0, in_progress: 0, completed: 0 } });
   });
 
+  it('a form with no responses yet still has the Summary / Responses switch, so Summary is one click away', async () => {
+    renderHub();
+    expect(await screen.findByRole('group', { name: 'Form data view' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Responses' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
   it('attributes a response-list failure to the list, not to a missing form', async () => {
     mockGetResponses.mockRejectedValue(new Error('backend unavailable'));
     renderHub();

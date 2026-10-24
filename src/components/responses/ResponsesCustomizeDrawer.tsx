@@ -139,7 +139,10 @@ function OpenDrawer({ onClose, formId, scope, fields, responseCount = 0, saved }
   return (
     <>
       <Drawer isOpen onClose={requestClose} width={940} title="Customize responses" description="For this form only. Owners and admins can change it." footer={footer}>
-        <Tabs tabs={TABS} activeId={tab} onChange={(id) => setTab(id as TabId)} ariaLabel="What to customize" panelId="customize-panel" />
+        {/* The tabs stay at the top while a long list scrolls under them. */}
+        <div className="sticky -top-(--space-5) z-10 -mx-(--space-5) -mt-(--space-5) bg-(--surface-card) px-(--space-5) pt-(--space-3)">
+          <Tabs tabs={TABS} activeId={tab} onChange={(id) => setTab(id as TabId)} ariaLabel="What to customize" panelId="customize-panel" />
+        </div>
 
         {conflict && (
           <Alert variant="warning" title="Someone else changed this setup first">

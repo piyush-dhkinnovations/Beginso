@@ -57,24 +57,25 @@ describe('FormDataHeader', () => {
     expect(screen.getByRole('heading', { name: '…' })).toBeInTheDocument();
   });
 
-  it('marks Responses active on /inbox and Summary active on /insights (trailing slash tolerated)', async () => {
+  it('on Responses the switch is not in the header (the page puts it on the line of the stage tabs); on Summary it is (trailing slash tolerated)', async () => {
     const { unmount } = renderHeader();
     await screen.findByRole('heading', { name: 'Survey' });
-    expect(screen.getByRole('button', { name: 'Responses' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'Summary' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('group', { name: 'Form data view' })).not.toBeInTheDocument();
     unmount();
 
     nav.pathname = '/forms/f1/insights/';
     renderHeader();
     await screen.findByRole('heading', { name: 'Survey' });
     expect(screen.getByRole('button', { name: 'Summary' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Responses' })).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('switching view navigates to the other data page', async () => {
+  it('on Summary, switching view navigates to the Responses page', async () => {
+    nav.pathname = '/forms/f1/insights';
     renderHeader();
     await screen.findByRole('heading', { name: 'Survey' });
-    await userEvent.click(screen.getByText('Summary'));
-    expect(nav.push).toHaveBeenCalledWith('/forms/f1/insights');
+    await userEvent.click(screen.getByText('Responses', { selector: 'button, button *' }));
+    expect(nav.push).toHaveBeenCalledWith('/forms/f1/inbox');
   });
 
   it('keeps the workspace in links and navigation (from ?ws=)', async () => {
@@ -83,8 +84,6 @@ describe('FormDataHeader', () => {
     await screen.findByRole('heading', { name: 'Survey' });
     expect(screen.getByRole('link', { name: 'Responses' })).toHaveAttribute('href', '/w/acme/form-responses');
     expect(screen.getByRole('link', { name: /Edit form/ })).toHaveAttribute('href', '/forms/f1/edit?ws=acme');
-    await userEvent.click(screen.getByText('Summary'));
-    expect(nav.push).toHaveBeenCalledWith('/forms/f1/insights?ws=acme');
   });
 
   it('falls back to the resolved form scope when there is no ?ws=', async () => {

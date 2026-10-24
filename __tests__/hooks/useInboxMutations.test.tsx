@@ -120,6 +120,20 @@ describe('useInboxMutations — bulk', () => {
     expect(rolledBack?.data[0].stage?.id).toBe('s1');
   });
 
+  it('says what is wrong when the server explains a refusal (too many responses for one action), instead of a bare failure', async () => {
+    const list: PaginatedResponsesResult = { data: [makeResponse('r1')], total: 1, page: 1, limit: 50, totalPages: 1 };
+    const { wrapper } = makeClientAndWrapper(list);
+    toastMock.mockClear();
+    mockBulk.mockRejectedValueOnce({ response: { status: 413, data: { message: 'Too many responses for one action: the limit is 5,000. Narrow the filter and try again.' } } });
+    const { result } = renderHook(() => useInboxMutations({ scope: 'acme' }), { wrapper });
+
+    act(() => {
+      result.current.bulk({ filter: {}, formId: 'form-1' }, { type: 'read' });
+    });
+
+    await waitFor(() => expect(toastMock).toHaveBeenCalledWith('Too many responses for one action: the limit is 5,000. Narrow the filter and try again.', 'error'));
+  });
+
   it('undo posts exactly one restore request carrying the previous snapshot', async () => {
     const list: PaginatedResponsesResult = { data: [makeResponse('r1'), makeResponse('r2')], total: 2, page: 1, limit: 50, totalPages: 1 };
     const { wrapper } = makeClientAndWrapper(list);

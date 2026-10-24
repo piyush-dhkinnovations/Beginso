@@ -2,6 +2,7 @@
 
 import { useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
+import { useSearchParams } from 'next/navigation';
 import { SlidersHorizontal } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -10,6 +11,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { FORM_HEADER_SLOT_ID } from '@/lib/formHeaderSlot';
 import { ResponsesBoard } from './ResponsesBoard';
 import { ResponsesCustomizeDrawer } from './ResponsesCustomizeDrawer';
+import { FormModeSwitch } from '@/components/forms/FormModeSwitch';
 import { RespondentFromProvider } from './RespondentFromContext';
 import { ResponsesCalendar } from './ResponsesCalendar';
 import { ResponsesToolbar } from './ResponsesToolbar';
@@ -36,7 +38,7 @@ import { useTags } from '@/hooks/useTags';
 import { useWorkspaceRole } from '@/hooks/useWorkspaceRole';
 import { useWorkspaceTimezone } from '@/hooks/useWorkspaceTimezone';
 import { useAuth } from '@/hooks/useAuth';
-import { canConfigureResponses, hasCapability } from '@/lib/roles';
+import { canActOnResponses, canConfigureResponses, hasCapability } from '@/lib/roles';
 import type { InboxViewMode } from '@/lib/inboxFilters';
 
 const subscribeNever = () => () => {};
@@ -70,7 +72,9 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   // The form's chosen order until the person clicks the column header themselves.
   const [pickedOrder, setPickedOrder] = useState<'asc' | 'desc' | null>(null);
   const submittedOrder = pickedOrder ?? (setup.sort === 'oldest' ? 'asc' : 'desc');
-  const setSubmittedOrder = setPickedOrder;
+  // The column picked in a header (the email, or a question); a column that has since been taken out of the table no longer sorts it.
+  const [pickedSort, setPickedSort] = useState<string>('submitted');
+  const sortBy = pickedSort !== 'submitted' && setup.tableColumns.includes(pickedSort) ? pickedSort : undefined;
   const [customizeOpen, setCustomizeOpen] = useState(false);
   const { data: members } = useMembers(scope === 'personal' ? undefined : scope);
   const { data: tags } = useTags(scope === 'personal' ? undefined : scope);
@@ -86,6 +90,8 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   });
   const formNames = formId ? undefined : Object.fromEntries((allForms?.forms ?? []).map((f) => [f._id, f.title]));
   const { user } = useAuth();
+  // The workspace the form's links carry: the address's own, else the form's scope.
+  const wsParam = useSearchParams().get('ws');
   // Inside a form, Export sits in the form header beside Edit form (its slot), so the filter row keeps only what shapes the list.
   const headerSlot = useSyncExternalStore(subscribeNever, () => document.getElementById(FORM_HEADER_SLOT_ID), () => null);
 
@@ -98,9 +104,9 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   const { runExport, exportCurrentFilter } = useInboxExports({ formId, filters, scope });
 
   const { form, formError, isFormError, refetchForm, stats, isStatsError, data, isLoading, isResponsesError, refetchResponses } =
-    useResponsesData({ scope, formId, filters, page, pageLimit, setPage, submittedOrder });
+    useResponsesData({ scope, formId, filters, page, pageLimit, setPage, submittedOrder, sortBy });
   const { responseId, responses, activeResponsePosition, openResponse, closeResponse, navigateResponse, expandResponse } = useResponseRouting({
-    scope, formId, filters, page, pageLimit, data, submittedOrder,
+    scope, formId, filters, page, pageLimit, data, submittedOrder, sortBy,
   });
   const fileFieldLabels = (form?.fields ?? [])
     .filter((field) => field.type === 'file_upload' && !field.deleted)
@@ -143,6 +149,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
   };
 
   const exportInHeader = !!formId && !!headerSlot && canExport;
+  const modeSwitch = formId ? <FormModeSwitch formId={formId} ws={wsParam ?? (scope !== 'personal' ? scope : null)} /> : null;
   const customizeInHeader = !!formId && !!headerSlot && canConfigure;
   const headerActions =
     scope !== 'personal' || (canExport && !exportInHeader) ? (
@@ -175,9 +182,8 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         createPortal(
           <>
             {customizeInHeader && (
-              <Button variant="secondary" onClick={() => setCustomizeOpen(true)}>
-                <SlidersHorizontal size={16} className="mr-1.5" aria-hidden="true" />
-                Customize
+              <Button variant="secondary" aria-label="Customize responses" title="Customize responses" onClick={() => setCustomizeOpen(true)}>
+                <SlidersHorizontal size={16} aria-hidden="true" />
               </Button>
             )}
             {exportInHeader && (
@@ -195,13 +201,23 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
       {formId && setupQuery.isLoading ? (
         <Skeleton variant="block" height={240} className="rounded-xl" />
       ) : isFirstRun ? (
-        <NoResponsesYet formId={formId} />
+        <>
+          {/* No tabs to carry it yet, but Summary must still be one click away. */}
+          {modeSwitch && <div className="flex justify-end">{modeSwitch}</div>}
+          <NoResponsesYet formId={formId} />
+        </>
       ) : (
         <>
-          {/* The stage tabs sit on a rule under the page header; inside a form the saved-view picker and Save view share their row. */}
+          {/* The stage tabs sit on a rule under the page header. Inside a form the same line carries, on the right, the Summary / Responses
+              switch, the saved-view picker and Save view, all centred on the height of the tabs. */}
           <div className="flex flex-wrap items-end justify-between gap-x-4 border-b border-(--border-default)">
             <ResponsesCountChips stats={isStatsError ? undefined : stats} stages={stages} filters={filters} onFilterChange={changeFilter} />
-            {formId && headerActions && <div className="flex flex-wrap items-center gap-3 pb-1.5">{headerActions}</div>}
+            {formId && (
+              <div className="flex min-h-10 flex-wrap items-center gap-3 pb-px">
+                {modeSwitch}
+                {headerActions}
+              </div>
+            )}
           </div>
 
           <ResponsesToolbar
@@ -232,6 +248,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
           {view === 'table' && (
             <ResponsesTableSection
               setup={formId ? setup : undefined}
+              onChangeStage={canActOnResponses(role) ? (id, stageId) => void mutations.updateStage(id, stageId) : undefined}
               responses={responses}
               isLoading={isLoading}
               selection={selection}
@@ -253,8 +270,10 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
               onExport={runExport}
               onClearFilters={clearAll}
               submittedOrder={submittedOrder}
-              onSubmittedOrderChange={(order) => {
-                setSubmittedOrder(order);
+              sortBy={sortBy ?? 'submitted'}
+              onSortChange={(key, dir) => {
+                setPickedSort(key);
+                setPickedOrder(dir);
                 setPage(1);
               }}
               onPageChange={(p) => {

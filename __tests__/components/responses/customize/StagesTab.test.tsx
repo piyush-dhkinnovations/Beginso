@@ -43,18 +43,19 @@ describe('StagesTab', () => {
     expect(next.stages.map((s: { name: string }) => s.name)).toEqual(['New', 'In Progress', 'Completed']);
   });
 
-  it('lists the form\'s stages with a name, a colour and what each counts as', () => {
+  it('lists the form\'s stages with a name, a colour dot and what each counts as', () => {
     setup(own());
     expect(screen.getByLabelText('Name of stage 2')).toHaveValue('In Progress');
     expect(screen.getByLabelText('In Progress counts as')).toHaveValue('in_progress');
-    expect(screen.getByLabelText('Colour of In Progress')).toHaveValue('warning');
+    expect(screen.getByRole('button', { name: /Colour of In Progress: Orange/ })).toBeInTheDocument();
   });
 
   it('renaming, recolouring and re-categorising a stage report the new draft', async () => {
     const onChange = setup(own());
     await userEvent.type(screen.getByLabelText('Name of stage 1'), 'X');
     expect(onChange.mock.calls.at(-1)![0].stages[0].name).toBe('NewX');
-    await userEvent.selectOptions(screen.getByLabelText('Colour of In Progress'), 'error');
+    await userEvent.click(screen.getByRole('button', { name: /Colour of In Progress/ }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Red' }));
     expect(onChange.mock.calls.at(-1)![0].stages[1].colour).toBe('error');
     await userEvent.selectOptions(screen.getByLabelText('Completed counts as'), 'in_progress');
     expect(onChange.mock.calls.at(-1)![0].stages[2].category).toBe('in_progress');

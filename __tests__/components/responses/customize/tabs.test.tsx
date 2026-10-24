@@ -38,7 +38,34 @@ describe('ColumnsTab', () => {
     );
     const add = screen.getByRole('heading', { name: 'Add a column' }).closest('section')!;
     const offered = within(add).getAllByRole('button').map((b) => b.textContent?.trim());
-    expect(offered).toEqual(['Average score', 'Notes', 'Full name', 'Title of the film', 'Genre']); // not Signature: it is not text
+    // four buttons, the rest behind More; Signature is not offered at all (it is not text)
+    expect(offered).toEqual(['Average score', 'Notes', 'Full name', 'Title of the film', 'More (1)']);
+  });
+
+  it('offers only four columns as buttons and keeps the rest behind More, which adds the one chosen', async () => {
+    const onChange = setup(draft());
+    expect(screen.queryByRole('button', { name: 'Genre' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'More columns, 1' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Genre' }));
+    expect(last(onChange)).toEqual(['respondent', 'email', 'tags', 'assignee', 'stage', 'submitted', 'q:genre']);
+  });
+
+  it('More opens a short list you can search, and says when nothing matches', async () => {
+    setup(draft({ tableColumns: ['respondent'] }));
+    await userEvent.click(screen.getByRole('button', { name: /More columns/ }));
+    const search = screen.getByRole('textbox', { name: 'Search the other columns' });
+    const list = search.closest('div[id="more-columns"]') as HTMLElement;
+    expect(within(list).getAllByRole('button').map((b) => b.textContent?.trim())).toEqual(['Submitted', 'Average score', 'Notes', 'Full name', 'Title of the film', 'Genre']);
+    await userEvent.type(search, 'tit');
+    expect(within(list).getAllByRole('button').map((b) => b.textContent?.trim())).toEqual(['Title of the film']);
+    await userEvent.clear(search);
+    await userEvent.type(search, 'zzz');
+    expect(screen.getByText(/No column matches/)).toBeInTheDocument();
+  });
+
+  it('has no More button when four or fewer are left', () => {
+    setup(draft({ tableColumns: ['respondent', 'email', 'tags', 'assignee', 'stage', 'submitted', 'score'] }));
+    expect(screen.queryByRole('button', { name: /More columns/ })).not.toBeInTheDocument();
   });
 
   it('adds a question as the last column', async () => {

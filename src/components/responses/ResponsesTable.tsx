@@ -9,11 +9,14 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import { Table, type TableColumn, type TableSort } from '@/components/ui/Table';
 import { Menu } from '@/components/ui/Menu';
 import { RespondentCell } from './ResponseRow';
+import { StageMenu } from './StageMenu';
 import { ResponseColumnCell, columnLabel } from './ResponseColumnCell';
 import { detectRespondentIdentity } from '@/lib/formatters';
-import { DEFAULT_RESPONSE_SETUP, DEFAULT_TABLE_COLUMNS, type ResponseSetupValues } from '@/types/responseSetup';
+import { DEFAULT_RESPONSE_SETUP, DEFAULT_TABLE_COLUMNS, questionOfColumn, type ResponseSetupValues } from '@/types/responseSetup';
+import { answerFor, textFields } from '@/lib/answerText';
 import { useFormFieldsMap } from '@/hooks/useFormFields';
 import type { IResponse } from '@/types/response';
+import type { StageRef } from '@/types/stage';
 
 interface ResponsesTableProps {
   responses: IResponse[];
@@ -41,8 +44,14 @@ interface ResponsesTableProps {
   /** Submission order, applied by the server across every page (newest first by default). */
   submittedOrder?: 'asc' | 'desc';
   onSubmittedOrderChange?: (order: 'asc' | 'desc') => void;
+  /** The column the server sorts every page by: `submitted` (default), `email`, or `q:<fieldId>`. `submittedOrder` is its direction. */
+  sortBy?: string;
+  onSortChange?: (key: string, dir: 'asc' | 'desc') => void;
   /** The form's columns and look (Customize). Absent on the all-forms view, which always shows the standard columns. */
   setup?: ResponseSetupValues;
+  /** With `onChangeStage`, the stage badge becomes a menu of these stages (one form's responses only: stages differ between forms). */
+  stages?: readonly StageRef[];
+  onChangeStage?: (responseId: string, stageId: string) => void;
 }
 
 export function ResponsesTable({
@@ -62,8 +71,13 @@ export function ResponsesTable({
   totalMatching,
   submittedOrder = 'desc',
   onSubmittedOrderChange,
+  sortBy = 'submitted',
+  onSortChange,
   setup,
+  stages,
+  onChangeStage,
 }: ResponsesTableProps) {
+  const stageMenu = !!formId && !formNames && !!stages && stages.length > 0 && !!onChangeStage;
   const { tableColumns, rowHeight, wrap, respondentFrom } = formNames || !setup ? DEFAULT_RESPONSE_SETUP : setup;
   const router = useRouter();
   const allSelected = responses.length > 0 && selectedIds.size === responses.length;
@@ -91,11 +105,16 @@ export function ResponsesTable({
   const everythingLoaded = totalMatching === undefined || totalMatching <= responses.length;
   const [pageSort, setPageSort] = useState<TableSort | undefined>();
   const activePageSort = everythingLoaded ? pageSort : undefined;
-  const sort: TableSort | undefined = activePageSort ?? { key: 'submitted', dir: submittedOrder };
+  const sort: TableSort | undefined = activePageSort ?? { key: sortBy, dir: submittedOrder };
+  // Sorted by the server across every page: the submission time, the email, and one form's questions (answers are filed per form).
+  const serverSortable = (key: string) => key === 'submitted' || key === 'email' || (!!formId && key.startsWith('q:'));
   const toggleSort = (key: string) => {
-    if (key === 'submitted') {
+    if (serverSortable(key)) {
       setPageSort(undefined);
-      onSubmittedOrderChange?.(submittedOrder === 'desc' ? 'asc' : 'desc');
+      // Another column starts A to Z (newest first for the time); the same column turns round.
+      const dir = key === sortBy ? (submittedOrder === 'desc' ? 'asc' : 'desc') : key === 'submitted' ? 'desc' : 'asc';
+      if (onSortChange) onSortChange(key, dir);
+      else if (key === 'submitted') onSubmittedOrderChange?.(dir);
       return;
     }
     setPageSort((cur) => (cur?.key === key ? (cur.dir === 'asc' ? { key, dir: 'desc' } : undefined) : { key, dir: 'asc' }));
@@ -105,16 +124,33 @@ export function ResponsesTable({
   const rows = useMemo(() => {
     if (!activePageSort) return responses;
     const sign = activePageSort.dir === 'asc' ? 1 : -1;
-    const value = (r: IResponse): string => {
-      if (activePageSort.key === 'respondent') {
-        const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId], r.respondentEmail, respondentFrom);
-        return (id.label ?? id.email ?? '').toLowerCase();
+    const key = activePageSort.key;
+    const identity = (r: IResponse) => detectRespondentIdentity(r.answers, fieldsByForm[r.formId], r.respondentEmail, respondentFrom);
+    const questionId = questionOfColumn(key);
+    const question = questionId ? textFields(fieldsByForm[formId ?? '']).find((f) => f.fieldId === questionId) : undefined;
+    // A column of numbers sorts as numbers (9 before 10), anything else as text; a blank answer goes last either way.
+    const value = (r: IResponse): string | number | undefined => {
+      if (question) return answerFor(r.answers, fieldsByForm[r.formId], question)?.toLowerCase();
+      switch (key) {
+        case 'respondent': return (identity(r).label ?? identity(r).email ?? '').toLowerCase() || undefined;
+        case 'email': return identity(r).email?.toLowerCase();
+        case 'stage': return (r.stage?.name ?? r.status ?? '').toLowerCase() || undefined;
+        case 'assignee': return r.assignee?.name.toLowerCase();
+        case 'tags': return r.tags?.[0]?.name.toLowerCase();
+        case 'score': return typeof r.scoreAverage === 'number' ? r.scoreAverage : undefined;
+        case 'notes': return r.noteCount ?? 0;
+        default: return r.submittedAt ?? '';
       }
-      if (activePageSort.key === 'stage') return (r.stage?.name ?? r.status ?? '').toLowerCase();
-      return r.submittedAt ?? '';
     };
-    return [...responses].sort((a, b) => sign * value(a).localeCompare(value(b)));
-  }, [responses, activePageSort, fieldsByForm, respondentFrom]);
+    const compare = (a: string | number, b: string | number) =>
+      typeof a === 'number' && typeof b === 'number' ? a - b : String(a).localeCompare(String(b), undefined, { numeric: true });
+    return [...responses].sort((a, b) => {
+      const va = value(a);
+      const vb = value(b);
+      if (va === undefined || vb === undefined) return va === vb ? 0 : va === undefined ? 1 : -1;
+      return sign * compare(va, vb);
+    });
+  }, [responses, activePageSort, fieldsByForm, respondentFrom, formId]);
   const respondentLabel = (r: IResponse) => {
     const id = detectRespondentIdentity(r.answers, fieldsByForm[r.formId], r.respondentEmail, respondentFrom);
     return id.label ?? id.email ?? 'this respondent';
@@ -174,12 +210,14 @@ export function ResponsesTable({
     ...tableColumns.flatMap((key): TableColumn<IResponse>[] => {
       const header = columnLabel(key, fields);
       if (header === undefined) return []; // a question that has since been deleted
-      const sortable = key === 'respondent' ? everythingLoaded : key === 'stage' ? everythingLoaded : key === 'submitted';
+      // Every column has the sort arrows like Submitted. Submitted is sorted by the server; the rest only while every match is on screen.
+      const sortable = serverSortable(key) || everythingLoaded;
       const column: TableColumn<IResponse> = {
         key,
         header,
-        sortKey: sortable ? (key === 'respondent' || key === 'stage' || key === 'submitted' ? key : undefined) : undefined,
+        sortKey: sortable ? key : undefined,
         render: (r) => {
+          if (key === 'stage' && stageMenu) return <StageMenu response={r} stages={stages} onChange={onChangeStage} />;
           if (key !== 'respondent') return <ResponseColumnCell columnKey={key} response={r} fields={fieldsByForm[r.formId]} respondentFrom={respondentFrom} wrap={wrap} />;
           // The real button gives the row its keyboard/screen-reader semantics; a click anywhere else on the row also opens it.
           return (

@@ -127,6 +127,8 @@ export interface GetResponsesParams extends ResponseFilters {
   /** Category filter (new | in_progress | completed). Sent for personal-shell stages, which have no Stage ids. */
   status?: 'new' | 'in_progress' | 'completed';
   sort?: string;
+  /** A column to sort by instead of the submission time: `email`, or `q:<fieldId>` for one question's answer (needs `formId`). `order` is its direction. */
+  sortBy?: string;
   /** Submission order across ALL pages: 'asc' = oldest first. Omitted = newest first (the API default). */
   order?: 'asc' | 'desc';
   page?: number;

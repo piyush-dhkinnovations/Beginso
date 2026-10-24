@@ -35,8 +35,12 @@ interface Props {
   onClearFilters: () => void;
   onPageChange: (page: number) => void;
   submittedOrder: 'asc' | 'desc';
-  onSubmittedOrderChange: (order: 'asc' | 'desc') => void;
+  /** The column the list is sorted by (`submitted` unless a header was clicked), and what to do when another header is clicked. */
+  sortBy?: string;
+  onSortChange: (key: string, dir: 'asc' | 'desc') => void;
   onViewResponse: (id: string) => void;
+  /** Changing a response's stage from its row; only given to people who may act on responses. */
+  onChangeStage?: (responseId: string, stageId: string) => void;
 }
 
 /**
@@ -47,7 +51,7 @@ interface Props {
  */
 export function ResponsesTableSection({
   setup, responses, isLoading, selection, total, page, pageLimit, formId, formNames, hasActiveFilters, filterSummary, otherCount,
-  filters, stages, tags, members, role, isBulkRunning, onBulk, onExport, onClearFilters, onPageChange, onViewResponse, submittedOrder, onSubmittedOrderChange,
+  filters, stages, tags, members, role, isBulkRunning, onBulk, onExport, onClearFilters, onPageChange, onViewResponse, submittedOrder, sortBy, onSortChange, onChangeStage,
 }: Props) {
   const { selectedIds, setSelectedIds, selectAllMatching, setSelectAllMatching, setConfirmDelete, clearSelection } = selection;
   return (
@@ -75,6 +79,8 @@ export function ResponsesTableSection({
 
       <ResponsesTable
         setup={setup}
+        stages={stages}
+        onChangeStage={onChangeStage}
         responses={responses}
         isLoading={isLoading}
         selectedIds={selectedIds}
@@ -86,7 +92,8 @@ export function ResponsesTableSection({
         otherCount={otherCount}
         totalMatching={total}
         submittedOrder={submittedOrder}
-        onSubmittedOrderChange={onSubmittedOrderChange}
+        sortBy={sortBy}
+        onSortChange={onSortChange}
         onSelectAll={(checked) => {
           setSelectAllMatching(false);
           setSelectedIds(checked ? new Set(responses.map((r) => r._id)) : new Set());

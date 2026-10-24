@@ -26,6 +26,7 @@ const WORKSPACE_STAGES = [
 
 interface Fake {
   puts: () => Record<string, any>[];
+  patches: () => { id: string; body: Record<string, any> }[];
 }
 
 async function installBackend(context: BrowserContext, role: 'admin' | 'viewer'): Promise<Fake> {
@@ -37,6 +38,7 @@ async function installBackend(context: BrowserContext, role: 'admin' | 'viewer')
   };
   let stages: { mode: 'workspace' | 'own'; list: any[]; startIndex: number | null } = { mode: 'workspace', list: [], startIndex: null };
   const puts: Record<string, any>[] = [];
+  const patches: { id: string; body: Record<string, any> }[] = [];
   let n = 0;
 
   const effective = () => (stages.mode === 'own' ? stages.list : WORKSPACE_STAGES);
@@ -84,10 +86,15 @@ async function installBackend(context: BrowserContext, role: 'admin' | 'viewer')
       const byStage = effective().map((s) => ({ stageId: s.id, name: s.name, category: s.category, colour: s.colour, count: PEOPLE.map(row).filter((r) => r.stage.id === s.id).length }));
       return json({ total: PEOPLE.length, unread: 0, byStage, byCategory: { new: 1, in_progress: 1, completed: 1 } });
     }
+    const patch = path.match(/^api\/responses\/([^/]+)$/);
+    if (patch && req.method() === 'PATCH') {
+      patches.push({ id: patch[1], body: req.postDataJSON() });
+      return json({ success: true, response: row(PEOPLE[0]) });
+    }
     if (req.method() === 'GET' && /notifications|members|tags|views|activity/.test(path)) return json([]);
     return json({});
   });
-  return { puts: () => puts };
+  return { puts: () => puts, patches: () => patches };
 }
 
 async function open(page: Page, query = '') {
@@ -205,6 +212,23 @@ test.describe('Customize responses', () => {
     await expect(page.getByRole('button', { name: /Open response from\s*Asha Rao/ })).toHaveCount(0);
   });
 
+  test('the stage in a table row is a button: pick another stage and the response moves without being opened', async ({ page, context }) => {
+    const fake = await installBackend(context, 'admin');
+    await open(page);
+    await page.getByRole('button', { name: 'Stage: New. Press to change it.' }).click();
+    await expect(page.getByRole('menuitem')).toHaveText(['New', 'In Progress', 'Completed']);
+    await page.getByRole('menuitem', { name: 'In Progress' }).click();
+    await expect.poll(() => fake.patches().length).toBe(1);
+    expect(fake.patches()[0]).toEqual({ id: 'r1', body: { stageId: 'w-prog' } });
+    await expect(page).not.toHaveURL(/responseId=/); // the response was not opened
+  });
+
+  test('a viewer sees the stage as a plain badge', async ({ page, context }) => {
+    await installBackend(context, 'viewer');
+    await open(page);
+    await expect(page.getByRole('button', { name: /Press to change it/ })).toHaveCount(0);
+  });
+
   test('closing with unsaved changes asks first, and the question is above the panel', async ({ page, context }) => {
     const fake = await installBackend(context, 'admin');
     await open(page);
@@ -221,5 +245,40 @@ test.describe('Customize responses', () => {
     await page.getByRole('button', { name: 'Discard changes' }).click();
     await expect(drawer(page)).toHaveCount(0);
     expect(fake.puts()).toHaveLength(0);
+  });
+});
+
+test.describe('The Responses header line', () => {
+  test('Summary / Responses sits on the stage tabs line beside the saved views; Customize is an icon; the header keeps Customize, Export and Edit form in that order', async ({ page, context }, testInfo) => {
+    await installBackend(context, 'admin');
+    await open(page);
+    const box = async (loc: ReturnType<Page['locator']>) => (await loc.first().boundingBox())!;
+    const tab = await box(page.getByRole('button', { name: /^All\b/ }));
+    const mode = await box(page.getByRole('group', { name: 'Form data view' }));
+    // the switch is on the line of the stage tabs, to the right of them
+    expect(Math.abs(mode.y + mode.height / 2 - (tab.y + tab.height / 2))).toBeLessThan(24);
+    expect(mode.x).toBeGreaterThan(tab.x + 300);
+    // the header: Customize (icon only), then Export, then Edit form
+    const customizeBtn = await box(page.getByRole('button', { name: 'Customize responses' }));
+    const exportBtn = await box(page.getByRole('button', { name: 'Export', exact: true }));
+    const edit = await box(page.getByRole('link', { name: 'Edit form' }));
+    expect(customizeBtn.x).toBeLessThan(exportBtn.x);
+    expect(exportBtn.x).toBeLessThan(edit.x);
+    expect(customizeBtn.width).toBeLessThan(60); // an icon, not a labelled button
+    expect(await page.getByRole('button', { name: 'Customize responses' }).innerText()).toBe('');
+    // nothing in the header row is higher or lower than its neighbours
+    expect(Math.abs(customizeBtn.y - exportBtn.y)).toBeLessThan(2);
+    expect(Math.abs(exportBtn.y - edit.y)).toBeLessThan(2);
+    await page.screenshot({ path: testInfo.outputPath('header-line.png'), clip: { x: 0, y: 0, width: 1440, height: 300 } });
+  });
+
+  test('on Summary the switch stays in the header', async ({ page, context }) => {
+    await installBackend(context, 'admin');
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/forms/${FORM_ID}/insights?ws=${WS}`);
+    await expect(page.getByRole('group', { name: 'Form data view' })).toBeVisible({ timeout: 60000 });
+    const mode = (await page.getByRole('group', { name: 'Form data view' }).boundingBox())!;
+    const edit = (await page.getByRole('link', { name: 'Edit form' }).boundingBox())!;
+    expect(Math.abs(mode.y + mode.height / 2 - (edit.y + edit.height / 2))).toBeLessThan(20);
   });
 });

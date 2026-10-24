@@ -1,12 +1,12 @@
 'use client';
 
 import { useHydrated } from '@/hooks/useHydrated';
-import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Pencil } from 'lucide-react';
 import { ButtonLink } from '@/components/ui/ButtonLink';
 import { PageHeader } from '@/components/ui/PageHeader';
-import { Segmented } from '@/components/ui/Segmented';
+import { FormModeSwitch } from './FormModeSwitch';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useFormScope } from '@/hooks/useFormScope';
 import { formsService } from '@/services/forms';
@@ -15,20 +15,15 @@ import { FORM_HEADER_SLOT_ID } from '@/lib/formHeaderSlot';
 
 const DATA_ROUTE_RE = /^\/forms\/[^/]+\/(inbox|insights)\/?$/;
 const STATUS_LABEL = { draft: 'Draft', published: 'Published', closed: 'Closed' } as const;
-const MODES = [
-  { id: 'insights', label: 'Summary' },
-  { id: 'inbox', label: 'Responses' },
-];
 
 /**
  * The header for a form's data pages (/forms/:id/inbox and /insights): breadcrumb back to Responses, the form's
- * name and status, and the Summary / Responses switch. The form's own pages (Overview, Edit, Settings) use
+ * name and status, and (on Summary) the Summary / Responses switch. The form's own pages (Overview, Edit, Settings) use
  * FormLevelHeader instead.
  */
 export function FormDataHeader() {
   const { id: formId } = useParams<{ id: string }>();
   const pathname = usePathname();
-  const router = useRouter();
   const scope = useFormScope(formId);
   const ws = useSearchParams().get('ws') ?? (scope && scope !== 'personal' ? scope : null);
   const show = DATA_ROUTE_RE.test(pathname);
@@ -58,7 +53,8 @@ export function FormDataHeader() {
       actionsAlign="center"
       actions={
         <>
-          <Segmented options={MODES} value={mode} onChange={(id) => router.push(`/forms/${formId}/${id}${q}`)} ariaLabel="Form data view" />
+          {/* On Responses the switch lives on the line of the stage tabs (ResponsesHubView); here it only stays on Summary. */}
+          {mode === 'insights' && <FormModeSwitch formId={formId} ws={ws} />}
           {/* The page's own controls (Summary: Filters, Add chart) land here, so they share this row. `contents` makes them siblings of the buttons. */}
           <div id={FORM_HEADER_SLOT_ID} className="contents" />
           {canEdit && (

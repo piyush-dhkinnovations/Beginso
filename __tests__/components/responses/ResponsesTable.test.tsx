@@ -91,6 +91,84 @@ describe('ResponsesTable: the columns chosen in Customize', () => {
   });
 });
 
+describe('ResponsesTable: sorting by a column on a form with more than one page', () => {
+  const rows = [makeResponse('r1')];
+  const setup = { ...DEFAULT_RESPONSE_SETUP, tableColumns: ['respondent', 'email', 'q:Name', 'stage', 'submitted'] };
+  const render120 = (extra: Partial<React.ComponentProps<typeof ResponsesTable>> = {}) =>
+    render(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} formId="form-1" totalMatching={120} setup={setup} {...extra} />);
+
+  it('the email, a question and Submitted have the sort arrows (the server sorts every page); Respondent and Stage do not (only this page is on screen)', () => {
+    render120({ sortBy: 'submitted', submittedOrder: 'desc' });
+    const sortable = (name: string) => within(screen.getByRole('columnheader', { name })).queryByRole('button') !== null;
+    expect(sortable('Email')).toBe(true);
+    expect(sortable('Full name')).toBe(true); // the question column (labelled by the question)
+    expect(sortable('Submitted')).toBe(true);
+    expect(sortable('Respondent')).toBe(false);
+    expect(sortable('Stage')).toBe(false);
+  });
+
+  it('a click on another column asks the server to sort by it, A to Z; a second click turns it round; Submitted starts newest first', () => {
+    const onSortChange = vi.fn();
+    const { rerender } = render120({ sortBy: 'submitted', submittedOrder: 'desc', onSortChange });
+    fireEvent.click(within(screen.getByRole('columnheader', { name: 'Full name' })).getByRole('button'));
+    expect(onSortChange).toHaveBeenLastCalledWith('q:Name', 'asc');
+    rerender(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} formId="form-1" totalMatching={120} setup={setup} sortBy="q:Name" submittedOrder="asc" onSortChange={onSortChange} />);
+    fireEvent.click(within(screen.getByRole('columnheader', { name: 'Full name' })).getByRole('button'));
+    expect(onSortChange).toHaveBeenLastCalledWith('q:Name', 'desc');
+    fireEvent.click(within(screen.getByRole('columnheader', { name: 'Submitted' })).getByRole('button'));
+    expect(onSortChange).toHaveBeenLastCalledWith('submitted', 'desc');
+  });
+
+  it('the arrow is on the column the list is sorted by', () => {
+    render120({ sortBy: 'email', submittedOrder: 'asc' });
+    expect(screen.getByRole('columnheader', { name: 'Email' })).toHaveAttribute('aria-sort', 'ascending');
+    expect(screen.getByRole('columnheader', { name: 'Submitted' })).toHaveAttribute('aria-sort', 'none');
+  });
+
+  it('on the all-forms view a question is not a column to sort by on the server', () => {
+    render(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} totalMatching={120} />);
+    expect(within(screen.getByRole('columnheader', { name: 'Email' })).queryByRole('button')).not.toBeNull();
+    expect(within(screen.getByRole('columnheader', { name: 'Stage' })).queryByRole('button')).toBeNull();
+  });
+});
+
+describe('ResponsesTable: changing the stage from the row', () => {
+  const stages = [
+    { id: 's-new', name: 'New', colour: 'info' as const, category: 'new' as const },
+    { id: 's-hold', name: 'On Hold', colour: 'warning' as const, category: 'in_progress' as const },
+    { id: 's-done', name: 'Done', colour: 'success' as const, category: 'completed' as const },
+  ];
+  const rows = [makeResponse('r1')];
+
+  it('the stage badge is a button that lists the stages, ticks the current one, and moves the response without opening it', async () => {
+    const onChangeStage = vi.fn();
+    const onViewResponse = vi.fn();
+    render(<ResponsesTable {...baseProps} onViewResponse={onViewResponse} responses={rows} isLoading={false} selectedIds={new Set()} formId="form-1" stages={stages} onChangeStage={onChangeStage} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Stage: New. Press to change it.' }));
+    expect(screen.getAllByRole('menuitem').map((m) => m.textContent)).toEqual(['New', 'On Hold', 'Done']);
+    fireEvent.click(screen.getByRole('menuitem', { name: 'On Hold' }));
+    expect(onChangeStage).toHaveBeenCalledWith('r1', 's-hold');
+    expect(onViewResponse).not.toHaveBeenCalled();
+  });
+
+  it('choosing the stage the response is already in changes nothing', () => {
+    const onChangeStage = vi.fn();
+    render(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} formId="form-1" stages={stages} onChangeStage={onChangeStage} />);
+    fireEvent.click(screen.getByRole('button', { name: /Stage: New/ }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'New' }));
+    expect(onChangeStage).not.toHaveBeenCalled();
+  });
+
+  it('is a plain badge for someone who may not change stages, and on the all-forms view where stages differ between forms', () => {
+    const { unmount } = render(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} formId="form-1" stages={stages} />);
+    expect(screen.queryByRole('button', { name: /Press to change it/ })).not.toBeInTheDocument();
+    expect(screen.getByText('New')).toBeInTheDocument();
+    unmount();
+    render(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} formNames={{ 'form-1': 'Survey' }} stages={stages} onChangeStage={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /Press to change it/ })).not.toBeInTheDocument();
+  });
+});
+
 describe('ResponsesTable', () => {
   it('renders skeleton rows when isLoading', () => {
     const { container } = render(

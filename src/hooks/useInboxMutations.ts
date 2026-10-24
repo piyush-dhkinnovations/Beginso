@@ -189,9 +189,12 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
 
       return { previousLists };
     },
-    onError: (_err, _vars, context) => {
+    onError: (err, _vars, context) => {
       context?.previousLists?.forEach(([key, data]) => queryClient.setQueryData(key, data));
-      toast('Failed to update responses. Please try again.', 'error');
+      // "Too many responses for one action" (413) and refused actions (422) say what to do: show that, not a bare failure.
+      const res = (err as { response?: { status?: number; data?: { message?: string } } }).response;
+      const explained = (res?.status === 413 || res?.status === 422) && res.data?.message;
+      toast(explained || 'Failed to update responses. Please try again.', 'error');
     },
     onSettled: () => queryClient.invalidateQueries({ queryKey: listKey }),
   });

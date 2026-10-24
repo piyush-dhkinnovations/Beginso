@@ -13,13 +13,15 @@ interface Options {
   filters: Filters;
   /** The table's submission order: stepping to the next/previous response across a page boundary must follow the same order. */
   submittedOrder?: 'asc' | 'desc';
+  /** The column the table is sorted by when it is not the submission time. */
+  sortBy?: string;
   page: number;
   pageLimit: number;
   data: { data: IResponse[]; totalPages: number; total: number } | undefined;
 }
 
 /** The drawer's `?responseId=` URL state: open/close, prev/next across pages, and expand-to-full-page. */
-export function useResponseRouting({ scope, formId, filters, page, pageLimit, data, submittedOrder = 'desc' }: Options) {
+export function useResponseRouting({ scope, formId, filters, page, pageLimit, data, submittedOrder = 'desc', sortBy }: Options) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -52,7 +54,7 @@ export function useResponseRouting({ scope, formId, filters, page, pageLimit, da
       targetPage = page + (direction === 'previous' ? -1 : 1);
       if (targetPage < 1 || targetPage > data.totalPages) return;
       const adjacentPage = await responsesService.getResponses(
-        { formId, ...filters, ...(submittedOrder === 'asc' ? { order: 'asc' as const } : {}), page: targetPage, limit: pageLimit },
+        { formId, ...filters, ...(sortBy ? { sortBy, order: submittedOrder } : submittedOrder === 'asc' ? { order: 'asc' as const } : {}), page: targetPage, limit: pageLimit },
         scope
       );
       target = direction === 'previous' ? adjacentPage.data.at(-1) : adjacentPage.data[0];

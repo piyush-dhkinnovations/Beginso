@@ -19,11 +19,14 @@ interface Options {
   setPage: InboxFilters['setPage'];
   /** Newest first (default) or oldest first, applied by the server across every page. */
   submittedOrder?: 'asc' | 'desc';
+  /** A column other than the submission time to sort by (`email`, `q:<fieldId>`); `submittedOrder` is then its direction. */
+  sortBy?: string;
 }
 
 /** Form, stats and paginated response-list queries, plus the out-of-range page clamp. */
-export function useResponsesData({ scope, formId, filters, page, pageLimit, setPage, submittedOrder = 'desc' }: Options) {
-  const order = submittedOrder === 'asc' ? ({ order: 'asc' } as const) : {};
+export function useResponsesData({ scope, formId, filters, page, pageLimit, setPage, submittedOrder = 'desc', sortBy }: Options) {
+  // Newest first is the server's default, so only an oldest-first order is sent; a column sort always says which way it goes.
+  const order = sortBy ? ({ sortBy, order: submittedOrder } as const) : submittedOrder === 'asc' ? ({ order: 'asc' } as const) : {};
   const listKey = responseKeys.list(scope, formId, { ...filters, ...order, page, limit: pageLimit });
   const replacePage = useCallback((nextPage: number) => setPage(nextPage), [setPage]);
 
