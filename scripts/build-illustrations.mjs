@@ -40,9 +40,16 @@ function token(color) {
   return 'var(--text-primary)';
 }
 function tokenise(svg) {
+  let previous;
+  do {
+    previous = svg;
+    svg = svg
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/<(?=!--)/g, '');
+  } while (svg !== previous);
+
   return svg
     .replace(/<\?xml[^>]*\?>/g, '')
-    .replace(/<!--[\s\S]*?-->/g, '')
     .replace(/<title>[\s\S]*?<\/title>/g, '')
     .replace(/\s(width|height)="[^"]*"/g, (m, k, off) => (off < 400 ? '' : m)) // root size only
     .replace(/#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\b/g, (m) => token(m) ?? m)
