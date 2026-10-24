@@ -49,6 +49,7 @@ function toReportJob(raw: RawReportJob): ReportJob {
     responseStatus: raw.responseStatus ?? raw.filters?.status,
     from: raw.from ?? raw.filters?.from,
     to: raw.to ?? raw.filters?.to,
+    selectedCount: raw.filters?.ids?.length || undefined,
     createdAt: raw.createdAt,
     completedAt: raw.completedAt,
     expiresAt: raw.expiresAt,

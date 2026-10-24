@@ -65,7 +65,9 @@ function scopeSubtitle(job: ReportJob): string {
   // StatusDistributionChart.tsx uses, since it's still the removed union's literal value.
   if (job.stage) parts.push(job.stage.name);
   else if (job.responseStatus) parts.push(CATEGORY_LABELS[job.responseStatus]);
-  if (job.from && job.to) {
+  if (job.selectedCount) {
+    parts.push(`${job.selectedCount} selected response${job.selectedCount === 1 ? '' : 's'}`);
+  } else if (job.from && job.to) {
     const preset = detectDateRangePreset(job.from, job.to);
     parts.push(preset === 'custom' ? `${formatShortDate(job.from)} – ${formatShortDate(job.to)}` : PRESET_LABEL[preset]);
   } else {

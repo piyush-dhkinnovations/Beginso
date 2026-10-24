@@ -58,6 +58,8 @@ export interface ReportJob {
   responseStatus?: 'new' | 'in_progress' | 'completed';
   from?: string;            // ISO 8601
   to?: string;              // ISO 8601
+  /** How many responses were chosen by hand for this export (an export of a selection has no date range). */
+  selectedCount?: number;
   createdAt: string;       // ISO 8601
   completedAt?: string;    // ISO 8601
   expiresAt?: string;      // ISO 8601

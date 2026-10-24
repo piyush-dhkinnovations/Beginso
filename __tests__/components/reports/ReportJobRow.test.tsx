@@ -53,6 +53,14 @@ describe('ReportJobRow', () => {
     vi.useRealTimers();
   });
 
+  it('an export of chosen responses says how many, not "All time"', () => {
+    const job = mockReportJob({ status: 'queued', formTitle: 'Customer service', responseStatus: undefined, from: undefined, to: undefined, selectedCount: 1 });
+    render(<table><tbody><ReportJobRow job={job} onRetry={vi.fn()} /></tbody></table>);
+    expect(screen.getByText('Customer service')).toBeInTheDocument();
+    expect(screen.getByText('1 selected response')).toBeInTheDocument();
+    expect(screen.queryByText(/All time/)).not.toBeInTheDocument();
+  });
+
   it('falls back to "All Forms" when there is no scoped form', () => {
     const job = mockReportJob({ status: 'queued', formId: undefined, formTitle: undefined, responseStatus: undefined, from: undefined, to: undefined });
     render(<table><tbody><ReportJobRow job={job} onRetry={vi.fn()} /></tbody></table>);
