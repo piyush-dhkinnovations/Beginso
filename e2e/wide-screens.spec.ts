@@ -1,8 +1,7 @@
 import { test, expect, type BrowserContext } from '@playwright/test';
 
 /**
- * The page uses the screen it is given. The content pane is capped at 1600px up to a 1920px screen, 2400px up to 2560px and 3600px beyond, so a 2K
- * monitor and a curved ultrawide are filled (with 40px of padding) instead of leaving wide empty sides, and a super-ultrawide still
+ * The page uses the screen it is given. The content pane is capped at 2400px up to a 2560px screen and 3600px beyond, so a 1920 monitor, a 2K screen and a curved ultrawide are filled (32px of padding, no margin), and a super-ultrawide still
  * gets a bounded column. The
  * backend is faked in the browser.
  */
@@ -37,10 +36,11 @@ async function install(context: BrowserContext) {
 const SIZES = [
   { width: 1280, height: 800, main: [1000, 1100], pad: 32 },
   { width: 1440, height: 900, main: [1200, 1220], pad: 32 },
-  { width: 1920, height: 1080, main: [1680, 1700], pad: 40 },
-  { width: 2560, height: 1440, main: [2320, 2340], pad: 40 },
-  { width: 3440, height: 1440, main: [3200, 3230], pad: 40 },
-  { width: 5120, height: 1440, main: [3600, 3600], pad: 40 },
+  { width: 1900, height: 1000, main: [1670, 1685], pad: 32 },
+  { width: 1920, height: 1080, main: [1680, 1700], pad: 32 },
+  { width: 2560, height: 1440, main: [2320, 2340], pad: 32 },
+  { width: 3440, height: 1440, main: [3200, 3230], pad: 32 },
+  { width: 5120, height: 1440, main: [3600, 3600], pad: 32 },
 ];
 
 for (const size of SIZES) {
@@ -52,6 +52,9 @@ for (const size of SIZES) {
     const main = (await page.locator('#main-content').boundingBox())!;
     expect(main.width).toBeGreaterThanOrEqual(size.main[0]);
     expect(main.width).toBeLessThanOrEqual(size.main[1]);
+    // the pane touches the sidebar and the screen edge: no centring margin on either side
+    const margin = await page.locator('#main-content').evaluate((el) => parseFloat(getComputedStyle(el).marginLeft));
+    if (size.width <= 2560) expect(margin).toBe(0);
     const padding = await page.locator('#main-content').evaluate((el) => parseFloat(getComputedStyle(el).paddingLeft));
     expect(padding).toBe(size.pad);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
