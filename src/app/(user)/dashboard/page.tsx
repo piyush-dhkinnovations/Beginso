@@ -16,6 +16,7 @@ import { RecentActivitySection } from '@/components/dashboard/RecentActivitySect
 import { ButtonLink } from '@/components/ui';
 import { ActionCard, Card, EmptyState, PageHeader, StatusBadge } from '@/components/ui';
 import { Alert } from '@/components/ui/Alert';
+import { FormTile } from '@/components/forms/FormTile';
 import { Button } from '@/components/ui/Button';
 import { HomeBodySkeleton } from '@/components/ui/PageSkeletons';
 import type { FormStatus } from '@/types/form';
@@ -190,9 +191,8 @@ export default function DashboardPage() {
                     href={`/forms/${form._id}/edit`}
                     className="flex items-center gap-3 px-4 py-3 no-underline transition-colors hover:bg-(--surface-hover)"
                   >
-                    <span aria-hidden="true" className="bg-stat-icon mb-0 h-7! w-7!">
-                      <FileText />
-                    </span>
+                    {/* The same mark the Forms page shows: the form's logo, the icon its owner picked, or the one that suits its name. */}
+                    <FormTile title={form.title} size={32} logoUrl={form.branding?.logoUrl} iconName={form.branding?.iconName} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate bg-body-sm font-semibold text-(--text-primary)">{form.title}</span>
                       <span className="block bg-caption text-(--text-muted)">

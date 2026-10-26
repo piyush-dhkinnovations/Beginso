@@ -86,7 +86,7 @@ export function ListCardSkeleton({ rows = 4 }: { rows?: number }) {
       <Card padded={false} className="divide-y divide-(--border-subtle) overflow-hidden">
         {Array.from({ length: rows }).map((_, i) => (
           <div key={i} className="flex items-center gap-3 px-4 py-3">
-            <Skeleton variant="block" width={28} height={28} className="block flex-none rounded-lg" />
+            <Skeleton variant="block" width={32} height={32} className="block flex-none rounded-lg" />
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <Skeleton variant="text" width="55%" height={14} />
               <Skeleton variant="text" width="30%" height={11} />
@@ -99,23 +99,76 @@ export function ListCardSkeleton({ rows = 4 }: { rows?: number }) {
   );
 }
 
-/** Everything under the Home page header: widget grid, then the forms list beside a smaller side card. */
+/** The Recent Activity card: heading inside the card, then rows of a round icon, two text lines and the date at the right. */
+export function ActivityCardSkeleton({ rows = 5 }: { rows?: number }) {
+  return (
+    <div className="bg-card bg-card-pad space-y-4" aria-hidden="true">
+      <Skeleton variant="title" width={130} height={20} />
+      <div className="divide-y divide-(--border-subtle)">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="flex min-h-16 items-center gap-3 px-2 py-3">
+            <Skeleton variant="circle" width={40} height={40} className="flex-none" />
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <Skeleton variant="text" width="45%" height={13} />
+              <Skeleton variant="text" width="25%" height={11} />
+            </div>
+            <Skeleton variant="text" width={112} height={12} className="flex-none max-sm:hidden" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Quick actions: a heading, then two tinted link cards (icon, title, hint). */
+export function QuickActionsSkeleton() {
+  return (
+    <div className="flex flex-col gap-3" aria-hidden="true">
+      <div className="flex min-h-8 items-center">
+        <Skeleton variant="title" width={110} height={20} />
+      </div>
+      {[0, 1].map((i) => (
+        <div key={i} className="bg-card flex-row items-center gap-4 p-4">
+          <Skeleton variant="block" width={40} height={40} className="block flex-none rounded-lg" />
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <Skeleton variant="text" width="45%" height={13} />
+            <Skeleton variant="text" width="65%" height={11} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Everything under the Home page header: widget grid, then the forms list beside Quick actions and Recent Activity. */
 export function HomeBodySkeleton() {
   return (
     <SkeletonRegion label="Loading your home" className="flex flex-col gap-6">
       <DashboardGridSkeleton />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]" aria-hidden="true">
         <ListCardSkeleton rows={5} />
-        <ListCardSkeleton rows={3} />
+        <div className="flex flex-col gap-6">
+          <QuickActionsSkeleton />
+          <ActivityCardSkeleton />
+        </div>
       </div>
     </SkeletonRegion>
   );
 }
 
+// The column steps of the real pages, so the skeleton cards fall where the real ones will: Forms and Responses stop at four across;
+// Templates, Workspaces and Shared go on to five on a very wide screen.
+const GRID_COLUMNS = {
+  2: 'sm:grid-cols-2',
+  3: 'sm:grid-cols-2 lg:grid-cols-3',
+  4: 'sm:grid-cols-2 lg:grid-cols-3 min-[90rem]:grid-cols-4',
+  wide: 'sm:grid-cols-2 lg:grid-cols-3 min-[120rem]:grid-cols-4 min-[150rem]:grid-cols-5',
+} as const;
+
 /** A grid of cards, each optionally with a media area on top (templates) or just a title and a line (workspaces, shared forms). */
-export function CardGridSkeleton({ count = 6, media = false, columns = 3, label, className }: { count?: number; media?: boolean; columns?: 2 | 3; label?: string; className?: string }) {
+export function CardGridSkeleton({ count = 6, media = false, columns = 3, label, className }: { count?: number; media?: boolean; columns?: keyof typeof GRID_COLUMNS; label?: string; className?: string }) {
   return (
-    <SkeletonRegion label={label} className={bx('grid grid-cols-1 gap-4', columns === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-2 lg:grid-cols-3', className)}>
+    <SkeletonRegion label={label} className={bx('grid grid-cols-1 gap-4', GRID_COLUMNS[columns], className)}>
       {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="overflow-hidden rounded-xl border border-(--border-default) bg-(--surface-card)" aria-hidden="true">
           {media && <Skeleton variant="block" width="100%" height={128} className="block rounded-none" />}
@@ -140,7 +193,7 @@ export function ToolbarSkeleton() {
         <Skeleton variant="block" width={120} height={36} className="block rounded-full" />
         <Skeleton variant="block" width={120} height={36} className="block rounded-full" />
       </div>
-      <Skeleton variant="block" width={288} height={40} className="block max-w-full rounded-lg" />
+      <Skeleton variant="block" width={288} height={36} className="block max-w-full rounded-lg" />
     </div>
   );
 }
@@ -196,6 +249,46 @@ export function SettingsBodySkeleton() {
         <Skeleton variant="block" width="100%" height={44} className="block rounded-lg" />
         <Skeleton variant="block" width={120} height={40} className="block rounded-lg" />
       </div>
+    </SkeletonRegion>
+  );
+}
+
+/**
+ * A form's Responses page below its header: the search row (switch is part of the header), the stage pills with the view switch at the
+ * right, then the table. Same rows, same 36px controls as the real page.
+ */
+export function ResponsesBodySkeleton({ rows = 8 }: { rows?: number }) {
+  return (
+    <SkeletonRegion label="Loading responses" className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-3" aria-hidden="true">
+        <Skeleton variant="block" width={320} height={36} className="block max-w-full rounded-lg" />
+        <Skeleton variant="block" width={88} height={36} className="block rounded-lg" />
+        <Skeleton variant="block" width={72} height={36} className="block rounded-lg" />
+        <Skeleton variant="block" width={80} height={36} className="block rounded-lg" />
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2" aria-hidden="true">
+        <div className="flex gap-2">
+          <Skeleton variant="block" width={76} height={32} className="block rounded-full" />
+          <Skeleton variant="block" width={92} height={32} className="block rounded-full" />
+          <Skeleton variant="block" width={84} height={32} className="block rounded-full" />
+          <Skeleton variant="block" width={104} height={32} className="block rounded-full max-sm:hidden" />
+        </div>
+        <Skeleton variant="block" width={236} height={36} className="block rounded-lg" />
+      </div>
+      <TableBlockSkeleton rows={rows} />
+    </SkeletonRegion>
+  );
+}
+
+/** A form's Insights page below its header: the filter row at the right, a row of stat cards, then the charts. */
+export function InsightsBodySkeleton() {
+  return (
+    <SkeletonRegion label="Loading insights" className="flex flex-col gap-4">
+      <div className="flex justify-end gap-3" aria-hidden="true">
+        <Skeleton variant="block" width={160} height={36} className="block rounded-lg" />
+        <Skeleton variant="block" width={116} height={36} className="block rounded-lg" />
+      </div>
+      <DashboardGridSkeleton />
     </SkeletonRegion>
   );
 }

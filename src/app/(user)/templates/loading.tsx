@@ -5,7 +5,7 @@ export default function Loading() {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader title="Templates" />
-      <CardGridSkeleton count={6} media />
+      <CardGridSkeleton count={8} columns="wide" media />
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { SlidersHorizontal } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { Button } from '@/components/ui/Button';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { ResponsesBodySkeleton } from '@/components/ui/PageSkeletons';
 import { FORM_HEADER_END_SLOT_ID, FORM_HEADER_SLOT_ID, FORM_SUBHEADER_SLOT_ID } from '@/lib/formHeaderSlot';
 import { ResponsesBoard } from './ResponsesBoard';
 import { ResponsesCustomizeDrawer } from './ResponsesCustomizeDrawer';
@@ -232,7 +232,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
       )}
 
       {formId && setupQuery.isLoading ? (
-        <Skeleton variant="block" height={240} className="rounded-xl" />
+        <ResponsesBodySkeleton />
       ) : isFirstRun ? (
         <NoResponsesYet formId={formId} />
       ) : (

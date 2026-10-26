@@ -42,16 +42,16 @@ export function FormsResults({ s, context }: { s: FormsPageState; context: Forms
   }
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-44 animate-pulse rounded-lg border border-(--border-default) bg-(--bg-sunken)" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 min-[90rem]:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="h-36 animate-pulse rounded-lg border border-(--border-default) bg-(--bg-sunken)" />
         ))}
       </div>
     );
   }
   if (rows.length === 0) return emptyFiltered;
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 min-[90rem]:grid-cols-4">
       {rows.map((form) => (
         <FormCard
           key={form._id}

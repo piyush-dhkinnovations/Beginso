@@ -69,7 +69,7 @@ export default function WorkspacesPage() {
       />
 
       {isLoading ? (
-        <CardGridSkeleton count={3} />
+        <CardGridSkeleton count={3} columns="wide" />
       ) : isError ? (
         <Card role="alert" className="flex items-center justify-between gap-4">
           <div>

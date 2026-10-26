@@ -70,9 +70,9 @@ describe('FormsResults', () => {
     expect(screen.getByRole('button', { name: 'Actions for Beta' })).toBeInTheDocument();
   });
 
-  it('grid view shows six skeleton tiles while loading', () => {
+  it('grid view shows eight skeleton tiles (two full rows of the four-across grid) while loading', () => {
     const { container } = render(<FormsResults s={makeState({ view: 'grid', isLoading: true })} context={personal} />);
-    expect(container.querySelectorAll('.animate-pulse')).toHaveLength(6);
+    expect(container.querySelectorAll('.animate-pulse')).toHaveLength(8);
   });
 
   it('grid view with no rows shows the empty state', () => {

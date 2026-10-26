@@ -5,7 +5,7 @@ export default function Loading() {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader eyebrow="Personal space" title="Shared with me" />
-      <CardGridSkeleton count={4} columns={2} />
+      <CardGridSkeleton count={4} columns="wide" />
     </div>
   );
 }

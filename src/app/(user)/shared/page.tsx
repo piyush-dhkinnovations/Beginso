@@ -157,7 +157,7 @@ export default function SharedWithMePage() {
       />
 
       {isLoading ? (
-        <CardGridSkeleton count={4} columns={2} />
+        <CardGridSkeleton count={4} columns="wide" />
       ) : isError ? (
         isPermissionDenied ? (
           <EmptyState illustration="no-access" icon={<Lock className="bg-icon" aria-hidden="true" />} title="You do not have access." />

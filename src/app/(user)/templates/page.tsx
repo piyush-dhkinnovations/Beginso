@@ -113,7 +113,7 @@ export default function TemplatesPage({ scope = 'personal' }: TemplatesPageProps
       />
 
       {isLoading ? (
-        <CardGridSkeleton count={6} media />
+        <CardGridSkeleton count={8} columns="wide" media />
       ) : error ? (
         <div className="flex items-center justify-center py-20">
           <p className="bg-body text-(--error-text)">Failed to load templates. Please refresh.</p>

@@ -6,10 +6,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import {
+  ActivityCardSkeleton,
   CardGridSkeleton,
   ChartCardSkeleton,
   DashboardGridSkeleton,
   HomeBodySkeleton,
+  InsightsBodySkeleton,
+  QuickActionsSkeleton,
+  ResponsesBodySkeleton,
   KpiCardSkeleton,
   ListBodySkeleton,
   PageHeaderSkeleton,
@@ -94,6 +98,32 @@ describe('CardGridSkeleton', () => {
   it('uses two columns or three on wide screens', () => {
     expect(render(<CardGridSkeleton columns={2} />).container.firstElementChild).not.toHaveClass('lg:grid-cols-3');
     expect(render(<CardGridSkeleton />).container.firstElementChild).toHaveClass('lg:grid-cols-3');
+  });
+});
+
+describe('the column steps match the real pages', () => {
+  it('Forms and Responses stop at four across; Templates, Workspaces and Shared go on to five', () => {
+    expect(render(<CardGridSkeleton columns={4} />).container.firstElementChild).toHaveClass('min-[90rem]:grid-cols-4');
+    expect(render(<CardGridSkeleton columns={4} />).container.firstElementChild?.className).not.toMatch(/grid-cols-5/);
+    expect(render(<CardGridSkeleton columns="wide" />).container.firstElementChild).toHaveClass('min-[150rem]:grid-cols-5');
+  });
+});
+
+describe('the Home side cards and the form data pages', () => {
+  it('Recent Activity is a card with its heading inside, rows of a round icon, two lines and a date; Home shows it under Quick actions', () => {
+    const { container } = render(<ActivityCardSkeleton />);
+    expect(container.firstElementChild).toHaveClass('bg-card');
+    expect(container.querySelectorAll('.divide-y > div')).toHaveLength(5);
+    const home = render(<HomeBodySkeleton />).container;
+    expect(home.querySelectorAll('.min-h-16')).toHaveLength(5); // the activity rows
+    expect(render(<QuickActionsSkeleton />).container.querySelectorAll('.bg-card')).toHaveLength(2);
+  });
+
+  it('the Responses body is a search row, the stage pills with the view switch, then a table; Insights is a filter row and the widget grid', () => {
+    render(<ResponsesBodySkeleton />);
+    expect(screen.getByRole('status', { name: 'Loading responses' })).toBeInTheDocument();
+    render(<InsightsBodySkeleton />);
+    expect(screen.getByRole('status', { name: 'Loading insights' })).toBeInTheDocument();
   });
 });
 

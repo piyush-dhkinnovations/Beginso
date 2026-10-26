@@ -33,13 +33,14 @@ export function RecentActivitySection({
 
       {isLoading ? (
         <div aria-busy="true" aria-label="Loading recent activity" className="divide-y divide-(--border-subtle)">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="flex min-h-16 items-center gap-3 py-3">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <div key={index} className="flex min-h-16 items-center gap-3 px-2 py-3">
               <div className="bg-skeleton bg-skeleton-circle h-10 w-10 shrink-0" />
               <div className="flex-1 space-y-2">
-                <div className="bg-skeleton h-3 w-48 max-w-full" />
-                <div className="bg-skeleton h-3 w-28" />
+                <div className="bg-skeleton h-3 w-44 max-w-full" />
+                <div className="bg-skeleton h-3 w-24" />
               </div>
+              <div className="bg-skeleton h-3 w-28 shrink-0 max-sm:hidden" />
             </div>
           ))}
         </div>

@@ -7,7 +7,7 @@ export default function Loading() {
     <div className="flex flex-col gap-6">
       <PageHeader title="Responses" />
       <ToolbarSkeleton />
-      <CardGridSkeleton count={6} />
+      <CardGridSkeleton count={8} columns={4} />
     </div>
   );
 }

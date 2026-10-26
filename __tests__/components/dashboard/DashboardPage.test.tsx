@@ -123,4 +123,16 @@ describe('DashboardPage analytics integration', () => {
     expect(screen.getByText('Personal space')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Home' })).not.toBeInTheDocument();
   });
+  it('Your forms shows each form with the same mark as the Forms page (its logo, its chosen icon, or one that suits its name), not a generic file icon', () => {
+    const form = { _id: 'f1', title: 'Customer service', status: 'published', responseCount: 1, updatedAt: '2026-10-22T12:00:00.000Z', branding: { iconName: null, logoUrl: 'https://x.test/logo.png' } };
+    mockUseQuery.mockImplementation((opts: { queryKey: unknown[] }) => {
+      const key = JSON.stringify(opts.queryKey);
+      if (key.includes('forms')) return { data: { forms: [form], total: 1, page: 1, limit: 5 }, isLoading: false };
+      return { data: undefined, isLoading: false };
+    });
+    render(<DashboardPage />);
+    const row = screen.getByRole('link', { name: /Customer service/ });
+    expect(row.querySelector('img[src="https://x.test/logo.png"]')).not.toBeNull();
+    expect(row.querySelector('.bg-stat-icon')).toBeNull();
+  });
 });

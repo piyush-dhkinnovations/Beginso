@@ -26,7 +26,8 @@ import { formsService } from '@/services/forms';
 import { formatRelativeTime } from '@/lib/formatters';
 import type { Form } from '@/types/form';
 
-const GRID = 'grid gap-4 [grid-template-columns:repeat(auto-fill,minmax(300px,1fr))]';
+// At most four cards in a line, however wide the screen: a wider screen gives bigger cards, not more of them.
+const GRID = 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 min-[90rem]:grid-cols-4';
 
 type Show = 'all' | 'with' | 'none';
 
@@ -133,7 +134,7 @@ export function ResponsesLanding({ scope = 'personal' }: ResponsesLandingProps) 
       {isLoading ? (
         <>
           <ToolbarSkeleton />
-          <CardGridSkeleton count={6} label="Loading forms" />
+          <CardGridSkeleton count={8} columns={4} label="Loading forms" />
         </>
       ) : isError ? (
         <EmptyState
