@@ -18,7 +18,7 @@ export function sampleResponses(formId: string, fields: readonly FormField[] | u
     return {
       _id: `sample-${i}`,
       formId,
-      reference: `KA-FIL-${String(COUNT - i).padStart(4, '0')}`,
+      reference: `KALFIL${String(COUNT - i).padStart(4, '0')}`,
       answers,
       respondentEmail: `${name.split(' ')[0].toLowerCase()}@example.com`,
       stage: stage ?? null,
