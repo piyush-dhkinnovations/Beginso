@@ -205,3 +205,18 @@ test('Export follows the selection: nothing chosen exports what the filters matc
   await expect.poll(() => posts.length).toBe(2);
   expect(posts[1]).toMatchObject({ format: 'pdf', ids: ['r1'] });
 });
+
+test('the clear (x) button sits inside the search box, not outside it', async ({ page, context }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installBackend(context);
+  await page.goto(`/forms/${FORM_ID}/inbox`);
+  await expect(page.getByText('harsh.vora@example.com').first()).toBeVisible({ timeout: 60000 });
+  const box = page.getByLabel('Search responses');
+  await box.fill('harsh');
+  const input = (await box.boundingBox())!;
+  const clear = (await page.getByRole('button', { name: 'Clear search' }).boundingBox())!;
+  expect(clear.x).toBeGreaterThanOrEqual(input.x);
+  expect(clear.x + clear.width).toBeLessThanOrEqual(input.x + input.width);
+  expect(clear.y).toBeGreaterThanOrEqual(input.y);
+  expect(clear.y + clear.height).toBeLessThanOrEqual(input.y + input.height);
+});

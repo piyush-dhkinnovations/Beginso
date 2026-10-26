@@ -159,6 +159,7 @@ test.describe('Customize responses', () => {
     await open(page);
     await customize(page).click();
     await drawer(page).getByRole('tab', { name: 'Table columns' }).click();
+    await drawer(page).getByRole('button', { name: /^More columns/ }).click(); // only four columns are offered as buttons
     await drawer(page).getByRole('button', { name: 'Title of the film', exact: true }).click(); // added last: q:f-film
     const handle = drawer(page).getByRole('button', { name: 'Move Title of the film', exact: true });
     const target = drawer(page).getByRole('button', { name: 'Move Respondent', exact: true });
@@ -187,6 +188,7 @@ test.describe('Customize responses', () => {
     await open(page);
     await customize(page).click();
     await drawer(page).getByRole('tab', { name: 'Table columns' }).click();
+    await drawer(page).getByRole('button', { name: /^More columns/ }).click(); // only four columns are offered as buttons
     for (const q of ['Title of the film', 'Genre', 'Budget', 'Language']) await drawer(page).getByRole('button', { name: q, exact: true }).click();
     const preview = drawer(page).getByRole('region', { name: 'Table preview' });
     await expect(preview.getByRole('columnheader', { name: 'Language' })).toBeAttached();

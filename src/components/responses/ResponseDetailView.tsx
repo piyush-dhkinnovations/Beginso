@@ -7,6 +7,7 @@ import { formsService } from '@/services/forms';
 import { responsesService } from '@/services/responses';
 import { useFormStages } from '@/hooks/useResponseSetup';
 import { responseKeys } from '@/lib/queryKeys';
+import { similarResponsesHref } from '@/lib/similarResponses';
 import { parseInboxFiltersFromParams } from '@/lib/inboxFilters';
 import type { IResponse } from '@/types/response';
 
@@ -120,7 +121,7 @@ export function ResponseDetailView({ id, scope }: Props) {
       hasNext={position !== undefined && position < (list?.total ?? 0)}
       onPrevious={() => void navigate('previous')}
       onNext={() => void navigate('next')}
-      onOpenResponse={(responseId) => router.push(buildUrl(responseId, page))}
+      onSeeSimilar={formId ? (email) => router.push(similarResponsesHref(scope, formId, email)) : undefined}
       collapseHref={drawerUrl}
       onClose={() => router.replace(drawerUrl)}
     />

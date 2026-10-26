@@ -126,7 +126,7 @@ export function ResponsesToolbar({
                   setInputValue('');
                   onSearchChange('');
                 }}
-                className="flex min-h-11 min-w-11 items-center justify-center text-(--text-muted) hover:text-(--text-secondary)"
+                className="flex h-7 w-7 items-center justify-center rounded-md text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-secondary) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
               >
                 <X size={16} />
               </button>

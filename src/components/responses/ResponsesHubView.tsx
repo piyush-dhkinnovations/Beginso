@@ -321,7 +321,11 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         responseId={responseId}
         formId={formId}
         scope={scope}
-        onOpenResponse={openResponse}
+        onSeeSimilar={(email) => {
+          closeResponse();
+          clearSelection();
+          changeFilter({ search: email });
+        }}
         formTitle={form?.title}
         fileFieldLabels={fileFieldLabels}
         stages={stages}

@@ -83,4 +83,11 @@ describe('ResponseColumnCell', () => {
     cell('notes', {}, { ...RESPONSE, noteCount: 0 } as IResponse);
     expect(screen.getAllByText('—')).toHaveLength(2);
   });
+
+  it('shows the reference ID, and a short id for a response that has none yet', () => {
+    cell('reference', {}, { ...RESPONSE, reference: 'KALCUS0042' } as IResponse);
+    expect(screen.getByText('KALCUS0042')).toBeInTheDocument();
+    cell('reference', {}, { ...RESPONSE, _id: 'abcdef123456', reference: undefined } as IResponse);
+    expect(screen.getByText(/^#/)).toBeInTheDocument();
+  });
 });

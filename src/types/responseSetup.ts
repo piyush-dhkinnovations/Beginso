@@ -4,7 +4,7 @@ import type { StageCategory, StageColorToken } from '@/types/stage';
  * How one form's Responses page is set up ("Customize" on the page, owner and admins only). Everything is optional on the server: a
  * form nobody customised reads back as DEFAULT_RESPONSE_SETUP, which is exactly how the page always looked.
  */
-export const TABLE_BUILTIN_COLUMNS = ['respondent', 'email', 'tags', 'assignee', 'stage', 'submitted', 'score', 'notes'] as const;
+export const TABLE_BUILTIN_COLUMNS = ['respondent', 'email', 'tags', 'assignee', 'stage', 'submitted', 'score', 'notes', 'reference'] as const;
 export type TableBuiltinColumn = (typeof TABLE_BUILTIN_COLUMNS)[number];
 
 /** A table column key: a built-in column, or `q:<fieldId>` for one of the form's questions. */

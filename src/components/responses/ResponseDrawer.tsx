@@ -77,7 +77,8 @@ interface ResponseDrawerProps {
   /** Navigates to another response by id — wired to the duplicate callout's "view original" link
    * (task 5.5). Optional: a caller with no cross-response navigation (e.g. the standalone
    * `/responses/[id]` page) simply doesn't render the callout's link as clickable-elsewhere. */
-  onOpenResponse?: (id: string) => void;
+  /** "Show all with this email" on a similar-response notice: the page lists those responses and this drawer closes. */
+  onSeeSimilar?: (email: string) => void;
 }
 
 type PageTab = 'response' | 'details' | 'notes' | 'activity';
@@ -167,7 +168,7 @@ export function ResponseDrawer({
   onExpand,
   collapseHref,
   onClose,
-  onOpenResponse,
+  onSeeSimilar,
 }: ResponseDrawerProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -420,7 +421,7 @@ export function ResponseDrawer({
       canCreateTag={canCreateTag}
       canScore={canCreateTag}
       isUpdating={mutations.isUpdating}
-      onOpenOriginal={onOpenResponse}
+      onSeeSimilar={onSeeSimilar}
       onStageChange={(stageId) => mutations.updateStage(r._id, stageId)}
       onAssigneeChange={(assigneeId) => mutations.updateAssignee(r._id, assigneeId)}
       onTagAdd={(tagId) => mutations.updateTags(r._id, [...(r.tags ?? []).map((t) => t.id), tagId])}

@@ -2,7 +2,7 @@ import { StageBadge } from './StageBadge';
 import { RespondentFromProvider } from './RespondentFromContext';
 import { RespondentCell, RowLead, TagsCell, AssigneeCell, SubmittedCell } from './ResponseRow';
 import { answerFor, textFields } from '@/lib/answerText';
-import { detectRespondentIdentity } from '@/lib/formatters';
+import { detectRespondentIdentity, shortId } from '@/lib/formatters';
 import { questionOfColumn, type TableBuiltinColumn, type TableColumnKey } from '@/types/responseSetup';
 import { bx } from '@/lib/utils';
 import type { FormField } from '@/types/form';
@@ -18,6 +18,7 @@ export const COLUMN_LABELS: Record<TableBuiltinColumn, string> = {
   submitted: 'Submitted',
   score: 'Average score',
   notes: 'Notes',
+  reference: 'Reference ID',
 };
 
 /** The header of a column: its built-in name, or the question's own label. A question that is gone has no header, so the column is dropped. */
@@ -90,6 +91,8 @@ function ColumnContent({ columnKey, response, fields, respondentFrom, wrap }: Om
       const average = response.scoreAverage;
       return typeof average === 'number' ? <span className="tabular-nums">{average.toFixed(1)}</span> : <span className="text-(--text-muted)">—</span>;
     }
+    case 'reference':
+      return <code className="font-mono bg-body-sm text-(--text-secondary)">{response.reference ?? `#${shortId(response._id)}`}</code>;
     case 'notes':
       return (response.noteCount ?? 0) > 0 ? <span className="tabular-nums">{response.noteCount}</span> : <span className="text-(--text-muted)">—</span>;
     default:

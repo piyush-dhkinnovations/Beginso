@@ -16,7 +16,8 @@ import { ScoreCard } from '@/components/scoring/ScoreCard';
 import { activityService } from '@/services/activity';
 import { useScoreCriteria } from '@/hooks/useScoreCriteria';
 import { responseActivityKeys } from '@/lib/queryKeys';
-import { formatResponseDate, shortId } from '@/lib/formatters';
+import { detectRespondentIdentity, formatResponseDate, shortId } from '@/lib/formatters';
+import { useFormFields } from '@/hooks/useFormFields';
 import type { ResponseDetail } from '@/types/response';
 import { fallbackStageId } from '@/lib/bulkActions';
 import type { StageRef } from '@/types/stage';
@@ -50,7 +51,8 @@ export interface WorkflowSidebarProps {
   isUpdating?: boolean;
   /** Wired to the duplicate callout's "view original" link (task 5.5). Undefined = no
    * cross-response navigation available from this caller. */
-  onOpenOriginal?: (id: string) => void;
+  /** Lists every response from the same email address (the caller closes the drawer and fills in the search). */
+  onSeeSimilar?: (email: string) => void;
   /** Render one part only (the full-screen page's tabs below 1024px). Undefined = everything, stacked. */
   only?: 'details' | 'notes' | 'activity';
 }
@@ -84,7 +86,7 @@ export function WorkflowSidebar({
   onTagRemove,
   onTagCreate,
   isUpdating,
-  onOpenOriginal,
+  onSeeSimilar,
   only,
 }: WorkflowSidebarProps) {
   const { data: activity, isLoading: activityLoading, isError: activityError, refetch: refetchActivity } = useQuery({
@@ -99,6 +101,9 @@ export function WorkflowSidebar({
   });
 
   const { data: criteria = [], isLoading: criteriaLoading } = useScoreCriteria(scope);
+  // The duplicate check compares the email address only, so that is what "similar" means here.
+  const formFields = useFormFields(response.formId);
+  const similarEmail = response.respondentEmail || detectRespondentIdentity(response.answers, formFields, response.respondentEmail).email || undefined;
 
   const showDetails = !only || only === 'details';
   const showNotes = !only || only === 'notes';
@@ -122,11 +127,12 @@ export function WorkflowSidebar({
         </p>
       )}
 
-      {response.duplicateOfId && onOpenOriginal && (
+      {response.duplicateOfId && (
         <DuplicateCallout
-          duplicateOfId={response.duplicateOfId}
+          email={similarEmail}
+          formId={response.formId}
           scope={scope}
-          onOpenOriginal={onOpenOriginal}
+          onSeeAll={(email) => onSeeSimilar?.(email)}
         />
       )}
 

@@ -2,6 +2,7 @@
 
 import { useContext, useMemo, useState, type ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { similarResponsesHref } from '@/lib/similarResponses';
 import { AlertCircle, GripVertical, LockKeyhole, Plus } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
@@ -75,9 +76,10 @@ function SortableChart({ chart, children }: { chart: SavedChart; children: (hand
   );
 }
 
-function ResponseOverlay({ responseId, formId, scope, formTitle, onOpen, onClose }: { responseId: string; formId: string; scope: string; formTitle?: string; onOpen: (id: string) => void; onClose: () => void }) {
+function ResponseOverlay({ responseId, formId, scope, formTitle, onClose }: { responseId: string; formId: string; scope: string; formTitle?: string; onClose: () => void }) {
   const { data: stages } = useStages(scope);
-  return <ResponseDrawer responseId={responseId} formId={formId} scope={scope} stages={stages ?? []} formTitle={formTitle} onOpenResponse={onOpen} onClose={onClose} />;
+  const router = useRouter();
+  return <ResponseDrawer responseId={responseId} formId={formId} scope={scope} stages={stages ?? []} formTitle={formTitle} onSeeSimilar={(email) => router.push(similarResponsesHref(scope, formId, email))} onClose={onClose} />;
 }
 
 export function CustomChartsSection({ form, formId, scope, range, addOpen, onAddClose, onAddRequest }: CustomChartsSectionProps) {
@@ -377,7 +379,7 @@ export function CustomChartsSection({ form, formId, scope, range, addOpen, onAdd
         onOpenResponse={openResponse}
       />
 
-      {responseId && <ResponseOverlay responseId={responseId} formId={formId} scope={scope} formTitle={form?.title} onOpen={openResponse} onClose={closeResponse} />}
+      {responseId && <ResponseOverlay responseId={responseId} formId={formId} scope={scope} formTitle={form?.title} onClose={closeResponse} />}
     </section>
   );
 }
