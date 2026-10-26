@@ -154,6 +154,34 @@ test.describe('Customize responses', () => {
     await expect(page.getByRole('button', { name: /^Received/ })).toBeVisible();
   });
 
+  test('columns are moved by dragging a handle; the first column, whatever it is, carries the picture', async ({ page, context }) => {
+    const fake = await installBackend(context, 'admin');
+    await open(page);
+    await customize(page).click();
+    await drawer(page).getByRole('tab', { name: 'Table columns' }).click();
+    await drawer(page).getByRole('button', { name: 'Title of the film', exact: true }).click(); // added last: q:f-film
+    const handle = drawer(page).getByRole('button', { name: 'Move Title of the film', exact: true });
+    const target = drawer(page).getByRole('button', { name: 'Move Respondent', exact: true });
+    const from = (await handle.boundingBox())!;
+    const to = (await target.boundingBox())!;
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(from.x + from.width / 2, from.y - 20, { steps: 6 });
+    await page.mouse.move(to.x + to.width / 2, to.y + 2, { steps: 20 });
+    await page.mouse.up();
+    const preview = drawer(page).getByRole('region', { name: 'Table preview' });
+    await expect(preview.getByRole('columnheader').first()).toHaveText('Title of the film');
+    // the picture follows the first column, and the Respondent column no longer has one
+    const firstRow = preview.getByRole('row').nth(1);
+    await expect(firstRow.getByRole('cell').first().locator('.bg-avatar')).toHaveCount(1);
+    await expect(firstRow.getByRole('cell').nth(1).locator('.bg-avatar')).toHaveCount(0);
+    await save(page).click();
+    await expect(drawer(page)).toHaveCount(0);
+    expect(fake.puts()[0].tableColumns[0]).toBe('q:f-film');
+    const table = page.getByRole('table');
+    await expect(table.getByRole('row').nth(1).getByRole('cell').first().locator('.bg-avatar')).toHaveCount(1);
+  });
+
   test('table columns: add questions, see them in the preview, save, and the table scrolls sideways with the first column kept', async ({ page, context }, testInfo) => {
     const fake = await installBackend(context, 'admin');
     await open(page);

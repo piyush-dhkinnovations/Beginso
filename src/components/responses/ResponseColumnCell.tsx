@@ -1,6 +1,6 @@
 import { StageBadge } from './StageBadge';
 import { RespondentFromProvider } from './RespondentFromContext';
-import { RespondentCell, TagsCell, AssigneeCell, SubmittedCell } from './ResponseRow';
+import { RespondentCell, RowLead, TagsCell, AssigneeCell, SubmittedCell } from './ResponseRow';
 import { answerFor, textFields } from '@/lib/answerText';
 import { detectRespondentIdentity } from '@/lib/formatters';
 import { questionOfColumn, type TableBuiltinColumn, type TableColumnKey } from '@/types/responseSetup';
@@ -34,13 +34,27 @@ interface ColumnCellProps {
   respondentFrom?: string;
   /** Long answers wrap onto several lines instead of being cut off with an ellipsis. */
   wrap?: boolean;
+  /** This is the first column of the table: it carries the person's picture and the unread dot, whatever it shows. */
+  lead?: boolean;
 }
 
 /**
  * What one column shows for one response. The Responses table and the preview in Customize both draw their cells from here, so
  * the preview is the table: what you see while choosing is what you get.
  */
-export function ResponseColumnCell({ columnKey, response, fields, respondentFrom, wrap = false }: ColumnCellProps) {
+export function ResponseColumnCell({ columnKey, response, fields, respondentFrom, wrap = false, lead = false }: ColumnCellProps) {
+  const cell = <ColumnContent columnKey={columnKey} response={response} fields={fields} respondentFrom={respondentFrom} wrap={wrap} />;
+  if (!lead) return cell;
+  return respondentFrom ? (
+    <RespondentFromProvider value={respondentFrom}>
+      <RowLead response={response}>{cell}</RowLead>
+    </RespondentFromProvider>
+  ) : (
+    <RowLead response={response}>{cell}</RowLead>
+  );
+}
+
+function ColumnContent({ columnKey, response, fields, respondentFrom, wrap }: Omit<ColumnCellProps, 'lead'>) {
   const fieldId = questionOfColumn(columnKey);
   if (fieldId) {
     const field = textFields(fields).find((f) => f.fieldId === fieldId);
@@ -57,10 +71,10 @@ export function ResponseColumnCell({ columnKey, response, fields, respondentFrom
       // The cell reads the form's choice from context; a preview of an unsaved choice passes it here instead.
       return respondentFrom ? (
         <RespondentFromProvider value={respondentFrom}>
-          <RespondentCell response={response} />
+          <RespondentCell response={response} withAvatar={false} />
         </RespondentFromProvider>
       ) : (
-        <RespondentCell response={response} />
+        <RespondentCell response={response} withAvatar={false} />
       );
     case 'email':
       return <>{detectRespondentIdentity(response.answers, fields as FormField[] | undefined, response.respondentEmail, respondentFrom).email ?? '—'}</>;

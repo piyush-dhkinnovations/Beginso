@@ -14,7 +14,25 @@ import type { IResponse, ResponseTag } from '@/types/response';
  * carry response-specific logic," reused by both the Respondent and Tags/Assignee columns.
  */
 
-export function RespondentCell({ response }: { response: IResponse }) {
+/**
+ * The unread dot and the person's picture. They belong to whichever column comes first in the table, not to the Respondent column:
+ * the first column is the one that stays in view when the table scrolls sideways, so it is the one that says who the row is.
+ */
+export function RowLead({ response, children }: { response: IResponse; children: React.ReactNode }) {
+  const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId), response.respondentEmail, useRespondentFrom());
+  const name = identity.label ?? identity.email ?? 'Anonymous';
+  return (
+    <div className="flex min-w-0 items-center gap-2.5">
+      <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: response.unread ? 'var(--action-primary)' : 'transparent' }} />
+      <span className="sr-only">{response.unread ? 'Unread. ' : ''}</span>
+      <Avatar size="sm" name={name} alt="" />
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
+/** `withAvatar={false}`: the picture (and unread dot) are drawn by the first column instead, see RowLead. */
+export function RespondentCell({ response, withAvatar = true }: { response: IResponse; withAvatar?: boolean }) {
   const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId), response.respondentEmail, useRespondentFrom());
   const name = identity.label ?? identity.email ?? 'Anonymous';
   const noteCount = response.noteCount ?? 0;
@@ -26,13 +44,17 @@ export function RespondentCell({ response }: { response: IResponse }) {
 
   return (
     <div className="flex min-w-0 items-center gap-2.5">
-      <span
-        aria-hidden="true"
-        className="h-2 w-2 shrink-0 rounded-full"
-        style={{ backgroundColor: response.unread ? 'var(--action-primary)' : 'transparent' }}
-      />
-      <span className="sr-only">{response.unread ? 'Unread. ' : ''}</span>
-      <Avatar size="sm" name={name} alt="" />
+      {withAvatar && (
+        <>
+          <span
+            aria-hidden="true"
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: response.unread ? 'var(--action-primary)' : 'transparent' }}
+          />
+          <span className="sr-only">{response.unread ? 'Unread. ' : ''}</span>
+          <Avatar size="sm" name={name} alt="" />
+        </>
+      )}
       <div className="flex min-w-0 flex-col">
         <span className="flex items-center gap-1.5">
           <span className="truncate font-medium text-(--text-primary)">{name}</span>

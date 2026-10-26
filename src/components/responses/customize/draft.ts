@@ -72,6 +72,13 @@ export function problems(draft: Draft): string[] {
   return out;
 }
 
+/** Puts the column `active` where the column `over` is (a drag from one row to another); a key that is not in the list leaves it alone. */
+export function moveColumn<T>(list: readonly T[], active: T, over: T): T[] {
+  const from = list.indexOf(active);
+  const to = list.indexOf(over);
+  return from === -1 || to === -1 ? [...list] : moveItem(list, from, to);
+}
+
 export function moveItem<T>(list: readonly T[], from: number, to: number): T[] {
   if (to < 0 || to >= list.length || from === to) return [...list];
   const next = [...list];

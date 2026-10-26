@@ -7,7 +7,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { RespondentCell, TagsCell, AssigneeCell, SubmittedCell } from '@/components/responses/ResponseRow';
+import { RespondentCell, RowLead, TagsCell, AssigneeCell, SubmittedCell } from '@/components/responses/ResponseRow';
 import type { IResponse, ResponseTag } from '@/types/response';
 
 // Respondent names come from the form's field definitions (not from guessing at answers), so the
@@ -95,5 +95,20 @@ describe('SubmittedCell', () => {
   it('renders the formatted submission date', () => {
     render(<SubmittedCell response={response} />);
     expect(screen.getByText(/03 Aug 2026/)).toBeInTheDocument();
+  });
+});
+
+describe('the picture belongs to the first column', () => {
+  it('RespondentCell without an avatar shows the name and email only', () => {
+    const { container } = render(<RespondentCell response={response} withAvatar={false} />);
+    expect(screen.getByText('Priya Sharma')).toBeInTheDocument();
+    expect(container.querySelector('.bg-avatar')).toBeNull();
+  });
+
+  it('RowLead puts the picture and the unread mark in front of whatever column it wraps', () => {
+    const { container } = render(<RowLead response={response}><span>Zanzar</span></RowLead>);
+    expect(container.querySelector('.bg-avatar')).not.toBeNull();
+    expect(screen.getByText('Zanzar')).toBeInTheDocument();
+    expect(screen.getByText(/Unread/)).toBeInTheDocument();
   });
 });

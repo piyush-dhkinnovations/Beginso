@@ -74,13 +74,22 @@ describe('ColumnsTab', () => {
     expect(last(onChange)).toEqual(['respondent', 'email', 'tags', 'assignee', 'stage', 'submitted', 'q:film']);
   });
 
-  it('moves a column left and right, and removes one', async () => {
+  it('every column has a drag handle (not up / down arrows), and a column can be removed', async () => {
     const onChange = setup(draft());
-    await userEvent.click(screen.getByRole('button', { name: 'Move Email right' }));
-    expect(last(onChange).slice(0, 3)).toEqual(['respondent', 'tags', 'email']);
+    expect(screen.getByRole('button', { name: 'Move Email' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Move Respondent' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Move .* (left|right)/ })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Remove Tags' }));
     expect(last(onChange)).not.toContain('tags');
-    expect(screen.getByRole('button', { name: 'Move Respondent left' })).toBeDisabled();
+  });
+
+  it('the first column of the preview carries the picture, whichever column that is', () => {
+    setup(draft({ tableColumns: ['q:film', 'respondent'] }));
+    const table = screen.getByRole('region', { name: 'Table preview' });
+    const firstRow = within(table).getAllByRole('row')[1];
+    const [first, second] = within(firstRow).getAllByRole('cell');
+    expect(first.querySelector('.bg-avatar')).not.toBeNull();
+    expect(second.querySelector('.bg-avatar')).toBeNull();
   });
 
   it('keeps the last column: it cannot be removed', () => {

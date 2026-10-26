@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Table, type TableColumn, type TableSort } from '@/components/ui/Table';
 import { Menu } from '@/components/ui/Menu';
-import { RespondentCell } from './ResponseRow';
+import { RespondentCell, RowLead } from './ResponseRow';
 import { StageMenu } from './StageMenu';
 import { ResponseColumnCell, columnLabel } from './ResponseColumnCell';
 import { detectRespondentIdentity } from '@/lib/formatters';
@@ -121,6 +121,8 @@ export function ResponsesTable({
   };
   const fieldsByForm = useFormFieldsMap(responses.map((r) => r.formId));
   const fields = formId ? fieldsByForm[formId] : undefined;
+  // The first column that is drawn (a column for a deleted question is skipped) carries the person's picture, whatever it shows.
+  const firstColumn = tableColumns.find((k) => columnLabel(k, fields) !== undefined);
   const rows = useMemo(() => {
     if (!activePageSort) return responses;
     const sign = activePageSort.dir === 'asc' ? 1 : -1;
@@ -210,6 +212,8 @@ export function ResponsesTable({
     ...tableColumns.flatMap((key): TableColumn<IResponse>[] => {
       const header = columnLabel(key, fields);
       if (header === undefined) return []; // a question that has since been deleted
+      // The first column that is drawn carries the picture and the unread dot, whatever it shows.
+      const lead = key === firstColumn;
       // Every column has the sort arrows like Submitted. Submitted is sorted by the server; the rest only while every match is on screen.
       const sortable = serverSortable(key) || everythingLoaded;
       const column: TableColumn<IResponse> = {
@@ -217,14 +221,18 @@ export function ResponsesTable({
         header,
         sortKey: sortable ? key : undefined,
         render: (r) => {
-          if (key === 'stage' && stageMenu) return <StageMenu response={r} stages={stages} onChange={onChangeStage} />;
-          if (key !== 'respondent') return <ResponseColumnCell columnKey={key} response={r} fields={fieldsByForm[r.formId]} respondentFrom={respondentFrom} wrap={wrap} />;
+          if (key === 'stage' && stageMenu) {
+            const menu = <StageMenu response={r} stages={stages} onChange={onChangeStage} />;
+            return lead ? <RowLead response={r}>{menu}</RowLead> : menu;
+          }
+          if (key !== 'respondent') return <ResponseColumnCell columnKey={key} response={r} fields={fieldsByForm[r.formId]} respondentFrom={respondentFrom} wrap={wrap} lead={lead} />;
           // The real button gives the row its keyboard/screen-reader semantics; a click anywhere else on the row also opens it.
-          return (
+          const open = (
             <button type="button" onClick={() => openOrSelect(r)} aria-label={`Open response from ${respondentLabel(r)}`} className="block min-w-0 text-left">
-              <RespondentCell response={r} />
+              <RespondentCell response={r} withAvatar={false} />
             </button>
           );
+          return lead ? <RowLead response={r}>{open}</RowLead> : open;
         },
       };
       // The standard table puts the form's name right after the respondent on the all-forms view.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { addStage, changesStages, copyStages, defaultDraft, isDirty, moveItem, moveStage, problems, removeStage, toDraft, toInput } from '@/components/responses/customize/draft';
+import { addStage, changesStages, copyStages, defaultDraft, isDirty, moveColumn, moveItem, moveStage, problems, removeStage, toDraft, toInput } from '@/components/responses/customize/draft';
 import { DEFAULT_RESPONSE_SETUP, type ResponseSetup } from '@/types/responseSetup';
 import type { StageRef } from '@/types/stage';
 
@@ -94,6 +94,12 @@ describe('problems', () => {
 });
 
 describe('editing the list', () => {
+  it('moveColumn puts the dragged column where the one it was dropped on is, and ignores a key that is not in the list', () => {
+    expect(moveColumn(['a', 'b', 'c', 'd'], 'd', 'b')).toEqual(['a', 'd', 'b', 'c']);
+    expect(moveColumn(['a', 'b', 'c', 'd'], 'a', 'c')).toEqual(['b', 'c', 'a', 'd']);
+    expect(moveColumn(['a', 'b'], 'a', 'a')).toEqual(['a', 'b']);
+    expect(moveColumn(['a', 'b'], 'x', 'a')).toEqual(['a', 'b']);
+  });
   it('moveItem moves within bounds and leaves the list alone outside them', () => {
     expect(moveItem(['a', 'b', 'c'], 0, 1)).toEqual(['b', 'a', 'c']);
     expect(moveItem(['a', 'b', 'c'], 2, 0)).toEqual(['c', 'a', 'b']);
