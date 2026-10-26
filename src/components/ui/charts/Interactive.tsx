@@ -18,6 +18,8 @@ export interface ChartSegment {
   percentage: number;
   /** The display figure (a count or a percentage). */
   text: string;
+  /** What the tooltip and the screen reader say after the name, when "N responses (x%)" would be wrong (an average, a sum). */
+  detail?: string;
 }
 
 export interface InteractiveChartProps {
@@ -65,7 +67,7 @@ function useChartNav({ data, onSelect }: InteractiveChartProps) {
       role: interactive ? 'button' : 'img',
       // Read-only charts stay keyboard-inspectable too: focus moves between points and shows the tooltip.
       tabIndex: tab === i ? 0 : -1,
-      'aria-label': `${d.label}: ${d.count.toLocaleString()} (${d.text})${interactive ? ', show these responses' : ''}`,
+      'aria-label': `${d.label}: ${d.detail ?? `${d.count.toLocaleString()} (${d.text})`}${interactive ? ', show these responses' : ''}`,
       style: { ...FRAME, cursor: interactive ? 'pointer' : 'default', ...extraStyle } as CSSProperties,
       onMouseMove: (e: React.MouseEvent) => {
         setActive(i);
@@ -104,7 +106,7 @@ function useChartNav({ data, onSelect }: InteractiveChartProps) {
         className="pointer-events-none absolute z-10 whitespace-nowrap rounded-md bg-(--surface-inverse) px-2 py-1 bg-caption text-(--text-inverse) shadow-md"
         style={{ left: Math.min(Math.max(pos.x, 70), Math.max(w - 70, 70)), top: pos.y, transform: 'translate(-50%, -100%)' }}
       >
-        <strong>{data[active].label}</strong> · {data[active].count.toLocaleString()} {data[active].count === 1 ? 'response' : 'responses'} ({data[active].percentage.toFixed(1).replace(/\.0$/, '')}%)
+        <strong>{data[active].label}</strong> · {data[active].detail ?? `${data[active].count.toLocaleString()} ${data[active].count === 1 ? 'response' : 'responses'} (${data[active].percentage.toFixed(1).replace(/\.0$/, '')}%)`}
       </div>
     ) : null;
 
@@ -198,7 +200,8 @@ export function BarsChart({
   byCategory,
   legend,
   height = 220,
-}: InteractiveChartProps & { horizontal?: boolean; byCategory?: boolean; legend?: boolean; height?: number }) {
+  dataLabels,
+}: InteractiveChartProps & { horizontal?: boolean; byCategory?: boolean; legend?: boolean; height?: number; dataLabels?: boolean }) {
   const nav = useChartNav({ data, ariaLabel, onSelect });
   const w = nav.w;
   const top = Math.max(...data.map((d) => d.count), 0);
@@ -256,7 +259,7 @@ export function BarsChart({
             <g key={d.key} {...nav.itemProps(i)}>
               <rect x={cx - band / 2} y={PAD.top} width={band} height={plotH} fill={on ? 'var(--surface-hover)' : 'transparent'} />
               <rect x={cx - bw / 2} y={y(d.count)} width={bw} height={Math.max(y(0) - y(d.count), d.count > 0 ? 2 : 0)} rx={Math.min(5, bw / 2)} fill={colorOf(i)} stroke={on && bw >= 4 ? 'var(--text-primary)' : 'none'} strokeWidth={2} />
-              {band >= 34 && <text x={cx} y={y(d.count) - 5} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--text-primary)" aria-hidden="true">{d.text}</text>}
+              {(dataLabels === undefined ? band >= 34 : dataLabels && band >= 18) && <text x={cx} y={y(d.count) - 5} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--text-primary)" aria-hidden="true">{d.text}</text>}
               {show.has(i) && <text x={cx} y={height - 10} textAnchor="middle" fontSize="11" fill="var(--text-muted)" aria-hidden="true">{clip(d.label, labelChars)}</text>}
             </g>
           );

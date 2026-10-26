@@ -193,7 +193,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
           filters={filters}
           stages={stages}
           fieldChipLabel={fieldChipLabel}
-          omit={['stageId', 'unread', 'q']}
+          omit={['stageId', 'unread', 'q', 'duplicate', 'from']}
           onRemove={(key) =>
             setFilters(key === 'field' ? { field: undefined, value: undefined, granularity: undefined } : { [key]: undefined }, { resetPage: true })
           }
@@ -322,9 +322,9 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
         formId={formId}
         scope={scope}
         onSeeSimilar={(email) => {
-          closeResponse();
           clearSelection();
-          changeFilter({ search: email });
+          // one address change: the response closes and the search fills in together (two changes used to undo each other)
+          setFilters({ search: email }, { resetPage: true, drop: ['responseId'] });
         }}
         formTitle={form?.title}
         fileFieldLabels={fileFieldLabels}

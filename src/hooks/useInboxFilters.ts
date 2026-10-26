@@ -52,8 +52,10 @@ export function useInboxFilters({ scope, formId }: UseInboxFiltersOptions) {
   );
 
   const setFilters = useCallback(
-    (patch: Partial<ResponseFilters & { page: number; view: InboxViewMode; search: string }>, opts?: { resetPage?: boolean; shallow?: boolean }) => {
+    (patch: Partial<ResponseFilters & { page: number; view: InboxViewMode; search: string }>, opts?: { resetPage?: boolean; shallow?: boolean; drop?: string[] }) => {
       let next = applyInboxFilterPatch(searchParams, patch, defaultView);
+      // other address parameters to remove in the same change (the open response), so two updates never overwrite each other
+      for (const key of opts?.drop ?? []) next.delete(key);
       if (opts?.resetPage && !('page' in patch)) next = applyInboxFilterPatch(next, { page: 1 }, defaultView);
       replace(next, opts?.shallow);
     },

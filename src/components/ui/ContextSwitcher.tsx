@@ -1,3 +1,4 @@
+import { LogoImage } from "./LogoImage";
 import { ChevronsUpDown, User, Building2 } from "lucide-react";
 import { bx } from "@/lib/utils";
 import { Menu } from "./Menu";
@@ -39,10 +40,7 @@ export interface ContextSwitcherProps {
 function ContextAvatar({ logo, Icon, size }: { logo?: string | null; Icon: typeof User; size: "sm" | "lg" }) {
   // A workspace with its own logo shows the logo alone (no box, border or background around it); the glyph keeps its quiet tile.
   if (logo) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element -- uploaded workspace logo, served by the backend
-      <img src={logo} alt="" aria-hidden="true" className={bx("shrink-0 object-contain", size === "lg" ? "size-10 rounded-lg" : "size-6 rounded-md")} />
-    );
+    return <LogoImage key={logo} src={logo} size={size === "lg" ? 40 : 24} />;
   }
   // A workspace that chose "BeginSo default" (no logo) shows the BeginSo mark, not a generic building; Personal keeps the person glyph.
   if (Icon === Building2) {

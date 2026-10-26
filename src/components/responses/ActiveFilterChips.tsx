@@ -33,9 +33,10 @@ export function ActiveFilterChips({ filters, stages, onRemove, onClearAll, field
   }
   if (filters.tagIds?.length) all.push({ key: 'tagIds', label: `Tags: ${filters.tagIds.length}` });
   if (filters.unread) all.push({ key: 'unread', label: 'Unread only' });
-  if (filters.duplicate) all.push({ key: 'duplicate', label: 'Duplicates only' });
+  if (filters.duplicate) all.push({ key: 'duplicate', label: 'Similar responses only' });
   if (filters.from || filters.to) all.push({ key: 'from', label: 'Date range' });
   if (filters.field) all.push({ key: 'field', label: fieldChipLabel ?? 'Chart filter' });
+  if (filters.chart) all.push({ key: 'chart', label: 'From a chart' });
   if (filters.q) all.push({ key: 'q', label: `Search: "${filters.q}"` });
 
   const chips = all.filter((c) => !omit.includes(c.key));

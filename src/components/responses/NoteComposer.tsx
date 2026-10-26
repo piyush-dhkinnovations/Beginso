@@ -67,7 +67,7 @@ function EmojiPicker({
       role="listbox"
       aria-label="Add an emoji"
       style={{ position: 'fixed', bottom: position.bottom, right: position.right }}
-      className="bg-menu z-50 grid grid-cols-5 gap-0.5 p-1.5"
+      className="bg-menu z-95 grid grid-cols-5 gap-0.5 p-1.5"
     >
       {QUICK_EMOJI.map((emoji) => (
         <button

@@ -119,6 +119,8 @@ export interface ResponseFilters {
   field?: string;
   value?: string;
   granularity?: 'day' | 'week' | 'month';
+  /** A chart builder chart and, optionally, one of its groups, as JSON (lib/chartBuilder.ts serialiseChartFilter). Needs `formId`. */
+  chart?: string;
 }
 
 export interface GetResponsesParams extends ResponseFilters {

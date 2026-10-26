@@ -15,6 +15,10 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { ChartDrawer } from './ChartDrawer';
+import { BuilderChartCard } from './builder/BuilderChartCard';
+import { ChartResponsesDrawer } from './builder/ChartResponsesDrawer';
+import { chartBuilderService } from '@/services/chartBuilder';
+import type { QueryEntry } from '@/types/chartBuilder';
 import { ChartDrillPanel, type DrillState } from './ChartDrillPanel';
 import { ChartFullScreen } from './ChartFullScreen';
 import { CustomChartCard } from './CustomChartCard';
@@ -35,9 +39,7 @@ interface CustomChartsSectionProps {
   formId: string;
   scope: string;
   range: AnalyticsRangeParams;
-  /** The page-level "Add chart" button lives next to the date range; it just flips this. */
-  addOpen: boolean;
-  onAddClose: () => void;
+  /** Opens the chart builder (the page's "Add chart" button and the empty state both go there). */
   onAddRequest: () => void;
 }
 
@@ -82,7 +84,7 @@ function ResponseOverlay({ responseId, formId, scope, formTitle, onClose }: { re
   return <ResponseDrawer responseId={responseId} formId={formId} scope={scope} stages={stages ?? []} formTitle={formTitle} onSeeSimilar={(email) => router.push(similarResponsesHref(scope, formId, email))} onClose={onClose} />;
 }
 
-export function CustomChartsSection({ form, formId, scope, range, addOpen, onAddClose, onAddRequest }: CustomChartsSectionProps) {
+export function CustomChartsSection({ form, formId, scope, range, onAddRequest }: CustomChartsSectionProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const router = useRouter();
@@ -94,6 +96,8 @@ export function CustomChartsSection({ form, formId, scope, range, addOpen, onAdd
   const [editing, setEditing] = useState<SavedChart | null>(null);
   const [drill, setDrill] = useState<DrillState | null>(null);
   const [fullScreenId, setFullScreenId] = useState<string | null>(null);
+  // A part of a chart builder chart that was clicked: the responses behind it open in the side screen.
+  const [builderDrill, setBuilderDrill] = useState<{ chart: SavedChart; entry: QueryEntry } | null>(null);
   const responseId = searchParams.get('responseId');
 
   const listKey = chartKeys.list(scope, formId);
@@ -109,7 +113,6 @@ export function CustomChartsSection({ form, formId, scope, range, addOpen, onAdd
   const isMine = (c: SavedChart) => canEdit && (!c.ownerId || !me || c.ownerId === me);
   const mine = ordered.filter(isMine);
   const shared = ordered.filter((c) => !isMine(c));
-  const nextPosition = ordered.reduce((m, c) => Math.max(m, c.position), -1) + 1;
 
   const fullScreen = ordered.find((c) => c._id === fullScreenId);
   const drillField = drill ? fieldById.get(drill.fieldId) : undefined;
@@ -126,16 +129,6 @@ export function CustomChartsSection({ form, formId, scope, range, addOpen, onAdd
   const rollback = (ctx?: { previous?: SavedChart[] }) => queryClient.setQueryData(listKey, ctx?.previous);
   const refresh = () => void queryClient.invalidateQueries({ queryKey: listKey });
   const definitionOf = (c: SavedChart): ChartDefinition => ({ fieldId: c.fieldId, type: c.type, size: c.size, title: c.title, options: c.options, visibility: c.visibility });
-
-  const addMutation = useMutation({
-    mutationFn: (def: ChartDefinition) => chartsService.create(formId, { ...def, position: nextPosition }, scope),
-    onSuccess: () => {
-      refresh();
-      toast('Chart added to the dashboard.', 'success');
-      onAddClose();
-    },
-    onError: onError('Could not add the chart. Please try again.'),
-  });
 
   const editMutation = useMutation({
     mutationFn: ({ chart, def }: { chart: SavedChart; def: ChartDefinition }) => chartsService.update(formId, chart._id, def, scope),
@@ -170,6 +163,11 @@ export function CustomChartsSection({ form, formId, scope, range, addOpen, onAdd
     mutationFn: (chart: SavedChart) => chartsService.remove(formId, chart._id, scope),
     onMutate: (chart) => optimistic((old) => old.filter((c) => c._id !== chart._id)),
     onSuccess: (_d, chart) => {
+      // A chart builder chart was confirmed in its card; there is no undo for it.
+      if (chart.kind === 'simple') {
+        toast('Chart removed.', 'success');
+        return;
+      }
       // The backend only offers DELETE, so Undo re-creates the chart (same definition and place).
       toast(`Removed "${chart.title}".`, 'success', 8000, {
         label: 'Undo',
@@ -197,6 +195,14 @@ export function CustomChartsSection({ form, formId, scope, range, addOpen, onAdd
     onSettled: refresh,
   });
 
+  const shareMutation = useMutation({
+    mutationFn: (chart: SavedChart) => chartBuilderService.update(formId, chart._id, { visibility: chart.visibility === 'workspace' ? 'private' : 'workspace', expectedVersion: chart.version }, scope),
+    onSuccess: (_c, chart) => toast(chart.visibility === 'workspace' ? 'This chart is private again.' : 'Chart shared with the workspace.', 'success'),
+    onError: (error) =>
+      onError(isAxiosError(error) && error.response?.status === 409 ? 'Someone else changed this chart. Reload it.' : 'Could not change who sees the chart.')(error),
+    onSettled: refresh,
+  });
+
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
   function onDragEnd({ active, over }: DragEndEvent) {
@@ -221,6 +227,20 @@ export function CustomChartsSection({ form, formId, scope, range, addOpen, onAdd
     onDragCancel: ({ active }: { active: { id: string | number } }) => `Reordering cancelled. Chart ${titleOf(active.id)} did not move.`,
   };
 
+  // "Move earlier / later" (the same order a drag makes, for people who do not drag).
+  function moveChart(chart: SavedChart, direction: -1 | 1) {
+    const from = mine.findIndex((c) => c._id === chart._id);
+    const to = from + direction;
+    if (from < 0 || to < 0 || to >= mine.length) return;
+    const next = arrayMove(mine, from, to).map((c, i) => ({ id: c._id, position: i }));
+    const byId = new Map(next.map((n) => [n.id, n.position]));
+    void optimistic((old) => old.map((c) => (byId.has(c._id) ? { ...c, position: byId.get(c._id)! } : c))).then((ctx) =>
+      reorderMutation.mutate(next.map((n) => n.id), { onError: () => rollback(ctx) }),
+    );
+  }
+
+  const editHref = (chart: SavedChart) => `/forms/${formId}/insights/charts/${chart._id}/edit${scope !== 'personal' ? `?ws=${encodeURIComponent(scope)}` : ''}`;
+
   function selectSegment(chart: SavedChart, target: DrillTarget) {
     setDrill({ chartId: chart._id, fieldId: chart.fieldId, target });
   }
@@ -236,7 +256,24 @@ export function CustomChartsSection({ form, formId, scope, range, addOpen, onAdd
     router.replace(`${pathname}?${params.toString()}`);
   }
 
-  const renderCard = (chart: SavedChart, manage: boolean, handle?: ReactNode) => (
+  const renderCard = (chart: SavedChart, manage: boolean, handle?: ReactNode) =>
+    chart.kind === 'simple' ? (
+      <BuilderChartCard
+        chart={chart}
+        formId={formId}
+        scope={scope}
+        canManage={canEdit && (chart.canEdit ?? manage)}
+        dragHandle={handle}
+        canMoveEarlier={mine.findIndex((c) => c._id === chart._id) > 0}
+        canMoveLater={mine.findIndex((c) => c._id === chart._id) >= 0 && mine.findIndex((c) => c._id === chart._id) < mine.length - 1}
+        onSelect={(c, entry) => setBuilderDrill({ chart: c, entry })}
+        onEdit={(c) => router.push(editHref(c))}
+        onDuplicate={(c) => duplicateMutation.mutate(c)}
+        onToggleShare={(c) => shareMutation.mutate(c)}
+        onRemove={(c) => removeMutation.mutate(c)}
+        onMove={moveChart}
+      />
+    ) : (
     <CustomChartCard
       chart={chart}
       formId={formId}
@@ -252,9 +289,9 @@ export function CustomChartsSection({ form, formId, scope, range, addOpen, onAdd
       onResize={(c, size) => resizeMutation.mutate({ chart: c, size })}
       onFullScreen={(c) => setFullScreenId(c._id)}
     />
-  );
+    );
 
-  const drawerOpen = (addOpen && canEdit) || !!editing;
+  const drawerOpen = !!editing;
 
   return (
     <section aria-labelledby="custom-charts-heading" className="flex flex-col gap-4">
@@ -339,18 +376,15 @@ export function CustomChartsSection({ form, formId, scope, range, addOpen, onAdd
       {canEdit && (
         <ChartDrawer
           isOpen={drawerOpen}
-          onClose={() => {
-            onAddClose();
-            setEditing(null);
-          }}
+          onClose={() => setEditing(null)}
           editing={editing}
           formId={formId}
           scope={scope}
           fields={fields}
           range={range}
           canShare={canEdit}
-          isSaving={addMutation.isPending || editMutation.isPending}
-          onSubmit={(def) => (editing ? editMutation.mutate({ chart: editing, def }) : addMutation.mutate(def))}
+          isSaving={editMutation.isPending}
+          onSubmit={(def) => editing && editMutation.mutate({ chart: editing, def })}
         />
       )}
 
@@ -376,6 +410,17 @@ export function CustomChartsSection({ form, formId, scope, range, addOpen, onAdd
         field={drillField}
         range={range}
         granularity={dateGranularity(range.from, range.to)}
+        onOpenResponse={openResponse}
+      />
+
+      <ChartResponsesDrawer
+        isOpen={!!builderDrill && !responseId}
+        onClose={() => setBuilderDrill(null)}
+        formId={formId}
+        scope={scope}
+        chartTitle={builderDrill?.chart.title ?? ''}
+        query={builderDrill?.chart.definition ?? null}
+        entry={builderDrill?.entry ?? null}
         onOpenResponse={openResponse}
       />
 

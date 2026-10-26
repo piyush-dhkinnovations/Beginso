@@ -64,18 +64,18 @@ test('the status badge is on the title line and Export is in the header row besi
   await page.screenshot({ path: testInfo.outputPath('responses-header.png'), clip: { x: 0, y: 0, width: 1440, height: 340 } });
 });
 
-test('an active filter is a chip in the search bar, and the stage is not repeated as a chip', async ({ page, context }, testInfo) => {
+test('a filter that a button already shows is not repeated as a chip (Show names it, the stage is a tab)', async ({ page, context }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await installBackend(context);
   await page.goto(`/forms/${FORM_ID}/inbox?duplicate=1&unread=1`);
   await expect(page.getByText('harsh.vora@example.com').first()).toBeVisible({ timeout: 60000 });
-  const chip = page.getByRole('button', { name: 'Remove filter: Duplicates only' });
-  await expect(chip).toBeVisible();
-  // "Unread only" is the Unread tab, so no chip repeats it.
+  // The Show button carries the value itself, so no chip says it again; "Unread only" is the Unread tab.
+  const show = page.getByRole('button', { name: 'Show: Similar responses only' });
+  await expect(show).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Remove filter: Similar responses only' })).toHaveCount(0);
   await expect(page.getByText('Unread only')).toHaveCount(0);
-  const search = (await page.getByLabel('Search responses').boundingBox())!;
-  const c = (await chip.boundingBox())!;
-  expect(Math.abs(c.y + c.height / 2 - (search.y + search.height / 2))).toBeLessThan(16);
+  // the colon sits against the name, with no gap between the two
+  expect(await show.evaluate((el) => (el.textContent ?? '').trim().startsWith('Show: Similar'))).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('responses-filtered.png'), clip: { x: 0, y: 0, width: 1440, height: 340 } });
 });
 

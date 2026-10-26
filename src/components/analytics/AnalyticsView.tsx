@@ -73,8 +73,9 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
   const isWorkspaceScope = scope !== 'personal';
   const router = useRouter();
   const formScope = useFormScope(formId ?? '');
-  const [addChartOpen, setAddChartOpen] = useState(false);
   const canAddChart = canEditCharts(useWorkspaceRole(formScope ?? 'personal'));
+  // "Add chart" opens the chart builder, a page of its own.
+  const addChart = () => router.push(`/forms/${formId}/insights/charts/new${formScope && formScope !== 'personal' ? `?ws=${encodeURIComponent(formScope)}` : ''}`);
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
@@ -321,7 +322,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
     <div className="ml-auto flex flex-wrap items-center gap-3">
       {filterPopover}
       {canAddChart && (
-        <Button size="small" onClick={() => setAddChartOpen(true)}>
+        <Button size="small" onClick={addChart}>
           <Plus size={14} className="mr-1.5" aria-hidden="true" />
           Add chart
         </Button>
@@ -467,9 +468,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
               formId={formId}
               scope={formScope}
               range={range}
-              addOpen={addChartOpen}
-              onAddClose={() => setAddChartOpen(false)}
-              onAddRequest={() => setAddChartOpen(true)}
+              onAddRequest={addChart}
             />
           )}
         </>

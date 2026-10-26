@@ -41,12 +41,13 @@ describe('FormTile', () => {
     const { container } = render(<FormTile title="x" size={40} logoUrl="/logo.png" />);
     const img = container.querySelector('img')!;
     expect(img).toHaveAttribute('src', '/logo.png');
-    expect(img).toHaveAttribute('aria-hidden', 'true');
-    expect(img).toHaveStyle({ width: '40px', height: '40px', margin: '0px' });
+    // the size is held by the box around the picture (a placeholder while it loads), so nothing jumps when it arrives
+    expect(img.parentElement).toHaveAttribute('aria-hidden', 'true');
+    expect(img.parentElement).toHaveStyle({ width: '40px', height: '40px', margin: '0px' });
   });
 
   it('insets a big (card-size) logo to 80% and centres it with margin', () => {
     const { container } = render(<FormTile title="x" size={100} logoUrl="/logo.png" />);
-    expect(container.querySelector('img')).toHaveStyle({ width: '80px', height: '80px', margin: '10px' });
+    expect(container.querySelector('img')!.parentElement).toHaveStyle({ width: '80px', height: '80px', margin: '10px' });
   });
 });

@@ -40,7 +40,7 @@ describe('FormCard', () => {
     const { container } = renderCard(form({ branding: { logoUrl: '/logo.png' } }));
     const img = container.querySelector('img')!;
     expect(img).toHaveAttribute('src', '/logo.png');
-    expect(img).toHaveStyle({ width: '48px', height: '48px', margin: '0px' });
+    expect(img.parentElement).toHaveStyle({ width: '48px', height: '48px', margin: '0px' });
   });
 
   it('links the title to the form and shows status, description and the response count', () => {

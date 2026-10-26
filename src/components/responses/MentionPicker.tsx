@@ -81,7 +81,7 @@ export function MentionPicker({ members, query, selectedIds, onSelect, onClose, 
       role="listbox"
       aria-label="Mention a teammate"
       style={{ position: 'fixed', bottom: position.bottom, left: position.left, width: position.width }}
-      className="bg-menu z-50 max-h-56 overflow-y-auto"
+      className="bg-menu z-95 max-h-56 overflow-y-auto"
     >
       {matches.length === 0 ? (
         <p className="px-3 py-2 bg-body-sm text-(--text-muted)">No matching members.</p>

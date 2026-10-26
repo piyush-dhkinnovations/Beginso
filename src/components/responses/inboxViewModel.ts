@@ -19,7 +19,7 @@ interface Input {
 /** Pure derivations of the inbox header/empty/filter copy from filters + loaded data. */
 export function deriveInboxViewModel({ filters, search, stages, page, form, stats, firstResponseSubmittedAt }: Input) {
   const hasActiveFilters =
-    !!search || !!filters.stageId || !!filters.assigneeId || !!filters.unread || !!filters.field || !!filters.tagIds?.length || !!filters.from || !!filters.to || !!filters.duplicate;
+    !!search || !!filters.stageId || !!filters.assigneeId || !!filters.unread || !!filters.field || !!filters.chart || !!filters.tagIds?.length || !!filters.from || !!filters.to || !!filters.duplicate;
   // Chart drill-down chip: "Satisfaction: Very satisfied" (date buckets read as plain words).
   const drillField = filters.field ? form?.fields.find((f) => f.fieldId === filters.field) : undefined;
   const fieldChipLabel = filters.field
@@ -48,6 +48,7 @@ export function deriveInboxViewModel({ filters, search, stages, page, form, stat
     (filters.from || filters.to) && 'that date range',
     search && `"${search}"`,
     filters.field && (fieldChipLabel ?? 'that chart filter'),
+    filters.chart && 'that chart',
   ]
     .filter(Boolean)
     .join(' + ');

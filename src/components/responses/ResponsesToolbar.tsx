@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState, type ReactNode } from 'react';
-import { Search, X } from 'lucide-react';
+import { CalendarRange, Search, X } from 'lucide-react';
+import { CustomRangeModal } from './CustomRangeModal';
 import { Input } from '@/components/ui/Input';
 import { Toolbar } from '@/components/ui/Toolbar';
 import { FilterMenu } from '@/components/ui/FilterMenu';
@@ -79,6 +80,7 @@ export function ResponsesToolbar({
   activeFilters,
 }: ResponsesToolbarProps) {
   const [inputValue, setInputValue] = useState(search);
+  const [rangeOpen, setRangeOpen] = useState(false);
   const [syncedSearch, setSyncedSearch] = useState(search);
   // A short pause after typing, so the list is asked for once per word, not once per key.
   const debounced = useDebounce(inputValue, 250);
@@ -167,6 +169,7 @@ export function ResponsesToolbar({
           selectedIds={filters.from || filters.to ? ['active'] : []}
           valueLabel={dateValueLabel(filters)}
           clearLabel="Any time"
+          extraItems={[{ id: 'custom', label: 'Custom range…', icon: <CalendarRange size={14} aria-hidden="true" />, onSelect: () => setRangeOpen(true) }]}
           onSelect={(id) => {
             const preset = DATE_PRESETS.find((p) => p.id === id);
             if (preset) onFilterChange({ from: startOfDaysAgo(preset.days).toISOString(), to: undefined });
@@ -180,7 +183,7 @@ export function ResponsesToolbar({
       <FilterMenu
         label="Show"
         options={[
-          { id: 'duplicate', label: 'Duplicates only' },
+          { id: 'duplicate', label: 'Similar responses only' },
           { id: 'tests', label: 'Include test submissions' },
         ]}
         selectedIds={showSelected}
@@ -198,6 +201,8 @@ export function ResponsesToolbar({
 
       {/* The count and the layout switcher stay together on the right, and wrap together when the bar is too narrow for one line. */}
       {trailing && <div className="ml-auto flex flex-wrap items-center gap-3">{trailing}</div>}
+
+      {rangeOpen && <CustomRangeModal isOpen onClose={() => setRangeOpen(false)} from={filters.from} to={filters.to} onApply={(range) => onFilterChange(range)} />}
     </Toolbar>
   );
 }

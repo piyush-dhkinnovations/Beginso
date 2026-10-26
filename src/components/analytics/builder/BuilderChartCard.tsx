@@ -1,0 +1,118 @@
+'use client';
+
+import { useState, type ReactNode } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, ArrowRight, Copy, MoreHorizontal, Pencil, Share2, Trash2, Users } from 'lucide-react';
+import { Badge } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
+import { Menu, type MenuItem } from '@/components/ui/Menu';
+import { chartBuilderService } from '@/services/chartBuilder';
+import { ChartResult } from './ChartResult';
+import { DEFAULT_DISPLAY } from '@/lib/chartBuilder';
+import type { BuilderChartType, QueryEntry } from '@/types/chartBuilder';
+import type { SavedChart } from '@/types/charts';
+
+interface BuilderChartCardProps {
+  formId: string;
+  scope: string;
+  chart: SavedChart;
+  /** My own chart (or an admin's shared one) and a role that may edit: the menu and the drag handle appear. */
+  canManage: boolean;
+  dragHandle?: ReactNode;
+  canMoveEarlier: boolean;
+  canMoveLater: boolean;
+  onSelect: (chart: SavedChart, entry: QueryEntry) => void;
+  onEdit: (chart: SavedChart) => void;
+  onDuplicate: (chart: SavedChart) => void;
+  onToggleShare: (chart: SavedChart) => void;
+  onRemove: (chart: SavedChart) => void;
+  onMove: (chart: SavedChart, direction: -1 | 1) => void;
+}
+
+/**
+ * A chart built in the chart builder, on the Insights dashboard. It asks for its own answer (so one chart failing shows its own message and
+ * never blanks the page), shows the chart, and lets a person click a part to see the responses behind it. Removing asks first, in the
+ * card itself.
+ */
+export function BuilderChartCard({ formId, scope, chart, canManage, dragHandle, canMoveEarlier, canMoveLater, onSelect, onEdit, onDuplicate, onToggleShare, onRemove, onMove }: BuilderChartCardProps) {
+  const [confirming, setConfirming] = useState(false);
+  const definition = chart.definition!;
+  const display = definition.display ?? DEFAULT_DISPLAY;
+  const data = useQuery({
+    queryKey: ['chart-data', scope, formId, chart._id, chart.version ?? 1],
+    queryFn: () => chartBuilderService.data(formId, chart._id, scope),
+    staleTime: 30_000,
+    retry: false,
+  });
+  const removed = data.data?.fieldMissing === true || chart.fieldMissing === true;
+  const title = chart.title || 'Chart';
+  const shared = chart.visibility === 'workspace';
+
+  const items: MenuItem[] = canManage
+    ? [
+        { id: 'edit', label: 'Edit', icon: <Pencil size={14} />, onSelect: () => onEdit(chart) },
+        { id: 'duplicate', label: 'Duplicate', icon: <Copy size={14} />, onSelect: () => onDuplicate(chart) },
+        { id: 'share', label: shared ? 'Stop sharing' : 'Share with workspace', icon: shared ? <Users size={14} /> : <Share2 size={14} />, onSelect: () => onToggleShare(chart) },
+        { id: 'earlier', label: 'Move earlier', icon: <ArrowLeft size={14} />, onSelect: () => onMove(chart, -1), disabled: !canMoveEarlier },
+        { id: 'later', label: 'Move later', icon: <ArrowRight size={14} />, onSelect: () => onMove(chart, 1), disabled: !canMoveLater },
+        { id: 'remove', label: 'Remove', icon: <Trash2 size={14} />, danger: true, onSelect: () => setConfirming(true) },
+      ]
+    : [];
+
+  return (
+    <Card className="h-full gap-3" aria-label={title}>
+      <div className="flex items-center gap-2">
+        {dragHandle}
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate bg-body font-semibold text-(--text-primary)" title={title}>
+            {title}
+          </h3>
+          {!canManage && shared && chart.ownerName && <p className="truncate bg-caption text-(--text-muted)">Shared by {chart.ownerName}</p>}
+        </div>
+        {shared && canManage && <Badge variant="info">Shared</Badge>}
+        {canManage && <Menu align="end" triggerLabel={`Chart options for ${title}`} trigger={<MoreHorizontal size={18} aria-hidden="true" />} items={items} />}
+      </div>
+
+      {confirming ? (
+        <div role="alertdialog" aria-label={`Remove ${title}?`} className="flex flex-wrap items-center gap-3 rounded-md bg-(--bg-subtle) p-3">
+          <p className="bg-body-sm font-medium text-(--text-primary)">Remove this chart?</p>
+          <Button variant="secondary" size="small" onClick={() => setConfirming(false)}>
+            Cancel
+          </Button>
+          <Button variant="destructive" size="small" onClick={() => onRemove(chart)}>
+            Remove
+          </Button>
+        </div>
+      ) : null}
+
+      {removed ? (
+        <div className="flex flex-col items-start gap-3">
+          <p className="bg-body-sm text-(--text-muted)">This chart uses a question that was removed. Edit or remove it.</p>
+          {canManage && (
+            <div className="flex gap-2">
+              <Button variant="secondary" size="small" onClick={() => onEdit(chart)}>
+                Edit
+              </Button>
+              <Button variant="secondary" size="small" onClick={() => setConfirming(true)}>
+                Remove
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <ChartResult
+          result={data.data?.query}
+          isLoading={data.isLoading}
+          isError={data.isError}
+          refreshing={data.isFetching && !data.isLoading}
+          onRetry={() => void data.refetch()}
+          chartType={(chart.type === ('horizontal_bar' as string) ? 'hbar' : chart.type) as unknown as BuilderChartType}
+          display={display}
+          onSelect={display.interactive ? (entry) => onSelect(chart, entry) : undefined}
+          label={title}
+        />
+      )}
+    </Card>
+  );
+}

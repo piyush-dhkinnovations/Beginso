@@ -88,6 +88,8 @@ export function parseInboxFiltersFromParams(
     field: params.get('field') ?? undefined,
     value: params.get('value') ?? undefined,
     granularity: normalizeGranularity(params.get('granularity')),
+    // A chart builder chart (and the group that was clicked): the Responses list shows exactly the people behind that bar.
+    chart: params.get('chart') ?? undefined,
   };
 
   return { filters, legacyStatusPending };
@@ -123,6 +125,7 @@ export function applyInboxFilterPatch(
   if ('field' in patch) set('field', patch.field);
   if ('value' in patch) set('value', patch.value);
   if ('granularity' in patch) set('granularity', patch.granularity);
+  if ('chart' in patch) set('chart', patch.chart);
   if ('search' in patch) set('search', patch.search);
   if ('page' in patch) set('page', patch.page ? String(patch.page) : undefined);
   if ('view' in patch) set('view', patch.view && patch.view !== defaultView ? patch.view : undefined);

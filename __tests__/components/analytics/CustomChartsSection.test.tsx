@@ -79,7 +79,7 @@ const form = { title: 'Survey', fields: [{ fieldId: 'f1', pageId: 'p', type: 'dr
 const httpError = (status: number) => new AxiosError('x', 'ERR', undefined, undefined, { status } as AxiosResponse);
 
 function setup(over: Partial<React.ComponentProps<typeof CustomChartsSection>> = {}, user: { id: string } | null = { id: 'me' }) {
-  const props = { form, formId: 'f1', scope: 'personal', range: {}, addOpen: false, onAddClose: vi.fn(), onAddRequest: vi.fn(), ...over };
+  const props = { form, formId: 'f1', scope: 'personal', range: {}, onAddRequest: vi.fn(), ...over };
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
   render(
     <QueryClientProvider client={qc}>
@@ -159,23 +159,14 @@ describe('CustomChartsSection', () => {
   it('treats every chart as read-only without edit rights and hides the drawer', async () => {
     role = 'reviewer';
     svc.list.mockResolvedValue([mk('a', 0)]);
-    setup({ scope: 'acme', addOpen: true });
+    setup({ scope: 'acme' });
     const card = await screen.findByLabelText('card Chart a');
     expect(card).toHaveAttribute('data-manage', 'false');
     expect(screen.queryByRole('heading', { name: 'Shared with the workspace' })).not.toBeInTheDocument();
     expect(screen.queryByRole('dialog', { name: 'chart drawer' })).not.toBeInTheDocument();
   });
 
-  it('adds a chart at the next position, then confirms and closes the drawer', async () => {
-    const user = userEvent.setup();
-    svc.list.mockResolvedValue([mk('a', 4)]);
-    svc.create.mockResolvedValue(mk('n', 5));
-    const props = setup({ addOpen: true });
-    await user.click(await screen.findByText('submit-chart'));
-    await waitFor(() => expect(svc.create).toHaveBeenCalledWith('f1', { fieldId: 'f1', title: 'New', position: 5 }, 'personal'));
-    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Chart added to the dashboard.', 'success'));
-    expect(props.onAddClose).toHaveBeenCalled();
-  });
+  // (Adding a chart is the chart builder's job now: see builder/ChartWizard.test.tsx. This section only opens it.)
 
   it('edits a chart through the drawer', async () => {
     const user = userEvent.setup();

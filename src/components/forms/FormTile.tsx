@@ -1,5 +1,6 @@
 import { getFormIcon, suggestFormIcon } from '@/lib/formIcons';
 import { IconArt } from '@/components/forms/FormIcon';
+import { LogoImage } from '@/components/ui/LogoImage';
 
 /**
  * A form's mark. In order: its uploaded logo, the icon the owner picked, and otherwise the icon that suits the form's name (lib/formIcons
@@ -20,10 +21,7 @@ export function FormTile({
   if (logoUrl) {
     // Small tiles (table rows) show the logo at full size; big ones (cards) leave a little air around it.
     const logo = size < 56 ? size : Math.round(size * 0.8);
-    return (
-      // eslint-disable-next-line @next/next/no-img-element -- backend-served upload, not a static asset
-      <img src={logoUrl} alt="" aria-hidden="true" className="flex-none rounded-lg object-contain" style={{ width: logo, height: logo, margin: (size - logo) / 2 }} />
-    );
+    return <LogoImage key={logoUrl} src={logoUrl} size={logo} margin={(size - logo) / 2} />;
   }
   // An icon is shown as its artwork alone, like a logo: no tile, border or background around it.
   const icon = getFormIcon(iconName) ?? suggestFormIcon(title);

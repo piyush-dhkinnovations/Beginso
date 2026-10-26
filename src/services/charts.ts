@@ -51,6 +51,10 @@ function toChart(raw: unknown): SavedChart {
     ownerId: c.ownerId != null ? String(c.ownerId) : owner?.id != null ? String(owner.id) : undefined,
     ownerName: typeof c.ownerName === 'string' ? c.ownerName : typeof owner?.name === 'string' ? owner.name : undefined,
     fieldMissing: c.fieldMissing === true,
+    canEdit: typeof c.canEdit === 'boolean' ? c.canEdit : undefined,
+    kind: c.kind === 'simple' ? 'simple' : 'legacy',
+    definition: c.kind === 'simple' && c.definition && typeof c.definition === 'object' ? (c.definition as SavedChart['definition']) : undefined,
+    version: typeof c.version === 'number' ? c.version : undefined,
   };
 }
 

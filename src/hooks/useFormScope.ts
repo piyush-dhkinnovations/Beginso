@@ -26,5 +26,8 @@ export function useFormScope(formId: string): string | undefined {
   if (hint) return hint;
   if (!form) return undefined;
   if (!form.workspaceId) return 'personal';
-  return workspaces?.find((w) => w.id === form.workspaceId)?.slug;
+  if (!workspaces) return undefined; // still finding out which workspaces I belong to
+  // A workspace I am not a member of: the form reached me through a per-form share (the grant opens that one form), which works in the
+  // personal context. Returning nothing here left the page on its loading skeleton for ever.
+  return workspaces.find((w) => w.id === form.workspaceId)?.slug ?? 'personal';
 }

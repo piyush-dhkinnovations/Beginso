@@ -127,4 +127,23 @@ describe('ResponsesToolbar', () => {
     render(<ResponsesToolbar {...baseProps} trailing={<button>Save view</button>} />);
     expect(screen.getByRole('button', { name: 'Save view' }).parentElement).toHaveClass('ml-auto');
   });
+
+  it('the Date menu ends with "Custom range…", which opens the two dates and applies them as one range', async () => {
+    const onFilterChange = vi.fn();
+    render(<ResponsesToolbar {...baseProps} onFilterChange={onFilterChange} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Date' }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Custom range…' }));
+    expect(screen.getByRole('dialog', { name: 'Pick a date range' })).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('From'), '2026-10-01');
+    await userEvent.type(screen.getByLabelText('To'), '2026-10-15');
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    const patch = onFilterChange.mock.calls.at(-1)![0];
+    expect(new Date(patch.from).getTime()).toBeLessThan(new Date(patch.to).getTime());
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('a filter button names its value right after the name: "Show: Similar responses only"', () => {
+    render(<ResponsesToolbar {...baseProps} filters={{ duplicate: true }} />);
+    expect(screen.getByRole('button', { name: 'Show: Similar responses only' })).toHaveTextContent(/^Show: Similar responses only$/);
+  });
 });

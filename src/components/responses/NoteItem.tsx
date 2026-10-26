@@ -97,7 +97,8 @@ export function NoteItem({ note, members, isOwn, canDeleteAny, onEdit, onDelete,
           onKeyDown={canAct ? (e) => { if (e.key === 'Enter') setShowActions((v) => !v); } : undefined}
           aria-label={canAct ? 'Double-click for edit and delete options' : undefined}
           className={cn(
-            'relative mt-0.5 rounded-2xl px-3 py-2 bg-caption whitespace-pre-wrap',
+            // a long word or an unbroken string wraps inside the bubble instead of running out of it
+            'relative mt-0.5 max-w-full min-w-0 rounded-2xl px-3 py-2 bg-caption whitespace-pre-wrap break-words [overflow-wrap:anywhere]',
             isOwn
               ? 'rounded-br-sm bg-(--action-primary) text-(--text-on-brand)'
               : 'rounded-bl-sm bg-(--bg-subtle) text-(--text-secondary)',
