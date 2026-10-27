@@ -42,7 +42,7 @@ export const FIELD_TAG: Record<string, string> = {
 };
 
 export const SYSTEM_FIELDS: { key: SystemKey; label: string; tag: string; group: 'Response details' | 'Time' }[] = [
-  { key: 'stage', label: 'Stage', tag: 'Stage', group: 'Response details' },
+  { key: 'stage', label: 'Response stage', tag: 'Stage', group: 'Response details' },
   { key: 'assignee', label: 'Assignee', tag: 'Person', group: 'Response details' },
   { key: 'tags', label: 'Tags', tag: 'Tags', group: 'Response details' },
   { key: 'submittedAt', label: 'Submitted date', tag: 'Date', group: 'Time' },

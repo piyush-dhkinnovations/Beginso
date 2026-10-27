@@ -158,7 +158,7 @@ describe('step 2: basic information', () => {
     const select = screen.getByLabelText('Group by field');
     expect(within(select).getAllByRole('group').map((g) => g.getAttribute('label'))).toEqual(['Questions', 'Response details', 'Time']);
     expect(within(select).queryByRole('option', { name: 'Name' })).not.toBeInTheDocument();
-    expect(within(select).getAllByRole('option').map((o) => o.textContent)).toEqual(['Plan', 'Age', 'Start date', 'Stage', 'Assignee', 'Tags', 'Submitted date']);
+    expect(within(select).getAllByRole('option').map((o) => o.textContent)).toEqual(['Plan', 'Age', 'Start date', 'Response stage', 'Assignee', 'Tags', 'Submitted date']);
   });
 
   it('says "Add a chart title to continue." when the title is empty, and keeps Next usable', async () => {
