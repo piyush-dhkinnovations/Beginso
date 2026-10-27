@@ -2,6 +2,8 @@
 
 import { CharCount } from '@/components/ui/CharCount';
 import { StepSection } from './StepSection';
+import { FilterBuilder } from './FilterBuilder';
+import { MeasureSection } from './MeasureSection';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { BUCKET_LABEL, FIELD_TAG, SYSTEM_FIELDS, groupableFields, isTimeKind, kindOfRef, refFromValue, refValue } from '@/lib/chartBuilder';
@@ -11,6 +13,7 @@ import type { Bucket, ChartQuery } from '@/types/chartBuilder';
 
 interface StepBasicsProps {
   formTitle: string | undefined;
+  scope?: string;
   fields: readonly FormField[] | undefined;
   state: WizardState;
   onChange: (patch: Partial<WizardState>) => void;
@@ -25,7 +28,7 @@ function tagOfRef(fields: readonly FormField[] | undefined, state: WizardState):
 }
 
 /** Step 2: the form (locked to this one), the title, the field to group by and, for dates, how to group them. */
-export function StepBasics({ formTitle, fields, state, onChange }: StepBasicsProps) {
+export function StepBasics({ formTitle, scope, fields, state, onChange }: StepBasicsProps) {
   const title = shownTitle(fields, state);
   const kind = kindOfRef(fields, state.query.groupBy.field);
   const questions = groupableFields(fields);
@@ -59,6 +62,14 @@ export function StepBasics({ formTitle, fields, state, onChange }: StepBasicsPro
       </div>
       </StepSection>
 
+      {state.kind === 'drilldown' ? (
+        <>
+          <MeasureSection fields={fields} state={state} onChange={onChange} />
+          <div className="border-t border-(--border-subtle) pt-6">
+            <FilterBuilder fields={fields} scope={scope} filters={state.query.filters} onChange={(filters) => setQuery({ ...state.query, filters })} />
+          </div>
+        </>
+      ) : (
       <StepSection id="what-chart" title="What to chart" description="The question whose answers become the bars. Dates can be grouped by day, week, month or year.">
       <div className="flex flex-col gap-1.5">
         <label htmlFor="chart-group-field" className="bg-label">
@@ -114,6 +125,7 @@ export function StepBasics({ formTitle, fields, state, onChange }: StepBasicsPro
         </Select>
       )}
       </StepSection>
+      )}
     </div>
   );
 }

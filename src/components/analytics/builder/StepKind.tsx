@@ -11,8 +11,6 @@ interface Option {
   description: string;
   bullets: string[];
   art: React.ReactNode;
-  /** Not built yet: shown, but it cannot be chosen. */
-  soon?: boolean;
 }
 
 const OPTIONS: Option[] = [
@@ -29,20 +27,19 @@ const OPTIONS: Option[] = [
     description: 'Create an interactive chart with multiple levels. Click a data point to explore deeper.',
     bullets: ['Two or more levels', 'Explore data step by step', 'Perfect for detailed analysis'],
     art: <DrillChartArt />,
-    soon: true,
   },
 ];
 
 const HOW_IT_WORKS = [
   { title: 'Pick a type', text: 'One chart, or one you can open level by level.' },
-  { title: 'Name it', text: 'Give it a title and choose what to group the responses by.' },
-  { title: 'Set it up', text: 'Choose how to measure, sort and which responses count.' },
+  { title: 'Name it', text: 'Give it a title and say what to group the responses by.' },
+  { title: 'Set it up', text: 'Choose how to measure, sort and which responses count, and for a drill-down its levels.' },
   { title: 'Save', text: 'Check the preview, then it joins your dashboard.' },
 ];
 
 interface StepKindProps {
-  value: 'simple' | null;
-  onChange: (kind: 'simple') => void;
+  value: 'simple' | 'drilldown' | null;
+  onChange: (kind: 'simple' | 'drilldown') => void;
   onContinue: () => void;
 }
 
@@ -58,21 +55,20 @@ export function StepKind({ value, onChange, onContinue }: StepKindProps) {
               key={o.id}
               className={bx(
                 'group relative flex flex-col overflow-hidden rounded-2xl border-2 bg-(--surface-card) transition-[border-color,box-shadow]',
-                o.soon ? 'cursor-not-allowed border-(--border-default)' : 'cursor-pointer hover:shadow-(--shadow-md)',
-                selected ? 'border-(--action-primary) shadow-(--shadow-md)' : !o.soon && 'border-(--border-default) hover:border-(--border-strong)',
+                'cursor-pointer hover:shadow-(--shadow-md)',
+                selected ? 'border-(--action-primary) shadow-(--shadow-md)' : 'border-(--border-default) hover:border-(--border-strong)',
                 'has-focus-visible:outline-2 has-focus-visible:outline-(--border-focus)',
               )}
             >
-              <input type="radio" name="chart-kind" value={o.id} checked={selected} disabled={o.soon} onChange={() => onChange('simple')} className="sr-only" />
+              <input type="radio" name="chart-kind" value={o.id} checked={selected} onChange={() => onChange(o.id)} className="sr-only" />
 
-              <div className={bx('flex h-36 w-full items-center justify-center px-5 pt-5', o.soon && 'opacity-60 grayscale-[30%]')}>{o.art}</div>
+              <div className="flex h-36 w-full items-center justify-center px-5 pt-5">{o.art}</div>
 
               <div className="flex flex-1 flex-col gap-3 p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="flex flex-wrap items-center gap-2 bg-h5 font-bold text-(--text-primary)">
                       {o.title}
-                      {o.soon && <span className="rounded-full bg-(--bg-sunken) px-2.5 py-0.5 bg-caption font-semibold text-(--text-secondary)">Coming soon</span>}
                     </p>
                     <p className="mt-1 bg-body-sm text-(--text-muted)">{o.description}</p>
                   </div>
@@ -97,13 +93,11 @@ export function StepKind({ value, onChange, onContinue }: StepKindProps) {
 
                 <Button
                   type="button"
-                  variant={o.soon ? 'secondary' : 'primary'}
-                  disabled={o.soon}
+                  variant="primary"
                   className="mt-auto w-full"
                   onClick={(e) => {
                     e.preventDefault();
-                    if (o.soon) return;
-                    onChange('simple');
+                    onChange(o.id);
                     onContinue();
                   }}
                 >

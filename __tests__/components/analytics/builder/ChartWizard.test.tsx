@@ -92,16 +92,16 @@ const toStep2 = async (u = user()) => {
 };
 
 describe('step 1: the kind of chart', () => {
-  it('offers Simple chart, and Drill-down chart marked "Coming soon" that cannot be chosen', async () => {
+  it('offers Simple chart and Drill-down chart, both of which can be chosen', async () => {
     draw();
     expect(await screen.findByRole('heading', { name: 'What kind of chart?' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Create chart' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /Simple chart/ })).toBeEnabled();
-    expect(screen.getByRole('radio', { name: /Drill-down chart/ })).toBeDisabled();
-    expect(screen.getByText('Coming soon')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: /Drill-down chart/ })).toBeEnabled();
+    expect(screen.queryByText('Coming soon')).not.toBeInTheDocument();
     const [simple, drill] = screen.getAllByRole('button', { name: 'Continue' });
     expect(simple).toBeEnabled();
-    expect(drill).toBeDisabled();
+    expect(drill).toBeEnabled();
   });
 
   it('Continue on Simple chart goes to step 2 and moves focus to its heading', async () => {
@@ -150,7 +150,7 @@ describe('step 2: basic information', () => {
     await u.selectOptions(screen.getByLabelText('Group by field'), 's:submittedAt');
     expect(screen.getByLabelText('Date grouping')).toHaveValue('month');
     await u.selectOptions(screen.getByLabelText('Date grouping'), 'year');
-    await waitFor(() => expect(query).toHaveBeenLastCalledWith('f1', expect.objectContaining({ groupBy: { field: { kind: 'system', key: 'submittedAt' }, bucket: 'year' } }), 'personal', expect.anything()));
+    await waitFor(() => expect(query).toHaveBeenLastCalledWith('f1', expect.objectContaining({ groupBy: { field: { kind: 'system', key: 'submittedAt' }, bucket: 'year' } }), 'personal', expect.anything(), []));
   });
 
   it('lists questions, response details and time in groups, and never text questions', async () => {
@@ -188,7 +188,7 @@ describe('step 3: configure', () => {
     expect(screen.getByLabelText('Sort by')).toHaveValue('');
     await u.selectOptions(screen.getByLabelText('Aggregation'), 'avg');
     expect(screen.getByLabelText('Number field')).toHaveValue('age');
-    await waitFor(() => expect(query).toHaveBeenLastCalledWith('f1', expect.objectContaining({ measure: { type: 'avg', field: { kind: 'question', fieldId: 'age' } } }), 'personal', expect.anything()));
+    await waitFor(() => expect(query).toHaveBeenLastCalledWith('f1', expect.objectContaining({ measure: { type: 'avg', field: { kind: 'question', fieldId: 'age' } } }), 'personal', expect.anything(), []));
     // a donut does not show an average
     expect(screen.getByRole('option', { name: /Donut chart \(donuts show parts of a whole\)/ })).toBeDisabled();
   });
@@ -213,7 +213,7 @@ describe('step 3: configure', () => {
     await u.click(screen.getByRole('button', { name: 'Next' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('Fill in every filter or remove it.');
     await u.selectOptions(screen.getByLabelText('Filter 1: value'), 'Pro');
-    await waitFor(() => expect(query).toHaveBeenLastCalledWith('f1', expect.objectContaining({ filters: { op: 'and', items: [{ field: { kind: 'question', fieldId: 'plan' }, op: 'is', value: 'Pro' }] } }), 'personal', expect.anything()));
+    await waitFor(() => expect(query).toHaveBeenLastCalledWith('f1', expect.objectContaining({ filters: { op: 'and', items: [{ field: { kind: 'question', fieldId: 'plan' }, op: 'is', value: 'Pro' }] } }), 'personal', expect.anything(), []));
     await u.click(screen.getByRole('button', { name: 'Next' }));
     expect(await screen.findByRole('heading', { name: 'Preview & save' })).toBeInTheDocument();
   });
@@ -353,5 +353,128 @@ describe('leaving, and the keyboard', () => {
     await screen.findByRole('heading', { name: 'Preview & save' });
     await press('Save to dashboard');
     await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
+  });
+});
+
+// ── the drill-down path ──────────────────────────────────────────────────────────────────────────────
+const LEVEL_ONE: QueryResult = { ...RESULT, depth: 0, levelCount: 2, nextLevel: { field: { kind: 'question', fieldId: 'age' }, label: 'Age' } };
+
+const toDrillBasics = async (u = user()) => {
+  query.mockResolvedValue(LEVEL_ONE);
+  draw();
+  await screen.findByRole('radio', { name: /Drill-down chart/ });
+  await u.click(screen.getAllByRole('button', { name: 'Continue' })[1]);
+  await screen.findByLabelText('Chart title');
+  return u;
+};
+const toLevels = async () => {
+  const u = await toDrillBasics();
+  await u.click(screen.getByRole('button', { name: 'Next' }));
+  await screen.findByRole('heading', { name: 'Drill-down levels', level: 2 });
+  return u;
+};
+
+describe('a drill-down chart', () => {
+  it('step 2 names the chart and sets what is counted; it has no "Group by field" and shows a placeholder where the chart will be', async () => {
+    await toDrillBasics();
+    expect(screen.getByRole('heading', { name: 'Create drill-down chart' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Chart title')).toHaveValue('Responses by Plan, then Age');
+    expect(screen.getByLabelText('Aggregation')).toBeInTheDocument();
+    expect(screen.getByText('Filters')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Group by field')).not.toBeInTheDocument();
+    expect(screen.getByText('Add the levels in the next step to see your chart preview.')).toBeInTheDocument();
+    expect(query).not.toHaveBeenCalled();
+  });
+
+  it('step 3 starts with two levels (the first two questions), cannot go below two, and each field is used once', async () => {
+    const u = await toLevels();
+    expect(screen.getByLabelText('Field', { selector: '#level-0-field' })).toHaveValue('q:plan');
+    expect(screen.getByLabelText('Field', { selector: '#level-1-field' })).toHaveValue('q:age');
+    expect(screen.getByRole('button', { name: 'Remove level 1' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Remove level 2' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Move level 1 up' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Move level 2 down' })).toBeDisabled();
+    // level 1 cannot pick level 2's field
+    expect(within(screen.getByLabelText('Field', { selector: '#level-0-field' })).queryByRole('option', { name: 'Age' })).not.toBeInTheDocument();
+    // Age is a number: its grouping is automatic; a date gets Day / Week / Month / Year
+    expect(screen.getByText('Automatic ranges')).toBeInTheDocument();
+    await u.selectOptions(screen.getByLabelText('Field', { selector: '#level-1-field' }), 's:submittedAt');
+    expect(screen.getByLabelText('Grouping')).toHaveValue('month');
+  });
+
+  it('adds up to four levels and then says why Add level is off; levels move and are removed', async () => {
+    const u = await toLevels();
+    await u.click(screen.getByRole('button', { name: 'Add level' }));
+    await u.click(screen.getByRole('button', { name: 'Add level' }));
+    expect(screen.getByText('4 of 4 levels. Level 1 is the chart people see first.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add level' })).toBeDisabled();
+    await u.click(screen.getByRole('button', { name: 'Move level 2 up' }));
+    expect(screen.getByLabelText('Field', { selector: '#level-0-field' })).toHaveValue('q:age');
+    await u.click(screen.getByRole('button', { name: 'Remove level 4' }));
+    expect(screen.getByText('3 of 4 levels. Level 1 is the chart people see first.')).toBeInTheDocument();
+  });
+
+  it('the preview is a working drill-down: a click opens the next level and the path above the chart goes back', async () => {
+    const u = await toLevels();
+    query.mockImplementation(async (_f: string, _d: unknown, _s: unknown, _sig: unknown, path: unknown[] = []) =>
+      path.length === 0
+        ? LEVEL_ONE
+        : { ...RESULT, depth: 1, levelCount: 2, nextLevel: null, total: 20, level: { field: { kind: 'question', fieldId: 'age' }, label: 'Age', kind: 'number' }, entries: [{ key: '18', label: '18–27', value: 20, n: 20, share: 1, focus: { key: '18', lo: 18, hi: 28 } }] },
+    );
+    await u.click(await screen.findByRole('button', { name: 'Show as a table' }));
+    await u.click(await screen.findByRole('button', { name: 'See responses: Pro' }));
+    await waitFor(() => expect(query).toHaveBeenLastCalledWith('f1', expect.objectContaining({ kind: 'drilldown' }), 'personal', expect.anything(), [{ level: 0, key: 'Pro' }]));
+    const path = screen.getByRole('navigation', { name: 'Drill-down path' });
+    expect(within(path).getByRole('button', { name: 'All responses' })).toBeInTheDocument();
+    expect(within(path).getByText('Pro')).toHaveAttribute('aria-current', 'step');
+    expect(await screen.findByText(/Level 2 of 2: by Age/)).toBeInTheDocument();
+    await u.click(within(path).getByRole('button', { name: 'All responses' }));
+    expect(await screen.findByText(/Level 1 of 2: by Plan/)).toBeInTheDocument();
+  });
+
+  it('Next, Next, Save to dashboard saves the levels, with the type left to each level', async () => {
+    const u = await toLevels();
+    await u.selectOptions(screen.getByLabelText('Sort by', { selector: '#level-0-sort' }), 'label_asc');
+    await u.selectOptions(screen.getByLabelText('Chart type', { selector: '#level-0-type' }), 'hbar');
+    await u.click(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByRole('heading', { name: 'Preview & save' });
+    expect(screen.getByRole('region', { name: 'Interactive preview' })).toBeInTheDocument();
+    const list = screen.getByRole('region', { name: 'Drill-down path levels' });
+    expect(within(list).getByText('Plan')).toBeInTheDocument();
+    expect(within(list).getByText('Bar chart')).toBeInTheDocument();
+    expect(within(list).getByText('Age')).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'Interactive drill-down' })).toBeChecked();
+    await u.click(screen.getByRole('button', { name: 'Save to dashboard' }));
+    await waitFor(() => expect(create).toHaveBeenCalledTimes(1));
+    expect(create.mock.calls[0][1]).toMatchObject({
+      title: 'Responses by Plan, then Age',
+      chartType: 'auto',
+      definition: {
+        kind: 'drilldown',
+        measure: { type: 'count' },
+        levels: [{ field: { kind: 'question', fieldId: 'plan' }, sort: 'label_asc', chartType: 'hbar' }, { field: { kind: 'question', fieldId: 'age' } }],
+        display: { interactive: true },
+      },
+    });
+    expect(create.mock.calls[0][1].definition.groupBy).toBeUndefined();
+  });
+
+  it('with Interactive drill-down off, the chart shows level 1 and has no path to click', async () => {
+    const u = await toLevels();
+    await u.click(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByRole('heading', { name: 'Preview & save' });
+    await u.click(screen.getByRole('switch', { name: 'Interactive drill-down' }));
+    expect(screen.queryByRole('navigation', { name: 'Drill-down path' })).not.toBeInTheDocument();
+    await u.click(screen.getByRole('button', { name: 'Save to dashboard' }));
+    await waitFor(() => expect(create).toHaveBeenCalled());
+    expect(create.mock.calls[0][1].definition.display.interactive).toBe(false);
+  });
+
+  it('a sum with no number field is stopped on step 2, where a drill-down sets what it counts', async () => {
+    const u = await toDrillBasics();
+    await u.selectOptions(screen.getByLabelText('Aggregation'), 'sum');
+    await u.selectOptions(screen.getByLabelText('Number field'), 'age');
+    await u.click(screen.getByRole('button', { name: 'Next' }));
+    expect(await screen.findByRole('heading', { name: 'Drill-down levels', level: 2 })).toBeInTheDocument();
   });
 });

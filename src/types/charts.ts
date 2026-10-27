@@ -24,9 +24,9 @@ export interface ChartDefinition {
 
 export interface SavedChart extends ChartDefinition {
   _id: string;
-  /** 'simple' = built in the chart builder (it carries its whole query in `definition`); 'legacy' = a one-question chart. */
-  kind?: 'legacy' | 'simple';
-  definition?: import('./chartBuilder').ChartQuery;
+  /** 'simple' / 'drilldown' = built in the chart builder (it carries its whole query in `definition`); 'legacy' = a one-question chart. */
+  kind?: 'legacy' | 'simple' | 'drilldown';
+  definition?: import('./chartBuilder').AnyChartQuery;
   version?: number;
   position: number;
   ownerId?: string;

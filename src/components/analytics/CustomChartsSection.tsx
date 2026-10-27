@@ -18,7 +18,7 @@ import { ChartDrawer } from './ChartDrawer';
 import { BuilderChartCard } from './builder/BuilderChartCard';
 import { ChartResponsesDrawer } from './builder/ChartResponsesDrawer';
 import { chartBuilderService } from '@/services/chartBuilder';
-import type { QueryEntry } from '@/types/chartBuilder';
+import type { DrillStep, QueryEntry } from '@/types/chartBuilder';
 import { ChartDrillPanel, type DrillState } from './ChartDrillPanel';
 import { ChartFullScreen } from './ChartFullScreen';
 import { CustomChartCard } from './CustomChartCard';
@@ -97,7 +97,7 @@ export function CustomChartsSection({ form, formId, scope, range, onAddRequest }
   const [drill, setDrill] = useState<DrillState | null>(null);
   const [fullScreenId, setFullScreenId] = useState<string | null>(null);
   // A part of a chart builder chart that was clicked: the responses behind it open in the side screen.
-  const [builderDrill, setBuilderDrill] = useState<{ chart: SavedChart; entry: QueryEntry } | null>(null);
+  const [builderDrill, setBuilderDrill] = useState<{ chart: SavedChart; entry: QueryEntry | null; steps: DrillStep[] } | null>(null);
   const responseId = searchParams.get('responseId');
 
   const listKey = chartKeys.list(scope, formId);
@@ -164,7 +164,7 @@ export function CustomChartsSection({ form, formId, scope, range, onAddRequest }
     onMutate: (chart) => optimistic((old) => old.filter((c) => c._id !== chart._id)),
     onSuccess: (_d, chart) => {
       // A chart builder chart was confirmed in its card; there is no undo for it.
-      if (chart.kind === 'simple') {
+      if (chart.kind === 'simple' || chart.kind === 'drilldown') {
         toast('Chart removed.', 'success');
         return;
       }
@@ -257,7 +257,7 @@ export function CustomChartsSection({ form, formId, scope, range, onAddRequest }
   }
 
   const renderCard = (chart: SavedChart, manage: boolean, handle?: ReactNode) =>
-    chart.kind === 'simple' ? (
+    chart.kind === 'simple' || chart.kind === 'drilldown' ? (
       <BuilderChartCard
         chart={chart}
         formId={formId}
@@ -266,7 +266,7 @@ export function CustomChartsSection({ form, formId, scope, range, onAddRequest }
         dragHandle={handle}
         canMoveEarlier={mine.findIndex((c) => c._id === chart._id) > 0}
         canMoveLater={mine.findIndex((c) => c._id === chart._id) >= 0 && mine.findIndex((c) => c._id === chart._id) < mine.length - 1}
-        onSelect={(c, entry) => setBuilderDrill({ chart: c, entry })}
+        onSelect={(c, entry, steps) => setBuilderDrill({ chart: c, entry, steps })}
         onEdit={(c) => router.push(editHref(c))}
         onDuplicate={(c) => duplicateMutation.mutate(c)}
         onToggleShare={(c) => shareMutation.mutate(c)}
@@ -421,6 +421,7 @@ export function CustomChartsSection({ form, formId, scope, range, onAddRequest }
         chartTitle={builderDrill?.chart.title ?? ''}
         query={builderDrill?.chart.definition ?? null}
         entry={builderDrill?.entry ?? null}
+        steps={builderDrill?.steps}
         onOpenResponse={openResponse}
       />
 

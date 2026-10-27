@@ -61,6 +61,19 @@ export function StepSave({ state, onChange, canShare }: StepSaveProps) {
             </label>
             <Switch id="show-labels" checked={display.dataLabels} onChange={(dataLabels) => setDisplay({ dataLabels })} />
           </div>
+          {state.kind === 'drilldown' && (
+            <div className="flex items-start justify-between gap-3 px-4 py-3">
+              <div className="min-w-0">
+                <label htmlFor="interactive-drill" className="bg-body-sm text-(--text-primary)">
+                  Interactive drill-down
+                </label>
+                <p id="interactive-hint" className="bg-caption text-(--text-muted)">
+                  {display.interactive ? 'A click on a part opens the next level, and after the last level its responses.' : 'The chart shows level 1 only, and cannot be clicked.'}
+                </p>
+              </div>
+              <Switch id="interactive-drill" checked={display.interactive} aria-describedby="interactive-hint" onChange={(interactive) => setDisplay({ interactive })} />
+            </div>
+          )}
         </div>
 
         <fieldset className="flex flex-col gap-2 border-0 p-0">

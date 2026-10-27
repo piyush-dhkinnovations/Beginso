@@ -9,8 +9,10 @@ import { Card } from '@/components/ui/Card';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { chartBuilderService } from '@/services/chartBuilder';
 import { ChartResult } from './ChartResult';
-import { DEFAULT_DISPLAY } from '@/lib/chartBuilder';
-import type { BuilderChartType, QueryEntry } from '@/types/chartBuilder';
+import { DrillChart } from './DrillChart';
+import { DEFAULT_DISPLAY, isDrill } from '@/lib/chartBuilder';
+import { useFormFields } from '@/hooks/useFormFields';
+import type { BuilderChartType, DrillStep, QueryEntry } from '@/types/chartBuilder';
 import type { SavedChart } from '@/types/charts';
 
 interface BuilderChartCardProps {
@@ -22,7 +24,8 @@ interface BuilderChartCardProps {
   dragHandle?: ReactNode;
   canMoveEarlier: boolean;
   canMoveLater: boolean;
-  onSelect: (chart: SavedChart, entry: QueryEntry) => void;
+  /** A part was clicked: on a simple chart its group; on a drill-down the last level's group, or (entry null) all of a level, with the parts clicked on the way. */
+  onSelect: (chart: SavedChart, entry: QueryEntry | null, steps: DrillStep[]) => void;
   onEdit: (chart: SavedChart) => void;
   onDuplicate: (chart: SavedChart) => void;
   onToggleShare: (chart: SavedChart) => void;
@@ -38,12 +41,16 @@ interface BuilderChartCardProps {
 export function BuilderChartCard({ formId, scope, chart, canManage, dragHandle, canMoveEarlier, canMoveLater, onSelect, onEdit, onDuplicate, onToggleShare, onRemove, onMove }: BuilderChartCardProps) {
   const [confirming, setConfirming] = useState(false);
   const definition = chart.definition!;
+  const drill = isDrill(definition) ? definition : null;
+  const fields = useFormFields(formId);
   const display = definition.display ?? DEFAULT_DISPLAY;
+  // a drill-down asks for its levels itself (each level is its own answer); a simple chart's answer is the saved chart's
   const data = useQuery({
     queryKey: ['chart-data', scope, formId, chart._id, chart.version ?? 1],
     queryFn: () => chartBuilderService.data(formId, chart._id, scope),
     staleTime: 30_000,
     retry: false,
+    enabled: !drill,
   });
   const removed = data.data?.fieldMissing === true || chart.fieldMissing === true;
   const title = chart.title || 'Chart';
@@ -70,6 +77,7 @@ export function BuilderChartCard({ formId, scope, chart, canManage, dragHandle, 
           </h3>
           {!canManage && shared && chart.ownerName && <p className="truncate bg-caption text-(--text-muted)">Shared by {chart.ownerName}</p>}
         </div>
+        {drill && <Badge variant="neutral">Drill-down</Badge>}
         {shared && canManage && <Badge variant="info">Shared</Badge>}
         {canManage && <Menu align="end" triggerLabel={`Chart options for ${title}`} trigger={<MoreHorizontal size={18} aria-hidden="true" />} items={items} />}
       </div>
@@ -100,6 +108,8 @@ export function BuilderChartCard({ formId, scope, chart, canManage, dragHandle, 
             </div>
           )}
         </div>
+      ) : drill ? (
+        <DrillChart formId={formId} scope={scope} fields={fields} definition={drill} label={title} onSeeResponses={(steps, entry) => onSelect(chart, entry, steps)} />
       ) : (
         <ChartResult
           result={data.data?.query}
@@ -109,7 +119,7 @@ export function BuilderChartCard({ formId, scope, chart, canManage, dragHandle, 
           onRetry={() => void data.refetch()}
           chartType={(chart.type === ('horizontal_bar' as string) ? 'hbar' : chart.type) as unknown as BuilderChartType}
           display={display}
-          onSelect={display.interactive ? (entry) => onSelect(chart, entry) : undefined}
+          onSelect={display.interactive ? (entry) => onSelect(chart, entry, []) : undefined}
           label={title}
         />
       )}

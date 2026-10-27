@@ -1,16 +1,21 @@
 import type { FormField } from '@/types/form';
 import type { ChartSegment } from '@/components/ui/charts';
 import type {
+  AnyChartQuery,
   Bucket,
   BuilderChartType,
   ChartDisplay,
   ChartQuery,
+  DrillLevel,
+  DrillQuery,
   FieldRef,
   FilterCondition,
   FilterGroup,
   GroupKind,
   InnerGroup,
   MeasureType,
+  PathStep,
+  QueryEntry,
   QueryResult,
   SortKey,
   SystemKey,
@@ -134,6 +139,19 @@ export function chartTypeChoices(kind: GroupKind | undefined, measure: MeasureTy
   ].map((c) => (c.enabled ? { type: c.type, enabled: true } : c)) as TypeChoice[];
 }
 
+/** "Automatic: Donut chart" first, then every type; one that does not fit is listed with why, and cannot be picked. */
+export function chartTypeOptionList(kind: GroupKind | undefined, measure: MeasureType, optionCount: number | null): { value: BuilderChartType; label: string; disabled: boolean }[] {
+  const auto = autoChartType(kind, measure, optionCount);
+  return [
+    { value: 'auto', label: `Automatic: ${CHART_TYPE_NAME[auto]}`, disabled: false },
+    ...chartTypeChoices(kind, measure).map((c) => ({
+      value: c.type as BuilderChartType,
+      label: c.enabled ? CHART_TYPE_NAME[c.type] : `${CHART_TYPE_NAME[c.type]} (${(c.reason ?? '').replace(/\.$/, '').toLowerCase()})`,
+      disabled: !c.enabled,
+    })),
+  ];
+}
+
 /** The type actually drawn: the chosen one when it still fits, otherwise the automatic one (the field or aggregation changed under it). */
 export function resolveChartType(chosen: BuilderChartType, kind: GroupKind | undefined, measure: MeasureType, optionCount: number | null): Exclude<BuilderChartType, 'auto'> {
   if (chosen !== 'auto' && chartTypeChoices(kind, measure).find((c) => c.type === chosen)?.enabled) return chosen;
@@ -168,8 +186,50 @@ export function defaultQuery(fields: readonly FormField[] | undefined): ChartQue
   return { kind: 'simple', measure: { type: 'count' }, groupBy: { field, ...(time ? { bucket: 'month' as const } : {}) }, display: { ...DEFAULT_DISPLAY } };
 }
 
-/** "Responses by Plan", "Average Age by Plan", "Responses by month". */
-export function generateTitle(fields: readonly FormField[] | undefined, q: ChartQuery): string {
+export const isDrill = (q: AnyChartQuery | null | undefined): q is DrillQuery => q?.kind === 'drilldown';
+
+/** Where a drill-down starts: the first two choice questions, then any other question, then the response details. */
+export function defaultLevels(fields: readonly FormField[] | undefined): DrillLevel[] {
+  const groupable = groupableFields(fields);
+  const questions = [...groupable.filter((f) => kindOfFieldType(f.type) === 'choice'), ...groupable.filter((f) => kindOfFieldType(f.type) !== 'choice')];
+  const refs: FieldRef[] = [...questions.map((f) => ({ kind: 'question', fieldId: f.fieldId }) as FieldRef), ...(['stage', 'tags', 'assignee', 'submittedAt'] as SystemKey[]).map((key) => ({ kind: 'system', key }) as FieldRef)];
+  return refs.slice(0, 2).map((field) => levelFor(fields, field));
+}
+
+/** A new level on a field: dates start grouped by month. */
+export const levelFor = (fields: readonly FormField[] | undefined, field: FieldRef): DrillLevel => ({ field, ...(isTimeKind(kindOfRef(fields, field)) ? { bucket: 'month' as Bucket } : {}) });
+
+/** The fields a level can pick: every groupable field that no other level uses. */
+export function levelFieldChoices(fields: readonly FormField[] | undefined, levels: readonly DrillLevel[], index: number): { ref: FieldRef; label: string; tag: string; group: 'Questions' | 'Response details' | 'Time' }[] {
+  const taken = new Set(levels.filter((_, i) => i !== index).map((l) => refValue(l.field)));
+  return [
+    ...groupableFields(fields).map((f) => ({ ref: { kind: 'question', fieldId: f.fieldId } as FieldRef, label: f.label || 'Untitled question', tag: FIELD_TAG[f.type] ?? '', group: 'Questions' as const })),
+    ...SYSTEM_FIELDS.map((f) => ({ ref: { kind: 'system', key: f.key } as FieldRef, label: f.label, tag: f.tag, group: f.group })),
+  ].filter((c) => !taken.has(refValue(c.ref)));
+}
+
+/** The first field not used by any level yet, for "Add level"; undefined when all are used. */
+export const nextLevelField = (fields: readonly FormField[] | undefined, levels: readonly DrillLevel[]): FieldRef | undefined => levelFieldChoices(fields, levels, -1)[0]?.ref;
+
+/** The simple chart one level of a drill-down is (what its groups are worked out from). */
+export const levelAsSimple = (q: DrillQuery, depth: number): ChartQuery => {
+  const l = q.levels[depth];
+  return { kind: 'simple', measure: q.measure, groupBy: { field: l.field, ...(l.bucket ? { bucket: l.bucket } : {}) }, filters: q.filters, sort: l.sort ?? null, display: q.display };
+};
+
+/** The path the server wants, from the groups that were clicked (outermost first). */
+export const pathOf = (steps: readonly { level: number; entry: QueryEntry }[]): PathStep[] => steps.map((s) => ({ level: s.level, ...s.entry.focus }));
+
+/** "Responses by Plan", "Average Age by Plan", "Responses by month"; a drill-down: "Responses by Plan, then Subscribed". */
+export function generateTitle(fields: readonly FormField[] | undefined, q: AnyChartQuery): string {
+  if (isDrill(q)) {
+    const m = q.measure;
+    const measured = m.field ? labelOfRef(fields, m.field) : '';
+    const head = m.type === 'count' ? 'Responses' : `${{ sum: 'Sum', avg: 'Average', min: 'Minimum', max: 'Maximum' }[m.type]} ${measured}`.trim();
+    const filters = describeFilters(fields, q.filters);
+    const names = q.levels.map((l) => (kindOfRef(fields, l.field) === 'time' ? 'date' : labelOfRef(fields, l.field)));
+    return `${head} by ${names.join(', then ')}${filters ? ` (${filters})` : ''}`.slice(0, 80);
+  }
   const by = labelOfRef(fields, q.groupBy.field);
   const kind = kindOfRef(fields, q.groupBy.field);
   const groupText = kind === 'time' ? BUCKET_LABEL[q.groupBy.bucket ?? 'month'].toLowerCase() : kind === 'date' ? `${by} (${(q.groupBy.bucket ?? 'month')})` : by;
@@ -255,11 +315,11 @@ export const toggleOp = (g: FilterGroup, groupIndex?: number): FilterGroup => {
 
 // ── the Responses link ───────────────────────────────────────────────────────
 
-/** The `chart` parameter of the Responses list: this chart's filters, optionally narrowed to the group that was clicked. */
-export function serialiseChartFilter(q: ChartQuery, focus?: { key: string; lo?: number; hi?: number }): string {
+/** The `chart` parameter of the Responses list: this chart's filters, optionally narrowed by the parts of a drill-down already clicked (`path`) and the group that was clicked (`focus`). */
+export function serialiseChartFilter(q: AnyChartQuery, focus?: { key: string; lo?: number; hi?: number }, path?: PathStep[]): string {
   const { display: _display, ...definition } = q;
   void _display;
-  return JSON.stringify({ definition, ...(focus ? { focus } : {}) });
+  return JSON.stringify({ definition, ...(path?.length ? { path } : {}), ...(focus ? { focus } : {}) });
 }
 
 // ── drawing ──────────────────────────────────────────────────────────────────
@@ -268,10 +328,10 @@ export const formatFigure = (n: number): string => (Number.isInteger(n) ? n.toLo
 const formatPercent = (p: number): string => `${p.toFixed(p % 1 ? 1 : 0)}`;
 
 /** The groups of an answer as the in-house charts want them: a figure to draw, the words for the tooltip, and a share. */
-export function entrySegments(result: QueryResult, mode: ChartDisplay['values'], interactive: boolean): ChartSegment[] {
+export function entrySegments(result: QueryResult, mode: ChartDisplay['values'], interactive: boolean, clickHint = 'Click to see who answered'): ChartSegment[] {
   const m = result.measure.type;
   const total = result.entries.reduce((s, e) => s + e.value, 0);
-  const hint = interactive ? ' · Click to see who answered' : '';
+  const hint = interactive ? ` · ${clickHint}` : '';
   return result.entries.map((e) => {
     const percentage = m === 'count' ? e.share * 100 : m === 'sum' && total > 0 ? (e.value / total) * 100 : 0;
     const text = mode === 'percent' && percentAvailable(m) ? `${formatPercent(percentage)}%` : formatFigure(e.value);

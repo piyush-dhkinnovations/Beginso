@@ -25,13 +25,22 @@ import { StepBasics } from './StepBasics';
 import { StepConfigure } from './StepConfigure';
 import { StepSave } from './StepSave';
 import { ChartPreviewCard } from './ChartPreviewCard';
-import { STEP_HINTS, STEP_IDS, STEP_LABELS, blockingMessage, effectiveTitle, initialState, isDirty, stateFromChart, type WizardState } from './wizardState';
+import { DrillPlaceholder, DrillPreviewCard } from './DrillPreviewCard';
+import { STEP_IDS, blockingMessage, definitionOf, effectiveTitle, initialState, isDirty, stateFromChart, stepHint, stepLabel, type WizardState } from './wizardState';
 
 const HEADINGS = {
   kind: { title: 'Create chart', description: 'Choose what kind of chart you want to build.', step: 'What kind of chart?', intro: '' },
   basics: { title: 'Create simple chart', description: 'Give the chart a name and choose what to group the responses by.', step: 'Basic information', intro: 'These two things decide what the chart is about: its name, and the question whose answers become the bars.' },
   configure: { title: 'Create simple chart', description: 'Choose how each group is measured and which responses count.', step: 'Configure chart', intro: 'Choose how each group is measured, how the chart is drawn and sorted, and which responses are counted at all.' },
   save: { title: 'Create simple chart', description: 'Check how it looks, then save it to the dashboard.', step: 'Preview & save', intro: 'Make it look right, choose how big it is on the dashboard, and who can see it.' },
+} as const;
+
+/** The same, for a drill-down: it names the chart and sets what is counted first, then adds its levels. */
+const DRILL_HEADINGS = {
+  ...HEADINGS,
+  basics: { title: 'Create drill-down chart', description: 'Name the chart, choose how it is measured and which responses count.', step: 'Basic information', intro: 'What the chart is called, what each bar shows, and which responses are counted. The levels come next.' },
+  configure: { title: 'Create drill-down chart', description: 'Add the levels: each click on a bar opens the next one.', step: 'Drill-down levels', intro: 'Level 1 is the chart people see first. Clicking a bar shows that bar’s responses grouped by level 2, and so on.' },
+  save: { title: 'Create drill-down chart', description: 'Try it out, then save it to the dashboard.', step: 'Preview & save', intro: 'Make it look right, choose how big it is on the dashboard, and who can see it.' },
 } as const;
 
 /**
@@ -52,8 +61,8 @@ export function ChartWizard({ formId, chartId }: { formId: string; chartId?: str
   // Nothing is stored until the person changes something: until then the state is the defaults for this form's questions.
   const [edited, setEdited] = useState<WizardState | null>(null);
   const charts = useQuery({ queryKey: chartKeys.list(scope ?? 'pending', formId), queryFn: () => chartsService.list(formId, scope), enabled: !!chartId && !!scope });
-  const existing = chartId ? charts.data?.find((c) => c._id === chartId && c.kind === 'simple') : undefined;
-  const baseline = existing ? stateFromChart(existing) : fields ? initialState(fields) : null;
+  const existing = chartId ? charts.data?.find((c) => c._id === chartId && (c.kind === 'simple' || c.kind === 'drilldown')) : undefined;
+  const baseline = existing ? stateFromChart(existing, fields) : fields ? initialState(fields) : null;
   const state = edited ?? baseline;
   const [notice, setNotice] = useState<string | null>(null);
   const [confirmLeave, setConfirmLeave] = useState(false);
@@ -75,8 +84,9 @@ export function ChartWizard({ formId, chartId }: { formId: string; chartId?: str
   const save = useMutation({
     mutationFn: () => {
       const payload = {
-        definition: { ...state!.query, display: state!.query.display ?? DEFAULT_DISPLAY },
-        chartType: state!.chartType,
+        definition: { ...definitionOf(state!), display: state!.query.display ?? DEFAULT_DISPLAY },
+        // a drill-down draws each level by that level's own type; the chart's own is only "the page picks"
+        chartType: state!.kind === 'drilldown' ? ('auto' as const) : state!.chartType,
         size: state!.size,
         title: effectiveTitle(fields, state!),
         visibility: (state!.shared ? 'workspace' : 'private') as 'workspace' | 'private',
@@ -106,12 +116,14 @@ export function ChartWizard({ formId, chartId }: { formId: string; chartId?: str
   }
 
   const id = STEP_IDS[step];
-  const head = chartId ? { ...HEADINGS[id], title: id === 'kind' ? 'Edit chart' : 'Edit simple chart' } : HEADINGS[id];
+  const drill = state.kind === 'drilldown';
+  const headings = drill ? DRILL_HEADINGS : HEADINGS;
+  const head = chartId ? { ...headings[id], title: id === 'kind' ? 'Edit chart' : drill ? 'Edit drill-down chart' : 'Edit simple chart' } : headings[id];
   const canShare = scope !== 'personal' && !!role && hasCapability(role, 'forms:edit');
   const steps = STEP_IDS.map((s, i) => ({
-    label: STEP_LABELS[s],
-    hint: STEP_HINTS[s],
-    value: i === 0 ? 'Simple chart' : i === 1 ? form.title : undefined,
+    label: stepLabel(s, state.kind),
+    hint: stepHint(s, state.kind),
+    value: i === 0 ? (drill ? 'Drill-down chart' : 'Simple chart') : i === 1 ? form.title : undefined,
   }));
 
   const leave = () => {
@@ -173,7 +185,7 @@ export function ChartWizard({ formId, chartId }: { formId: string; chartId?: str
                     </h2>
                     <p className="bg-body-sm text-(--text-muted)">{head.intro}</p>
                   </header>
-                  {id === 'basics' && <StepBasics formTitle={form.title} fields={fields} state={state} onChange={patch} />}
+                  {id === 'basics' && <StepBasics formTitle={form.title} scope={scope} fields={fields} state={state} onChange={patch} />}
                   {id === 'configure' && <StepConfigure fields={fields} scope={scope} state={state} onChange={patch} />}
                   {id === 'save' && <StepSave state={state} onChange={patch} canShare={canShare} />}
                 </Card>
@@ -217,14 +229,18 @@ export function ChartWizard({ formId, chartId }: { formId: string; chartId?: str
 
               {/* the chart, beside the form on a wide screen (and in view while a long form scrolls), below it on a narrow one */}
               <div className="min-w-0 xl:sticky xl:top-24">
-                {id === 'basics' && <ChartPreviewCard formId={formId} scope={scope} fields={fields} state={state} onChartType={(chartType) => patch({ chartType })} />}
-                {id === 'configure' && <ChartPreviewCard formId={formId} scope={scope} fields={fields} state={state} />}
+                {id === 'basics' && (drill ? <DrillPlaceholder /> : <ChartPreviewCard formId={formId} scope={scope} fields={fields} state={state} onChartType={(chartType) => patch({ chartType })} />)}
+                {id === 'configure' && (drill ? <DrillPreviewCard formId={formId} scope={scope} fields={fields} state={state} /> : <ChartPreviewCard formId={formId} scope={scope} fields={fields} state={state} />)}
                 {id === 'save' && (
                   // The card as the dashboard will draw it: inside a strip that stands for one row of the dashboard, at the width the chosen size gives it.
                   <section aria-label="How it sits on the dashboard" className="flex flex-col gap-2">
                     <div className="rounded-xl border border-dashed border-(--border-default) bg-(--bg-subtle) p-3">
                       <div className="min-w-64 max-w-full" style={{ width: state.size === 'small' ? '34%' : state.size === 'medium' ? '51%' : '100%' }}>
-                        <ChartPreviewCard formId={formId} scope={scope} fields={fields} state={state} heading="Final preview" />
+                        {drill ? (
+                          <DrillPreviewCard formId={formId} scope={scope} fields={fields} state={state} showPath />
+                        ) : (
+                          <ChartPreviewCard formId={formId} scope={scope} fields={fields} state={state} heading="Final preview" />
+                        )}
                       </div>
                     </div>
                     <p className="bg-caption text-(--text-muted)">

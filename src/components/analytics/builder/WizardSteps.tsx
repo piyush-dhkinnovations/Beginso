@@ -42,7 +42,7 @@ export function WizardSteps({ steps, current, onGoTo }: WizardStepsProps) {
               >
                 {done ? <Check size={14} /> : i + 1}
               </span>
-              <span className={bx('min-w-0 flex-col text-left', isCurrent ? 'flex' : 'hidden lg:flex')}>
+              <span className={bx('min-w-0 flex-col text-left', isCurrent ? 'flex' : 'sr-only lg:not-sr-only lg:flex')}>
                 <span className={bx('truncate bg-body font-semibold', isCurrent ? 'text-(--text-primary)' : 'text-(--text-secondary)')}>
                   {step.label}
                   {done && <span className="sr-only"> (done)</span>}

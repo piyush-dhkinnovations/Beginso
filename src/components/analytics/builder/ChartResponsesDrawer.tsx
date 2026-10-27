@@ -10,17 +10,17 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useFormFields } from '@/hooks/useFormFields';
 import { responsesService } from '@/services/responses';
-import { serialiseChartFilter } from '@/lib/chartBuilder';
+import { pathOf, serialiseChartFilter } from '@/lib/chartBuilder';
 import { detectRespondentIdentity, formatResponseDate, shortId } from '@/lib/formatters';
-import type { ChartQuery, QueryEntry } from '@/types/chartBuilder';
+import type { AnyChartQuery, DrillStep, QueryEntry } from '@/types/chartBuilder';
 
 const PAGE = 20;
 
 /** The Responses page of a chart's group: the same filter code the chart used, so the number here is the number on the bar. */
-export function chartResponsesHref(scope: string, formId: string, query: ChartQuery, entry?: QueryEntry | null): string {
+export function chartResponsesHref(scope: string, formId: string, query: AnyChartQuery, entry?: QueryEntry | null, steps: DrillStep[] = []): string {
   const params = new URLSearchParams();
   if (scope !== 'personal') params.set('ws', scope);
-  params.set('chart', serialiseChartFilter(query, entry?.focus));
+  params.set('chart', serialiseChartFilter(query, entry?.focus, pathOf(steps)));
   return `/forms/${formId}/inbox?${params.toString()}`;
 }
 
@@ -30,9 +30,11 @@ interface ChartResponsesDrawerProps {
   formId: string;
   scope: string;
   chartTitle: string;
-  query: ChartQuery | null;
-  /** The group that was clicked. */
+  query: AnyChartQuery | null;
+  /** The group that was clicked (null for "all of a drill-down's current level"). */
   entry: QueryEntry | null;
+  /** A drill-down: the parts clicked on the way here, outermost first. */
+  steps?: DrillStep[];
   onOpenResponse: (id: string) => void;
 }
 
@@ -40,10 +42,11 @@ interface ChartResponsesDrawerProps {
  * The side screen that opens when a part of a chart is clicked: the responses behind it, 20 at a time, the same way the Responses page
  * opens a response. "Open in Responses" carries the chart's filter to the full list.
  */
-export function ChartResponsesDrawer({ isOpen, onClose, formId, scope, chartTitle, query, entry, onOpenResponse }: ChartResponsesDrawerProps) {
+export function ChartResponsesDrawer({ isOpen, onClose, formId, scope, chartTitle, query, entry, steps = [], onOpenResponse }: ChartResponsesDrawerProps) {
   const router = useRouter();
   const fields = useFormFields(formId);
-  const chart = query ? serialiseChartFilter(query, entry?.focus) : '';
+  const chart = query ? serialiseChartFilter(query, entry?.focus, pathOf(steps)) : '';
+  const trail = [...steps.map((s) => s.entry.label), ...(entry ? [entry.label] : [])].join(' › ');
 
   const list = useInfiniteQuery({
     queryKey: ['chart-responses', scope, formId, chart],
@@ -54,24 +57,25 @@ export function ChartResponsesDrawer({ isOpen, onClose, formId, scope, chartTitl
   });
   const total = list.data?.pages[0]?.total;
   const rows = list.data?.pages.flatMap((p) => p.data) ?? [];
-  const stale = entry && total !== undefined && total !== entry.n;
+  const expected = entry ? entry.n : steps.length ? steps[steps.length - 1].entry.n : undefined;
+  const stale = expected !== undefined && total !== undefined && total !== expected;
 
   return (
     <Drawer
       isOpen={isOpen && !!query}
       onClose={onClose}
-      title={entry ? (total !== undefined ? `${entry.label} - ${total.toLocaleString()} ${total === 1 ? 'response' : 'responses'}` : entry.label) : 'Responses'}
+      title={trail ? (total !== undefined ? `${trail} - ${total.toLocaleString()} ${total === 1 ? 'response' : 'responses'}` : trail) : 'Responses'}
       description={chartTitle}
     >
       <div className="flex flex-col gap-3">
         {query && (
-          <Button variant="secondary" size="small" className="self-start" onClick={() => router.push(chartResponsesHref(scope, formId, query, entry))}>
+          <Button variant="secondary" size="small" className="self-start" onClick={() => router.push(chartResponsesHref(scope, formId, query, entry, steps))}>
             Open in Responses
           </Button>
         )}
         {stale && (
           <p className="bg-caption text-(--text-muted)">
-            The chart counted {entry.n.toLocaleString()} here; {total.toLocaleString()} match now, because responses may have arrived since it loaded.
+            The chart counted {expected.toLocaleString()} here; {total.toLocaleString()} match now, because responses may have arrived since it loaded.
           </p>
         )}
 

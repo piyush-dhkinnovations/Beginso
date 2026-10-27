@@ -1,13 +1,13 @@
 import axiosInstance from '@/lib/axios';
 import { unwrapEnvelope } from '@/lib/apiEnvelope';
 import { workspaceHeaders } from '@/lib/workspaceHeaders';
-import type { BuilderChart, BuilderChartSize, BuilderChartType, ChartQuery, QueryResult } from '@/types/chartBuilder';
+import type { AnyChartQuery, BuilderChart, BuilderChartSize, BuilderChartType, PathStep, QueryResult } from '@/types/chartBuilder';
 
 // Charts v3 (see Beginso-Backend/src/utils/chartQuery.ts). A chart is saved with its whole query; the live preview runs the same query
 // without saving it. Responses are defensively unwrapped like the other services: the answer is either flat or under `chart`.
 
 export interface SaveChartPayload {
-  definition: ChartQuery;
+  definition: AnyChartQuery;
   chartType: BuilderChartType;
   size: BuilderChartSize;
   title: string;
@@ -17,10 +17,13 @@ export interface SaveChartPayload {
 const toChart = (raw: unknown): BuilderChart => unwrapEnvelope<BuilderChart>(raw, 'chart');
 
 export const chartBuilderService = {
-  /** Runs a chart that does not have to be saved (the wizard's live preview). `signal` cancels it when the person keeps typing. */
-  query: (formId: string, definition: ChartQuery, scope?: string, signal?: AbortSignal): Promise<QueryResult> =>
+  /**
+   * Runs a chart that does not have to be saved (the wizard's live preview). `signal` cancels it when the person keeps typing.
+   * `path` is a drill-down chart's parts already clicked, outermost first.
+   */
+  query: (formId: string, definition: AnyChartQuery, scope?: string, signal?: AbortSignal, path?: PathStep[]): Promise<QueryResult> =>
     axiosInstance
-      .post(`/api/forms/${formId}/charts/query`, { definition }, { headers: workspaceHeaders(scope), signal })
+      .post(`/api/forms/${formId}/charts/query`, { definition, ...(path?.length ? { path } : {}) }, { headers: workspaceHeaders(scope), signal })
       .then((r) => r.data as QueryResult),
 
   create: (formId: string, payload: SaveChartPayload, scope?: string): Promise<BuilderChart> =>

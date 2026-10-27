@@ -13,6 +13,11 @@ const FIELDS = [
   { fieldId: 'f-age', pageId: 'p1', label: 'Age', type: 'number', required: false, deleted: false, order: 2 },
   { fieldId: 'f-when', pageId: 'p1', label: 'Start date', type: 'date', required: false, deleted: false, order: 3 },
 ];
+const AGE = [
+  { key: '18', label: '18–27', n: 10 },
+  { key: '28', label: '28–37', n: 6 },
+  { key: '38', label: '38–47', n: 4 },
+];
 const PLAN = [
   { key: 'Pro', label: 'Pro', n: 20 },
   { key: 'Free', label: 'Free', n: 12 },
@@ -21,6 +26,7 @@ const PLAN = [
 
 interface Fake {
   queries: () => any[];
+  paths: () => any[][];
   created: () => any[];
   patched: () => any[];
   deleted: () => string[];
@@ -51,6 +57,7 @@ const chartRow = (id: string, position: number, title: string, extra: Record<str
 async function installBackend(context: BrowserContext, seed: any[] = []): Promise<Fake> {
   await context.addCookies([{ name: 'beginso_session', value: 'e2e.jwt', url: 'http://localhost:3100' }]);
   const queries: any[] = [];
+  const paths: any[][] = [];
   const created: any[] = [];
   const patched: any[] = [];
   const deleted: string[] = [];
@@ -63,19 +70,28 @@ async function installBackend(context: BrowserContext, seed: any[] = []): Promis
     _id: FORM_ID, workspaceId: null, title: 'Customer service', description: '', status: 'published', schemaVersion: 1, responseCount: 40, contentVersion: 1,
     createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z', pages: [{ id: 'p1', order: 0, title: 'Page' }], branding: {}, settings: {}, fields: FIELDS,
   };
-  const result = (def: any) => {
+  const result = (def: any, path: any[] = []) => {
     const filtered = !!def.filters;
-    const f = def.groupBy.field;
-    const entries =
-      f.kind === 'question' && f.fieldId === 'f-plan'
+    const drill = def.kind === 'drilldown';
+    const depth = path.length;
+    const f = drill ? def.levels[depth].field : def.groupBy.field;
+    const isAge = f.kind === 'question' && f.fieldId === 'f-age';
+    const parent = depth > 0 ? (PLAN.find((p) => p.key === path[0].key)?.n ?? 0) : 40;
+    const entries = isAge
+      ? AGE.map((a) => ({ key: a.key, label: a.label, value: a.n, n: a.n, share: a.n / 20, focus: { key: a.key, lo: Number(a.key), hi: Number(a.key) + 10 } }))
+      : f.kind === 'question' && f.fieldId === 'f-plan'
         ? PLAN.map((p) => ({ ...p, value: filtered ? Math.ceil(p.n / 2) : p.n, n: filtered ? Math.ceil(p.n / 2) : p.n, share: p.n / 40, focus: { key: p.key } }))
         : ['2026-08', '2026-09', '2026-10'].map((k, i) => ({ key: k, label: ['Aug 2026', 'Sep 2026', 'Oct 2026'][i], value: 10 + i, n: 10 + i, share: 0.25, focus: { key: k } }));
+    const next = drill && depth + 1 < def.levels.length ? def.levels[depth + 1].field : null;
     return {
-      level: { field: f, label: f.kind === 'question' ? 'Plan' : 'Submitted', kind: f.kind === 'question' ? 'choice' : 'time', ...(f.kind === 'system' ? { bucket: 'month' } : {}) },
-      fieldType: f.kind === 'question' ? 'dropdown' : 'submittedAt',
-      optionCount: f.kind === 'question' ? 3 : null,
+      depth,
+      levelCount: drill ? def.levels.length : 1,
+      nextLevel: next ? { field: next, label: next.kind === 'question' && next.fieldId === 'f-age' ? 'Age' : 'Plan' } : null,
+      level: { field: f, label: isAge ? 'Age' : f.kind === 'question' ? 'Plan' : 'Submitted', kind: isAge ? 'number' : f.kind === 'question' ? 'choice' : 'time', ...(f.kind === 'system' ? { bucket: 'month' } : {}) },
+      fieldType: isAge ? 'number' : f.kind === 'question' ? 'dropdown' : 'submittedAt',
+      optionCount: isAge ? null : f.kind === 'question' ? 3 : null,
       measure: { type: def.measure.type, label: 'Responses' },
-      total: filtered ? 20 : 40, answered: filtered ? 20 : 40, blank: 0, blankLabel: "didn't answer", measureAnswered: null,
+      total: filtered ? 20 : parent, answered: filtered ? 20 : parent, blank: 0, blankLabel: "didn't answer", measureAnswered: null,
       entries, shown: entries.length, totalGroups: entries.length, warnings: [], computedAt: new Date().toISOString(),
     };
   };
@@ -96,14 +112,15 @@ async function installBackend(context: BrowserContext, seed: any[] = []): Promis
     if (path === base && req.method() === 'POST') {
       const body = req.postDataJSON();
       created.push(body);
-      const chart = chartRow(`c${(n += 1)}`, store.length, body.title, { chartType: body.chartType, size: body.size, visibility: body.visibility, definition: body.definition });
+      const chart = chartRow(`c${(n += 1)}`, store.length, body.title, { chartType: body.chartType, size: body.size, visibility: body.visibility, definition: body.definition, kind: body.definition.kind, fieldId: 'f-plan' });
       store = [...store, chart];
       return json({ success: true, chart }, 201);
     }
     if (path === `${base}/query`) {
       const body = req.postDataJSON();
       queries.push(body.definition);
-      return json({ success: true, ...result(body.definition) });
+      paths.push(body.path ?? []);
+      return json({ success: true, ...result(body.definition, body.path ?? []) });
     }
     if (path === `${base}/order` && req.method() === 'PUT') {
       const { ids } = req.postDataJSON();
@@ -136,8 +153,11 @@ async function installBackend(context: BrowserContext, seed: any[] = []): Promis
     }
     if (path === 'api/responses' && req.method() === 'GET') {
       const chart = url.searchParams.get('chart');
-      const key = chart ? JSON.parse(chart).focus?.key : undefined;
-      const total = key ? (PLAN.find((p) => p.key === key)?.n ?? 0) : chart ? 40 : 40;
+      const parsed = chart ? JSON.parse(chart) : {};
+      const key = parsed.focus?.key;
+      const deep = (parsed.path ?? []).length > 0;
+      // a drill-down: the parts clicked narrow it, so the same group name counts differently one level down
+      const total = deep ? (key ? (AGE.find((a) => a.key === key)?.n ?? 0) : (PLAN.find((p) => p.key === parsed.path[0].key)?.n ?? 0)) : key ? (PLAN.find((p) => p.key === key)?.n ?? 0) : 40;
       const limit = Number(url.searchParams.get('limit') ?? 50);
       const rows = Array.from({ length: Math.min(total, limit) }, (_, i) => ({
         _id: `r${i}`, formId: FORM_ID, reference: `CUSTOM${String(i + 1).padStart(4, '0')}`, answers: { Name: `Person ${i + 1}`, Plan: key ?? 'Pro' }, respondentEmail: `person${i + 1}@example.com`,
@@ -150,7 +170,7 @@ async function installBackend(context: BrowserContext, seed: any[] = []): Promis
     if (req.method() === 'GET' && /workspaces|notifications|members|stages|tags|views|activity|response-setup/.test(path)) return json([]);
     return json({});
   });
-  return { queries: () => queries, created: () => created, patched: () => patched, deleted: () => deleted, orders: () => orders, duplicated: () => duplicated };
+  return { queries: () => queries, paths: () => paths, created: () => created, patched: () => patched, deleted: () => deleted, orders: () => orders, duplicated: () => duplicated };
 }
 
 const openInsights = async (page: Page, width = 1440) => {
@@ -169,6 +189,12 @@ const openCardMenu = async (page: Page, title: string) => {
   }).toPass({ timeout: 15000 });
 };
 const next = (page: Page) => page.getByRole('button', { name: 'Next' });
+const toDrillBasics = async (page: Page) => {
+  await page.getByRole('button', { name: 'Add chart' }).first().click();
+  await expect(page.getByRole('heading', { name: 'What kind of chart?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Continue' }).nth(1).click();
+  await expect(page.getByLabel('Chart title')).toBeVisible();
+};
 const toBasics = async (page: Page) => {
   await page.getByRole('button', { name: 'Add chart' }).first().click();
   await expect(page.getByRole('heading', { name: 'What kind of chart?' })).toBeVisible();
@@ -214,6 +240,88 @@ test.describe('Chart builder', () => {
     await expect(page.getByText('20 responses').first()).toBeVisible({ timeout: 60000 });
     await expect(page.getByText('From a chart')).toBeVisible();
   });
+
+  test('a drill-down: two levels, an interactive preview, saved on the dashboard; a click opens the next level, the last one opens the responses in the side screen', async ({ page, context }, testInfo) => {
+    const fake = await installBackend(context);
+    await openInsights(page);
+    await toDrillBasics(page);
+    await expect(page.getByRole('heading', { name: 'Create drill-down chart' })).toBeVisible();
+    await expect(page.getByLabel('Chart title')).toHaveValue('Responses by Plan, then Age');
+    await expect(page.getByText('Add the levels in the next step to see your chart preview.')).toBeVisible();
+    await expect(page.getByLabel('Aggregation')).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath('drill-basics.png') });
+    await next(page).click();
+
+    await expect(page.getByRole('heading', { name: 'Drill-down levels', level: 2 })).toBeFocused();
+    await expect(page.locator('#level-0-field')).toHaveValue('q:f-plan');
+    await expect(page.locator('#level-1-field')).toHaveValue('q:f-age');
+    await expect(page.getByRole('button', { name: 'Remove level 1' })).toBeDisabled();
+    await page.screenshot({ path: testInfo.outputPath('drill-levels.png') });
+    await next(page).click();
+
+    await expect(page.getByRole('heading', { name: 'Preview & save' })).toBeFocused();
+    const preview = page.getByRole('region', { name: 'Interactive preview' });
+    await expect(preview.getByRole('navigation', { name: 'Drill-down path' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Drill-down path levels' })).toBeVisible();
+    await preview.getByRole('button', { name: 'Show as a table' }).click();
+    await preview.getByRole('button', { name: 'See responses: Pro' }).click();
+    await expect(preview.getByText(/Level 2 of 2: by Age/)).toBeVisible();
+    await expect.poll(() => fake.paths().at(-1)).toEqual([{ level: 0, key: 'Pro' }]);
+    await page.screenshot({ path: testInfo.outputPath('drill-preview-level-2.png') });
+    await page.getByRole('button', { name: 'Save to dashboard' }).click();
+
+    await expect(page).toHaveURL(/\/insights$/);
+    expect(fake.created()[0]).toMatchObject({ title: 'Responses by Plan, then Age', chartType: 'auto', definition: { kind: 'drilldown', levels: [{ field: { fieldId: 'f-plan' } }, { field: { fieldId: 'f-age' } }] } });
+    const card = page.getByLabel('Responses by Plan, then Age', { exact: true });
+    await expect(card).toBeVisible();
+    await expect(card.getByText('Drill-down', { exact: true })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath('drill-dashboard.png') });
+
+    await card.getByRole('button', { name: 'Show as a table' }).click();
+    await card.getByRole('button', { name: 'See responses: Pro' }).click();
+    await expect(card.getByText(/Level 2 of 2: by Age/)).toBeVisible();
+    await expect(card.getByRole('button', { name: 'See these 20 responses' })).toBeVisible();
+    await card.getByRole('button', { name: 'See responses: 18–27' }).click();
+    const drawer = page.getByRole('dialog');
+    await expect(drawer.getByRole('heading', { name: 'Pro › 18–27 - 10 responses' })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath('drill-responses-side-screen.png') });
+    await drawer.getByRole('button', { name: 'Open in Responses' }).click();
+    await expect(page).toHaveURL(/\/inbox\?.*chart=/);
+    expect(decodeURIComponent(page.url())).toContain('"path":[{"level":0,"key":"Pro"}]');
+    await expect(page.getByText('10 responses').first()).toBeVisible({ timeout: 60000 });
+  });
+
+  for (const width of [360, 1440]) {
+    test(`${width}px: the drill-down levels and the interactive preview fit the screen, and axe is clean`, async ({ page, context }, testInfo) => {
+      await installBackend(context);
+      await openInsights(page, width);
+      await toDrillBasics(page);
+      expect(await page.evaluate(NO_SCROLL)).toBe(true);
+      await page.addScriptTag({ path: require.resolve('axe-core/axe.min.js') });
+      const check = async (where: string) => {
+        await page.waitForTimeout(700); // a change asks again after 250 ms; check the chart once it has settled
+        await expect(page.locator('[aria-busy="true"]')).toHaveCount(0);
+        const violations = await page.evaluate(async () => {
+          const r = await (window as any).axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa'] } });
+          return r.violations.map((v: any) => `${v.id}: ${v.nodes.map((n: any) => n.target.join(' ')).join(' | ')}`);
+        });
+        expect(violations, where).toEqual([]);
+      };
+      await check('drill-down basics');
+      await next(page).click();
+      await page.getByRole('button', { name: 'Add level' }).click();
+      await expect(page.locator('#level-2-field')).toBeVisible();
+      expect(await page.evaluate(NO_SCROLL)).toBe(true);
+      await page.screenshot({ path: testInfo.outputPath(`drill-levels-${width}.png`) });
+      await check('drill-down levels');
+      await next(page).click();
+      await expect(page.getByRole('heading', { name: 'Preview & save' })).toBeVisible();
+      await expect(page.getByRole('region', { name: 'Drill-down path levels' })).toBeVisible();
+      expect(await page.evaluate(NO_SCROLL)).toBe(true);
+      await page.screenshot({ path: testInfo.outputPath(`drill-save-${width}.png`) });
+      await check('drill-down preview and save');
+    });
+  }
 
   test('the first step fits one screen: pictures are a fixed height, and the page does not scroll up and down', async ({ page, context }, testInfo) => {
     await installBackend(context);

@@ -4,7 +4,7 @@ import { Select } from '@/components/ui/Select';
 import { Card } from '@/components/ui/Card';
 import { useChartQuery } from '@/hooks/useChartQuery';
 import { ChartResult } from './ChartResult';
-import { autoChartType, CHART_TYPE_NAME, chartTypeChoices, kindOfRef, optionCountOf } from '@/lib/chartBuilder';
+import { chartTypeOptionList, kindOfRef, optionCountOf } from '@/lib/chartBuilder';
 import { effectiveTitle, type WizardState } from './wizardState';
 import type { FormField } from '@/types/form';
 import type { BuilderChartType, QueryEntry } from '@/types/chartBuilder';
@@ -23,13 +23,8 @@ interface ChartPreviewCardProps {
 
 /** "Automatic: Donut chart" first, then the types; a type that does not fit is listed with why, and cannot be picked. */
 export function chartTypeOptions(fields: readonly FormField[] | undefined, state: WizardState) {
-  const kind = kindOfRef(fields, state.query.groupBy.field);
-  const measure = state.query.measure.type;
-  const auto = autoChartType(kind, measure, optionCountOf(fields, state.query.groupBy.field));
-  return [
-    { value: 'auto', label: `Automatic: ${CHART_TYPE_NAME[auto]}`, disabled: false },
-    ...chartTypeChoices(kind, measure).map((c) => ({ value: c.type, label: c.enabled ? CHART_TYPE_NAME[c.type] : `${CHART_TYPE_NAME[c.type]} (${(c.reason ?? '').replace(/\.$/, '').toLowerCase()})`, disabled: !c.enabled })),
-  ];
+  const ref = state.query.groupBy.field;
+  return chartTypeOptionList(kindOfRef(fields, ref), state.query.measure.type, optionCountOf(fields, ref));
 }
 
 /** The live chart: its title, an optional chart-type select, and the answer for the chart as it is being built. */

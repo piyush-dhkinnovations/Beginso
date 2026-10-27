@@ -4,15 +4,23 @@ import {
   addGroup,
   autoChartType,
   chartTypeChoices,
+  chartTypeOptionList,
   conditionCount,
   defaultQuery,
+  defaultLevels,
   describeFilters,
   filtersComplete,
   generateTitle,
   groupableFields,
+  isDrill,
   kindOfRef,
+  levelAsSimple,
+  levelFieldChoices,
+  levelFor,
+  nextLevelField,
   numericFields,
   optionCountOf,
+  pathOf,
   percentAvailable,
   refFromValue,
   refValue,
@@ -23,7 +31,7 @@ import {
   updateCondition,
 } from '@/lib/chartBuilder';
 import type { FormField } from '@/types/form';
-import type { ChartQuery, FilterCondition, FilterGroup } from '@/types/chartBuilder';
+import type { ChartQuery, DrillQuery, FilterCondition, FilterGroup, QueryEntry } from '@/types/chartBuilder';
 
 const f = (fieldId: string, type: string, label: string, order: number, extra: Record<string, unknown> = {}) => ({ fieldId, type, label, order, deleted: false, required: false, ...extra }) as unknown as FormField;
 const FIELDS = [
@@ -200,5 +208,68 @@ describe('the link to the Responses', () => {
     expect(parsed.definition.filters.items[0].value).toBe(25);
     expect(parsed.focus).toEqual({ key: 'Pro' });
     expect(JSON.parse(serialiseChartFilter(q)).focus).toBeUndefined();
+  });
+});
+
+describe('drill-down charts', () => {
+  const drill: DrillQuery = { kind: 'drilldown', measure: { type: 'count' }, levels: [{ field: { kind: 'question', fieldId: 'plan' } }, { field: { kind: 'question', fieldId: 'yn' } }, { field: { kind: 'question', fieldId: 'when' }, bucket: 'year' }] };
+  const entry = (key: string, extra: Record<string, unknown> = {}): QueryEntry => ({ key, label: key, value: 1, n: 1, share: 1, focus: { key, ...extra } });
+
+  it('starts from the first two choice questions, then any other question, then the response details', () => {
+    expect(defaultLevels(FIELDS).map((l) => (l.field as { fieldId: string }).fieldId)).toEqual(['plan', 'yn']);
+    const numbersOnly = [f('age', 'number', 'Age', 0), f('when', 'date', 'Start date', 1)];
+    expect(defaultLevels(numbersOnly)).toEqual([{ field: { kind: 'question', fieldId: 'age' } }, { field: { kind: 'question', fieldId: 'when' }, bucket: 'month' }]);
+    expect(defaultLevels([]).map((l) => l.field)).toEqual([{ kind: 'system', key: 'stage' }, { kind: 'system', key: 'tags' }]);
+  });
+
+  it('gives a date level a grouping, and nothing else one', () => {
+    expect(levelFor(FIELDS, { kind: 'question', fieldId: 'when' })).toEqual({ field: { kind: 'question', fieldId: 'when' }, bucket: 'month' });
+    expect(levelFor(FIELDS, { kind: 'system', key: 'submittedAt' }).bucket).toBe('month');
+    expect(levelFor(FIELDS, { kind: 'question', fieldId: 'plan' }).bucket).toBeUndefined();
+  });
+
+  it('offers a level every field the other levels do not use, and Add level the first of them', () => {
+    const levels = drill.levels.slice(0, 2);
+    const offered = levelFieldChoices(FIELDS, levels, 0).map((c) => c.label);
+    expect(offered).toContain('Plan'); // its own field stays
+    expect(offered).not.toContain('Subscribed'); // another level's does not
+    expect(offered).toEqual(expect.arrayContaining(['Age', 'Rating', 'Response stage', 'Submitted date']));
+    expect(nextLevelField(FIELDS, levels)).toEqual({ kind: 'question', fieldId: 'age' });
+    const all = [...groupableFields(FIELDS).map((x) => levelFor(FIELDS, { kind: 'question', fieldId: x.fieldId })), ...(['stage', 'assignee', 'tags', 'submittedAt'] as const).map((key) => levelFor(FIELDS, { kind: 'system', key }))];
+    expect(nextLevelField(FIELDS, all)).toBeUndefined();
+  });
+
+  it('names a drill-down by its levels, a date as "date", and keeps the measure and the filters in the words', () => {
+    expect(generateTitle(FIELDS, drill)).toBe('Responses by Plan, then Subscribed, then Start date');
+    expect(generateTitle(FIELDS, { ...drill, measure: { type: 'avg', field: { kind: 'question', fieldId: 'age' } }, levels: drill.levels.slice(0, 2), filters: { op: 'and', items: [cond('rate', 'gte', 4)] } })).toBe('Average Age by Plan, then Subscribed (Rating ≥ 4)');
+    expect(generateTitle(FIELDS, { ...drill, levels: [{ field: { kind: 'system', key: 'submittedAt' }, bucket: 'month' }, drill.levels[0]] })).toBe('Responses by date, then Plan');
+    expect(generateTitle(FIELDS, drill).length).toBeLessThanOrEqual(80);
+  });
+
+  it('knows a drill-down from a simple chart, and what one level counts', () => {
+    expect(isDrill(drill)).toBe(true);
+    expect(isDrill(defaultQuery(FIELDS))).toBe(false);
+    expect(isDrill(null)).toBe(false);
+    const level = levelAsSimple({ ...drill, filters: { op: 'and', items: [cond('age', 'gt', 1)] } }, 2);
+    expect(level).toMatchObject({ kind: 'simple', measure: { type: 'count' }, groupBy: { field: { kind: 'question', fieldId: 'when' }, bucket: 'year' }, sort: null });
+    expect(level.filters?.items).toHaveLength(1);
+  });
+
+  it('sends the clicked parts to the server as level + focus, and into the Responses link with the group', () => {
+    const steps = [{ level: 0, entry: entry('Pro') }, { level: 1, entry: entry('18', { lo: 18, hi: 28 }) }];
+    expect(pathOf(steps)).toEqual([{ level: 0, key: 'Pro' }, { level: 1, key: '18', lo: 18, hi: 28 }]);
+    const parsed = JSON.parse(serialiseChartFilter(drill, { key: 'Yes' }, pathOf(steps)));
+    expect(parsed.definition.kind).toBe('drilldown');
+    expect(parsed.path).toHaveLength(2);
+    expect(parsed.focus).toEqual({ key: 'Yes' });
+    expect(JSON.parse(serialiseChartFilter(drill, undefined, [])).path).toBeUndefined();
+  });
+
+  it('lists the chart types a level can draw, "Automatic" first and named for the field', () => {
+    const options = chartTypeOptionList('time', 'count', null);
+    expect(options[0]).toEqual({ value: 'auto', label: 'Automatic: Line chart', disabled: false });
+    expect(options.find((o) => o.value === 'donut')?.disabled).toBe(true);
+    expect(chartTypeOptionList('choice', 'count', 3)[0].label).toBe('Automatic: Donut chart');
+    expect(chartTypeOptionList('choice', 'avg', 3).find((o) => o.value === 'donut')?.disabled).toBe(true);
   });
 });

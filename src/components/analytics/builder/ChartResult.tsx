@@ -24,6 +24,8 @@ interface ChartResultProps {
   display: ChartDisplay;
   /** A click on a group (a bar, a slice, a point, a row of the table). Omit for a chart that only shows. */
   onSelect?: (entry: QueryEntry) => void;
+  /** What a click does, in the tooltip (default: shows who answered). */
+  selectHint?: string;
   /** Title for assistive tech. */
   label: string;
   height?: number;
@@ -34,7 +36,7 @@ interface ChartResultProps {
  * numbers for people who cannot use the picture, and plain lines under it about the people who did not answer, a short list and so on.
  * Every state has words: loading is a skeleton shaped like the chart, an error says so and can retry, nothing found says so.
  */
-export function ChartResult({ result, isLoading, isError, refreshing, onRetry, chartType, display, onSelect, label, height = 240 }: ChartResultProps) {
+export function ChartResult({ result, isLoading, isError, refreshing, onRetry, chartType, display, onSelect, selectHint, label, height = 240 }: ChartResultProps) {
   const [tableOpen, setTableOpen] = useState(false);
   const tableId = useId();
 
@@ -57,7 +59,7 @@ export function ChartResult({ result, isLoading, isError, refreshing, onRetry, c
   const warnings = result.warnings.filter((w) => w.code !== 'top_groups');
   const topNote = result.warnings.find((w) => w.code === 'top_groups');
   const type = resolveChartType(chartType, result.level.kind, result.measure.type, result.optionCount);
-  const segments = entrySegments(result, display.values, !!onSelect);
+  const segments = entrySegments(result, display.values, !!onSelect, selectHint);
   const select = onSelect ? (s: { key: string }) => onSelect(result.entries.find((e) => e.key === s.key) ?? result.entries[0]) : undefined;
   const hasData = result.entries.some((e) => e.value > 0 || e.n > 0);
   const based = result.measureAnswered !== null ? ` · based on ${result.measureAnswered.toLocaleString()} ${result.measureAnswered === 1 ? 'answer' : 'answers'}` : '';
