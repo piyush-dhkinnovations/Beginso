@@ -22,6 +22,14 @@ describe('ContextSwitcher component', () => {
   });
 });
 
+describe('ContextSwitcher marks are one shape', () => {
+  it('the person glyph has no tile, border or background of its own inside the trigger', () => {
+    const { container } = render(<ContextSwitcher />);
+    const svg = container.querySelector('button svg') as SVGElement;
+    expect(svg.parentElement?.className).not.toMatch(/border|bg-|rounded/);
+  });
+});
+
 // sprint-8-workspaces-context, requirements.md §7.2 — the real dropdown Sprint 7 deferred.
 describe('ContextSwitcher — real dropdown (sprint-8, Day 2)', () => {
   const workspaces = [

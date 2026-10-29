@@ -38,22 +38,22 @@ export interface ContextSwitcherProps {
 
 // The icon slot: the workspace's own logo when it has one, otherwise the BeginSo mark (workspace) or the person glyph (Personal).
 function ContextAvatar({ logo, Icon, size }: { logo?: string | null; Icon: typeof User; size: "sm" | "lg" }) {
-  // A workspace with its own logo shows the logo alone (no box, border or background around it); the glyph keeps its quiet tile.
+  // Every mark is ONE shape: a logo alone, the BeginSo mark alone, the person glyph alone, with no tile, border or background of its own (the trigger button and the list row are the only boxes).
   if (logo) {
     return <LogoImage key={logo} src={logo} size={size === "lg" ? 40 : 24} />;
   }
   // A workspace that chose "BeginSo default" (no logo) shows the BeginSo mark, not a generic building; Personal keeps the person glyph.
   if (Icon === Building2) {
     return (
-      <span aria-hidden="true" className={bx("flex shrink-0 items-center justify-center overflow-hidden border border-(--border-default) bg-(--surface-card)", size === "lg" ? "size-10 rounded-md" : "size-6 rounded")}>
+      <span aria-hidden="true" className={bx("flex shrink-0 items-center justify-center", size === "lg" ? "size-10" : "size-6")}>
         {/* eslint-disable-next-line @next/next/no-img-element -- local brand mark */}
-        <img src="/favicon.svg" alt="" className={size === "lg" ? "size-6" : "size-4"} />
+        <img src="/favicon.svg" alt="" className={size === "lg" ? "size-7" : "size-5"} />
       </span>
     );
   }
   return (
-    <span aria-hidden="true" className={bx("flex shrink-0 items-center justify-center overflow-hidden border border-(--border-default) bg-(--bg-subtle)", size === "lg" ? "size-10 rounded-md" : "size-6 rounded")}>
-      <Icon className={size === "lg" ? "w-5 h-5 text-(--text-muted)" : "w-3.5 h-3.5 text-(--text-muted)"} />
+    <span aria-hidden="true" className={bx("flex shrink-0 items-center justify-center", size === "lg" ? "size-10" : "size-6")}>
+      <Icon className={size === "lg" ? "w-6 h-6 text-(--text-muted)" : "w-4 h-4 text-(--text-muted)"} />
     </span>
   );
 }
