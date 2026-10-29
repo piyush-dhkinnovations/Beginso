@@ -114,5 +114,28 @@ export function useBuilderPublishFlow({
     router.push(`/forms/${id}/preview`);
   }, [dirty, formId, fields, formTitle, pages, branding, settings, markSaved, id, queryClient, router, toast, setSaveState]);
 
-  return { showPublishModal, setShowPublishModal, handleStatusChange, handlePublishClick, handleChangeSetting, handleFixField, handlePreview };
+  // The same, in a NEW tab, for "Full screen" in the Branding studio: the editor stays where it is. The tab is opened at once, while the click
+  // still counts (a browser blocks one opened after a wait), and sent to the preview when the save is done; a failed save closes it again.
+  const handlePreviewInNewTab = useCallback(async () => {
+    const tab = window.open('about:blank', '_blank');
+    if (dirty && formId && formId !== 'undefined') {
+      try {
+        setSaveState('saving');
+        await saveFormSnapshot(formId, { fields, formTitle, pages, branding, settings });
+        markSaved();
+        setSaveState('saved');
+      } catch {
+        setSaveState('error');
+        tab?.close();
+        toast('Could not save your changes, so the preview was not opened. Please try again.', 'error');
+        return;
+      }
+    }
+    queryClient.removeQueries({ queryKey: ['form', id] });
+    // ?bare=1: the form alone, filling the tab (the preview bar is for the editor's own Preview)
+    if (tab) tab.location.href = `/forms/${id}/preview?bare=1`;
+    else toast('Your browser blocked the new tab. Allow pop-ups for this site, or use Preview.', 'error');
+  }, [dirty, formId, fields, formTitle, pages, branding, settings, markSaved, id, queryClient, toast, setSaveState]);
+
+  return { showPublishModal, setShowPublishModal, handleStatusChange, handlePublishClick, handleChangeSetting, handleFixField, handlePreview, handlePreviewInNewTab };
 }

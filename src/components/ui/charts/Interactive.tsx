@@ -14,6 +14,8 @@ export interface ChartSegment {
   /** Raw value - what a drill-down sends to the server. */
   key: string;
   label: string;
+  /** A shorter name for the axis under the bar, where room is tight ("24 Aug"); the tooltip and screen readers keep the full `label`. */
+  axisLabel?: string;
   count: number;
   percentage: number;
   /** The display figure (a count or a percentage). */
@@ -260,7 +262,7 @@ export function BarsChart({
               <rect x={cx - band / 2} y={PAD.top} width={band} height={plotH} fill={on ? 'var(--surface-hover)' : 'transparent'} />
               <rect x={cx - bw / 2} y={y(d.count)} width={bw} height={Math.max(y(0) - y(d.count), d.count > 0 ? 2 : 0)} rx={Math.min(5, bw / 2)} fill={colorOf(i)} stroke={on && bw >= 4 ? 'var(--text-primary)' : 'none'} strokeWidth={2} />
               {(dataLabels === undefined ? band >= 34 : dataLabels && band >= 18) && <text x={cx} y={y(d.count) - 5} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--text-primary)" aria-hidden="true">{d.text}</text>}
-              {show.has(i) && <text x={cx} y={height - 10} textAnchor="middle" fontSize="11" fill="var(--text-muted)" aria-hidden="true">{clip(d.label, labelChars)}</text>}
+              {show.has(i) && <text x={cx} y={height - 10} textAnchor="middle" fontSize="11" fill="var(--text-muted)" aria-hidden="true">{clip(d.axisLabel ?? d.label, labelChars)}</text>}
             </g>
           );
         })}
@@ -321,7 +323,7 @@ export function LineAreaChart({ data, ariaLabel, onSelect, area, height = 220 }:
             <g key={d.key} {...nav.itemProps(i)}>
               <rect x={x(i) - band / 2} y={PAD.top} width={band} height={plotH} fill={on ? 'var(--surface-hover)' : 'transparent'} />
               {(on || data.length <= 24) && <circle cx={x(i)} cy={y(d.count)} r={on ? 6 : 3.5} fill="var(--surface-card)" stroke={CHART_COLOR.primary} strokeWidth="2.5" />}
-              {show.has(i) && <text x={x(i)} y={height - 10} textAnchor="middle" fontSize="11" fill="var(--text-muted)" aria-hidden="true">{d.label}</text>}
+              {show.has(i) && <text x={x(i)} y={height - 10} textAnchor="middle" fontSize="11" fill="var(--text-muted)" aria-hidden="true">{d.axisLabel ?? d.label}</text>}
             </g>
           );
         })}

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { bx } from '@/lib/utils';
+import { uploadSrc } from '@/lib/uploadSrc';
 
 /**
  * An uploaded logo that never leaves a hole while it loads: a quiet tile holds its place (same size, so nothing jumps), the picture fades
@@ -23,7 +24,7 @@ export function LogoImage({ src, size, margin = 0, className }: { src: string; s
             // a picture that was already in the browser's cache finished before React could listen
             if (img?.complete && img.naturalWidth > 0 && state === 'loading') setState('ready');
           }}
-          src={src}
+          src={uploadSrc(src)}
           alt=""
           decoding="async"
           onLoad={() => setState('ready')}

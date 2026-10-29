@@ -11,7 +11,3 @@ export { terms, privacy, cookiePolicy, acceptableUse, fairUse, dpa };
 
 /** All policy documents, in the order they should be listed (e.g. in the Footer). */
 export const ALL_POLICIES: PolicyDoc[] = [terms, privacy, cookiePolicy, acceptableUse, fairUse, dpa];
-
-export function getPolicyBySlug(slug: string): PolicyDoc | undefined {
-  return ALL_POLICIES.find((p) => p.slug === slug);
-}

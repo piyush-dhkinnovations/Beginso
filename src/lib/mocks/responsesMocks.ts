@@ -8,7 +8,6 @@
 import type {
   IResponse,
   IResponseFile,
-  PaginatedResponsesResult,
   ResponseAnswers,
   ResponseDetail,
 } from '@/types/response';
@@ -61,17 +60,6 @@ function makeResponse(overrides: Partial<IResponse> = {}): IResponse {
   };
 }
 
-export function mockResponsesList(overrides: Partial<PaginatedResponsesResult> = {}): PaginatedResponsesResult {
-  const data: IResponse[] = [
-    makeResponse({ _id: 'resp-1', status: 'new', submittedAt: '2026-08-03T09:50:00.000Z' }),
-    makeResponse({ _id: 'resp-2', status: 'in_progress', submittedAt: '2026-08-03T08:30:00.000Z', answers: pickAnswers(['Phone Number', 'Years of Experience']) }),
-    makeResponse({ _id: 'resp-3', status: 'completed', submittedAt: '2026-08-02T17:10:00.000Z', answers: pickAnswers(['Country', 'Referral Source']) }),
-    makeResponse({ _id: 'resp-4', status: 'new', submittedAt: '2026-08-02T11:05:00.000Z', answers: pickAnswers(['Topics']) }),
-    makeResponse({ _id: 'resp-5', status: 'completed', submittedAt: '2026-08-01T14:22:00.000Z', answers: pickAnswers(['Full Name', 'Comments']) }),
-  ];
-  return { data, total: data.length, page: 1, limit: 50, totalPages: 1, ...overrides };
-}
-
 export function mockResponseDetail(id = 'resp-1', overrides: Partial<ResponseDetail> = {}): ResponseDetail {
   const responseFiles: IResponseFile[] = [
     {
@@ -88,8 +76,4 @@ export function mockResponseDetail(id = 'resp-1', overrides: Partial<ResponseDet
     responseFiles,
     ...overrides,
   };
-}
-
-export function mockFileUrl(): { url: string } {
-  return { url: 'https://mock-r2.example.com/resume.pdf' };
 }

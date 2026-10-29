@@ -163,6 +163,11 @@ export interface FormMark {
   iconName?: string | null;
 }
 
+export interface BannerLink {
+  label?: string;
+  url: string;
+}
+
 export interface FormBranding {
   primaryColor?: string;   // hex color — overrides workspace default when set
   logoUrl?: string;
@@ -183,6 +188,8 @@ export interface FormBranding {
   formWidth?: FormWidth;         // default 'standard' — how wide the form card is
   backgroundImageUrl?: string;   // the owner's own picture, used when backgroundStyle is 'image'
   backgroundColor?: string;      // hex the page background is built from; absent = the primary colour
+  bannerText?: string;           // a line of text under the title on the form's header
+  bannerLinks?: BannerLink[];    // up to 5 links on the form's header (http or https only)
 }
 
 // Sprint 13 (builder-publish-respondent), design.md §13. Six presets replace the three V1 layout
@@ -313,18 +320,6 @@ export interface UpdateFormPayload {
 }
 
 // ─── API Response Types ───────────────────────────────────────────────────────
-
-export interface FormsListResponse {
-  forms: Form[];
-  total: number;
-  page: number;
-  limit: number;
-}
-
-export interface CreateFormResponse {
-  _id: string;
-  title: string;
-}
 
 // ─── Templates Gallery ────────────────────────────────────────────────────────
 

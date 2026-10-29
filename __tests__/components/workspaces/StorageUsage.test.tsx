@@ -23,6 +23,16 @@ describe('StorageUsage', () => {
     expect(screen.getByRole('link', { name: /free up space/i })).toHaveAttribute('href', '/trash');
   });
 
+  it('a small amount against a large quota still shows a visible sliver, not an empty bar', () => {
+    usage.mockReturnValue({ storageUsedBytes: 5.6 * MB, storageTrashBytes: 0.22 * MB, storageQuotaBytes: 500 * MB });
+    render(<StorageUsage />);
+    expect(screen.getByText('5.6 MB of 500 MB')).toBeInTheDocument();
+    const bar = screen.getByRole('progressbar');
+    for (const segment of bar.children) {
+      expect(parseFloat((segment as HTMLElement).style.width)).toBeGreaterThanOrEqual(1.5);
+    }
+  });
+
   it('renders nothing on a server without the quota fields', () => {
     usage.mockReturnValue({ id: 'u' });
     const { container } = render(<StorageUsage />);

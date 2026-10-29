@@ -25,15 +25,13 @@ export interface LayoutFrameProps {
   children: ReactNode;
 }
 
-export const DEFAULT_PRIMARY = '#1D4ED8';
-
 /** Page background + centring. The page is washed with the brand colour and the card is centred in the viewport, so a
  *  short form never floats at the top of an empty grey page. `min-h-screen` is dropped in preview so the shell never
  *  forces a second full-viewport box inside the preview frame. Also carries the form's typeface and type scale. */
 export function Backdrop({ branding, previewMode, children }: { branding: PublicFormBranding; previewMode?: boolean; children: ReactNode }) {
   const style: CSSProperties = { ...brandWashStyle(branding), ...brandTypeStyle(branding) };
   return (
-    <div className={`flex flex-col ${previewMode ? 'min-h-full' : 'min-h-screen'}`} style={style}>
+    <div className={`bg-form-type flex flex-col ${previewMode ? 'min-h-full' : 'min-h-screen'}`} style={style}>
       <div className={`flex flex-1 justify-center items-start md:items-center ${branding.backgroundStyle === 'none' ? 'p-2' : 'p-4 md:p-10'}`}>
         {children}
       </div>

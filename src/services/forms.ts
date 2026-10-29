@@ -33,7 +33,7 @@ const BRANDING_ENUMS: Record<string, readonly string[]> = {
   coverFit: ['banner', 'original'],
   backgroundStyle: ['wash', 'plain', 'solid', 'gradient', 'mesh', 'dots', 'grid', 'image'],
 };
-const BRANDING_STRINGS = ['logoUrl', 'coverImageUrl', 'backgroundImageUrl'];
+const BRANDING_STRINGS = ['logoUrl', 'coverImageUrl', 'backgroundImageUrl', 'bannerText'];
 
 export function sanitizeBranding(raw: Record<string, unknown> | undefined | null): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -44,6 +44,11 @@ export function sanitizeBranding(raw: Record<string, unknown> | undefined | null
   for (const k of BRANDING_STRINGS) if (typeof raw[k] === 'string' && (raw[k] as string).trim()) out[k] = raw[k];
   for (const [k, allowed] of Object.entries(BRANDING_ENUMS)) if (typeof raw[k] === 'string' && allowed.includes(raw[k] as string)) out[k] = raw[k];
   if (typeof raw.showProgress === 'boolean') out.showProgress = raw.showProgress;
+  // a link with no address yet (a row just added in the studio) is not saved
+  if (Array.isArray(raw.bannerLinks)) {
+    const links = (raw.bannerLinks as { label?: string; url?: string }[]).filter((l) => l?.url?.trim()).map((l) => ({ ...(l.label?.trim() ? { label: l.label.trim() } : {}), url: l.url!.trim() }));
+    if (links.length) out.bannerLinks = links;
+  }
   return out;
 }
 

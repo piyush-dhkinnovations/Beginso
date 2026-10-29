@@ -70,7 +70,6 @@ export const numericFields = (fields: readonly FormField[] | undefined): FormFie
 
 export const refValue = (ref: FieldRef): string => (ref.kind === 'question' ? `q:${ref.fieldId}` : `s:${ref.key}`);
 export const refFromValue = (value: string): FieldRef => (value.startsWith('s:') ? { kind: 'system', key: value.slice(2) as SystemKey } : { kind: 'question', fieldId: value.slice(2) });
-export const sameRef = (a: FieldRef, b: FieldRef): boolean => refValue(a) === refValue(b);
 
 export const kindOfRef = (fields: readonly FormField[] | undefined, ref: FieldRef): GroupKind | undefined => {
   if (ref.kind === 'system') return ref.key === 'submittedAt' ? 'time' : (ref.key as GroupKind);

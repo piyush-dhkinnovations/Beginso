@@ -26,6 +26,9 @@ const PUBLIC_DATA_PATHS = new Set([
 // The invitation preview is public on the backend (a person opens the emailed link BEFORE signing in), so it must not be
 // stopped here with 401. Only the GET previews: accept needs a session and is never matched.
 const PUBLIC_INVITE_PREVIEW = /^api\/invitations\/(?:(?:preview|token)\/)?[A-Za-z0-9_-]{1,200}$/;
+// An uploaded picture (a logo, a cover, a page background) is public on the backend too: a respondent who is not signed in sees it in the
+// form. Only GET, only under /api/upload/file/.
+const PUBLIC_UPLOAD_FILE = /^api\/upload\/file\/.+$/;
 const ALLOWED_API_ROOTS = new Set([
   // Sprint 14 (task 2.1) - GET /api/search lives under its own root. Same allowlist trap as every
   // root below: without this entry every search call 404s "Backend path is not allowed".
@@ -111,7 +114,8 @@ async function forward(request: NextRequest, pathParts: string[]): Promise<NextR
   const isSessionRequest = path === SESSION_PATH;
   const isLogoutRequest = path === LOGOUT_PATH;
   const isPublicAuthRequest = PUBLIC_AUTH_PATHS.has(path);
-  const isPublicDataRequest = PUBLIC_DATA_PATHS.has(path) || (request.method === 'GET' && PUBLIC_INVITE_PREVIEW.test(path));
+  const isUploadFile = request.method === 'GET' && PUBLIC_UPLOAD_FILE.test(path);
+  const isPublicDataRequest = PUBLIC_DATA_PATHS.has(path) || (request.method === 'GET' && PUBLIC_INVITE_PREVIEW.test(path)) || isUploadFile;
   const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
 
   // Session probe (AuthProvider on every page load): "nobody is signed in" is a normal answer, not an
@@ -207,7 +211,8 @@ async function forward(request: NextRequest, pathParts: string[]): Promise<NextR
       return response;
     }
 
-    const responseHeaders = new Headers({ 'cache-control': 'no-store' });
+    // Everything is fresh each time, except a picture the backend served: it is kept for an hour so a form does not fetch its cover again on every view.
+    const responseHeaders = new Headers({ 'cache-control': isUploadFile && upstream.ok ? 'public, max-age=3600' : 'no-store' });
     const upstreamContentType = upstream.headers.get('content-type');
     const contentDisposition = upstream.headers.get('content-disposition');
     if (upstreamContentType) responseHeaders.set('content-type', upstreamContentType);

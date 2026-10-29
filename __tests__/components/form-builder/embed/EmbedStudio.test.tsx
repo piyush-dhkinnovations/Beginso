@@ -74,15 +74,6 @@ describe('EmbedStudio', () => {
     expect(screen.getByLabelText('Embed code')).toHaveTextContent('data-beginso-drawer="abc"');
   });
 
-  it('link method shows just the public URL and relabels the tab and copy button', async () => {
-    const { onCopy } = setup();
-    await pickMethod(/Full-page link/);
-    await codeTab();
-    expect(screen.getByLabelText('Link').textContent).toBe('https://app.test/f/abc');
-    await userEvent.click(screen.getByRole('button', { name: 'Copy link' }));
-    expect(onCopy).toHaveBeenCalledWith('https://app.test/f/abc', 'Link copied to clipboard.');
-  });
-
   it('Copy code passes the exact snippet and a message', async () => {
     const { onCopy } = setup();
     await userEvent.click(screen.getByRole('button', { name: 'Copy code' }));
@@ -154,7 +145,7 @@ describe('EmbedStudio', () => {
   it('offers no way to hide Beginso branding anywhere in the studio', async () => {
     setup();
     expect(screen.queryByText(/branding/i)).not.toBeInTheDocument();
-    for (const name of [/Inline, fixed size/, /^Popup/, /Slide-over drawer/, /Full-page link/]) {
+    for (const name of [/Inline, fixed size/, /^Popup/, /Slide-over drawer/]) {
       await pickMethod(name);
       expect(screen.queryByText(/branding/i)).not.toBeInTheDocument();
     }

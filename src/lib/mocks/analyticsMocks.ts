@@ -8,7 +8,6 @@ import type {
   AnalyticsOverview,
   AnalyticsTrendResult,
   AnalyticsTrendPoint,
-  QuestionBreakdown,
   AnalyticsFormsSummaryResult,
   AnalyticsFormSummary,
 } from '@/types/analytics';
@@ -30,33 +29,6 @@ export function mockAnalyticsTrends(overrides: Partial<AnalyticsTrendResult> = {
     { bucketStart: '2026-08-11T00:00:00.000Z', responses: 21 },
   ];
   return { bucket: 'week', points, ...overrides };
-}
-
-export function mockQuestionBreakdown(overrides: Partial<QuestionBreakdown>[] = []): { questions: QuestionBreakdown[] } {
-  const base: QuestionBreakdown[] = [
-    {
-      fieldId: 'field-1',
-      label: 'How did you hear about us?',
-      options: [
-        { option: 'Social media', count: 34 },
-        { option: 'Friend referral', count: 22 },
-        { option: 'Search engine', count: 15 },
-        { option: 'Other', count: 5 },
-      ],
-    },
-    {
-      fieldId: 'field-2',
-      label: 'Preferred contact method',
-      options: [
-        { option: 'Email', count: 40 },
-        { option: 'Phone', count: 12 },
-      ],
-    },
-  ];
-  const questions = overrides.length
-    ? base.map((q, i) => ({ ...q, ...overrides[i] }))
-    : base;
-  return { questions };
 }
 
 export function mockFormsSummary(overrides: Partial<AnalyticsFormsSummaryResult> = {}): AnalyticsFormsSummaryResult {

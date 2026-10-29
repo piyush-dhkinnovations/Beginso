@@ -22,8 +22,10 @@ const SPAN: Record<WidgetWidth, string> = {
 };
 const TONE_DOT: Record<KpiTone, string> = { primary: 'var(--action-primary)', success: 'var(--success)', warning: 'var(--warning)', error: 'var(--error)', purple: '#8B5CF6' };
 const WIDTH_LABEL: Record<WidgetWidth, string> = { 3: 'Small (1/4)', 4: 'Medium (1/3)', 6: 'Wide (1/2)', 12: 'Full width' };
-// Rows share one track height so cards line up; a chart spans two tracks, a KPI card one.
-const rows = (w: Widget) => (w.config.type === 'map' ? 'row-span-3' : w.config.type === 'chart' ? 'row-span-2' : '');
+// Rows share one track height so cards line up; a map spans three tracks, a chart over time two, a KPI card or a chart of a few
+// categories one (its row grows to fit the chart, rather than leaving the card a tall frame with a small chart in the middle).
+const rows = (w: Widget, metrics: MetricMap) =>
+  w.config.type === 'map' ? 'row-span-3' : w.config.type === 'chart' && isSeries(metrics[w.config.metric] ?? {}) ? 'row-span-2' : '';
 const GRID = 'grid auto-rows-[minmax(8.5rem,auto)] grid-cols-1 gap-4 md:grid-cols-6 xl:grid-cols-12';
 
 function Unavailable({ onRemove }: { onRemove?: () => void }) {
@@ -86,7 +88,7 @@ function SortableWidget({
       {...listeners}
       aria-label={`${widget.config.type === 'kpi' ? 'Card' : widget.config.type === 'map' ? 'Map' : 'Chart'}: drag to reorder, press Space to pick up`}
       className={bx(
-        SPAN[widget.w], rows(widget),
+        SPAN[widget.w], rows(widget, metrics),
         'group/widget relative min-w-0 cursor-grab touch-none select-none rounded-2xl outline-none transition-shadow active:cursor-grabbing',
         selected ? 'ring-2 ring-(--action-primary) ring-offset-2 ring-offset-(--bg-page,var(--surface-card))' : 'ring-1 ring-transparent hover:ring-(--border-strong)',
         isDragging && 'opacity-90 shadow-xl',
@@ -131,7 +133,7 @@ export function DashboardGrid({ widgets, metrics, onChange, empty }: DashboardGr
   if (!onChange) {
     return (
       <div className={GRID}>
-        {widgets.map((w) => <div key={w.id} className={bx(SPAN[w.w], rows(w), 'min-w-0 *:h-full')}><WidgetBody widget={w} metrics={metrics} /></div>)}
+        {widgets.map((w) => <div key={w.id} className={bx(SPAN[w.w], rows(w, metrics), 'min-w-0 *:h-full')}><WidgetBody widget={w} metrics={metrics} /></div>)}
       </div>
     );
   }

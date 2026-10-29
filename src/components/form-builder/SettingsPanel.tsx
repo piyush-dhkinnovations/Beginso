@@ -1,16 +1,12 @@
 'use client';
 
-import { buildPublicFormUrl } from '@/lib/publicFormUrl';
 import { useState } from 'react';
-import { Copy } from 'lucide-react';
-import type { FormSettings, FormStatus } from '@/types/form';
+import type { FormSettings } from '@/types/form';
 import { Input } from '@/components/ui/Input';
-import { useToast } from '@/components/ui/Toast';
 import { Switch } from '@/components/ui/Switch';
 import { Select } from '@/components/ui/Select';
 import { Alert } from '@/components/ui/Alert';
 import type { AccessMode } from '@/types/form';
-import { PanelCard } from './PanelCard';
 
 function pad(n: number): string {
   return String(n).padStart(2, '0');
@@ -31,18 +27,35 @@ function isoToLocalInput(iso: string): string {
 
 export interface SettingsPanelProps {
   settings: FormSettings;
-  status: FormStatus;
-  slug?: string;
   onUpdate: (updates: Partial<FormSettings>) => void;
 }
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <h2 className="bg-overline border-b border-(--border-default) pb-2 text-(--text-muted)">{children}</h2>;
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="bg-h5 font-semibold text-(--text-primary)">{title}</h2>
+      <div className="flex flex-col divide-y divide-(--border-default) rounded-xl border border-(--border-default) bg-(--surface-card) shadow-(--shadow-sm)">{children}</div>
+    </section>
+  );
 }
 
-export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPanelProps) {
-  const { toast } = useToast();
+/** One setting: its name and a line of help on the left, the control on the right (under them on a phone); `children` is what opens below it. */
+function Row({ label, description, control, children }: { label: string; description: string; control?: React.ReactNode; children?: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3 p-4 sm:p-5">
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <div className="min-w-0 flex-1 basis-60">
+          <p className="bg-body font-medium text-(--text-primary)">{label}</p>
+          <p className="bg-body-sm text-(--text-muted)">{description}</p>
+        </div>
+        {control}
+      </div>
+      {children}
+    </div>
+  );
+}
 
+export function SettingsPanel({ settings, onUpdate }: SettingsPanelProps) {
   // ── Success message (commits on blur) ───────────────────────────────────────
   const [message, setMessage] = useState(settings.successMessage ?? '');
   const [prevMessage, setPrevMessage] = useState(settings.successMessage ?? '');
@@ -80,152 +93,145 @@ export function SettingsPanel({ settings, status, slug, onUpdate }: SettingsPane
   const closeDateEnabled = settings.closeDate !== undefined;
   const isPastDate = closeDateEnabled && new Date(settings.closeDate!) < new Date();
 
-  const publicUrl = buildPublicFormUrl(slug) || '';
 
   return (
-    <div className="flex flex-col gap-6">
+    // Each group is a card of rows (name and help on the left, the control on the right). From 1024px the groups sit in two columns:
+    // who can respond and its limits on the left, what happens after and protection on the right.
+    <div className="flex flex-col gap-8">
       <div>
         <h1 className="bg-h3 font-bold text-(--text-primary)">Settings</h1>
         <p className="bg-body text-(--text-muted) mt-1">Control who can respond and how this form behaves.</p>
       </div>
 
-      <SectionLabel>Responses</SectionLabel>
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2 2xl:grid-cols-3">
-
-      {/* Sprint 13 (D1.1, requirements.md 7.1). Plain-language access mode. A form with no stored value is
-          Mode 1 (open) — that is what every pre-V2 form is. The new-form default is the backend's call
-          (OQ-9); this control only reads and writes `settings.accessMode`. */}
-      <PanelCard label="Who can respond" description="Choose who is allowed to submit this form.">
-        {/* A form stored as the old "login" mode is the same gate as "tracked" (the server reads it that way), so it shows as that. */}
-        <Select
-          id="access-mode"
+      <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
+      <Group title="Responses">
+        {/* Sprint 13 (D1.1, requirements.md 7.1). Plain-language access mode. A form with no stored value is
+            Mode 1 (open) — that is what every pre-V2 form is. The new-form default is the backend's call
+            (OQ-9); this control only reads and writes `settings.accessMode`. */}
+        <Row
           label="Who can respond"
-          value={settings.accessMode === 'tracked' || settings.accessMode === 'login' ? 'tracked' : 'open'}
-          onChange={(e) => onUpdate({ accessMode: e.target.value as AccessMode })}
+          description="Choose who is allowed to submit this form."
+          control={
+            /* A form stored as the old "login" mode is the same gate as "tracked" (the server reads it that way), so it shows as that. */
+            <div className="w-full sm:w-64">
+              <Select
+                id="access-mode"
+                aria-label="Who can respond"
+                value={settings.accessMode === 'tracked' || settings.accessMode === 'login' ? 'tracked' : 'open'}
+                onChange={(e) => onUpdate({ accessMode: e.target.value as AccessMode })}
+              >
+                <option value="open">Anyone with the link</option>
+                <option value="tracked">Anyone with a verified email</option>
+              </Select>
+            </div>
+          }
         >
-          <option value="open">Anyone with the link</option>
-          <option value="tracked">Anyone with a verified email</option>
-        </Select>
-        {(settings.accessMode ?? 'open') === 'open' ? (
-          <p className="bg-caption text-(--text-muted)">No email and no tracking: the quickest way for people to respond.</p>
-        ) : (
-          <>
-            <p className="bg-caption text-(--text-muted)">
-              Before the form starts, people confirm their email with a 6-digit code we send them, or continue with Google. You see who
-              responded, and they can find their submission again. The emails never contain their answers.
+          {(settings.accessMode ?? 'open') === 'open' ? (
+            <p className="bg-caption text-(--text-muted)">No email and no tracking: the quickest way for people to respond.</p>
+          ) : (
+            <>
+              <p className="bg-caption text-(--text-muted)">
+                Before the form starts, people confirm their email with a 6-digit code we send them, or continue with Google. You see who
+                responded, and they can find their submission again. The emails never contain their answers.
+              </p>
+              <Alert variant="info" title="Fewer people may finish">
+                Asking for a verified email adds a step. Use it when you need to know who responded, not for a quick public poll.
+              </Alert>
+            </>
+          )}
+        </Row>
+
+        <Row
+          label="Limit responses"
+          description="Stop accepting responses after a set number."
+          control={
+            <Switch
+              id="response-limit-toggle"
+              aria-label="Limit responses"
+              checked={limitEnabled}
+              onChange={(v) => onUpdate({ responseLimit: v ? 1 : undefined, responseLimitEnabled: v })}
+            />
+          }
+        >
+          {limitEnabled && (
+            <div className="w-full sm:w-48">
+              <Input
+                id="response-limit-value"
+                aria-label="Number of responses"
+                type="number"
+                min={1}
+                value={limitStr}
+                onChange={(e) => setLimitStr(e.target.value)}
+                onBlur={commitLimit}
+                error={limitError ?? undefined}
+              />
+            </div>
+          )}
+        </Row>
+
+        <Row
+          label="Close on a date"
+          description="Stop accepting responses at a set date and time."
+          control={
+            <Switch
+              id="close-date-toggle"
+              aria-label="Auto-close on a date"
+              checked={closeDateEnabled}
+              onChange={(v) => onUpdate({ closeDate: v ? new Date().toISOString() : undefined })}
+            />
+          }
+        >
+          {closeDateEnabled && (
+            <div className="w-full sm:w-64">
+              <Input
+                id="close-date-value"
+                aria-label="Close date and time"
+                type="datetime-local"
+                value={settings.closeDate ? isoToLocalInput(settings.closeDate) : ''}
+                onChange={(e) => onUpdate({ closeDate: e.target.value ? localInputToIso(e.target.value) : undefined })}
+              />
+            </div>
+          )}
+          {isPastDate && (
+            <p className="bg-caption text-(--warning-text) font-semibold">
+              This date is in the past — the form will be immediately closed on publish.
             </p>
-            <Alert variant="info" title="Fewer people may finish">
-              Asking for a verified email adds a step. Use it when you need to know who responded, not for a quick public poll.
-            </Alert>
-          </>
-        )}
-      </PanelCard>
+          )}
+        </Row>
+      </Group>
 
-      <PanelCard label="Response limit" description="Automatically stop accepting responses after a set number.">
-        <div className="flex items-center justify-between">
-          <span className="bg-body-sm font-medium text-(--text-secondary)">Limit responses</span>
-          <Switch
-            id="response-limit-toggle"
-            aria-label="Limit responses"
-            checked={limitEnabled}
-            onChange={(v) => onUpdate({ responseLimit: v ? 1 : undefined, responseLimitEnabled: v })}
+      <div className="flex min-w-0 flex-col gap-8">
+      <Group title="After submission">
+        <Row label="Success message" description="Shown to respondents after they submit.">
+          <textarea
+            aria-label="Success message"
+            value={message}
+            maxLength={500}
+            onChange={(e) => setMessage(e.target.value)}
+            onBlur={() => onUpdate({ successMessage: message })}
+            placeholder="Thank you for your response!"
+            rows={3}
+            className="w-full rounded-md border border-(--border-default) px-3 py-2 bg-body-sm bg-(--surface-card) outline-none focus:border-(--border-focus) resize-none"
           />
-        </div>
-        {limitEnabled && (
-        <Input
-          id="response-limit-value"
-          type="number"
-          min={1}
-          value={limitStr}
-          onChange={(e) => setLimitStr(e.target.value)}
-          onBlur={commitLimit}
-          error={limitError ?? undefined}
+          <p className="bg-caption text-(--text-muted) text-right">{message.length}/500</p>
+        </Row>
+      </Group>
+
+      <Group title="Protection">
+        <Row
+          label="Spam protection"
+          description="A hidden field is added to the form. Bots that fill it are silently rejected."
+          control={
+            <Switch
+              id="honeypot-toggle"
+              aria-label="Honeypot spam protection"
+              checked={settings.honeypotEnabled}
+              onChange={(v) => onUpdate({ honeypotEnabled: v })}
+            />
+          }
         />
-        )}
-      </PanelCard>
-
-      <PanelCard label="Close date" description="Automatically close the form at a set date and time.">
-        <div className="flex items-center justify-between">
-          <span className="bg-body-sm font-medium text-(--text-secondary)">Auto-close on a date</span>
-          <Switch
-            id="close-date-toggle"
-            aria-label="Auto-close on a date"
-            checked={closeDateEnabled}
-            onChange={(v) => onUpdate({ closeDate: v ? new Date().toISOString() : undefined })}
-          />
-        </div>
-        {closeDateEnabled && (
-        <Input
-          id="close-date-value"
-          type="datetime-local"
-          value={settings.closeDate ? isoToLocalInput(settings.closeDate) : ''}
-          onChange={(e) => onUpdate({ closeDate: e.target.value ? localInputToIso(e.target.value) : undefined })}
-        />
-        )}
-        {isPastDate && (
-          <p className="bg-caption text-(--warning-text) font-semibold">
-            This date is in the past — the form will be immediately closed on publish.
-          </p>
-        )}
-      </PanelCard>
-
-
+      </Group>
       </div>
-
-      <SectionLabel>After submission</SectionLabel>
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2 2xl:grid-cols-3">
-
-      <PanelCard label="Success message" description="Shown to respondents after they submit.">
-        <textarea
-          value={message}
-          maxLength={500}
-          onChange={(e) => setMessage(e.target.value)}
-          onBlur={() => onUpdate({ successMessage: message })}
-          placeholder="Thank you for your response!"
-          rows={4}
-          className="w-full rounded-md border-2 border-(--border-default) px-3 py-2 bg-body-sm bg-(--surface-card) outline-none focus:border-(--border-strong) resize-none"
-        />
-        <p className="bg-caption text-(--text-muted) text-right">{message.length}/500</p>
-      </PanelCard>
-
-      </div>
-
-      <SectionLabel>Protection &amp; link</SectionLabel>
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-2 2xl:grid-cols-3">
-
-      <PanelCard
-        label="Spam protection"
-        description="A hidden field is added to the form. Bots that fill it are silently rejected."
-      >
-        <div className="flex items-center justify-between">
-          <span className="bg-body-sm font-medium text-(--text-secondary)">Honeypot spam protection</span>
-          <Switch
-            id="honeypot-toggle"
-            aria-label="Honeypot spam protection"
-            checked={settings.honeypotEnabled}
-            onChange={(v) => onUpdate({ honeypotEnabled: v })}
-          />
-        </div>
-      </PanelCard>
-
-      {status === 'published' && slug && (
-        <PanelCard label="Public URL" description="Your form's live address.">
-          <div className="flex items-center gap-2">
-            <Input id="public-url" value={publicUrl} readOnly className="font-mono" />
-            <button
-              type="button"
-              onClick={() => {
-                navigator.clipboard.writeText(publicUrl);
-                toast('Link copied to clipboard.', 'success');
-              }}
-              className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md p-2 text-(--text-disabled) hover:bg-(--accent-soft) hover:text-(--accent-soft-text)"
-              aria-label="Copy public URL"
-            >
-              <Copy size={16} />
-            </button>
-          </div>
-        </PanelCard>
-      )}
       </div>
     </div>
   );

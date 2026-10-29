@@ -166,3 +166,43 @@ describe('pre-flight shortcuts', () => {
     vi.unstubAllGlobals();
   });
 });
+
+describe('handlePreviewInNewTab (Full screen in the Branding studio)', () => {
+  it('opens the tab at once, then sends it to the preview; the editor stays where it is', async () => {
+    const tab = { location: { href: '' }, close: vi.fn() };
+    const open = vi.spyOn(window, 'open').mockReturnValue(tab as never);
+    const { result } = setup();
+    await act(async () => {
+      await result.current.handlePreviewInNewTab();
+    });
+    expect(open).toHaveBeenCalledWith('about:blank', '_blank');
+    expect(tab.location.href).toBe('/forms/f1/preview?bare=1');
+    expect(push).not.toHaveBeenCalled();
+    open.mockRestore();
+  });
+
+  it('closes the tab again and says so when the save fails', async () => {
+    const tab = { location: { href: '' }, close: vi.fn() };
+    const open = vi.spyOn(window, 'open').mockReturnValue(tab as never);
+    updateForm.mockRejectedValueOnce(new Error('offline'));
+    useBuilderStore.setState({ dirty: true });
+    const { result } = setup();
+    await act(async () => {
+      await result.current.handlePreviewInNewTab();
+    });
+    expect(tab.close).toHaveBeenCalled();
+    expect(tab.location.href).toBe('');
+    expect(toast).toHaveBeenCalledWith(expect.stringContaining('preview was not opened'), 'error');
+    open.mockRestore();
+  });
+
+  it('says so when the browser blocks the new tab', async () => {
+    const open = vi.spyOn(window, 'open').mockReturnValue(null);
+    const { result } = setup();
+    await act(async () => {
+      await result.current.handlePreviewInNewTab();
+    });
+    expect(toast).toHaveBeenCalledWith(expect.stringContaining('blocked'), 'error');
+    open.mockRestore();
+  });
+});

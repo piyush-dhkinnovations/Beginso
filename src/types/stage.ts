@@ -39,11 +39,6 @@ export interface StageRef {
   category: StageCategory;
 }
 
-// A response's stage was deleted, or stages haven't loaded yet for this workspace — every
-// consumer must render a neutral chip, never throw (requirements.md §7.1, "unknown/deleted stage
-// renders a neutral 'Unknown stage' chip; it never throws").
-export const UNKNOWN_STAGE: StageRef = { id: '', name: 'Unknown stage', colour: 'neutral', category: 'new' };
-
 export const CATEGORY_LABELS: Record<StageCategory, string> = {
   new: 'New',
   in_progress: 'In Progress',

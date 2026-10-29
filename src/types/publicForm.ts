@@ -29,6 +29,8 @@ export interface PublicFormBranding {
   formWidth?: 'narrow' | 'standard' | 'wide';
   coverFit?: 'banner' | 'original';
   iconName?: string;
+  bannerText?: string;
+  bannerLinks?: { label?: string; url: string }[];
 }
 
 /** Shape returned by GET /api/public/:slug — user-only fields omitted. */
@@ -80,11 +82,6 @@ export interface UploadState {
 }
 
 // ─── Service Error ───────────────────────────────────────────────────────────────
-
-export interface PublicFormError {
-  message: string;
-  status: number;
-}
 
 // ─── Field Renderer Contract ─────────────────────────────────────────────────────
 

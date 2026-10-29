@@ -208,7 +208,7 @@ export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubVie
     // ResponseDrawer is position:fixed, and must be able to layer above the fixed TopNav.
     // AppShell owns page width (CLAUDE.md) — this component sets none of its own.
     <RespondentFromProvider value={formId ? setup.respondentFrom : 'auto'}>
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
       {/* The form header's own spots (lib/formHeaderSlot.ts): Export, then Edit form, then Customize. */}
       {exportInHeader &&
         headerSlot &&

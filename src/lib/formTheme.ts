@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { FormBranding } from '@/types/form';
 import { safeHttpUrl } from '@/lib/fieldDisplay';
+import { uploadSrc } from '@/lib/uploadSrc';
 
 // Sprint 13 (CF2.3). The ONE place a branding choice becomes CSS, shared by the editor's live preview and the real
 // public form so they cannot drift. Everything is optional; an absent value is the default.
@@ -53,7 +54,8 @@ export function brandTypeStyle(b: Look): CSSProperties {
   const stack = (FORM_FONT_OPTIONS.find((f) => f.value === b.fontFamily) ?? FORM_FONT_OPTIONS[0]).stack;
   const s = SCALES[b.typeScale ?? 'default'];
   // --bg-font-sans is the design system's own font variable: every label, heading and button reads it, so pointing it at the
-  // chosen typeface changes the WHOLE form, not just the inputs that inherit.
+  // chosen typeface changes the WHOLE form, not just the inputs that inherit. The wrapper must also have the class `bg-form-type`: the
+  // type tokens (--text-h4, --text-label...) are worked out where they are declared, so that class declares them again under this wrapper.
   return { fontFamily: stack, fontSize: s.body, '--bg-font-sans': stack, '--form-headline': s.headline } as CSSProperties;
 }
 
@@ -107,7 +109,9 @@ export function brandWashStyle(b: Look & Pick<FormBranding, 'backgroundColor' | 
       return { backgroundColor: 'var(--bg-subtle)' };
     case 'image': {
       // Only an http(s) URL goes into the CSS, JSON-quoted, so a stored value can never break out of url().
-      const url = safeHttpUrl(b.backgroundImageUrl)?.href;
+      // an uploaded picture is asked for through the app (see uploadSrc); any other address must be http(s)
+      const own = uploadSrc(b.backgroundImageUrl);
+      const url = own?.startsWith('/api/backend/') ? own : safeHttpUrl(b.backgroundImageUrl)?.href;
       return url
         ? { backgroundColor: c, backgroundImage: `url(${JSON.stringify(url)})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
         : { backgroundColor: tint(14) };

@@ -96,7 +96,7 @@ export default function MySubmissionsPage() {
   );
 
   return (
-    <div className="flex flex-col gap-5 animate-fade-in">
+    <div className="flex flex-col gap-4 animate-fade-in">
       <PageHeader
         eyebrow="Personal space"
         title="My Submissions"

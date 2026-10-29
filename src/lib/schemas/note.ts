@@ -7,5 +7,3 @@ export const noteSchema = z.object({
   body: z.string().trim().min(1, 'Note cannot be empty').max(5000, 'Note must be 5000 characters or fewer'),
   mentionIds: z.array(z.string()).optional(),
 });
-
-export type NoteFormValues = z.infer<typeof noteSchema>;

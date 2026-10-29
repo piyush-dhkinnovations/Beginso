@@ -1,6 +1,8 @@
 import type { PublicFormBranding } from '@/types/publicForm';
 import { brandCoverObjectPosition, brandPanelStyle } from '@/lib/formTheme';
 import { BrandMark, hasBrandMark } from './BrandMark';
+import { BannerExtras, hasBannerExtras } from './BannerExtras';
+import { uploadSrc } from '@/lib/uploadSrc';
 
 interface FormBannerProps {
   branding: PublicFormBranding;
@@ -16,22 +18,25 @@ interface FormBannerProps {
 export function FormBanner({ branding, title }: FormBannerProps) {
   const { coverImageUrl } = branding;
   const hasMark = hasBrandMark(branding);
-  const hasText = !!title || hasMark;
+  const hasText = !!title || hasMark || hasBannerExtras(branding);
 
   // 'original': the whole picture at its own size and ratio (never cropped); the logo and headline sit under it.
   if (coverImageUrl && branding.coverFit === 'original') {
     return (
       <div className="w-full">
         {/* eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset */}
-        <img src={coverImageUrl} alt="" className="block h-auto w-full" />
+        <img src={uploadSrc(coverImageUrl)} alt="" className="block h-auto w-full" />
         {hasText && (
-          <div className="flex items-center gap-3 px-6 pt-6 md:px-8">
-            {hasMark && <span className="flex-none"><BrandMark branding={branding} size={44} className="rounded-xl border border-(--border-default) bg-white object-contain p-1" /></span>}
-            {title && (
-              <p aria-hidden="true" className="font-bold leading-tight text-balance text-(--text-primary)" style={{ fontSize: 'var(--form-headline, 1.75rem)' }}>
-                {title}
-              </p>
-            )}
+          <div className="flex flex-col gap-3 px-6 pt-6 md:px-8">
+            <div className="flex items-center gap-3">
+              {hasMark && <span className="flex-none"><BrandMark branding={branding} size={44} className="rounded-lg object-contain" /></span>}
+              {title && (
+                <p aria-hidden="true" className="font-bold leading-tight text-balance text-(--text-primary)" style={{ fontSize: 'var(--form-headline, 1.75rem)' }}>
+                  {title}
+                </p>
+              )}
+            </div>
+            <BannerExtras branding={branding} />
           </div>
         )}
       </div>
@@ -42,17 +47,18 @@ export function FormBanner({ branding, title }: FormBannerProps) {
     <div className={`relative w-full overflow-hidden ${hasText ? 'min-h-44' : 'aspect-3/1 max-h-56'}`} style={brandPanelStyle(branding)}>
       {coverImageUrl && (
         // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset
-        <img src={coverImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: brandCoverObjectPosition(branding) }} />
+        <img src={uploadSrc(coverImageUrl)} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: brandCoverObjectPosition(branding) }} />
       )}
       {coverImageUrl && hasText && <div aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />}
       {hasText && (
         <div className="relative flex h-full min-h-44 flex-col justify-end gap-3 p-6 md:p-8 text-white">
-          {hasMark && <BrandMark branding={branding} size={44} className="rounded-xl bg-white object-contain p-1 shadow-(--shadow-sm)" />}
+          {hasMark && <BrandMark branding={branding} size={44} className="rounded-lg object-contain" />}
           {title && (
             <p aria-hidden="true" className="font-bold leading-tight text-balance" style={{ fontSize: 'var(--form-headline, 1.75rem)' }}>
               {title}
             </p>
           )}
+          <BannerExtras branding={branding} onDark />
         </div>
       )}
     </div>

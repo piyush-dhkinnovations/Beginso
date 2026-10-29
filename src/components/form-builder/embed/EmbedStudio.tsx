@@ -44,10 +44,7 @@ export function EmbedStudio({ ctx, fields, pages, onCopy }: Props) {
 
   return (
     <section aria-labelledby="embed-heading" className="flex flex-col gap-4">
-      <div>
-        <h2 id="embed-heading" className="bg-h5 font-semibold">Embed on your website</h2>
-        <p className="bg-body-sm text-(--text-muted)">Pick a method, set it up, then copy the code. It updates as you change anything.</p>
-      </div>
+      <p id="embed-heading" className="bg-body-sm text-(--text-muted)">Pick a method, set it up, then copy the code. It updates as you change anything.</p>
 
       <EmbedMethodPicker config={config} onChange={patch} />
 
@@ -56,7 +53,7 @@ export function EmbedStudio({ ctx, fields, pages, onCopy }: Props) {
 
         {/* On desktop the preview is exactly as tall as the settings column beside it (it is taken out of flow, so a tall form cannot
             stretch the row) and scrolls inside. */}
-        <div className="min-w-0 lg:relative lg:min-h-44">
+        <div className="min-w-0 lg:relative lg:min-h-136">
           <div className="lg:absolute lg:inset-0">
           {!ctx ? (
             <Alert variant="info" title="Publish the form to get its embed code.">

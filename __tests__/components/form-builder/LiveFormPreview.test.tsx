@@ -99,3 +99,80 @@ describe('LiveFormPreview', () => {
     expect(screen.getByTitle('Live form preview')).toHaveStyle({ transform: 'scale(1)' });
   });
 });
+
+describe('LiveFormPreview: the stage and its zoom', () => {
+  // A stage of the given size (the box the preview is drawn in).
+  const stageOf = () => {
+    let cb: ResizeObserverCallback = () => {};
+    class RO {
+      constructor(c: ResizeObserverCallback) {
+        cb = c;
+      }
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    }
+    vi.stubGlobal('ResizeObserver', RO);
+    return (width: number, height: number) => act(() => cb([{ contentRect: { width, height } } as ResizeObserverEntry], {} as ResizeObserver));
+  };
+  const formIsDrawn = () =>
+    act(() => {
+      window.dispatchEvent(new MessageEvent('message', { data: { type: 'beginso-preview-drawn' }, origin: window.location.origin }));
+    });
+  const frame = () => screen.getByTitle('Live form preview');
+  const stageBox = () => frame().closest('.relative') as HTMLElement;
+
+  it('holds a placeholder of its own until the form says it is drawn, so nothing else is seen first', () => {
+    render(<LiveFormPreview fill formId="abc" branding={{}} />);
+    expect(screen.getByRole('status', { name: 'Loading the preview' })).toBeInTheDocument();
+    expect(frame().className).toContain('opacity-0');
+    formIsDrawn();
+    expect(screen.queryByRole('status', { name: 'Loading the preview' })).not.toBeInTheDocument();
+    expect(frame().className).toContain('opacity-100');
+  });
+
+  it('shows the frame anyway if the form never says it is drawn (it may have failed, and says so itself)', () => {
+    vi.useFakeTimers();
+    render(<LiveFormPreview fill formId="abc" branding={{}} />);
+    act(() => {
+      vi.advanceTimersByTime(8100);
+    });
+    expect(screen.queryByRole('status', { name: 'Loading the preview' })).not.toBeInTheDocument();
+    vi.useRealTimers();
+  });
+
+  it('is 100% to start: the form is drawn at full size and fills the stage', () => {
+    const stage = stageOf();
+    render(<LiveFormPreview fill formId="abc" branding={{}} />);
+    stage(1000, 600);
+    expect(frame()).toHaveStyle({ transform: 'scale(1)', width: '1000px', height: '600px' });
+  });
+
+  it('zooming out draws it smaller on a stage that is the same size: the frame is bigger by as much, so the page still fills the stage', () => {
+    const stage = stageOf();
+    const { rerender } = render(<LiveFormPreview fill zoom={0.5} formId="abc" branding={{}} />);
+    stage(1000, 600);
+    expect(frame()).toHaveStyle({ transform: 'scale(0.5)', width: '2000px', height: '1200px' });
+    rerender(<LiveFormPreview fill zoom={1.5} formId="abc" branding={{}} />);
+    expect(frame()).toHaveStyle({ transform: 'scale(1.5)', width: `${1000 / 1.5}px` });
+  });
+
+  it('on a laptop screen the form is the stage itself: one box, not a narrower frame in a grey one', () => {
+    const stage = stageOf();
+    render(<LiveFormPreview fill zoom={0.75} formId="abc" branding={{}} />);
+    stage(1000, 600);
+    expect(frame().parentElement).toBe(stageBox());
+    expect(stageBox().className).not.toContain('overflow-auto');
+  });
+
+  it('a tablet or a phone keeps its real width, in a box of its own in the middle, and the stage scrolls sideways when it is zoomed past it', () => {
+    const stage = stageOf();
+    const { rerender } = render(<LiveFormPreview fill device="mobile" formId="abc" branding={{}} />);
+    stage(1000, 600);
+    expect(frame()).toHaveStyle({ width: '375px' });
+    expect(frame().parentElement).not.toBe(stageBox());
+    rerender(<LiveFormPreview fill device="tablet" zoom={1.5} formId="abc" branding={{}} />);
+    expect(frame()).toHaveStyle({ width: '768px', transform: 'scale(1.5)' });
+    expect(stageBox().className).toContain('overflow-auto');
+  });
+});

@@ -15,7 +15,10 @@ export function StorageUsage() {
   const quota = usage.storageQuotaBytes;
   const trash = Math.min(usage.storageTrashBytes ?? 0, used);
   const level = storageLevel(used, quota);
-  const pct = (bytes: number) => `${Math.min(100, (bytes / quota) * 100)}%`;
+  // A few MB against a large quota (5.6 MB of 500 MB is ~1%) rounds to a sliver so thin it reads as empty. Any
+  // nonzero amount is floored to a minimum visible share of the bar instead of vanishing into its rounded corner.
+  const MIN_VISIBLE_PCT = 1.5;
+  const pct = (bytes: number) => `${bytes > 0 ? Math.max(MIN_VISIBLE_PCT, Math.min(100, (bytes / quota) * 100)) : 0}%`;
 
   return (
     <div className="mb-3 px-1 text-xs text-(--text-muted)" data-testid="storage-usage">

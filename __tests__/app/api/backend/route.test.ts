@@ -126,3 +126,37 @@ describe('BFF proxy — allowlist', () => {
     expect(body.error ?? body.message).toMatch(/not allowed/i);
   });
 });
+
+describe('BFF proxy: uploaded pictures', () => {
+  beforeEach(() => {
+    vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://backend.example');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('picture', { status: 200, headers: { 'content-type': 'image/jpeg' } })));
+  });
+  const path = ['api', 'upload', 'file', 'u1', 'f1', 'brand', 'brand_banner', 'cover.jpg'];
+
+  it('serves an uploaded file to someone who is not signed in (a respondent sees the form\'s cover), and lets it be kept for a while', async () => {
+    const req = new NextRequest(`http://localhost:3000/api/backend/${path.join('/')}`);
+    const res = await GET(req, { params: Promise.resolve({ path }) });
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toBe('image/jpeg');
+    expect(res.headers.get('cache-control')).toBe('public, max-age=3600');
+    const [url, init] = (fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(String(url)).toBe('https://backend.example/api/upload/file/u1/f1/brand/brand_banner/cover.jpg');
+    expect((init.headers as Headers).has('authorization')).toBe(false);
+  });
+
+  it('is public only for GET of a file: the upload itself, and everything else, still needs a session', async () => {
+    const post = new NextRequest('http://localhost:3000/api/backend/api/upload', { method: 'POST' });
+    expect((await (await import('@/app/api/backend/[...path]/route')).POST(post, { params: Promise.resolve({ path: ['api', 'upload'] }) })).status).toBe(401);
+    const forms = new NextRequest('http://localhost:3000/api/backend/api/forms');
+    expect((await GET(forms, { params: Promise.resolve({ path: ['api', 'forms'] }) })).status).toBe(401);
+  });
+
+  it('a failed fetch of a file is not cached', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('nope', { status: 404 })));
+    const req = new NextRequest(`http://localhost:3000/api/backend/${path.join('/')}`);
+    const res = await GET(req, { params: Promise.resolve({ path }) });
+    expect(res.status).toBe(404);
+    expect(res.headers.get('cache-control')).toBe('no-store');
+  });
+});

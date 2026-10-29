@@ -80,7 +80,7 @@ export default function BuilderPageShell() {
   const unsavedCount = useBuilderStore((state) => Math.max(1, state.undoStack.length - state.savedUndoDepth));
   useBuilderUndoShortcuts();
 
-  const { showPublishModal, setShowPublishModal, handleStatusChange, handlePublishClick, handleChangeSetting, handleFixField, handlePreview } =
+  const { showPublishModal, setShowPublishModal, handleStatusChange, handlePublishClick, handleChangeSetting, handleFixField, handlePreview, handlePreviewInNewTab } =
     useBuilderPublishFlow({ id, setActiveTab, setSaveState });
 
   const { showLeaveModal, handleBack, handleLeaveWithoutSaving, handleStay } = useBuilderLeaveGuard({ overviewHref, formsListHref });
@@ -163,16 +163,18 @@ export default function BuilderPageShell() {
                       isPublic={status === 'published' && settings.accessMode !== 'login'}
                       onBrandingUpdate={setBranding}
                       onLayoutChange={(layout) => setSettings({ layout })}
+                      onFullScreen={handlePreviewInNewTab}
+                      onTitleChange={setFormTitle}
                     />
                   </div>
                 ) : activeTab === 'share' && canSeeShare(formRole) && formId ? (
                   <div className="min-w-0 flex-1">
-                    <ShareView formId={formId} embedded onOpenPublish={handlePublishClick} />
+                    <ShareView formId={formId} embedded onOpenPublish={handlePublishClick} onOpenSettings={() => setActiveTab('settings')} />
                   </div>
                 ) : activeTab === 'settings' ? (
                   // Settings is an ordinary page in a form-width column: it scrolls with the page.
                   <div className="min-w-0 flex-1">
-                    <SettingsPanel settings={settings} status={status} slug={slug} onUpdate={setSettings} />
+                    <SettingsPanel settings={settings} onUpdate={setSettings} />
                   </div>
                 ) : null}
               </div>

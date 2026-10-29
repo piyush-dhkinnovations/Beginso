@@ -6,18 +6,24 @@ import { toSegments } from '@/lib/chartSegments';
 import { Select } from '@/components/ui/Select';
 import { EmptyState } from '@/components/ui/EmptyState';
 import type { AnalyticsTrendPoint } from '@/types/analytics';
-import { formatBucketLabel } from './TrendChart';
+import { parseBucket } from './TrendChart';
 
 export type TrendBucket = 'day' | 'week';
 
-const label = (bucketStart: string, bucket: TrendBucket) => {
-  const week = /^(\d{4})-W(\d{2})$/.exec(bucketStart);
-  if (bucket === 'week' && week) return `Wk ${formatBucketLabel(bucketStart, bucket)} ${week[1]}`;
-  const d = new Date(bucketStart);
-  if (Number.isNaN(d.getTime())) return bucketStart;
-  // "03 Sep" — built from parts because the en-GB locale spells September "Sept".
-  const text = `${String(d.getUTCDate()).padStart(2, '0')} ${d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })}`;
-  return bucket === 'week' ? `Wk ${text}` : text;
+/**
+ * What a bar is called. In full ("Week of 24 Aug 2020", "5 Oct 2026") for the tooltip and screen readers; on the axis only as much as is
+ * needed to tell the bars apart: "24 Aug", or "Aug 2020" once the chart reaches across years (a bare "24 Aug" would not say which year).
+ * "Wk" was dropped: it was cut off on the axis ("Wk 1 Fe...") and means nothing to most people.
+ */
+const names = (bucketStart: string, bucket: TrendBucket, acrossYears: boolean) => {
+  const d = parseBucket(bucketStart);
+  if (!d) return { label: bucketStart, axisLabel: bucketStart };
+  // built from parts because the en-GB locale spells September "Sept"
+  const month = d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' });
+  const day = d.getUTCDate();
+  const year = d.getUTCFullYear();
+  const date = `${day} ${month} ${year}`;
+  return { label: bucket === 'week' ? `Week of ${date}` : date, axisLabel: acrossYears ? `${month} ${year}` : `${day} ${month}` };
 };
 
 interface ResponsesOverTimeCardProps {
@@ -30,7 +36,8 @@ interface ResponsesOverTimeCardProps {
 // Responses per day/week across all forms as a bar chart (peak highlighted), with a Daily/Weekly
 // switch. A visually-hidden table carries the exact figures for assistive tech.
 export function ResponsesOverTimeCard({ points, isLoading, bucket, onBucketChange }: ResponsesOverTimeCardProps) {
-  const data = (points ?? []).map((p) => ({ label: label(p.bucketStart, bucket), value: p.responses }));
+  const years = new Set((points ?? []).map((p) => parseBucket(p.bucketStart)?.getUTCFullYear()));
+  const data = (points ?? []).map((p) => ({ ...names(p.bucketStart, bucket, years.size > 1), value: p.responses }));
   return (
     <ChartCard
       title="Responses over time"

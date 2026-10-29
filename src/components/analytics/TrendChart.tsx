@@ -21,7 +21,7 @@ export function mapTrendSeries(points: AnalyticsTrendPoint[]): AnalyticsTrendPoi
 
 // The backend's bucket keys are plain strings, not ISO timestamps: days are "2026-04-06" and weeks are
 // ISO weeks "2026-W15" (`new Date("2026-W15")` is Invalid Date). A week is labelled by its Monday.
-function parseBucket(bucketStart: string): Date | null {
+export function parseBucket(bucketStart: string): Date | null {
   const week = /^(\d{4})-W(\d{2})$/.exec(bucketStart);
   if (week) {
     const jan4 = new Date(Date.UTC(Number(week[1]), 0, 4));

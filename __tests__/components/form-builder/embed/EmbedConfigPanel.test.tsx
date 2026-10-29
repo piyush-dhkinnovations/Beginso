@@ -26,10 +26,11 @@ function setup(initial: Partial<EmbedConfig> = {}, fields: FormField[] = []) {
 }
 
 describe('EmbedMethodPicker', () => {
-  it('offers the five methods as one radio group with the current one selected', () => {
+  it('offers the four embed methods (not the plain link) as one radio group with the current one selected', () => {
     setup({ method: 'popup' });
     const group = screen.getByRole('radiogroup', { name: 'How to embed' });
-    expect(within(group).getAllByRole('radio')).toHaveLength(EMBED_METHODS.length);
+    expect(within(group).getAllByRole('radio')).toHaveLength(EMBED_METHODS.length - 1);
+    expect(within(group).queryByRole('radio', { name: /^Link/ })).not.toBeInTheDocument();
     expect(within(group).getByRole('radio', { name: /Popup/ })).toBeChecked();
     expect(within(group).getByRole('radio', { name: /Inline, auto-height/ })).not.toBeChecked();
   });

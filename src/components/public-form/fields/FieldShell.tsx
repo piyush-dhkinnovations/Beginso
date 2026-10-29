@@ -6,7 +6,7 @@ import type { FieldError } from 'react-hook-form';
 
 /** Base input classes shared by every text-like field renderer — mirrors src/components/ui/Input.tsx. */
 export const FIELD_INPUT_CLASSES =
-  'w-full min-h-10 rounded-lg px-3 bg-body-sm bg-(--surface-card) font-[inherit] max-md:text-base text-[15px] text-(--text-primary) placeholder:text-(--text-muted) transition-colors duration-200 outline-none border border-(--border-default) hover:border-(--border-strong) focus:border-(--action-primary) focus:shadow-(--shadow-focus)';
+  'w-full min-h-10 rounded-lg px-3 bg-body-sm bg-(--surface-card) font-[inherit] max-md:text-base text-sm text-(--text-primary) placeholder:text-(--text-muted) transition-colors duration-200 outline-none border border-(--border-default) hover:border-(--border-strong) focus:border-(--action-primary) focus:shadow-(--shadow-focus)';
 
 export const FIELD_INPUT_ERROR_CLASSES = 'border-(--error) focus:border-(--error)';
 export const FIELD_INPUT_DISABLED_CLASSES = 'bg-(--bg-sunken) opacity-60 cursor-not-allowed pointer-events-none';

@@ -24,17 +24,15 @@ describe('FIELD_TYPE_CONFIG', () => {
 });
 
 describe('Toolbox', () => {
-  it('opens only the first group by default; the others are collapsed', () => {
+  it('shows every group at once, each under a plain heading: nothing is hidden behind a menu', () => {
     renderToolbox();
-    expect(screen.getByRole('button', { name: /Text & contact/ })).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('button', { name: /Choice & rating/ })).toHaveAttribute('aria-expanded', 'false');
-  });
-
-  it('clicking a group heading opens that group only', async () => {
-    renderToolbox();
-    await userEvent.click(screen.getByRole('button', { name: /Choice & rating/ }));
-    expect(screen.getByRole('button', { name: /Choice & rating/ })).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('button', { name: /Text & contact/ })).toHaveAttribute('aria-expanded', 'false');
+    for (const g of FIELD_GROUPS) {
+      const section = screen.getByRole('region', { name: g.label });
+      expect(within(section).getByRole('heading', { name: g.label })).toBeInTheDocument();
+    }
+    expect(screen.queryByRole('button', { name: /Choice & rating/ })).not.toBeInTheDocument();
+    expect(screen.getByTitle('Dropdown')).toBeInTheDocument();
+    expect(screen.getByTitle('Signature')).toBeInTheDocument();
   });
 
   it('clicking a field tile adds that field type', async () => {
@@ -44,14 +42,14 @@ describe('Toolbox', () => {
     expect(onAdd).toHaveBeenCalledWith('short_text');
   });
 
-  it('search filters across groups, opens every group with a match and hides empty groups', async () => {
+  it('search filters across groups and hides empty groups', async () => {
     renderToolbox();
     await userEvent.type(screen.getByRole('searchbox', { name: 'Search fields' }), 'upload');
     expect(screen.getByTitle('File Upload')).toBeInTheDocument();
     expect(screen.getByTitle('Image Upload')).toBeInTheDocument();
     expect(screen.queryByTitle('Short Text')).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Text & contact' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Uploads & signature/ })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('region', { name: 'Uploads & signature' })).toBeInTheDocument();
   });
 
   it('search is case-insensitive and trimmed', async () => {

@@ -7,7 +7,8 @@ import axiosInstance from '@/lib/axios';
 import type { PublicFormSchema, SubmissionData } from '@/types/publicForm';
 import { reasonFromCode, type FormUnavailableReason } from '@/lib/formUnavailable';
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
+// A trailing slash in the env value (http://host:5000/) would make every address //api/..., which the backend answers with a 404.
+const BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/[/]+$/, '');
 
 export interface FormSchemaResult {
   schema: PublicFormSchema | null;

@@ -109,7 +109,7 @@ export function SimpleCanvas({ setTitle }: { setTitle: (t: string) => void }) {
 
   return (
     <div className="min-h-full">
-      <div className="min-h-full p-4 sm:p-10" style={{ ...brandTypeStyle(branding), ...brandWashStyle(branding) }}>
+      <div className="bg-form-type min-h-full p-4 sm:p-10" style={{ ...brandTypeStyle(branding), ...brandWashStyle(branding) }}>
       <div className={`mx-auto max-w-2xl ${brandCardClass(branding)}`}>
         <div className="flex flex-col gap-2 px-5 py-6 text-white sm:px-8" style={brandPanelStyle(branding)}>
           {branding.logoUrl && (

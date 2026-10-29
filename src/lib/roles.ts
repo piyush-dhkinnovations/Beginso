@@ -183,11 +183,6 @@ export function canArchiveForm(role: Role | undefined): boolean {
   return canPublishForm(role);
 }
 
-/** Form restore, permanent delete and Empty trash — Owner only, matches forms:delete. */
-export function canManageTrash(role: Role | undefined): boolean {
-  return canDeleteForm(role);
-}
-
 /** Restore a single response from Trash — Owner/Admin, matches responses:delete. */
 export function canRestoreResponse(role: Role | undefined): boolean {
   return role !== undefined && hasCapability(role, 'responses:delete');
@@ -196,11 +191,6 @@ export function canRestoreResponse(role: Role | undefined): boolean {
 /** Publish a form to the workspace's templates — Editor and above (Reviewers cannot create forms). */
 export function canPublishTemplate(role: Role | undefined): boolean {
   return role !== undefined && hasCapability(role, 'forms:create');
-}
-
-/** Remove a workspace template — Owner/Admin. */
-export function canRemoveTemplate(role: Role | undefined): boolean {
-  return role !== undefined && hasCapability(role, 'workspace:settings');
 }
 
 /** The Share & Embed page and nav item — hidden from Reviewers (wireframe 34). */

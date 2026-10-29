@@ -4,7 +4,7 @@ import { buildPublicFormUrl, publicFormSlug, publicOrigin } from '@/lib/publicFo
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
-import { Copy, Download, ExternalLink, FileQuestion, Lock } from 'lucide-react';
+import { ChevronDown, Code2, Copy, Download, ExternalLink, FileQuestion, Lock } from 'lucide-react';
 import { formsService } from '@/services/forms';
 import { workspacesService } from '@/services/workspaces';
 import { formKeys, workspaceKeys } from '@/lib/queryKeys';
@@ -33,10 +33,13 @@ export interface ShareViewProps {
   embedded?: boolean;
   /** Embedded: open the publish dialog instead of navigating away. */
   onOpenPublish?: () => void;
+  /** Embedded: go to the Settings tab (who can respond, limits, close date live there). */
+  onOpenSettings?: () => void;
 }
 
-export function ShareView({ formId, embedded = false, onOpenPublish }: ShareViewProps) {
+export function ShareView({ formId, embedded = false, onOpenPublish, onOpenSettings }: ShareViewProps) {
   const { toast } = useToast();
+  const [embedOpen, setEmbedOpen] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
 
   // Same key the builder and preview use, so arriving from either is a cache hit.
@@ -216,7 +219,19 @@ export function ShareView({ formId, embedded = false, onOpenPublish }: ShareView
                 </a>
               )}
             </div>
-            <p className="bg-body-sm text-(--text-muted)">The link never changes, even when you re-publish or edit the form.</p>
+            <p className="bg-body-sm text-(--text-muted)">
+              The link never changes, even when you re-publish or edit the form.{' '}
+              {form.settings.accessMode === 'tracked' || form.settings.accessMode === 'login' ? 'People confirm their email before they respond.' : 'Anyone with the link can respond.'}{' '}
+              {onOpenSettings ? (
+                <button type="button" onClick={onOpenSettings} className="font-semibold text-(--text-link) underline">
+                  Change who can respond in Settings
+                </button>
+              ) : (
+                <Link href={`/forms/${formId}/edit?tab=settings`} className="font-semibold text-(--text-link) underline">
+                  Change who can respond in Settings
+                </Link>
+              )}
+            </p>
           </div>
 
           {isLive && (
@@ -235,12 +250,32 @@ export function ShareView({ formId, embedded = false, onOpenPublish }: ShareView
           )}
         </Card>
 
-        <EmbedStudio
-          ctx={isLive ? { origin: appOrigin, slug: liveSlug!, formTitle: form.title } : null}
-          fields={form.fields}
-          pages={form.pages}
-          onCopy={(text, message) => void copy(text, message)}
-        />
+        {/* Most people only copy the link, so the embed builder (four methods, a live preview, many options) opens on request. */}
+        <Card className="flex flex-col gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex min-w-0 items-start gap-3">
+              <Code2 size={20} className="mt-0.5 flex-none text-(--text-muted)" aria-hidden="true" />
+              <div className="min-w-0">
+                <h2 className="bg-h5 font-semibold">Embed on your website</h2>
+                <p className="bg-body-sm text-(--text-muted)">Show the form inside your own page, or open it from a button.</p>
+              </div>
+            </div>
+            <Button type="button" variant="secondary" aria-expanded={embedOpen} aria-controls="embed-studio" onClick={() => setEmbedOpen((o) => !o)} className="min-h-11">
+              {embedOpen ? 'Hide embed options' : 'Set up embed'}
+              <ChevronDown size={16} className={embedOpen ? 'rotate-180' : ''} aria-hidden="true" />
+            </Button>
+          </div>
+          {embedOpen && (
+            <div id="embed-studio">
+              <EmbedStudio
+                ctx={isLive ? { origin: appOrigin, slug: liveSlug!, formTitle: form.title } : null}
+                fields={form.fields}
+                pages={form.pages}
+                onCopy={(text, message) => void copy(text, message)}
+              />
+            </div>
+          )}
+        </Card>
       </div>
     </div>
   );

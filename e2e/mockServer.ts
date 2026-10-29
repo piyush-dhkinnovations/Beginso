@@ -44,6 +44,15 @@ function schemaFor(slug: string): PublicFormSchema {
       settings: { ...mockPublicFormSchema.settings, accessMode: 'tracked' },
     };
   }
+  // A form with its own typeface (Lora, a serif) in the Split Feature layout: the title and the labels must be Lora too, not only the inputs.
+  if (slug.includes('own-font')) {
+    return {
+      ...mockPublicFormSchema,
+      title: 'Serif form',
+      branding: { primaryColor: '#be185d', fontFamily: 'lora', panelTreatment: 'gradient' },
+      settings: { ...mockPublicFormSchema.settings, layout: 'split_feature' },
+    };
+  }
   if (slug.includes('closed-date')) {
     return {
       ...mockPublicFormSchema,

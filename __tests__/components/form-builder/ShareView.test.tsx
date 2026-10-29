@@ -25,6 +25,8 @@ vi.mock('@/components/form-builder/embed/EmbedStudio', () => ({
 
 const published = (over: Partial<Form> = {}) => makeForm({ _id: 'f1', title: 'My Survey', status: 'published', slug: 'abc', ...over });
 
+const openEmbed = async () => userEvent.click(await screen.findByRole('button', { name: 'Set up embed' }));
+
 function renderView(props: Partial<React.ComponentProps<typeof ShareView>> = {}) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
@@ -110,6 +112,7 @@ describe('ShareView: draft', () => {
     expect(screen.getByLabelText('Public form link')).toHaveValue('');
     expect(screen.getByRole('button', { name: /Copy/ })).toBeDisabled();
     expect(screen.queryByRole('link', { name: /Open form/ })).not.toBeInTheDocument();
+    await openEmbed();
     expect(screen.getByTestId('studio')).toHaveTextContent('studio-draft');
     expect(toDataURL).not.toHaveBeenCalled();
   });
@@ -145,6 +148,8 @@ describe('ShareView: live', () => {
     const open = screen.getByRole('link', { name: /Open form/ });
     expect(open).toHaveAttribute('target', '_blank');
     expect(open).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(screen.queryByTestId('studio')).not.toBeInTheDocument(); // the embed builder opens on request
+    await openEmbed();
     expect(screen.getByTestId('studio')).toHaveTextContent('studio-live');
     expect(studioProps.last?.ctx).toMatchObject({ slug: 'abc', formTitle: 'My Survey' });
     expect((studioProps.last?.ctx as { origin: string }).origin).toMatch(/^https?:\/\//);
@@ -169,6 +174,7 @@ describe('ShareView: live', () => {
 
   it('copying from the studio uses the same clipboard path with the studio\'s message', async () => {
     renderView();
+    await openEmbed();
     await screen.findByTestId('studio');
     studioProps.last!.onCopy('<iframe/>', 'Embed code copied.');
     await waitFor(() => expect(navigator.clipboard.writeText).toHaveBeenCalledWith('<iframe/>'));
@@ -231,9 +237,18 @@ describe('ShareView: layout', () => {
     expect(screen.getByText('Published')).toBeInTheDocument();
   });
 
+  it('says who can respond and sends the owner to Settings to change it', async () => {
+    const onOpenSettings = vi.fn();
+    renderView({ embedded: true, onOpenSettings });
+    expect(await screen.findByText(/Anyone with the link can respond/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Change who can respond in Settings' }));
+    expect(onOpenSettings).toHaveBeenCalled();
+  });
+
   it('passes the form\'s fields and pages to the embed studio', async () => {
     getFormById.mockResolvedValue(published({ pages: [{ id: 'p', order: 0 }] }));
     renderView();
+    await openEmbed();
     await screen.findByTestId('studio');
     expect(studioProps.last?.pages).toHaveLength(1);
   });

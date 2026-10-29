@@ -12,7 +12,8 @@
 import axiosInstance from '@/lib/axios';
 import type { LinkState, MySubmission, RespondLinkView, RespondLinkField } from '@/types/respondent';
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? '';
+// A trailing slash in the env value (http://host:5000/) would make every address //api/..., which the backend answers with a 404.
+const BASE = (process.env.NEXT_PUBLIC_API_URL ?? '').replace(/[/]+$/, '');
 
 export interface LinkViewResult {
   /** HTTP status of the call — 200 valid/used, 410 expired, 404 invalid. */

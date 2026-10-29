@@ -213,10 +213,11 @@ export function ChartWizard({ formId, chartId }: { formId: string; chartId?: str
               {id === 'basics' && (drill ? <DrillPlaceholder /> : <ChartPreviewCard formId={formId} scope={scope} fields={fields} state={state} onChartType={(chartType) => patch({ chartType })} />)}
               {id === 'configure' && (drill ? <DrillPreviewCard formId={formId} scope={scope} fields={fields} state={state} level={activeLevel} onFull={() => setFocus({ step, level: 0 })} /> : <ChartPreviewCard formId={formId} scope={scope} fields={fields} state={state} />)}
               {id === 'save' && (
-                // The card as the dashboard will draw it: inside a strip that stands for one row of the dashboard, at the width the chosen size gives it.
+                // The card as the dashboard will draw it: inside a strip that stands for one row of the dashboard, at the width the chosen size gives it,
+                // centred in the strip so it is the first thing seen, not pushed into a corner.
                 <section aria-label="How it sits on the dashboard" className="flex flex-col gap-2">
                   <div className="rounded-xl border border-dashed border-(--border-default) bg-(--bg-subtle) p-3">
-                    <div className="min-w-64 max-w-full" style={{ width: state.size === 'small' ? '34%' : state.size === 'medium' ? '51%' : '100%' }}>
+                    <div className="mx-auto min-w-64 max-w-full" style={{ width: state.size === 'small' ? '34%' : state.size === 'medium' ? '51%' : '100%' }}>
                       {drill ? (
                         <DrillPreviewCard formId={formId} scope={scope} fields={fields} state={state} showPath />
                       ) : (
@@ -224,7 +225,7 @@ export function ChartWizard({ formId, chartId }: { formId: string; chartId?: str
                       )}
                     </div>
                   </div>
-                  <p className="bg-caption text-(--text-muted)">
+                  <p className="text-center bg-caption text-(--text-muted)">
                     On the dashboard this chart takes {state.size === 'small' ? 'a third of' : state.size === 'medium' ? 'half of' : 'all of'} a row.
                   </p>
                 </section>

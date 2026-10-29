@@ -34,6 +34,5 @@ export const changePasswordSchema = z.object({
 });
 
 export type ProfileNameFormValues = z.infer<typeof profileNameSchema>;
-export type WorkspaceNameFormValues = z.infer<typeof workspaceNameSchema>;
 export type WorkspaceGeneralFormValues = z.infer<typeof workspaceGeneralSchema>;
 export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;

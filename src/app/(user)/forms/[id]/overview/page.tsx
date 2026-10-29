@@ -154,7 +154,7 @@ export default function FormOverviewPage() {
   const inboxHref = workspace?.slug ? `/forms/${formId}/inbox?ws=${workspace.slug}` : `/forms/${formId}/inbox`;
 
   return (
-    <div className="flex flex-col gap-6 animate-fade-in">
+    <div className="flex flex-col gap-4 animate-fade-in">
       <h1 className="sr-only">Overview</h1>
       <FormOverviewStats
         stats={effectiveStats}

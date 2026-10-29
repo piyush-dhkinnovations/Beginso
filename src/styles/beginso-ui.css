@@ -159,17 +159,7 @@
      product needs. Shrunk roughly one notch across the board; --control-md (40px, the nav-item/
      button minimum tap target — requirements.md's own accessibility floor) is deliberately left
      untouched, only type and padding shrink. */
-  --text-display: 700 36px/44px var(--bg-font-sans);
-  --text-h1:      700 30px/38px var(--bg-font-sans);
-  --text-h2:      700 24px/32px var(--bg-font-sans);
-  --text-h3:      600 20px/28px var(--bg-font-sans);
-  --text-h4:      600 17px/24px var(--bg-font-sans);
-  --text-h5:      600 15px/22px var(--bg-font-sans);
-  --text-body-lg: 400 15px/22px var(--bg-font-sans);
-  --text-body:    400 13px/20px var(--bg-font-sans);
-  --text-body-sm: 400 12px/18px var(--bg-font-sans);
-  --text-caption: 400 11px/16px var(--bg-font-sans);
-  --text-button:  500 13px/20px var(--bg-font-sans);
+  /* The --text-* tokens (heading, body, label sizes) are in the block right after this one. */
 
   /* ---- Layout ----------------------------------------------------------- */
   --container-max: 1200px;
@@ -186,6 +176,26 @@
   --micro: 150ms;
   --standard: 250ms;
   --large: 400ms;
+}
+
+/* ---- Type tokens: size, weight and typeface of every heading, label and button -------------------------------------------------------
+   Declared on :root AND on .bg-form-type (the wrapper of a respondent form, set up in lib/formTheme.ts). A custom property that uses
+   var(--bg-font-sans) is worked out where it is declared, so tokens that were only on :root kept DM Sans inside a form that chose Lora or
+   Nunito: its title and labels stayed DM Sans and only the inputs (which inherit the font) changed. Declared again on the form wrapper they
+   are worked out against the form's own --bg-font-sans. Only these tokens are repeated, never the colours: those must stay as the theme set them. */
+:root,
+.bg-form-type {
+  --text-display: 700 36px/44px var(--bg-font-sans);
+  --text-h1:      700 30px/38px var(--bg-font-sans);
+  --text-h2:      700 24px/32px var(--bg-font-sans);
+  --text-h3:      600 20px/28px var(--bg-font-sans);
+  --text-h4:      600 17px/24px var(--bg-font-sans);
+  --text-h5:      600 15px/22px var(--bg-font-sans);
+  --text-body-lg: 400 15px/22px var(--bg-font-sans);
+  --text-body:    400 13px/20px var(--bg-font-sans);
+  --text-body-sm: 400 12px/18px var(--bg-font-sans);
+  --text-caption: 400 11px/16px var(--bg-font-sans);
+  --text-button:  500 13px/20px var(--bg-font-sans);
 }
 
 /* ---- Dark mode. Opt in with data-theme="dark" on any ancestor. ---------- */

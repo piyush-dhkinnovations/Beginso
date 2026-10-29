@@ -8,6 +8,7 @@ import { FORM_FONT_OPTIONS, PAGE_BACKGROUND_OPTIONS } from '@/lib/formTheme';
 import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
 import { shrinkImage } from '@/lib/shrinkImage';
+import { uploadSrc } from '@/lib/uploadSrc';
 import { uploadService } from '@/services/upload';
 import { useToast } from '@/components/ui/Toast';
 import { LiveFormPreview } from './LiveFormPreview';
@@ -116,7 +117,7 @@ export function ImageUploadZone({
         <Loader2 size={20} className="animate-spin text-(--text-disabled)" />
       ) : imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset
-        <img src={imageUrl} alt={label} className={freeform ? 'block h-auto max-h-80 w-full object-contain' : 'w-full h-full object-cover'} />
+        <img src={uploadSrc(imageUrl)} alt={label} className={freeform ? 'block h-auto max-h-80 w-full object-contain' : 'w-full h-full object-cover'} />
       ) : (
         <>
           <Upload size={aspect === 'square' ? 16 : 20} className="text-(--text-disabled)" />

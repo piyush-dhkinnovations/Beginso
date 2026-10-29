@@ -1,5 +1,7 @@
 'use client';
 
+/* eslint-disable @next/next/no-img-element -- third-party link thumbnails, intentionally not routed through next/image (arbitrary hosts, no remotePatterns) */
+
 import { useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { ExternalLink, Globe, Maximize2 } from 'lucide-react';
@@ -122,7 +124,6 @@ function RichPreview({ href, domain, service, scope, framed, size, ratio, small 
         {isLoading ? (
           <div aria-busy="true" className="size-12 shrink-0 animate-pulse rounded-md bg-(--bg-subtle)" />
         ) : image ? (
-          // eslint-disable-next-line @next/next/no-img-element -- third-party thumbnail, intentionally not routed through next/image
           videoEmbedUrl ? (
             <button type="button" onClick={openVideo} aria-label="Play video" className="relative size-12 shrink-0 overflow-hidden rounded-md">
               <img src={image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setImageFailed(true)} className="size-full object-cover" />
@@ -164,7 +165,6 @@ function RichPreview({ href, domain, service, scope, framed, size, ratio, small 
       {isLoading ? (
         <div aria-busy="true" className={cn('animate-pulse bg-(--bg-subtle)', thumb, !stacked && framed && 'self-stretch')} />
       ) : image ? (
-        // eslint-disable-next-line @next/next/no-img-element -- third-party thumbnail, intentionally not routed through next/image
         videoEmbedUrl ? <button type="button" onClick={openVideo} aria-label="Play video" className={cn('group relative overflow-hidden bg-black', thumb, !stacked && framed && 'self-stretch')}>
           <img src={image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setImageFailed(true)} className="size-full object-cover" />
           <span aria-hidden="true" className="absolute inset-0 grid place-items-center bg-black/20 text-white transition-colors group-hover:bg-black/40"><span className="grid size-12 place-items-center rounded-full bg-black/65 text-xl">▶</span></span>

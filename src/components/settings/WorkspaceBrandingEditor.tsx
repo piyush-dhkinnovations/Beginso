@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/Toast';
 import { uploadService } from '@/services/upload';
 import { brandButtonStyle, brandCoverObjectPosition, brandGapClass } from '@/lib/formTheme';
 import { ImageUploadZone } from '@/components/form-builder/BrandingPanel';
+import { uploadSrc } from '@/lib/uploadSrc';
 
 // Workspace Settings > Branding, laid out as the reference design: Appearance, Branding (logo + cover) and Form
 // behaviour on the left; a realistic Live preview with a device toggle on the right. Fully controlled — the tab
@@ -206,14 +207,14 @@ export function WorkspaceBrandingEditor({ branding, onChange }: WorkspaceBrandin
             <div className="relative w-full h-28" style={{ backgroundColor: color }}>
               {branding.coverImageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL
-                <img src={branding.coverImageUrl} alt="" className="h-full w-full object-cover" style={{ objectPosition: brandCoverObjectPosition(branding) }} />
+                <img src={uploadSrc(branding.coverImageUrl)} alt="" className="h-full w-full object-cover" style={{ objectPosition: brandCoverObjectPosition(branding) }} />
               )}
             </div>
             <div className={`p-5 flex flex-col ${brandGapClass(branding)}`}>
               <div className="flex items-center gap-3">
                 {branding.logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL
-                  <img src={branding.logoUrl} alt="" className="h-12 w-12 rounded-md object-cover" />
+                  <img src={uploadSrc(branding.logoUrl)} alt="" className="h-12 w-12 rounded-md object-cover" />
                 ) : (
                   <span className="h-12 w-12 rounded-md border border-dashed" style={{ borderColor: '#D1D5DB', backgroundColor: '#F3F4F6' }} aria-hidden="true" />
                 )}

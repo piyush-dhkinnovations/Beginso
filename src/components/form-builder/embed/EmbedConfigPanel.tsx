@@ -46,11 +46,11 @@ function NumberField({ id, label, value, range, suffix, onChange }: { id: string
   );
 }
 
-/** The five embed methods as one compact row of choices (two columns on a phone), instead of five tall cards. */
+/** The four ways to put the form on a page, as one compact row of choices. The plain link is the Public link card above, not a method here. */
 export function EmbedMethodPicker({ config: c, onChange }: Pick<Props, 'config' | 'onChange'>) {
   return (
-    <div role="radiogroup" aria-label="How to embed" className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
-      {EMBED_METHODS.map((m) => (
+    <div role="radiogroup" aria-label="How to embed" className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+      {EMBED_METHODS.filter((m) => m.id !== 'link').map((m) => (
         <label key={m.id} className="bg-choice-card p-3" htmlFor={`embed-method-${m.id}`} title={m.whenToUse}>
           <Radio id={`embed-method-${m.id}`} name="embed-method" checked={c.method === m.id} onChange={() => onChange({ method: m.id as EmbedMethod })} />
           <span className="min-w-0">
@@ -152,8 +152,8 @@ export function EmbedConfigPanel({ config: c, onChange, fields }: Props) {
 
       {shared && (
         <Card padded={false}>
-         <details open className="p-4">
-          <summary className="cursor-pointer bg-h5 font-semibold text-(--text-primary)">Options for every embed</summary>
+         <details className="p-4">
+          <summary className="cursor-pointer bg-h5 font-semibold text-(--text-primary)">More options: cover, background, theme, pre-fill</summary>
           <div className="mt-4 flex flex-col gap-4">
           <SwitchRow id="embed-cover" label="Show cover" hint="The banner and logo above the form." checked={c.cover} onChange={(v) => onChange({ cover: v })} />
           <SwitchRow id="embed-background" label="Show page background" hint="The colour or pattern behind the form card. Turn off to let your own page show through." checked={c.background} onChange={(v) => onChange({ background: v })} />

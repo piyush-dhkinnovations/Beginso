@@ -111,7 +111,7 @@ export default function DashboardPage() {
   // reliable query has actually answered; no fallback, no interim guess.
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       <PageHeader
         eyebrow="Personal space"
         title={welcomeTitle(user?.name)}

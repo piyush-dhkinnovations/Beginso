@@ -8,7 +8,7 @@ vi.mock('@/components/ui/Toast', () => ({ useToast: () => ({ toast }) }));
 
 function setup(over: Partial<SettingsPanelProps> = {}) {
   const onUpdate = vi.fn();
-  const utils = render(<SettingsPanel settings={{ honeypotEnabled: true }} status="draft" onUpdate={onUpdate} {...over} />);
+  const utils = render(<SettingsPanel settings={{ honeypotEnabled: true }} onUpdate={onUpdate} {...over} />);
   return { onUpdate, ...utils };
 }
 
@@ -103,7 +103,7 @@ describe('SettingsPanel: response limit', () => {
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '0' } });
     fireEvent.blur(screen.getByRole('spinbutton'));
     expect(screen.getByText('Enter a positive whole number')).toBeInTheDocument();
-    rerender(<SettingsPanel settings={{ honeypotEnabled: true, responseLimit: 9, responseLimitEnabled: true }} status="draft" onUpdate={onUpdate} />);
+    rerender(<SettingsPanel settings={{ honeypotEnabled: true, responseLimit: 9, responseLimitEnabled: true }} onUpdate={onUpdate} />);
     expect(screen.queryByText('Enter a positive whole number')).not.toBeInTheDocument();
     expect(screen.getByRole('spinbutton')).toHaveValue(9);
   });
@@ -166,7 +166,7 @@ describe('SettingsPanel: success message, honeypot and public URL', () => {
 
   it('follows an external change to the success message', () => {
     const { rerender, onUpdate } = setup({ settings: { honeypotEnabled: true, successMessage: 'A' } });
-    rerender(<SettingsPanel settings={{ honeypotEnabled: true, successMessage: 'B' }} status="draft" onUpdate={onUpdate} />);
+    rerender(<SettingsPanel settings={{ honeypotEnabled: true, successMessage: 'B' }} onUpdate={onUpdate} />);
     expect(screen.getByPlaceholderText('Thank you for your response!')).toHaveValue('B');
   });
 
@@ -178,19 +178,9 @@ describe('SettingsPanel: success message, honeypot and public URL', () => {
     expect(onUpdate).toHaveBeenCalledWith({ honeypotEnabled: false });
   });
 
-  it('shows no public URL for a draft, or for a published form without a slug', () => {
-    const { unmount } = setup({ status: 'draft', slug: 'abc' });
+  it('has no public URL: the address is on the Share tab', () => {
+    setup();
     expect(screen.queryByText('Public URL')).not.toBeInTheDocument();
-    unmount();
-    setup({ status: 'published' });
-    expect(screen.queryByText('Public URL')).not.toBeInTheDocument();
-  });
-
-  it('a published form shows its link and copies it', async () => {
-    const { container } = setup({ status: 'published', slug: 'abc' });
-    expect((container.querySelector('#public-url') as HTMLInputElement).value).toMatch(/\/f\/abc$/);
-    await userEvent.click(screen.getByRole('button', { name: 'Copy public URL' }));
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringMatching(/\/f\/abc$/));
-    expect(toast).toHaveBeenCalledWith('Link copied to clipboard.', 'success');
+    expect(screen.queryByRole('button', { name: 'Copy public URL' })).not.toBeInTheDocument();
   });
 });

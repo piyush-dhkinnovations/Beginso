@@ -1,10 +1,7 @@
 'use client';
 
-import { Check, Eye } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
-import { Button } from '@/components/ui/Button';
-import { LAYOUT_LOOKS, type LayoutLook, type LayoutPresetInfo } from '@/lib/layoutPresets';
-import { FORM_FONT_OPTIONS, brandPanelStyle, brandWashStyle } from '@/lib/formTheme';
+import type { LayoutLook } from '@/lib/layoutPresets';
+import { brandPanelStyle } from '@/lib/formTheme';
 import type { LayoutPreset } from '@/types/form';
 
 // Static schematic per preset, drawn from tokens — cards never mount the real form; only an explicit
@@ -25,7 +22,7 @@ function Sheet({ children, className = '', surface }: { children: React.ReactNod
   return <div className={`bg-(--surface-card) ${surface} p-3 flex flex-col gap-2 ${className}`}>{children}</div>;
 }
 
-function Schematic({ id, look }: { id: LayoutPreset; look: LayoutLook }) {
+export function Schematic({ id, look }: { id: LayoutPreset; look: LayoutLook }) {
   const surface = SURFACE[look.cardStyle];
   const panel = brandPanelStyle({ primaryColor: look.color, panelTreatment: look.panel });
   switch (id) {
@@ -116,56 +113,4 @@ function Schematic({ id, look }: { id: LayoutPreset; look: LayoutLook }) {
         </Sheet>
       );
   }
-}
-
-export interface LayoutPresetCardProps {
-  preset: LayoutPresetInfo;
-  selected: boolean;
-  /** Shown as a "Recommended" badge when the field count favours this preset. */
-  recommended?: boolean;
-  canPreview: boolean;
-  onPreview: () => void;
-  onUse: () => void;
-}
-
-// Reference-gallery card: tinted stage with a mini form, name + badge, short use-case, Preview + Use.
-// The per-card Mobile / Accessibility / Watch-out block lives in the Preview dialog only.
-export function LayoutPresetCard({ preset, selected, recommended, canPreview, onPreview, onUse }: LayoutPresetCardProps) {
-  const look = LAYOUT_LOOKS[preset.id];
-  const font = FORM_FONT_OPTIONS.find((f) => f.value === look.font)!;
-  return (
-    <article
-      // The card is set in the preset's own typeface; its colour appears only inside the thumbnail, so the gallery stays calm.
-      style={{ fontFamily: font.stack }}
-      className={`relative flex flex-col gap-4 rounded-xl border bg-(--surface-card) p-5 transition-colors ${
-        selected ? 'border-(--text-primary)' : 'border-(--border-default) hover:border-(--border-strong)'
-      }`}
-    >
-      <div className="relative flex h-40 items-center justify-center overflow-hidden rounded-lg border border-(--border-subtle)" style={{ '--action-primary': look.color, ...brandWashStyle({ primaryColor: look.color, backgroundStyle: look.background }) } as React.CSSProperties}>
-        <Schematic id={preset.id} look={look} />
-        {selected && (
-          <span className="absolute right-3 top-3 flex size-6 items-center justify-center rounded-full bg-(--text-primary) text-(--surface-card)" aria-hidden="true">
-            <Check size={14} />
-          </span>
-        )}
-      </div>
-      <div className="flex flex-col gap-1.5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="bg-h5 font-bold text-(--text-primary)">{preset.name}</h3>
-          {recommended && !selected ? <Badge variant="success">Recommended</Badge> : <Badge variant="neutral">{preset.best}</Badge>}
-        </div>
-        <p className="bg-body-sm text-(--text-muted) line-clamp-2">{preset.use}</p>
-        <p className="bg-caption text-(--text-disabled)">{font.label.split(' ')[0]} · {look.cardStyle} card · {look.background === 'wash' ? 'glow' : look.background} background</p>
-      </div>
-      <div className="mt-auto flex gap-3">
-        <Button type="button" variant="secondary" className="min-h-11 flex-1 gap-2" onClick={onPreview} disabled={!canPreview}>
-          <Eye size={16} aria-hidden="true" />
-          Preview
-        </Button>
-        <Button type="button" variant={selected ? 'secondary' : 'primary'} className="min-h-11 flex-1" onClick={onUse} disabled={selected}>
-          {selected ? 'In use' : 'Use this layout'}
-        </Button>
-      </div>
-    </article>
-  );
 }

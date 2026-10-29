@@ -217,6 +217,10 @@ test.describe('Chart builder', () => {
     await page.screenshot({ path: testInfo.outputPath('wizard-configure.png') });
     await next(page).click();
     await expect(page.getByRole('heading', { name: 'Preview & save' })).toBeFocused();
+    // the preview is centred in the strip that stands for the dashboard row, not pushed to its left edge
+    const strip = (await page.getByRole('region', { name: 'How it sits on the dashboard' }).locator('> div').first().boundingBox())!;
+    const finalCard = (await page.getByRole('region', { name: 'Final preview' }).boundingBox())!;
+    expect(Math.abs(finalCard.x + finalCard.width / 2 - (strip.x + strip.width / 2)), 'the preview is centred in its strip').toBeLessThan(3);
     await page.screenshot({ path: testInfo.outputPath('wizard-save.png') });
     await page.getByRole('button', { name: 'Save to dashboard' }).click();
 
