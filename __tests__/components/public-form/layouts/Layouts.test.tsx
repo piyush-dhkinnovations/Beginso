@@ -244,7 +244,7 @@ describe('layout helpers', () => {
 
   it('cardClass varies by card style and appends extra classes', () => {
     expect(cardClass({ cardStyle: 'bordered' })).toContain('border-2');
-    expect(cardClass({ cardStyle: 'elevated' })).toContain('shadow-xl');
+    expect(cardClass({ cardStyle: 'elevated' })).toContain('shadow-2xl');
     expect(cardClass({ cardStyle: 'flat' }, 'extra-x')).toContain('extra-x');
     expect(cardClass({ cardStyle: 'flat' })).not.toContain('border');
   });

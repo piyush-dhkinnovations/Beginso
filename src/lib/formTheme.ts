@@ -61,12 +61,14 @@ export function brandTypeStyle(b: Look): CSSProperties {
 
 /** The form card's surface. */
 export function brandCardClass(b: Look): string {
-  const base = 'bg-(--surface-card) rounded-2xl overflow-hidden';
+  // Each one differs in its edge AND its corners, so the choice is plain to see on the form (a hairline or a faint shadow was not):
+  //  flat: square, no edge, no shadow; soft: rounded with a soft shadow; bordered: a firm line in the brand colour; elevated: very round, floating.
+  const base = 'bg-(--surface-card) overflow-hidden';
   switch (b.cardStyle) {
-    case 'flat': return `${base}`;
-    case 'bordered': return `${base} border-2 border-(--border-default)`;
-    case 'elevated': return `${base} border border-(--border-subtle) shadow-xl`;
-    default: return `${base} border border-(--border-default) shadow-(--shadow-sm)`;
+    case 'flat': return `${base} rounded-none`;
+    case 'bordered': return `${base} rounded-xl border-2 border-(--action-primary)`;
+    case 'elevated': return `${base} rounded-3xl shadow-2xl ring-1 ring-black/5`;
+    default: return `${base} rounded-2xl border border-(--border-subtle) shadow-lg`;
   }
 }
 

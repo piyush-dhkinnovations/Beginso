@@ -1,6 +1,6 @@
 import type { PublicFormBranding } from '@/types/publicForm';
 import { brandCoverObjectPosition, brandPanelStyle } from '@/lib/formTheme';
-import { BrandMark, hasBrandMark } from './BrandMark';
+import { BrandMark, hasBrandMark, logoPx } from './BrandMark';
 import { BannerExtras, hasBannerExtras } from './BannerExtras';
 import { uploadSrc } from '@/lib/uploadSrc';
 
@@ -29,7 +29,7 @@ export function FormBanner({ branding, title }: FormBannerProps) {
         {hasText && (
           <div className="flex flex-col gap-3 px-6 pt-6 md:px-8">
             <div className="flex items-center gap-3">
-              {hasMark && <span className="flex-none"><BrandMark branding={branding} size={44} className="rounded-lg object-contain" /></span>}
+              {hasMark && <span className="flex-none"><BrandMark branding={branding} size={logoPx(branding)} className="object-contain" /></span>}
               {title && (
                 <p aria-hidden="true" className="font-bold leading-tight text-balance text-(--text-primary)" style={{ fontSize: 'var(--form-headline, 1.75rem)' }}>
                   {title}
@@ -52,7 +52,7 @@ export function FormBanner({ branding, title }: FormBannerProps) {
       {coverImageUrl && hasText && <div aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />}
       {hasText && (
         <div className="relative flex h-full min-h-44 flex-col justify-end gap-3 p-6 md:p-8 text-white">
-          {hasMark && <BrandMark branding={branding} size={44} className="rounded-lg object-contain" />}
+          {hasMark && <BrandMark branding={branding} size={logoPx(branding)} className="object-contain" />}
           {title && (
             <p aria-hidden="true" className="font-bold leading-tight text-balance" style={{ fontSize: 'var(--form-headline, 1.75rem)' }}>
               {title}

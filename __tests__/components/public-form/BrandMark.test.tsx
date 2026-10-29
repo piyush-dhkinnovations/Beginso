@@ -4,7 +4,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
-import { BrandMark, hasBrandMark } from '@/components/public-form/BrandMark';
+import { BrandMark, hasBrandMark, logoPx } from '@/components/public-form/BrandMark';
 import { FormBanner } from '@/components/public-form/FormBanner';
 
 describe('hasBrandMark', () => {
@@ -14,6 +14,25 @@ describe('hasBrandMark', () => {
     expect(hasBrandMark({ iconName: 'not-an-icon' })).toBe(false);
     expect(hasBrandMark({ iconName: 'rocket' })).toBe(false); // an older name from before the icon set changed
     expect(hasBrandMark({})).toBe(false);
+  });
+});
+
+describe('logoPx', () => {
+  it('small, medium (the default) and large are three clearly different sizes', () => {
+    expect([logoPx({ logoSize: 'sm' }), logoPx({}), logoPx({ logoSize: 'md' }), logoPx({ logoSize: 'lg' })]).toEqual([32, 48, 48, 72]);
+  });
+
+  it('the corners are a share of the size of the logo: a small logo gets half the rounding of a medium one', () => {
+    const radius = (logoSize: 'sm' | 'md' | 'lg') => parseFloat(render(<BrandMark branding={{ logoUrl: '/a.png', logoSize }} size={logoPx({ logoSize })} />).container.querySelector('img')!.style.borderRadius);
+    const [sm, md, lg] = [radius('sm'), radius('md'), radius('lg')];
+    expect(sm).toBeLessThan(md);
+    expect(md).toBeLessThan(lg);
+    expect(sm * 2).toBe(md);
+  });
+
+  it('the banner draws the logo at the chosen size', () => {
+    const { container } = render(<FormBanner branding={{ logoUrl: '/a.png', logoSize: 'lg' }} title='T' />);
+    expect(container.querySelector('img')).toHaveStyle({ width: '72px', height: '72px' });
   });
 });
 

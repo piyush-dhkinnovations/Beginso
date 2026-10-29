@@ -31,6 +31,7 @@ const BRANDING_ENUMS: Record<string, readonly string[]> = {
   fieldGrouping: ['auto', 'single'],
   formWidth: ['narrow', 'standard', 'wide'],
   coverFit: ['banner', 'original'],
+  logoSize: ['sm', 'md', 'lg'],
   backgroundStyle: ['wash', 'plain', 'solid', 'gradient', 'mesh', 'dots', 'grid', 'image'],
 };
 const BRANDING_STRINGS = ['logoUrl', 'coverImageUrl', 'backgroundImageUrl', 'bannerText'];

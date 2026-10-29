@@ -101,6 +101,8 @@ export function ImageUploadZone({
       } ${
         isDragging
           ? 'border-(--border-focus) bg-(--accent-soft)'
+          : hasImage && aspect === 'square' && !freeform
+          ? 'border-transparent bg-transparent' // a logo is its own box: no second frame around it
           : hasImage
           ? 'border-(--border-default) bg-(--surface-card)'
           : 'border-(--border-strong) bg-(--bg-subtle) hover:border-(--border-strong)'
@@ -117,7 +119,7 @@ export function ImageUploadZone({
         <Loader2 size={20} className="animate-spin text-(--text-disabled)" />
       ) : imageUrl ? (
         // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset
-        <img src={uploadSrc(imageUrl)} alt={label} className={freeform ? 'block h-auto max-h-80 w-full object-contain' : 'w-full h-full object-cover'} />
+        <img src={uploadSrc(imageUrl)} alt={label} className={freeform ? 'block h-auto max-h-80 w-full object-contain' : aspect === 'square' ? 'w-full h-full rounded-lg object-contain' : 'w-full h-full object-cover'} />
       ) : (
         <>
           <Upload size={aspect === 'square' ? 16 : 20} className="text-(--text-disabled)" />

@@ -78,7 +78,7 @@ export function BuildTabPanel({
         onDeletePage={deletePage}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-      <PageSwitcher pages={pages} activePageId={activePageId} onSelectPage={setActivePageId} />
+      <PageSwitcher pages={pages} activePageId={activePageId} onSelectPage={setActivePageId} onAddPage={addPage} />
       <Canvas
         fields={fields}
         activePageId={activePageId}

@@ -113,7 +113,7 @@ describe('BuildTabPanel', () => {
   it('Add page appends a page, and switching pages shows that page\'s own fields only', async () => {
     useBuilderStore.getState().addField('short_text');
     renderPanel();
-    await userEvent.click(screen.getByRole('button', { name: 'Add page' }));
+    await userEvent.click(screen.getAllByRole('button', { name: 'Add page' })[0]);
     expect(useBuilderStore.getState().pages).toHaveLength(2);
     const [p1, p2] = useBuilderStore.getState().pages;
     useBuilderStore.getState().setActivePageId(p2.id);

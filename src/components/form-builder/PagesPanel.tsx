@@ -135,18 +135,18 @@ export function PagesPanel({
 
 // ─── Compact page switcher (< 1024px) ───────────────────────────────────────
 // Sprint 13 (CF2.12, requirements.md 4.4). Below 1024px the Pages panel is gone, but editing the
-// fields WITHIN each page must still work, so pages stay selectable. Creating, deleting and
-// rearranging pages is multi-page structural editing — desktop-only, and said so rather than silently
+// fields WITHIN each page must still work, so pages stay selectable, and a "+" adds one. Renaming (on the
+// canvas header), deleting and rearranging pages stay desktop-only, and are said so rather than silently
 // missing.
 export function PageSwitcher({
   pages,
   activePageId,
   onSelectPage,
-}: Pick<PagesPanelProps, 'pages' | 'activePageId' | 'onSelectPage'>) {
+  onAddPage,
+}: Pick<PagesPanelProps, 'pages' | 'activePageId' | 'onSelectPage' | 'onAddPage'>) {
   return (
     <div className="lg:hidden flex flex-col gap-1 border-b bg-(--surface-card) px-3 py-2 shrink-0">
-      {pages.length > 1 && (
-        <div role="group" aria-label="Pages" className="flex gap-2 overflow-x-auto">
+      <div role="group" aria-label="Pages" className="flex items-center gap-2 overflow-x-auto">
           {pages.map((page, index) => (
             <button
               key={page.id}
@@ -162,9 +162,17 @@ export function PageSwitcher({
               Page {index + 1}
             </button>
           ))}
-        </div>
-      )}
-      <p className="bg-caption text-(--text-muted)">Pages can only be added, renamed or reordered on a larger screen. You can still edit your questions here.</p>
+          <button
+            type="button"
+            onClick={onAddPage}
+            aria-label="Add page"
+            title="Add page"
+            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md border border-dashed border-(--border-strong) text-(--text-secondary) hover:bg-(--surface-hover) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
+          >
+            <Plus size={18} aria-hidden="true" />
+          </button>
+      </div>
+      <p className="bg-caption text-(--text-muted)">Pages can only be renamed, deleted or reordered on a larger screen. You can still edit your questions here.</p>
     </div>
   );
 }

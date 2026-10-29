@@ -66,8 +66,14 @@ describe('brandCardClass', () => {
   it('varies by card style', () => {
     expect(brandCardClass({ cardStyle: 'flat' })).not.toMatch(/border|shadow/);
     expect(brandCardClass({ cardStyle: 'bordered' })).toContain('border-2');
-    expect(brandCardClass({ cardStyle: 'elevated' })).toContain('shadow-xl');
-    expect(brandCardClass({})).toContain('shadow-(--shadow-sm)');
+    expect(brandCardClass({ cardStyle: 'elevated' })).toContain('shadow-2xl');
+    expect(brandCardClass({})).toContain('shadow-lg');
+  });
+
+  it('the four looks differ in their corners as well as their edge, so the choice is plain to see', () => {
+    const corners = (cardStyle: 'flat' | 'soft' | 'bordered' | 'elevated') => brandCardClass({ cardStyle }).match(/rounded-[a-z0-9]+/)?.[0];
+    expect(new Set(['flat', 'soft', 'bordered', 'elevated'].map((s) => corners(s as 'flat'))).size).toBe(4);
+    expect(brandCardClass({ cardStyle: 'bordered' })).toContain('border-(--action-primary)');
   });
 });
 

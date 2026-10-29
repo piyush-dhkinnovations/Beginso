@@ -1,6 +1,6 @@
 /* eslint-disable @next/next/no-img-element -- arbitrary backend-served upload URLs, same tradeoff as FormBanner (no remotePatterns configured). */
 import { brandPanelStyle } from '@/lib/formTheme';
-import { BrandMark, hasBrandMark } from '../BrandMark';
+import { BrandMark, hasBrandMark, logoPx } from '../BrandMark';
 import { BannerExtras } from '../BannerExtras';
 import { Backdrop, widthClass, type LayoutFrameProps } from './shared';
 import { uploadSrc } from '@/lib/uploadSrc';
@@ -28,7 +28,7 @@ export function SplitFeatureLayout({ branding, title, stepNames, currentPage, pr
             </>
           )}
           <div className="relative">
-            {hasBrandMark(branding) && <BrandMark branding={branding} size={48} className="rounded-lg object-contain" />}
+            {hasBrandMark(branding) && <BrandMark branding={branding} size={logoPx(branding)} className="object-contain" />}
           </div>
           <div className="relative flex flex-col gap-3">
             <div aria-hidden="true" className="flex flex-col gap-2">

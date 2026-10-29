@@ -28,6 +28,7 @@ export interface PublicFormBranding {
   backgroundImageUrl?: string;
   formWidth?: 'narrow' | 'standard' | 'wide';
   coverFit?: 'banner' | 'original';
+  logoSize?: 'sm' | 'md' | 'lg';
   iconName?: string;
   bannerText?: string;
   bannerLinks?: { label?: string; url: string }[];

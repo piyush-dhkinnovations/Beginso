@@ -59,7 +59,7 @@ describe('PagesPanel', () => {
 describe('PageSwitcher', () => {
   it('lists Page 1..n with the active one pressed and selects on click', async () => {
     const onSelectPage = vi.fn();
-    render(<PageSwitcher pages={pages} activePageId="p2" onSelectPage={onSelectPage} />);
+    render(<PageSwitcher pages={pages} activePageId="p2" onSelectPage={onSelectPage} onAddPage={vi.fn()} />);
     const group = screen.getByRole('group', { name: 'Pages' });
     expect(within(group).getByRole('button', { name: 'Page 2' })).toHaveAttribute('aria-pressed', 'true');
     expect(within(group).getByRole('button', { name: 'Page 1' })).toHaveAttribute('aria-pressed', 'false');
@@ -67,9 +67,15 @@ describe('PageSwitcher', () => {
     expect(onSelectPage).toHaveBeenCalledWith('p1');
   });
 
-  it('hides the switcher for a single page but still explains structure editing is desktop-only', () => {
-    render(<PageSwitcher pages={[pages[0]]} activePageId="p1" onSelectPage={vi.fn()} />);
-    expect(screen.queryByRole('group', { name: 'Pages' })).not.toBeInTheDocument();
-    expect(screen.getByText('Pages can only be added, renamed or reordered on a larger screen. You can still edit your questions here.')).toBeInTheDocument();
+  it('a plus button adds a page, even when the form has only one', async () => {
+    const onAddPage = vi.fn();
+    render(<PageSwitcher pages={[pages[0]]} activePageId="p1" onSelectPage={vi.fn()} onAddPage={onAddPage} />);
+    await userEvent.click(within(screen.getByRole('group', { name: 'Pages' })).getByRole('button', { name: 'Add page' }));
+    expect(onAddPage).toHaveBeenCalledTimes(1);
+  });
+
+  it('still says renaming, deleting and reordering pages need a larger screen', () => {
+    render(<PageSwitcher pages={[pages[0]]} activePageId="p1" onSelectPage={vi.fn()} onAddPage={vi.fn()} />);
+    expect(screen.getByText('Pages can only be renamed, deleted or reordered on a larger screen. You can still edit your questions here.')).toBeInTheDocument();
   });
 });

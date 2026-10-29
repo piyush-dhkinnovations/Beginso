@@ -13,11 +13,11 @@ import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { Segmented } from '@/components/ui/Segmented';
 import type { PreviewDevice } from '@/components/preview/DeviceToggle';
-import { FORM_FONT_OPTIONS, PAGE_BACKGROUND_OPTIONS, brandWashStyle } from '@/lib/formTheme';
+import { FORM_FONT_OPTIONS, PAGE_BACKGROUND_OPTIONS, brandCardClass, brandWashStyle } from '@/lib/formTheme';
 import { lookBranding } from '@/lib/layoutPresets';
 import { uploadService } from '@/services/upload';
 import { bx } from '@/lib/utils';
-import type { BannerLink, ButtonRadius, ButtonStyle, CardStyle, CoverFit, CoverPosition, FieldGrouping, FormBranding, FormFont, FormSpacing, FormWidth, LayoutPreset, PageBackground, PanelTreatment, TypeScale } from '@/types/form';
+import type { BannerLink, ButtonRadius, ButtonStyle, CardStyle, CoverFit, CoverPosition, FieldGrouping, FormBranding, FormFont, FormSpacing, FormWidth, LayoutPreset, LogoSize, PageBackground, PanelTreatment, TypeScale } from '@/types/form';
 import { ImageUploadZone } from './BrandingPanel';
 import { LayoutChooser } from './LayoutChooser';
 import { ZOOM_STEPS } from '@/lib/previewZoom';
@@ -62,6 +62,43 @@ function ChipChoice<T extends string>({ label, value, options, onChange, columns
               value === o.value ? 'border-(--action-primary) bg-(--accent-soft) text-(--text-primary)' : 'border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)',
             )}
           >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** The four card looks, each drawn as a small card on a page, so the difference is seen before it is chosen. */
+const CARD_STYLES: { value: CardStyle; label: string }[] = [
+  { value: 'flat', label: 'Flat' },
+  { value: 'soft', label: 'Soft shadow' },
+  { value: 'bordered', label: 'Bordered' },
+  { value: 'elevated', label: 'Elevated' },
+];
+
+function CardStyleTiles({ value, brand, onChange }: { value: CardStyle; brand: string; onChange: (value: CardStyle) => void }) {
+  const id = useId();
+  return (
+    <div role="group" aria-labelledby={id} className="flex flex-col gap-2">
+      <span id={id} className="bg-label">Card</span>
+      <div className="grid grid-cols-2 gap-2">
+        {CARD_STYLES.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            aria-pressed={value === o.value}
+            onClick={() => onChange(o.value)}
+            className={bx(
+              'flex flex-col gap-2 rounded-lg border-2 p-2 bg-body-sm font-medium focus-visible:outline-2 focus-visible:outline-(--border-focus)',
+              value === o.value ? 'border-(--action-primary) bg-(--accent-soft) text-(--text-primary)' : 'border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)',
+            )}
+          >
+            {/* a page with a card on it, drawn with the same classes as the real form card */}
+            <span aria-hidden="true" className="flex h-14 items-center justify-center rounded-md bg-(--bg-subtle) px-4" style={{ ['--action-primary' as string]: brand }}>
+              <span className={bx(brandCardClass({ cardStyle: o.value }), 'block h-9 w-full')} />
+            </span>
             {o.label}
           </button>
         ))}
@@ -278,7 +315,7 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
     ),
     style: (
       <>
-        <ChipChoice<CardStyle> label="Card" value={branding.cardStyle ?? 'soft'} columns={2} options={[{ value: 'flat', label: 'Flat' }, { value: 'soft', label: 'Soft shadow' }, { value: 'bordered', label: 'Bordered' }, { value: 'elevated', label: 'Elevated' }]} onChange={(cardStyle) => set({ cardStyle })} />
+        <CardStyleTiles value={branding.cardStyle ?? 'soft'} brand={brand} onChange={(cardStyle) => set({ cardStyle })} />
         <ChipChoice<FormWidth> label="Form width" value={branding.formWidth ?? 'standard'} options={[{ value: 'narrow', label: 'Narrow' }, { value: 'standard', label: 'Standard' }, { value: 'wide', label: 'Wide' }]} onChange={(formWidth) => set({ formWidth })} />
         <ChipChoice<FormSpacing> label="Spacing" value={branding.spacing ?? 'comfortable'} options={[{ value: 'compact', label: 'Compact' }, { value: 'comfortable', label: 'Comfortable' }, { value: 'spacious', label: 'Spacious' }]} onChange={(spacing) => set({ spacing })} />
         <ChipChoice<FieldGrouping> label="Fields" value={branding.fieldGrouping ?? 'auto'} columns={2} options={[{ value: 'auto', label: 'Side by side' }, { value: 'single', label: 'One per row' }]} onChange={(fieldGrouping) => set({ fieldGrouping })} />
@@ -316,6 +353,7 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
           <span className="bg-label">Logo</span>
           <ImageUploadZone label="Logo" imageUrl={branding.logoUrl} aspect="square" onUpload={(file) => upload(file, 'logoUrl')} onRemove={() => set({ logoUrl: undefined })} />
           <p className="bg-caption text-(--text-muted)">Square, 256 × 256 or larger.</p>
+          <ChipChoice<LogoSize> label="Logo size" value={branding.logoSize ?? 'md'} options={[{ value: 'sm', label: 'Small' }, { value: 'md', label: 'Medium' }, { value: 'lg', label: 'Large' }]} onChange={(logoSize) => set({ logoSize })} />
         </div>
         <div className="flex flex-col gap-2">
           <span className="bg-label">Cover image</span>
@@ -336,7 +374,10 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
       <h2 className="sr-only">Branding</h2>
       <div className="grid items-start gap-6 lg:grid-cols-[24rem_minmax(0,1fr)]">
         <Card className="flex min-w-0 flex-col gap-4 p-4 lg:max-h-[calc(100vh-16.5rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <Tabs tabs={SECTIONS} activeId={section} onChange={(id) => setSection(id as Section)} ariaLabel="Branding sections" panelId="branding-section" />
+          {/* Stays at the top of the card while the controls scroll under it. */}
+          <div className="sticky -top-4 z-10 -mx-4 -mt-4 bg-(--surface-card) px-4 pt-4">
+            <Tabs tabs={SECTIONS} activeId={section} onChange={(id) => setSection(id as Section)} ariaLabel="Branding sections" panelId="branding-section" />
+          </div>
           <div role="tabpanel" id="branding-section" aria-labelledby={`tab-${section}`} className="flex flex-col gap-5">
             {panels[section]}
           </div>

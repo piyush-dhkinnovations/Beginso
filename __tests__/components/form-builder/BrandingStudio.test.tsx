@@ -140,6 +140,24 @@ describe('Layout', () => {
     expect(screen.queryByRole('button', { name: /Reset style/ })).not.toBeInTheDocument();
   });
 
+  it('lets the owner pick a logo size: small, medium or large', async () => {
+    const { onBrandingUpdate } = draw({ branding: { logoUrl: 'https://x/logo.png' } });
+    await userEvent.click(tab('Header'));
+    const group = screen.getByRole('group', { name: 'Logo size' });
+    expect(within(group).getByRole('button', { name: 'Medium' })).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(within(group).getByRole('button', { name: 'Large' }));
+    expect(onBrandingUpdate).toHaveBeenLastCalledWith({ logoSize: 'lg' });
+  });
+
+  it('the Card choice shows a small picture of each of the four looks', async () => {
+    const { onBrandingUpdate } = draw();
+    await userEvent.click(tab('Style'));
+    const group = screen.getByRole('group', { name: 'Card' });
+    expect(within(group).getAllByRole('button')).toHaveLength(4);
+    await userEvent.click(within(group).getByRole('button', { name: 'Elevated' }));
+    expect(onBrandingUpdate).toHaveBeenLastCalledWith({ cardStyle: 'elevated' });
+  });
+
   it('adds, edits and removes links, up to five', async () => {
     const { onBrandingUpdate } = draw({ branding: { bannerLinks: [{ label: 'A', url: 'https://a.com' }] } });
     await userEvent.click(tab('Header'));

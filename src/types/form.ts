@@ -154,6 +154,7 @@ export type CardStyle = 'flat' | 'soft' | 'bordered' | 'elevated';
 export type PanelTreatment = 'solid' | 'gradient' | 'image' | 'pattern';
 export type FieldGrouping = 'auto' | 'single';
 export type CoverFit = 'banner' | 'original';
+export type LogoSize = 'sm' | 'md' | 'lg';
 export type FormWidth = 'narrow' | 'standard' | 'wide';
 export type PageBackground = 'wash' | 'plain' | 'solid' | 'gradient' | 'mesh' | 'dots' | 'grid' | 'image';
 
@@ -184,7 +185,8 @@ export interface FormBranding {
   fieldGrouping?: FieldGrouping; // default 'auto' — short fields pair into two columns
   backgroundStyle?: PageBackground; // default 'wash' — how the PAGE behind the form card is filled (not the card)
   iconName?: string;             // the form's icon when it has no uploaded logo (lib/formIcons)
-  coverFit?: CoverFit;           // 'banner' crops the cover to a strip; 'original' shows the whole image at its own ratio
+  coverFit?: CoverFit;
+  logoSize?: LogoSize;           // default 'md' — how big the logo is drawn on the form's header           // 'banner' crops the cover to a strip; 'original' shows the whole image at its own ratio
   formWidth?: FormWidth;         // default 'standard' — how wide the form card is
   backgroundImageUrl?: string;   // the owner's own picture, used when backgroundStyle is 'image'
   backgroundColor?: string;      // hex the page background is built from; absent = the primary colour
