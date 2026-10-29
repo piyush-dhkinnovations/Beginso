@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, ArrowRight, Copy, MoreHorizontal, Pencil, Share2, Trash2, Users } from 'lucide-react';
+import { Check, Copy, MoreHorizontal, Pencil, Share2, Trash2, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -11,9 +11,10 @@ import { chartBuilderService } from '@/services/chartBuilder';
 import { ChartResult } from './ChartResult';
 import { DrillChart } from './DrillChart';
 import { DEFAULT_DISPLAY, isDrill } from '@/lib/chartBuilder';
+import { SIZES, SIZE_LABEL } from '@/lib/chartOptions';
 import { useFormFields } from '@/hooks/useFormFields';
 import type { BuilderChartType, DrillStep, QueryEntry } from '@/types/chartBuilder';
-import type { SavedChart } from '@/types/charts';
+import type { ChartSize, SavedChart } from '@/types/charts';
 
 interface BuilderChartCardProps {
   formId: string;
@@ -22,15 +23,14 @@ interface BuilderChartCardProps {
   /** My own chart (or an admin's shared one) and a role that may edit: the menu and the drag handle appear. */
   canManage: boolean;
   dragHandle?: ReactNode;
-  canMoveEarlier: boolean;
-  canMoveLater: boolean;
   /** A part was clicked: on a simple chart its group; on a drill-down the last level's group, or (entry null) all of a level, with the parts clicked on the way. */
   onSelect: (chart: SavedChart, entry: QueryEntry | null, steps: DrillStep[]) => void;
   onEdit: (chart: SavedChart) => void;
   onDuplicate: (chart: SavedChart) => void;
   onToggleShare: (chart: SavedChart) => void;
   onRemove: (chart: SavedChart) => void;
-  onMove: (chart: SavedChart, direction: -1 | 1) => void;
+  /** How much of a row the card takes on the dashboard: the same Small / Medium / Large the wizard offers. */
+  onResize: (chart: SavedChart, size: ChartSize) => void;
 }
 
 /**
@@ -38,7 +38,7 @@ interface BuilderChartCardProps {
  * never blanks the page), shows the chart, and lets a person click a part to see the responses behind it. Removing asks first, in the
  * card itself.
  */
-export function BuilderChartCard({ formId, scope, chart, canManage, dragHandle, canMoveEarlier, canMoveLater, onSelect, onEdit, onDuplicate, onToggleShare, onRemove, onMove }: BuilderChartCardProps) {
+export function BuilderChartCard({ formId, scope, chart, canManage, dragHandle, onSelect, onEdit, onDuplicate, onToggleShare, onRemove, onResize }: BuilderChartCardProps) {
   const [confirming, setConfirming] = useState(false);
   const definition = chart.definition!;
   const drill = isDrill(definition) ? definition : null;
@@ -61,8 +61,12 @@ export function BuilderChartCard({ formId, scope, chart, canManage, dragHandle, 
         { id: 'edit', label: 'Edit', icon: <Pencil size={14} />, onSelect: () => onEdit(chart) },
         { id: 'duplicate', label: 'Duplicate', icon: <Copy size={14} />, onSelect: () => onDuplicate(chart) },
         { id: 'share', label: shared ? 'Stop sharing' : 'Share with workspace', icon: shared ? <Users size={14} /> : <Share2 size={14} />, onSelect: () => onToggleShare(chart) },
-        { id: 'earlier', label: 'Move earlier', icon: <ArrowLeft size={14} />, onSelect: () => onMove(chart, -1), disabled: !canMoveEarlier },
-        { id: 'later', label: 'Move later', icon: <ArrowRight size={14} />, onSelect: () => onMove(chart, 1), disabled: !canMoveLater },
+        ...SIZES.map((s) => ({
+          id: `size-${s}`,
+          label: `Size: ${SIZE_LABEL[s]}`,
+          icon: chart.size === s ? <Check size={14} /> : <span className="inline-block w-3.5" />,
+          onSelect: () => onResize(chart, s),
+        })),
         { id: 'remove', label: 'Remove', icon: <Trash2 size={14} />, danger: true, onSelect: () => setConfirming(true) },
       ]
     : [];

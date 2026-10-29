@@ -86,7 +86,9 @@ export function CustomChartCard({ formId, scope, chart, field, range, canManage,
           )}
         </div>
       ) : (
-        <ChartBody def={chart} field={field} query={query} onSelect={(t) => onSelect(chart, t)} />
+        <div className="flex flex-1 flex-col justify-center">
+          <ChartBody def={chart} field={field} query={query} onSelect={(t) => onSelect(chart, t)} />
+        </div>
       )}
     </Card>
   );

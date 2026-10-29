@@ -67,6 +67,14 @@ describe('Sidebar (collapsed rail)', () => {
     expect(screen.queryByRole('tooltip', { hidden: true })).not.toBeInTheDocument();
   });
 
+  it('draws the label on the page itself, not inside the sidebar, so the content after the sidebar cannot paint over it ("Resp" cut short)', () => {
+    const { container } = rail();
+    fireEvent.mouseEnter(screen.getByRole('link', { name: 'Insights' }));
+    const tip = screen.getByRole('tooltip', { hidden: true });
+    expect(tip.parentElement).toBe(document.body);
+    expect(container.contains(tip)).toBe(false);
+  });
+
   it('does not rely on a native title (it would show a second tooltip)', () => {
     rail();
     expect(screen.getByRole('link', { name: 'Insights' })).not.toHaveAttribute('title');

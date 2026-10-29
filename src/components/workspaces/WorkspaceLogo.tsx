@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { bx } from '@/lib/utils';
 import { localAvatarSrc } from '@/lib/avatarUrl';
 
-const SIZE = { sm: 'size-8 rounded-md', md: 'size-11 rounded-lg' } as const;
+const SIZE = { sm: 'size-8 rounded', md: 'size-11 rounded-md' } as const;
 
 /**
  * A workspace's own logo, or the BeginSo mark when it has none (or the image cannot load). The same two looks as the workspace switcher in

@@ -51,6 +51,8 @@ const SPAN: Record<ChartSize, string> = {
   large: 'md:col-span-6 xl:col-span-6',
 };
 
+// Cards in one row are the same height (the grid stretches them). Inside a card the title stays at the top, the chart is centred in the space that
+// is left, and its notes and "Show as a table" sit at the bottom, so a short chart beside a tall one is spaced out, not left with an empty half.
 const GRID = 'grid grid-cols-1 gap-4 md:grid-cols-6';
 
 function SortableChart({ chart, children }: { chart: SavedChart; children: (handle: ReactNode) => ReactNode }) {
@@ -227,18 +229,6 @@ export function CustomChartsSection({ form, formId, scope, range, onAddRequest }
     onDragCancel: ({ active }: { active: { id: string | number } }) => `Reordering cancelled. Chart ${titleOf(active.id)} did not move.`,
   };
 
-  // "Move earlier / later" (the same order a drag makes, for people who do not drag).
-  function moveChart(chart: SavedChart, direction: -1 | 1) {
-    const from = mine.findIndex((c) => c._id === chart._id);
-    const to = from + direction;
-    if (from < 0 || to < 0 || to >= mine.length) return;
-    const next = arrayMove(mine, from, to).map((c, i) => ({ id: c._id, position: i }));
-    const byId = new Map(next.map((n) => [n.id, n.position]));
-    void optimistic((old) => old.map((c) => (byId.has(c._id) ? { ...c, position: byId.get(c._id)! } : c))).then((ctx) =>
-      reorderMutation.mutate(next.map((n) => n.id), { onError: () => rollback(ctx) }),
-    );
-  }
-
   const editHref = (chart: SavedChart) => `/forms/${formId}/insights/charts/${chart._id}/edit${scope !== 'personal' ? `?ws=${encodeURIComponent(scope)}` : ''}`;
 
   function selectSegment(chart: SavedChart, target: DrillTarget) {
@@ -264,14 +254,12 @@ export function CustomChartsSection({ form, formId, scope, range, onAddRequest }
         scope={scope}
         canManage={canEdit && (chart.canEdit ?? manage)}
         dragHandle={handle}
-        canMoveEarlier={mine.findIndex((c) => c._id === chart._id) > 0}
-        canMoveLater={mine.findIndex((c) => c._id === chart._id) >= 0 && mine.findIndex((c) => c._id === chart._id) < mine.length - 1}
         onSelect={(c, entry, steps) => setBuilderDrill({ chart: c, entry, steps })}
         onEdit={(c) => router.push(editHref(c))}
         onDuplicate={(c) => duplicateMutation.mutate(c)}
         onToggleShare={(c) => shareMutation.mutate(c)}
         onRemove={(c) => removeMutation.mutate(c)}
-        onMove={moveChart}
+        onResize={(c, size) => resizeMutation.mutate({ chart: c, size })}
       />
     ) : (
     <CustomChartCard

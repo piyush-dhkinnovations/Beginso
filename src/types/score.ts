@@ -44,23 +44,3 @@ export interface ScorePayload {
   criterionId: string;
   value: number;
 }
-
-/** One row of GET /api/forms/:formId/score-comparison. */
-export interface ScoreComparisonRow {
-  responseId: string;
-  reference?: string;
-  scoreAverage: number | null;
-  scoreCount: number;
-}
-
-export interface GetScoreComparisonParams {
-  page?: number;
-  sort?: 'scoreAverage' | '-scoreAverage';
-}
-
-export interface PaginatedScoreComparison {
-  data: ScoreComparisonRow[];
-  total: number;
-  page: number;
-  limit: number;
-}

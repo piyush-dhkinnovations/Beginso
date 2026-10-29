@@ -106,13 +106,13 @@ export function ResponsesTable({
   const [pageSort, setPageSort] = useState<TableSort | undefined>();
   const activePageSort = everythingLoaded ? pageSort : undefined;
   const sort: TableSort | undefined = activePageSort ?? { key: sortBy, dir: submittedOrder };
-  // Sorted by the server across every page: the submission time, the email, and one form's questions (answers are filed per form).
-  const serverSortable = (key: string) => key === 'submitted' || key === 'email' || (!!formId && key.startsWith('q:'));
+  // Sorted by the server across every page: the submission time, the email, the average score, and one form's questions (answers are filed per form).
+  const serverSortable = (key: string) => key === 'submitted' || key === 'email' || key === 'score' || (!!formId && key.startsWith('q:'));
   const toggleSort = (key: string) => {
     if (serverSortable(key)) {
       setPageSort(undefined);
-      // Another column starts A to Z (newest first for the time); the same column turns round.
-      const dir = key === sortBy ? (submittedOrder === 'desc' ? 'asc' : 'desc') : key === 'submitted' ? 'desc' : 'asc';
+      // Another column starts A to Z (newest first for the time, highest first for the score); the same column turns round.
+      const dir = key === sortBy ? (submittedOrder === 'desc' ? 'asc' : 'desc') : key === 'submitted' || key === 'score' ? 'desc' : 'asc';
       if (onSortChange) onSortChange(key, dir);
       else if (key === 'submitted') onSubmittedOrderChange?.(dir);
       return;

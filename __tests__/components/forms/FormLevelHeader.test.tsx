@@ -58,14 +58,14 @@ describe('FormLevelHeader', () => {
     Object.defineProperty(navigator, 'clipboard', { value: { writeText: vi.fn().mockResolvedValue(undefined) }, configurable: true });
   });
 
-  it.each(['/forms/f1/edit', '/forms/f1/inbox', '/forms/f1/settings'])('renders nothing and fetches nothing on %s', (p) => {
+  it.each(['/forms/f1/edit', '/forms/f1/inbox', '/forms/f1/settings', '/forms/f1/scores'])('renders nothing and fetches nothing on %s', (p) => {
     nav.pathname = p;
     renderHeader();
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
     expect(getFormById).not.toHaveBeenCalled();
   });
 
-  it('shows the title, status, dates and the primary actions on /overview and /scores', async () => {
+  it('shows the title, status, dates and the primary actions on /overview', async () => {
     renderHeader();
     expect(await screen.findByText('Survey')).toBeInTheDocument();
     expect(screen.getByText('Published')).toBeInTheDocument();
@@ -73,12 +73,6 @@ describe('FormLevelHeader', () => {
     expect(screen.getByRole('link', { name: /Preview/ })).toHaveAttribute('href', '/forms/f1/preview');
     expect(screen.getByRole('link', { name: /Edit form/ })).toHaveAttribute('href', '/forms/f1/edit');
     expect(screen.getByRole('button', { name: /^Share$/ })).toBeInTheDocument();
-  });
-
-  it('also appears on /scores', async () => {
-    nav.pathname = '/forms/f1/scores/';
-    renderHeader();
-    expect(await screen.findByText('Survey')).toBeInTheDocument();
   });
 
   it('a personal form owned by the caller goes back to Forms', async () => {

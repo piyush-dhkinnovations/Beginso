@@ -19,53 +19,55 @@ interface WizardStepsProps {
 }
 
 /**
- * The left-hand list of steps: an ordered list, the current step marked `aria-current="step"`, finished steps with a check and what was
- * chosen. On a phone it becomes one row (the current step's name stays visible) so the form below keeps the room.
+ * The steps in one row across the top of the builder: an ordered list, the current step marked `aria-current="step"`, finished steps with a
+ * check and what was chosen, and a line from each step to the next that turns green once the step is done. Under `md` only the current
+ * step keeps its name, so the row never needs a second line.
  */
 export function WizardSteps({ steps, current, onGoTo }: WizardStepsProps) {
   return (
-    <nav aria-label="Chart steps">
-      <ol className="m-0 flex min-w-0 list-none gap-3 p-0 lg:flex-col lg:gap-5">
+    <nav aria-label="Chart steps" className="rounded-xl border border-(--border-default) bg-(--surface-card) px-4 py-3 md:px-5">
+      <ol className="m-0 flex min-w-0 list-none items-center gap-3 p-0">
         {steps.map((step, i) => {
           const done = i < current;
           const isCurrent = i === current;
+          const last = i === steps.length - 1;
           const body = (
             <>
               <span
                 aria-hidden="true"
                 className={bx(
-                  'flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 bg-body-sm font-semibold lg:h-9 lg:w-9 lg:bg-body',
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 bg-body-sm font-semibold',
                   done && 'border-(--success) bg-(--success) text-white',
-                  isCurrent && 'border-(--action-primary) text-(--action-primary)',
+                  isCurrent && 'border-(--action-primary) bg-(--accent-soft) text-(--action-primary)',
                   !done && !isCurrent && 'border-(--border-default) text-(--text-muted)',
                 )}
               >
                 {done ? <Check size={14} /> : i + 1}
               </span>
-              <span className={bx('min-w-0 flex-col text-left', isCurrent ? 'flex' : 'sr-only lg:not-sr-only lg:flex')}>
-                <span className={bx('truncate bg-body font-semibold', isCurrent ? 'text-(--text-primary)' : 'text-(--text-secondary)')}>
+              <span className={bx('min-w-0 flex-col text-left', isCurrent ? 'flex' : 'sr-only md:not-sr-only md:flex')}>
+                <span className={bx('truncate bg-body-sm font-semibold', isCurrent ? 'text-(--text-primary)' : 'text-(--text-secondary)')}>
                   {step.label}
                   {done && <span className="sr-only"> (done)</span>}
                 </span>
-                <span className="truncate bg-caption text-(--text-muted)">{done && step.value ? step.value : step.hint}</span>
+                <span className="hidden truncate bg-caption text-(--text-muted) md:block">{done && step.value ? step.value : step.hint}</span>
               </span>
             </>
           );
           return (
-            <li key={step.label} aria-current={isCurrent ? 'step' : undefined} className={bx('relative min-w-0', isCurrent && 'max-lg:flex-1')}>
-              {/* the line from this step's circle down to the next one: green once this step is done */}
-              {i < steps.length - 1 && <span aria-hidden="true" className={bx('absolute top-[2.8rem] -bottom-4 left-[1.6rem] hidden w-0.5 rounded-full lg:block', done ? 'bg-(--success)' : 'bg-(--border-default)')} />}
+            <li key={step.label} aria-current={isCurrent ? 'step' : undefined} className={bx('flex min-w-0 items-center gap-3', last ? 'shrink-0' : 'flex-1', isCurrent && 'max-md:flex-1')}>
               {done ? (
                 <button
                   type="button"
                   onClick={() => onGoTo(i)}
-                  className="flex w-full items-center gap-3 rounded-lg px-0 py-1 text-left hover:bg-(--surface-hover) focus-visible:outline-2 focus-visible:outline-(--border-focus) lg:px-2"
+                  className="-mx-1 flex min-w-0 items-center gap-3 rounded-lg px-1 py-0.5 text-left hover:bg-(--surface-hover) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
                 >
                   {body}
                 </button>
               ) : (
-                <div className="flex items-center gap-3 px-0 py-1 lg:px-2">{body}</div>
+                <div className="flex min-w-0 items-center gap-3">{body}</div>
               )}
+              {/* the line to the next step: green once this one is done */}
+              {!last && <span aria-hidden="true" className={bx('h-0.5 min-w-4 flex-1 rounded-full', done ? 'bg-(--success)' : 'bg-(--border-default)', isCurrent && 'max-md:hidden')} />}
             </li>
           );
         })}

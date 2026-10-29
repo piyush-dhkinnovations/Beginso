@@ -29,40 +29,42 @@ export function StepSave({ state, onChange, canShare }: StepSaveProps) {
   const percentOk = percentAvailable(state.query.measure.type);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-5">
       <StepSection id="display-heading" title="Display settings" description="What the numbers say and how the chart is coloured.">
-        <div className="flex flex-col gap-1.5">
-          <span id="values-label" className="bg-label">
-            Show values as
-          </span>
-          <Segmented
-            ariaLabel="Show values as"
-            options={[
-              { id: 'counts', label: 'Counts' },
-              { id: 'percent', label: 'Percentages' },
-            ]}
-            value={percentOk ? display.values : 'counts'}
-            onChange={(id) => percentOk && setDisplay({ values: id as ChartDisplay['values'] })}
-            className={bx('self-start', !percentOk && 'pointer-events-none opacity-50')}
-          />
-          {!percentOk && <p className="bg-caption text-(--text-muted)">Percentages are available for counts and sums.</p>}
-        </div>
-
+        {/* one list: each setting on its own line, its control at the right */}
         <div className="flex flex-col divide-y divide-(--border-subtle) rounded-lg border border-(--border-default)">
-          <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-2.5">
+            <div className="min-w-0">
+              <span id="values-label" className="bg-body-sm text-(--text-primary)">
+                Show values as
+              </span>
+              {!percentOk && <p className="bg-caption text-(--text-muted)">Percentages are available for counts and sums.</p>}
+            </div>
+            <Segmented
+              ariaLabel="Show values as"
+              options={[
+                { id: 'counts', label: 'Counts' },
+                { id: 'percent', label: 'Percentages' },
+              ]}
+              value={percentOk ? display.values : 'counts'}
+              onChange={(id) => percentOk && setDisplay({ values: id as ChartDisplay['values'] })}
+              className={bx(!percentOk && 'pointer-events-none opacity-50')}
+            />
+          </div>
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5">
             <label htmlFor="show-legend" className="bg-body-sm text-(--text-primary)">
               Show legend
             </label>
             <Switch id="show-legend" checked={display.legend} onChange={(legend) => setDisplay({ legend })} />
           </div>
-          <div className="flex items-center justify-between gap-3 px-4 py-3">
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5">
             <label htmlFor="show-labels" className="bg-body-sm text-(--text-primary)">
               Show data labels
             </label>
             <Switch id="show-labels" checked={display.dataLabels} onChange={(dataLabels) => setDisplay({ dataLabels })} />
           </div>
           {state.kind === 'drilldown' && (
-            <div className="flex items-start justify-between gap-3 px-4 py-3">
+            <div className="flex items-start justify-between gap-3 px-4 py-2.5">
               <div className="min-w-0">
                 <label htmlFor="interactive-drill" className="bg-body-sm text-(--text-primary)">
                   Interactive drill-down
@@ -85,7 +87,7 @@ export function StepSave({ state, onChange, canShare }: StepSaveProps) {
                 <label
                   key={p.id}
                   className={bx(
-                    'flex cursor-pointer items-center gap-2 rounded-lg border-2 px-3 py-2 bg-body-sm has-focus-visible:outline-2 has-focus-visible:outline-(--border-focus)',
+                    'flex cursor-pointer items-center gap-2 rounded-lg border-2 px-2.5 py-1.5 bg-body-sm has-focus-visible:outline-2 has-focus-visible:outline-(--border-focus)',
                     selected ? 'border-(--action-primary) bg-(--accent-soft)' : 'border-(--border-default) hover:bg-(--surface-hover)',
                   )}
                 >
@@ -113,7 +115,7 @@ export function StepSave({ state, onChange, canShare }: StepSaveProps) {
                 <label
                   key={s.id}
                   className={bx(
-                    'flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 px-2 py-3 text-center has-focus-visible:outline-2 has-focus-visible:outline-(--border-focus)',
+                    'flex cursor-pointer flex-col items-center gap-1 rounded-lg border-2 px-2 py-2.5 text-center has-focus-visible:outline-2 has-focus-visible:outline-(--border-focus)',
                     selected ? 'border-(--action-primary) bg-(--accent-soft)' : 'border-(--border-default) hover:bg-(--surface-hover)',
                   )}
                 >

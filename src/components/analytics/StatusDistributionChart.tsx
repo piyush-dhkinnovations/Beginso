@@ -4,8 +4,10 @@ import { PieChart as PieChartIcon } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Donut } from '@/components/ui/charts/Rings';
 import { seriesColor } from '@/components/ui/charts';
-import { CATEGORY_LABELS, type StageCategory } from '@/types/stage';
+import { bx } from '@/lib/utils';
+import { CATEGORY_LABELS, type StageCategory, type StageRef } from '@/types/stage';
 import type { AnalyticsOverview } from '@/types/analytics';
 
 const CHART_HEIGHT = 240;
@@ -25,9 +27,14 @@ interface StatusDistributionChartProps {
   /** Whether the current Date_Range is "All time" — changes the empty-state copy, matching
    * TrendChart (Requirement 4.4, reused per 5.4 — one shared empty state, one shared cause). */
   isAllTime?: boolean;
+  /** Every stage this form can use, in the order of its pipeline. With these the card lists all of them, a stage nobody is in yet included (at 0). */
+  stages?: readonly StageRef[];
 }
 
-export function StatusDistributionChart({ overview, isLoading, isError = false, onRetry, isAllTime = false }: StatusDistributionChartProps) {
+/** More rows than this scroll inside the card instead of making it taller than the chart beside it. */
+const VISIBLE_ROWS = 6;
+
+export function StatusDistributionChart({ overview, isLoading, isError = false, onRetry, isAllTime = false, stages }: StatusDistributionChartProps) {
   if (isLoading) {
     return (
       <Card>
@@ -73,10 +80,17 @@ export function StatusDistributionChart({ overview, isLoading, isError = false, 
   // the three category totals, as if it had three stages). Stages are grouped New -> In Progress -> Completed. Responses that are in no
   // stage (older data) get their own row so the rows always add up to the total. Without stage counts (a personal form, an older
   // backend) the three categories are shown, as before.
-  const stageRows = overview?.stageCounts?.length
-    ? [...overview.stageCounts].sort(
-        (a, b) => SEGMENT_ORDER.indexOf(a.category) - SEGMENT_ORDER.indexOf(b.category) || b.count - a.count || a.name.localeCompare(b.name),
-      )
+  // When the form's stages are known, every one of them is a row, in the order of the pipeline, and a stage nobody is in yet shows 0: the card
+  // is the pipeline, not only the part of it that has responses. A stage that has responses but is no longer on the list (it was deleted) is
+  // kept at the end so the rows still add up.
+  const counts = overview?.stageCounts;
+  const stageRows = counts?.length
+    ? stages?.length
+      ? [
+          ...stages.map((s) => ({ stageId: s.id, name: s.name, category: s.category, count: counts.find((c) => c.stageId === s.id)?.count ?? 0 })),
+          ...counts.filter((c) => !stages.some((s) => s.id === c.stageId)),
+        ]
+      : [...counts].sort((a, b) => SEGMENT_ORDER.indexOf(a.category) - SEGMENT_ORDER.indexOf(b.category) || b.count - a.count || a.name.localeCompare(b.name))
     : null;
   const staged = stageRows?.reduce((sum, r) => sum + r.count, 0) ?? 0;
   const rows: { key: string; label: string; count: number }[] = stageRows
@@ -86,28 +100,34 @@ export function StatusDistributionChart({ overview, isLoading, isError = false, 
       ]
     : SEGMENT_ORDER.map((c) => ({ key: c, label: CATEGORY_LABELS[c], count: categoryCounts[c] }));
 
+  const scrolls = rows.length > VISIBLE_ROWS;
   return (
-    <Card>
+    <Card className="flex h-full flex-col">
       <h3 className="bg-h5 text-(--text-primary) font-bold mb-4">Status Distribution</h3>
-      <div className="flex flex-col items-center gap-5">
-        {/* A stacked bar, not a donut that would print the total twice. */}
-        <div
-          role="img"
-          aria-label={`Status distribution: ${rows.map((r) => `${r.count} ${r.label.toLowerCase()}`).join(', ')}`}
-          className="flex h-4 w-full gap-0.5 overflow-hidden rounded-full"
-        >
-          {rows.map((row, ci) => (row.count > 0 ? <span key={row.key} style={{ flexGrow: row.count, backgroundColor: seriesColor(ci) }} /> : null))}
+      {/* The donut and the list share the card's height, so it never has a blank lower half next to a taller chart. In a narrow column they
+          are stacked; in a wide one (a tablet, a single column) side by side. */}
+      <div className="flex flex-1 flex-col items-center justify-center gap-5 sm:flex-row sm:gap-8 lg:flex-col lg:gap-5">
+        <div role="img" aria-label={`Status distribution: ${rows.map((r) => `${r.count} ${r.label.toLowerCase()}`).join(', ')}`} className="shrink-0">
+          <Donut
+            size={144}
+            centre={total.toLocaleString()}
+            sub={total === 1 ? 'response' : 'responses'}
+            segments={rows.map((row, ci) => ({ label: row.label, value: row.count, color: seriesColor(ci) }))}
+          />
         </div>
 
-        <div className="flex flex-col gap-2.5 w-full">
+        <div
+          {...(scrolls ? { role: 'region', 'aria-label': 'Responses in each stage', tabIndex: 0 } : {})}
+          className={bx('flex w-full min-w-0 flex-col gap-2.5', scrolls && 'max-h-44 overflow-y-auto pr-1 focus-visible:outline-2 focus-visible:outline-(--border-focus)')}
+        >
           {rows.map((row, ci) => (
             <div key={row.key} className="flex items-center justify-between gap-6">
               <span className="flex min-w-0 items-center gap-2">
                 <span aria-hidden="true" className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: seriesColor(ci) }} />
-                <span className="truncate bg-body-sm font-medium text-(--text-secondary)" title={row.label}>{row.label}</span>
+                <span className={bx('truncate bg-body-sm font-medium', row.count === 0 ? 'text-(--text-muted)' : 'text-(--text-secondary)')} title={row.label}>{row.label}</span>
               </span>
               <span className="flex shrink-0 items-center gap-3">
-                <span className="bg-body-sm font-semibold text-(--text-primary)">{row.count.toLocaleString()}</span>
+                <span className={bx('bg-body-sm font-semibold', row.count === 0 ? 'text-(--text-muted)' : 'text-(--text-primary)')}>{row.count.toLocaleString()}</span>
                 <span className="bg-caption text-(--text-muted) w-12 text-right">{percentOf(row.count)}%</span>
               </span>
             </div>

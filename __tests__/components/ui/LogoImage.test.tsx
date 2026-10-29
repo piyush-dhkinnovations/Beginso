@@ -15,6 +15,15 @@ describe('LogoImage', () => {
     expect(img.className).toMatch(/opacity-100/);
   });
 
+  it('rounds its corners in proportion to its size (a sixth of the width), so a small logo is not turned into a circle', () => {
+    const small = render(<LogoImage src="/a.png" size={24} />);
+    expect(small.container.querySelector('img')).toHaveStyle({ borderRadius: '4px' });
+    const large = render(<LogoImage src="/b.png" size={48} />);
+    expect(large.container.querySelector('img')).toHaveStyle({ borderRadius: '8px' });
+    // the tile that holds its place while loading has the same corners as the picture that replaces it
+    expect(small.container.firstElementChild).toHaveStyle({ borderRadius: '4px' });
+  });
+
   it('a picture that cannot be loaded leaves the tile, not a broken-image mark', () => {
     const { container } = render(<LogoImage src="/missing.png" size={24} />);
     fireEvent.error(container.querySelector('img')!);

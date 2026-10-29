@@ -44,8 +44,9 @@ const DRILL_HEADINGS = {
 } as const;
 
 /**
- * The full-page "Create chart": a stepper on the left, the step in the middle and the live chart beside it. Everything has a default, so
- * Next, Next, Save gives a good chart. Nothing is disabled without saying why: a step that cannot be left shows its reason in the footer.
+ * The full-page "Create chart": the choice of kind on its own, then the steps in one row on top, the form under them and the live chart beside it
+ * (kept in view while the form scrolls). Everything has a default, so Next, Next, Save gives a good chart. Nothing is disabled without saying
+ * why: a step that cannot be left shows its reason in the bar that stays at the bottom of the screen.
  */
 export function ChartWizard({ formId, chartId }: { formId: string; chartId?: string }) {
   const router = useRouter();
@@ -65,6 +66,8 @@ export function ChartWizard({ formId, chartId }: { formId: string; chartId?: str
   const baseline = existing ? stateFromChart(existing, fields) : fields ? initialState(fields) : null;
   const state = edited ?? baseline;
   const [notice, setNotice] = useState<string | null>(null);
+  // The level being edited on the levels step: the preview shows it. Kept with its step, so coming back to the step starts on level 1 again.
+  const [focus, setFocus] = useState({ step: 0, level: 0 });
   const [confirmLeave, setConfirmLeave] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
   const mounted = useRef(false);
@@ -119,6 +122,7 @@ export function ChartWizard({ formId, chartId }: { formId: string; chartId?: str
   const drill = state.kind === 'drilldown';
   const headings = drill ? DRILL_HEADINGS : HEADINGS;
   const head = chartId ? { ...headings[id], title: id === 'kind' ? 'Edit chart' : drill ? 'Edit drill-down chart' : 'Edit simple chart' } : headings[id];
+  const activeLevel = drill && focus.step === step ? Math.min(focus.level, state.levels.length - 1) : 0;
   const canShare = scope !== 'personal' && !!role && hasCapability(role, 'forms:edit');
   const steps = STEP_IDS.map((s, i) => ({
     label: stepLabel(s, state.kind),
@@ -155,124 +159,117 @@ export function ChartWizard({ formId, chartId }: { formId: string; chartId?: str
         <PageHeader title={head.title} description={head.description} className="min-w-0 flex-1" />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
-        <WizardSteps steps={steps} current={step} onGoTo={(i) => { setNotice(null); setStep(i); }} />
+      {/* the steps stay out of the way on the first step (there is nothing to go back to yet) and sit in one row above the work after it */}
+      {id !== 'kind' && <WizardSteps steps={steps} current={step} onGoTo={(i) => { setNotice(null); setStep(i); }} />}
 
+      {id === 'kind' ? (
         <div className="flex min-w-0 flex-col gap-6">
-          {id === 'kind' && (
-            <h2 ref={heading} tabIndex={-1} className="bg-h4 font-bold text-(--text-primary) outline-none">
-              {head.step}
-            </h2>
-          )}
-
-          {id === 'kind' ? (
-            <StepKind
-              value={state.kind}
-              onChange={(kind) => patch({ kind })}
-              onContinue={() => {
-                setNotice(null);
-                setStep(1);
-              }}
-            />
-          ) : (
-            <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,34rem)_minmax(0,1fr)]">
-              {/* the form, and under it the buttons: both in one column, so Back, Cancel and Next sit with what they act on */}
-              <div className="flex min-w-0 flex-col gap-6">
-                <Card className="flex flex-col gap-6 p-6">
-                  <header className="flex flex-col gap-1">
-                    <h2 ref={heading} tabIndex={-1} className="bg-h4 font-bold text-(--text-primary) outline-none">
-                      {head.step}
-                    </h2>
-                    <p className="bg-body-sm text-(--text-muted)">{head.intro}</p>
-                  </header>
-                  {id === 'basics' && <StepBasics formTitle={form.title} scope={scope} fields={fields} state={state} onChange={patch} />}
-                  {id === 'configure' && <StepConfigure fields={fields} scope={scope} state={state} onChange={patch} />}
-                  {id === 'save' && <StepSave state={state} onChange={patch} canShare={canShare} />}
-                </Card>
-
-                <div className="sticky bottom-0 z-10 -mx-4 flex flex-col gap-2 border-t border-(--border-default) bg-(--bg-body) px-4 py-3 md:-mx-6 md:px-6 xl:static xl:mx-0 xl:border-0 xl:bg-transparent xl:p-0">
-                  {notice && (
-                    <p role="alert" className="bg-body-sm font-medium text-(--danger-text)">
-                      {notice}
-                    </p>
-                  )}
-                  {confirmLeave ? (
-                    <div role="alertdialog" aria-label="Discard this chart?" className="flex flex-wrap items-center gap-3">
-                      <p className="bg-body-sm font-medium text-(--text-primary)">Discard this chart?</p>
-                      <Button variant="secondary" size="small" onClick={() => setConfirmLeave(false)}>
-                        Keep editing
-                      </Button>
-                      <Button variant="destructive" size="small" onClick={() => router.push(back)}>
-                        Discard
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap items-center gap-3">
-                      <Button variant="secondary" onClick={goBack}>
-                        Back
-                      </Button>
-                      <Button variant="ghost" onClick={leave}>
-                        Cancel
-                      </Button>
-                      <span className="flex-1" />
-                      {last ? (
-                        <Button isLoading={save.isPending} onClick={() => save.mutate()}>
-                          {existing ? 'Save changes' : 'Save to dashboard'}
-                        </Button>
-                      ) : (
-                        <Button onClick={next}>Next</Button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* the chart, beside the form on a wide screen (and in view while a long form scrolls), below it on a narrow one */}
-              <div className="min-w-0 xl:sticky xl:top-24">
-                {id === 'basics' && (drill ? <DrillPlaceholder /> : <ChartPreviewCard formId={formId} scope={scope} fields={fields} state={state} onChartType={(chartType) => patch({ chartType })} />)}
-                {id === 'configure' && (drill ? <DrillPreviewCard formId={formId} scope={scope} fields={fields} state={state} /> : <ChartPreviewCard formId={formId} scope={scope} fields={fields} state={state} />)}
-                {id === 'save' && (
-                  // The card as the dashboard will draw it: inside a strip that stands for one row of the dashboard, at the width the chosen size gives it.
-                  <section aria-label="How it sits on the dashboard" className="flex flex-col gap-2">
-                    <div className="rounded-xl border border-dashed border-(--border-default) bg-(--bg-subtle) p-3">
-                      <div className="min-w-64 max-w-full" style={{ width: state.size === 'small' ? '34%' : state.size === 'medium' ? '51%' : '100%' }}>
-                        {drill ? (
-                          <DrillPreviewCard formId={formId} scope={scope} fields={fields} state={state} showPath />
-                        ) : (
-                          <ChartPreviewCard formId={formId} scope={scope} fields={fields} state={state} heading="Final preview" />
-                        )}
-                      </div>
-                    </div>
-                    <p className="bg-caption text-(--text-muted)">
-                      On the dashboard this chart takes {state.size === 'small' ? 'a third of' : state.size === 'medium' ? 'half of' : 'all of'} a row.
-                    </p>
-                  </section>
-                )}
-              </div>
+          <h2 ref={heading} tabIndex={-1} className="bg-h4 font-bold text-(--text-primary) outline-none">
+            {head.step}
+          </h2>
+          <StepKind
+            value={state.kind}
+            onChange={(kind) => patch({ kind })}
+            onContinue={() => {
+              setNotice(null);
+              setStep(1);
+            }}
+          />
+          {confirmLeave ? (
+            <div role="alertdialog" aria-label="Discard this chart?" className="flex flex-wrap items-center gap-3">
+              <p className="bg-body-sm font-medium text-(--text-primary)">Discard this chart?</p>
+              <Button variant="secondary" size="small" onClick={() => setConfirmLeave(false)}>
+                Keep editing
+              </Button>
+              <Button variant="destructive" size="small" onClick={() => router.push(back)}>
+                Discard
+              </Button>
             </div>
-          )}
-
-          {id === 'kind' && (
-            <div className="flex items-center gap-3">
-              {confirmLeave ? (
-                <div role="alertdialog" aria-label="Discard this chart?" className="flex flex-wrap items-center gap-3">
-                  <p className="bg-body-sm font-medium text-(--text-primary)">Discard this chart?</p>
-                  <Button variant="secondary" size="small" onClick={() => setConfirmLeave(false)}>
-                    Keep editing
-                  </Button>
-                  <Button variant="destructive" size="small" onClick={() => router.push(back)}>
-                    Discard
-                  </Button>
-                </div>
-              ) : (
-                <Button variant="ghost" onClick={leave}>
-                  Cancel
-                </Button>
-              )}
+          ) : (
+            <div>
+              <Button variant="ghost" onClick={leave}>
+                Cancel
+              </Button>
             </div>
           )}
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,36rem)_minmax(0,1fr)]">
+            <Card className="flex min-w-0 flex-col gap-5 p-5 md:p-6">
+              <header className="flex flex-col gap-1">
+                <h2 ref={heading} tabIndex={-1} className="bg-h4 font-bold text-(--text-primary) outline-none">
+                  {head.step}
+                </h2>
+                <p className="bg-body-sm text-(--text-muted)">{head.intro}</p>
+              </header>
+              {id === 'basics' && <StepBasics formTitle={form.title} scope={scope} fields={fields} state={state} onChange={patch} />}
+              {id === 'configure' && <StepConfigure fields={fields} scope={scope} state={state} onChange={patch} activeLevel={activeLevel} onActiveLevel={(level) => setFocus({ step, level })} />}
+              {id === 'save' && <StepSave state={state} onChange={patch} canShare={canShare} />}
+            </Card>
+
+            {/* the chart, beside the form on a wide screen (and in view while a long form scrolls), below it on a narrow one */}
+            <div className="min-w-0 xl:sticky xl:top-20">
+              {id === 'basics' && (drill ? <DrillPlaceholder /> : <ChartPreviewCard formId={formId} scope={scope} fields={fields} state={state} onChartType={(chartType) => patch({ chartType })} />)}
+              {id === 'configure' && (drill ? <DrillPreviewCard formId={formId} scope={scope} fields={fields} state={state} level={activeLevel} onFull={() => setFocus({ step, level: 0 })} /> : <ChartPreviewCard formId={formId} scope={scope} fields={fields} state={state} />)}
+              {id === 'save' && (
+                // The card as the dashboard will draw it: inside a strip that stands for one row of the dashboard, at the width the chosen size gives it.
+                <section aria-label="How it sits on the dashboard" className="flex flex-col gap-2">
+                  <div className="rounded-xl border border-dashed border-(--border-default) bg-(--bg-subtle) p-3">
+                    <div className="min-w-64 max-w-full" style={{ width: state.size === 'small' ? '34%' : state.size === 'medium' ? '51%' : '100%' }}>
+                      {drill ? (
+                        <DrillPreviewCard formId={formId} scope={scope} fields={fields} state={state} showPath />
+                      ) : (
+                        <ChartPreviewCard formId={formId} scope={scope} fields={fields} state={state} heading="Final preview" />
+                      )}
+                    </div>
+                  </div>
+                  <p className="bg-caption text-(--text-muted)">
+                    On the dashboard this chart takes {state.size === 'small' ? 'a third of' : state.size === 'medium' ? 'half of' : 'all of'} a row.
+                  </p>
+                </section>
+              )}
+            </div>
+          </div>
+
+          {/* Back, Cancel and Next stay at the bottom of the screen while a long step scrolls, so they are never a scroll away; on a wide screen the bar is as wide as the form */}
+          <div className="sticky bottom-3 z-10 flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--surface-card) px-4 py-3 shadow-(--shadow-md) xl:max-w-xl">
+            {notice && (
+              <p role="alert" className="bg-body-sm font-medium text-(--danger-text)">
+                {notice}
+              </p>
+            )}
+            {confirmLeave ? (
+              <div role="alertdialog" aria-label="Discard this chart?" className="flex flex-wrap items-center gap-3">
+                <p className="bg-body-sm font-medium text-(--text-primary)">Discard this chart?</p>
+                <Button variant="secondary" size="small" onClick={() => setConfirmLeave(false)}>
+                  Keep editing
+                </Button>
+                <Button variant="destructive" size="small" onClick={() => router.push(back)}>
+                  Discard
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-3">
+                <Button variant="secondary" onClick={goBack}>
+                  Back
+                </Button>
+                <Button variant="ghost" onClick={leave}>
+                  Cancel
+                </Button>
+                <span className="flex-1" />
+                {last ? (
+                  <Button isLoading={save.isPending} onClick={() => save.mutate()}>
+                    {existing ? 'Save changes' : 'Save to dashboard'}
+                  </Button>
+                ) : (
+                  <Button onClick={next}>Next</Button>
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

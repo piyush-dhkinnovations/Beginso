@@ -6,8 +6,6 @@ import type {
   CriterionPayload,
   ResponseScore,
   ScorePayload,
-  GetScoreComparisonParams,
-  PaginatedScoreComparison,
 } from '@/types/score';
 
 /**
@@ -56,14 +54,4 @@ export const scoresService = {
       .put(`/api/responses/${responseId}/score`, payload)
       .then((r) => unwrapEnvelope<ResponseScore>(r.data, 'score')),
 
-  getComparison: (formId: string, params: GetScoreComparisonParams = {}): Promise<PaginatedScoreComparison> =>
-    axiosInstance
-      .get(`/api/forms/${formId}/score-comparison`, { params })
-      .then((r) => unwrapEnvelope<PaginatedScoreComparison>(r.data, 'comparison'))
-      .then((result) => ({
-        data: Array.isArray(result?.data) ? result.data : [],
-        total: typeof result?.total === 'number' ? result.total : 0,
-        page: typeof result?.page === 'number' ? result.page : params.page ?? 1,
-        limit: typeof result?.limit === 'number' ? result.limit : 20,
-      })),
 };

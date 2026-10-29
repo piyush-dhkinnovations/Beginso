@@ -1,3 +1,4 @@
+import { Star } from 'lucide-react';
 import { StageBadge } from './StageBadge';
 import { RespondentFromProvider } from './RespondentFromContext';
 import { RespondentCell, RowLead, TagsCell, AssigneeCell, SubmittedCell } from './ResponseRow';
@@ -89,7 +90,17 @@ function ColumnContent({ columnKey, response, fields, respondentFrom, wrap }: Om
       return <SubmittedCell response={response} />;
     case 'score': {
       const average = response.scoreAverage;
-      return typeof average === 'number' ? <span className="tabular-nums">{average.toFixed(1)}</span> : <span className="text-(--text-muted)">—</span>;
+      const reviewers = response.scoreCount ?? 0;
+      return typeof average === 'number' ? (
+        // A star, the average, and how many reviewers it is the average of: the same star the rating answers use.
+        <span className="inline-flex items-center gap-1 tabular-nums" title={reviewers > 0 ? `Average of ${reviewers} reviewer${reviewers === 1 ? '' : 's'}` : undefined}>
+          <Star size={14} aria-hidden="true" className="shrink-0 fill-current text-(--warning)" />
+          <span>{average.toFixed(1)}</span>
+          {reviewers > 0 && <span className="text-(--text-muted)">({reviewers})</span>}
+        </span>
+      ) : (
+        <span className="text-(--text-muted)">—</span>
+      );
     }
     case 'reference':
       return <code className="font-mono bg-body-sm text-(--text-secondary)">{response.reference ?? `#${shortId(response._id)}`}</code>;

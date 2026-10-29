@@ -2,7 +2,6 @@
 
 import { buildPublicFormUrl, publicFormSlug } from '@/lib/publicFormUrl';
 import { useContext, useState } from 'react';
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Copy, Lock, FileQuestion, Link2, Inbox, Share2 } from 'lucide-react';
@@ -230,16 +229,9 @@ export default function FormOverviewPage() {
           <section aria-labelledby="recent-responses-heading" className="flex flex-col gap-3 rounded-xl border border-(--border-default) bg-(--surface-card) p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <h2 id="recent-responses-heading" className="bg-h4">Recent responses</h2>
-              <span className="flex items-center gap-3">
-                {/* Sprint 12 (inbox-collaboration), task 5.2 — placement judgment call, no wireframe
-                    names a surface for this (see ScoreComparison's own comment). */}
-                <Link href={`/forms/${formId}/scores`} className="bg-body-sm">
-                  Score comparison
-                </Link>
-                <ButtonLink variant="ghost" size="small" href={inboxHref}>
-                  View all responses →
-                </ButtonLink>
-              </span>
+              <ButtonLink variant="ghost" size="small" href={inboxHref}>
+                View all responses →
+              </ButtonLink>
             </div>
             {responsesQuery.isLoading ? (
               <Skeleton variant="text" width="100%" height={64} />

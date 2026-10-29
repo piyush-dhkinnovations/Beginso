@@ -61,13 +61,11 @@ export const viewKeys = {
 };
 
 // Sprint 12 (inbox-collaboration), design.md §10, task 5.2/5.3 — OQ-7 resolved 3 Oct 2026.
-// Criteria are workspace-namespaced (stageKeys' own precedent); score/comparison are namespaced
-// by response id / form id respectively (both globally unique Mongo ObjectIds).
+// Criteria are workspace-namespaced (stageKeys' own precedent); a response's score is namespaced
+// by its id (a globally unique Mongo ObjectId).
 export const scoreKeys = {
   criteria: (scope: string) => ['score-criteria', scope] as const,
   detail: (responseId: string) => ['scores', 'detail', responseId] as const,
-  comparison: (formId: string, params: { page?: number; sort?: string }) =>
-    ['scores', 'comparison', formId, params] as const,
 };
 
 // Sprint 12 (inbox-collaboration), design.md §10, task 4.1 — namespaced by response id (a Mongo

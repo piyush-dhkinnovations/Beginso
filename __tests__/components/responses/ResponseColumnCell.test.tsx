@@ -20,6 +20,7 @@ const RESPONSE = {
   tags: [],
   noteCount: 3,
   scoreAverage: 4.25,
+  scoreCount: 2,
   submittedAt: '2026-10-16T10:00:00.000Z',
   createdAt: '2026-10-16T10:00:00.000Z',
   updatedAt: '2026-10-16T10:00:00.000Z',
@@ -74,6 +75,11 @@ describe('ResponseColumnCell', () => {
     expect(screen.getByText('Screening')).toBeInTheDocument();
     cell('score');
     expect(screen.getByText('4.3')).toBeInTheDocument();
+    // a star beside it, and how many reviewers the average is of (in full on hover)
+    expect(screen.getByText('(2)')).toBeInTheDocument();
+    const shown = screen.getByTitle('Average of 2 reviewers');
+    expect(shown.querySelector('svg')).toHaveAttribute('aria-hidden', 'true');
+    expect(shown.textContent).toBe('4.3(2)');
     cell('notes');
     expect(screen.getByText('3')).toBeInTheDocument();
   });

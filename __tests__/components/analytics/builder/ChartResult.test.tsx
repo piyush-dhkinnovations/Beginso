@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ChartResult } from '@/components/analytics/builder/ChartResult';
 import type { ChartDisplay, QueryResult } from '@/types/chartBuilder';
 
@@ -41,5 +42,33 @@ describe('ChartResult colours', () => {
     const { container } = render(<ChartResult result={RESULT('choice')} isLoading={false} isError={false} chartType="bar" display={{ ...DISPLAY, palette: 'sunset' }} label="Status" />);
     const holder = container.querySelector('svg')!.closest('[style]') as HTMLElement;
     expect(holder.style.getPropertyValue('--action-primary')).toBe('#EA580C');
+  });
+});
+
+describe('ChartResult: "Show as a table"', () => {
+  const draw = (onSelect?: () => void) =>
+    render(<ChartResult result={RESULT('choice')} isLoading={false} isError={false} chartType="bar" display={DISPLAY} label="Status" onSelect={onSelect} />);
+
+  it('takes the place of the chart instead of growing the card: the chart stays in the layout (hidden) and the table sits in the same cell', async () => {
+    const { container } = draw();
+    const chart = container.querySelector('svg')!.closest('.col-start-1') as HTMLElement;
+    expect(chart).not.toHaveClass('invisible');
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Show as a table' }));
+    expect(chart).toHaveClass('invisible');
+    const area = screen.getByRole('region', { name: 'Status: table' });
+    expect(area.parentElement).toBe(chart.parentElement); // one shared cell, so the card is exactly as tall as the chart
+    expect(area).toHaveClass('col-start-1', 'row-start-1', 'overflow-y-auto');
+    expect(within(area).getAllByRole('row')).toHaveLength(5); // the header and the four groups
+    expect(screen.getByRole('button', { name: 'Show as a table' })).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('the scrolling table can be reached with the keyboard, and closing it shows the chart again', async () => {
+    const { container } = draw();
+    const u = userEvent.setup();
+    await u.click(screen.getByRole('button', { name: 'Show as a table' }));
+    expect(screen.getByRole('region', { name: 'Status: table' })).toHaveAttribute('tabindex', '0');
+    await u.click(screen.getByRole('button', { name: 'Show as a table' }));
+    expect(screen.queryByRole('region', { name: 'Status: table' })).not.toBeInTheDocument();
+    expect(container.querySelector('svg')!.closest('.col-start-1')).not.toHaveClass('invisible');
   });
 });

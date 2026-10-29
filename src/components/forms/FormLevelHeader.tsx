@@ -26,7 +26,7 @@ const STATUS_LABEL = { draft: 'Draft', published: 'Published', closed: 'Closed' 
 
 // Pages under /forms/:id that show this header. The builder renders the same FormHeader itself (it adds the
 // title field, save state and publish actions), and the preview is a full-viewport overlay with no header.
-const HEADER_ROUTE_RE = /^\/forms\/[^/]+\/(overview|scores)\/?$/;
+const HEADER_ROUTE_RE = /^\/forms\/[^/]+\/overview\/?$/;
 
 /**
  * The header for the form's read pages: icon, name, status, created/updated dates, Preview / Share /

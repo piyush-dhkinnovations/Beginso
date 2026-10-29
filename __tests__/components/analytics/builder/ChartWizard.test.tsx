@@ -98,6 +98,8 @@ describe('step 1: the kind of chart', () => {
     expect(screen.getByRole('heading', { name: 'Create chart' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /Simple chart/ })).toBeEnabled();
     expect(screen.getByRole('radio', { name: /Drill-down chart/ })).toBeEnabled();
+    // the steps appear once a kind is chosen: the first screen is only the choice
+    expect(screen.queryByRole('navigation', { name: 'Chart steps' })).not.toBeInTheDocument();
     expect(screen.queryByText('Coming soon')).not.toBeInTheDocument();
     const [simple, drill] = screen.getAllByRole('button', { name: 'Continue' });
     expect(simple).toBeEnabled();
@@ -406,12 +408,12 @@ describe('a drill-down chart', () => {
     const u = await toLevels();
     await u.click(screen.getByRole('button', { name: 'Add level' }));
     await u.click(screen.getByRole('button', { name: 'Add level' }));
-    expect(screen.getByText('4 of 4 levels. Level 1 is the chart people see first.')).toBeInTheDocument();
+    expect(screen.getByText('4 of 4 levels')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Add level' })).toBeDisabled();
     await u.click(screen.getByRole('button', { name: 'Move level 2 up' }));
     expect(screen.getByLabelText('Field', { selector: '#level-0-field' })).toHaveValue('q:age');
     await u.click(screen.getByRole('button', { name: 'Remove level 4' }));
-    expect(screen.getByText('3 of 4 levels. Level 1 is the chart people see first.')).toBeInTheDocument();
+    expect(screen.getByText('3 of 4 levels')).toBeInTheDocument();
   });
 
   it('the preview is a working drill-down: a click opens the next level and the path above the chart goes back', async () => {
@@ -430,6 +432,26 @@ describe('a drill-down chart', () => {
     expect(await screen.findByText(/Level 2 of 2: by Age/)).toBeInTheDocument();
     await u.click(within(path).getByRole('button', { name: 'All responses' }));
     expect(await screen.findByText(/Level 1 of 2: by Plan/)).toBeInTheDocument();
+  });
+
+  it('editing a later level previews that level on its own, and "Try the whole drill-down" goes back to the clickable chart', async () => {
+    const u = await toLevels();
+    query.mockImplementation(async (_f: string, d: { kind: string; groupBy?: { field: unknown } }) =>
+      d.kind === 'simple' ? { ...RESULT, depth: 0, level: { field: d.groupBy!.field, label: 'Age', kind: 'number' } } : LEVEL_ONE,
+    );
+    expect(screen.getByRole('region', { name: 'Interactive preview' })).toBeInTheDocument();
+    await u.click(screen.getByLabelText('Field', { selector: '#level-1-field' }));
+    expect(await screen.findByText(/Level 2 of 2: by Age\. Shown on its own, counting all responses\./)).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Level 2 preview' })).toBeInTheDocument();
+    await waitFor(() => expect(query).toHaveBeenLastCalledWith('f1', expect.objectContaining({ kind: 'simple', groupBy: { field: { kind: 'question', fieldId: 'age' } } }), 'personal', expect.anything(), []));
+    await u.click(screen.getByRole('button', { name: 'Try the whole drill-down' }));
+    expect(await screen.findByText(/Level 1 of 2: by Plan/)).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'Drill-down path' })).toBeInTheDocument();
+    // touching level 1 again shows the working drill-down too
+    await u.click(screen.getByLabelText('Chart type', { selector: '#level-1-type' }));
+    expect(await screen.findByRole('region', { name: 'Level 2 preview' })).toBeInTheDocument();
+    await u.click(screen.getByLabelText('Sort by', { selector: '#level-0-sort' }));
+    expect(await screen.findByRole('region', { name: 'Interactive preview' })).toBeInTheDocument();
   });
 
   it('Next, Next, Save to dashboard saves the levels, with the type left to each level', async () => {

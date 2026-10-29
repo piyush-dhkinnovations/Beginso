@@ -95,6 +95,23 @@ describe('drilling', () => {
     expect(seeResponses).not.toHaveBeenCalled();
   });
 
+  it('after a click the chart on screen stays what it was (same level, same type) until the next level arrives', async () => {
+    const u = userEvent.setup();
+    let release: ((r: QueryResult) => void) | undefined;
+    query.mockReset().mockImplementation((_f, _d, _s, _sig, path: unknown[] = []) =>
+      path.length === 0 ? Promise.resolve(ANSWERS[0]) : new Promise<QueryResult>((r) => { release = r; }),
+    );
+    draw();
+    await clickPart(u, 'Pro');
+    await waitFor(() => expect(release).toBeDefined());
+    // the path already says "Pro", but the numbers on screen are still level 1's, and so is the heading over them
+    expect(within(screen.getByRole('navigation', { name: 'Drill-down path' })).getByText('Pro')).toHaveAttribute('aria-current', 'step');
+    expect(screen.getByText(/Level 1 of 3: by Plan/)).toBeInTheDocument();
+    expect(screen.queryByText(/Level 2 of 3/)).not.toBeInTheDocument();
+    release!(ANSWERS[1]);
+    expect(await screen.findByText(/Level 2 of 3: by Subscribed/)).toBeInTheDocument();
+  });
+
   it('the path goes back to any earlier level', async () => {
     const u = userEvent.setup();
     draw();

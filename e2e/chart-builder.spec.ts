@@ -257,6 +257,12 @@ test.describe('Chart builder', () => {
     await expect(page.locator('#level-1-field')).toHaveValue('q:f-age');
     await expect(page.getByRole('button', { name: 'Remove level 1' })).toBeDisabled();
     await page.screenshot({ path: testInfo.outputPath('drill-levels.png') });
+    // the level being edited is the one the preview shows: level 2 on its own, and back to the working drill-down
+    await page.locator('#level-1-field').focus();
+    await expect(page.getByRole('region', { name: 'Level 2 preview' }).getByText(/Level 2 of 2: by Age\. Shown on its own/)).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath('drill-levels-level-2.png') });
+    await page.getByRole('button', { name: 'Try the whole drill-down' }).click();
+    await expect(page.getByRole('region', { name: 'Interactive preview' })).toBeVisible();
     await next(page).click();
 
     await expect(page.getByRole('heading', { name: 'Preview & save' })).toBeFocused();
@@ -277,7 +283,12 @@ test.describe('Chart builder', () => {
     await expect(card.getByText('Drill-down', { exact: true })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath('drill-dashboard.png') });
 
+    // opening the table does not make the card taller (it takes the chart's place), so the cards beside it are not stretched either
+    const heightBefore = (await card.boundingBox())!.height;
     await card.getByRole('button', { name: 'Show as a table' }).click();
+    await expect(card.getByRole('region', { name: /: table$/ })).toBeVisible();
+    expect(Math.abs((await card.boundingBox())!.height - heightBefore), 'the card keeps its height').toBeLessThanOrEqual(2);
+    await page.screenshot({ path: testInfo.outputPath('drill-card-table.png') });
     await card.getByRole('button', { name: 'See responses: Pro' }).click();
     await expect(card.getByText(/Level 2 of 2: by Age/)).toBeVisible();
     await expect(card.getByRole('button', { name: 'See these 20 responses' })).toBeVisible();
@@ -365,15 +376,16 @@ test.describe('Chart builder', () => {
     await expect(page.getByRole('alert').filter({ hasText: 'Fill in every filter' })).toBeVisible();
   });
 
-  test('edit, duplicate, move later and remove (asked first) from a chart card', async ({ page, context }, testInfo) => {
+  test('edit, duplicate, resize and remove (asked first) from a chart card; no Move earlier / Move later in the menu', async ({ page, context }, testInfo) => {
     const fake = await installBackend(context, [chartRow('c1', 0, 'Plans'), chartRow('c2', 1, 'Plans again')]);
     await openInsights(page);
     await expect(page.getByLabel('Plans', { exact: true })).toBeVisible();
 
-    // move later: the same order a drag makes
+    // moving a chart is the drag handle's job: the menu has no Move earlier / Move later
     await openCardMenu(page, 'Plans');
-    await page.getByRole('menuitem', { name: 'Move later' }).click();
-    await expect.poll(() => fake.orders().at(-1)).toEqual(['c2', 'c1']);
+    await expect(page.getByRole('menuitem', { name: 'Edit' })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: /Move earlier|Move later/ })).toHaveCount(0);
+    await page.keyboard.press('Escape');
 
     // duplicate
     await openCardMenu(page, 'Plans again');
@@ -396,6 +408,15 @@ test.describe('Chart builder', () => {
     await expect(page.getByLabel('Plans by tier', { exact: true })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath('dashboard-after-edit.png') });
 
+    // size: the same Small / Medium / Large as the wizard, from the card's menu
+    await openCardMenu(page, 'Plans by tier');
+    await expect(page.getByRole('menuitem', { name: 'Size: Medium' })).toBeVisible();
+    await page.getByRole('menuitem', { name: 'Size: Large' }).click();
+    await expect.poll(() => fake.patched().at(-1)).toMatchObject({ id: 'c1', size: 'large' });
+    await openCardMenu(page, 'Plans by tier');
+    await expect(page.getByRole('menuitem', { name: 'Size: Large' })).toBeVisible();
+    await page.keyboard.press('Escape');
+
     // remove: the card asks first
     await openCardMenu(page, 'Plans by tier');
     await page.getByRole('menuitem', { name: 'Remove' }).click();
@@ -404,6 +425,29 @@ test.describe('Chart builder', () => {
     await page.getByRole('alertdialog').getByRole('button', { name: 'Remove' }).click();
     await expect.poll(() => fake.deleted()).toEqual(['c1']);
     await expect(page.getByLabel('Plans by tier', { exact: true })).toHaveCount(0);
+  });
+
+  test('cards side by side are the same height, and a short one is spaced out inside (chart centred, notes at the bottom) rather than left with an empty half', async ({ page, context }, testInfo) => {
+    const drill = chartRow('c2', 1, 'Plans then age', {
+      kind: 'drilldown',
+      definition: { kind: 'drilldown', measure: { type: 'count' }, levels: [{ field: { kind: 'question', fieldId: 'f-plan' } }, { field: { kind: 'question', fieldId: 'f-age' } }], display: { values: 'counts', legend: true, dataLabels: false, palette: 'theme', interactive: true } },
+    });
+    await installBackend(context, [chartRow('c1', 0, 'Plans'), drill]);
+    await openInsights(page);
+    const simple = page.getByLabel('Plans', { exact: true });
+    const tall = page.getByLabel('Plans then age', { exact: true });
+    await expect(simple.getByText(/40 responses/)).toBeVisible();
+    await expect(tall.getByText(/Level 1 of 2/)).toBeVisible();
+    const a = (await simple.boundingBox())!;
+    const b = (await tall.boundingBox())!;
+    expect(Math.abs(a.y - b.y), 'the two sit in one row').toBeLessThan(2);
+    expect(Math.abs(a.height - b.height), 'the two are the same height').toBeLessThan(2);
+    // the last line of each card (Show as a table) sits at the bottom of it, whatever the card holds
+    for (const [card, box] of [[simple, a], [tall, b]] as const) {
+      const toggle = (await card.getByRole('button', { name: 'Show as a table' }).boundingBox())!;
+      expect(box.y + box.height - (toggle.y + toggle.height), 'space under the last line').toBeLessThan(40);
+    }
+    await page.screenshot({ path: testInfo.outputPath('cards-same-height.png') });
   });
 
   for (const width of [360, 768, 1440]) {

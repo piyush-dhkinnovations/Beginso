@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 
 interface Tip {
   label: string;
@@ -11,8 +12,10 @@ interface Tip {
 /**
  * Label for an icon-only control (the collapsed sidebar rail). It shows on mouse hover AND on keyboard focus, which the native
  * `title` attribute never did for a keyboard user, and Esc dismisses it (WCAG 1.4.13). It is drawn with position:fixed from the
- * control's own rectangle, so the rail's overflow clipping cannot hide it. The control keeps its aria-label; this is the visual
- * half only, so the tip is hidden from assistive tech to avoid reading the name twice (QA A3-006).
+ * control's own rectangle, so the rail's overflow clipping cannot hide it, and it is put on the page's top layer (a portal to <body>):
+ * inside the sidebar it sat in the sidebar's own stacking layer, and the page content that comes after it painted over it, so only the
+ * first letters of "Responses" showed. The control keeps its aria-label; this is the visual half only, so the tip is hidden from
+ * assistive tech to avoid reading the name twice (QA A3-006).
  */
 export function RailTip({ label, children }: { label: string; children: React.ReactNode }) {
   const [tip, setTip] = useState<Tip | null>(null);
@@ -34,16 +37,18 @@ export function RailTip({ label, children }: { label: string; children: React.Re
       onKeyDown={(e) => e.key === 'Escape' && setTip(null)}
     >
       {children}
-      {tip && (
-        <span
-          role="tooltip"
-          aria-hidden="true"
-          style={{ position: 'fixed', top: tip.top, left: tip.left, transform: 'translateY(-50%)' }}
-          className="pointer-events-none z-70 whitespace-nowrap rounded-md bg-(--surface-inverse) px-3 py-1.5 bg-caption text-(--text-inverse) shadow-(--shadow-md)"
-        >
-          {tip.label}
-        </span>
-      )}
+      {tip &&
+        createPortal(
+          <span
+            role="tooltip"
+            aria-hidden="true"
+            style={{ position: 'fixed', top: tip.top, left: tip.left, transform: 'translateY(-50%)' }}
+            className="pointer-events-none z-70 whitespace-nowrap rounded-md bg-(--surface-inverse) px-3 py-1.5 bg-caption text-(--text-inverse) shadow-(--shadow-md)"
+          >
+            {tip.label}
+          </span>,
+          document.body,
+        )}
     </span>
   );
 }

@@ -119,6 +119,19 @@ describe('ResponsesTable: sorting by a column on a form with more than one page'
     expect(onSortChange).toHaveBeenLastCalledWith('submitted', 'desc');
   });
 
+  it('the average score is sorted by the server too, highest first, and a second click turns it round', () => {
+    const onSortChange = vi.fn();
+    const withScore = { ...DEFAULT_RESPONSE_SETUP, tableColumns: ['respondent', 'stage', 'score', 'submitted'] };
+    const { rerender } = render120({ sortBy: 'submitted', submittedOrder: 'desc', onSortChange, setup: withScore });
+    expect(within(screen.getByRole('columnheader', { name: 'Average score' })).queryByRole('button')).not.toBeNull();
+    fireEvent.click(within(screen.getByRole('columnheader', { name: 'Average score' })).getByRole('button'));
+    expect(onSortChange).toHaveBeenLastCalledWith('score', 'desc');
+    rerender(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} formId="form-1" totalMatching={120} setup={withScore} sortBy="score" submittedOrder="desc" onSortChange={onSortChange} />);
+    expect(screen.getByRole('columnheader', { name: 'Average score' })).toHaveAttribute('aria-sort', 'descending');
+    fireEvent.click(within(screen.getByRole('columnheader', { name: 'Average score' })).getByRole('button'));
+    expect(onSortChange).toHaveBeenLastCalledWith('score', 'asc');
+  });
+
   it('the arrow is on the column the list is sorted by', () => {
     render120({ sortBy: 'email', submittedOrder: 'asc' });
     expect(screen.getByRole('columnheader', { name: 'Email' })).toHaveAttribute('aria-sort', 'ascending');

@@ -80,7 +80,8 @@ export interface PathStep extends QueryFocus {
 export type BuilderChartSize = 'small' | 'medium' | 'large';
 
 /** What the grouped field turned out to be (the server's classification). */
-export type GroupKind = 'choice' | 'number' | 'rating' | 'date' | 'stage' | 'assignee' | 'tags' | 'time';
+/** `hour` is a Time question (grouped by the hour of the day); `time` is the submission time. */
+export type GroupKind = 'choice' | 'number' | 'rating' | 'date' | 'hour' | 'stage' | 'assignee' | 'tags' | 'time';
 
 export interface QueryFocus {
   key: string;

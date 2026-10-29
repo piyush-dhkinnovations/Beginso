@@ -18,6 +18,7 @@ import { FilterPopover } from './FilterPopover';
 import { AnalyticsStatCards } from './AnalyticsStatCards';
 import { TrendChart } from './TrendChart';
 import { StatusDistributionChart } from './StatusDistributionChart';
+import { useFormStages } from '@/hooks/useResponseSetup';
 import { QuestionBreakdownSection } from './QuestionBreakdownSection';
 import { FormsSummaryTable } from './FormsSummaryTable';
 import { FormsByStatusCard } from './FormsByStatusCard';
@@ -74,6 +75,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
   const router = useRouter();
   const formScope = useFormScope(formId ?? '');
   const canAddChart = canEditCharts(useWorkspaceRole(formScope ?? 'personal'));
+  const { stages: formStages } = useFormStages(formScope && formScope !== 'personal' ? formScope : undefined, formId);
   // "Add chart" opens the chart builder, a page of its own.
   const addChart = () => router.push(`/forms/${formId}/insights/charts/new${formScope && formScope !== 'personal' ? `?ws=${encodeURIComponent(formScope)}` : ''}`);
   const pathname = usePathname();
@@ -446,6 +448,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
                     isError={overviewQuery.isError}
                     onRetry={() => void overviewQuery.refetch()}
                     isAllTime={isAllTime}
+                    stages={formStages}
                   />
                 </div>
               ),

@@ -109,11 +109,15 @@ const nextConfig: NextConfig = {
   // Query strings (?ws=, ?responseId=, ...) are carried over by Next.
   async redirects() {
     const renamed = { responses: "inbox", analytics: "insights", reports: "exports" } as const;
-    return Object.entries(renamed).flatMap(([from, to]) => [
-      { source: `/${from}/:path*`, destination: `/${to}/:path*`, permanent: true },
-      { source: `/w/:slug/${from}/:path*`, destination: `/w/:slug/${to}/:path*`, permanent: true },
-      ...(from === "reports" ? [] : [{ source: `/forms/:id/${from}`, destination: `/forms/:id/${to}`, permanent: true }]),
-    ]);
+    return [
+      // Score comparison was a page of its own; the scores are now a column of the Responses table, sorted there.
+      { source: "/forms/:id/scores", destination: "/forms/:id/inbox", permanent: true },
+      ...Object.entries(renamed).flatMap(([from, to]) => [
+        { source: `/${from}/:path*`, destination: `/${to}/:path*`, permanent: true },
+        { source: `/w/:slug/${from}/:path*`, destination: `/w/:slug/${to}/:path*`, permanent: true },
+        ...(from === "reports" ? [] : [{ source: `/forms/:id/${from}`, destination: `/forms/:id/${to}`, permanent: true }]),
+      ]),
+    ];
   },
   async headers() {
     return [

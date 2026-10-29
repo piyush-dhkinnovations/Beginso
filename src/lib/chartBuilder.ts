@@ -33,6 +33,9 @@ const KIND_BY_TYPE: Record<string, GroupKind> = {
   number: 'number',
   rating: 'rating',
   date: 'date',
+  // a date with a time is grouped by its date; a time on its own by the hour of the day
+  datetime: 'date',
+  time: 'hour',
 };
 
 /** The small read-only tag shown beside a field in the "Group by field" select. */
@@ -44,6 +47,8 @@ export const FIELD_TAG: Record<string, string> = {
   number: 'Number',
   rating: 'Rating',
   date: 'Date',
+  datetime: 'Date & time',
+  time: 'Time',
 };
 
 export const SYSTEM_FIELDS: { key: SystemKey; label: string; tag: string; group: 'Response details' | 'Time' }[] = [
@@ -58,7 +63,7 @@ export const kindOfFieldType = (type: string): GroupKind | undefined => KIND_BY_
 const live = (fields: readonly FormField[] | undefined) =>
   [...(fields ?? [])].filter((f) => !f.deleted).sort((a, b) => a.order - b.order);
 
-/** Questions a chart can group by (in the form's own order). Short text, long text, files and signatures are not offered. */
+/** Questions a chart can group by (in the form's own order): the ones with a few set answers, numbers, ratings, dates and times. Free text, files and signatures are not offered. */
 export const groupableFields = (fields: readonly FormField[] | undefined): FormField[] => live(fields).filter((f) => kindOfFieldType(f.type));
 /** Questions a sum, average, minimum or maximum can use. */
 export const numericFields = (fields: readonly FormField[] | undefined): FormField[] => live(fields).filter((f) => f.type === 'number' || f.type === 'rating');
@@ -111,12 +116,12 @@ export const CHART_TYPE_NAME: Record<Exclude<BuilderChartType, 'auto'>, string> 
 };
 
 /**
- * The chart type picked for "Automatic": a date -> line; a number or rating -> columns; a choice with up to five options, counted or
+ * The chart type picked for "Automatic": a date -> line; a number, rating or hour of the day -> columns; a choice with up to five options, counted or
  * summed -> donut; anything else -> bars.
  */
 export function autoChartType(kind: GroupKind | undefined, measure: MeasureType, optionCount: number | null): Exclude<BuilderChartType, 'auto'> {
   if (isTimeKind(kind)) return 'line';
-  if (kind === 'number' || kind === 'rating') return 'bar';
+  if (kind === 'number' || kind === 'rating' || kind === 'hour') return 'bar';
   if (kind === 'choice' && optionCount !== null && optionCount <= 5 && (measure === 'count' || measure === 'sum')) return 'donut';
   return 'bar';
 }
@@ -169,7 +174,7 @@ export const SORT_LABEL: Record<Exclude<SortKey, 'natural'>, string> = {
 
 /** The words for the "natural" order of this field. */
 export const naturalSortLabel = (kind: GroupKind | undefined): string =>
-  isTimeKind(kind) ? 'Oldest first' : kind === 'number' ? 'Low to high ranges' : kind === 'rating' ? 'Low to high' : 'Question order';
+  isTimeKind(kind) ? 'Oldest first' : kind === 'number' ? 'Low to high ranges' : kind === 'rating' ? 'Low to high' : kind === 'hour' ? 'Earliest hour first' : 'Question order';
 
 // ── defaults and titles ──────────────────────────────────────────────────────
 
@@ -228,7 +233,12 @@ export function generateTitle(fields: readonly FormField[] | undefined, q: AnyCh
     const head = m.type === 'count' ? 'Responses' : `${{ sum: 'Sum', avg: 'Average', min: 'Minimum', max: 'Maximum' }[m.type]} ${measured}`.trim();
     const filters = describeFilters(fields, q.filters);
     const names = q.levels.map((l) => (kindOfRef(fields, l.field) === 'time' ? 'date' : labelOfRef(fields, l.field)));
-    return `${head} by ${names.join(', then ')}${filters ? ` (${filters})` : ''}`.slice(0, 80);
+    const tail = filters ? ` (${filters})` : '';
+    const say = (list: string[], joiner: string, more = 0) => `${head} by ${list.join(joiner)}${more ? ` and ${more} more` : ''}${tail}`;
+    // a title is at most 80 characters, and a name is never cut in half: drop the "then"s, and then the last names ("and 2 more") before cutting anything
+    for (const joiner of [', then ', ', ']) if (say(names, joiner).length <= 80) return say(names, joiner);
+    for (let n = names.length - 1; n >= 1; n--) if (say(names.slice(0, n), ', ', names.length - n).length <= 80) return say(names.slice(0, n), ', ', names.length - n);
+    return say(names, ', ').slice(0, 80);
   }
   const by = labelOfRef(fields, q.groupBy.field);
   const kind = kindOfRef(fields, q.groupBy.field);
@@ -348,7 +358,8 @@ export function entrySegments(result: QueryResult, mode: ChartDisplay['values'],
 /** The fields a filter can use: choice, number and rating questions, then the response details, then the submitted year. */
 export function filterableRefs(fields: readonly FormField[] | undefined, includePeople: boolean): { ref: FieldRef; label: string; group: 'Questions' | 'Response details' | 'Time' }[] {
   const questions = groupableFields(fields)
-    .filter((f) => kindOfFieldType(f.type) !== 'date')
+    // a date or a time of day is grouped, not filtered (the filter for dates is the submitted year)
+    .filter((f) => kindOfFieldType(f.type) !== 'date' && kindOfFieldType(f.type) !== 'hour')
     .map((f) => ({ ref: { kind: 'question', fieldId: f.fieldId } as FieldRef, label: f.label || 'Untitled question', group: 'Questions' as const }));
   const details = SYSTEM_FIELDS.filter((s) => s.group === 'Response details' && (includePeople || s.key === 'stage')).map((s) => ({ ref: { kind: 'system', key: s.key } as FieldRef, label: s.label, group: 'Response details' as const }));
   return [...questions, ...details, { ref: { kind: 'system', key: 'submittedAt' } as FieldRef, label: 'Submitted year', group: 'Time' as const }];

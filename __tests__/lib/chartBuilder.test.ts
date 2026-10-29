@@ -29,6 +29,10 @@ import {
   serialiseChartFilter,
   toggleOp,
   updateCondition,
+  FIELD_TAG,
+  filterableRefs,
+  kindOfFieldType,
+  naturalSortLabel,
 } from '@/lib/chartBuilder';
 import type { FormField } from '@/types/form';
 import type { ChartQuery, DrillQuery, FilterCondition, FilterGroup, QueryEntry } from '@/types/chartBuilder';
@@ -246,6 +250,17 @@ describe('drill-down charts', () => {
     expect(generateTitle(FIELDS, drill).length).toBeLessThanOrEqual(80);
   });
 
+  it('a long drill-down title is never cut in half: it drops the "then"s, then the last names ("and 2 more")', () => {
+    const q = (...labels: string[]) => ({ fields: labels.map((label, i) => ({ fieldId: `l${i}`, type: 'dropdown', label, order: i, deleted: false, required: false, options: ['a'] }) as unknown as FormField) });
+    const four = q('STATUS', 'Categories', 'Status of the Film', 'Response stage').fields;
+    const levels4 = four.map((f) => ({ field: { kind: 'question' as const, fieldId: f.fieldId } }));
+    expect(generateTitle(four, { ...drill, levels: levels4 })).toBe('Responses by STATUS, Categories, Status of the Film, Response stage');
+    const wide = q('A very long question name number one', 'A very long question name number two', 'A very long question name number three').fields;
+    const t = generateTitle(wide, { ...drill, levels: wide.map((f) => ({ field: { kind: 'question' as const, fieldId: f.fieldId } })) });
+    expect(t).toBe('Responses by A very long question name number one and 2 more');
+    expect(t.length).toBeLessThanOrEqual(80);
+  });
+
   it('knows a drill-down from a simple chart, and what one level counts', () => {
     expect(isDrill(drill)).toBe(true);
     expect(isDrill(defaultQuery(FIELDS))).toBe(false);
@@ -271,5 +286,31 @@ describe('drill-down charts', () => {
     expect(options.find((o) => o.value === 'donut')?.disabled).toBe(true);
     expect(chartTypeOptionList('choice', 'count', 3)[0].label).toBe('Automatic: Donut chart');
     expect(chartTypeOptionList('choice', 'avg', 3).find((o) => o.value === 'donut')?.disabled).toBe(true);
+  });
+});
+
+describe('Time and Date & time questions', () => {
+  const MORE = [f('t', 'time', 'Preferred time', 0), f('dt', 'datetime', 'Booking', 1), f('txt', 'short_text', 'Notes', 2), f('addr', 'address', 'Address', 3), f('plan', 'dropdown', 'Plan', 4, { options: ['a', 'b'] })];
+
+  it('are offered to group by (the free-text ones still are not), and tagged for what they are', () => {
+    expect(groupableFields(MORE).map((x) => x.fieldId)).toEqual(['t', 'dt', 'plan']);
+    expect(kindOfFieldType('time')).toBe('hour');
+    expect(kindOfFieldType('datetime')).toBe('date');
+    expect(FIELD_TAG.time).toBe('Time');
+    expect(FIELD_TAG.datetime).toBe('Date & time');
+  });
+
+  it('a date and time is grouped like a date (by month to start, drawn as a line); a time of day by the hour, drawn as columns, with no date grouping', () => {
+    expect(levelFor(MORE, { kind: 'question', fieldId: 'dt' }).bucket).toBe('month');
+    expect(levelFor(MORE, { kind: 'question', fieldId: 'dt' })).toMatchObject({ bucket: 'month' });
+    expect(levelFor(MORE, { kind: 'question', fieldId: 't' }).bucket).toBeUndefined();
+    expect(autoChartType('date', 'count', null)).toBe('line');
+    expect(autoChartType('hour', 'count', null)).toBe('bar');
+    expect(naturalSortLabel('hour')).toBe('Earliest hour first');
+  });
+
+  it('are grouped, not filtered: a filter row cannot pick them', () => {
+    const picked = filterableRefs(MORE, false).filter((r) => r.group === 'Questions').map((r) => (r.ref.kind === 'question' ? r.ref.fieldId : ''));
+    expect(picked).toEqual(['plan']);
   });
 });

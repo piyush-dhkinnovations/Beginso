@@ -43,7 +43,10 @@ export function DrillChart({ formId, scope, fields, definition, label, onSeeResp
   const depth = steps.length;
   const q = useChartQuery(formId, scope, definition, enabled, pathOf(steps));
   const result = q.data;
-  const level = definition.levels[depth];
+  // The level the numbers on screen belong to. After a click the next level is still on its way and the previous chart stays (dimmed):
+  // it keeps its own chart type and its own "Level n" until the new numbers arrive, so a donut is not redrawn as columns for a moment.
+  const shown = result?.depth ?? depth;
+  const level = definition.levels[shown] ?? definition.levels[depth];
   const display = definition.display ?? DEFAULT_DISPLAY;
   const interactive = display.interactive;
   // while the next level is on its way the previous chart stays (dimmed): a click on it must not be read against the wrong level
@@ -56,7 +59,7 @@ export function DrillChart({ formId, scope, fields, definition, label, onSeeResp
   };
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-1 flex-col gap-3">
       {interactive && (
         <nav aria-label="Drill-down path" className="flex flex-wrap items-center gap-1 bg-body-sm">
           <ol className="m-0 flex list-none flex-wrap items-center gap-1 p-0">
@@ -87,7 +90,7 @@ export function DrillChart({ formId, scope, fields, definition, label, onSeeResp
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="bg-caption text-(--text-muted)">
-          Level {depth + 1} of {definition.levels.length}
+          Level {shown + 1} of {definition.levels.length}
           {result ? `: by ${result.level.label}` : ''}
           {interactive && result && (result.nextLevel ? `. Click a part to see it by ${result.nextLevel.label}.` : '. Click a part to see its responses.')}
         </p>

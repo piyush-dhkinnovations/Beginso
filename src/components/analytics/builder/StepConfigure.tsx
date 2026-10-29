@@ -16,14 +16,17 @@ interface StepConfigureProps {
   scope: string | undefined;
   state: WizardState;
   onChange: (patch: Partial<WizardState>) => void;
+  /** A drill-down's level being edited (the preview shows it), and how a level says "this is the one". */
+  activeLevel?: number;
+  onActiveLevel?: (level: number) => void;
 }
 
 /** Step 3: how each group is measured, how it is drawn and sorted, and which responses count at all. A drill-down adds its levels here instead. */
-export function StepConfigure({ fields, scope, state, onChange }: StepConfigureProps) {
+export function StepConfigure({ fields, scope, state, onChange, activeLevel = 0, onActiveLevel }: StepConfigureProps) {
   const q = state.query;
   const kind = kindOfRef(fields, q.groupBy.field);
   const typeOptions = chartTypeOptions(fields, state);
-  if (state.kind === 'drilldown') return <StepLevels fields={fields} state={state} onChange={onChange} />;
+  if (state.kind === 'drilldown') return <StepLevels fields={fields} state={state} onChange={onChange} active={activeLevel} onActive={onActiveLevel ?? (() => {})} />;
 
   return (
     <div className="flex flex-col gap-6">

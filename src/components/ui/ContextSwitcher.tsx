@@ -45,14 +45,14 @@ function ContextAvatar({ logo, Icon, size }: { logo?: string | null; Icon: typeo
   // A workspace that chose "BeginSo default" (no logo) shows the BeginSo mark, not a generic building; Personal keeps the person glyph.
   if (Icon === Building2) {
     return (
-      <span aria-hidden="true" className={bx("flex shrink-0 items-center justify-center overflow-hidden border border-(--border-default) bg-(--surface-card)", size === "lg" ? "size-10 rounded-lg" : "size-6 rounded-md")}>
+      <span aria-hidden="true" className={bx("flex shrink-0 items-center justify-center overflow-hidden border border-(--border-default) bg-(--surface-card)", size === "lg" ? "size-10 rounded-md" : "size-6 rounded")}>
         {/* eslint-disable-next-line @next/next/no-img-element -- local brand mark */}
         <img src="/favicon.svg" alt="" className={size === "lg" ? "size-6" : "size-4"} />
       </span>
     );
   }
   return (
-    <span aria-hidden="true" className={bx("flex shrink-0 items-center justify-center overflow-hidden border border-(--border-default) bg-(--bg-subtle)", size === "lg" ? "size-10 rounded-lg" : "size-6 rounded-md")}>
+    <span aria-hidden="true" className={bx("flex shrink-0 items-center justify-center overflow-hidden border border-(--border-default) bg-(--bg-subtle)", size === "lg" ? "size-10 rounded-md" : "size-6 rounded")}>
       <Icon className={size === "lg" ? "w-5 h-5 text-(--text-muted)" : "w-3.5 h-3.5 text-(--text-muted)"} />
     </span>
   );
