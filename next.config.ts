@@ -102,7 +102,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Default bottom-left position sits directly on top of the mobile nav drawer, which also
   // opens from the left — dev-only, has no effect on production builds.
-  devIndicators: {
+  // The e2e suite runs against `next dev` (playwright.config.ts sets NEXT_E2E): the "Next.js Dev Tools" button is a second button whose
+  // name contains "Next", which made `getByRole('button', { name: 'Next' })` ambiguous in 11 specs. Off for that run only.
+  devIndicators: process.env.NEXT_E2E === "1" ? false : {
     position: "bottom-right",
   },
   // One vocabulary (Inbox / Insights / Exports): the old names stay reachable as permanent aliases.
