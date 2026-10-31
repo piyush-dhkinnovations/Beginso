@@ -140,7 +140,7 @@ Beginso/                    # Next.js 16 application (this repo)
 │   └── proxy.ts            # Route guards; validates the HttpOnly session with the backend
 ├── __tests__/              # Vitest unit and property-based tests
 ├── e2e/                    # Playwright end-to-end tests + mock backend server
-├── docs/                   # Project documentation — see docs/README.md for the map
+├── (no docs/ folder)       # Documentation lives in the Beginso-Report repository (Beginso-Frontend-Report/)
 ├── .kiro/specs/            # Day-by-day sprint task specifications
 └── .env.local              # Environment configuration
 ```
