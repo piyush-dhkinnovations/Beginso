@@ -240,3 +240,29 @@ src/types/search.ts :: MemberSearchResult
 src/types/search.ts :: ResponseSearchResult
 src/types/search.ts :: TemplateSearchResult
 ```
+
+---
+
+## Step 1 and Step 2 results (31 Oct 2026)
+
+**Step 1** (branch `chore/cleanup-frontend-step1`, commit `9322076`): deleted `tmp-dbg.mjs`, `tmp-dbg2.mjs`, `tmp-drive.mjs`, `illustrations-src/_unused/` (11 SVG), `scripts/screenshot-mvp.mjs`. 15 files, 542 lines.
+
+**Step 2** (branch `chore/cleanup-frontend-step2`): removed the dependencies `tw-animate-css` and `@eslint/eslintrc` (2 lines in `package.json`, 227 lines out of the lockfile, no version changed, nothing added). `node_modules` 974 MB to 971 MB. Lint, type-check and the build pass without `@eslint/eslintrc`, so it stays removed. `knip` (run once the network was back) reports exactly these two as unused and no others.
+
+**Gate against the baseline (same machine, same day):**
+
+| | Before | After step 1 | After step 2 |
+|---|---|---|---|
+| Type-check, lint | clean | clean | clean |
+| Unit tests | 456 files, 4,115 tests | same | same |
+| `next build` route table | 88 lines | identical | identical |
+| E2E | 198 passed, **11 failed** | same 11 fail | same 11 fail |
+
+The 11 failing e2e tests (10 in `chart-builder.spec.ts`, 1 in `public-form-font.spec.ts`) **already failed before any change**. They are unrelated to this cleanup and need their own look (the log shows hydration mismatch errors).
+
+**Duplicate-purpose libraries:** none. One HTTP client (`axios`), one form library (`react-hook-form`), one animation source (CSS only), no date or chart library. `MapWidget` uses both Google Maps (script loaded with a key) and Leaflet, which is a deliberate fallback: report, keep. `lucide-react` is the icon set; `@iconify-json/streamline-ultimate-color` is only used by `scripts/generateFormIcons.mjs`: keep.
+
+**Other `knip` findings (report only, nothing changed):**
+* Unlisted dependencies: `axe-core` (used by five e2e specs) and `postcss` (named in `postcss.config.mjs`) are used but not declared in `package.json`; they work today because another package brings them in. Declaring them is a dependency change, so it needs your approval.
+* "Unused files" flagged by knip: `e2e/mockServer.ts`, `e2e/mocks/publicFormMocks.ts` (loaded by Playwright config or specs), `public/embed.js` (served to embedders), `scripts/build-illustrations.mjs` (run by hand and by its test), three files in `shared/types/`. All look like false positives; not deleted.
+* Unused exported types: 198 (mostly `*Props`): Step 3 does not touch exports.
