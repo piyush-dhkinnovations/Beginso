@@ -266,3 +266,13 @@ The 11 failing e2e tests (10 in `chart-builder.spec.ts`, 1 in `public-form-font.
 * Unlisted dependencies: `axe-core` (used by five e2e specs) and `postcss` (named in `postcss.config.mjs`) are used but not declared in `package.json`; they work today because another package brings them in. Declaring them is a dependency change, so it needs your approval.
 * "Unused files" flagged by knip: `e2e/mockServer.ts`, `e2e/mocks/publicFormMocks.ts` (loaded by Playwright config or specs), `public/embed.js` (served to embedders), `scripts/build-illustrations.mjs` (run by hand and by its test), three files in `shared/types/`. All look like false positives; not deleted.
 * Unused exported types: 198 (mostly `*Props`): Step 3 does not touch exports.
+
+## Step 3 result: nothing to remove under the approved rules (31 Oct 2026)
+
+Rules: only names that are unused **even inside their own file**, only in files **not touched in the last 30 days** (nothing after 1 Oct 2026), no `export` keyword removed, and no change to `analytics/builder`, `chartBuilder`, `chartOptions` or the `responseView` files.
+
+* **ESLint with `no-unused-vars` switched on** (the project config leaves it off) finds exactly two names: `_bucket` in `TrendChart.tsx` and `_logicRules` in `builderStore.ts`. Both start with an underscore on purpose (a discarded parameter and a key dropped by destructuring) and both files were touched within 30 days. Not removed.
+* **Names knip reports as unused exports** were checked for use inside their own file. The only two in files older than 30 days are `PEOPLE` in `src/components/landing/data/people.ts` (used by `Person` and `BY_ID` in the same file) and the default export of `src/lib/firebase.ts` (the module's own value). Neither qualifies.
+* **Every other candidate** is in a file touched on or after 1 Oct 2026 and is therefore excluded by the 30-day rule.
+
+No code was changed in Step 3. The branch `chore/cleanup-frontend-step3` only carries this note. After the 30-day window moves on (files untouched since early October), the same check can be re-run.
