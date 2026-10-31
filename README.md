@@ -2,7 +2,7 @@
 
 A form management platform that goes beyond collecting responses. Create forms, share them publicly, manage incoming submissions with workflow tracking, and view auto-generated dashboards — all in one place, without a spreadsheet in sight.
 
-**Status: Beginso V2.0.0 complete, 31 Oct 2026** (declared by the owner; Sprints 7 to 14 built, plus the October work) · MVP v1.0 shipped earlier. Status, open items and verification: `Beginso-Report/PROJECT_STATUS.md`. *Last updated 31 Oct 2026, checked against `main` `3f98ff5`; the `version` field in `package.json` is `2.1.0` and is set to the release number in a separate step.*
+**Status: V2 code-complete 31 Oct 2026, release gates open** (declared complete by the owner; Sprints 7 to 14 built, plus the October work) · MVP v1.0 shipped earlier. Status, open items and verification: `Beginso-Report/PROJECT_STATUS.md`. *Last updated 31 Oct 2026, checked against `main` `3f98ff5`; the `version` field in `package.json` is `2.1.0`; no release number has been set yet.*
 
 ---
 
@@ -78,7 +78,7 @@ Platform overview with global stats and error/abuse monitors. Paginated, filtera
 
 ## What V2 added
 
-V2 turned a single-admin tool into a multi-user product. It is **complete as of 31 Oct 2026**. The three changes that matter most:
+V2 turned a single-admin tool into a multi-user product. It is **code-complete as of 31 Oct 2026**; the release gates are still open (`Beginso-Report/docs/v2-release-checklist.md`). The three changes that matter most:
 
 1. **More than one person can work on a form**: members, roles, invitations, assignment, internal notes, and sharing a single form.
 2. **A form does not have to belong to a team**: a personal space sits alongside workspaces, and forms move between them.
@@ -96,7 +96,7 @@ Full scope, decisions and the sprint plan live in the shared documentation repos
 
 Workspace and forms management · drag-and-drop builder with 10 field types, conditional logic and branding · public form with progress bar, validation and file uploads · response hub with data table, workflow status and ECharts dashboards · CSV and PDF export · internal admin console.
 
-### Built in V2 (complete, 31 Oct 2026)
+### Built in V2 (code-complete, 31 Oct 2026)
 
 Multi-user workspaces and roles · personal space alongside workspaces · custom pipeline stages · response scoring · tags, assignment and internal notes · board and calendar response views · global search · notifications · archive and trash.
 
@@ -221,7 +221,7 @@ The Super Admin console gained a Mail Logs UI and a last-login-location map afte
 
 Sprint numbers continue across the product, so **V2 is Sprints 7 to 14, plus Sprint 15 for the October work**. The week-by-week plan lives in `Beginso-Report/Beginso-V2/SPRINT-PLAN.md`.
 
-### V2.0.0: Sprints 7 to 14 and the October work
+### V2: Sprints 7 to 14 and the October work
 
 Dates are the first and last commit in the frontend history that names the sprint; later follow-up work is dated in `Beginso-Report/CHANGELOG.md`. **State** is what the code proves on 31 Oct 2026 (456 test files and 4,115 tests pass, and 209 end-to-end tests pass); **Spec tasks ticked** is the count in the sprint's checklist `.kiro/specs/<sprint>/tasks.md` (a local folder, not in git). The open boxes of Sprints 9 to 14 are mostly manual verification and launch gates (live-backend integration, dark-mode and device passes, production deploy, the `v2.0.0` tag), not missing features; they are listed in `Beginso-Report/PROJECT_STATUS.md` and were not ticked by this README's author.
 
