@@ -2,14 +2,14 @@
 
 A form management platform that goes beyond collecting responses. Create forms, share them publicly, manage incoming submissions with workflow tracking, and view auto-generated dashboards — all in one place, without a spreadsheet in sight.
 
-**Status:** MVP v1.0 complete · V2 in development
+**Status: Beginso V2.0.0 complete, 31 Oct 2026** (declared by the owner; Sprints 7 to 14 built, plus the October work) · MVP v1.0 shipped earlier. Status, open items and verification: `Beginso-Report/PROJECT_STATUS.md`. *Last updated 31 Oct 2026, checked against `main` `3f98ff5`; the `version` field in `package.json` is `2.1.0` and is set to the release number in a separate step.*
 
 ---
 
 ## Contents
 
 - [What this is](#what-this-is) · [User roles](#user-roles) · [Core flow](#core-user-flow)
-- [Features](#key-features) · [What's next in V2](#whats-next-in-v2) · [Scope](#scope)
+- [Features](#key-features) · [What V2 added](#what-v2-added) · [Scope](#scope)
 - [Tech stack](#tech-stack) · [Project structure](#project-structure) · [Design system](#design-system)
 - [Security](#security--reliability) · [Timeline](#development-timeline) · [Screens](#screens-reference)
 - [Getting started](#getting-started) · [Testing](#testing) · [Contributing](#contributing)
@@ -76,15 +76,17 @@ Platform overview with global stats and error/abuse monitors. Paginated, filtera
 
 ---
 
-## What's next in V2
+## What V2 added
 
-V2 turns a single-admin tool into a multi-user product. The three changes that matter most:
+V2 turned a single-admin tool into a multi-user product. It is **complete as of 31 Oct 2026**. The three changes that matter most:
 
-1. **More than one person can work on a form** — members, roles, invitations, assignment, internal notes.
-2. **A form does not have to belong to a team** — a personal space sits alongside workspaces, and forms move between them.
-3. **A response is something you work on, not just read** — custom pipeline stages, scoring, tags, saved views, duplicate detection.
+1. **More than one person can work on a form**: members, roles, invitations, assignment, internal notes, and sharing a single form.
+2. **A form does not have to belong to a team**: a personal space sits alongside workspaces, and forms move between them.
+3. **A response is something you work on, not just read**: custom pipeline stages, scoring, tags, saved views, duplicate flags, and Table, Board, Calendar, Grid and List views.
 
-Full scope, decisions and the sprint plan live in the shared documentation repository, `Beginso-Report/Beginso-V2/`. That is the source of truth for what V2 contains; this README does not duplicate it.
+Added in the last weeks: a branding studio with a live preview and six layouts, a verified-email gate for tracked forms, an insights chart builder with drill-down, a customisable Home with a response map, per-user storage and workspace limits, and response references such as `KALCUS0042`.
+
+Full scope, decisions and the sprint plan live in the shared documentation repository, `Beginso-Report/Beginso-V2/` (the plan) and `Beginso-Report/PROJECT_STATUS.md` (what was delivered). This README does not duplicate them.
 
 ---
 
@@ -94,7 +96,7 @@ Full scope, decisions and the sprint plan live in the shared documentation repos
 
 Workspace and forms management · drag-and-drop builder with 10 field types, conditional logic and branding · public form with progress bar, validation and file uploads · response hub with data table, workflow status and ECharts dashboards · CSV and PDF export · internal admin console.
 
-### Coming in V2
+### Built in V2 (complete, 31 Oct 2026)
 
 Multi-user workspaces and roles · personal space alongside workspaces · custom pipeline stages · response scoring · tags, assignment and internal notes · board and calendar response views · global search · notifications · archive and trash.
 
@@ -200,7 +202,7 @@ V2 introduces a full component library. Its written rules and the CSS live in `B
 
 ### Working rhythm
 
-Monday to Saturday, Sunday off. **Monday–Friday** is development only. **Saturday** is testing — no new feature code. A sprint is done when the Saturday pass is green and every exit criterion is met.
+Monday to Saturday, Sunday off. **Monday–Friday** is development only. **Saturday** is testing — no new feature code. A sprint is done when the Saturday pass is green and every exit criterion is met. *(This was the V2 plan's rhythm; the October work was run task by task with the gate described in `Beginso-Report/HOW-TO-RUN-A-SPRINT.md`.)*
 
 ### MVP v1.0 — 8 weeks, all complete
 
@@ -217,7 +219,27 @@ Monday to Saturday, Sunday off. **Monday–Friday** is development only. **Satur
 
 The Super Admin console gained a Mail Logs UI and a last-login-location map after its sprint closed. Sprint 6 added onboarding and the notification bell outside its original spec.
 
-Sprint numbers continue across the product — **V2 runs sprints 7 to 14**. Its week-by-week plan lives in `Beginso-Report/Beginso-V2/SPRINT-PLAN.md`.
+Sprint numbers continue across the product, so **V2 is Sprints 7 to 14, plus Sprint 15 for the October work**. The week-by-week plan lives in `Beginso-Report/Beginso-V2/SPRINT-PLAN.md`.
+
+### V2.0.0: Sprints 7 to 14 and the October work
+
+Dates are the first and last commit in the frontend history that names the sprint; later follow-up work is dated in `Beginso-Report/CHANGELOG.md`. **State** is what the code proves on 31 Oct 2026 (456 test files and 4,115 tests pass, and 209 end-to-end tests pass); **Spec tasks ticked** is the count in the sprint's checklist `.kiro/specs/<sprint>/tasks.md` (a local folder, not in git). The open boxes of Sprints 9 to 14 are mostly manual verification and launch gates (live-backend integration, dark-mode and device passes, production deploy, the `v2.0.0` tag), not missing features; they are listed in `Beginso-Report/PROJECT_STATUS.md` and were not ticked by this README's author.
+
+| Sprint (spec folder) | Focus | Dates (2026) | State | Spec tasks ticked |
+|---|---|---|---|---|
+| Sprint 7 `sprint-7-foundation` | V2 design system, 20 UI primitives, app shell, landing page rebuild | 01 – 03 Sep | ✅ | 48 of 48 |
+| Sprint 8 `sprint-8-workspaces-context` | `/w/[slug]` routing, context switcher, All workspaces, forms manager per context | 07 – 09 Sep | ✅ | 29 of 29 |
+| Sprint 9 `sprint-9-team-permissions` | Members, invitations and the accept page, role matrix, per-form access, Shared with me | 10 – 16 Sep | ✅ | 39 of 40 |
+| Sprint 10 `sprint-10-events-migration` | Workspace activity, audit log, form events, V1 to memberships migration | 21 – 22 Sep | ✅ built; 🟡 live-backend check not recorded | 42 of 45 |
+| Sprint 11 `sprint-11-v2a-hardening` | Permission audit, accessibility, dark mode, view counting; V2a deploy | 23 – 29 Sep | ✅ built; 🟡 the production deploy and 24 h watch items are unticked | 35 of 45 |
+| Sprint 12 `sprint-12-inbox-collaboration` | Stages, tags, assignment, notes, scoring, saved views, bulk actions, duplicate flags | 29 Sep – early Oct | ✅ | 44 of 46 |
+| Sprint 13 `sprint-13-builder-publish-respondent` | Access modes, review before submit, respondent links, archive and trash, leave guard, layout gallery | 05 Oct | ✅ built; 🟡 the integration and sprint-gate boxes are unticked | 49 of 71 |
+| Sprint 14 `sprint-14-insights-search-launch` | Insights, global search, notifications, audits and the launch gates | 06 Oct | ✅ built; 🟡 the audits, gates and launch boxes are unticked | 40 of 64 |
+| Sprint 15 `sprint-15-scoring-v2c` | "Scoring, V2c refinements and V2b launch closure": it carries over the Sprint 14 launch tasks (zeros fix, PDF pages, cookie flags, load test, production deploy and the `v2.0.0` tag) | created 21 Oct | ⚪ no task is ticked; scoring itself exists (Sprint 12), and the carried-over launch tasks are in `PROJECT_STATUS.md` | 0 of 63 |
+| October work (called "Sprint 15" in the code comments; **no spec folder**) | Home widgets and response map, V2 field types, branding studio and six layouts, storage limits, response layouts and response setup, response references, chart builder with drill-down, verified-email gate | 08 – 29 Oct | ✅ | no checklist |
+
+The plan's week numbers (Weeks 1 to 8) are timeline positions, not sprint numbers. The MVP specs show the same pattern (for example Sprint 1: 155 of 171 ticked), so a ticked box lags the code; the code and the tests are the evidence.
+
 
 ---
 
