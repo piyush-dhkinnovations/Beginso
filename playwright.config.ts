@@ -51,7 +51,7 @@ export default defineConfig({
       // reliably on Windows after the tests finish.
       command: `node node_modules/next/dist/bin/next ${prod ? 'start' : 'dev'} -p ${APP_PORT}`,
       url: `http://localhost:${APP_PORT}`,
-      env: { NEXT_PUBLIC_API_URL: `http://localhost:${MOCK_PORT}`, NEXT_DIST_DIR: '.next-e2e' },
+      env: { NEXT_PUBLIC_API_URL: `http://localhost:${MOCK_PORT}`, NEXT_DIST_DIR: '.next-e2e', NEXT_E2E: '1' },
       reuseExistingServer,
       timeout: 60000,
     },
