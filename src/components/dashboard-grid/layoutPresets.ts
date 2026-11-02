@@ -49,8 +49,7 @@ export const LAYOUT_PRESETS: LayoutPreset[] = [
       kpi('l-forms', 'totalForms', 16),
       kpi('l-responses', 'totalResponses', responsesVariant(m)),
       kpi('l-published', 'publishedForms', 14),
-      kpi('l-month', 'responsesThisMonth', 16),
-      kpi('l-avg', 'avgPerForm', 13),
+      has(m, 'responsesThisMonth') ? kpi('l-month', 'responsesThisMonth', 16) : kpi('l-avg', 'avgPerForm', 16),
     ],
   },
   {
