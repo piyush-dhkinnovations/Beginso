@@ -17,7 +17,6 @@ const BASE = {
   completionRate: null,
   changes: NO_CHANGE,
   periodLabel: 'vs previous 30 days',
-  perFormResponses: [],
 };
 
 describe('WorkspaceSummaryCards', () => {
@@ -31,7 +30,6 @@ describe('WorkspaceSummaryCards', () => {
         averageResponsesPerForm={63.5}
         completionRate={78.4}
         changes={{ responses: 12.04, average: null, completion: null }}
-        perFormResponses={[10, 40, 90, 114]}
         isLoading={false}
       />
     );
@@ -47,6 +45,17 @@ describe('WorkspaceSummaryCards', () => {
     expect(screen.getByText('Completion rate')).toBeInTheDocument();
     // The value and the ring's own label both read 78%.
     expect(screen.getAllByText('78%').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('writes numbers with thousands separators and no stray decimal', () => {
+    render(<WorkspaceSummaryCards {...BASE} totalResponses={1170} activeForms={1} totalForms={1} averageResponsesPerForm={1170} isLoading={false} />);
+    expect(screen.getAllByText('1,170')).toHaveLength(2);
+    expect(screen.queryByText('1170.0')).not.toBeInTheDocument();
+  });
+
+  it('says why the completion rate is empty, in words, not only in a tooltip', () => {
+    render(<WorkspaceSummaryCards {...BASE} totalResponses={50} isLoading={false} />);
+    expect(screen.getAllByText('Not enough views yet').length).toBeGreaterThan(0);
   });
 
   it('shows the change vs the previous period under the card it belongs to', () => {
@@ -68,7 +77,6 @@ describe('WorkspaceSummaryCards', () => {
 
     // Total responses, active forms and the average all read zero.
     expect(screen.getAllByText('0').every((el) => el.className.includes('text-(--text-disabled)'))).toBe(true);
-    expect(screen.getByText('0.0').className).toContain('text-(--text-disabled)');
     // The null rate is "—" with a "Not enough views yet" explanation, in the muted token (never 0%).
     expect(screen.getByText('Not enough views yet')).toBeInTheDocument();
     expect(screen.getByText(/^—/).closest('.bg-stat-value')?.className).toContain('text-(--text-disabled)');

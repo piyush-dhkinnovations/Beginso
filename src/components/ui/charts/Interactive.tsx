@@ -264,7 +264,12 @@ export function BarsChart({
               <rect x={cx - band / 2} y={PAD.top} width={band} height={plotH} fill={on ? 'var(--surface-hover)' : 'transparent'} />
               <rect x={cx - bw / 2} y={y(d.count)} width={bw} height={Math.max(y(0) - y(d.count), d.count > 0 ? 2 : 0)} rx={Math.min(5, bw / 2)} fill={colorOf(i)} stroke={on && bw >= 4 ? 'var(--text-primary)' : 'none'} strokeWidth={2} />
               {(dataLabels === undefined ? band >= 34 : dataLabels && band >= 18) && <text x={cx} y={y(d.count) - 5} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--text-primary)" aria-hidden="true">{d.text}</text>}
-              {show.has(i) && <text x={cx} y={height - 10} textAnchor="middle" fontSize="11" fill="var(--text-muted)" aria-hidden="true">{clip(d.axisLabel ?? d.label, labelChars)}</text>}
+              {show.has(i) && (() => {
+                // the last label is set against the right edge instead of being centred under a bar and running off the chart
+                const text = clip(d.axisLabel ?? d.label, labelChars);
+                const atEdge = cx + (text.length * 6.2) / 2 > w - 2;
+                return <text x={atEdge ? w - 2 : cx} y={height - 10} textAnchor={atEdge ? 'end' : 'middle'} fontSize="11" fill="var(--text-muted)" aria-hidden="true">{text}</text>;
+              })()}
             </g>
           );
         })}
