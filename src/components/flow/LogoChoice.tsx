@@ -5,6 +5,7 @@ import { ImagePlus, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import { uploadService } from '@/services/upload';
+import { uploadSrc } from '@/lib/uploadSrc';
 
 const MAX_MB = 2;
 const ACCEPTED = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
@@ -71,7 +72,7 @@ export function LogoChoice({ value, onChange, subject, disabled }: LogoChoicePro
           ) : uploadChosen ? (
             value ? (
               // eslint-disable-next-line @next/next/no-img-element -- backend-served upload, not a static asset
-              <img src={value} alt="Your uploaded logo" className="size-full object-cover" />
+              <img src={uploadSrc(value)} alt="Your uploaded logo" className="size-full object-cover" />
             ) : (
               <ImagePlus size={26} className="text-(--text-muted)" aria-hidden="true" />
             )
