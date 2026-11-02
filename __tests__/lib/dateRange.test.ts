@@ -6,7 +6,7 @@
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { resolveDateRangePreset, normalizeDateRange, resolveTrendBucket, resolvePreviousDateRange } from '@/lib/dateRange';
+import { resolveDateRangePreset, normalizeDateRange, resolveTrendBucket, resolvePreviousDateRange, spansMoreThanAYear } from '@/lib/dateRange';
 
 describe('resolveDateRangePreset', () => {
   afterEach(() => {
@@ -61,6 +61,14 @@ describe('normalizeDateRange', () => {
   it('throws on unparseable input instead of returning Invalid Date', () => {
     expect(() => normalizeDateRange('not-a-date', '2026-08-10T00:00:00.000Z')).toThrow();
     expect(() => normalizeDateRange('2026-08-10T00:00:00.000Z', 'also-not-a-date')).toThrow();
+  });
+});
+
+describe('spansMoreThanAYear', () => {
+  it('is true only for an explicit range longer than 365 days', () => {
+    expect(spansMoreThanAYear('2024-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z')).toBe(true);
+    expect(spansMoreThanAYear('2026-01-01T00:00:00.000Z', '2026-08-01T00:00:00.000Z')).toBe(false);
+    expect(spansMoreThanAYear(undefined, undefined)).toBe(false);
   });
 });
 

@@ -39,7 +39,7 @@ import { useFormScope } from '@/hooks/useFormScope';
 import { analyticsService } from '@/services/analytics';
 import { analyticsKeys, chartKeys } from '@/lib/queryKeys';
 import { chartsService } from '@/services/charts';
-import { ALL_TIME_SENTINEL, resolveEffectiveDateRange, resolveTrendBucket, resolvePreviousDateRange } from '@/lib/dateRange';
+import { ALL_TIME_SENTINEL, resolveEffectiveDateRange, resolveTrendBucket, resolvePreviousDateRange, spansMoreThanAYear } from '@/lib/dateRange';
 import { computeChangePercent } from '@/lib/analyticsChange';
 import { browserTimezone } from '@/lib/calendarDates';
 import { FORM_SUBHEADER_SLOT_ID } from '@/lib/formHeaderSlot';
@@ -127,8 +127,15 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
   const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
   const headerSlot = useSyncExternalStore(subscribeNever, () => document.getElementById(FORM_SUBHEADER_SLOT_ID), () => null);
   const defaultBucket = resolveTrendBucket(from, to);
-  const [bucketOverride, setBucketOverride] = useState<TrendBucket | null>(null);
-  const bucket: TrendBucket = bucketOverride ?? defaultBucket;
+  // The workspace chart's grouping. A choice belongs to the range it was made for (a new range starts from the default again), and a
+  // history of more than about a year and a quarter of weeks starts by the month: hundreds of thin bars say nothing.
+  const rangeKey = `${from ?? ''}|${to ?? ''}`;
+  const [pick, setPick] = useState<{ key: string; bucket: TrendBucket } | null>(null);
+  const [longHistoryKey, setLongHistoryKey] = useState<string | null>(null);
+  const picked = pick?.key === rangeKey ? pick.bucket : null;
+  const trendBucket: TrendBucket = picked ?? (spansMoreThanAYear(from, to) || longHistoryKey === rangeKey ? 'month' : defaultBucket);
+  // The backend groups by day or week only; months are added up from days.
+  const bucket: 'day' | 'week' = trendBucket === 'month' ? 'day' : trendBucket;
   const timezone = browserTimezone();
   const range = { from, to };
   const rawPage = Number(searchParams.get('page'));
@@ -158,8 +165,8 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
   });
 
   const trendsQuery = useQuery({
-    queryKey: analyticsKeys.trends(formId as string, range, bucket),
-    queryFn: () => analyticsService.getTrends({ formId, from, to, timezone, bucket }, formScope),
+    queryKey: analyticsKeys.trends(formId as string, range, defaultBucket),
+    queryFn: () => analyticsService.getTrends({ formId, from, to, timezone, bucket: defaultBucket }, formScope),
     enabled: !!formId && !!formScope,
   });
 
@@ -249,6 +256,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
     enabled: !formId && formsSummaryQuery.isSuccess && currentForms.length > 0,
     scope,
   });
+  if (bucket === 'week' && !picked && longHistoryKey !== rangeKey && (workspaceTrend.points?.length ?? 0) > 60) setLongHistoryKey(rangeKey);
   const statusCounts = {
     published: currentForms.filter((f) => f.status === 'published').length,
     draft: currentForms.filter((f) => f.status === 'draft').length,
@@ -395,9 +403,6 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
           completionRate={workspaceCompletion}
           changes={summaryChanges}
           periodLabel={periodLabel}
-          trend={workspaceTrend.points?.map((p) => p.responses)}
-          previousTotalResponses={hasPreviousRange ? previousWorkspaceTotalResponses : undefined}
-          perFormResponses={currentForms.map((f) => f.totalResponses)}
           isLoading={formsSummaryQuery.isLoading}
         />
       )}
@@ -477,12 +482,12 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
         </>
       ) : (
         <>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <ResponsesOverTimeCard
             points={workspaceTrend.points}
             isLoading={formsSummaryQuery.isLoading || workspaceTrend.isLoading}
-            bucket={bucket}
-            onBucketChange={setBucketOverride}
+            bucket={trendBucket}
+            onBucketChange={(next) => setPick({ key: rangeKey, bucket: next })}
           />
           <FormsByStatusCard counts={statusCounts} isLoading={formsSummaryQuery.isLoading} />
         </div>

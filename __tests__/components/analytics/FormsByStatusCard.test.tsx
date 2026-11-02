@@ -26,10 +26,16 @@ describe('FormsByStatusCard', () => {
     expect(items[2]).toHaveTextContent('Closed1 (10%)');
   });
 
-  it('uses the singular for one form and lists zero-count statuses', () => {
+  it('uses the singular for one form and lists only the one status in use', () => {
     render(<FormsByStatusCard counts={{ published: 0, draft: 1, closed: 0 }} isLoading={false} />);
     expect(screen.getByText('form')).toBeInTheDocument();
-    expect(screen.getByRole('img')).toHaveAttribute('aria-label', 'Forms by status: 0 published, 1 draft, 0 closed');
-    expect(screen.getByText('Published').closest('li')).toHaveTextContent('Published0 (0%)');
+    expect(screen.getByRole('img')).toHaveAttribute('aria-label', 'Forms by status: 1 draft');
+    expect(screen.getByText('Draft').closest('li')).toHaveTextContent('Draft1 (100%)');
+    expect(screen.queryByText('Published')).not.toBeInTheDocument();
+  });
+
+  it('still lists the empty statuses when more than one is in use', () => {
+    render(<FormsByStatusCard counts={{ published: 2, draft: 1, closed: 0 }} isLoading={false} />);
+    expect(screen.getByText('Closed').closest('li')).toHaveTextContent('Closed0 (0%)');
   });
 });
