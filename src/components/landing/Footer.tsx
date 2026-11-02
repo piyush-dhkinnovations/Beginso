@@ -1,4 +1,5 @@
 import { Wordmark } from "./Wordmark";
+import { CookieSettingsButton } from "./CookieSettingsButton";
 
 const COLUMNS = [
   {
@@ -51,6 +52,11 @@ export default function Footer() {
                     </a>
                   </li>
                 ))}
+                {column.title === "Legal" && (
+                  <li>
+                    <CookieSettingsButton className="inline-flex min-h-10 items-center bg-body-sm text-(--text-on-brand)/80 hover:text-(--text-on-brand) transition-colors" />
+                  </li>
+                )}
               </ul>
             </div>
           ))}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChevronRight, Link2 } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
+import { CookieBanner } from "@/components/landing/CookieBanner";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
@@ -72,6 +73,7 @@ export function PolicyLayout({ doc }: { doc: PolicyDoc }) {
       </article>
 
       <Footer />
+      <CookieBanner />
       <ScrollNav />
     </main>
   );
