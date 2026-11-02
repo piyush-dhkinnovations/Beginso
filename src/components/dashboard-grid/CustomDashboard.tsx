@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { MoreHorizontal, Plus, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { LayoutTemplate, MoreHorizontal, Plus, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Menu } from '@/components/ui/Menu';
 import { DashboardGridSkeleton, SkeletonRegion } from '@/components/ui/PageSkeletons';
@@ -12,6 +12,7 @@ import { dashboardKeys } from '@/lib/queryKeys';
 import { dashboardLayoutService } from '@/services/dashboardLayout';
 import { AddWidgetDrawer } from './AddWidgetDrawer';
 import { DashboardGrid } from './DashboardGrid';
+import { LayoutPicker } from './LayoutPicker';
 import type { MetricMap, Widget } from './types';
 
 let seq = 0;
@@ -37,6 +38,7 @@ export function useCustomDashboard({ scope, defaults, metrics, canEdit = true, e
   const key = dashboardKeys.layout(scope);
   const [draft, setDraft] = useState<Widget[] | null>(null);
   const [adding, setAdding] = useState(false);
+  const [choosingLayout, setChoosingLayout] = useState(false);
 
   const { data, isLoading } = useQuery({ queryKey: key, queryFn: () => dashboardLayoutService.get(scope), enabled, retry: false });
   const saved = data?.widgets ?? defaults;
@@ -91,6 +93,7 @@ export function useCustomDashboard({ scope, defaults, metrics, canEdit = true, e
             align="end"
             items={[{ id: 'reset', label: 'Reset to default', icon: <RotateCcw size={16} />, disabled: reset.isPending || !data, onSelect: () => reset.mutate() }]}
           />
+          <Button variant="secondary" onClick={() => setChoosingLayout(true)} aria-label="Choose a layout"><LayoutTemplate size={16} className="sm:mr-2" /><span className="hidden sm:inline">Layout</span></Button>
           <Button variant="secondary" onClick={() => setAdding(true)}><Plus size={16} className="sm:mr-2" /><span className="hidden sm:inline">Add widget</span><span className="sr-only sm:hidden">Add widget</span></Button>
           <Button variant="secondary" onClick={() => setDraft(null)}>Cancel</Button>
           <Button onClick={() => save.mutate(draft)} disabled={save.isPending}>{save.isPending ? 'Saving…' : 'Save'}</Button>
@@ -114,6 +117,16 @@ export function useCustomDashboard({ scope, defaults, metrics, canEdit = true, e
         metrics={metrics}
         onChange={editing ? setDraft : undefined}
         empty={<p className="bg-body text-(--text-muted)">No widgets yet. {canEdit ? 'Click Customize, then Add widget.' : ''}</p>}
+      />
+      <LayoutPicker
+        isOpen={choosingLayout}
+        onClose={() => setChoosingLayout(false)}
+        metrics={metrics}
+        // shown as the draft, so Save keeps it and Cancel brings the old dashboard back
+        onPick={(widgets) => {
+          setDraft(widgets);
+          setChoosingLayout(false);
+        }}
       />
       <AddWidgetDrawer isOpen={adding} onClose={() => setAdding(false)} metrics={metrics} onAdd={(w) => setDraft((d) => [...(d ?? saved), { ...w, id: uid() }])} />
     </>

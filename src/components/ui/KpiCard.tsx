@@ -70,7 +70,7 @@ const mutedCls = 'text-xs leading-4 text-(--text-muted)';
 function Shell({ children, className, style }: { children: ReactNode; className?: string; style?: CSSProperties }) {
   return (
     <div
-      className={bx('relative h-full min-h-34 min-w-0 overflow-hidden rounded-xl border border-(--border-default) bg-(--surface-card) p-5', className)}
+      className={bx('relative h-full min-h-34 min-w-0 overflow-hidden rounded-(--bg-radius-lg) border border-(--border-default) bg-(--surface-card) p-5', className)}
       style={style}
     >
       {children}
