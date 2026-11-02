@@ -6,7 +6,7 @@ name: Verify Frontend Deploy
 # `npm run prebuild`), and finishes green when the site serves this commit, red when it does not within 15 minutes. While it waits it is
 # "in progress", which the Admin shows as "Deploying".
 #
-# Uses the repository variable SMOKE_SITE_URL (the live site, for example https://www.beginso.com), the same one the smoke workflow uses.
+# Uses the repository variable SMOKE_SITE_URL (the live site, for example https://www.beginso.com).
 on:
   push:
     branches: [main]
