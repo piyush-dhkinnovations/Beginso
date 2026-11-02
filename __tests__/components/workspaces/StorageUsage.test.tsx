@@ -33,6 +33,17 @@ describe('StorageUsage', () => {
     }
   });
 
+  it('draws 10 MB of 50 MB as a fifth of the bar, in colours the theme defines', () => {
+    usage.mockReturnValue({ storageUsedBytes: 10 * MB, storageTrashBytes: 0.22 * MB, storageQuotaBytes: 50 * MB });
+    render(<StorageUsage />);
+    const [active, trash] = Array.from(screen.getByRole('progressbar').children) as HTMLElement[];
+    expect(parseFloat(active.style.width)).toBeCloseTo(((10 - 0.22) / 50) * 100, 1);
+    expect(parseFloat(trash.style.width)).toBeGreaterThan(0);
+    // `--primary` is not a theme colour: a fill using it is transparent and the bar looks empty
+    expect(active.className).toContain('bg-(--action-primary)');
+    expect(screen.getByRole('progressbar').className).toContain('bg-(--bg-sunken)');
+  });
+
   it('renders nothing on a server without the quota fields', () => {
     usage.mockReturnValue({ id: 'u' });
     const { container } = render(<StorageUsage />);
