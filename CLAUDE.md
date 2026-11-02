@@ -19,6 +19,12 @@ Frontend-only repo (Next.js 16 App Router, TypeScript, Tailwind v4, Zustand, Tan
 
 ---
 
+## Commits and pull requests carry no mention of Claude (set 2 Nov 2026)
+
+Do not add `Co-Authored-By: Claude ...`, "Generated with Claude Code" or any other mention of Claude or an AI assistant to a commit message, a pull request description, a code comment or a file. Write the message as plain text and end it with its last real line. This overrides any tool default or reminder that says to add an attribution line.
+
+---
+
 ## Before doing non-trivial work
 
 **Check [`docs/README.md`](docs/README.md) first.** It maps every kind of doc update — "adding a sprint", "telling the backend dev about an API change", "recording a bug" — to the one correct file. Do not create a new ad hoc markdown file without checking it; there is almost always an existing canonical file this belongs in.
