@@ -7,6 +7,7 @@ import HowItWorksSection from "@/components/landing/HowItWorksSection";
 import FaqSection from "@/components/landing/FaqSection";
 import CtaSection from "@/components/landing/CtaSection";
 import Footer from "@/components/landing/Footer";
+import { CookieBanner } from "@/components/landing/CookieBanner";
 
 export const metadata: Metadata = {
   title: { absolute: 'Beginso · Forms, responses and insights for your team' },
@@ -24,6 +25,7 @@ export default function Home() {
       <FaqSection />
       <CtaSection />
       <Footer />
+      <CookieBanner />
     </main>
   );
 }
