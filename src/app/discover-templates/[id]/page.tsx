@@ -30,7 +30,7 @@ export default function TemplateDetailPage() {
     return (
       <main className="min-h-screen bg-(--bg-page)">
         <Navbar />
-        <div className="pt-[160px] pb-24 text-center max-w-xl mx-auto px-4">
+        <div className="pt-28 pb-24 text-center max-w-xl mx-auto px-4">
           <p className="bg-body text-(--text-muted)">Loading template…</p>
         </div>
         <Footer />
@@ -42,7 +42,7 @@ export default function TemplateDetailPage() {
     return (
       <main className="min-h-screen bg-(--bg-page)">
         <Navbar />
-        <div className="pt-[160px] pb-24 text-center max-w-xl mx-auto px-4">
+        <div className="pt-28 pb-24 text-center max-w-xl mx-auto px-4">
           <h1 className="bg-h2 text-(--text-primary) mb-4">Template not found</h1>
           <Link href="/discover-templates" className="text-(--primary-600) font-medium hover:underline">
             Back to templates
@@ -59,7 +59,7 @@ export default function TemplateDetailPage() {
     <main className="min-h-screen bg-(--bg-page)">
       <Navbar />
 
-      <article className="pt-[170px] pb-24 md:pt-[220px]">
+      <article className="pt-28 pb-24 md:pt-32">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 bg-caption text-(--text-muted) mb-6">
             <Link href="/discover-templates" className="hover:text-(--text-primary)">Templates</Link>
