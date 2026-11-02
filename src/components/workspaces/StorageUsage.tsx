@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useAccountUsage } from '@/hooks/useAccountUsage';
 import { formatStorage, storageLevel } from '@/lib/storageUsage';
 
-const FILL = { ok: 'bg-(--primary)', warning: 'bg-(--warning)', full: 'bg-(--error)' } as const;
+const FILL = { ok: 'bg-(--action-primary)', warning: 'bg-(--warning)', full: 'bg-(--error)' } as const;
 
 /** Sidebar usage bar: active vs Trash, out of the quota. Trash counts toward the total until it is emptied. */
 export function StorageUsage() {
@@ -34,7 +34,7 @@ export function StorageUsage() {
         aria-valuenow={Math.round((used / quota) * 100)}
         aria-valuemin={0}
         aria-valuemax={100}
-        className="flex h-1.5 overflow-hidden rounded-full bg-(--surface-hover)"
+        className="flex h-2 overflow-hidden rounded-full bg-(--bg-sunken) ring-1 ring-inset ring-(--border-default)"
       >
         <div className={FILL[level]} style={{ width: pct(used - trash) }} />
         <div className={`${FILL[level]} opacity-50`} style={{ width: pct(trash) }} />
