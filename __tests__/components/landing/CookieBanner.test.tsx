@@ -40,6 +40,13 @@ describe('CookieBanner', () => {
     expect(screen.queryByRole('region', { name: 'Cookies' })).toBeNull();
   });
 
+  it('blurs the page behind it while it asks, and the blur goes with it', () => {
+    render(<CookieBanner />);
+    expect(screen.getByTestId('cookie-backdrop').className).toContain('backdrop-blur');
+    fireEvent.click(screen.getByRole('button', { name: 'Allow all' }));
+    expect(screen.queryByTestId('cookie-backdrop')).toBeNull();
+  });
+
   it('stays away once a choice is saved', () => {
     window.localStorage.setItem('beginso.cookie-consent', JSON.stringify({ choice: 'essential', savedAt: new Date().toISOString() }));
     render(<CookieBanner />);

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import { Cookie } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { COOKIE_CHANGE_EVENT, COOKIE_REOPEN_EVENT, readCookieConsent, saveCookieConsent } from '@/lib/cookieConsent';
 
@@ -13,8 +14,9 @@ const subscribe = (notify: () => void) => {
 const UNKNOWN = 'unknown';
 
 /**
- * Asks once, at the bottom of the page, whether other cookies are allowed. Essential cookies (staying signed in, remembering the theme)
- * always work. The answer is saved in the browser and the bar stays away until "Cookie settings" in the footer asks for it again.
+ * Asks once, at the bottom of the page, whether other cookies are allowed, with the page behind it softly blurred. Essential cookies
+ * (staying signed in, remembering the theme) always work. The answer is saved in the browser and the bar stays away until "Cookie
+ * settings" in the footer asks for it again.
  */
 export function CookieBanner() {
   const saved = useSyncExternalStore(subscribe, readCookieConsent, () => UNKNOWN);
@@ -34,26 +36,30 @@ export function CookieBanner() {
   };
 
   return (
-    <section
-      aria-label="Cookies"
-      className="fixed inset-x-0 bottom-0 z-50 p-3 sm:p-4"
-    >
-      <div className="mx-auto flex max-w-3xl flex-col gap-3 rounded-xl border border-(--border-default) bg-(--surface-card) p-4 shadow-(--shadow-hover) sm:flex-row sm:items-center sm:gap-6">
-        <p className="bg-body-sm text-(--text-secondary) sm:flex-1">
-          We use cookies to keep you signed in and to make Beginso better. You can allow all cookies or only the ones Beginso needs.{' '}
-          <Link href="/cookie-policy" className="font-semibold text-(--text-link) underline">
-            Cookie Policy
-          </Link>
-        </p>
-        <div className="flex shrink-0 gap-2">
-          <Button variant="secondary" size="small" onClick={() => choose('essential')}>
-            Essential only
-          </Button>
-          <Button variant="primary" size="small" onClick={() => choose('all')}>
-            Allow all
-          </Button>
+    <>
+      <div aria-hidden="true" data-testid="cookie-backdrop" className="fixed inset-0 z-40 bg-(--surface-inverse)/30 backdrop-blur-[3px]" />
+      <section aria-label="Cookies" className="fixed inset-x-0 bottom-0 z-50 p-4 sm:p-6">
+        <div className="mx-auto flex max-w-5xl flex-col gap-5 rounded-2xl border border-(--border-default) bg-(--surface-card) p-6 shadow-(--shadow-hover) sm:p-8 md:flex-row md:items-center md:gap-8">
+          <Cookie className="hidden size-10 shrink-0 text-(--action-primary) md:block" aria-hidden="true" />
+          <div className="md:flex-1">
+            <p className="bg-h5 text-(--text-primary)">We use cookies</p>
+            <p className="mt-1 bg-body text-(--text-secondary)">
+              We use cookies to keep you signed in and to make Beginso better. You can allow all cookies or only the ones Beginso needs.{' '}
+              <Link href="/cookie-policy" className="font-semibold text-(--text-link) underline">
+                Cookie Policy
+              </Link>
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-col-reverse gap-3 sm:flex-row">
+            <Button variant="secondary" onClick={() => choose('essential')}>
+              Essential only
+            </Button>
+            <Button variant="primary" onClick={() => choose('all')}>
+              Allow all
+            </Button>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
