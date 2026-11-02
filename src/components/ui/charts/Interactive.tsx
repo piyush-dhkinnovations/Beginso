@@ -119,7 +119,9 @@ function Wrap({ nav, children }: { nav: ReturnType<typeof useChartNav>; children
   // `attach` is a callback ref and `tip` plain state; the react-hooks/refs rule mistakes them for ref objects.
   /* eslint-disable react-hooks/refs */
   return (
-    <div ref={nav.attach} className="relative w-full">
+    // contain: inline-size = the chart takes its width from its container and never props it open: a drawing of a fixed pixel width would
+    // otherwise keep a card (or a grid column) at the size it had, so the chart could grow with its container but never shrink back
+    <div ref={nav.attach} className="relative w-full min-w-0 max-w-full [contain:inline-size]">
       {children}
       {nav.tip}
     </div>
