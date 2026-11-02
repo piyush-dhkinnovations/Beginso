@@ -8,6 +8,11 @@ describe('WorkspaceLogo', () => {
     expect(container.querySelector('img')).toHaveAttribute('src', 'https://cdn.example.com/l.png');
   });
 
+  it('asks for an uploaded logo through this site, whatever host the backend stored it with', () => {
+    const { container } = render(<WorkspaceLogo logo="http://192.168.33.47:5000/api/upload/file/abc.png" />);
+    expect(container.querySelector('img')).toHaveAttribute('src', '/api/backend/api/upload/file/abc.png');
+  });
+
   it('shows the BeginSo mark when there is no logo', () => {
     const { container } = render(<WorkspaceLogo logo={null} />);
     expect(container.querySelector('img')).toHaveAttribute('src', '/favicon.svg');
