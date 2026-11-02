@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { bx } from '@/lib/utils';
-import { localAvatarSrc } from '@/lib/avatarUrl';
+import { uploadSrc } from '@/lib/uploadSrc';
 
 const SIZE = { sm: 'size-8 rounded', md: 'size-11 rounded-md' } as const;
 
@@ -12,7 +12,8 @@ const SIZE = { sm: 'size-8 rounded', md: 'size-11 rounded-md' } as const;
  */
 export function WorkspaceLogo({ logo, size = 'md', className }: { logo?: string | null; size?: keyof typeof SIZE; className?: string }) {
   const [failed, setFailed] = useState(false);
-  const src = localAvatarSrc(logo ?? undefined);
+  // an uploaded logo is asked for through this site (/api/backend), like the sidebar switcher does; the raw address is blocked by the page's image policy
+  const src = uploadSrc(logo);
   if (src && !failed) {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- uploaded workspace logo, served by the backend
