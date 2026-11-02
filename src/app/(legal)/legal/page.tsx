@@ -15,7 +15,7 @@ export default function LegalIndexPage() {
     <main className="min-h-screen bg-(--bg-page)">
       <Navbar />
 
-      <section className="pt-[140px] pb-24 md:pt-[180px] max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="pt-28 pb-24 md:pt-32 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-14">
           <h1 className="bg-h1 text-(--text-primary) mb-3">Legal</h1>
           <p className="bg-body-lg text-(--text-secondary)">
