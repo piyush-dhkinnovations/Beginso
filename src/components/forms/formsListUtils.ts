@@ -28,6 +28,14 @@ export const SERVER_SORT_FIELD: Record<string, 'title' | 'status' | 'updatedAt' 
   updated: 'updatedAt',
 };
 
+/**
+ * The pinned forms first, the rest after them, each group keeping the order it came in. The server already sends the list this way; this keeps the
+ * page right when the server is an older one that only marks a form as pinned, and costs nothing when it is not (the order is already so).
+ */
+export function pinnedFirst(forms: Form[]): Form[] {
+  return [...forms.filter((f) => f.pinned), ...forms.filter((f) => !f.pinned)];
+}
+
 // The caller's pinned forms stay on top, whatever the column: the pinned group first, then the rest, each in the chosen order (the server
 // does the same for the sorts it can do; this keeps it true for the ones it cannot).
 export function sortForms(forms: Form[], { key, dir }: TableSort): Form[] {

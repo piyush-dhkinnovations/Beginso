@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   sortForms,
+  pinnedFirst,
   SERVER_SORT_FIELD,
   formatUpdated,
   createFormHref,
@@ -19,6 +20,30 @@ const forms = [
   form({ _id: 'c', title: 'Gamma', status: 'draft', responseCount: 1, updatedAt: '2026-02-01T00:00:00Z' }),
 ];
 const ids = (l: Form[]) => l.map((f) => f._id);
+
+describe('pinnedFirst', () => {
+  it('puts the pinned forms first and keeps the order inside each group', () => {
+    const list = [
+      form({ _id: 'a', pinned: false }),
+      form({ _id: 'b', pinned: true }),
+      form({ _id: 'c' }),
+      form({ _id: 'd', pinned: true }),
+    ];
+    expect(ids(pinnedFirst(list))).toEqual(['b', 'd', 'a', 'c']);
+  });
+
+  it('changes nothing when nothing is pinned or the list is already so', () => {
+    expect(ids(pinnedFirst(forms))).toEqual(['a', 'b', 'c']);
+    const already = [form({ _id: 'p', pinned: true }), form({ _id: 'q' })];
+    expect(ids(pinnedFirst(already))).toEqual(['p', 'q']);
+  });
+
+  it('does not change the list it is given', () => {
+    const list = [form({ _id: 'a' }), form({ _id: 'b', pinned: true })];
+    pinnedFirst(list);
+    expect(ids(list)).toEqual(['a', 'b']);
+  });
+});
 
 describe('sortForms', () => {
   it('sorts by title (locale-aware) both ways', () => {
