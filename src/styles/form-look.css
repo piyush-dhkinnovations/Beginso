@@ -13,7 +13,7 @@
   --form-field-bg-filled: var(--bg-sunken);
   --form-field-border: var(--border-default);
   --form-field-edge: var(--text-muted); /* the line under a filled or underlined field: AA on every light surface, so at least 3:1 */
-  --form-field-radius: 8px;
+  --form-field-radius: var(--radius-lg); /* what rounded-lg was: 0.625rem */
 }
 
 /* Filled fields: a tinted box with no visible edge until it is focused. Underline: only a line under the text. */

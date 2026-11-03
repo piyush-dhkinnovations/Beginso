@@ -142,7 +142,9 @@ export function useBuilderAutosave() {
   const { toast } = useToast();
   // read inside the debounced save without making it a dependency (the toast function is a new one on every render)
   const toastRef = useRef(toast);
-  toastRef.current = toast;
+  useEffect(() => {
+    toastRef.current = toast;
+  });
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [saveDetail, setSaveDetail] = useState<string | null>(null);

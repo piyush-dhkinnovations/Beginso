@@ -37,7 +37,7 @@ describe('the form look CSS', () => {
     const defaults = section.slice(0, section.indexOf('}'));
     expect(defaults).toContain('--form-field-bg: var(--surface-card)');
     expect(defaults).toContain('--form-field-border: var(--border-default)');
-    expect(defaults).toContain('--form-field-radius: 8px');
+    expect(defaults).toContain('--form-field-radius: var(--radius-lg)');
     expect(defaults).toContain('--form-heading: var(--text-primary)');
   });
 

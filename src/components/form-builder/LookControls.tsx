@@ -423,7 +423,7 @@ export function FineTune({ branding, layout, setTheme }: { branding: FormBrandin
           {cornersBlocked ? (
             <p className="bg-caption text-(--text-muted)">Field corners: {cornersBlocked}</p>
           ) : (
-            <Slider label="Field corners" value={t?.fields?.radius} preset={8} min={0} max={32} onChange={(radius) => setTheme('fields', { radius })} onReset={() => setTheme('fields', { radius: undefined })} />
+            <Slider label="Field corners" value={t?.fields?.radius} preset={10} min={0} max={32} onChange={(radius) => setTheme('fields', { radius })} onReset={() => setTheme('fields', { radius: undefined })} />
           )}
           <p className="bg-caption text-(--text-muted)">The form width is a biggest width: on a small screen the form still fits the screen.</p>
           {touched && (
