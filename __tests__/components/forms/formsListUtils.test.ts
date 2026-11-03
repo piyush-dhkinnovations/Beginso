@@ -35,6 +35,15 @@ describe('sortForms', () => {
     expect(ids(sortForms(forms, { key: 'responses', dir: 'asc' }))).toEqual(['c', 'a', 'b']);
   });
 
+  it('keeps the pinned forms on top whatever the column, each group in the chosen order', () => {
+    const withPins = [{ ...forms[0], pinned: false }, { ...forms[1], pinned: true }, { ...forms[2], pinned: true }];
+    expect(ids(sortForms(withPins, { key: 'responses', dir: 'desc' }))).toEqual(['b', 'c', 'a']);
+    expect(ids(sortForms(withPins, { key: 'responses', dir: 'asc' }))).toEqual(['c', 'b', 'a']);
+    expect(ids(sortForms(withPins, { key: 'title', dir: 'asc' }))).toEqual(['b', 'c', 'a']);
+    // no pins: nothing changes
+    expect(ids(sortForms(forms, { key: 'responses', dir: 'desc' }))).toEqual(['b', 'a', 'c']);
+  });
+
   it('sorts by updated, and unknown keys fall back to updated', () => {
     expect(ids(sortForms(forms, { key: 'updated', dir: 'desc' }))).toEqual(['a', 'c', 'b']);
     expect(ids(sortForms(forms, { key: 'nonsense', dir: 'asc' }))).toEqual(['b', 'c', 'a']);
