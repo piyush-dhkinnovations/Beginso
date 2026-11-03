@@ -105,6 +105,10 @@
   --surface-inverse: var(--ink-900);
   --text-inverse:    var(--neutral-0);
 
+  /* The backing of artwork that was drawn for a white page (form icons, a drawn signature, a QR code). White in every style, light or dark: the
+     picture needs it, so it is not a surface that follows the style. */
+  --surface-art: #FFFFFF;
+
   /* Control internals — the knob of a switch, the tick of a checkbox. */
   --control-knob: var(--neutral-0);
   --control-off:  var(--neutral-300);
@@ -196,6 +200,78 @@
   --text-body-sm: 400 12px/18px var(--bg-font-sans);
   --text-caption: 400 11px/16px var(--bg-font-sans);
   --text-button:  500 13px/20px var(--bg-font-sans);
+}
+
+/* ---- Light styles. "Classic" is the tokens above, with no attribute at all; the page adds data-light="paper" or data-light="mist" (Settings >
+   Appearance, set before paint like data-dark) only while it is light. They change the neutral surfaces, text, borders and shadows and nothing
+   else: the brand blue, the status colours and every component stay as they are, and the dark styles are not touched. Every text and background
+   pair is checked by scripts/check-contrast.mjs (4.5:1 for text, 3:1 for control borders and the focus ring). ---- */
+
+/* Paper: a warm off-white, like uncoated stock. Cards are a step lighter than the page so they still lift off it. */
+:root[data-light="paper"] {
+  --bg-page:        #F5F0E6;
+  --bg-subtle:      #EFE9DC;
+  --bg-sunken:      #E7E0D0;
+  --surface-card:   #FCFAF5;
+  --surface-hover:  #F1ECDF;
+  --surface-active: #E6ECF7;
+
+  --text-primary:   #1F1A12;
+  --text-secondary: #473F32;
+  --text-muted:     #5A5242;
+  --text-disabled:  #8F8670;
+  /* status text a notch darker, so it clears 4.5:1 on the warmer page */
+  --success-text:   #136B38;
+  --warning-text:   #9A4608;
+
+  --border-default: #D9D0BC;
+  --border-strong:  #8A8068;
+  --border-subtle:  #E6DFCE;
+
+  --accent-soft:       #E4EAF6;
+  --accent-soft-hover: #D5DEF1;
+
+  --control-off:   #8A8068;
+  --chart-muted:   #DCE3F2;
+  --chart-muted-2: #C3D0EA;
+
+  --shadow-sm: 0 1px 2px rgba(60, 42, 12, 0.08);
+  --shadow-md: 0 4px 12px rgba(60, 42, 12, 0.10);
+  --shadow-hover: 0 2px 6px rgba(60, 42, 12, 0.10);
+  --shadow-lg: 0 12px 32px rgba(60, 42, 12, 0.14);
+}
+
+/* Mist: a cool blue-gray, the quietest of the three. */
+:root[data-light="mist"] {
+  --bg-page:        #ECF0F6;
+  --bg-subtle:      #E4E9F1;
+  --bg-sunken:      #DAE1EC;
+  --surface-card:   #F9FAFD;
+  --surface-hover:  #E8EDF4;
+  --surface-active: #DCE6F7;
+
+  --text-primary:   #0C1730;
+  --text-secondary: #38435C;
+  --text-muted:     #4D5870;
+  --text-disabled:  #8590A8;
+  --success-text:   #136B38;
+  --warning-text:   #9A4608;
+
+  --border-default: #CDD6E4;
+  --border-strong:  #77839D;
+  --border-subtle:  #DEE4EE;
+
+  --accent-soft:       #DCE6F7;
+  --accent-soft-hover: #CBD9F2;
+
+  --control-off:   #77839D;
+  --chart-muted:   #D6E0F3;
+  --chart-muted-2: #BCCBE9;
+
+  --shadow-sm: 0 1px 2px rgba(14, 30, 70, 0.08);
+  --shadow-md: 0 4px 12px rgba(14, 30, 70, 0.10);
+  --shadow-hover: 0 2px 6px rgba(14, 30, 70, 0.10);
+  --shadow-lg: 0 12px 32px rgba(14, 30, 70, 0.14);
 }
 
 /* ---- Dark mode. Opt in with data-theme="dark" on any ancestor. ---------- */
@@ -391,6 +467,20 @@ html {
   -webkit-text-size-adjust: 100%;
   /* Reserve the scrollbar's width always, so pages with and without a scrollbar lay out identically. */
   scrollbar-gutter: stable;
+}
+
+/* Text size (Settings > Appearance). The root size is the browser's own default (16px unless the person changed it) scaled by their choice, and
+   every length in this file and in the app is in rem, so everything follows: text, controls, rows, the sidebar. Default sets nothing.
+   Set before paint by the script in app/layout.tsx, in the signed-in app only (the public form keeps its own size for everyone). */
+html[data-text="large"] { font-size: 112.5%; --ui-scale: 1.125; }
+html[data-text="xlarge"] { font-size: 125%; --ui-scale: 1.25; }
+/* Icons are sized in code (size={16} is a width attribute in pixels, which the build step cannot reach), so they follow the setting here. An icon whose
+   size comes from a class (size-4, h-5 w-5) is in rem already and is left alone. At Default --ui-scale is not set and this changes nothing. */
+svg.lucide:not([class*="size-"]):not([class*="w-"]):not([class*="h-"]) { zoom: var(--ui-scale, 1); }
+/* The top bar holds five things (menu, logo, search, bell, avatar), and with bigger text they no longer fit a phone: the logo was squeezed to half. Less air
+   between them gives the logo its room back. */
+@media (max-width: 480px) {
+  html[data-text] .bg-topbar { gap: var(--space-1); padding-inline: var(--space-2); }
 }
 
 body {

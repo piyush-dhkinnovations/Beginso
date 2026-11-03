@@ -4,6 +4,7 @@ import { useId, type CSSProperties, type ReactNode } from 'react';
 import { ArrowDown, ArrowUp, ChevronRight, CircleDot, TrendingUp, Zap } from 'lucide-react';
 import { bx } from '@/lib/utils';
 import { Ring } from './charts';
+import { useTextScale } from '@/hooks/useTextScale';
 import { curve, scalePoints } from './charts/math';
 
 // One KPI card, 20 looks. Every look is driven by the same KpiData; a look uses what it needs and
@@ -185,6 +186,9 @@ function Hint({ children }: { children?: string }) {
 }
 
 function Render({ variant, d: raw }: { variant: KpiVariant; d: KpiData }) {
+  // At a larger text size the words need more of the card: the ring (a drawing in pixels) gets smaller, and at Extra large it sits above the words instead of beside
+  // them. At Default it is 84px beside them, as before.
+  const textScale = useTextScale();
   const trend = usableTrend(raw.trend);
   const d: KpiData = { ...raw, trend };
   const tone = d.tone ?? 'primary';
@@ -206,8 +210,12 @@ function Render({ variant, d: raw }: { variant: KpiVariant; d: KpiData }) {
             {d.delta && <Pill value={d.delta.value} down={d.delta.down} />}
           </div>
           <div className="flex items-end justify-between gap-3">
-            <div className="min-w-0"><div className={valueCls}>{d.value}</div><div className={labelCls}>{d.label}</div><Hint>{trendHint}</Hint></div>
-            {d.trend && <Spark values={d.trend} tone={tone} className="h-12 w-28 flex-none" />}
+            <div className="min-w-min"><div className={valueCls}>{d.value}</div><div className={labelCls}>{d.label}</div><Hint>{trendHint}</Hint></div>
+            {d.trend && (
+              <div className="flex-none" style={{ width: Math.round(112 - (textScale - 1) * 160) }}>
+                <Spark values={d.trend} tone={tone} className="h-12 w-full" />
+              </div>
+            )}
           </div>
         </Shell>
       );
@@ -423,13 +431,13 @@ function Render({ variant, d: raw }: { variant: KpiVariant; d: KpiData }) {
       );
     case 16:
       return (
-        <Shell className="flex items-center gap-4">
+        <Shell className={bx('flex', textScale > 1.2 ? 'flex-col items-start gap-3' : 'items-center gap-4')}>
           {noRing ? (Icon && <Tile tone={tone} size="lg">{Icon}</Tile>) : (
-            <Ring percent={pct} size={84} stroke={10} color={TONE[tone]}>
+            <Ring percent={pct} size={textScale > 1 ? 72 : 84} stroke={10} color={TONE[tone]}>
               <span className="text-sm font-bold text-(--text-primary)">{Math.round(pct)}%</span>
             </Ring>
           )}
-          <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex min-w-0 flex-col gap-0.5 [overflow-wrap:anywhere]">
             <span className={valueCls}>{d.value}</span>
             <span className={labelCls}>{d.label}</span>
             {d.delta && <Pill value={d.delta.value} down={d.delta.down} />}

@@ -1,4 +1,7 @@
+'use client';
+
 import { getFormIcon, suggestFormIcon } from '@/lib/formIcons';
+import { useTextScale } from '@/hooks/useTextScale';
 import { IconArt } from '@/components/forms/FormIcon';
 import { LogoImage } from '@/components/ui/LogoImage';
 
@@ -17,6 +20,7 @@ export function FormTile({
   logoUrl?: string | null;
   iconName?: string | null;
 }) {
+  const k = useTextScale();
   // A form with its own logo shows just the logo: no tile, border or background around it.
   if (logoUrl) {
     // Small tiles (table rows) show the logo at full size; big ones (cards) leave a little air around it.
@@ -26,8 +30,8 @@ export function FormTile({
   // An icon is shown as its artwork alone, like a logo: no tile, border or background around it.
   const icon = getFormIcon(iconName) ?? suggestFormIcon(title);
   return (
-    <span className="inline-flex flex-none items-center justify-center" style={{ width: size, height: size }}>
-      <IconArt icon={icon} size={Math.round(size * 0.92)} />
+    <span className="inline-flex flex-none items-center justify-center" style={{ width: Math.round(size * k), height: Math.round(size * k) }}>
+      <IconArt icon={icon} size={Math.round(size * 0.92 * k)} />
     </span>
   );
 }

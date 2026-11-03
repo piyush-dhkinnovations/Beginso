@@ -16,7 +16,7 @@ export function Wordmark({ height = 24, force }: { height?: number; force?: "lig
         alt="Beginso"
         height={height}
         width={width}
-        style={{ height, width }}
+        style={{ height, width, zoom: 'var(--ui-scale, 1)', flexShrink: 0 }}
       />
     );
   }
@@ -24,9 +24,9 @@ export function Wordmark({ height = 24, force }: { height?: number; force?: "lig
   return (
     <>
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={LOGO_FULL_LIGHT} alt="Beginso" height={height} width={width} style={{ height, width }} className="wordmark-light" />
+      <img src={LOGO_FULL_LIGHT} alt="Beginso" height={height} width={width} style={{ height, width, zoom: 'var(--ui-scale, 1)', flexShrink: 0 }} className="wordmark-light" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={LOGO_FULL_DARK} alt="Beginso" height={height} width={width} style={{ height, width }} className="wordmark-dark" />
+      <img src={LOGO_FULL_DARK} alt="Beginso" height={height} width={width} style={{ height, width, zoom: 'var(--ui-scale, 1)', flexShrink: 0 }} className="wordmark-dark" />
     </>
   );
 }

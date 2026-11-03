@@ -1,0 +1,29 @@
+{
+  "classic": [
+    "--border-strong on --bg-page",
+    "--border-strong on --surface-card",
+    "--border-strong on --bg-subtle",
+    "--control-off on --surface-card",
+    "--control-off on --bg-page"
+  ],
+  "slate": [
+    "--border-strong on --bg-page",
+    "--border-strong on --surface-card",
+    "--border-strong on --bg-subtle",
+    "--control-off on --surface-card",
+    "--control-off on --bg-page"
+  ],
+  "midnight": [
+    "--border-strong on --surface-card",
+    "--border-strong on --bg-subtle",
+    "--control-off on --surface-card",
+    "--control-off on --bg-page"
+  ],
+  "dimmed": [
+    "--border-strong on --bg-page",
+    "--border-strong on --surface-card",
+    "--border-strong on --bg-subtle",
+    "--control-off on --surface-card",
+    "--control-off on --bg-page"
+  ]
+}

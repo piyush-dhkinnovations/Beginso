@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { bx } from '@/lib/utils';
 import { uploadSrc } from '@/lib/uploadSrc';
+import { useTextScale } from '@/hooks/useTextScale';
 
 /**
  * An uploaded logo that never leaves a hole while it loads: a quiet tile holds its place (same size, so nothing jumps), the picture fades
@@ -12,8 +13,12 @@ import { uploadSrc } from '@/lib/uploadSrc';
  * The corners are rounded in proportion to the logo (about a sixth of its width): a fixed 8px rounds a 24px logo into a circle and cuts the
  * corners off a wide one.
  */
-export function LogoImage({ src, size, margin = 0, className }: { src: string; size: number; margin?: number; className?: string }) {
+export function LogoImage({ src, size: base, margin: baseMargin = 0, className }: { src: string; size: number; margin?: number; className?: string }) {
   const [state, setState] = useState<'loading' | 'ready' | 'failed'>('loading');
+  // sized in pixels from code, so it follows the Text size setting here (the build step only reaches the CSS)
+  const k = useTextScale();
+  const size = Math.round(base * k);
+  const margin = baseMargin * k;
   const radius = Math.max(3, Math.round(size / 6));
   return (
     <span aria-hidden="true" className={bx('relative inline-block flex-none', state !== 'ready' && 'animate-pulse bg-(--bg-sunken)', className)} style={{ width: size, height: size, margin, ...(state !== 'ready' ? { borderRadius: radius } : {}) }}>

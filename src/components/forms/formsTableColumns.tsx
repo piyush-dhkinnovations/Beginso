@@ -57,8 +57,8 @@ export function buildFormColumns(s: FormsPageState, context: FormsContext): Tabl
       key: 'form',
       header: 'Form Title',
       sortKey: 'title',
-      // Takes whatever width the other columns leave and truncates the title (max-w-0 lets the cell shrink below its text).
-      className: 'w-full max-w-0',
+      // Takes whatever width the other columns leave and truncates the title (max-w-0 lets the cell shrink below its text; only from the sm screen up, where it is a table row. In the stacked phone card it squeezed the title to nothing).
+      className: 'w-full sm:max-w-0',
       render: (form) => {
         const owner = ownerName(form);
         return (

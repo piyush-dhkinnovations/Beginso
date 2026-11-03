@@ -39,8 +39,13 @@ export function FormThemeScope({ children }: { children: ReactNode }) {
     const root = document.documentElement;
     const htmlTheme = root.getAttribute('data-theme');
     const dark = root.getAttribute('data-dark');
+    const light = root.getAttribute('data-light');
+    const text = root.getAttribute('data-text');
     root.removeAttribute('data-theme');
     root.removeAttribute('data-dark');
+    // The light style and the text size are the viewer's own choices too: the form looks the same for everyone.
+    root.removeAttribute('data-light');
+    root.removeAttribute('data-text');
     // Embed with ?bg=0: the document itself must be see-through too, or the body colour would still fill the frame.
     const clear = new URLSearchParams(window.location.search).get('embed') === '1' && new URLSearchParams(window.location.search).get('bg') === '0';
     const prevBody = document.body.style.background;
@@ -54,6 +59,8 @@ export function FormThemeScope({ children }: { children: ReactNode }) {
       root.style.background = prevRoot;
       if (htmlTheme !== null) root.setAttribute('data-theme', htmlTheme);
       if (dark !== null) root.setAttribute('data-dark', dark);
+      if (light !== null) root.setAttribute('data-light', light);
+      if (text !== null) root.setAttribute('data-text', text);
     };
   }, []);
 
