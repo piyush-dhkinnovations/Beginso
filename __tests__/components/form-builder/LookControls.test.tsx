@@ -236,3 +236,34 @@ describe('choice tiles stay real radios and checkboxes', () => {
     expect(container.querySelector('.form-look')!.getAttributeNames().sort()).toEqual(['class']);
   });
 });
+
+describe('Text tab: fonts and the heading font', () => {
+  it('lists the fonts in groups, each drawn in its own typeface, and picking one sets the form font', async () => {
+    const update = draw();
+    await open('Text');
+    const fonts = screen.getByRole('group', { name: 'Font' });
+    for (const g of ['Modern', 'Serif', 'Friendly', 'Handwritten and display']) expect(within(fonts).getByRole('group', { name: g })).toBeInTheDocument();
+    const serif = within(fonts).getByRole('group', { name: 'Serif' });
+    expect(within(serif).getAllByRole('button').length).toBeGreaterThanOrEqual(5);
+    await userEvent.click(within(serif).getByRole('button', { name: /Playfair Display/ }));
+    expect(update).toHaveBeenLastCalledWith({ fontFamily: 'playfair_display' });
+  });
+
+  it('the heading font starts as "Same as the text", sets theme.fonts.heading, and clears the theme when put back', async () => {
+    const update = draw();
+    await open('Text');
+    const select = screen.getByLabelText('Heading font') as HTMLSelectElement;
+    expect(select.value).toBe('');
+    await userEvent.selectOptions(select, 'caveat');
+    expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, fonts: { heading: 'caveat' } } });
+  });
+
+  it('shows the chosen heading font, and putting it back to "Same as the text" clears it', async () => {
+    const update = draw({ primaryColor: '#1D4ED8', theme: { v: 1, fonts: { heading: 'caveat' } } });
+    await open('Text');
+    const select = screen.getByLabelText('Heading font') as HTMLSelectElement;
+    expect(select.value).toBe('caveat');
+    await userEvent.selectOptions(select, '');
+    expect(update).toHaveBeenLastCalledWith({ theme: null });
+  });
+});

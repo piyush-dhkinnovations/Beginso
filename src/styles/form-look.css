@@ -38,6 +38,9 @@
   border-bottom-color: var(--error);
 }
 
+/* A heading font, when one is chosen: the form title and the page titles (marked .form-heading) */
+.form-look[data-heading-font] .form-heading { font-family: var(--form-heading-font); }
+
 /* Exact values */
 .form-look[data-card-radius] .form-card { border-radius: var(--form-card-radius); }
 /* Split Feature is a full-width panel on a phone, as it always was: its own corners and shadow are a tablet-and-up thing. */

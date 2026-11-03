@@ -43,6 +43,8 @@ const LOOK_THEMES: Record<string, NonNullable<PublicFormSchema['branding']['them
   beside: { v: 1, fields: { label: 'start' } },
   tiles: { v: 1, fields: { choice: 'tiles' } },
   exact: { v: 1, card: { radius: 32, shadow: 90 }, layout: { maxWidth: 520, fieldGap: 28 } },
+  heading: { v: 1, fonts: { heading: 'playfair_display' } },
+  body: undefined, // the form's own font is Quicksand (set below)
   all: {
     v: 1,
     colors: { text: '#1F2937', heading: '#7C3AED', card: '#FFF7ED', field: '#FFFFFF', fieldBorder: '#6B7280' },
@@ -67,7 +69,7 @@ function lookSchema(slug: string): PublicFormSchema | undefined {
       { fieldId: 'd', pageId: 'p1', type: 'multiple_choice', label: 'How did you hear about us?', required: true, deleted: false, order: 3, options: ['Search', 'Friend', 'Social media'] },
       { fieldId: 'e', pageId: 'p1', type: 'checkbox', label: 'Which features interest you?', required: false, deleted: false, order: 4, options: ['Forms', 'Analytics'] },
     ],
-    branding: { primaryColor: '#1D4ED8', bannerText: 'Takes two minutes', ...(theme ? { theme } : {}) },
+    branding: { primaryColor: '#1D4ED8', bannerText: 'Takes two minutes', ...(m[2] === 'body' ? { fontFamily: 'quicksand' as const } : {}), ...(theme ? { theme } : {}) },
     settings: { ...mockPublicFormSchema.settings, layout: m[1] as 'classic' },
   };
 }

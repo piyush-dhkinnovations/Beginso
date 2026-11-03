@@ -10,7 +10,7 @@ import type { ChoiceStyle, FieldStyle, FormBranding, FormTheme, LabelPosition, L
 // The groups of controls the branding studio has for the form's colours, how its fields look, and exact sizes. Each choice is drawn (a tile that
 // looks like what it does), "Default" is one click away, and an option the chosen layout cannot show is switched off with the reason, never ignored.
 
-export type ThemeGroup = 'colors' | 'fields' | 'card' | 'layout';
+export type ThemeGroup = 'colors' | 'fields' | 'card' | 'layout' | 'fonts';
 export type SetTheme = <G extends ThemeGroup>(group: G, patch: Partial<NonNullable<FormTheme[G]>>) => void;
 
 const HEX = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;

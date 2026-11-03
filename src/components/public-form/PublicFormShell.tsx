@@ -638,7 +638,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
               <FormProgress currentPage={currentPageIndex + 1} totalPages={totalPages} />
             )}
 
-            <h1 className={embedOpts.hideTitle || headlineInBanner ? 'sr-only' : layout === 'card_stack' ? 'bg-h4 text-(--form-heading) border-b border-(--border-default) pb-3' : 'bg-h3 text-(--form-heading)'}>{currentPage?.title ?? schema.title}</h1>
+            <h1 className={embedOpts.hideTitle || headlineInBanner ? 'sr-only' : layout === 'card_stack' ? 'form-heading bg-h4 text-(--form-heading) border-b border-(--border-default) pb-3' : 'form-heading bg-h3 text-(--form-heading)'}>{currentPage?.title ?? schema.title}</h1>
             {currentPage?.description && <p className="bg-body text-(--text-muted) mt-1">{currentPage.description}</p>}
 
             </>

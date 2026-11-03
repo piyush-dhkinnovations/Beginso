@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { FieldStyle, FormBranding, FormTheme, LayoutPreset } from '@/types/form';
+import type { FieldStyle, FormBranding, FormFont, FormTheme, LayoutPreset } from '@/types/form';
 import { safeHttpUrl } from '@/lib/fieldDisplay';
 import { uploadSrc } from '@/lib/uploadSrc';
 import { isBuiltInPictureUrl } from '@/lib/formPictures';
@@ -35,12 +35,37 @@ export const brandShowsProgress = (b: Theme): boolean => b.showProgress !== fals
 // ── Respondent-form look: font, type scale, card surface, colour panel ─────────────────────────────────────────────
 type Look = Pick<FormBranding, 'primaryColor' | 'fontFamily' | 'typeScale' | 'cardStyle' | 'panelTreatment' | 'coverImageUrl'>;
 
-export const FORM_FONT_OPTIONS: { value: NonNullable<FormBranding['fontFamily']>; label: string; stack: string }[] = [
-  { value: 'dm_sans', label: 'DM Sans (default)', stack: 'var(--font-dm-sans), system-ui, sans-serif' },
-  { value: 'inter', label: 'Inter — clean', stack: 'var(--font-inter), system-ui, sans-serif' },
-  { value: 'work_sans', label: 'Work Sans — modern', stack: 'var(--font-work-sans), system-ui, sans-serif' },
-  { value: 'lora', label: 'Lora — serif, formal', stack: 'var(--font-lora), Georgia, serif' },
-  { value: 'nunito', label: 'Nunito — rounded, friendly', stack: 'var(--font-nunito), system-ui, sans-serif' },
+export type FontGroup = 'modern' | 'serif' | 'friendly' | 'display';
+export const FONT_GROUPS: { id: FontGroup; label: string }[] = [
+  { id: 'modern', label: 'Modern' },
+  { id: 'serif', label: 'Serif' },
+  { id: 'friendly', label: 'Friendly' },
+  { id: 'display', label: 'Handwritten and display' },
+];
+
+export const FORM_FONT_OPTIONS: { value: FormFont; label: string; group: FontGroup; stack: string }[] = [
+  { value: 'dm_sans', label: 'DM Sans (default)', group: 'modern', stack: 'var(--font-dm-sans), system-ui, sans-serif' },
+  { value: 'inter', label: 'Inter — clean', group: 'modern', stack: 'var(--font-inter), system-ui, sans-serif' },
+  { value: 'work_sans', label: 'Work Sans — modern', group: 'modern', stack: 'var(--font-work-sans), system-ui, sans-serif' },
+  { value: 'lora', label: 'Lora — serif, formal', group: 'serif', stack: 'var(--font-lora), Georgia, serif' },
+  { value: 'nunito', label: 'Nunito — rounded, friendly', group: 'friendly', stack: 'var(--font-nunito), system-ui, sans-serif' },
+  { value: 'poppins', label: 'Poppins — geometric', group: 'modern', stack: 'var(--font-poppins), system-ui, sans-serif' },
+  { value: 'manrope', label: 'Manrope — crisp', group: 'modern', stack: 'var(--font-manrope), system-ui, sans-serif' },
+  { value: 'plus_jakarta_sans', label: 'Plus Jakarta Sans — friendly modern', group: 'modern', stack: 'var(--font-plus-jakarta-sans), system-ui, sans-serif' },
+  { value: 'outfit', label: 'Outfit — clean geometric', group: 'modern', stack: 'var(--font-outfit), system-ui, sans-serif' },
+  { value: 'space_grotesk', label: 'Space Grotesk — techy', group: 'modern', stack: 'var(--font-space-grotesk), system-ui, sans-serif' },
+  { value: 'montserrat', label: 'Montserrat — bold, urban', group: 'modern', stack: 'var(--font-montserrat), system-ui, sans-serif' },
+  { value: 'playfair_display', label: 'Playfair Display — elegant', group: 'serif', stack: 'var(--font-playfair-display), Georgia, serif' },
+  { value: 'merriweather', label: 'Merriweather — readable serif', group: 'serif', stack: 'var(--font-merriweather), Georgia, serif' },
+  { value: 'source_serif_4', label: 'Source Serif — editorial', group: 'serif', stack: 'var(--font-source-serif-4), Georgia, serif' },
+  { value: 'fraunces', label: 'Fraunces — soft, warm serif', group: 'serif', stack: 'var(--font-fraunces), Georgia, serif' },
+  { value: 'dm_serif_display', label: 'DM Serif Display — headline serif', group: 'serif', stack: 'var(--font-dm-serif-display), Georgia, serif' },
+  { value: 'quicksand', label: 'Quicksand — light, rounded', group: 'friendly', stack: 'var(--font-quicksand), system-ui, sans-serif' },
+  { value: 'fredoka', label: 'Fredoka — playful', group: 'friendly', stack: 'var(--font-fredoka), system-ui, sans-serif' },
+  { value: 'caveat', label: 'Caveat — handwritten', group: 'display', stack: 'var(--font-caveat), cursive' },
+  { value: 'pacifico', label: 'Pacifico — brush script', group: 'display', stack: 'var(--font-pacifico), cursive' },
+  { value: 'bebas_neue', label: 'Bebas Neue — tall caps', group: 'display', stack: 'var(--font-bebas-neue), Impact, sans-serif' },
+  { value: 'space_mono', label: 'Space Mono — monospace', group: 'display', stack: 'var(--font-space-mono), ui-monospace, monospace' },
 ];
 
 // Inputs and labels never drop below 16px / 14px whatever the scale: only the headline moves a lot.
@@ -182,6 +207,8 @@ export function cleanTheme(raw: unknown): FormTheme | undefined {
     }
     if (Object.keys(g).length) out[group] = g;
   }
+  const heading = t.fonts?.heading;
+  if (typeof heading === 'string' && FORM_FONT_OPTIONS.some((f) => f.value === heading)) out.fonts = { heading };
   return Object.keys(out).length ? ({ v: 1, ...out } as FormTheme) : undefined;
 }
 
@@ -211,7 +238,7 @@ export function effectiveTheme(layout: LayoutPreset, raw?: FormTheme | null): Fo
 }
 
 /** Sets or clears one key of one group; an emptied group, and an emptied theme, are removed so a form returns to having none. */
-export function patchTheme<G extends 'colors' | 'fields' | 'card' | 'layout'>(theme: FormTheme | null | undefined, group: G, patch: Partial<NonNullable<FormTheme[G]>>): FormTheme | null {
+export function patchTheme<G extends 'colors' | 'fields' | 'card' | 'layout' | 'fonts'>(theme: FormTheme | null | undefined, group: G, patch: Partial<NonNullable<FormTheme[G]>>): FormTheme | null {
   const next: FormTheme = { ...(theme ?? { v: 1 }), v: 1 };
   const merged: Record<string, unknown> = { ...(next[group] ?? {}), ...patch };
   for (const k of Object.keys(merged)) if (merged[k] === undefined) delete merged[k];
@@ -259,11 +286,14 @@ export function brandLookProps(b: Pick<FormBranding, 'theme'>): { className: str
   if (t?.card?.shadow !== undefined) style['--form-card-shadow'] = cardShadowValue(t.card.shadow);
   if (t?.layout?.maxWidth !== undefined) style['--form-max-width'] = `${t.layout.maxWidth}px`;
   if (t?.layout?.fieldGap !== undefined) style['--form-field-gap'] = `${t.layout.fieldGap}px`;
+  const headingFont = t?.fonts?.heading ? FORM_FONT_OPTIONS.find((f) => f.value === t.fonts?.heading)?.stack : undefined;
+  if (headingFont) style['--form-heading-font'] = headingFont;
   const fieldStyle: FieldStyle | undefined = f?.style && f.style !== 'outlined' ? f.style : undefined;
   return {
     className: 'form-look',
     style: style as CSSProperties,
     'data-field-style': fieldStyle,
+    'data-heading-font': headingFont ? '' : undefined,
     'data-label-start': f?.label === 'start' ? '' : undefined,
     'data-choice-tiles': f?.choice === 'tiles' ? '' : undefined,
     'data-card-radius': t?.card?.radius !== undefined ? '' : undefined,

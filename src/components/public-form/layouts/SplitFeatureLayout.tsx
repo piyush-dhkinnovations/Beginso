@@ -33,7 +33,7 @@ export function SplitFeatureLayout({ branding, title, stepNames, currentPage, pr
           <div className="relative flex flex-col gap-3">
             <div aria-hidden="true" className="flex flex-col gap-2">
             {stepLabel && <p className="bg-overline" style={{ color: 'rgba(255,255,255,0.85)' }}>{stepLabel}</p>}
-            {title && <p className="font-bold leading-tight text-balance" style={{ fontSize: 'var(--form-headline, 1.75rem)', color: 'var(--form-heading-header, inherit)' }}>{title}</p>}
+            {title && <p className="form-heading font-bold leading-tight text-balance" style={{ fontSize: 'var(--form-headline, 1.75rem)', color: 'var(--form-heading-header, inherit)' }}>{title}</p>}
             </div>
             <BannerExtras branding={branding} onDark />
           </div>

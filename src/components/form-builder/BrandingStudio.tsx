@@ -8,12 +8,13 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { safeHttpUrl } from '@/lib/fieldDisplay';
+import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
 import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { Segmented } from '@/components/ui/Segmented';
 import type { PreviewDevice } from '@/components/preview/DeviceToggle';
-import { FORM_FONT_OPTIONS, PAGE_BACKGROUND_OPTIONS, brandCardClass, brandWashStyle, patchTheme } from '@/lib/formTheme';
+import { FONT_GROUPS, FORM_FONT_OPTIONS, PAGE_BACKGROUND_OPTIONS, brandCardClass, brandWashStyle, patchTheme } from '@/lib/formTheme';
 import { lookBranding } from '@/lib/layoutPresets';
 import { uploadService } from '@/services/upload';
 import { bx } from '@/lib/utils';
@@ -305,29 +306,49 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
       <>
         <div role="group" aria-label="Font" className="flex flex-col gap-2">
           <span className="bg-label">Font</span>
-          {FORM_FONT_OPTIONS.map((font) => {
-            const chosen = (branding.fontFamily ?? 'dm_sans') === font.value;
-            return (
-              <button
-                key={font.value}
-                type="button"
-                aria-pressed={chosen}
-                onClick={() => set({ fontFamily: font.value as FormFont })}
-                // each option is drawn in its own typeface, so the choice is seen, not imagined
-                style={{ fontFamily: font.stack }}
-                className={bx(
-                  'flex min-h-11 items-center gap-3 rounded-lg border-2 px-3 text-left focus-visible:outline-2 focus-visible:outline-(--border-focus)',
-                  chosen ? 'border-(--action-primary) bg-(--accent-soft)' : 'border-(--border-default) hover:bg-(--surface-hover)',
-                )}
-              >
-                <span aria-hidden="true" className="w-8 text-xl font-semibold text-(--text-primary)">
-                  Aa
-                </span>
-                <span className="min-w-0 flex-1 truncate text-sm text-(--text-primary)">{font.label}</span>
-                {chosen && <Check size={16} className="text-(--action-primary)" aria-hidden="true" />}
-              </button>
-            );
-          })}
+          {FONT_GROUPS.map((group) => (
+            <div key={group.id} role="group" aria-label={group.label} className="flex flex-col gap-2">
+              <span className="pt-1 bg-caption font-semibold text-(--text-muted)">{group.label}</span>
+              {FORM_FONT_OPTIONS.filter((f) => f.group === group.id).map((font) => {
+                const chosen = (branding.fontFamily ?? 'dm_sans') === font.value;
+                return (
+                  <button
+                    key={font.value}
+                    type="button"
+                    aria-pressed={chosen}
+                    onClick={() => set({ fontFamily: font.value as FormFont })}
+                    // each option is drawn in its own typeface, so the choice is seen, not imagined
+                    style={{ fontFamily: font.stack }}
+                    className={bx(
+                      'flex min-h-11 items-center gap-3 rounded-lg border-2 px-3 text-left focus-visible:outline-2 focus-visible:outline-(--border-focus)',
+                      chosen ? 'border-(--action-primary) bg-(--accent-soft)' : 'border-(--border-default) hover:bg-(--surface-hover)',
+                    )}
+                  >
+                    <span aria-hidden="true" className="w-8 text-xl font-semibold text-(--text-primary)">
+                      Aa
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-sm text-(--text-primary)">{font.label}</span>
+                    {chosen && <Check size={16} className="text-(--action-primary)" aria-hidden="true" />}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Select id={`${uid}-heading-font`} label="Heading font" value={theme?.fonts?.heading ?? ''} onChange={(e) => setTheme('fonts', { heading: (e.target.value || undefined) as FormFont | undefined })}>
+            <option value="">Same as the text</option>
+            {FONT_GROUPS.map((group) => (
+              <optgroup key={group.id} label={group.label}>
+                {FORM_FONT_OPTIONS.filter((f) => f.group === group.id).map((f) => (
+                  <option key={f.value} value={f.value}>
+                    {f.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </Select>
+          <p className="bg-caption text-(--text-muted)">Used for the form title and page titles. The questions keep the text font.</p>
         </div>
         <ChipChoice<TypeScale> label="Headline size" value={branding.typeScale ?? 'default'} options={[{ value: 'compact', label: 'Small' }, { value: 'default', label: 'Standard' }, { value: 'large', label: 'Large' }]} onChange={(typeScale) => set({ typeScale })} />
         <ChipChoice<ButtonStyle> label="Buttons" value={branding.buttonStyle ?? 'solid'} columns={2} options={[{ value: 'solid', label: 'Solid' }, { value: 'outline', label: 'Outline' }]} onChange={(buttonStyle) => set({ buttonStyle })} />

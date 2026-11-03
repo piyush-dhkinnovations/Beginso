@@ -148,7 +148,29 @@ export type ButtonStyle = 'solid' | 'outline';
 export type ButtonRadius = '4px' | '8px' | '16px';
 export type CoverPosition = 'center' | 'top' | 'bottom';
 export type FormSpacing = 'compact' | 'comfortable' | 'spacious';
-export type FormFont = 'dm_sans' | 'inter' | 'work_sans' | 'lora' | 'nunito';
+export type FormFont =
+  | 'dm_sans'
+  | 'inter'
+  | 'work_sans'
+  | 'lora'
+  | 'nunito'
+  | 'poppins'
+  | 'manrope'
+  | 'plus_jakarta_sans'
+  | 'outfit'
+  | 'space_grotesk'
+  | 'montserrat'
+  | 'playfair_display'
+  | 'merriweather'
+  | 'source_serif_4'
+  | 'fraunces'
+  | 'dm_serif_display'
+  | 'quicksand'
+  | 'fredoka'
+  | 'caveat'
+  | 'pacifico'
+  | 'bebas_neue'
+  | 'space_mono';
 export type TypeScale = 'compact' | 'default' | 'large';
 export type CardStyle = 'flat' | 'soft' | 'bordered' | 'elevated';
 export type PanelTreatment = 'solid' | 'gradient' | 'image' | 'pattern';
@@ -170,6 +192,8 @@ export interface FormTheme {
   fields?: { style?: FieldStyle; radius?: number; label?: LabelPosition; choice?: ChoiceStyle };
   card?: { radius?: number; shadow?: number };
   layout?: { maxWidth?: number; fieldGap?: number };
+  /** The typeface of the headings (the form title and page titles); absent = the same as the form's font. */
+  fonts?: { heading?: FormFont };
 }
 export type PageBackground = 'wash' | 'plain' | 'solid' | 'gradient' | 'mesh' | 'dots' | 'grid' | 'image';
 

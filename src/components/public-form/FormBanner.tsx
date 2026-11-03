@@ -31,7 +31,7 @@ export function FormBanner({ branding, title }: FormBannerProps) {
             <div className="flex items-center gap-3">
               {hasMark && <span className="flex-none"><BrandMark branding={branding} size={logoPx(branding)} className="object-contain" /></span>}
               {title && (
-                <p aria-hidden="true" className="font-bold leading-tight text-balance text-(--form-heading)" style={{ fontSize: 'var(--form-headline, 1.75rem)' }}>
+                <p aria-hidden="true" className="form-heading font-bold leading-tight text-balance text-(--form-heading)" style={{ fontSize: 'var(--form-headline, 1.75rem)' }}>
                   {title}
                 </p>
               )}
@@ -54,7 +54,7 @@ export function FormBanner({ branding, title }: FormBannerProps) {
         <div className="relative flex h-full min-h-44 flex-col justify-end gap-3 p-6 md:p-8 text-white">
           {hasMark && <BrandMark branding={branding} size={logoPx(branding)} className="object-contain" />}
           {title && (
-            <p aria-hidden="true" className="font-bold leading-tight text-balance" style={{ fontSize: 'var(--form-headline, 1.75rem)', color: 'var(--form-heading-header, inherit)' }}>
+            <p aria-hidden="true" className="form-heading font-bold leading-tight text-balance" style={{ fontSize: 'var(--form-headline, 1.75rem)', color: 'var(--form-heading-header, inherit)' }}>
               {title}
             </p>
           )}

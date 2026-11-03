@@ -1,4 +1,4 @@
-import { cleanTheme } from '@/lib/formTheme';
+import { cleanTheme, FORM_FONT_OPTIONS } from '@/lib/formTheme';
 import type { FormTheme } from '@/types/form';
 import axiosInstance from '@/lib/axios';
 import { workspaceHeaders } from '@/lib/workspaceHeaders';
@@ -26,7 +26,7 @@ const BRANDING_ENUMS: Record<string, readonly string[]> = {
   buttonRadius: ['4px', '8px', '16px'],
   coverPosition: ['center', 'top', 'bottom'],
   spacing: ['compact', 'comfortable', 'spacious'],
-  fontFamily: ['dm_sans', 'inter', 'work_sans', 'lora', 'nunito'],
+  fontFamily: FORM_FONT_OPTIONS.map((f) => f.value),
   typeScale: ['compact', 'default', 'large'],
   cardStyle: ['flat', 'soft', 'bordered', 'elevated'],
   panelTreatment: ['solid', 'gradient', 'image', 'pattern'],
