@@ -128,7 +128,7 @@ function renderValue(item: AnswerItem, scope: string, variant: AnswerVariant, qu
     case 'signature':
       return isDrawnSignature(value) ? (
         // eslint-disable-next-line @next/next/no-img-element -- validated PNG data URL, nothing to optimise
-        <img src={value} alt="Drawn signature" className={cn('max-w-full rounded-md border border-(--border-default) bg-white object-contain p-1', compact ? 'h-12' : 'h-24')} />
+        <img src={value} alt="Drawn signature" className={cn('max-w-full rounded-md border border-(--border-default) bg-(--surface-art) object-contain p-1', compact ? 'h-12' : 'h-24')} />
       ) : (
         <span className={cn('font-serif italic', compact ? 'text-lg' : 'text-2xl')}>{String(value)}</span>
       );

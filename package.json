@@ -13,6 +13,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "type-check": "tsc --noEmit",
+    "check:contrast": "node scripts/check-contrast.mjs",
     "generate:form-icons": "node scripts/generateFormIcons.mjs"
   },
   "dependencies": {
@@ -58,8 +59,8 @@
     "fast-check": "4.10.2",
     "jsdom": "29.1.1",
     "postcss": "8.5.23",
-    "tailwindcss": "4.3.3",
     "postcss-pxtorem": "6.1.0",
+    "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
     "vitest": "^4.1.11"
   },
