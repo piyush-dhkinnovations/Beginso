@@ -101,6 +101,61 @@ export function Schematic({ id, look }: { id: LayoutPreset; look: LayoutLook }) 
           <div className={`${BTN} w-1/4 self-end`} />
         </Sheet>
       );
+    case 'chat':
+      return (
+        <div className="flex w-3/5 flex-col gap-1.5">
+          <div className={`flex items-center gap-1.5 bg-(--surface-card) px-2 py-1.5 ${surface}`}>
+            <div className="size-3 rounded-full" style={panel} />
+            <div className="h-1 w-1/3 rounded-full bg-(--border-strong)" />
+          </div>
+          <div className="flex items-start gap-1">
+            <div className="mt-1 size-2.5 shrink-0 rounded-full" style={panel} />
+            <div className={`flex flex-1 flex-col gap-1.5 bg-(--surface-card) p-2 rounded-xl rounded-tl-sm shadow-(--shadow-md)`}>
+              <div className="h-1.5 w-2/3 rounded-full bg-(--border-strong)" />
+              <div className={FIELD} />
+              <div className={`${BTN} w-1/3 self-end`} />
+            </div>
+          </div>
+        </div>
+      );
+    case 'sidebar':
+      return (
+        <div className={`flex w-4/5 overflow-hidden bg-(--surface-card) ${surface}`}>
+          <div className="w-1/4 border-r border-(--border-subtle) bg-(--bg-subtle) p-2 flex flex-col gap-2">
+            {[true, false, false].map((on, i) => (
+              <div key={i} className="flex items-center gap-1">
+                <div className={`size-2 shrink-0 rounded-full ${on ? 'bg-(--action-primary)' : 'border border-(--border-strong)'}`} />
+                <div className="h-0.5 flex-1 rounded-full bg-(--border-default)" />
+              </div>
+            ))}
+          </div>
+          <div className="flex-1 p-3 flex flex-col gap-2">
+            <div className="h-1.5 w-1/2 rounded-full bg-(--border-strong)" />
+            <div className={FIELD} />
+            <div className={FIELD} />
+            <div className={`${BTN} w-1/3 self-end`} />
+          </div>
+        </div>
+      );
+    case 'open':
+      return (
+        <div className="flex w-3/5 flex-col gap-2">
+          <div className="h-2 w-2/3 rounded-full bg-(--border-strong)" />
+          <div className="h-1 w-1/2 rounded-full bg-(--border-default)" />
+          <div className={FIELD} />
+          <div className={FIELD} />
+          <div className={`${BTN} w-1/4`} />
+        </div>
+      );
+    case 'focus':
+      return (
+        <div className="flex w-3/5 flex-col gap-2">
+          <div className="h-0.5 w-full rounded-full bg-(--bg-sunken)"><div className="h-0.5 w-1/3 rounded-full bg-(--action-primary)" /></div>
+          <div className="mt-1 h-2.5 w-4/5 rounded-sm bg-(--border-strong)" />
+          <div className="h-4 w-full rounded-sm border-b-2 border-(--border-strong)" />
+          <div className={`${BTN} w-1/4`} />
+        </div>
+      );
     default:
       return (
         <Sheet surface={surface} className="w-3/5">

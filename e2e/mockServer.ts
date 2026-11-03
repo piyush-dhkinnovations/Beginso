@@ -44,6 +44,8 @@ const LOOK_THEMES: Record<string, NonNullable<PublicFormSchema['branding']['them
   tiles: { v: 1, fields: { choice: 'tiles' } },
   exact: { v: 1, card: { radius: 32, shadow: 90 }, layout: { maxWidth: 520, fieldGap: 28 } },
   heading: { v: 1, fonts: { heading: 'playfair_display' } },
+  panelend: { v: 1, layout: { panelSide: 'end' } },
+  multi: undefined, // two pages, so a step list has something to list
   body: undefined, // the form's own font is Quicksand (set below)
   all: {
     v: 1,
@@ -55,19 +57,19 @@ const LOOK_THEMES: Record<string, NonNullable<PublicFormSchema['branding']['them
 };
 
 function lookSchema(slug: string): PublicFormSchema | undefined {
-  const m = slug.match(/^look-(classic|card_stack|guided|steps|split_feature|compact)-([a-z]+)$/);
+  const m = slug.match(/^look-(classic|card_stack|guided|steps|split_feature|compact|chat|sidebar|open|focus)-([a-z]+)$/);
   if (!m || !(m[2] in LOOK_THEMES)) return undefined;
   const theme = LOOK_THEMES[m[2]];
   return {
     ...mockPublicFormSchema,
     title: 'Customer Feedback Survey',
-    pages: [{ id: 'p1', order: 0, title: 'Customer Feedback Survey' }],
+    pages: m[2] === 'multi' ? [{ id: 'p1', order: 0, title: 'Your details' }, { id: 'p2', order: 1, title: 'Your feedback' }] : [{ id: 'p1', order: 0, title: 'Customer Feedback Survey' }],
     fields: [
       { fieldId: 'a', pageId: 'p1', type: 'short_text', label: 'Full name', required: true, deleted: false, order: 0, placeholder: 'Jane Doe' },
       { fieldId: 'b', pageId: 'p1', type: 'email', label: 'Email address', required: true, deleted: false, order: 1 },
       { fieldId: 'c', pageId: 'p1', type: 'long_text', label: 'Tell us more', required: false, deleted: false, order: 2 },
-      { fieldId: 'd', pageId: 'p1', type: 'multiple_choice', label: 'How did you hear about us?', required: true, deleted: false, order: 3, options: ['Search', 'Friend', 'Social media'] },
-      { fieldId: 'e', pageId: 'p1', type: 'checkbox', label: 'Which features interest you?', required: false, deleted: false, order: 4, options: ['Forms', 'Analytics'] },
+      { fieldId: 'd', pageId: m[2] === 'multi' ? 'p2' : 'p1', type: 'multiple_choice', label: 'How did you hear about us?', required: true, deleted: false, order: 3, options: ['Search', 'Friend', 'Social media'] },
+      { fieldId: 'e', pageId: m[2] === 'multi' ? 'p2' : 'p1', type: 'checkbox', label: 'Which features interest you?', required: false, deleted: false, order: 4, options: ['Forms', 'Analytics'] },
     ],
     branding: { primaryColor: '#1D4ED8', bannerText: 'Takes two minutes', ...(m[2] === 'body' ? { fontFamily: 'quicksand' as const } : {}), ...(theme ? { theme } : {}) },
     settings: { ...mockPublicFormSchema.settings, layout: m[1] as 'classic' },

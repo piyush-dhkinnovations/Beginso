@@ -78,15 +78,23 @@ const WIDTHS: Record<LayoutPreset, Record<'narrow' | 'standard' | 'wide', string
   steps: { narrow: 'max-w-2xl', standard: 'max-w-3xl', wide: 'max-w-5xl' },
   split_feature: { narrow: 'md:max-w-4xl', standard: 'md:max-w-6xl', wide: 'md:max-w-7xl' },
   compact: { narrow: 'max-w-2xl', standard: 'max-w-4xl', wide: 'max-w-6xl' },
+  chat: { narrow: 'max-w-md', standard: 'max-w-lg', wide: 'max-w-2xl' },
+  sidebar: { narrow: 'max-w-3xl', standard: 'max-w-5xl', wide: 'max-w-6xl' },
+  open: { narrow: 'max-w-xl', standard: 'max-w-2xl', wide: 'max-w-4xl' },
+  focus: { narrow: 'max-w-lg', standard: 'max-w-xl', wide: 'max-w-3xl' },
 };
 export const widthClass = (layout: LayoutPreset, branding: PublicFormBranding) => `form-width ${WIDTHS[layout][branding.formWidth ?? 'standard']}`;
 
 /** The form card: surface chosen by the owner's card style. */
 export const cardClass = (branding: PublicFormBranding, extra = '') => `${brandCardClass(branding)} w-full ${extra}`;
 
-/** Short fields pair up into two columns by default; the owner can switch to a single column, and Guided is always one. */
+/** Layouts that ask one question at a time (the shell shows a single field, with Back, and a review before submit). */
+export const ONE_AT_A_TIME: readonly LayoutPreset[] = ['guided', 'chat', 'focus'];
+export const isOneAtATime = (layout: LayoutPreset) => ONE_AT_A_TIME.includes(layout);
+
+/** Short fields pair up into two columns by default; the owner can switch to a single column, and one-at-a-time layouts are always one. */
 export const isGrouped = (layout: LayoutPreset, grouping: PublicFormBranding['fieldGrouping']) =>
-  layout === 'compact' || (layout !== 'guided' && grouping !== 'single');
+  layout === 'compact' || (!isOneAtATime(layout) && grouping !== 'single');
 
 /** How the fields inside the form body are arranged for each preset. */
 export function fieldsClassFor(layout: LayoutPreset, spacing: PublicFormBranding['spacing'] = 'comfortable', grouping: PublicFormBranding['fieldGrouping'] = 'auto'): string {

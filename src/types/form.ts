@@ -191,7 +191,7 @@ export interface FormTheme {
   colors?: { text?: string; heading?: string; card?: string; field?: string; fieldBorder?: string; buttonText?: string };
   fields?: { style?: FieldStyle; radius?: number; label?: LabelPosition; choice?: ChoiceStyle };
   card?: { radius?: number; shadow?: number };
-  layout?: { maxWidth?: number; fieldGap?: number };
+  layout?: { maxWidth?: number; fieldGap?: number; /** Split Feature: which side the picture panel is on (start = the left in left-to-right languages). */ panelSide?: 'start' | 'end' };
   /** The typeface of the headings (the form title and page titles); absent = the same as the form's font. */
   fonts?: { heading?: FormFont };
 }
@@ -236,7 +236,7 @@ export interface FormBranding {
 
 // Sprint 13 (builder-publish-respondent), design.md §13. Six presets replace the three V1 layout
 // modes; legacy values stay readable and are mapped by lib/layoutPresets.ts normaliseLayout().
-export type LayoutPreset = 'classic' | 'card_stack' | 'guided' | 'steps' | 'split_feature' | 'compact';
+export type LayoutPreset = 'classic' | 'card_stack' | 'guided' | 'steps' | 'split_feature' | 'compact' | 'chat' | 'sidebar' | 'open' | 'focus';
 export type LegacyLayout = 'single_column' | 'two_column' | 'compact';
 export type AccessMode = 'open' | 'tracked' | 'login';
 

@@ -282,3 +282,37 @@ describe('Text tab: fonts and the heading font', () => {
     expect(update).toHaveBeenLastCalledWith({ theme: null });
   });
 });
+
+describe('Style tab: the picture side', () => {
+  it('on Split Feature, picking the right puts the picture on the right', async () => {
+    const update = draw({ primaryColor: '#1D4ED8' }, 'split_feature');
+    await open('Style');
+    expect(screen.getByRole('button', { name: 'On the left' })).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(screen.getByRole('button', { name: 'On the right' }));
+    expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, layout: { panelSide: 'end' } } });
+  });
+
+  it('shows the saved side, and the left puts it back', async () => {
+    const update = draw({ primaryColor: '#1D4ED8', theme: { v: 1, layout: { panelSide: 'end' } } }, 'split_feature');
+    await open('Style');
+    expect(screen.getByRole('button', { name: 'On the right' })).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(screen.getByRole('button', { name: 'On the left' }));
+    expect(update).toHaveBeenLastCalledWith({ theme: null });
+  });
+
+  it.each<LayoutPreset>(['classic', 'chat', 'sidebar', 'open', 'focus', 'guided'])('on %s both sides are off, with the reason', async (layout) => {
+    draw({ primaryColor: '#1D4ED8', theme: { v: 1, layout: { panelSide: 'end' } } }, layout);
+    await open('Style');
+    expect(screen.getByRole('button', { name: 'On the left' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'On the right' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'On the right' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByText('Only the Split Feature layout has a picture panel.')).toBeInTheDocument();
+  });
+
+  it('Chat and Focus switch off "Beside the field" with their own reason', async () => {
+    draw({ primaryColor: '#1D4ED8' }, 'chat');
+    await open('Style');
+    expect(screen.getByRole('button', { name: 'Beside the field' })).toBeDisabled();
+    expect(screen.getByText(/Chat shows one question at a time/)).toBeInTheDocument();
+  });
+});

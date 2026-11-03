@@ -199,6 +199,7 @@ export function cleanTheme(raw: unknown): FormTheme | undefined {
       const v = t[group]?.[k];
       if (typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max) g[k] = v;
     }
+    if (group === 'layout' && t.layout?.panelSide !== undefined && ['start', 'end'].includes(t.layout.panelSide as string)) g.panelSide = t.layout.panelSide;
     if (group === 'fields') {
       for (const [k, allowed] of Object.entries(THEME_ENUMS)) {
         const v = t.fields?.[k];
@@ -213,16 +214,19 @@ export function cleanTheme(raw: unknown): FormTheme | undefined {
 }
 
 /** What each layout can show of the new options, and why not when it cannot. */
-export type ThemeOption = 'fieldStyle' | 'fieldRadius' | 'labelPosition' | 'choiceStyle' | 'cardShape' | 'maxWidth';
+export type ThemeOption = 'fieldStyle' | 'fieldRadius' | 'labelPosition' | 'choiceStyle' | 'cardShape' | 'maxWidth' | 'panelSide';
 
 export const LABEL_BESIDE_UNSUPPORTED: Partial<Record<LayoutPreset, string>> = {
   guided: 'Guided shows one question per screen, so the label stays above it.',
   compact: 'Compact already sets fields in two columns, so the label stays above.',
+  chat: 'Chat shows one question at a time, so the label stays above it.',
+  focus: 'Focus shows one question at a time, so the label stays above it.',
 };
 
 /** The reason an option cannot be used with this layout (and field style), or undefined when it can. */
 export function themeOptionBlocked(option: ThemeOption, layout: LayoutPreset, theme?: FormTheme | null): string | undefined {
   if (option === 'labelPosition') return LABEL_BESIDE_UNSUPPORTED[layout];
+  if (option === 'panelSide' && layout !== 'split_feature') return 'Only the Split Feature layout has a picture panel.';
   if (option === 'fieldRadius' && theme?.fields?.style === 'underline') return 'Underline fields have no corners.';
   return undefined;
 }
@@ -234,7 +238,9 @@ export function effectiveTheme(layout: LayoutPreset, raw?: FormTheme | null): Fo
   const fields = { ...theme.fields };
   if (themeOptionBlocked('labelPosition', layout)) delete fields.label;
   if (themeOptionBlocked('fieldRadius', layout, theme)) delete fields.radius;
-  return { ...theme, fields };
+  const layoutGroup = { ...theme.layout };
+  if (themeOptionBlocked('panelSide', layout)) delete layoutGroup.panelSide;
+  return { ...theme, fields, layout: layoutGroup };
 }
 
 /** Sets or clears one key of one group; an emptied group, and an emptied theme, are removed so a form returns to having none. */
@@ -300,5 +306,6 @@ export function brandLookProps(b: Pick<FormBranding, 'theme'>): { className: str
     'data-card-shadow': t?.card?.shadow !== undefined ? '' : undefined,
     'data-max-width': t?.layout?.maxWidth !== undefined ? '' : undefined,
     'data-field-gap': t?.layout?.fieldGap !== undefined ? '' : undefined,
+    'data-panel-end': t?.layout?.panelSide === 'end' ? '' : undefined,
   };
 }

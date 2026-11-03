@@ -379,6 +379,31 @@ export function FieldsLook({ branding, layout, setTheme, onCorners }: { branding
   );
 }
 
+/** Which side of the form the picture panel is on. Only the Split Feature layout has one; on the others the choice is off, with the reason. */
+export function PanelSide({ branding, layout, setTheme }: { branding: FormBranding; layout: LayoutPreset; setTheme: SetTheme }) {
+  const side = branding.theme?.layout?.panelSide ?? 'start';
+  const blocked = themeOptionBlocked('panelSide', layout);
+  const drawing = (end: boolean) => (
+    <span className={bx('flex h-9 w-full items-stretch gap-1', end && 'flex-row-reverse')}>
+      <span className="w-2/5 rounded-sm bg-(--action-primary)" />
+      <span className="flex flex-1 flex-col justify-center gap-1 rounded-sm border border-(--border-strong) bg-(--surface-card) px-1.5">
+        <span className="h-1 w-2/3 rounded-full bg-(--border-strong)" />
+        <span className="h-1 w-1/2 rounded-full bg-(--border-default)" />
+      </span>
+    </span>
+  );
+  return (
+    <TileGroup label="Picture side" columns={2} hint={blocked ?? 'On a phone the picture is a header above the form.'}>
+      <LookTile label="On the left" chosen={!blocked && side === 'start'} disabled={!!blocked} onClick={() => setTheme('layout', { panelSide: undefined })}>
+        {drawing(false)}
+      </LookTile>
+      <LookTile label="On the right" chosen={!blocked && side === 'end'} disabled={!!blocked} onClick={() => setTheme('layout', { panelSide: 'end' })}>
+        {drawing(true)}
+      </LookTile>
+    </TileGroup>
+  );
+}
+
 // ── Exact values ────────────────────────────────────────────────────────────────────────────────────────────────────
 
 interface SliderProps {

@@ -77,6 +77,16 @@ describe('My styles', () => {
     expect(await screen.findByText(/No saved styles yet/)).toBeInTheDocument();
   });
 
+  it('says plainly when the server does not have saved styles yet (a 404), and the ready-made looks still work', async () => {
+    svc.list.mockRejectedValue(serverError(404, 'Not found'));
+    const { onApply } = draw();
+    await mine();
+    expect(await screen.findByRole('alert')).toHaveTextContent('Saved styles are not switched on for this server yet');
+    await userEvent.click(screen.getByRole('tab', { name: 'Ready-made' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Use the Clean look' }));
+    expect(onApply).toHaveBeenCalled();
+  });
+
   it('shows a load failure and retries', async () => {
     svc.list.mockRejectedValueOnce(new Error('down')).mockResolvedValueOnce([MINE]);
     draw();

@@ -24,7 +24,7 @@ import { LayoutChooser } from './LayoutChooser';
 import { PictureChoice } from './PicturePicker';
 import { LooksDialog } from './LooksDialog';
 import { currentLook, styleUpdates } from '@/lib/formStyles';
-import { CustomBadge, FieldsLook, FineTune, FormColours, type SetTheme } from './LookControls';
+import { CustomBadge, FieldsLook, FineTune, FormColours, PanelSide, type SetTheme } from './LookControls';
 import { ZOOM_STEPS } from '@/lib/previewZoom';
 import { LiveFormPreview } from './LiveFormPreview';
 
@@ -414,6 +414,7 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
           </label>
           <Switch id={`${uid}-progress`} checked={branding.showProgress !== false} onChange={(showProgress) => set({ showProgress })} />
         </div>
+        <PanelSide branding={branding} layout={layout} setTheme={setTheme} />
         <FieldsLook
           branding={branding}
           layout={layout}

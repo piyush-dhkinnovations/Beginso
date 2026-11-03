@@ -245,3 +245,41 @@ describe('a built-in picture as the page background', () => {
     expect(evil.backgroundImage).toBeUndefined();
   });
 });
+
+describe('the Split Feature picture side', () => {
+  it('is cleaned: only start or end stays', () => {
+    expect(cleanTheme({ v: 1, layout: { panelSide: 'end' } })).toEqual({ v: 1, layout: { panelSide: 'end' } });
+    expect(cleanTheme({ v: 1, layout: { panelSide: 'start', maxWidth: 800 } })).toEqual({ v: 1, layout: { panelSide: 'start', maxWidth: 800 } });
+    for (const bad of ['left', 'right', '', 1, null, 'END']) expect(cleanTheme({ v: 1, layout: { panelSide: bad } })).toBeUndefined();
+  });
+
+  it('switches the CSS on for end only, and not for start or nothing', () => {
+    expect(brandLookProps({ theme: { v: 1, layout: { panelSide: 'end' } } })['data-panel-end']).toBe('');
+    expect(brandLookProps({ theme: { v: 1, layout: { panelSide: 'start' } } })['data-panel-end']).toBeUndefined();
+    expect(brandLookProps({ theme: { v: 1, card: { radius: 4 } } })['data-panel-end']).toBeUndefined();
+  });
+
+  it('only Split Feature has a picture panel; the other layouts say so and leave the choice out of what is drawn', () => {
+    expect(themeOptionBlocked('panelSide', 'split_feature')).toBeUndefined();
+    for (const l of ['classic', 'card_stack', 'guided', 'steps', 'compact', 'chat', 'sidebar', 'open', 'focus'] as const) {
+      expect(themeOptionBlocked('panelSide', l)).toMatch(/Only the Split Feature layout/);
+      expect(effectiveTheme(l, { v: 1, layout: { panelSide: 'end', maxWidth: 800 } })?.layout).toEqual({ maxWidth: 800 });
+    }
+    expect(effectiveTheme('split_feature', { v: 1, layout: { panelSide: 'end' } })?.layout).toEqual({ panelSide: 'end' });
+  });
+
+  it('is sent on a save', () => {
+    expect(sanitizeTheme({ v: 1, layout: { panelSide: 'end' } })).toEqual({ v: 1, layout: { panelSide: 'end' } });
+  });
+});
+
+describe('the label at the start for the new layouts', () => {
+  it.each(['chat', 'focus'] as const)('%s keeps the label above, and says why', (layout) => {
+    expect(themeOptionBlocked('labelPosition', layout)).toMatch(/one question at a time/);
+    expect(effectiveTheme(layout, { v: 1, fields: { label: 'start' } })?.fields).toEqual({});
+  });
+
+  it.each(['sidebar', 'open'] as const)('%s allows the label at the start', (layout) => {
+    expect(themeOptionBlocked('labelPosition', layout)).toBeUndefined();
+  });
+});

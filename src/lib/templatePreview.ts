@@ -20,7 +20,7 @@ const LOOKS: Record<string, TemplateLook> = {
 };
 const LOOK_ORDER = Object.keys(LOOKS);
 const ALIASES: Record<string, string> = { event: 'events', hiring: 'hr', contact: 'sales' };
-const MODERN = new Set<string>(['classic', 'card_stack', 'guided', 'steps', 'split_feature', 'compact']);
+const MODERN = new Set<string>(['classic', 'card_stack', 'guided', 'steps', 'split_feature', 'compact', 'chat', 'sidebar', 'open', 'focus']);
 
 /** The look for a category; an unknown category gets a stable pick from the template id so it never flips between renders. */
 export function templateLook(template: Template): TemplateLook {

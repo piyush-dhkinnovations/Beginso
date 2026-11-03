@@ -15,7 +15,7 @@ import { saveDraft, loadDraft, clearDraft } from '@/lib/formDraft';
 import { Button } from '@/components/ui/Button';
 import { normaliseLayout } from '@/lib/layoutPresets';
 import { brandButtonStyle, brandShowsProgress, effectiveTheme } from '@/lib/formTheme';
-import { LAYOUT_COMPONENTS, fieldsClassFor, isGrouped } from './layouts';
+import { LAYOUT_COMPONENTS, fieldsClassFor, isGrouped, isOneAtATime } from './layouts';
 import { parseEmbedOptions, carryEmbedSearch } from '@/lib/embed/embedParams';
 import { resolvePrefill } from '@/lib/embed/prefill';
 import { FormProgress } from './FormProgress';
@@ -89,7 +89,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   const previewMode = previewProp || embedOpts.preview;
   const sortedPages = useMemo(() => [...schema.pages].sort((a, b) => a.order - b.order), [schema.pages]);
   const layout = normaliseLayout(schema.settings.layout);
-  const isGuided = layout === 'guided';
+  const isGuided = isOneAtATime(layout); // Guided, Chat and Focus ask one question at a time
 
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   // Guided only: which question of the current page is showing. Page-level draft persistence is

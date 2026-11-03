@@ -13,12 +13,12 @@ export function SplitFeatureLayout({ branding, title, stepNames, currentPage, pr
   const stepLabel = stepNames.length > 1 ? stepNames[currentPage] : '';
   return (
     <Backdrop branding={branding} previewMode={previewMode}>
-      <div className={`form-card bg-(--surface-card) w-full overflow-hidden md:grid md:grid-cols-5 ${widthClass('split_feature', branding)} md:rounded-2xl md:shadow-xl ${previewMode ? '' : 'md:min-h-[min(46rem,calc(100vh-5rem))]'}`}>
+      <div className={`form-card bg-(--surface-card) w-full overflow-hidden flex flex-col md:grid md:grid-cols-5 ${widthClass('split_feature', branding)} md:rounded-2xl md:shadow-xl ${previewMode ? '' : 'md:min-h-[min(46rem,calc(100vh-5rem))]'}`}>
         {/* The panel is decorative, so it comes AFTER the form in DOM order (wireframe a11y note) and is
             moved before it visually: first in the column below 768, left of the form from md up. */}
-        <div className="md:col-span-3 md:order-2 md:flex md:flex-col md:justify-center">{children}</div>
+        <div className="split-form md:col-span-3 md:order-2 md:flex md:flex-col md:justify-center">{children}</div>
         <div
-          className="order-first relative flex flex-col justify-between gap-10 p-6 text-white md:order-1 md:col-span-2 md:p-10 max-[480px]:hidden"
+          className="split-panel order-first relative flex flex-col justify-between gap-10 p-6 text-white md:order-1 md:col-span-2 md:p-10 max-[480px]:hidden"
           style={brandPanelStyle(branding)}
         >
           {coverImageUrl && !hideCover && (

@@ -119,7 +119,9 @@ function MyStyles({ scope, layout, branding, onApply }: { scope: string; layout:
         <p role="status" className="bg-body-sm text-(--text-muted)">Loading your styles</p>
       ) : styles.isError ? (
         <p role="alert" className="bg-body-sm text-(--error-text)">
-          Could not load your styles.{' '}
+          {isAxiosError(styles.error) && styles.error.response?.status === 404
+            ? 'Saved styles are not switched on for this server yet. The ready-made looks still work.'
+            : 'Could not load your styles.'}{' '}
           <button type="button" onClick={() => styles.refetch()} className="underline underline-offset-2">
             Try again
           </button>

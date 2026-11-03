@@ -436,6 +436,32 @@ describe('PublicFormShell layouts', () => {
     expect(await screen.findByLabelText(/Name/)).toHaveValue('Asha');
   });
 
+  it.each(['chat', 'focus'])('%s asks one question at a time like guided: a counter, Back keeps the answer, and it ends in review', async (layout) => {
+    render(<PublicFormShell schema={schema({}, undefined, layout)} slug="s" />);
+    expect(await screen.findByText('Question 1 of 2')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Note')).not.toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText(/Name/), 'Asha');
+    await userEvent.click(screen.getByRole('button', { name: 'Next' }));
+    expect(await screen.findByLabelText('Note')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Review answers' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(await screen.findByLabelText(/Name/)).toHaveValue('Asha');
+  });
+
+  it.each(['sidebar', 'open'])('%s shows every question of a page at once (it is not a one-at-a-time layout)', async (layout) => {
+    render(<PublicFormShell schema={schema({}, undefined, layout)} slug="s" />);
+    expect(await screen.findByLabelText(/Name/)).toBeInTheDocument();
+    expect(screen.getByLabelText('Note')).toBeInTheDocument();
+    expect(screen.queryByText(/Question 1 of/)).not.toBeInTheDocument();
+  });
+
+  it('sidebar lists the pages by name beside the form', async () => {
+    render(<PublicFormShell schema={{ ...twoPage(), settings: { honeypotEnabled: true, layout: 'sidebar' } as PublicFormSchema['settings'] }} slug="s" />);
+    const nav = await screen.findByRole('navigation', { name: 'Form steps' });
+    expect(nav).toHaveTextContent('Step one');
+    expect(nav.querySelector('[aria-current="step"]')).not.toBeNull();
+  });
+
   it('steps layout names the steps', async () => {
     render(<PublicFormShell schema={{ ...twoPage(), settings: { honeypotEnabled: true, layout: 'steps' } as PublicFormSchema['settings'] }} slug="s" />);
     expect(await screen.findByRole('status')).toHaveTextContent('Step 1 of 2: Step one');

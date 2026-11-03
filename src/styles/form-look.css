@@ -41,6 +41,12 @@
 /* A heading font, when one is chosen: the form title and the page titles (marked .form-heading) */
 .form-look[data-heading-font] .form-heading { font-family: var(--form-heading-font); }
 
+/* Split Feature with its picture on the other side (from tablet width up; on a phone the panel is a header above the form) */
+@media (min-width: 768px) {
+  .form-look[data-panel-end] .split-form { order: 1; }
+  .form-look[data-panel-end] .split-panel { order: 2; }
+}
+
 /* Exact values */
 .form-look[data-card-radius] .form-card { border-radius: var(--form-card-radius); }
 /* Split Feature is a full-width panel on a phone, as it always was: its own corners and shadow are a tablet-and-up thing. */
