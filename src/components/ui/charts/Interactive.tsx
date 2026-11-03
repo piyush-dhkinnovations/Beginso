@@ -3,6 +3,7 @@
 import { useCallback, useId, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { CHART_COLOR } from './Mini';
 import { curve, labelIndices, niceAxis } from './math';
+import { useTextScale } from '@/hooks/useTextScale';
 import { useWidth } from './useWidth';
 
 // Interactive, in-house SVG charts for the custom-chart dashboard (no charting library). Every segment is
@@ -139,6 +140,7 @@ function arc(r0: number, r1: number, a0: number, a1: number): string {
 }
 
 export function PieChart({ data, ariaLabel, onSelect, donut, legend = true, centreLabel }: InteractiveChartProps & { donut?: boolean; legend?: boolean; centreLabel?: string }) {
+  const k = useTextScale();
   const shown = data.filter((d) => d.count > 0);
   const nav = useChartNav({ data: shown, ariaLabel, onSelect });
   const w = nav.w;
@@ -172,8 +174,8 @@ export function PieChart({ data, ariaLabel, onSelect, donut, legend = true, cent
           })}
           {donut && (
             <g aria-hidden="true" pointerEvents="none">
-              <text x="100" y="98" textAnchor="middle" fontSize="24" fontWeight="700" fill="var(--text-primary)">{total.toLocaleString()}</text>
-              <text x="100" y="118" textAnchor="middle" fontSize="11" fill="var(--text-muted)">{centreLabel ?? 'answers'}</text>
+              <text x="100" y="98" textAnchor="middle" fontSize={24 * k} fontWeight="700" fill="var(--text-primary)">{total.toLocaleString()}</text>
+              <text x="100" y="118" textAnchor="middle" fontSize={11 * k} fill="var(--text-muted)">{centreLabel ?? 'answers'}</text>
             </g>
           )}
         </svg>
@@ -194,7 +196,8 @@ export function PieChart({ data, ariaLabel, onSelect, donut, legend = true, cent
 
 // ── Bar (vertical, horizontal) ───────────────────────────────────────────────
 
-const PAD = { top: 18, right: 12, bottom: 30, left: 38 };
+// room around the plot; the text is bigger at a larger Text size, so the axis labels get more room
+const padFor = (k: number) => ({ top: 18, right: 12, bottom: Math.round(30 * k), left: Math.round(38 * k) });
 
 export function BarsChart({
   data,
@@ -206,6 +209,8 @@ export function BarsChart({
   height = 220,
   dataLabels,
 }: InteractiveChartProps & { horizontal?: boolean; byCategory?: boolean; legend?: boolean; height?: number; dataLabels?: boolean }) {
+  const k = useTextScale();
+  const PAD = padFor(k);
   const nav = useChartNav({ data, ariaLabel, onSelect });
   const w = nav.w;
   const top = Math.max(...data.map((d) => d.count), 0);
@@ -213,8 +218,8 @@ export function BarsChart({
   const colorOf = (i: number) => (byCategory ? seriesColor(i) : CHART_COLOR.primary);
 
   if (horizontal) {
-    const rowH = 36;
-    const labelW = Math.max(80, Math.min(160, Math.round(w * 0.34)));
+    const rowH = Math.round(36 * k);
+    const labelW = Math.round(Math.max(80, Math.min(160, w * 0.34)) * k);
     const trackW = Math.max(w - labelW - 56, 20);
     const h = data.length * rowH + 8;
     return (
@@ -226,10 +231,10 @@ export function BarsChart({
             return (
               <g key={d.key} {...nav.itemProps(i)}>
                 <rect x={0} y={y} width={w} height={rowH} fill={on ? 'var(--surface-hover)' : 'transparent'} rx={6} />
-                <text x={4} y={y + rowH / 2 + 4} fontSize="12" fill="var(--text-secondary)">{clip(d.label, Math.floor((labelW - 8) / 6.4))}</text>
+                <text x={4} y={y + rowH / 2 + 4} fontSize={12 * k} fill="var(--text-secondary)">{clip(d.label, Math.floor((labelW - 8) / (6.4 * k)))}</text>
                 <rect x={labelW} y={y + 9} width={trackW} height={18} rx={4} fill="var(--chart-muted)" />
                 <rect x={labelW} y={y + 9} width={top > 0 ? Math.max((d.count / top) * trackW, d.count > 0 ? 3 : 0) : 0} height={18} rx={4} fill={colorOf(i)} stroke={on ? 'var(--text-primary)' : 'none'} strokeWidth={2} />
-                <text x={w - 4} y={y + rowH / 2 + 4} textAnchor="end" fontSize="12" fontWeight="600" fill="var(--text-primary)">{d.text}</text>
+                <text x={w - 4} y={y + rowH / 2 + 4} textAnchor="end" fontSize={12 * k} fontWeight="600" fill="var(--text-primary)">{d.text}</text>
               </g>
             );
           })}
@@ -245,15 +250,15 @@ export function BarsChart({
   const y = (v: number) => PAD.top + plotH - (v / axis.max) * plotH;
   // A bar never gets wider than its slot: with hundreds of days they stay thin separate lines, not one solid block.
   const bw = Math.max(1, Math.min(40, band * (band < 6 ? 0.7 : 0.62)));
-  const show = labelIndices(data.length, Math.max(2, Math.floor(plotW / 54)));
-  const labelChars = Math.max(3, Math.floor(plotW / Math.max(show.size, 1) / 6.2)); // the room one shown label has, so a date is never cut to "08–"
+  const show = labelIndices(data.length, Math.max(2, Math.floor(plotW / (54 * k))));
+  const labelChars = Math.max(3, Math.floor(plotW / Math.max(show.size, 1) / (6.2 * k))); // the room one shown label has, so a date is never cut to "08–"
   return (
     <Wrap nav={nav}>
       <svg width={w} height={height} role="group" aria-label={ariaLabel}>
         {axis.ticks.map((t) => (
           <g key={t} aria-hidden="true">
             <line x1={PAD.left} x2={w - PAD.right} y1={y(t)} y2={y(t)} stroke="var(--border-subtle)" />
-            <text x={PAD.left - 8} y={y(t) + 4} textAnchor="end" fontSize="11" fill="var(--text-muted)">{t}</text>
+            <text x={PAD.left - 8} y={y(t) + 4} textAnchor="end" fontSize={11 * k} fill="var(--text-muted)">{t}</text>
           </g>
         ))}
         {data.map((d, i) => {
@@ -263,12 +268,12 @@ export function BarsChart({
             <g key={d.key} {...nav.itemProps(i)}>
               <rect x={cx - band / 2} y={PAD.top} width={band} height={plotH} fill={on ? 'var(--surface-hover)' : 'transparent'} />
               <rect x={cx - bw / 2} y={y(d.count)} width={bw} height={Math.max(y(0) - y(d.count), d.count > 0 ? 2 : 0)} rx={Math.min(5, bw / 2)} fill={colorOf(i)} stroke={on && bw >= 4 ? 'var(--text-primary)' : 'none'} strokeWidth={2} />
-              {(dataLabels === undefined ? band >= 34 : dataLabels && band >= 18) && <text x={cx} y={y(d.count) - 5} textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--text-primary)" aria-hidden="true">{d.text}</text>}
+              {(dataLabels === undefined ? band >= 34 : dataLabels && band >= 18) && <text x={cx} y={y(d.count) - 5} textAnchor="middle" fontSize={11 * k} fontWeight="600" fill="var(--text-primary)" aria-hidden="true">{d.text}</text>}
               {show.has(i) && (() => {
                 // the last label is set against the right edge instead of being centred under a bar and running off the chart
                 const text = clip(d.axisLabel ?? d.label, labelChars);
-                const atEdge = cx + (text.length * 6.2) / 2 > w - 2;
-                return <text x={atEdge ? w - 2 : cx} y={height - 10} textAnchor={atEdge ? 'end' : 'middle'} fontSize="11" fill="var(--text-muted)" aria-hidden="true">{text}</text>;
+                const atEdge = cx + (text.length * 6.2 * k) / 2 > w - 2;
+                return <text x={atEdge ? w - 2 : cx} y={height - 10} textAnchor={atEdge ? 'end' : 'middle'} fontSize={11 * k} fill="var(--text-muted)" aria-hidden="true">{text}</text>;
               })()}
             </g>
           );
@@ -295,6 +300,8 @@ function CategoryLegend({ data }: { data: ChartSegment[] }) {
 // ── Line / area ──────────────────────────────────────────────────────────────
 
 export function LineAreaChart({ data, ariaLabel, onSelect, area, height = 220 }: InteractiveChartProps & { area?: boolean; height?: number }) {
+  const k = useTextScale();
+  const PAD = padFor(k);
   const gid = useId();
   const nav = useChartNav({ data, ariaLabel, onSelect });
   const w = nav.w;
@@ -305,7 +312,7 @@ export function LineAreaChart({ data, ariaLabel, onSelect, area, height = 220 }:
   const x = (i: number) => PAD.left + band * i + band / 2;
   const y = (v: number) => PAD.top + plotH - (v / axis.max) * plotH;
   const pts = data.map((d, i) => [x(i), y(d.count)] as const);
-  const show = labelIndices(data.length, Math.max(2, Math.floor(plotW / 62)));
+  const show = labelIndices(data.length, Math.max(2, Math.floor(plotW / (62 * k))));
   const line = pts.length > 1 ? curve(pts) : '';
   return (
     <Wrap nav={nav}>
@@ -319,7 +326,7 @@ export function LineAreaChart({ data, ariaLabel, onSelect, area, height = 220 }:
         {axis.ticks.map((t) => (
           <g key={t} aria-hidden="true">
             <line x1={PAD.left} x2={w - PAD.right} y1={y(t)} y2={y(t)} stroke="var(--border-subtle)" />
-            <text x={PAD.left - 8} y={y(t) + 4} textAnchor="end" fontSize="11" fill="var(--text-muted)">{t}</text>
+            <text x={PAD.left - 8} y={y(t) + 4} textAnchor="end" fontSize={11 * k} fill="var(--text-muted)">{t}</text>
           </g>
         ))}
         {pts.length > 1 && area && <path d={`${line} L${pts[pts.length - 1][0]} ${y(0)} L${pts[0][0]} ${y(0)} Z`} fill={`url(#${gid})`} aria-hidden="true" />}
@@ -330,7 +337,7 @@ export function LineAreaChart({ data, ariaLabel, onSelect, area, height = 220 }:
             <g key={d.key} {...nav.itemProps(i)}>
               <rect x={x(i) - band / 2} y={PAD.top} width={band} height={plotH} fill={on ? 'var(--surface-hover)' : 'transparent'} />
               {(on || data.length <= 24) && <circle cx={x(i)} cy={y(d.count)} r={on ? 6 : 3.5} fill="var(--surface-card)" stroke={CHART_COLOR.primary} strokeWidth="2.5" />}
-              {show.has(i) && <text x={x(i)} y={height - 10} textAnchor="middle" fontSize="11" fill="var(--text-muted)" aria-hidden="true">{d.axisLabel ?? d.label}</text>}
+              {show.has(i) && <text x={x(i)} y={height - 10} textAnchor="middle" fontSize={11 * k} fill="var(--text-muted)" aria-hidden="true">{d.axisLabel ?? d.label}</text>}
             </g>
           );
         })}

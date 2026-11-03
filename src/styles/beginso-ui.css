@@ -469,6 +469,20 @@ body {
 .bg-grid-3 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 .bg-grid-4 { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
 
+/* Text size (Settings > Appearance). The root size is the browser's own default (16px unless the person changed it) scaled by their choice, and
+   every length in this file and in the app is in rem, so everything follows: text, controls, rows, the sidebar. Default sets nothing.
+   Set before paint by the script in app/layout.tsx, in the signed-in app only (the public form keeps its own size for everyone). */
+html[data-text="large"] { font-size: 112.5%; --ui-scale: 1.125; }
+html[data-text="xlarge"] { font-size: 125%; --ui-scale: 1.25; }
+/* Icons are sized in code (size={16} is a width attribute in pixels, which the build step cannot reach), so they follow the setting here. An icon whose
+   size comes from a class (size-4, h-5 w-5) is in rem already and is left alone. At Default --ui-scale is not set and this changes nothing. */
+svg.lucide:not([class*="size-"]):not([class*="w-"]):not([class*="h-"]) { zoom: var(--ui-scale, 1); }
+/* The top bar holds five things (menu, logo, search, bell, avatar), and with bigger text they no longer fit a phone: the logo was squeezed to half. Less air
+   between them gives the logo its room back. */
+@media (max-width: 480px) {
+  html[data-text] .bg-topbar { gap: var(--space-1); padding-inline: var(--space-2); }
+}
+
 .bg-divider { height: 1px; background-color: var(--border-default); border: 0; }
 .bg-divider-v { width: 1px; align-self: stretch; background-color: var(--border-default); }
 

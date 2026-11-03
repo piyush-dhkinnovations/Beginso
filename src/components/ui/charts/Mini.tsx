@@ -47,7 +47,7 @@ export function Sparkline({ values, area = true, dot = true, color = CHART_COLOR
       viewBox={`0 0 ${w} ${height}`}
       preserveAspectRatio="none"
       className={bx('w-full', className)}
-      style={{ maxWidth: 220, height }}
+      style={{ maxWidth: 'calc(220px * var(--ui-scale, 1))', height }}
       aria-hidden="true"
     >
       <defs><Gradient id={gid} color={color} /></defs>
@@ -62,7 +62,7 @@ export function Sparkline({ values, area = true, dot = true, color = CHART_COLOR
 export function MultiLine({ values, secondary, height = 64 }: { values: number[]; secondary: number[]; height?: number }) {
   const max = Math.max(...values, ...secondary);
   return (
-    <span className="relative block w-full" style={{ maxWidth: 220, height }} aria-hidden="true">
+    <span className="relative block w-full" style={{ maxWidth: 'calc(220px * var(--ui-scale, 1))', height }} aria-hidden="true">
       <SparkOnScale values={values} max={max} height={height} filled />
       <SparkOnScale values={secondary} max={max} height={height} color={CHART_COLOR.success} className="absolute inset-0" />
     </span>
