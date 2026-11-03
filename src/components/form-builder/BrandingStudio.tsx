@@ -474,19 +474,6 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
         <Card className="flex min-w-0 flex-col gap-4 p-4 lg:max-h-[calc(100vh-16.5rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* Stays at the top of the card while the controls scroll under it. */}
           <div className="sticky -top-4 z-10 -mx-4 -mt-4 bg-(--surface-card) px-4 pt-4">
-            <button
-              type="button"
-              onClick={() => setLooksOpen(true)}
-              className="mb-3 flex w-full items-center gap-3 rounded-lg border-2 border-(--border-default) bg-(--surface-card) px-3 py-2 text-left hover:bg-(--surface-hover) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
-            >
-              <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-md bg-(--accent-soft) text-(--accent-soft-text)">
-                <Sparkles size={18} />
-              </span>
-              <span className="flex min-w-0 flex-col">
-                <span className="bg-body-sm font-semibold text-(--text-primary)">Looks</span>
-                <span className="bg-caption text-(--text-muted)">Ready-made looks and your saved styles</span>
-              </span>
-            </button>
             <Tabs tabs={SECTIONS} activeId={section} onChange={(id) => setSection(id as Section)} ariaLabel="Branding sections" panelId="branding-section" />
           </div>
           <div role="tabpanel" id="branding-section" aria-labelledby={`tab-${section}`} className="flex flex-col gap-5">
@@ -508,6 +495,10 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
                 setZoom(1);
               }}
             />
+            <Button type="button" variant="secondary" size="small" onClick={() => setLooksOpen(true)} className="absolute right-6 top-3 z-10 shadow-(--shadow-md)">
+              <Sparkles size={14} className="mr-1.5" aria-hidden="true" />
+              Looks
+            </Button>
             <div className="absolute bottom-3 right-6 z-10 flex items-center gap-0.5 rounded-lg bg-(--surface-card) p-0.5 shadow-(--shadow-md) ring-1 ring-(--border-default)">
               <div role="group" aria-label="Preview zoom" className="flex items-center gap-0.5">
                 <Button type="button" variant="ghost" size="small" aria-label="Zoom out" disabled={smaller === undefined} onClick={() => smaller !== undefined && setZoom(smaller)} className="min-h-8 min-w-8 p-1.5">
