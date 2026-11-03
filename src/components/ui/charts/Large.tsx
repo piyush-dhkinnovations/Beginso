@@ -3,6 +3,7 @@
 import { useId } from 'react';
 import { CHART_COLOR } from './Mini';
 import { curve, labelIndices, niceAxis } from './math';
+import { useTextScale } from '@/hooks/useTextScale';
 import { useWidth } from './useWidth';
 
 // Axis charts. Layout is computed in real pixels from the measured container width (useWidth), so
@@ -14,7 +15,7 @@ export interface ChartDatum {
   value: number;
 }
 
-const PAD = { top: 12, right: 12, bottom: 28, left: 34 };
+const padFor = (k: number) => ({ top: 12, right: 12, bottom: Math.round(28 * k), left: Math.round(34 * k) });
 
 function Frame({
   data,
@@ -30,6 +31,8 @@ function Frame({
   children: (g: { w: number; plotW: number; plotH: number; y: (v: number) => number; x: (i: number) => number; band: number }) => React.ReactNode;
 }) {
   const [ref, w] = useWidth();
+  const k = useTextScale();
+  const PAD = padFor(k);
   const top = Math.max(...data.map((d) => d.value), ...(secondary ?? []), 0);
   const axis = niceAxis(top);
   const plotW = w - PAD.left - PAD.right;
@@ -37,20 +40,20 @@ function Frame({
   const band = data.length > 0 ? plotW / data.length : plotW;
   const y = (v: number) => PAD.top + plotH - (v / axis.max) * plotH;
   const x = (i: number) => PAD.left + band * i + band / 2;
-  const show = labelIndices(data.length, Math.max(2, Math.floor(plotW / 56)));
+  const show = labelIndices(data.length, Math.max(2, Math.floor(plotW / (56 * k))));
   return (
     <div ref={ref} className="w-full">
       <svg width={w} height={height} role="img" aria-label={ariaLabel}>
         {axis.ticks.map((t) => (
           <g key={t}>
             <line x1={PAD.left} x2={w - PAD.right} y1={y(t)} y2={y(t)} stroke="var(--border-subtle)" strokeWidth="1" />
-            <text x={PAD.left - 8} y={y(t) + 3.5} textAnchor="end" fontSize="11" fill="var(--text-muted)">{t}</text>
+            <text x={PAD.left - 8} y={y(t) + 3.5} textAnchor="end" fontSize={11 * k} fill="var(--text-muted)">{t}</text>
           </g>
         ))}
         {children({ w, plotW, plotH, y, x, band })}
         {data.map((d, i) =>
           show.has(i) ? (
-            <text key={i} x={x(i)} y={height - 8} textAnchor="middle" fontSize="11" fill="var(--text-muted)">{d.label}</text>
+            <text key={i} x={x(i)} y={height - 8} textAnchor="middle" fontSize={11 * k} fill="var(--text-muted)">{d.label}</text>
           ) : null,
         )}
       </svg>

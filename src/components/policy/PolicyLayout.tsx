@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ChevronRight, Link2 } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
+import { CookieBanner } from "@/components/landing/CookieBanner";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
@@ -18,7 +19,7 @@ export function PolicyLayout({ doc }: { doc: PolicyDoc }) {
     <main className="min-h-screen bg-(--bg-page)">
       <Navbar />
 
-      <article className="pt-[140px] pb-24 md:pt-[180px]">
+      <article className="pt-28 pb-24 md:pt-32">
         <div className="max-w-[1100px] mx-auto px-4 sm:px-6 lg:px-8">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 bg-caption text-(--text-muted) mb-6">
             <Link href="/" className="hover:text-(--text-primary)">Beginso</Link>
@@ -72,6 +73,7 @@ export function PolicyLayout({ doc }: { doc: PolicyDoc }) {
       </article>
 
       <Footer />
+      <CookieBanner />
       <ScrollNav />
     </main>
   );

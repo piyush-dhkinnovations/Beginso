@@ -102,6 +102,47 @@ describe('CustomDashboard', () => {
     expect(screen.getByTestId('grid').textContent).toMatch(/^d1,w/);
   });
 
+  it('a ready-made layout shows at once as a draft: Save keeps it, Cancel brings the old dashboard back', async () => {
+    const user = userEvent.setup();
+    mockGet.mockResolvedValue(null);
+    const metrics = { totalForms: { label: 'Forms', value: 2 }, totalResponses: { label: 'Responses', value: 9 } };
+    renderIt({ metrics });
+    await user.click(await screen.findByRole('button', { name: 'Customize dashboard' }));
+    await user.click(screen.getByRole('button', { name: 'Choose a layout' }));
+    await user.click(screen.getByRole('button', { name: 'Use the Numbers only layout' }));
+    expect(screen.getByTestId('grid')).toHaveAttribute('data-editing', 'true');
+    expect(screen.getByTestId('grid').textContent).toMatch(/^l-forms,l-responses/);
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.getByTestId('grid').textContent).toBe('d1');
+    expect(mockSave).not.toHaveBeenCalled();
+  });
+
+  it('saves a chosen layout like any other draft', async () => {
+    const user = userEvent.setup();
+    mockGet.mockResolvedValue(null);
+    mockSave.mockResolvedValue({ widgets: [], version: 1 });
+    renderIt({ metrics: { totalForms: { label: 'Forms', value: 2 } } });
+    await user.click(await screen.findByRole('button', { name: 'Customize dashboard' }));
+    await user.click(screen.getByRole('button', { name: 'Choose a layout' }));
+    await user.click(screen.getByRole('button', { name: 'Use the Numbers only layout' }));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(mockSave).toHaveBeenCalledWith('personal', [expect.objectContaining({ id: 'l-forms' })], undefined));
+  });
+
+  it('has one button to start with, Customize: the layouts are inside it, not a second button beside it', async () => {
+    mockGet.mockResolvedValue(null);
+    renderIt();
+    await screen.findByRole('button', { name: 'Customize dashboard' });
+    expect(screen.queryByRole('button', { name: 'Choose a layout' })).toBeNull();
+  });
+
+  it('offers no layout to someone who cannot edit', async () => {
+    mockGet.mockResolvedValue(null);
+    renderIt({ canEdit: false });
+    await screen.findByTestId('grid');
+    expect(screen.queryByRole('button', { name: 'Choose a layout' })).toBeNull();
+  });
+
   it('saves the draft with the loaded version and confirms', async () => {
     const user = userEvent.setup();
     mockGet.mockResolvedValue({ widgets: savedWidgets, version: 7 });

@@ -11,7 +11,7 @@ export function IconTile({ size, fill, className = '', children }: { size: numbe
   return (
     <span
       aria-hidden="true"
-      className={`inline-flex flex-none items-center justify-center border border-(--border-default) bg-white ${fill ? 'size-full' : ''} ${className}`}
+      className={`inline-flex flex-none items-center justify-center border border-(--border-default) bg-(--surface-art) ${fill ? 'size-full' : ''} ${className}`}
       style={{ ...(fill ? {} : { width: size, height: size }), borderRadius: '26%' }}
     >
       {children}

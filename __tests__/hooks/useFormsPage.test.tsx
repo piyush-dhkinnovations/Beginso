@@ -96,6 +96,17 @@ describe('useFormsPage sort wiring', () => {
     await waitFor(() => expect(result.current.rows).toHaveLength(3));
     expect(result.current.rows.map((f) => f._id)).toEqual(['a', 'b', 'c']);
   });
+
+  it('puts the pinned forms on top even when the server sent them in date order (an older server)', async () => {
+    getForms.mockImplementation(async (p: { limit: number }) =>
+      p.limit === 1
+        ? { forms: [], total: 0, page: 1, limit: 1 }
+        : { forms: [row('a', 'Alpha', 1), { ...row('b', 'Bravo', 9), pinned: true }, row('c', 'Charlie', 4), { ...row('d', 'Delta', 2), pinned: true }], total: 4, page: 1, limit: p.limit },
+    );
+    const { result } = setup();
+    await waitFor(() => expect(result.current.rows).toHaveLength(4));
+    expect(result.current.rows.map((f) => f._id)).toEqual(['b', 'd', 'a', 'c']);
+  });
 });
 
 describe('useFormsPage tabs', () => {

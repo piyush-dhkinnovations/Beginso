@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   sortForms,
+  pinnedFirst,
   SERVER_SORT_FIELD,
   formatUpdated,
   createFormHref,
@@ -20,6 +21,30 @@ const forms = [
 ];
 const ids = (l: Form[]) => l.map((f) => f._id);
 
+describe('pinnedFirst', () => {
+  it('puts the pinned forms first and keeps the order inside each group', () => {
+    const list = [
+      form({ _id: 'a', pinned: false }),
+      form({ _id: 'b', pinned: true }),
+      form({ _id: 'c' }),
+      form({ _id: 'd', pinned: true }),
+    ];
+    expect(ids(pinnedFirst(list))).toEqual(['b', 'd', 'a', 'c']);
+  });
+
+  it('changes nothing when nothing is pinned or the list is already so', () => {
+    expect(ids(pinnedFirst(forms))).toEqual(['a', 'b', 'c']);
+    const already = [form({ _id: 'p', pinned: true }), form({ _id: 'q' })];
+    expect(ids(pinnedFirst(already))).toEqual(['p', 'q']);
+  });
+
+  it('does not change the list it is given', () => {
+    const list = [form({ _id: 'a' }), form({ _id: 'b', pinned: true })];
+    pinnedFirst(list);
+    expect(ids(list)).toEqual(['a', 'b']);
+  });
+});
+
 describe('sortForms', () => {
   it('sorts by title (locale-aware) both ways', () => {
     expect(ids(sortForms(forms, { key: 'title', dir: 'asc' }))).toEqual(['b', 'a', 'c']);
@@ -33,6 +58,15 @@ describe('sortForms', () => {
   it('sorts by responses numerically', () => {
     expect(ids(sortForms(forms, { key: 'responses', dir: 'desc' }))).toEqual(['b', 'a', 'c']);
     expect(ids(sortForms(forms, { key: 'responses', dir: 'asc' }))).toEqual(['c', 'a', 'b']);
+  });
+
+  it('keeps the pinned forms on top whatever the column, each group in the chosen order', () => {
+    const withPins = [{ ...forms[0], pinned: false }, { ...forms[1], pinned: true }, { ...forms[2], pinned: true }];
+    expect(ids(sortForms(withPins, { key: 'responses', dir: 'desc' }))).toEqual(['b', 'c', 'a']);
+    expect(ids(sortForms(withPins, { key: 'responses', dir: 'asc' }))).toEqual(['c', 'b', 'a']);
+    expect(ids(sortForms(withPins, { key: 'title', dir: 'asc' }))).toEqual(['b', 'c', 'a']);
+    // no pins: nothing changes
+    expect(ids(sortForms(forms, { key: 'responses', dir: 'desc' }))).toEqual(['b', 'a', 'c']);
   });
 
   it('sorts by updated, and unknown keys fall back to updated', () => {

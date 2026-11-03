@@ -87,6 +87,11 @@ describe('LogoChoice', () => {
     expect(screen.getByRole('radio', { name: /BeginSo default/ })).toBeChecked();
   });
 
+  it('asks for a logo the backend stored through this site, whatever host it was stored with', () => {
+    setup({ value: 'http://192.168.33.47:5000/api/upload/file/abc.png' });
+    expect(screen.getByAltText('Your uploaded logo')).toHaveAttribute('src', '/api/backend/api/upload/file/abc.png');
+  });
+
   it('shows the uploaded logo with Replace and Remove', async () => {
     const user = userEvent.setup();
     const { onChange } = setup({ value: 'https://cdn/x.png' });

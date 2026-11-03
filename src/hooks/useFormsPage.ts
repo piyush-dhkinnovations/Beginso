@@ -14,7 +14,7 @@ import { useFormsCounts } from '@/hooks/useFormsCounts';
 import { useFormsMutations } from '@/hooks/useFormsMutations';
 import type { TableSort } from '@/components/ui/Table';
 import type { FormsManagerTab } from '@/components/forms/FormsManagerTabs';
-import { PAGE_SIZES, TAB_STATUS, createFormHref, formHref, formsQueryEnabled, sortForms, SERVER_SORT_FIELD } from '@/components/forms/formsListUtils';
+import { PAGE_SIZES, TAB_STATUS, createFormHref, formHref, formsQueryEnabled, pinnedFirst, sortForms, SERVER_SORT_FIELD } from '@/components/forms/formsListUtils';
 import type { Form, FormStatus } from '@/types/form';
 import type { FormsContext } from '@/types/workspace';
 
@@ -143,8 +143,9 @@ export function useFormsPage(context: FormsContext) {
     useFormsMutations({ context, data, page, setPage, setSelectedIds, setBulkDeleteConfirming });
 
   const rows = useMemo(
-    // Pinned keeps the server order (most recently pinned first); the sort select is hidden there.
-    () => (onPinnedTab || serverSort ? (data?.forms ?? []) : sortForms(data?.forms ?? [], sort)),
+    // Pinned keeps the server order (most recently pinned first); the sort select is hidden there. A sort the server does keeps its order, with the
+    // pinned forms on top (the server does that itself; this covers a server that does not yet).
+    () => (onPinnedTab ? (data?.forms ?? []) : serverSort ? pinnedFirst(data?.forms ?? []) : sortForms(data?.forms ?? [], sort)),
     [data, sort, onPinnedTab, serverSort]
   );
   const maxResponses = Math.max(0, ...rows.map((form) => form.responseCount));

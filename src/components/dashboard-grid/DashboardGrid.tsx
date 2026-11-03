@@ -89,7 +89,7 @@ function SortableWidget({
       aria-label={`${widget.config.type === 'kpi' ? 'Card' : widget.config.type === 'map' ? 'Map' : 'Chart'}: drag to reorder, press Space to pick up`}
       className={bx(
         SPAN[widget.w], rows(widget, metrics),
-        'group/widget relative min-w-0 cursor-grab touch-none select-none rounded-2xl outline-none transition-shadow active:cursor-grabbing',
+        'group/widget relative min-w-0 cursor-grab touch-none select-none rounded-(--bg-radius-lg) outline-none transition-shadow active:cursor-grabbing',
         selected ? 'ring-2 ring-(--action-primary) ring-offset-2 ring-offset-(--bg-page,var(--surface-card))' : 'ring-1 ring-transparent hover:ring-(--border-strong)',
         isDragging && 'opacity-90 shadow-xl',
       )}

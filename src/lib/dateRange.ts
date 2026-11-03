@@ -85,6 +85,13 @@ export function resolveTrendBucket(from?: string, to?: string): 'day' | 'week' {
   return spanDays <= DAY_BUCKET_THRESHOLD_DAYS ? 'day' : 'week';
 }
 
+/** True when an explicit range is longer than a year: a chart of it reads best by the month. Open-ended ("All time") is unknown, so false. */
+export function spansMoreThanAYear(from?: string, to?: string): boolean {
+  if (!from || !to) return false;
+  const span = new Date(to).getTime() - new Date(from).getTime();
+  return Number.isFinite(span) && span > 365 * DAY_MS;
+}
+
 /** Which preset (if any) an already-resolved `{from, to}` pair matches — for pill active-state. */
 export function detectDateRangePreset(from?: string, to?: string): DateRangePreset {
   if (!from && !to) return 'all';

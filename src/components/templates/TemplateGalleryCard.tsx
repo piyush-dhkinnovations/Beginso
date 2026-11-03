@@ -31,7 +31,7 @@ export function TemplateGalleryCard({ template }: { template: Template }) {
       <div className="flex flex-1 flex-col gap-3 p-5">
         <div className="flex items-center gap-3">
           {icon && (
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-(--border-default) bg-white shadow-(--shadow-sm)">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-(--border-default) bg-(--surface-art) shadow-(--shadow-sm)">
               <IconArt icon={icon} size={28} />
             </span>
           )}

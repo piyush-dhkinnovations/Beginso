@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { ResponsesOverTimeCard } from '@/components/analytics/ResponsesOverTimeCard';
+import { ResponsesOverTimeCard, groupByMonth } from '@/components/analytics/ResponsesOverTimeCard';
 
 describe('ResponsesOverTimeCard', () => {
   it('shows ISO week buckets as valid dates in the chart data', () => {
@@ -49,6 +49,41 @@ describe('ResponsesOverTimeCard', () => {
     expect(axisLabels(container)).toEqual(expect.arrayContaining(['Aug 2020', 'Feb 2021']));
     expect(screen.getByRole('table')).toHaveTextContent('Week of 24 Aug 2020');
     expect('Aug 2020'.length).toBeLessThanOrEqual(8);
+  });
+
+  it('adds daily points up by calendar month, oldest first', () => {
+    expect(
+      groupByMonth([
+        { bucketStart: '2023-02-03', responses: 2 },
+        { bucketStart: '2023-01-31', responses: 1 },
+        { bucketStart: '2023-02-20', responses: 5 },
+      ]),
+    ).toEqual([
+      { bucketStart: '2023-01-01', responses: 1 },
+      { bucketStart: '2023-02-01', responses: 7 },
+    ]);
+  });
+
+  it('shows one bar per month, named "Feb 2023", when grouped by month', () => {
+    render(
+      <ResponsesOverTimeCard
+        points={[{ bucketStart: '2023-02-03', responses: 2 }, { bucketStart: '2023-02-20', responses: 5 }]}
+        isLoading={false}
+        bucket="month"
+        onBucketChange={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('table')).toHaveTextContent('Feb 2023');
+    expect(screen.getByRole('table')).toHaveTextContent('7');
+    expect(screen.getByRole('option', { name: 'Monthly' })).toBeInTheDocument();
+  });
+
+  it('offers Daily only while the chart is short enough to read by the day', () => {
+    const weeks = Array.from({ length: 40 }, (_, i) => ({ bucketStart: `2025-W${String(i + 1).padStart(2, '0')}`, responses: 1 }));
+    const { rerender } = render(<ResponsesOverTimeCard points={weeks} isLoading={false} bucket="week" onBucketChange={vi.fn()} />);
+    expect(screen.queryByRole('option', { name: 'Daily' })).not.toBeInTheDocument();
+    rerender(<ResponsesOverTimeCard points={weeks.slice(0, 5)} isLoading={false} bucket="week" onBucketChange={vi.fn()} />);
+    expect(screen.getByRole('option', { name: 'Daily' })).toBeInTheDocument();
   });
 
   it('a day is just its date, in full for the tooltip', () => {

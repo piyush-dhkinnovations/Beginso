@@ -20,6 +20,8 @@ export function FormsByStatusCard({ counts, isLoading }: FormsByStatusCardProps)
     { label: 'Closed', value: counts.closed, color: FORM_STATUS_COLOR.closed },
   ];
   const segments = all.filter((s) => s.value > 0);
+  // one status only (every form published, say): that one line, not two empty rows beside it
+  const rows = segments.length === 1 ? segments : all;
   const total = counts.published + counts.draft + counts.closed;
   return (
     <ChartCard title="Forms by status">
@@ -36,15 +38,15 @@ export function FormsByStatusCard({ counts, isLoading }: FormsByStatusCardProps)
           </p>
           <div
             role="img"
-            aria-label={`Forms by status: ${all.map((s) => `${s.value} ${s.label.toLowerCase()}`).join(', ')}`}
+            aria-label={`Forms by status: ${rows.map((s) => `${s.value} ${s.label.toLowerCase()}`).join(', ')}`}
             className="flex h-4 w-full gap-0.5 overflow-hidden rounded-full"
           >
-            {all.map((s) =>
+            {rows.map((s) =>
               s.value > 0 ? <span key={s.label} style={{ flexGrow: s.value, backgroundColor: s.color }} /> : null,
             )}
           </div>
           <ul className="flex flex-col gap-2">
-            {all.map((s) => (
+            {rows.map((s) => (
               <li key={s.label} className="flex items-center justify-between gap-3 bg-body-sm text-(--text-secondary)">
                 <span className="inline-flex items-center gap-2">
                   <span aria-hidden="true" className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: s.color }} />

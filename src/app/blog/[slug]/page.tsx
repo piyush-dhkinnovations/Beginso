@@ -54,7 +54,7 @@ export default function BlogArticlePage() {
     return (
       <main className="min-h-screen bg-(--bg-page)">
         <Navbar />
-        <div className="pt-[160px] pb-24 text-center max-w-xl mx-auto px-4">
+        <div className="pt-28 pb-24 text-center max-w-xl mx-auto px-4">
           <StateArt name="not-found" className="mb-4" />
           <h1 className="bg-h2 text-(--text-primary) mb-4">Post not found</h1>
           <Link href="/blog" className="text-(--text-link) font-medium hover:underline">
@@ -73,7 +73,7 @@ export default function BlogArticlePage() {
     <main className="min-h-screen bg-(--bg-page)">
       <Navbar />
 
-      <article className="pt-[140px] pb-24 md:pt-[180px]">
+      <article className="pt-28 pb-24 md:pt-32">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 bg-caption text-(--text-muted) mb-6">
             <Link href="/blog" className="hover:text-(--text-primary)">Blog</Link>

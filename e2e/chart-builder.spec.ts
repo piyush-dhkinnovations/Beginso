@@ -245,6 +245,25 @@ test.describe('Chart builder', () => {
     await expect(page.getByText('From a chart')).toBeVisible();
   });
 
+  test('the final preview chart stays inside its card whichever size is chosen', async ({ page, context }) => {
+    await installBackend(context);
+    await openInsights(page);
+    await toBasics(page);
+    await page.getByLabel('Chart type').selectOption({ value: 'bar' });
+    await next(page).click();
+    await next(page).click();
+    await expect(page.getByRole('heading', { name: 'Preview & save' })).toBeFocused();
+    const card = page.getByRole('region', { name: 'Final preview' });
+    for (const size of ['Small', 'Large', 'Medium', 'Small']) {
+      await page.getByRole('radio', { name: new RegExp(`^${size}`) }).check({ force: true });
+      await expect(async () => {
+        const box = (await card.boundingBox())!;
+        const svg = (await card.locator('svg').first().boundingBox())!;
+        expect(svg.x + svg.width, `${size}: the chart ends inside the card`).toBeLessThanOrEqual(box.x + box.width + 1);
+      }).toPass({ timeout: 5000 });
+    }
+  });
+
   test('a drill-down: two levels, an interactive preview, saved on the dashboard; a click opens the next level, the last one opens the responses in the side screen', async ({ page, context }, testInfo) => {
     const fake = await installBackend(context);
     await openInsights(page);

@@ -39,7 +39,7 @@ export default function BlogListPage() {
     <main className="min-h-screen bg-(--bg-page)">
       <Navbar />
 
-      <section className="pt-[140px] pb-16 md:pt-[180px] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="pt-28 pb-16 md:pt-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div ref={headerRef} className={`reveal ${headerVisible ? "is-visible" : ""} text-center max-w-2xl mx-auto mb-10`}>
           <h1 className="bg-h1 text-(--text-primary) mb-3">What&apos;s new in Beginso</h1>
           <p className="bg-body-lg text-(--text-secondary)">Product updates, guides and release notes.</p>

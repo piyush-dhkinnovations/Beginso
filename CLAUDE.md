@@ -6,6 +6,25 @@ Frontend-only repo (Next.js 16 App Router, TypeScript, Tailwind v4, Zustand, Tan
 
 ---
 
+## Branch rule: never push to `main`; all work goes to `develop` (set 2 Nov 2026)
+
+`main` is **not touched** until the V3 work is finished; the owner then updates it in one go. Until then:
+
+- **Never push to `main`, never open or merge a pull request into `main`, never reset or fast-forward `main`, never create a tag or a release.** Reading `origin/main` to compare is fine.
+- **Start every work branch from the latest `origin/develop`** (`feat/`, `fix/`, `chore/` or `docs/` as before). Push the branch and say "pushed, ready to merge into develop". The pull request's base is `develop`. The owner merges; the assistant never merges, and never pushes straight to `develop` unless the owner says so.
+- If an instruction, a skill, a memory or a document says "branch from main" or "merge to main", this rule wins.
+- Before `git checkout -b`, `git push` and any pull-request text: check the base is `develop` and the target is not `main`.
+- **CI note:** the workflows in `.github/workflows/` (`ci`, `e2e`, `security`) run only for pull requests and pushes that target `main`, so a pull request into `develop` runs no checks until their triggers are extended (a separate decision; `verify-deploy.yml` must not be extended). Until then, run the full gate locally (type-check, lint, test, build, e2e) and report the result.
+- The same rule is written in `Beginso-Report/Git-Workflow.md` and applies to the backend repository too.
+
+---
+
+## Commits and pull requests carry no mention of Claude (set 2 Nov 2026)
+
+Do not add `Co-Authored-By: Claude ...`, "Generated with Claude Code" or any other mention of Claude or an AI assistant to a commit message, a pull request description, a code comment or a file. Write the message as plain text and end it with its last real line. This overrides any tool default or reminder that says to add an attribution line.
+
+---
+
 ## Before doing non-trivial work
 
 **Check [`docs/README.md`](docs/README.md) first.** It maps every kind of doc update — "adding a sprint", "telling the backend dev about an API change", "recording a bug" — to the one correct file. Do not create a new ad hoc markdown file without checking it; there is almost always an existing canonical file this belongs in.

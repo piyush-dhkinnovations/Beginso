@@ -8,7 +8,20 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import type { AnalyticsTrendPoint } from '@/types/analytics';
 import { parseBucket } from './TrendChart';
 
-export type TrendBucket = 'day' | 'week';
+export type TrendBucket = 'day' | 'week' | 'month';
+
+/** Daily points added up by calendar month ("2023-04-17" belongs to "2023-04-01"), oldest first. */
+export function groupByMonth(points: AnalyticsTrendPoint[]): AnalyticsTrendPoint[] {
+  const months = new Map<string, number>();
+  for (const p of points) {
+    const key = `${p.bucketStart.slice(0, 7)}-01`;
+    months.set(key, (months.get(key) ?? 0) + p.responses);
+  }
+  return [...months].sort(([a], [b]) => a.localeCompare(b)).map(([bucketStart, responses]) => ({ bucketStart, responses }));
+}
+
+// Daily bars stop being readable past about half a year, so the Daily choice is offered only while the chart is short.
+const DAILY_MAX_POINTS = { week: 26, month: 6 } as const;
 
 /**
  * What a bar is called. In full ("Week of 24 Aug 2020", "5 Oct 2026") for the tooltip and screen readers; on the axis only as much as is
@@ -23,6 +36,7 @@ const names = (bucketStart: string, bucket: TrendBucket, acrossYears: boolean) =
   const day = d.getUTCDate();
   const year = d.getUTCFullYear();
   const date = `${day} ${month} ${year}`;
+  if (bucket === 'month') return { label: `${month} ${year}`, axisLabel: acrossYears ? `${month} ${year}` : month };
   return { label: bucket === 'week' ? `Week of ${date}` : date, axisLabel: acrossYears ? `${month} ${year}` : `${day} ${month}` };
 };
 
@@ -36,16 +50,19 @@ interface ResponsesOverTimeCardProps {
 // Responses per day/week across all forms as a bar chart (peak highlighted), with a Daily/Weekly
 // switch. A visually-hidden table carries the exact figures for assistive tech.
 export function ResponsesOverTimeCard({ points, isLoading, bucket, onBucketChange }: ResponsesOverTimeCardProps) {
-  const years = new Set((points ?? []).map((p) => parseBucket(p.bucketStart)?.getUTCFullYear()));
-  const data = (points ?? []).map((p) => ({ ...names(p.bucketStart, bucket, years.size > 1), value: p.responses }));
+  const shown = bucket === 'month' && points ? groupByMonth(points) : points;
+  const years = new Set((shown ?? []).map((p) => parseBucket(p.bucketStart)?.getUTCFullYear()));
+  const showDaily = bucket === 'day' || (shown?.length ?? 0) <= DAILY_MAX_POINTS[bucket];
+  const data = (shown ?? []).map((p) => ({ ...names(p.bucketStart, bucket, years.size > 1), value: p.responses }));
   return (
     <ChartCard
       title="Responses over time"
       legend={
         <div className="w-32">
           <Select id="trend-bucket" aria-label="Group responses by" value={bucket} onChange={(e) => onBucketChange(e.target.value as TrendBucket)}>
-            <option value="day">Daily</option>
+            {showDaily && <option value="day">Daily</option>}
             <option value="week">Weekly</option>
+            <option value="month">Monthly</option>
           </Select>
         </div>
       }
@@ -53,7 +70,7 @@ export function ResponsesOverTimeCard({ points, isLoading, bucket, onBucketChang
       {isLoading ? (
         <div className="h-52 animate-pulse rounded-lg bg-(--bg-sunken)" />
       ) : data.length === 0 ? (
-        <EmptyState icon={<BarChart3 />} title="No trend yet" description="Daily responses will chart here once forms start receiving submissions in this range." />
+        <EmptyState icon={<BarChart3 />} title="No trend yet" description="Responses will chart here once forms start receiving submissions in this range." />
       ) : (
         <>
           <BarsChart data={toSegments(data)} height={210} ariaLabel="Responses over time" />

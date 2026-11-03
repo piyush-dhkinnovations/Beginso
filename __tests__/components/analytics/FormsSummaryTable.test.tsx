@@ -48,11 +48,28 @@ describe('FormsSummaryTable', () => {
     expect(screen.getByText('91%')).toBeInTheDocument();
   });
 
-  it('shows "—" in the Change column when there is no previous-period data for a form', () => {
+  it('leaves out the Change column when no form has a previous-period figure, and the Completion column when none has a rate', () => {
     const data = mockFormsSummary({ forms: [{ _id: 'form-9', title: 'Solo Form', status: 'published', totalResponses: 10, completionRate: 50 }] });
-    render(<FormsSummaryTable data={data} isLoading={false} page={1} onPageChange={vi.fn()} />);
+    const { rerender } = render(<FormsSummaryTable data={data} isLoading={false} page={1} onPageChange={vi.fn()} />);
+    expect(screen.queryByText('Change')).not.toBeInTheDocument();
+    expect(screen.getByText('Completion Rate')).toBeInTheDocument();
 
-    expect(screen.getAllByText('—').length).toBeGreaterThan(0);
+    rerender(<FormsSummaryTable data={mockFormsSummary({ forms: [{ ...data.forms[0], completionRate: null }] })} isLoading={false} page={1} onPageChange={vi.fn()} />);
+    expect(screen.queryByText('Completion Rate')).not.toBeInTheDocument();
+  });
+
+  it('sorts by a header: responses biggest first, then smallest first; names A to Z', () => {
+    const data = mockFormsSummary();
+    render(<FormsSummaryTable data={data} isLoading={false} page={1} onPageChange={vi.fn()} />);
+    const titles = () => screen.getAllByRole('link').map((l) => l.textContent).filter((t) => data.forms.some((f) => f.title === t));
+
+    fireEvent.click(screen.getByRole('button', { name: /Responses/ }));
+    expect(titles()[0]).toBe('Customer Feedback Survey');
+    fireEvent.click(screen.getByRole('button', { name: /Responses/ }));
+    expect(titles()[0]).toBe('Product Waitlist');
+    fireEvent.click(screen.getByRole('button', { name: /^Form/ }));
+    expect(titles()[0]).toBe('Customer Feedback Survey');
+    expect(titles()[1]).toBe('Event Registration');
   });
 
   it('computes an up/down Change label from previousForms, matched by form id', () => {

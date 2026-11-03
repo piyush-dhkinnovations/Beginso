@@ -1,7 +1,7 @@
 'use client';
 
 import { BarChart3, FileCheck2, MessageSquare } from 'lucide-react';
-import { StatCard, type StatChart } from '@/components/ui/StatCard';
+import { StatCard } from '@/components/ui/StatCard';
 import { formatChangeLabel } from '@/lib/analyticsChange';
 import { MIN_TREND_POINTS, NOT_ENOUGH_DATA } from '@/lib/chartSegments';
 import { CompletionRateCard } from './CompletionRateCard';
@@ -24,13 +24,6 @@ interface WorkspaceSummaryCardsProps {
   changes: WorkspaceSummaryChanges;
   /** e.g. "vs previous 30 days". */
   periodLabel: string;
-  /** Responses per bucket for the range, oldest first — drives the Total Responses bars. */
-  trend?: number[];
-  /** Total for the previous equal-length period — the Total Responses fallback chart compares it
-   * with the current total when there is no trend or per-form data to draw bars from. */
-  previousTotalResponses?: number;
-  /** Response totals of the busiest forms — drives the Avg. Responses / Form bars. */
-  perFormResponses: number[];
   isLoading: boolean;
 }
 
@@ -39,15 +32,12 @@ function delta(change: number | null, periodLabel: string) {
   return { label: formatChangeLabel(change), direction: (change > 0 ? 'up' : 'down') as 'up' | 'down', note: periodLabel };
 }
 
-const bars = (values?: number[]): StatChart | undefined =>
-  values && values.length > 1 && values.some((v) => v > 0) ? { kind: 'bars', values: values.slice(-12) } : undefined;
+const count = (n: number) => n.toLocaleString('en-US');
+// 1,170 not 1170.0: one decimal only when the average has a fraction worth showing
+const average = (n: number) => (Number.isInteger(Math.round(n * 10) / 10) ? count(Math.round(n)) : n.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }));
 
-// Four stat cards for Workspace Analytics — large bare icon + number + label on the left, a chart
-// on the right — always one, so the row reads evenly. Best data first, with a real fallback each:
-//   Total Responses  bars from the daily trend → bars per form → previous vs current period split
-//   Active Forms     progress: published / total
-//   Avg / Form       bars per form → progress: the average against the busiest form
-//   Completion Rate  ring (an empty ring when no form has responses yet)
+// Four stat cards for Workspace Analytics: a large bare icon, the number and its label, and a change against the previous period when
+// there is one. No decorative graphs: the chart below carries the trend, and a bar or ring that says nothing is noise.
 export function WorkspaceSummaryCards({
   totalResponses,
   activeForms,
@@ -56,9 +46,6 @@ export function WorkspaceSummaryCards({
   completionRate,
   changes,
   periodLabel,
-  trend,
-  previousTotalResponses,
-  perFormResponses,
   isLoading,
 }: WorkspaceSummaryCardsProps) {
   // Minimum-data rule: under ten responses, raw counts only - no bars, rings, progress or deltas.
@@ -72,36 +59,27 @@ export function WorkspaceSummaryCards({
     icon: typeof MessageSquare;
     muted: boolean;
     delta?: ReturnType<typeof delta>;
-    chart?: StatChart;
   }> = [
     {
       label: 'Total Responses',
-      value: String(totalResponses),
+      value: count(totalResponses),
       icon: MessageSquare,
       muted: totalResponses === 0,
       delta: delta(changes.responses, periodLabel),
-      chart:
-        bars(trend) ??
-        bars(perFormResponses) ??
-        ({ kind: 'split', parts: [{ value: previousTotalResponses ?? 0 }, { value: totalResponses }] } as StatChart),
     },
     {
       label: 'Active Forms',
-      value: String(activeForms),
+      value: count(activeForms),
       unit: totalForms > 0 ? `/ ${totalForms}` : undefined,
       icon: FileCheck2,
       muted: activeForms === 0,
-      chart: totalForms > 0 ? { kind: 'progress', percent: Math.round((activeForms / totalForms) * 100) } : undefined,
     },
     {
       label: 'Avg. Responses / Form',
-      value: averageResponsesPerForm.toFixed(1),
+      value: average(averageResponsesPerForm),
       icon: BarChart3,
       muted: averageResponsesPerForm === 0,
       delta: delta(changes.average, periodLabel),
-      chart:
-        bars([...perFormResponses].sort((a, b) => a - b)) ??
-        ({ kind: 'progress', percent: Math.max(...perFormResponses, 0) > 0 ? Math.round((averageResponsesPerForm / Math.max(...perFormResponses)) * 100) : 0 } as StatChart),
     },
   ];
 
@@ -119,7 +97,6 @@ export function WorkspaceSummaryCards({
             valueClassName={!isLoading && card.muted ? 'text-(--text-disabled)' : undefined}
             note={sparse && ci === 0 ? NOT_ENOUGH_DATA : undefined}
             delta={isLoading || sparse ? undefined : card.delta}
-            chart={isLoading || sparse ? undefined : card.chart}
           />
         );
       })}

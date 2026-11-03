@@ -12,8 +12,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
 import { Menu } from '@/components/ui/Menu';
 import { Tooltip } from '@/components/ui/Tooltip';
-import { ProgressBar } from '@/components/ui/charts';
-import { Table, type TableColumn } from '@/components/ui/Table';
+import { Table, type TableColumn, type TableSort } from '@/components/ui/Table';
 import { FormTile } from '@/components/forms/FormTile';
 import { PaginationControls } from '@/components/responses/PaginationControls';
 import { computeChangePercent, formatChangeLabel } from '@/lib/analyticsChange';
@@ -41,7 +40,7 @@ interface FormsSummaryTableProps {
 }
 
 // "Form performance": one row per form — tinted icon (colour from its title), status, responses,
-// change vs the previous period, completion as a number plus a bar, and a ⋮ menu. The title links
+// change vs the previous period, completion as a number, and a ⋮ menu. The title links
 // to that form's own analytics. Search filters the rows already loaded (the summary fetch covers
 // up to 100 forms per page).
 export function FormsSummaryTable({
@@ -56,12 +55,18 @@ export function FormsSummaryTable({
 }: FormsSummaryTableProps) {
   const router = useRouter();
   const [search, setSearch] = useState('');
+  const [sort, setSort] = useState<TableSort | null>(null);
 
   const forms = useMemo(() => data?.forms ?? [], [data]);
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase();
-    return term ? forms.filter((f) => f.title.toLowerCase().includes(term)) : forms;
-  }, [forms, search]);
+    const found = term ? forms.filter((f) => f.title.toLowerCase().includes(term)) : forms;
+    if (!sort) return found;
+    const by = (f: AnalyticsFormSummary) => (sort.key === 'form' ? f.title.toLowerCase() : sort.key === 'status' ? f.status : f.totalResponses);
+    return [...found].sort((a, b) => (by(a) < by(b) ? -1 : by(a) > by(b) ? 1 : 0) * (sort.dir === 'asc' ? 1 : -1));
+  }, [forms, search, sort]);
+  // text first, then the biggest number first: the order a person expects the first time they press a header
+  const changeSort = (key: string) => setSort((s) => (s?.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: key === 'responses' ? 'desc' : 'asc' }));
 
   if (isLoading) {
     return (
@@ -119,13 +124,18 @@ export function FormsSummaryTable({
     return previous === undefined ? null : computeChangePercent(form.totalResponses, previous);
   };
 
+  // A column that is a dash in every row says nothing: it appears once at least one form has something to show.
+  const anyChange = forms.some((f) => changePercent(f) !== null);
+  const anyCompletion = forms.some((f) => typeof f.completionRate === 'number');
+
   const columns: TableColumn<AnalyticsFormSummary>[] = [
     {
       key: 'form',
       header: 'Form',
+      sortKey: 'form',
       render: (form) => (
         <div className="flex min-w-0 items-center gap-3">
-          <FormTile title={form.title} logoUrl={form.branding?.logoUrl} iconName={form.branding?.iconName} />
+          <FormTile title={form.title} logoUrl={form.branding?.logoUrl} iconName={form.branding?.iconName} size={32} />
           <Link href={`/forms/${form._id}/insights${wsQuery}`} className="bg-body-sm min-w-0 truncate font-semibold text-(--text-primary) hover:underline">
             {form.title}
           </Link>
@@ -135,17 +145,19 @@ export function FormsSummaryTable({
     {
       key: 'status',
       header: 'Status',
+      sortKey: 'status',
       render: (form) => <StatusBadge variant={form.status}>{STATUS_LABEL[form.status]}</StatusBadge>,
     },
     {
       key: 'responses',
       header: 'Responses',
-      render: (form) => <span className="bg-body-sm tabular-nums text-(--text-primary)">{form.totalResponses}</span>,
+      sortKey: 'responses',
+      render: (form) => <span className="bg-body-sm tabular-nums text-(--text-primary)">{form.totalResponses.toLocaleString('en-US')}</span>,
     },
-    {
+    ...(anyChange ? [{
       key: 'change',
       header: 'Change',
-      render: (form) => {
+      render: (form: AnalyticsFormSummary) => {
         const change = changePercent(form);
         return (
           <span
@@ -158,12 +170,12 @@ export function FormsSummaryTable({
           </span>
         );
       },
-    },
-    {
+    }] : []),
+    ...(anyCompletion ? [{
       key: 'completion',
       header: 'Completion Rate',
       // Sprint 14 (OQ-3): null = no counted views - "—" with a tooltip, never 0%.
-      render: (form) =>
+      render: (form: AnalyticsFormSummary) =>
         form.completionRate === null || form.completionRate === undefined ? (
           <Tooltip content={completionRateUnavailableReason(form.totalResponses, form.views)}>
             <span tabIndex={0} className="bg-body-sm text-(--text-muted)">
@@ -172,12 +184,9 @@ export function FormsSummaryTable({
             </span>
           </Tooltip>
         ) : (
-          <div className="flex items-center gap-3">
-            <span className="w-10 bg-body-sm tabular-nums text-(--text-primary)">{Math.round(form.completionRate)}%</span>
-            <ProgressBar percent={form.completionRate} width={110} />
-          </div>
+          <span className="bg-body-sm tabular-nums text-(--text-primary)">{Math.round(form.completionRate)}%</span>
         ),
-    },
+    }] : []),
     {
       key: 'actions',
       header: '',
@@ -213,6 +222,9 @@ export function FormsSummaryTable({
           columns={columns}
           rows={visible}
           rowKey={(form) => form._id}
+          dense
+          sort={sort ?? undefined}
+          onSortChange={changeSort}
           emptyState={<EmptyState illustration="no-results" icon={<Search />} title="No matching forms" description="Try a different search term." />}
         />
       </Card>
