@@ -34,6 +34,8 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  /* Tailwind's own rounded-full is an infinite size, which the CSS minifier turned into a "leaf" (two big corners, two small) on every round photo and logo. A plain number is safe. */
+  --radius-full: 9999px;
 
   /* Custom animations */
   --animate-fade-up: fadeUp 0.4s ease-out both;
