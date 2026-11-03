@@ -25,8 +25,9 @@ export function snapshotStyle(layout: LayoutPreset, branding: FormBranding): { l
   const out: Record<string, unknown> = {};
   for (const k of STYLE_KEYS) if (branding[k] !== undefined && branding[k] !== null) out[k] = branding[k];
   for (const k of ['coverImageUrl', 'backgroundImageUrl'] as const) if (isBuiltInPictureUrl(branding[k])) out[k] = branding[k];
-  const theme = cleanTheme(branding.theme);
-  if (theme) out.theme = theme;
+  // a photographer's credit belongs to a photo, and a style keeps no outside photo
+  const { credit: _credit, ...theme } = cleanTheme(branding.theme) ?? { v: 1 as const };
+  if (Object.keys(theme).length > 1) out.theme = theme;
   return { layout, branding: out as StyleBranding };
 }
 

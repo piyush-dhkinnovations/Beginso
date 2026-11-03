@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { LayoutPreset } from '@/types/form';
 import type { PublicFormBranding } from '@/types/publicForm';
-import { brandCardClass, brandLookProps, brandTypeStyle, brandWashStyle } from '@/lib/formTheme';
+import { UNSPLASH_HOME, brandCardClass, brandLookProps, brandTypeStyle, brandWashStyle, creditsToShow } from '@/lib/formTheme';
 import { Wordmark } from '@/components/landing/Wordmark';
 
 // Sprint 13 (CF2.7), design.md §7. Every layout is a presentation FRAME around the form body that
@@ -35,8 +35,31 @@ export function Backdrop({ branding, previewMode, children }: { branding: Public
       <LookScope branding={branding} className={`flex flex-1 justify-center items-start md:items-center ${branding.backgroundStyle === 'none' ? 'p-2' : 'p-4 md:p-10'}`}>
         {children}
       </LookScope>
+      <PhotoCredits branding={branding} />
       {!previewMode && <MadeWithBeginso />}
     </div>
+  );
+}
+
+/** "Photo by <photographer> on Unsplash", for each Unsplash photo in use on the form (Unsplash's rule for using their photos). Nothing when there is none. */
+export function PhotoCredits({ branding }: { branding: PublicFormBranding }) {
+  const credits = creditsToShow(branding);
+  if (credits.length === 0) return null;
+  return (
+    <p className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-4 pb-16 bg-caption text-(--text-muted) md:pb-20">
+      {credits.map((c) => (
+        <span key={c.url} className="rounded-full bg-(--surface-card) px-3 py-1">
+          Photo by{' '}
+          <a href={c.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-(--text-primary)">
+            {c.name}
+          </a>{' '}
+          on{' '}
+          <a href={UNSPLASH_HOME} target="_blank" rel="noopener noreferrer" className="underline hover:text-(--text-primary)">
+            Unsplash
+          </a>
+        </span>
+      ))}
+    </p>
   );
 }
 

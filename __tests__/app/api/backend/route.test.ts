@@ -130,6 +130,16 @@ describe('BFF proxy — allowlist', () => {
     }
   });
 
+  // Photos from Unsplash (the picture picker) live under their own root, like the roots above.
+  it('allows GET and POST under /api/unsplash', async () => {
+    const { POST } = await import('@/app/api/backend/[...path]/route');
+    const res = await GET(makeRequest('api/unsplash/featured'), { params: Promise.resolve({ path: ['api', 'unsplash', 'featured'] }) });
+    expect(res.status).not.toBe(404);
+    const path = ['api', 'unsplash', 'download'];
+    const post = await POST(new NextRequest(`http://localhost/api/backend/${path.join('/')}`, { method: 'POST', body: '{}' }), { params: Promise.resolve({ path }) });
+    expect(post.status).not.toBe(404);
+  });
+
   it('rejects an unknown root with 404 "Backend path is not allowed"', async () => {
     const req = makeRequest('api/not-a-real-root');
     const res = await GET(req, { params: Promise.resolve({ path: ['api', 'not-a-real-root'] }) });

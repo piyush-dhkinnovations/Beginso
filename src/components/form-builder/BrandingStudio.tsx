@@ -14,11 +14,11 @@ import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { Segmented } from '@/components/ui/Segmented';
 import type { PreviewDevice } from '@/components/preview/DeviceToggle';
-import { FONT_GROUPS, FORM_FONT_OPTIONS, PAGE_BACKGROUND_OPTIONS, brandCardClass, brandWashStyle, patchTheme } from '@/lib/formTheme';
+import { FONT_GROUPS, FORM_FONT_OPTIONS, PAGE_BACKGROUND_OPTIONS, brandCardClass, brandWashStyle, cleanTheme, patchTheme, withCredit } from '@/lib/formTheme';
 import { lookBranding } from '@/lib/layoutPresets';
 import { uploadService } from '@/services/upload';
 import { bx } from '@/lib/utils';
-import type { BannerLink, ButtonRadius, FormTheme, ButtonStyle, CardStyle, CoverFit, CoverPosition, FieldGrouping, FormBranding, FormFont, FormSpacing, FormWidth, LayoutPreset, LogoSize, PageBackground, PanelTreatment, TypeScale } from '@/types/form';
+import type { BannerLink, ButtonRadius, FormTheme, ButtonStyle, CardStyle, CoverFit, CoverPosition, FieldGrouping, FormBranding, FormFont, FormSpacing, FormWidth, LayoutPreset, LogoSize, PageBackground, PanelTreatment, PhotoCredit, TypeScale } from '@/types/form';
 import { ImageUploadZone } from './BrandingPanel';
 import { LayoutChooser } from './LayoutChooser';
 import { PictureChoice } from './PicturePicker';
@@ -237,12 +237,18 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
   const links = branding.bannerLinks ?? [];
   const setLink = (i: number, change: Partial<BannerLink>) => set({ bannerLinks: links.map((l, j) => (j === i ? { ...l, ...change } : l)) });
   const coverFit: CoverFit = branding.coverFit ?? (branding.coverImageUrl ? 'banner' : 'original');
+  // A picture change also sets (an Unsplash photo) or clears (anything else) that picture's photographer credit, so a credit never outlives its photo.
+  const setPicture = (slot: 'cover' | 'background', patch: Partial<FormBranding>, credit?: PhotoCredit) => {
+    const had = !!cleanTheme(theme)?.credit?.[slot];
+    set({ ...patch, ...(credit || had ? { theme: withCredit(theme, slot, credit) } : {}) });
+  };
 
   const upload = async (file: File, key: 'logoUrl' | 'coverImageUrl' | 'backgroundImageUrl') => {
     try {
       const url = (await uploadService.uploadFile(file)).url;
       // a cover remembers how it was added, so the form shows it the same way (whole, or cropped to the banner)
-      set({ [key]: url, ...(key === 'coverImageUrl' ? { coverFit } : {}) });
+      if (key === 'logoUrl') set({ logoUrl: url });
+      else setPicture(key === 'coverImageUrl' ? 'cover' : 'background', { [key]: url, ...(key === 'coverImageUrl' ? { coverFit } : {}) });
     } catch (err) {
       toast(isAxiosError(err) && err.response?.status === 413 ? 'That image is too large. Use one under 5 MB.' : 'Upload failed. Check your connection.', 'error');
     }
@@ -304,10 +310,10 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
           </div>
         </div>
         {branding.backgroundStyle === 'image' && (
-          <PictureChoice label="Pictures to choose from" value={branding.backgroundImageUrl} onPick={(url) => set({ backgroundImageUrl: url })} />
+          <PictureChoice label="Pictures to choose from" value={branding.backgroundImageUrl} onPick={(url, credit) => setPicture('background', { backgroundImageUrl: url }, credit)} />
         )}
         {branding.backgroundStyle === 'image' && (
-          <ImageUploadZone label="Page background image" imageUrl={branding.backgroundImageUrl} aspect="banner" freeform onUpload={(file) => upload(file, 'backgroundImageUrl')} onRemove={() => set({ backgroundImageUrl: undefined, formWidth: undefined, coverFit: undefined })} />
+          <ImageUploadZone label="Page background image" imageUrl={branding.backgroundImageUrl} aspect="banner" freeform onUpload={(file) => upload(file, 'backgroundImageUrl')} onRemove={() => setPicture('background', { backgroundImageUrl: undefined, formWidth: undefined, coverFit: undefined })} />
         )}
         {(branding.backgroundStyle ?? 'wash') !== 'plain' && branding.backgroundStyle !== 'image' && (
           <div className="flex flex-col gap-1">
@@ -458,8 +464,8 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
           {branding.coverImageUrl && coverFit === 'banner' && (
             <ChipChoice<CoverPosition> label="Show the" value={branding.coverPosition ?? 'center'} options={[{ value: 'top', label: 'Top' }, { value: 'center', label: 'Middle' }, { value: 'bottom', label: 'Bottom' }]} onChange={(coverPosition) => set({ coverPosition })} />
           )}
-          <PictureChoice label="Pictures to choose from" value={branding.coverImageUrl} onPick={(url) => set({ coverImageUrl: url, coverFit })} />
-          <ImageUploadZone label="Cover image" imageUrl={branding.coverImageUrl} aspect="banner" freeform={coverFit === 'original'} onUpload={(file) => upload(file, 'coverImageUrl')} onRemove={() => set({ coverImageUrl: undefined })} />
+          <PictureChoice label="Pictures to choose from" value={branding.coverImageUrl} onPick={(url, credit) => setPicture('cover', { coverImageUrl: url, coverFit }, credit)} />
+          <ImageUploadZone label="Cover image" imageUrl={branding.coverImageUrl} aspect="banner" freeform={coverFit === 'original'} onUpload={(file) => upload(file, 'coverImageUrl')} onRemove={() => setPicture('cover', { coverImageUrl: undefined })} />
         </div>
       </>
     ),

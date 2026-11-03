@@ -194,6 +194,13 @@ export interface FormTheme {
   layout?: { maxWidth?: number; fieldGap?: number; /** Split Feature: which side the picture panel is on (start = the left in left-to-right languages). */ panelSide?: 'start' | 'end' };
   /** The typeface of the headings (the form title and page titles); absent = the same as the form's font. */
   fonts?: { heading?: FormFont };
+  /** Who took the Unsplash photo used as the cover and/or the page background (one credit each), shown on the form. Only an unsplash.com profile address. */
+  credit?: { cover?: PhotoCredit; background?: PhotoCredit };
+}
+
+export interface PhotoCredit {
+  name: string;
+  url: string;
 }
 export type PageBackground = 'wash' | 'plain' | 'solid' | 'gradient' | 'mesh' | 'dots' | 'grid' | 'image';
 

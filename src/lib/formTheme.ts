@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { FieldStyle, FormBranding, FormFont, FormTheme, LayoutPreset } from '@/types/form';
+import type { FieldStyle, FormBranding, FormFont, FormTheme, LayoutPreset, PhotoCredit } from '@/types/form';
 import { safeHttpUrl } from '@/lib/fieldDisplay';
 import { uploadSrc } from '@/lib/uploadSrc';
 import { isBuiltInPictureUrl } from '@/lib/formPictures';
@@ -210,7 +210,25 @@ export function cleanTheme(raw: unknown): FormTheme | undefined {
   }
   const heading = t.fonts?.heading;
   if (typeof heading === 'string' && FORM_FONT_OPTIONS.some((f) => f.value === heading)) out.fonts = { heading };
+  const credit: Record<string, PhotoCredit> = {};
+  for (const slot of ['cover', 'background'] as const) {
+    const c = cleanCredit((t.credit as Record<string, unknown> | undefined)?.[slot]);
+    if (c) credit[slot] = c;
+  }
+  if (Object.keys(credit).length) out.credit = credit;
   return Object.keys(out).length ? ({ v: 1, ...out } as FormTheme) : undefined;
+}
+
+const CREDIT_URL = /^https:\/\/unsplash\.com\/(@[A-Za-z0-9_.-]{1,60})?(\?[A-Za-z0-9_=&%.-]{0,120})?$/;
+
+/** A photographer's credit as the backend accepts it: a name without control characters or markup, and an unsplash.com profile address. Anything else is nothing. */
+export function cleanCredit(raw: unknown): PhotoCredit | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const { name, url } = raw as { name?: unknown; url?: unknown };
+  if (typeof name !== 'string' || typeof url !== 'string') return undefined;
+  const n = name.trim();
+  if (!n || n.length > 80 || /[\u0000-\u001f\u007f<>]/.test(n) || url.length > 300 || !CREDIT_URL.test(url)) return undefined;
+  return { name: n, url };
 }
 
 /** What each layout can show of the new options, and why not when it cannot. */
@@ -308,4 +326,32 @@ export function brandLookProps(b: Pick<FormBranding, 'theme'>): { className: str
     'data-field-gap': t?.layout?.fieldGap !== undefined ? '' : undefined,
     'data-panel-end': t?.layout?.panelSide === 'end' ? '' : undefined,
   };
+}
+
+// ── Photographer credit for Unsplash photos ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+// Unsplash asks that a photo used from its library is credited with a link to the photographer and to Unsplash. The credit rides in the theme, one for the
+// cover and one for the page background, and is shown on the form only while its photo is in use.
+
+export const UNSPLASH_HOME = 'https://unsplash.com/?utm_source=beginso&utm_medium=referral';
+export const isUnsplashImage = (url: string | null | undefined): url is string => typeof url === 'string' && url.startsWith('https://images.unsplash.com/');
+
+/** The theme with one picture's credit set, or taken out when `credit` is undefined; an emptied theme is null (how a save clears it). */
+export function withCredit(theme: FormTheme | null | undefined, slot: 'cover' | 'background', credit?: PhotoCredit): FormTheme | null {
+  const next: FormTheme = { ...(theme ?? { v: 1 }), v: 1 };
+  const credits = { ...next.credit };
+  if (credit) credits[slot] = credit;
+  else delete credits[slot];
+  if (Object.keys(credits).length) next.credit = credits;
+  else delete next.credit;
+  return Object.keys(next).length > 1 ? next : null;
+}
+
+/** The credits to show on a form: one for each Unsplash picture actually in use (the cover, and the background while the page background is a picture). */
+export function creditsToShow(b: Pick<FormBranding, 'theme' | 'coverImageUrl' | 'backgroundImageUrl'> & { backgroundStyle?: string }): PhotoCredit[] {
+  const credit = cleanTheme(b.theme)?.credit;
+  if (!credit) return [];
+  const list: PhotoCredit[] = [];
+  if (credit.cover && isUnsplashImage(b.coverImageUrl)) list.push(credit.cover);
+  if (credit.background && b.backgroundStyle === 'image' && isUnsplashImage(b.backgroundImageUrl)) list.push(credit.background);
+  return list.filter((c, i) => list.findIndex((o) => o.url === c.url) === i);
 }
