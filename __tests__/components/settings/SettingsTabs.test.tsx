@@ -72,4 +72,24 @@ describe('SettingsTabs', () => {
     fireEvent.keyDown(screen.getByRole('tab', { name: 'Profile' }), { key: 'ArrowRight' });
     expect(onChange).toHaveBeenCalledWith('appearance');
   });
+
+  it('puts a small icon at the start of every section (decoration only: the name is the word)', () => {
+    render(<SettingsTabs activeTab="profile" onChange={vi.fn()} visible={['profile', 'appearance', 'workspace', 'branding', 'notifications', 'tags', 'stages', 'scoring', 'security', 'sessions', 'data']} />);
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs).toHaveLength(11);
+    for (const tab of tabs) {
+      const icon = tab.querySelector('svg');
+      expect(icon, `${tab.textContent} has an icon`).not.toBeNull();
+      expect(icon!.closest('[aria-hidden="true"]')).not.toBeNull();
+      // the icon comes first, before the words
+      expect(tab.querySelector('span')!.firstElementChild).toContainElement(icon as SVGElement);
+    }
+    expect(screen.getByRole('tab', { name: 'Appearance' })).toBeInTheDocument();
+  });
+
+  it('gives every section a different icon, so they can be told apart by shape', () => {
+    render(<SettingsTabs activeTab="profile" onChange={vi.fn()} visible={['profile', 'appearance', 'workspace', 'branding', 'notifications', 'tags', 'stages', 'scoring', 'security', 'sessions', 'data']} />);
+    const shapes = screen.getAllByRole('tab').map((t) => t.querySelector('svg')!.getAttribute('class'));
+    expect(new Set(shapes).size).toBe(11);
+  });
 });

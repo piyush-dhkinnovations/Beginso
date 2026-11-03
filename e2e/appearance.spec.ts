@@ -72,10 +72,9 @@ test('Light, Paper and Extra large: applied at once, saved, and in place before 
 test('the Theme decides which style sections show, and a hidden section keeps its choice', async ({ page, context }) => {
   await install(context);
   await openAppearance(page);
-  await page.getByRole('radio', { name: /^Mist/ }).click();
-  await page.getByRole('radio', { name: /^Dimmed/ }).click();
-
+  await page.getByRole('radio', { name: /^Mist/ }).click(); // System on a light device shows the light styles
   await page.getByRole('radio', { name: /^Dark/ }).click();
+  await page.getByRole('radio', { name: /^Dimmed/ }).click();
   await expect(page.getByRole('radio', { name: /^Mist/ })).toHaveCount(0);
   await expect(page.getByRole('radio', { name: /^Dimmed/ })).toHaveAttribute('aria-checked', 'true');
   expect(await html(page)).toMatchObject({ theme: 'dark', dark: 'dimmed', light: null });
@@ -85,18 +84,25 @@ test('the Theme decides which style sections show, and a hidden section keeps it
   await expect(page.getByRole('radio', { name: /^Mist/ })).toHaveAttribute('aria-checked', 'true');
   expect(await html(page)).toMatchObject({ theme: null, dark: null, light: 'mist' });
 
+  // System looks at the device: in light mode only the light styles show, in dark mode only the dark ones, and the other choice is kept
+  await page.emulateMedia({ colorScheme: 'light' });
   await page.getByRole('radio', { name: /^System/ }).click();
-  await expect(page.getByText('Used when your device is in light mode.')).toBeVisible();
-  await expect(page.getByText('Used when your device is in dark mode.')).toBeVisible();
+  await expect(page.getByText(/Used while your device is in light mode/)).toBeVisible();
   await expect(page.getByRole('radio', { name: /^Mist/ })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio', { name: /^Dimmed/ })).toHaveCount(0);
+  await page.emulateMedia({ colorScheme: 'dark' }); // the device switches while the page is open
+  await expect(page.getByText(/Used while your device is in dark mode/)).toBeVisible();
   await expect(page.getByRole('radio', { name: /^Dimmed/ })).toHaveAttribute('aria-checked', 'true');
+  await expect(page.getByRole('radio', { name: /^Mist/ })).toHaveCount(0);
 });
 
 test('System follows the device: the light style by day, the dark style by night, each with its own saved choice', async ({ page, context }) => {
   await install(context);
   await openAppearance(page);
   await page.getByRole('radio', { name: /^Paper/ }).click();
+  await page.getByRole('radio', { name: /^Dark/ }).click();
   await page.getByRole('radio', { name: /^Midnight/ }).click();
+  await page.getByRole('radio', { name: /^System/ }).click();
   await page.emulateMedia({ colorScheme: 'light' });
   await page.reload({ waitUntil: 'domcontentloaded' });
   expect(await html(page)).toMatchObject({ theme: null, light: 'paper', dark: null });
