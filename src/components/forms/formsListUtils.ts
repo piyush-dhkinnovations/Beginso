@@ -28,6 +28,8 @@ export const SERVER_SORT_FIELD: Record<string, 'title' | 'status' | 'updatedAt' 
   updated: 'updatedAt',
 };
 
+// The caller's pinned forms stay on top, whatever the column: the pinned group first, then the rest, each in the chosen order (the server
+// does the same for the sorts it can do; this keeps it true for the ones it cannot).
 export function sortForms(forms: Form[], { key, dir }: TableSort): Form[] {
   const sign = dir === 'asc' ? 1 : -1;
   const cmp: Record<string, (a: Form, b: Form) => number> = {
@@ -36,7 +38,7 @@ export function sortForms(forms: Form[], { key, dir }: TableSort): Form[] {
     responses: (a, b) => a.responseCount - b.responseCount,
     updated: (a, b) => a.updatedAt.localeCompare(b.updatedAt),
   };
-  return [...forms].sort((a, b) => sign * (cmp[key] ?? cmp.updated)(a, b));
+  return [...forms].sort((a, b) => Number(!!b.pinned) - Number(!!a.pinned) || sign * (cmp[key] ?? cmp.updated)(a, b));
 }
 
 // "26 Sep 2026, 12:30" — day-first, three-letter month, 24-hour. Built from parts because the en-GB
