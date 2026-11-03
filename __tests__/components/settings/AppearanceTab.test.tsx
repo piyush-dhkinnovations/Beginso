@@ -234,22 +234,22 @@ describe('AppearanceTab', () => {
     expect(screen.getByRole('radio', { name: /^Large/ })).toHaveAttribute('aria-checked', 'true');
   });
 
-  it('Text size: three boxes in one radio group, Default selected, each drawn at its own size, and a note that it is saved on this device only', () => {
+  it('Text size: three boxes in one radio group, Default selected, each shown as a letter A, and a note that it is saved on this device only', () => {
     renderTab();
     expect(screen.getByRole('radiogroup', { name: 'Text size' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /^Default/ })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('radio', { name: /^Large/ })).toHaveAttribute('aria-checked', 'false');
     expect(screen.getByRole('radio', { name: /^Extra large/ })).toHaveAttribute('aria-checked', 'false');
-    expect(screen.getAllByText('Your forms')).toHaveLength(3);
+    expect(screen.getAllByText('A')).toHaveLength(3);
     expect(screen.getByText(/Makes text, buttons and spacing bigger/)).toHaveTextContent('Saved on this device only');
   });
 
-  it('Text size: every box shows its own real size (16px, 18px, 20px) at once, whatever size the page is at now and whichever is chosen', () => {
+  it('Text size: every box shows its own letter size (36px, 52px, 72px) at once, whatever size the page is at now and whichever is chosen', () => {
     renderTab();
-    const sizes = () => screen.getAllByText('Your forms').map((n) => (n.parentElement as HTMLElement).style.fontSize);
-    expect(sizes()).toEqual(['16px', '18px', '20px']);
+    const sizes = () => screen.getAllByText('A').map((n) => n.style.width);
+    expect(sizes()).toEqual(['36px', '52px', '72px']);
     fireEvent.click(screen.getByRole('radio', { name: /^Extra large/ }));
-    expect(sizes()).toEqual(['16px', '18px', '20px']);
+    expect(sizes()).toEqual(['36px', '52px', '72px']);
   });
 
   it('Text size: choosing one applies it at once, saves it on this device only, and Default clears it', () => {

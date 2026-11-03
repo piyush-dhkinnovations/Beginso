@@ -9,7 +9,6 @@ import { useToast } from '@/components/ui/Toast';
 import { SegmentedRadio } from '@/components/ui/SegmentedRadio';
 import { bx } from '@/lib/utils';
 import {
-  TEXT_SCALE,
   applyTextSize,
   applyTheme,
   readDarkVariant,
@@ -81,7 +80,7 @@ function StyleGroup<T extends string>({ labelledBy, options, value, onChange, lo
   value: T;
   onChange: (next: T) => void;
   look?: (id: T) => Look;
-  /** What to draw in the box instead of the colour swatch (the text size boxes draw a sample at their own size). */
+  /** What to draw instead of the colour swatch, with no inner box (the text size boxes draw a letter A at their own size). */
   thumb?: (id: T) => React.ReactNode;
   thumbClass?: string;
 }) {
@@ -95,7 +94,7 @@ function StyleGroup<T extends string>({ labelledBy, options, value, onChange, lo
     refs.current[next]?.focus();
   }
   return (
-    <div role="radiogroup" aria-labelledby={labelledBy} className="grid grid-cols-3 gap-3">
+    <div role="radiogroup" aria-labelledby={labelledBy} className={bx(thumb ? 'flex flex-wrap gap-x-6 gap-y-4' : 'grid grid-cols-3 gap-3')}>
       {options.map((o, i) => {
         const checked = value === o.id;
         return (
@@ -109,13 +108,14 @@ function StyleGroup<T extends string>({ labelledBy, options, value, onChange, lo
             onClick={() => onChange(o.id)}
             onKeyDown={(e) => onKeyDown(e, i)}
             className={bx(
-              'flex flex-col gap-2 rounded-xl border p-2 text-left outline-none transition-colors focus-visible:shadow-(--shadow-focus)',
-              checked ? 'border-(--action-primary) bg-(--surface-card) ring-1 ring-(--action-primary)' : 'border-(--border-default) bg-(--surface-card) hover:border-(--border-strong)',
+              'flex flex-col gap-2 rounded-xl p-2 text-left outline-none transition-colors focus-visible:shadow-(--shadow-focus)',
+              // the text size options are bare: the circle itself shows which is chosen, with no card around it
+              thumb ? 'w-36 items-center text-center' : checked ? 'border border-(--action-primary) bg-(--surface-card) ring-1 ring-(--action-primary)' : 'border border-(--border-default) bg-(--surface-card) hover:border-(--border-strong)',
             )}
           >
-            <span className={bx('block overflow-hidden rounded-lg border border-(--border-subtle)', thumbClass)}>{thumb ? thumb(o.id) : <Swatch look={look!(o.id)} />}</span>
-            <span className="flex flex-col px-0.5 pb-0.5">
-              <span className="flex items-center justify-between gap-2 bg-body-sm font-semibold text-(--text-primary)">
+            {thumb ? <span className={bx('block', thumbClass)}>{thumb(o.id)}</span> : <span className={bx('block overflow-hidden rounded-lg border border-(--border-subtle)', thumbClass)}><Swatch look={look!(o.id)} /></span>}
+            <span className={bx('flex flex-col px-0.5 pb-0.5', thumb && 'items-center')}>
+              <span className={bx('flex items-center gap-2', thumb ? 'justify-center' : 'justify-between', 'bg-body-sm font-semibold text-(--text-primary)')}>
                 {o.label}
                 {checked && <Check size={14} className="text-(--action-primary)" aria-hidden="true" />}
               </span>
@@ -128,17 +128,18 @@ function StyleGroup<T extends string>({ labelledBy, options, value, onChange, lo
   );
 }
 
-/** A heading, a line of text and a button at one size. In real pixels on purpose: each box shows its own size whatever size the page is at now. */
-function TextThumb({ size }: { size: TextSize }) {
+/** A round badge with the letter A in it, at three clearly different sizes, so the choice reads at a glance: small, bigger, biggest. The chosen one has a ring. */
+const BADGE_PX: Record<TextSize, number> = { default: 36, large: 52, xlarge: 72 };
+function TextThumb({ size, checked }: { size: TextSize; checked: boolean }) {
+  const px = BADGE_PX[size];
   return (
-    <span
-      aria-hidden="true"
-      className="flex h-full flex-col justify-center gap-1 overflow-hidden bg-(--bg-subtle) px-3"
-      style={{ fontSize: `${16 * TEXT_SCALE[size]}px`, lineHeight: 1.25 }}
-    >
-      <span className="font-bold text-(--text-primary)" style={{ fontSize: '1.25em' }}>Your forms</span>
-      <span className="truncate text-(--text-secondary)" style={{ fontSize: '0.8125em' }}>3 responses waiting.</span>
-      <span className="mt-0.5 w-fit rounded-md bg-(--action-primary) font-medium text-(--text-on-brand)" style={{ fontSize: '0.8125em', padding: '0.3em 0.8em' }}>Create form</span>
+    <span aria-hidden="true" className="flex h-full items-center justify-center">
+      <span
+        className={bx('flex items-center justify-center rounded-full bg-(--action-primary) font-semibold leading-none text-(--text-on-brand) transition-shadow', checked && 'outline-2 outline-offset-4 outline-(--action-primary)')}
+        style={{ width: px, height: px, fontSize: `${px * 0.45}px` }}
+      >
+        A
+      </span>
     </span>
   );
 }
@@ -278,7 +279,7 @@ export function AppearanceTab() {
       )}
 
       <Section id="appearance-text" title="Text size" description="Makes text, buttons and spacing bigger across Beginso. Saved on this device only.">
-        <StyleGroup labelledBy="appearance-text" options={TEXT_SIZES} value={text} onChange={chooseText} thumb={(id) => <TextThumb size={id} />} thumbClass="h-28" />
+        <StyleGroup labelledBy="appearance-text" options={TEXT_SIZES} value={text} onChange={chooseText} thumb={(id) => <TextThumb size={id} checked={text === id} />} thumbClass="h-20" />
       </Section>
     </div>
   );
