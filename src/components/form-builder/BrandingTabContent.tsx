@@ -44,7 +44,7 @@ export function BrandingTabContent({ formId, formTitle, branding, settings, fiel
           isPublic={isPublic}
           onPick={(next) => {
             onLayoutChange(next);
-            onBrandingUpdate(lookBranding(next, branding));
+            onBrandingUpdate(lookBranding(next, branding, false, layout));
           }}
         />
         <Alert variant="info" title="Detailed branding needs a larger screen">

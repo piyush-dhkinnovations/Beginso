@@ -4,7 +4,7 @@
  */
 
 import type { Control, FieldError, UseFormRegister, UseFormSetValue, UseFormTrigger } from 'react-hook-form';
-import type { FormField, FormPage, FormSettings } from '@/types/form';
+import type { FormField, FormPage, FormSettings, FormTheme } from '@/types/form';
 
 // ─── API Response: GET /api/public/:slug ──────────────────────────────────────
 
@@ -29,6 +29,7 @@ export interface PublicFormBranding {
   formWidth?: 'narrow' | 'standard' | 'wide';
   coverFit?: 'banner' | 'original';
   logoSize?: 'sm' | 'md' | 'lg';
+  theme?: FormTheme | null;
   iconName?: string;
   bannerText?: string;
   bannerLinks?: { label?: string; url: string }[];

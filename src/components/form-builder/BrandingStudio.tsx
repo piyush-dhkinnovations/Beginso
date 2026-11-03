@@ -13,13 +13,14 @@ import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { Segmented } from '@/components/ui/Segmented';
 import type { PreviewDevice } from '@/components/preview/DeviceToggle';
-import { FORM_FONT_OPTIONS, PAGE_BACKGROUND_OPTIONS, brandCardClass, brandWashStyle } from '@/lib/formTheme';
+import { FORM_FONT_OPTIONS, PAGE_BACKGROUND_OPTIONS, brandCardClass, brandWashStyle, patchTheme } from '@/lib/formTheme';
 import { lookBranding } from '@/lib/layoutPresets';
 import { uploadService } from '@/services/upload';
 import { bx } from '@/lib/utils';
-import type { BannerLink, ButtonRadius, ButtonStyle, CardStyle, CoverFit, CoverPosition, FieldGrouping, FormBranding, FormFont, FormSpacing, FormWidth, LayoutPreset, LogoSize, PageBackground, PanelTreatment, TypeScale } from '@/types/form';
+import type { BannerLink, ButtonRadius, FormTheme, ButtonStyle, CardStyle, CoverFit, CoverPosition, FieldGrouping, FormBranding, FormFont, FormSpacing, FormWidth, LayoutPreset, LogoSize, PageBackground, PanelTreatment, TypeScale } from '@/types/form';
 import { ImageUploadZone } from './BrandingPanel';
 import { LayoutChooser } from './LayoutChooser';
+import { CustomBadge, FieldsLook, FineTune, FormColours, type SetTheme } from './LookControls';
 import { ZOOM_STEPS } from '@/lib/previewZoom';
 import { LiveFormPreview } from './LiveFormPreview';
 
@@ -43,23 +44,24 @@ const COLUMNS = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' } as cons
 const BACKGROUND_NAME: Record<string, string> = { wash: 'Glow', plain: 'Plain', solid: 'Solid', gradient: 'Gradient', mesh: 'Mesh', dots: 'Dots', grid: 'Grid', image: 'Image' };
 
 /** A few set choices, one click each: a row of buttons, the chosen one marked. Faster to use (and to see) than a drop-down. */
-function ChipChoice<T extends string>({ label, value, options, onChange, columns = 3 }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (value: T) => void; columns?: 2 | 3 | 4 }) {
+function ChipChoice<T extends string>({ label, value, options, onChange, columns = 3, custom }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (value: T) => void; columns?: 2 | 3 | 4; custom?: boolean }) {
   const id = useId();
   return (
     <div role="group" aria-labelledby={id} className="flex flex-col gap-2">
       <span id={id} className="bg-label">
         {label}
+        {custom && <CustomBadge />}
       </span>
       <div className={bx('grid gap-2', COLUMNS[columns])}>
         {options.map((o) => (
           <button
             key={o.value}
             type="button"
-            aria-pressed={value === o.value}
+            aria-pressed={!custom && value === o.value}
             onClick={() => onChange(o.value)}
             className={bx(
               'min-h-10 rounded-lg border-2 px-2 bg-body-sm font-medium focus-visible:outline-2 focus-visible:outline-(--border-focus)',
-              value === o.value ? 'border-(--action-primary) bg-(--accent-soft) text-(--text-primary)' : 'border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)',
+              !custom && value === o.value ? 'border-(--action-primary) bg-(--accent-soft) text-(--text-primary)' : 'border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)',
             )}
           >
             {o.label}
@@ -78,21 +80,24 @@ const CARD_STYLES: { value: CardStyle; label: string }[] = [
   { value: 'elevated', label: 'Elevated' },
 ];
 
-function CardStyleTiles({ value, brand, onChange }: { value: CardStyle; brand: string; onChange: (value: CardStyle) => void }) {
+function CardStyleTiles({ value, brand, onChange, custom }: { value: CardStyle; brand: string; onChange: (value: CardStyle) => void; custom?: boolean }) {
   const id = useId();
   return (
     <div role="group" aria-labelledby={id} className="flex flex-col gap-2">
-      <span id={id} className="bg-label">Card</span>
+      <span id={id} className="bg-label">
+        Card
+        {custom && <CustomBadge />}
+      </span>
       <div className="grid grid-cols-2 gap-2">
         {CARD_STYLES.map((o) => (
           <button
             key={o.value}
             type="button"
-            aria-pressed={value === o.value}
+            aria-pressed={!custom && value === o.value}
             onClick={() => onChange(o.value)}
             className={bx(
               'flex flex-col gap-2 rounded-lg border-2 p-2 bg-body-sm font-medium focus-visible:outline-2 focus-visible:outline-(--border-focus)',
-              value === o.value ? 'border-(--action-primary) bg-(--accent-soft) text-(--text-primary)' : 'border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)',
+              !custom && value === o.value ? 'border-(--action-primary) bg-(--accent-soft) text-(--text-primary)' : 'border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)',
             )}
           >
             {/* a page with a card on it, drawn with the same classes as the real form card */}
@@ -194,6 +199,17 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
   const { toast } = useToast();
   const uid = useId();
   const set = onBrandingUpdate;
+  const theme = branding.theme;
+  // One group of branding.theme at a time; an emptied theme is saved as null, which clears it on the server.
+  const setTheme: SetTheme = (group, patch) => set({ theme: patchTheme(theme, group, patch) });
+  // Choosing a preset where an exact value is in use puts the preset back and says so, with an Undo that restores both.
+  const pickPreset = (apply: Partial<FormBranding>, cleared: FormTheme | null, had: boolean, what: string) => {
+    const before: Partial<FormBranding> = { theme: theme ?? null };
+    for (const k of Object.keys(apply)) (before as Record<string, unknown>)[k] = branding[k as keyof FormBranding];
+    // the theme is only touched when an exact value was in use: a form without one sends exactly what it always sent
+    set({ ...apply, ...(had ? { theme: cleared } : {}) });
+    if (had) toast(`${what} is back to the preset.`, 'info', undefined, { label: 'Undo', onClick: () => set(before) });
+  };
   const brand = branding.primaryColor ?? DEFAULT_COLOR;
   const links = branding.bannerLinks ?? [];
   const setLink = (i: number, change: Partial<BannerLink>) => set({ bannerLinks: links.map((l, j) => (j === i ? { ...l, ...change } : l)) });
@@ -217,7 +233,7 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
         isPublic={isPublic}
         onPick={(next) => {
           onLayoutChange(next);
-          set(lookBranding(next, branding));
+          set(lookBranding(next, branding, false, layout));
         }}
       />
     ),
@@ -278,6 +294,7 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
             )}
           </div>
         )}
+        <FormColours branding={branding} setTheme={setTheme} onBrand={(primaryColor) => set({ primaryColor })} />
       </>
     ),
     text: (
@@ -315,9 +332,26 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
     ),
     style: (
       <>
-        <CardStyleTiles value={branding.cardStyle ?? 'soft'} brand={brand} onChange={(cardStyle) => set({ cardStyle })} />
-        <ChipChoice<FormWidth> label="Form width" value={branding.formWidth ?? 'standard'} options={[{ value: 'narrow', label: 'Narrow' }, { value: 'standard', label: 'Standard' }, { value: 'wide', label: 'Wide' }]} onChange={(formWidth) => set({ formWidth })} />
-        <ChipChoice<FormSpacing> label="Spacing" value={branding.spacing ?? 'comfortable'} options={[{ value: 'compact', label: 'Compact' }, { value: 'comfortable', label: 'Comfortable' }, { value: 'spacious', label: 'Spacious' }]} onChange={(spacing) => set({ spacing })} />
+        <CardStyleTiles
+          value={branding.cardStyle ?? 'soft'}
+          brand={brand}
+          custom={theme?.card?.radius !== undefined || theme?.card?.shadow !== undefined}
+          onChange={(cardStyle) => pickPreset({ cardStyle }, patchTheme(theme, 'card', { radius: undefined, shadow: undefined }), theme?.card?.radius !== undefined || theme?.card?.shadow !== undefined, 'The card')}
+        />
+        <ChipChoice<FormWidth>
+          label="Form width"
+          value={branding.formWidth ?? 'standard'}
+          custom={theme?.layout?.maxWidth !== undefined}
+          options={[{ value: 'narrow', label: 'Narrow' }, { value: 'standard', label: 'Standard' }, { value: 'wide', label: 'Wide' }]}
+          onChange={(formWidth) => pickPreset({ formWidth }, patchTheme(theme, 'layout', { maxWidth: undefined }), theme?.layout?.maxWidth !== undefined, 'The form width')}
+        />
+        <ChipChoice<FormSpacing>
+          label="Spacing"
+          value={branding.spacing ?? 'comfortable'}
+          custom={theme?.layout?.fieldGap !== undefined}
+          options={[{ value: 'compact', label: 'Compact' }, { value: 'comfortable', label: 'Comfortable' }, { value: 'spacious', label: 'Spacious' }]}
+          onChange={(spacing) => pickPreset({ spacing }, patchTheme(theme, 'layout', { fieldGap: undefined }), theme?.layout?.fieldGap !== undefined, 'The spacing')}
+        />
         <ChipChoice<FieldGrouping> label="Fields" value={branding.fieldGrouping ?? 'auto'} columns={2} options={[{ value: 'auto', label: 'Side by side' }, { value: 'single', label: 'One per row' }]} onChange={(fieldGrouping) => set({ fieldGrouping })} />
         <div className="flex items-center justify-between gap-3">
           <label htmlFor={`${uid}-progress`} className="bg-body-sm font-medium text-(--text-secondary)">
@@ -325,6 +359,13 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
           </label>
           <Switch id={`${uid}-progress`} checked={branding.showProgress !== false} onChange={(showProgress) => set({ showProgress })} />
         </div>
+        <FieldsLook
+          branding={branding}
+          layout={layout}
+          setTheme={setTheme}
+          onCorners={(radius) => pickPreset({}, patchTheme(theme, 'fields', { radius }), theme?.fields?.radius !== undefined && ![0, 8, 20].includes(theme.fields.radius), 'The field corners')}
+        />
+        <FineTune branding={branding} layout={layout} setTheme={setTheme} />
       </>
     ),
     header: (

@@ -18,6 +18,7 @@
 @layer theme, base, beginso, components, utilities;
 @import "../styles/beginso-ui.css" layer(beginso);
 @import "tailwindcss";
+@import "../styles/form-look.css";
 
 @theme inline {
   --color-background: var(--background);

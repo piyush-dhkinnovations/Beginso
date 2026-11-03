@@ -217,7 +217,7 @@ describe('layout helpers', () => {
     ['split_feature', 'narrow', 'md:max-w-4xl'],
     ['compact', 'wide', 'max-w-6xl'],
   ])('widthClass(%s, %s) = %s', (layout, formWidth, expected) => {
-    expect(widthClass(layout, { formWidth })).toBe(expected);
+    expect(widthClass(layout, { formWidth })).toBe(`form-width ${expected}`);
   });
 
   it.each<[LayoutPreset, 'auto' | 'single' | undefined, boolean]>([

@@ -1,11 +1,11 @@
 import type { CSSProperties } from 'react';
-import type { FormBranding } from '@/types/form';
+import type { FieldStyle, FormBranding, FormTheme, LayoutPreset } from '@/types/form';
 import { safeHttpUrl } from '@/lib/fieldDisplay';
 import { uploadSrc } from '@/lib/uploadSrc';
 
 // Sprint 13 (CF2.3). The ONE place a branding choice becomes CSS, shared by the editor's live preview and the real
 // public form so they cannot drift. Everything is optional; an absent value is the default.
-type Theme = Pick<FormBranding, 'primaryColor' | 'buttonStyle' | 'buttonRadius' | 'coverPosition' | 'spacing' | 'showProgress'>;
+type Theme = Pick<FormBranding, 'primaryColor' | 'buttonStyle' | 'buttonRadius' | 'coverPosition' | 'spacing' | 'showProgress' | 'theme'>;
 
 const DEFAULT_COLOR = '#1D4ED8';
 
@@ -15,7 +15,7 @@ export function brandButtonStyle(b: Theme): CSSProperties {
   const radius = b.buttonRadius ?? '8px';
   return b.buttonStyle === 'outline'
     ? { backgroundColor: '#FFFFFF', color, border: `1.5px solid ${color}`, borderRadius: radius }
-    : { backgroundColor: color, color: '#FFFFFF', border: `1.5px solid ${color}`, borderRadius: radius };
+    : { backgroundColor: color, color: cleanTheme(b.theme)?.colors?.buttonText ?? '#FFFFFF', border: `1.5px solid ${color}`, borderRadius: radius };
 }
 
 /** Where a cover image is cropped when it does not fit the banner. */
@@ -63,7 +63,7 @@ export function brandTypeStyle(b: Look): CSSProperties {
 export function brandCardClass(b: Look): string {
   // Each one differs in its edge AND its corners, so the choice is plain to see on the form (a hairline or a faint shadow was not):
   //  flat: square, no edge, no shadow; soft: rounded with a soft shadow; bordered: a firm line in the brand colour; elevated: very round, floating.
-  const base = 'bg-(--surface-card) overflow-hidden';
+  const base = 'form-card bg-(--surface-card) overflow-hidden';
   switch (b.cardStyle) {
     case 'flat': return `${base} rounded-none`;
     case 'bordered': return `${base} rounded-xl border-2 border-(--action-primary)`;
@@ -139,4 +139,134 @@ export function brandWashStyle(b: Look & Pick<FormBranding, 'backgroundColor' | 
       // 'wash': the soft glow of the brand colour in two corners.
       return { backgroundColor: 'var(--bg-subtle)', backgroundImage: `radial-gradient(60rem 36rem at 15% -10%, color-mix(in srgb, ${c} 16%, transparent), transparent 60%), radial-gradient(50rem 30rem at 100% 110%, color-mix(in srgb, ${c} 12%, transparent), transparent 60%)` };
   }
+}
+
+// ── Colours, fields look and exact sizes (branding.theme) ─────────────────────────────────────────────────────────────────────────────────
+// ONE code path for the public form, the builder's live preview and the studio's own tiles. Every key is optional; a form with no theme gets
+// no inline style and no data attribute from here, and the CSS for them (beginso-ui.css) only matches when the attribute is there, so it is
+// drawn exactly as it was before the theme existed.
+
+const THEME_HEX = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+const THEME_ENUMS = { style: ['outlined', 'filled', 'underline'], label: ['above', 'start'], choice: ['plain', 'tiles'] } as const;
+// the same limits the backend enforces (whole numbers, inclusive)
+const THEME_NUMBERS = { fields: { radius: [0, 32] }, card: { radius: [0, 40], shadow: [0, 100] }, layout: { maxWidth: [360, 1400], fieldGap: [4, 64] } } as const;
+const THEME_COLOURS = ['text', 'heading', 'card', 'field', 'fieldBorder', 'buttonText'] as const;
+
+/**
+ * The theme with only what is safe to draw: version 1, hex colours, known options, whole numbers in range. Everything else is dropped. This runs
+ * before a theme becomes CSS or is saved, whatever the server sent or the editor held, so a raw string never reaches a style.
+ */
+export function cleanTheme(raw: unknown): FormTheme | undefined {
+  if (!raw || typeof raw !== 'object' || (raw as { v?: unknown }).v !== 1) return undefined;
+  const t = raw as Record<string, Record<string, unknown> | undefined>;
+  const out: Record<string, Record<string, unknown>> = {};
+  const colors: Record<string, unknown> = {};
+  for (const k of THEME_COLOURS) {
+    const v = t.colors?.[k];
+    if (typeof v === 'string' && THEME_HEX.test(v)) colors[k] = v;
+  }
+  if (Object.keys(colors).length) out.colors = colors;
+  for (const [group, keys] of Object.entries(THEME_NUMBERS)) {
+    const g: Record<string, unknown> = {};
+    for (const [k, [min, max]] of Object.entries(keys)) {
+      const v = t[group]?.[k];
+      if (typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max) g[k] = v;
+    }
+    if (group === 'fields') {
+      for (const [k, allowed] of Object.entries(THEME_ENUMS)) {
+        const v = t.fields?.[k];
+        if (typeof v === 'string' && (allowed as readonly string[]).includes(v)) g[k] = v;
+      }
+    }
+    if (Object.keys(g).length) out[group] = g;
+  }
+  return Object.keys(out).length ? ({ v: 1, ...out } as FormTheme) : undefined;
+}
+
+/** What each layout can show of the new options, and why not when it cannot. */
+export type ThemeOption = 'fieldStyle' | 'fieldRadius' | 'labelPosition' | 'choiceStyle' | 'cardShape' | 'maxWidth';
+
+export const LABEL_BESIDE_UNSUPPORTED: Partial<Record<LayoutPreset, string>> = {
+  guided: 'Guided shows one question per screen, so the label stays above it.',
+  compact: 'Compact already sets fields in two columns, so the label stays above.',
+};
+
+/** The reason an option cannot be used with this layout (and field style), or undefined when it can. */
+export function themeOptionBlocked(option: ThemeOption, layout: LayoutPreset, theme?: FormTheme | null): string | undefined {
+  if (option === 'labelPosition') return LABEL_BESIDE_UNSUPPORTED[layout];
+  if (option === 'fieldRadius' && theme?.fields?.style === 'underline') return 'Underline fields have no corners.';
+  return undefined;
+}
+
+/** The theme as this layout can actually draw it: an option the layout cannot show is left out, never half applied. */
+export function effectiveTheme(layout: LayoutPreset, raw?: FormTheme | null): FormTheme | undefined {
+  const theme = cleanTheme(raw);
+  if (!theme) return undefined;
+  const fields = { ...theme.fields };
+  if (themeOptionBlocked('labelPosition', layout)) delete fields.label;
+  if (themeOptionBlocked('fieldRadius', layout, theme)) delete fields.radius;
+  return { ...theme, fields };
+}
+
+/** Sets or clears one key of one group; an emptied group, and an emptied theme, are removed so a form returns to having none. */
+export function patchTheme<G extends 'colors' | 'fields' | 'card' | 'layout'>(theme: FormTheme | null | undefined, group: G, patch: Partial<NonNullable<FormTheme[G]>>): FormTheme | null {
+  const next: FormTheme = { ...(theme ?? { v: 1 }), v: 1 };
+  const merged: Record<string, unknown> = { ...(next[group] ?? {}), ...patch };
+  for (const k of Object.keys(merged)) if (merged[k] === undefined) delete merged[k];
+  if (Object.keys(merged).length) (next as unknown as Record<string, unknown>)[group] = merged;
+  else delete next[group];
+  return Object.keys(next).length > 1 ? next : null;
+}
+
+const mix = (c: string, pct: number) => `color-mix(in srgb, ${c} ${pct}%, transparent)`;
+
+/** A 0-100 shadow strength as a box-shadow: 0 is none, 100 is a deep, wide shadow. */
+export const cardShadowValue = (strength: number): string => {
+  const s = Math.max(0, Math.min(100, strength));
+  return s === 0 ? 'none' : `0 ${Math.round(s * 0.3)}px ${Math.round(s * 0.8)}px rgba(0, 0, 0, ${(0.04 + s * 0.0021).toFixed(3)})`;
+};
+
+/** The class, inline style and data attributes for the element that wraps the form's card and fields. */
+export function brandLookProps(b: Pick<FormBranding, 'theme'>): { className: string; style: CSSProperties; [attr: `data-${string}`]: string | undefined } {
+  const t = cleanTheme(b.theme);
+  const c = t?.colors;
+  const f = t?.fields;
+  const style: Record<string, string> = {};
+  if (c?.text) {
+    style['--text-primary'] = c.text;
+    style['--text-secondary'] = mix(c.text, 82);
+    style['--text-muted'] = mix(c.text, 62);
+    // an opaque edge (not the see-through muted text), so a filled or underlined field keeps a line that can be seen
+    style['--form-field-edge'] = `color-mix(in srgb, ${c.text} 72%, var(--surface-card))`;
+  }
+  if (c?.heading) {
+    style['--form-heading'] = c.heading;
+    style['--form-heading-header'] = c.heading; // set only when chosen: a title on the coloured header stays white otherwise
+  }
+  if (c?.card) style['--surface-card'] = c.card;
+  if (c?.field) {
+    style['--form-field-bg'] = c.field;
+    style['--form-field-bg-filled'] = c.field;
+  }
+  if (c?.fieldBorder) {
+    style['--form-field-border'] = c.fieldBorder;
+    style['--form-field-edge'] = c.fieldBorder;
+  }
+  if (f?.radius !== undefined) style['--form-field-radius'] = `${f.radius}px`;
+  if (t?.card?.radius !== undefined) style['--form-card-radius'] = `${t.card.radius}px`;
+  if (t?.card?.shadow !== undefined) style['--form-card-shadow'] = cardShadowValue(t.card.shadow);
+  if (t?.layout?.maxWidth !== undefined) style['--form-max-width'] = `${t.layout.maxWidth}px`;
+  if (t?.layout?.fieldGap !== undefined) style['--form-field-gap'] = `${t.layout.fieldGap}px`;
+  const fieldStyle: FieldStyle | undefined = f?.style && f.style !== 'outlined' ? f.style : undefined;
+  return {
+    className: 'form-look',
+    style: style as CSSProperties,
+    'data-field-style': fieldStyle,
+    'data-label-start': f?.label === 'start' ? '' : undefined,
+    'data-choice-tiles': f?.choice === 'tiles' ? '' : undefined,
+    'data-card-radius': t?.card?.radius !== undefined ? '' : undefined,
+    'data-card-shadow': t?.card?.shadow !== undefined ? '' : undefined,
+    'data-max-width': t?.layout?.maxWidth !== undefined ? '' : undefined,
+    'data-field-gap': t?.layout?.fieldGap !== undefined ? '' : undefined,
+  };
 }

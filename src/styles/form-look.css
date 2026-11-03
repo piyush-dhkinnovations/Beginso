@@ -1,0 +1,78 @@
+/* Form look (branding.theme): the owner's colours, fields look and exact sizes. See lib/formTheme.ts brandLookProps.
+   This file is imported WITHOUT a layer (globals.css), on purpose: beginso-ui.css sits in @layer beginso, below Tailwind's utilities, so a rule
+   there can never beat a class such as `flex`, `rounded-2xl` or `gap-y-4` on the same property. An unlayered rule beats every layer. */
+
+/* ---- The owner's colours, fields look and exact values (lib/formTheme.ts brandLookProps) --------------------------------------
+   The defaults are declared on :root and again on .form-look (the element around the card), so a colour set inline there (--surface-card,
+   --text-primary) is what the defaults resolve against. A form that sets none of these is drawn exactly as it always was. The switches
+   below are data attributes, present only when the owner chose that look. */
+:root,
+.form-look {
+  --form-heading: var(--text-primary);
+  --form-field-bg: var(--surface-card);
+  --form-field-bg-filled: var(--bg-sunken);
+  --form-field-border: var(--border-default);
+  --form-field-edge: var(--text-muted); /* the line under a filled or underlined field: AA on every light surface, so at least 3:1 */
+  --form-field-radius: 8px;
+}
+
+/* Filled fields: a tinted box with no visible edge until it is focused. Underline: only a line under the text. */
+.form-look[data-field-style="filled"] .form-field-input {
+  background-color: var(--form-field-bg-filled);
+  border-color: transparent transparent var(--form-field-edge);
+  border-bottom-width: 2px;
+}
+.form-look[data-field-style="underline"] .form-field-input {
+  background-color: transparent;
+  border-width: 0 0 2px;
+  border-color: var(--form-field-edge);
+  border-radius: 0;
+  padding-inline: 2px;
+}
+.form-look[data-field-style="filled"] .form-field-input:focus,
+.form-look[data-field-style="underline"] .form-field-input:focus {
+  border-bottom-color: var(--action-primary);
+}
+.form-look[data-field-style="filled"] .form-field-input[aria-invalid="true"],
+.form-look[data-field-style="underline"] .form-field-input[aria-invalid="true"] {
+  border-bottom-color: var(--error);
+}
+
+/* Exact values */
+.form-look[data-card-radius] .form-card { border-radius: var(--form-card-radius); }
+/* Split Feature is a full-width panel on a phone, as it always was: its own corners and shadow are a tablet-and-up thing. */
+@media (max-width: 767px) {
+  .form-look[data-card-radius] .form-card.md\:grid { border-radius: 0; }
+  .form-look[data-card-shadow] .form-card.md\:grid { box-shadow: none; }
+}
+.form-look[data-card-shadow] .form-card { box-shadow: var(--form-card-shadow); }
+.form-look[data-max-width] .form-width { max-width: var(--form-max-width); }
+.form-look[data-field-gap] .form-fields { row-gap: var(--form-field-gap); }
+
+/* Labels beside the field, from tablet width up (a phone keeps them above). The label is always the first child of a field. */
+@media (min-width: 768px) {
+  /* One field per row: a label beside the field in each of two columns leaves too little room for either */
+  .form-look[data-label-start] .form-fields { grid-template-columns: minmax(0, 1fr); }
+  .form-look[data-label-start] [data-field-id]:not(.items-start) {
+    display: grid;
+    grid-template-columns: 9rem minmax(0, 1fr);
+    column-gap: 0.75rem;
+    row-gap: 0.375rem;
+    align-items: start;
+  }
+  .form-look[data-label-start] [data-field-id]:not(.items-start) > :first-child { grid-column: 1; padding-top: 0.625rem; }
+  .form-look[data-label-start] [data-field-id]:not(.items-start) > :not(:first-child) { grid-column: 2; }
+}
+
+/* Radio and checkbox answers as tiles: each answer in its own box, the chosen one marked in the brand colour. */
+.form-look[data-choice-tiles] .form-choice {
+  padding: 0.375rem 0.75rem;
+  border: 1.5px solid var(--form-field-border);
+  border-radius: var(--form-field-radius);
+  background-color: var(--form-field-bg);
+}
+.form-look[data-choice-tiles] .form-choice:has(input:checked) {
+  border-color: var(--action-primary);
+  background-color: color-mix(in srgb, var(--action-primary) 10%, var(--form-field-bg));
+}
+.form-look[data-choice-tiles] .form-choice:has(input:focus-visible) { outline: 2px solid var(--border-focus); outline-offset: 2px; }

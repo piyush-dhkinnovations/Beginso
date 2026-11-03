@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { LayoutPreset } from '@/types/form';
 import type { PublicFormBranding } from '@/types/publicForm';
-import { brandCardClass, brandTypeStyle, brandWashStyle } from '@/lib/formTheme';
+import { brandCardClass, brandLookProps, brandTypeStyle, brandWashStyle } from '@/lib/formTheme';
 import { Wordmark } from '@/components/landing/Wordmark';
 
 // Sprint 13 (CF2.7), design.md §7. Every layout is a presentation FRAME around the form body that
@@ -32,10 +32,20 @@ export function Backdrop({ branding, previewMode, children }: { branding: Public
   const style: CSSProperties = { ...brandWashStyle(branding), ...brandTypeStyle(branding) };
   return (
     <div className={`bg-form-type flex flex-col ${previewMode ? 'min-h-full' : 'min-h-screen'}`} style={style}>
-      <div className={`flex flex-1 justify-center items-start md:items-center ${branding.backgroundStyle === 'none' ? 'p-2' : 'p-4 md:p-10'}`}>
+      <LookScope branding={branding} className={`flex flex-1 justify-center items-start md:items-center ${branding.backgroundStyle === 'none' ? 'p-2' : 'p-4 md:p-10'}`}>
         {children}
-      </div>
+      </LookScope>
       {!previewMode && <MadeWithBeginso />}
+    </div>
+  );
+}
+
+/** The element around the card: carries the owner's colours, fields look and exact values (see brandLookProps) without touching the page behind it or the "Made with" pill. */
+export function LookScope({ branding, className, children }: { branding: PublicFormBranding; className?: string; children: ReactNode }) {
+  const { className: lookClass, style, ...attrs } = brandLookProps(branding);
+  return (
+    <div {...attrs} className={`${lookClass} ${className ?? ''}`} style={style}>
+      {children}
     </div>
   );
 }
@@ -69,7 +79,7 @@ const WIDTHS: Record<LayoutPreset, Record<'narrow' | 'standard' | 'wide', string
   split_feature: { narrow: 'md:max-w-4xl', standard: 'md:max-w-6xl', wide: 'md:max-w-7xl' },
   compact: { narrow: 'max-w-2xl', standard: 'max-w-4xl', wide: 'max-w-6xl' },
 };
-export const widthClass = (layout: LayoutPreset, branding: PublicFormBranding) => WIDTHS[layout][branding.formWidth ?? 'standard'];
+export const widthClass = (layout: LayoutPreset, branding: PublicFormBranding) => `form-width ${WIDTHS[layout][branding.formWidth ?? 'standard']}`;
 
 /** The form card: surface chosen by the owner's card style. */
 export const cardClass = (branding: PublicFormBranding, extra = '') => `${brandCardClass(branding)} w-full ${extra}`;
@@ -84,6 +94,6 @@ export function fieldsClassFor(layout: LayoutPreset, spacing: PublicFormBranding
   const gap = spacing === 'compact' ? 'gap-3' : spacing === 'spacious' ? 'gap-7' : 'gap-4';
   const gapY = spacing === 'compact' ? 'gap-y-3' : spacing === 'spacious' ? 'gap-y-7' : 'gap-y-4';
   return isGrouped(layout, grouping)
-    ? `mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-5 ${gapY}` // two columns, forced to one below 768
-    : `mt-6 flex flex-col ${gap}`;
+    ? `form-fields mt-6 grid grid-cols-1 md:grid-cols-2 gap-x-5 ${gapY}` // two columns, forced to one below 768
+    : `form-fields mt-6 flex flex-col ${gap}`;
 }

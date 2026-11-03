@@ -14,7 +14,7 @@ import { focusFirstInvalidSoon } from '@/lib/focusField';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/formDraft';
 import { Button } from '@/components/ui/Button';
 import { normaliseLayout } from '@/lib/layoutPresets';
-import { brandButtonStyle, brandShowsProgress } from '@/lib/formTheme';
+import { brandButtonStyle, brandShowsProgress, effectiveTheme } from '@/lib/formTheme';
 import { LAYOUT_COMPONENTS, fieldsClassFor, isGrouped } from './layouts';
 import { parseEmbedOptions, carryEmbedSearch } from '@/lib/embed/embedParams';
 import { resolvePrefill } from '@/lib/embed/prefill';
@@ -544,7 +544,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   const frameProps = {
     layout,
     // ?bg=0 (embed): no page background, so the host page shows around the card.
-    branding: embedOpts.background ? schema.branding : { ...schema.branding, backgroundStyle: 'none' as const },
+    branding: { ...(embedOpts.background ? schema.branding : { ...schema.branding, backgroundStyle: 'none' as const }), theme: effectiveTheme(layout, schema.branding.theme) },
     title: embedOpts.hideTitle ? '' : schema.title,
     previewMode,
     hideCover: !embedOpts.cover,
@@ -638,7 +638,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
               <FormProgress currentPage={currentPageIndex + 1} totalPages={totalPages} />
             )}
 
-            <h1 className={embedOpts.hideTitle || headlineInBanner ? 'sr-only' : layout === 'card_stack' ? 'bg-h4 text-(--text-primary) border-b border-(--border-default) pb-3' : 'bg-h3 text-(--text-primary)'}>{currentPage?.title ?? schema.title}</h1>
+            <h1 className={embedOpts.hideTitle || headlineInBanner ? 'sr-only' : layout === 'card_stack' ? 'bg-h4 text-(--form-heading) border-b border-(--border-default) pb-3' : 'bg-h3 text-(--form-heading)'}>{currentPage?.title ?? schema.title}</h1>
             {currentPage?.description && <p className="bg-body text-(--text-muted) mt-1">{currentPage.description}</p>}
 
             </>

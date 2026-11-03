@@ -156,6 +156,21 @@ export type FieldGrouping = 'auto' | 'single';
 export type CoverFit = 'banner' | 'original';
 export type LogoSize = 'sm' | 'md' | 'lg';
 export type FormWidth = 'narrow' | 'standard' | 'wide';
+export type FieldStyle = 'outlined' | 'filled' | 'underline';
+export type LabelPosition = 'above' | 'start';
+export type ChoiceStyle = 'plain' | 'tiles';
+
+/**
+ * The owner's own colours, fields look and exact sizes: one versioned object, stored as branding.theme. Every key is optional and an absent
+ * one is the default look. The backend validates it (hex colours, bounded whole numbers) and drops keys it does not know.
+ */
+export interface FormTheme {
+  v: 1;
+  colors?: { text?: string; heading?: string; card?: string; field?: string; fieldBorder?: string; buttonText?: string };
+  fields?: { style?: FieldStyle; radius?: number; label?: LabelPosition; choice?: ChoiceStyle };
+  card?: { radius?: number; shadow?: number };
+  layout?: { maxWidth?: number; fieldGap?: number };
+}
 export type PageBackground = 'wash' | 'plain' | 'solid' | 'gradient' | 'mesh' | 'dots' | 'grid' | 'image';
 
 /** A form's mark: an uploaded logo, or an icon (name + colour) from the icon library; none of them = picked automatically from the name. */
@@ -190,6 +205,7 @@ export interface FormBranding {
   formWidth?: FormWidth;         // default 'standard' — how wide the form card is
   backgroundImageUrl?: string;   // the owner's own picture, used when backgroundStyle is 'image'
   backgroundColor?: string;      // hex the page background is built from; absent = the primary colour
+  theme?: FormTheme | null;      // colours, fields look and exact sizes; null only in a save, to clear it
   bannerText?: string;           // a line of text under the title on the form's header
   bannerLinks?: BannerLink[];    // up to 5 links on the form's header (http or https only)
 }

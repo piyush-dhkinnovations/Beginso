@@ -1,3 +1,5 @@
+import { cleanTheme } from '@/lib/formTheme';
+import type { FormTheme } from '@/types/form';
 import axiosInstance from '@/lib/axios';
 import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import { unwrapEnvelope } from '@/lib/apiEnvelope';
@@ -36,6 +38,9 @@ const BRANDING_ENUMS: Record<string, readonly string[]> = {
 };
 const BRANDING_STRINGS = ['logoUrl', 'coverImageUrl', 'backgroundImageUrl', 'bannerText'];
 
+/** branding.theme with only what the backend accepts (see cleanTheme). Undefined when nothing is left. */
+export const sanitizeTheme = (raw: unknown): FormTheme | undefined => cleanTheme(raw);
+
 export function sanitizeBranding(raw: Record<string, unknown> | undefined | null): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (!raw) return out;
@@ -45,6 +50,12 @@ export function sanitizeBranding(raw: Record<string, unknown> | undefined | null
   for (const k of BRANDING_STRINGS) if (typeof raw[k] === 'string' && (raw[k] as string).trim()) out[k] = raw[k];
   for (const [k, allowed] of Object.entries(BRANDING_ENUMS)) if (typeof raw[k] === 'string' && allowed.includes(raw[k] as string)) out[k] = raw[k];
   if (typeof raw.showProgress === 'boolean') out.showProgress = raw.showProgress;
+  // theme: null is how a save clears it on the server; a form that never had one sends nothing, and the server keeps what it has
+  if (raw.theme === null) out.theme = null;
+  else {
+    const theme = sanitizeTheme(raw.theme);
+    if (theme) out.theme = theme;
+  }
   // a link with no address yet (a row just added in the studio) is not saved
   if (Array.isArray(raw.bannerLinks)) {
     const links = (raw.bannerLinks as { label?: string; url?: string }[]).filter((l) => l?.url?.trim()).map((l) => ({ ...(l.label?.trim() ? { label: l.label.trim() } : {}), url: l.url!.trim() }));

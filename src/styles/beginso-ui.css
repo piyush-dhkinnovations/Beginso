@@ -819,7 +819,7 @@ body {
    so keyboard, screen readers and form submission all work with no JS.
    ========================================================================== */
 
-.bg-choice {
+.form-choice {
   display: flex;
   align-items: flex-start;
   gap: var(--space-3);
@@ -827,10 +827,10 @@ body {
   font: var(--text-body-sm);
   color: var(--text-primary);
 }
-.bg-choice input { flex-shrink: 0; }
-.bg-choice-text { display: flex; flex-direction: column; gap: 2px; }
-.bg-choice-text small { font: var(--text-caption); color: var(--text-muted); }
-.bg-choice:has(input:disabled) { cursor: not-allowed; color: var(--text-disabled); }
+.form-choice input { flex-shrink: 0; }
+.form-choice-text { display: flex; flex-direction: column; gap: 2px; }
+.form-choice-text small { font: var(--text-caption); color: var(--text-muted); }
+.form-choice:has(input:disabled) { cursor: not-allowed; color: var(--text-disabled); }
 
 /* ---- Checkbox ---------------------------------------------------------- */
 .bg-checkbox {
@@ -920,7 +920,7 @@ body {
 .bg-switch-sm:checked::after { transform: translateX(14px); }
 
 /* ---- Selectable cards · radio or checkbox with a real target area ------ */
-.bg-choice-card {
+.form-choice-card {
   position: relative;
   display: flex;
   align-items: flex-start;
@@ -932,15 +932,15 @@ body {
   cursor: pointer;
   transition: border-color var(--micro) var(--ease), background-color var(--micro) var(--ease), box-shadow var(--micro) var(--ease);
 }
-.bg-choice-card:hover { border-color: var(--border-strong); background-color: var(--surface-hover); }
-.bg-choice-card:has(input:checked) {
+.form-choice-card:hover { border-color: var(--border-strong); background-color: var(--surface-hover); }
+.form-choice-card:has(input:checked) {
   border-color: var(--primary-500);
   background-color: var(--surface-active);
   box-shadow: inset 0 0 0 1px var(--primary-500);
 }
-.bg-choice-card:has(input:focus-visible) { box-shadow: var(--shadow-focus); }
-.bg-choice-card strong { font: 600 13px/20px var(--bg-font-sans); }
-.bg-choice-card small { display: block; margin-top: 2px; font: var(--text-caption); color: var(--text-muted); }
+.form-choice-card:has(input:focus-visible) { box-shadow: var(--shadow-focus); }
+.form-choice-card strong { font: 600 13px/20px var(--bg-font-sans); }
+.form-choice-card small { display: block; margin-top: 2px; font: var(--text-caption); color: var(--text-muted); }
 
 /* ---- File dropzone ----------------------------------------------------- */
 .bg-dropzone {

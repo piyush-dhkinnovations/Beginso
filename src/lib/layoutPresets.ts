@@ -41,8 +41,22 @@ export const LAYOUT_LOOKS: Record<LayoutPreset, LayoutLook> = {
 };
 
 /** Branding changes for "Use this layout": font, card and panel always follow the preset; the colour only when the owner has not picked their own (`showcase`, used by the gallery preview, always swaps it so each layout reads as its own design). */
-export function lookBranding(layout: LayoutPreset, current: FormBranding, showcase = false): Partial<FormBranding> {
+export function lookBranding(layout: LayoutPreset, current: FormBranding, showcase = false, from?: LayoutPreset): Partial<FormBranding> {
   const look = LAYOUT_LOOKS[layout];
+  // Switching layout (`from` is the layout the form has now) must not undo a design the owner has made: a font, card, panel or page background they
+  // changed from the current layout's own is kept. One they have not touched still follows the new layout, so a fresh form gets the whole look.
+  if (from) {
+    const was = LAYOUT_LOOKS[from];
+    const untouched = <T,>(value: T | undefined, preset: T) => value === undefined || value === preset;
+    const background = untouched(current.backgroundStyle, was.background);
+    return {
+      ...(untouched(current.fontFamily, was.font) ? { fontFamily: look.font } : {}),
+      ...(untouched(current.cardStyle, was.cardStyle) ? { cardStyle: look.cardStyle } : {}),
+      ...(untouched(current.panelTreatment, was.panel) ? { panelTreatment: look.panel } : {}),
+      ...(background ? { backgroundStyle: look.background, backgroundColor: undefined } : {}),
+      ...(untouched(current.primaryColor, was.color) || !current.primaryColor ? { primaryColor: look.color } : {}),
+    };
+  }
   const ownColour = !!current.primaryColor && current.primaryColor.toUpperCase() !== '#1D4ED8' && !Object.values(LAYOUT_LOOKS).some((l) => l.color === current.primaryColor);
   return {
     fontFamily: look.font,
