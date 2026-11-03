@@ -20,6 +20,7 @@ import { bx } from '@/lib/utils';
 import type { BannerLink, ButtonRadius, FormTheme, ButtonStyle, CardStyle, CoverFit, CoverPosition, FieldGrouping, FormBranding, FormFont, FormSpacing, FormWidth, LayoutPreset, LogoSize, PageBackground, PanelTreatment, TypeScale } from '@/types/form';
 import { ImageUploadZone } from './BrandingPanel';
 import { LayoutChooser } from './LayoutChooser';
+import { PictureChoice } from './PicturePicker';
 import { CustomBadge, FieldsLook, FineTune, FormColours, type SetTheme } from './LookControls';
 import { ZOOM_STEPS } from '@/lib/previewZoom';
 import { LiveFormPreview } from './LiveFormPreview';
@@ -281,6 +282,9 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
           </div>
         </div>
         {branding.backgroundStyle === 'image' && (
+          <PictureChoice label="Pictures to choose from" value={branding.backgroundImageUrl} onPick={(url) => set({ backgroundImageUrl: url })} />
+        )}
+        {branding.backgroundStyle === 'image' && (
           <ImageUploadZone label="Page background image" imageUrl={branding.backgroundImageUrl} aspect="banner" freeform onUpload={(file) => upload(file, 'backgroundImageUrl')} onRemove={() => set({ backgroundImageUrl: undefined, formWidth: undefined, coverFit: undefined })} />
         )}
         {(branding.backgroundStyle ?? 'wash') !== 'plain' && branding.backgroundStyle !== 'image' && (
@@ -402,6 +406,7 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
           {branding.coverImageUrl && coverFit === 'banner' && (
             <ChipChoice<CoverPosition> label="Show the" value={branding.coverPosition ?? 'center'} options={[{ value: 'top', label: 'Top' }, { value: 'center', label: 'Middle' }, { value: 'bottom', label: 'Bottom' }]} onChange={(coverPosition) => set({ coverPosition })} />
           )}
+          <PictureChoice label="Pictures to choose from" value={branding.coverImageUrl} onPick={(url) => set({ coverImageUrl: url, coverFit })} />
           <ImageUploadZone label="Cover image" imageUrl={branding.coverImageUrl} aspect="banner" freeform={coverFit === 'original'} onUpload={(file) => upload(file, 'coverImageUrl')} onRemove={() => set({ coverImageUrl: undefined })} />
         </div>
       </>

@@ -124,7 +124,7 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       // Static art in /public served with max-age=0 was revalidated on every page load (QA A11-008).
-      ...["/favicon.svg", "/favicon-light.svg", "/favicon-dark.svg", "/name-light.svg", "/name-dark.svg", "/avatars/:path*", "/blog/covers/:path*", "/email/:path*"].map((source) => ({
+      ...["/favicon.svg", "/favicon-light.svg", "/favicon-dark.svg", "/name-light.svg", "/name-dark.svg", "/avatars/:path*", "/blog/covers/:path*", "/email/:path*", "/form-pictures/:path*"].map((source) => ({
         source,
         headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
       })),

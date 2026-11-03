@@ -2,6 +2,7 @@ import type { CSSProperties } from 'react';
 import type { FieldStyle, FormBranding, FormTheme, LayoutPreset } from '@/types/form';
 import { safeHttpUrl } from '@/lib/fieldDisplay';
 import { uploadSrc } from '@/lib/uploadSrc';
+import { isBuiltInPictureUrl } from '@/lib/formPictures';
 
 // Sprint 13 (CF2.3). The ONE place a branding choice becomes CSS, shared by the editor's live preview and the real
 // public form so they cannot drift. Everything is optional; an absent value is the default.
@@ -113,7 +114,8 @@ export function brandWashStyle(b: Look & Pick<FormBranding, 'backgroundColor' | 
       // Only an http(s) URL goes into the CSS, JSON-quoted, so a stored value can never break out of url().
       // an uploaded picture is asked for through the app (see uploadSrc); any other address must be http(s)
       const own = uploadSrc(b.backgroundImageUrl);
-      const url = own?.startsWith('/api/backend/') ? own : safeHttpUrl(b.backgroundImageUrl)?.href;
+      // an upload is asked for through the app, a picture from the app's own library is its own path, any other address must be http(s)
+      const url = own?.startsWith('/api/backend/') ? own : isBuiltInPictureUrl(b.backgroundImageUrl) ? b.backgroundImageUrl : safeHttpUrl(b.backgroundImageUrl)?.href;
       return url
         ? { backgroundColor: c, backgroundImage: `url(${JSON.stringify(url)})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }
         : { backgroundColor: tint(14) };

@@ -3,7 +3,7 @@
  * a form with no theme gets nothing from it.
  */
 import { describe, it, expect } from 'vitest';
-import { brandButtonStyle, brandLookProps, cleanTheme, cardShadowValue, effectiveTheme, patchTheme, themeOptionBlocked } from '@/lib/formTheme';
+import { brandWashStyle, brandButtonStyle, brandLookProps, cleanTheme, cardShadowValue, effectiveTheme, patchTheme, themeOptionBlocked } from '@/lib/formTheme';
 import { contrastRatio, fixContrast } from '@/lib/contrast';
 import { sanitizeBranding, sanitizeTheme } from '@/services/forms';
 import { LAYOUT_LOOKS, lookBranding } from '@/lib/layoutPresets';
@@ -232,5 +232,16 @@ describe('the theme is re-checked before it becomes CSS', () => {
 
   it('effectiveTheme cleans before it filters', () => {
     expect(effectiveTheme('classic', { v: 1, fields: { label: 'inside' } } as unknown as FormTheme)).toBeUndefined();
+  });
+});
+
+describe('a built-in picture as the page background', () => {
+  it('is drawn from its own path; an unknown relative path is not', () => {
+    const ok = brandWashStyle({ backgroundStyle: 'image', backgroundImageUrl: '/form-pictures/aurora-mint.jpg' }) as Record<string, string>;
+    expect(ok.backgroundImage).toBe('url("/form-pictures/aurora-mint.jpg")');
+    const bad = brandWashStyle({ backgroundStyle: 'image', backgroundImageUrl: '/somewhere/else.jpg' }) as Record<string, string>;
+    expect(bad.backgroundImage).toBeUndefined();
+    const evil = brandWashStyle({ backgroundStyle: 'image', backgroundImageUrl: '/form-pictures/a.jpg");background:url(//evil' }) as Record<string, string>;
+    expect(evil.backgroundImage).toBeUndefined();
   });
 });
