@@ -118,6 +118,18 @@ describe('BFF proxy — allowlist', () => {
     expect(fetch).toHaveBeenCalled();
   });
 
+  // Saved form styles ("Save my style") live under their own root: without the allowlist entry every call 404s through the BFF.
+  it('allows GET, POST, PATCH and DELETE under /api/form-styles', async () => {
+    const { POST, PATCH, DELETE } = await import('@/app/api/backend/[...path]/route');
+    const list = await GET(makeRequest('api/form-styles'), { params: Promise.resolve({ path: ['api', 'form-styles'] }) });
+    expect(list.status).not.toBe(404);
+    for (const [handler, method] of [[POST, 'POST'], [PATCH, 'PATCH'], [DELETE, 'DELETE']] as const) {
+      const path = method === 'POST' ? ['api', 'form-styles'] : ['api', 'form-styles', 's1'];
+      const res = await handler(new NextRequest(`http://localhost/api/backend/${path.join('/')}`, { method, body: method === 'DELETE' ? undefined : '{}' }), { params: Promise.resolve({ path }) });
+      expect(res.status, method).not.toBe(404);
+    }
+  });
+
   it('rejects an unknown root with 404 "Backend path is not allowed"', async () => {
     const req = makeRequest('api/not-a-real-root');
     const res = await GET(req, { params: Promise.resolve({ path: ['api', 'not-a-real-root'] }) });

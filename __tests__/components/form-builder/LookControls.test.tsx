@@ -55,6 +55,10 @@ describe('Colour tab: form colours and readability', () => {
   it('measures the four pairs, says so when a pair cannot be measured, and fixes a failing one in one tap', async () => {
     const update = draw({ primaryColor: '#1D4ED8', backgroundStyle: 'image', theme: { v: 1, colors: { text: '#AAAAAA' } } });
     await open('Colour');
+    // only what needs fixing is listed to begin with; every check is one click away
+    expect(within(screen.getByRole('list', { name: 'Readability of the colours' })).getAllByRole('listitem').length).toBeLessThan(7);
+    expect(screen.getByRole('status')).toHaveTextContent(/to fix/);
+    await userEvent.click(screen.getByRole('button', { name: 'Show all checks' }));
     const list = screen.getByRole('list', { name: 'Readability of the colours' });
     const rows = within(list).getAllByRole('listitem');
     expect(rows).toHaveLength(7);
@@ -65,6 +69,17 @@ describe('Colour tab: form colours and readability', () => {
     const sent = update.mock.calls.at(-1)![0].theme.colors.text as string;
     expect(sent).toMatch(/^#[0-9A-F]{6}$/);
     expect(sent).not.toBe('#AAAAAA');
+  });
+
+  it('says "All the colours are easy to read" and lists nothing when every check passes', async () => {
+    draw({ primaryColor: '#1D4ED8', backgroundStyle: 'plain', theme: { v: 1, colors: { fieldBorder: '#6B7280' } } });
+    await open('Colour');
+    expect(screen.getByRole('status')).toHaveTextContent('All the colours are easy to read');
+    expect(screen.queryByRole('list', { name: 'Readability of the colours' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Show all checks' }));
+    expect(within(screen.getByRole('list', { name: 'Readability of the colours' })).getAllByRole('listitem').length).toBeGreaterThanOrEqual(6);
+    await userEvent.click(screen.getByRole('button', { name: 'Show less' }));
+    expect(screen.queryByRole('list', { name: 'Readability of the colours' })).not.toBeInTheDocument();
   });
 
   it('checks the field border at 3 to 1 and the button text on the button', () => {

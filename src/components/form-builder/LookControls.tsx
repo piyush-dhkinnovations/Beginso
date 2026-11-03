@@ -44,7 +44,7 @@ const six = (v: string) => (v.length === 4 ? `#${v[1]}${v[1]}${v[2]}${v[2]}${v[3
 
 // ── Colours ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 
-/** One colour: a swatch that opens the picker, the hex, and a reset to the default. */
+/** One colour as a box: a big swatch that opens the picker, its name with a reset, and the hex underneath (empty = the default). */
 function ColourRow({ label, value, fallback, onPick, onReset }: { label: string; value?: string; fallback: string; onPick: (c: string) => void; onReset: () => void }) {
   const id = useId();
   const [typed, setTyped] = useState<string | null>(null);
@@ -53,14 +53,29 @@ function ColourRow({ label, value, fallback, onPick, onReset }: { label: string;
     setTyped(null);
   };
   return (
-    <div className="flex items-center gap-2">
-      <label className="relative size-9 shrink-0 cursor-pointer" aria-label={`${label} colour`}>
-        <span aria-hidden="true" className="block size-9 rounded-md border border-(--border-strong)" style={{ backgroundColor: value ?? fallback }} />
+    <div className={bx('flex flex-col gap-2 rounded-lg border-2 p-2', value ? 'border-(--action-primary) bg-(--accent-soft)' : 'border-(--border-default)')}>
+      <label className="relative block h-11 cursor-pointer" aria-label={`${label} colour`}>
+        <span aria-hidden="true" className="block h-11 w-full rounded-md border border-(--border-strong)" style={{ backgroundColor: value ?? fallback }} />
         <input type="color" value={six(value ?? fallback)} onChange={(e) => onPick(e.target.value)} className="absolute inset-0 size-full cursor-pointer opacity-0" />
       </label>
-      <label htmlFor={id} className="min-w-0 flex-1 bg-body-sm font-medium text-(--text-primary)">
-        {label}
-      </label>
+      <div className="flex items-center justify-between gap-1">
+        <label htmlFor={id} className="min-w-0 truncate bg-body-sm font-medium text-(--text-primary)">
+          {label}
+        </label>
+        <button
+          type="button"
+          onClick={() => {
+            setTyped(null);
+            onReset();
+          }}
+          disabled={!value}
+          aria-label={`Set ${label.toLowerCase()} back to the default`}
+          title="Back to the default"
+          className="flex size-7 shrink-0 items-center justify-center rounded-md text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-primary) disabled:pointer-events-none disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-(--border-focus)"
+        >
+          <RotateCcw size={14} aria-hidden="true" />
+        </button>
+      </div>
       <input
         id={id}
         value={typed ?? value ?? ''}
@@ -70,21 +85,8 @@ function ColourRow({ label, value, fallback, onPick, onReset }: { label: string;
         onChange={(e) => setTyped(e.target.value)}
         onBlur={commit}
         onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-        className="h-9 w-24 rounded-md border border-(--border-default) bg-(--surface-card) px-2 font-mono text-sm text-(--text-primary) placeholder:font-sans placeholder:text-(--text-muted) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
+        className="h-8 w-full rounded-md border border-(--border-default) bg-(--surface-card) px-2 font-mono text-sm text-(--text-primary) placeholder:font-sans placeholder:text-(--text-muted) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
       />
-      <button
-        type="button"
-        onClick={() => {
-          setTyped(null);
-          onReset();
-        }}
-        disabled={!value}
-        aria-label={`Set ${label.toLowerCase()} back to the default`}
-        title="Back to the default"
-        className="flex size-9 shrink-0 items-center justify-center rounded-md text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-primary) disabled:pointer-events-none disabled:opacity-30 focus-visible:outline-2 focus-visible:outline-(--border-focus)"
-      >
-        <RotateCcw size={14} aria-hidden="true" />
-      </button>
     </div>
   );
 }
@@ -157,61 +159,86 @@ export function readabilityChecks(b: FormBranding): Check[] {
   ];
 }
 
-/** Each pair with its ratio, and a one-tap Fix for a failing one. */
+/** The readability of the colours: what needs fixing (with a one-tap Fix) comes first, and the checks that pass are one click away. */
 function Readability({ branding, setTheme, onBrand }: { branding: FormBranding; setTheme: SetTheme; onBrand: (colour: string) => void }) {
+  const [all, setAll] = useState(false);
   const checks = readabilityChecks(branding);
+  const isBad = (k: Check) => k.ratio !== null && k.ratio < k.need;
+  const bad = checks.filter(isBad);
+  const unknown = checks.filter((k) => k.ratio === null);
+  const good = checks.length - bad.length - unknown.length;
+  const shown = all ? checks : bad;
   return (
-    <div className="flex flex-col gap-1.5" role="list" aria-label="Readability of the colours">
-      <span className="bg-label">Readability</span>
-      {checks.map((k) => {
-        const ok = k.ratio !== null && k.ratio >= k.need;
-        return (
-          <div key={k.id} role="listitem" className="flex items-start gap-2 bg-body-sm">
-            {k.ratio === null ? (
-              <span aria-hidden="true" className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border border-(--border-strong) text-[0.625rem] text-(--text-muted)">?</span>
-            ) : ok ? (
-              <Check size={16} className="mt-0.5 shrink-0 text-(--success-text)" aria-hidden="true" />
-            ) : (
-              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-(--warning-text)" aria-hidden="true" />
-            )}
-            <span className="min-w-0 flex-1 text-(--text-secondary)">
-              {k.label}{' '}
-              {k.ratio === null ? (
-                <span className="text-(--text-muted)">Can&apos;t check: {k.unknown ?? 'a colour is not a plain colour'}.</span>
-              ) : (
-                <span className={ok ? 'text-(--text-muted)' : 'font-medium text-(--warning-text)'}>
-                  {ok ? `${k.ratio.toFixed(1)} to 1, good.` : `${k.ratio.toFixed(1)} to 1. Needs ${k.need}.`}
+    <div className={bx('flex flex-col gap-2 rounded-lg border-2 p-3', bad.length ? 'border-(--warning-text)' : 'border-(--border-default)')}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <span className="bg-label">Readability</span>
+          <span role="status" className={bx('bg-body-sm', bad.length ? 'font-medium text-(--warning-text)' : 'text-(--success-text)')}>
+            {bad.length ? `${bad.length} to fix` : 'All the colours are easy to read'}
+          </span>
+          <span className="bg-caption text-(--text-muted)">
+            {good} good{unknown.length ? `, ${unknown.length} can't be checked (the page behind is a picture or a pattern)` : ''}
+          </span>
+        </div>
+        <button type="button" aria-expanded={all} onClick={() => setAll((v) => !v)} className="shrink-0 rounded-md bg-caption text-(--text-muted) underline underline-offset-2 hover:text-(--text-secondary)">
+          {all ? 'Show less' : 'Show all checks'}
+        </button>
+      </div>
+      {shown.length > 0 && (
+        <div className="flex flex-col gap-1.5" role="list" aria-label="Readability of the colours">
+          {shown.map((k) => {
+            const ok = k.ratio !== null && k.ratio >= k.need;
+            return (
+              <div key={k.id} role="listitem" className="flex items-start gap-2 bg-body-sm">
+                {k.ratio === null ? (
+                  <span aria-hidden="true" className="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border border-(--border-strong) text-[0.625rem] text-(--text-muted)">?</span>
+                ) : ok ? (
+                  <Check size={16} className="mt-0.5 shrink-0 text-(--success-text)" aria-hidden="true" />
+                ) : (
+                  <AlertTriangle size={16} className="mt-0.5 shrink-0 text-(--warning-text)" aria-hidden="true" />
+                )}
+                <span className="min-w-0 flex-1 text-(--text-secondary)">
+                  {k.label}{' '}
+                  {k.ratio === null ? (
+                    <span className="text-(--text-muted)">Can&apos;t check: {k.unknown ?? 'a colour is not a plain colour'}.</span>
+                  ) : (
+                    <span className={ok ? 'text-(--text-muted)' : 'font-medium text-(--warning-text)'}>
+                      {ok ? `${k.ratio.toFixed(1)} to 1, good.` : `${k.ratio.toFixed(1)} to 1. Needs ${k.need}.`}
+                    </span>
+                  )}
                 </span>
-              )}
-            </span>
-            {k.fix && (
-              <button
-                type="button"
-                onClick={() => (k.fix!.key === 'brand' ? onBrand(k.fix!.colour) : setTheme('colors', { [k.fix!.key]: k.fix!.colour }))}
-                aria-label={`Fix: ${k.label.toLowerCase()}, use ${k.fix.colour}`}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-(--border-strong) px-2 py-0.5 bg-caption font-semibold text-(--text-primary) hover:bg-(--surface-hover) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
-              >
-                <span aria-hidden="true" className="size-3 rounded-sm border border-(--border-strong)" style={{ backgroundColor: k.fix.colour }} />
-                Fix
-              </button>
-            )}
-          </div>
-        );
-      })}
+                {k.fix && (
+                  <button
+                    type="button"
+                    onClick={() => (k.fix!.key === 'brand' ? onBrand(k.fix!.colour) : setTheme('colors', { [k.fix!.key]: k.fix!.colour }))}
+                    aria-label={`Fix: ${k.label.toLowerCase()}, use ${k.fix.colour}`}
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-(--border-strong) px-2 py-0.5 bg-caption font-semibold text-(--text-primary) hover:bg-(--surface-hover) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
+                  >
+                    <span aria-hidden="true" className="size-3 rounded-sm border border-(--border-strong)" style={{ backgroundColor: k.fix.colour }} />
+                    Fix
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
-/** Text, headings, card, fields, field border and button text, each on one line, then the readability of the pairs. */
+/** Text, headings, card, fields, field border and button text as six boxes, then the readability of the pairs. */
 export function FormColours({ branding, setTheme, onBrand }: { branding: FormBranding; setTheme: SetTheme; onBrand: (colour: string) => void }) {
   const colours = branding.theme?.colors ?? {};
   const any = COLOURS.some((c) => colours[c.key]);
   return (
     <div className="flex flex-col gap-3">
-      <GroupTitle hint="Leave one as Default and it follows the look you picked.">Form colours</GroupTitle>
-      {COLOURS.map((c) => (
-        <ColourRow key={c.key} label={c.label} value={colours[c.key]} fallback={DEFAULT[c.key]} onPick={(v) => setTheme('colors', { [c.key]: v })} onReset={() => setTheme('colors', { [c.key]: undefined })} />
-      ))}
+      <GroupTitle hint="Tap a box to choose a colour. A box left as Default follows the look you picked.">Form colours</GroupTitle>
+      <div className="grid grid-cols-2 gap-2">
+        {COLOURS.map((c) => (
+          <ColourRow key={c.key} label={c.label} value={colours[c.key]} fallback={DEFAULT[c.key]} onPick={(v) => setTheme('colors', { [c.key]: v })} onReset={() => setTheme('colors', { [c.key]: undefined })} />
+        ))}
+      </div>
       {any && (
         <button type="button" onClick={() => setTheme('colors', Object.fromEntries(COLOURS.map((c) => [c.key, undefined])))} className="self-start rounded-md bg-body-sm text-(--text-muted) underline underline-offset-2 hover:text-(--text-secondary)">
           Reset all colours
@@ -295,7 +322,7 @@ export function FieldsLook({ branding, layout, setTheme, onCorners }: { branding
   const customCorners = radius !== undefined && !FIELD_CORNERS.some((c) => c.value === radius);
   return (
     <div className="flex flex-col gap-5">
-      <GroupTitle hint="How the boxes people type in look.">Fields</GroupTitle>
+      <GroupTitle hint="How the boxes people type in look.">Field look</GroupTitle>
       <TileGroup label="Field style" columns={3}>
         {FIELD_STYLES.map((o) => (
           <LookTile key={o.value} label={o.label} chosen={style === o.value} onClick={() => setTheme('fields', { style: o.value === 'outlined' ? undefined : o.value })}>

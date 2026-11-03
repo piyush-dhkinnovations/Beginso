@@ -2,7 +2,7 @@
 
 import { isAxiosError } from 'axios';
 import { useId, useState, type ReactNode } from 'react';
-import { Check, ImageIcon, Maximize2, Minus, Plus, X } from 'lucide-react';
+import { Check, ImageIcon, Maximize2, Minus, Plus, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
@@ -22,6 +22,8 @@ import type { BannerLink, ButtonRadius, FormTheme, ButtonStyle, CardStyle, Cover
 import { ImageUploadZone } from './BrandingPanel';
 import { LayoutChooser } from './LayoutChooser';
 import { PictureChoice } from './PicturePicker';
+import { LooksDialog } from './LooksDialog';
+import { currentLook, styleUpdates } from '@/lib/formStyles';
 import { CustomBadge, FieldsLook, FineTune, FormColours, type SetTheme } from './LookControls';
 import { ZOOM_STEPS } from '@/lib/previewZoom';
 import { LiveFormPreview } from './LiveFormPreview';
@@ -184,6 +186,8 @@ export interface BrandingStudioProps {
   /** The form's title, edited on the Header section. Without onTitleChange the title is not shown there. */
   formTitle?: string;
   onTitleChange?: (title: string) => void;
+  /** A workspace slug or 'personal': where "My styles" are kept. Without it only the ready-made looks are offered. */
+  styleScope?: string;
 }
 
 /**
@@ -191,7 +195,8 @@ export interface BrandingStudioProps {
  * beside them, large, changing as each control is touched: there is no step to get through first, no preview to open, and a setting is
  * one click away. Choosing a layout applies it at once, with the typeface, card and colour that go with it.
  */
-export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic, onBrandingUpdate, onLayoutChange, onFullScreen, formTitle, onTitleChange }: BrandingStudioProps) {
+export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic, onBrandingUpdate, onLayoutChange, onFullScreen, formTitle, onTitleChange, styleScope }: BrandingStudioProps) {
+  const [looksOpen, setLooksOpen] = useState(false);
   const [section, setSection] = useState<Section>('layout');
   const [device, setDevice] = useState<PreviewDevice>('desktop');
   // The form is shown at 100%; the - and + step through ZOOM_STEPS, and the percentage between them goes back to 100%.
@@ -201,6 +206,22 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
   const { toast } = useToast();
   const uid = useId();
   const set = onBrandingUpdate;
+  // A whole look in one click (a ready-made one, or one of "My styles"): the layout and every look setting change, the form's own logo, uploads,
+  // title and text stay, and Undo puts back exactly what was there.
+  const applyLook = (look: Parameters<typeof styleUpdates>[0] & { layout: LayoutPreset }, name: string) => {
+    const before = currentLook(branding);
+    const beforeLayout = layout;
+    onLayoutChange(look.layout);
+    set(styleUpdates(look, branding));
+    setLooksOpen(false);
+    toast(`${name} look applied.`, 'success', undefined, {
+      label: 'Undo',
+      onClick: () => {
+        onLayoutChange(beforeLayout);
+        set(before);
+      },
+    });
+  };
   const theme = branding.theme;
   // One group of branding.theme at a time; an emptied theme is saved as null, which clears it on the server.
   const setTheme: SetTheme = (group, patch) => set({ theme: patchTheme(theme, group, patch) });
@@ -309,29 +330,38 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
           {FONT_GROUPS.map((group) => (
             <div key={group.id} role="group" aria-label={group.label} className="flex flex-col gap-2">
               <span className="pt-1 bg-caption font-semibold text-(--text-muted)">{group.label}</span>
-              {FORM_FONT_OPTIONS.filter((f) => f.group === group.id).map((font) => {
-                const chosen = (branding.fontFamily ?? 'dm_sans') === font.value;
-                return (
-                  <button
-                    key={font.value}
-                    type="button"
-                    aria-pressed={chosen}
-                    onClick={() => set({ fontFamily: font.value as FormFont })}
-                    // each option is drawn in its own typeface, so the choice is seen, not imagined
-                    style={{ fontFamily: font.stack }}
-                    className={bx(
-                      'flex min-h-11 items-center gap-3 rounded-lg border-2 px-3 text-left focus-visible:outline-2 focus-visible:outline-(--border-focus)',
-                      chosen ? 'border-(--action-primary) bg-(--accent-soft)' : 'border-(--border-default) hover:bg-(--surface-hover)',
-                    )}
-                  >
-                    <span aria-hidden="true" className="w-8 text-xl font-semibold text-(--text-primary)">
-                      Aa
-                    </span>
-                    <span className="min-w-0 flex-1 truncate text-sm text-(--text-primary)">{font.label}</span>
-                    {chosen && <Check size={16} className="text-(--action-primary)" aria-hidden="true" />}
-                  </button>
-                );
-              })}
+              <div className="grid grid-cols-2 gap-2">
+                {FORM_FONT_OPTIONS.filter((f) => f.group === group.id).map((font) => {
+                  const chosen = (branding.fontFamily ?? 'dm_sans') === font.value;
+                  const [name, ...rest] = font.label.split(' — ');
+                  return (
+                    <button
+                      key={font.value}
+                      type="button"
+                      aria-pressed={chosen}
+                      title={font.label}
+                      onClick={() => set({ fontFamily: font.value as FormFont })}
+                      // each box is drawn in its own typeface, so the choice is seen, not imagined
+                      style={{ fontFamily: font.stack }}
+                      className={bx(
+                        'relative flex min-h-24 flex-col items-center justify-center gap-1 rounded-lg border-2 px-2 py-3 text-center focus-visible:outline-2 focus-visible:outline-(--border-focus)',
+                        chosen ? 'border-(--action-primary) bg-(--accent-soft)' : 'border-(--border-default) hover:bg-(--surface-hover)',
+                      )}
+                    >
+                      <span aria-hidden="true" className="text-3xl font-semibold leading-none text-(--text-primary)">
+                        Aa
+                      </span>
+                      <span className="text-sm leading-tight text-(--text-primary)">{name}</span>
+                      {rest.length > 0 && <span className="text-xs leading-tight text-(--text-muted)">{rest.join(' — ')}</span>}
+                      {chosen && (
+                        <span className="absolute right-1.5 top-1.5 flex size-5 items-center justify-center rounded-full bg-(--action-primary) text-white">
+                          <Check size={12} aria-hidden="true" />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           ))}
         </div>
@@ -439,10 +469,24 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
     // the section tabs, so the controls and the form start right under the builder's tabs.
     <div className="flex flex-col gap-4">
       <h2 className="sr-only">Branding</h2>
+      <LooksDialog isOpen={looksOpen} onClose={() => setLooksOpen(false)} layout={layout} branding={branding} scope={styleScope} onApply={applyLook} />
       <div className="grid items-start gap-6 lg:grid-cols-[24rem_minmax(0,1fr)]">
         <Card className="flex min-w-0 flex-col gap-4 p-4 lg:max-h-[calc(100vh-16.5rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* Stays at the top of the card while the controls scroll under it. */}
           <div className="sticky -top-4 z-10 -mx-4 -mt-4 bg-(--surface-card) px-4 pt-4">
+            <button
+              type="button"
+              onClick={() => setLooksOpen(true)}
+              className="mb-3 flex w-full items-center gap-3 rounded-lg border-2 border-(--border-default) bg-(--surface-card) px-3 py-2 text-left hover:bg-(--surface-hover) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
+            >
+              <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-md bg-(--accent-soft) text-(--accent-soft-text)">
+                <Sparkles size={18} />
+              </span>
+              <span className="flex min-w-0 flex-col">
+                <span className="bg-body-sm font-semibold text-(--text-primary)">Looks</span>
+                <span className="bg-caption text-(--text-muted)">Ready-made looks and your saved styles</span>
+              </span>
+            </button>
             <Tabs tabs={SECTIONS} activeId={section} onChange={(id) => setSection(id as Section)} ariaLabel="Branding sections" panelId="branding-section" />
           </div>
           <div role="tabpanel" id="branding-section" aria-labelledby={`tab-${section}`} className="flex flex-col gap-5">
