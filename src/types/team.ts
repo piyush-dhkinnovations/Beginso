@@ -58,6 +58,9 @@ export interface InvitationPreview {
 export interface FormAccessGrant {
   userId: string;
   email: string;
+  /** The person's name and picture, when the server sends them (it does for the grants list). */
+  name?: string;
+  user?: { avatarUrl?: string | null } | null;
   role: Exclude<Role, 'owner'>;
   accessLevel: 'read' | 'write';
 }
