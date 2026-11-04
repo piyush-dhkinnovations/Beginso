@@ -71,8 +71,37 @@ describe('FormAccessPanel', () => {
     mockListGrants.mockResolvedValue([GRANT]);
     renderPanel();
     expect(await screen.findByText('sam@example.com')).toBeInTheDocument();
-    expect(screen.getByText('Reviewer')).toBeInTheDocument();
+    expect(screen.getByLabelText('Role for sam@example.com')).toHaveValue('viewer');
     expect(screen.getByLabelText('Revoke access for sam@example.com')).toBeInTheDocument();
+  });
+
+  it('shows each member with their picture and name, and the email under the name', async () => {
+    mockListGrants.mockResolvedValue([{ ...GRANT, name: 'Sam Rivera', user: { avatarUrl: 'https://cdn.example/sam.png' } }, { userId: 'u2', email: 'lee@example.com', role: 'member', accessLevel: 'write' }]);
+    renderPanel();
+    expect(await screen.findByText('Sam Rivera')).toBeInTheDocument();
+    expect(screen.getByText('sam@example.com')).toBeInTheDocument();
+    expect(document.querySelector('img[src*="sam.png"]')).not.toBeNull(); // the dialog renders outside the test container
+    // no name from the server: the email stands in, once, with its first letter as the picture
+    expect(screen.getAllByText('lee@example.com')).toHaveLength(1);
+    expect(screen.getByText('L', { selector: '.bg-avatar' })).toBeInTheDocument();
+  });
+
+  it('changes a role from the list in one step, with no remove and add', async () => {
+    mockListGrants.mockResolvedValue([GRANT]);
+    mockGrant.mockResolvedValue({ ...GRANT, role: 'member' });
+    renderPanel();
+    await userEvent.selectOptions(await screen.findByLabelText('Role for sam@example.com'), 'member');
+    await waitFor(() => expect(mockGrant).toHaveBeenCalledWith('f1', 'sam@example.com', 'member'));
+    expect(mockRevoke).not.toHaveBeenCalled();
+  });
+
+  it('does not call the server when the same role is picked again', async () => {
+    mockListGrants.mockResolvedValue([{ ...GRANT, role: 'reviewer' }]);
+    renderPanel();
+    const select = await screen.findByLabelText('Role for sam@example.com');
+    expect(select).toHaveValue('viewer'); // reviewer is another name for viewer
+    await userEvent.selectOptions(select, 'viewer');
+    expect(mockGrant).not.toHaveBeenCalled();
   });
 
   it('shows an error alert with retry when the grants query fails', async () => {
