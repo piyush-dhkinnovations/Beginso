@@ -67,13 +67,38 @@ describe('CreateFormPage', () => {
     expect(createForm).not.toHaveBeenCalled();
   });
 
-  it('rejects a title over 200 characters', async () => {
+  it.each(['1', 'ab', '  a  '])('says a title of %j is too short, and does not call the API', async (typed) => {
+    renderPage();
+    await userEvent.type(screen.getByLabelText('Form Title'), typed);
+    await userEvent.click(screen.getByRole('button', { name: /Create Form/ }));
+    expect(await screen.findByText('Form title must be at least 3 characters')).toBeInTheDocument();
+    expect(createForm).not.toHaveBeenCalled();
+  });
+
+  it('rejects a title over 100 characters (the most the server accepts)', async () => {
     renderPage();
     await userEvent.click(screen.getByLabelText('Form Title'));
-    await userEvent.paste('x'.repeat(201));
+    await userEvent.paste('x'.repeat(101));
     await userEvent.click(screen.getByRole('button', { name: /Create Form/ }));
-    expect(await screen.findByText('Title must be 200 characters or less')).toBeInTheDocument();
+    expect(await screen.findByText('Form title must be 100 characters or less')).toBeInTheDocument();
     expect(createForm).not.toHaveBeenCalled();
+  });
+
+  it('shows the reason the server gives under the field, not a vague toast', async () => {
+    createForm.mockRejectedValue({ response: { status: 400, data: { success: false, message: 'Validation failed', errors: [{ field: 'title', message: 'Form title must be at least 3 characters' }] } } });
+    renderPage();
+    await userEvent.type(screen.getByLabelText('Form Title'), 'My form');
+    await userEvent.click(screen.getByRole('button', { name: /Create Form/ }));
+    expect(await screen.findByText('Form title must be at least 3 characters')).toBeInTheDocument();
+    expect(toast).not.toHaveBeenCalled();
+  });
+
+  it('keeps the plain toast for an error that names no field', async () => {
+    createForm.mockRejectedValue({ response: { status: 500, data: {} } });
+    renderPage();
+    await userEvent.type(screen.getByLabelText('Form Title'), 'My form');
+    await userEvent.click(screen.getByRole('button', { name: /Create Form/ }));
+    await waitFor(() => expect(toast).toHaveBeenCalledWith('Failed to create form. Please try again.', 'error'));
   });
 
   it('creates a personal form, seeds the builder store and opens the builder', async () => {

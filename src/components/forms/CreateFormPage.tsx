@@ -48,6 +48,7 @@ export function CreateFormPage() {
   const {
     register,
     handleSubmit,
+    setError,
     formState: { errors },
     control,
   } = useForm<CreateFormValues>({ resolver: zodResolver(createFormSchema) });
@@ -98,7 +99,19 @@ export function CreateFormPage() {
       // `?ws=` lets the shell paint the workspace sidebar on the builder's first render.
       router.push(target ? `/forms/${response._id}/edit?ws=${target.slug}` : `/forms/${response._id}/edit`);
     },
-    onError: () => toast('Failed to create form. Please try again.', 'error'),
+    onError: (err) => {
+      // The server says which field it refused and why ("Form title must be at least 3 characters"): show that under the field.
+      const refused = (err as { response?: { status?: number; data?: { errors?: { field?: string; message?: string }[] } } }).response;
+      const fieldErrors = refused?.status === 400 ? (refused.data?.errors ?? []) : [];
+      let shown = false;
+      for (const e of fieldErrors) {
+        if ((e.field === 'title' || e.field === 'description') && e.message) {
+          setError(e.field, { type: 'server', message: e.message });
+          shown = true;
+        }
+      }
+      if (!shown) toast('Failed to create form. Please try again.', 'error');
+    },
   });
 
   return (
