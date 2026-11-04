@@ -9,7 +9,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from './firebase';
 import { PROTECTED_PATHS, matchesRoute } from './authRoutes';
 import { bindRecentFormsUser } from '@/store/recentFormsStore';
-import { applyTheme, isThemePreference, readDarkVariant, readThemePreference, storeTheme, type ThemePreference } from './theme';
+import { applyTheme, isThemePreference, readDarkVariant, readThemePreference, storeTheme, storeThemeCookie, type ThemePreference } from './theme';
 
 interface User {
   id: string;
@@ -123,7 +123,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // and this does nothing. The dark style stays per-device.
   const savedTheme = state.user?.theme;
   useEffect(() => {
-    if (!isThemePreference(savedTheme) || readThemePreference() === savedTheme) return;
+    if (!isThemePreference(savedTheme)) return;
+    storeThemeCookie(savedTheme); // keeps the first-paint copy current for people who signed in before it existed
+    if (readThemePreference() === savedTheme) return;
     const variant = readDarkVariant();
     storeTheme(savedTheme, variant);
     applyTheme(savedTheme, variant);

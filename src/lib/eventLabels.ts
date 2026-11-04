@@ -33,6 +33,7 @@ const ACTION_PHRASES: Record<string, string> = {
   'template.publish': 'published a template from',
   'template.remove': 'removed a template',
   'access_grant.create': 'shared',
+  'access_grant.role_change': 'changed access to',
   'access_grant.revoke': 'removed access to',
   'form.create': 'created',
   'form.close': 'closed',
