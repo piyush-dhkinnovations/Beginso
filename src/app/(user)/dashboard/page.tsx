@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Plus, LayoutTemplate, PlusCircle, FileText } from 'lucide-react';
+import { Plus, LayoutTemplate, PlusCircle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { dashboardService } from '@/services/dashboard';
@@ -13,8 +13,9 @@ import { WELCOME_DESCRIPTION, welcomeTitle } from '@/lib/welcome';
 import { useCustomDashboard } from '@/components/dashboard-grid/CustomDashboard';
 import { personalDefaults, personalMetrics } from '@/components/dashboard-grid/personalHome';
 import { RecentActivitySection } from '@/components/dashboard/RecentActivitySection';
+import { FirstRunHome } from '@/components/dashboard/FirstRunHome';
 import { ButtonLink } from '@/components/ui';
-import { ActionCard, Card, EmptyState, PageHeader, StatusBadge } from '@/components/ui';
+import { ActionCard, Card, PageHeader, StatusBadge } from '@/components/ui';
 import { Alert } from '@/components/ui/Alert';
 import { FormTile } from '@/components/forms/FormTile';
 import { Button } from '@/components/ui/Button';
@@ -35,14 +36,8 @@ const STATUS_LABEL: Record<FormStatus, string> = {
 const YOUR_FORMS_LIMIT = 10; // fetched; the list shows the first YOUR_FORMS_SHOWN
 const YOUR_FORMS_SHOWN = 5;
 
-const HOW_IT_WORKS = [
-  { title: 'Build', body: 'Add questions in the builder, or start from a template.' },
-  { title: 'Share', body: 'Publish and send the link to anyone — no account needed.' },
-  { title: 'Collect', body: 'Responses land in your inbox, ready to review and export.' },
-];
-
 // Personal Home (A1.4). First run (no personal forms) is one illustrated call to action plus a
-// three-step "how it works" strip — not a wall of zeros. Once forms exist: the stat cards lead
+// three-step path — not a wall of zeros. Once forms exist: the stat cards lead
 // (split graphs where the data supports one), then two columns — "Your forms" on the left, quick
 // actions and recent activity on the right. All cards share the Tinted surface (.bg-card).
 export default function DashboardPage() {
@@ -140,36 +135,7 @@ export default function DashboardPage() {
           <Button onClick={() => void refetchForms()}>Try again</Button>
         </Card>
       ) : !hasForms ? (
-        <>
-          <Card className="items-center py-6">
-            <EmptyState
-              illustration="onboarding"
-              icon={<FileText className="bg-icon" aria-hidden="true" />}
-              title="Create your first form"
-              description="Build a form, share the link, and collect responses — all from one place."
-              actions={
-                <>
-                  <ButtonLink href="/forms/new">
-                    <Plus size={16} className="mr-2" />
-                    Create Form
-                  </ButtonLink>
-                  <ButtonLink href="/templates" variant="secondary">
-                    Browse templates
-                  </ButtonLink>
-                </>
-              }
-            />
-          </Card>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            {HOW_IT_WORKS.map((step, i) => (
-              <Card key={step.title} className="gap-1">
-                <span className="bg-caption font-semibold text-(--text-link)">Step {i + 1}</span>
-                <h2 className="bg-body font-semibold text-(--text-primary)">{step.title}</h2>
-                <p className="bg-body-sm text-(--text-muted)">{step.body}</p>
-              </Card>
-            ))}
-          </div>
-        </>
+        <FirstRunHome />
       ) : (
         <>
           {/* Gated on formsLoaded (not analyticsLoading) — rendering the cards before we know
