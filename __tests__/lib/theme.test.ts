@@ -14,6 +14,8 @@ import {
   storeLightVariant,
   storeTextSize,
   storeTheme,
+  storeThemeCookie,
+  THEME_COOKIE,
   TEXT_SCALE,
   THEME_KEY,
   DARK_VARIANT_KEY,
@@ -43,6 +45,14 @@ describe('theme preference', () => {
     window.localStorage.setItem(DARK_VARIANT_KEY, 'neon');
     expect(readThemePreference()).toBe('system');
     expect(readDarkVariant()).toBe('slate');
+  });
+
+  it('also keeps a cookie copy of the choice, which the first paint falls back on when nothing is saved on the device', () => {
+    document.cookie = `${THEME_COOKIE}=; Max-Age=0; Path=/`;
+    storeTheme('dark', 'slate');
+    expect(document.cookie).toContain(`${THEME_COOKIE}=dark`);
+    storeThemeCookie('system');
+    expect(document.cookie).toContain(`${THEME_COOKIE}=system`);
   });
 
   it('stores and reads back the choice', () => {
