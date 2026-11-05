@@ -58,7 +58,7 @@ jobs:
 
       - name: Restore the Chromium cache
         id: browsers
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
@@ -73,7 +73,7 @@ jobs:
         run: npx playwright install-deps chromium
 
       - name: Restore the Next build cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .next-e2e/cache
           key: next-e2e-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'next.config.ts') }}
