@@ -46,6 +46,10 @@ const LOOK_THEMES: Record<string, NonNullable<PublicFormSchema['branding']['them
   heading: { v: 1, fonts: { heading: 'playfair_display' } },
   panelend: { v: 1, layout: { panelSide: 'end' } },
   multi: undefined, // two pages, so a step list has something to list
+  // the page behind the form: a gradient with the owner's colours and angle; a picture darkened and blurred; and a tall cover banner
+  gradient: { v: 1, background: { from: '#FF0000', to: '#0000FF', angle: 90 } },
+  veil: { v: 1, background: { darken: 40, blur: 10 } },
+  tall: { v: 1, cover: { height: 320 } },
   // the thank-you screen with the owner's own headline, accent colour, picture, confetti, and a redirect after 3 seconds
   thanks: { v: 1, success: { headline: "You're in!", colour: '#16A34A', picture: '/form-pictures/aurora-mint.jpg', confetti: true, redirect: { url: 'https://example.com/welcome', seconds: 3 } } },
   // two pages, with big buttons that are as wide as their words, lift on hover, carry the owner's words, a step list for the progress, and a note
@@ -75,7 +79,14 @@ function lookSchema(slug: string): PublicFormSchema | undefined {
       { fieldId: 'd', pageId: m[2] === 'multi' || m[2] === 'buttons' ? 'p2' : 'p1', type: 'multiple_choice', label: 'How did you hear about us?', required: true, deleted: false, order: 3, options: ['Search', 'Friend', 'Social media'] },
       { fieldId: 'e', pageId: m[2] === 'multi' || m[2] === 'buttons' ? 'p2' : 'p1', type: 'checkbox', label: 'Which features interest you?', required: false, deleted: false, order: 4, options: ['Forms', 'Analytics'] },
     ],
-    branding: { primaryColor: '#1D4ED8', bannerText: 'Takes two minutes', ...(m[2] === 'body' ? { fontFamily: 'quicksand' as const } : {}), ...(theme ? { theme } : {}) },
+    branding: {
+      primaryColor: '#1D4ED8',
+      bannerText: 'Takes two minutes',
+      ...(m[2] === 'body' ? { fontFamily: 'quicksand' as const } : {}),
+      ...(m[2] === 'gradient' ? { backgroundStyle: 'gradient' as const } : {}),
+      ...(m[2] === 'veil' ? { backgroundStyle: 'image' as const, backgroundImageUrl: '/form-pictures/aurora-mint.jpg' } : {}),
+      ...(theme ? { theme } : {}),
+    },
     settings: { ...mockPublicFormSchema.settings, layout: m[1] as 'classic' },
   };
 }

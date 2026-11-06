@@ -7,45 +7,65 @@ import { Button } from '@/components/ui/Button';
 // Crop step for logo and cover uploads. A fixed-shape frame sits over the image; drag to move, slide (or +/-) to
 // zoom, arrow keys nudge. "Use this crop" renders exactly the framed part at the output size and hands back a File.
 // No library: it is a canvas draw of the visible region. The image always covers the frame (no empty edges).
+/** How a crop was framed: the shape, the centre of the part kept (a share of the whole picture, 0 to 1) and the zoom. Enough to open the dialog on it again. */
+export interface CropFrame {
+  aspect: number;
+  fx: number;
+  fy: number;
+  zoom: number;
+}
+
 export interface ImageCropModalProps {
+  /** Opens the dialog already framed like this (an earlier crop being adjusted), instead of centred. */
+  initial?: CropFrame;
+  /** A picture of our own, read back as a file: the crop is drawn into a new file. */
   file: File | null;
+  /** Or a picture that must stay linked (a photo from Unsplash): the crop is given back as a shape, a focal point and a zoom, and nothing is copied. */
+  linkedUrl?: string | null;
+  onConfirmLinked?: (crop: CropFrame) => void;
   /** Frame shape = output shape. */
   aspect: number;
   outputWidth: number;
   /** PNG keeps a logo's transparency; JPEG keeps a cover photo small. */
   mime: 'image/png' | 'image/jpeg';
   title: string;
+  /** Shapes to choose from (each with its own frame ratio). Without them the frame keeps `aspect`. */
+  shapes?: { label: string; aspect: number }[];
   onCancel: () => void;
-  onConfirm: (cropped: File) => void;
+  onConfirm: (cropped: File, frame: CropFrame) => void;
 }
 
 const MAX_ZOOM = 4;
 
-export function ImageCropModal({ file, aspect, outputWidth, mime, title, onCancel, onConfirm }: ImageCropModalProps) {
+export function ImageCropModal({ file, linkedUrl, onConfirmLinked, initial, aspect, outputWidth, mime, title, shapes, onCancel, onConfirm }: ImageCropModalProps) {
   return (
-    <Modal isOpen={!!file} onClose={onCancel} title={title} description="Drag the image to choose the part you want. Use the slider to zoom.">
-      {file && <Cropper file={file} aspect={aspect} outputWidth={outputWidth} mime={mime} onCancel={onCancel} onConfirm={onConfirm} />}
+    <Modal isOpen={!!file || !!linkedUrl} onClose={onCancel} title={title} description="Drag the image to choose the part you want. Use the slider to zoom.">
+      {(file || linkedUrl) && <Cropper file={file} linkedUrl={linkedUrl} onConfirmLinked={onConfirmLinked} initial={initial} aspect={aspect} outputWidth={outputWidth} mime={mime} shapes={shapes} onCancel={onCancel} onConfirm={onConfirm} />}
     </Modal>
   );
 }
 
-function Cropper({ file, aspect, outputWidth, mime, onCancel, onConfirm }: Omit<ImageCropModalProps, 'title'> & { file: File }) {
+function Cropper({ file, linkedUrl, onConfirmLinked, initial, aspect: startAspect, outputWidth, mime, shapes, onCancel, onConfirm }: Omit<ImageCropModalProps, 'title'>) {
+  const [aspect, setAspect] = useState(initial?.aspect ?? startAspect);
   const frameRef = useRef<HTMLDivElement>(null);
   const [src, setSrc] = useState<string | null>(null);
   const [nat, setNat] = useState<{ w: number; h: number } | null>(null);
   const [frameW, setFrameW] = useState(0);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(initial?.zoom ?? 1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [busy, setBusy] = useState(false);
   const drag = useRef<{ px: number; py: number; ox: number; oy: number } | null>(null);
   const frameH = frameW / aspect;
 
   useEffect(() => {
+    if (!file) return;
     const url = URL.createObjectURL(file);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- the object URL must be created and revoked with the effect
     setSrc(url);
     return () => URL.revokeObjectURL(url);
   }, [file]);
+  // a linked picture is shown from where it lives
+  const shown = file ? src : (linkedUrl ?? null);
 
   useEffect(() => {
     const el = frameRef.current;
@@ -68,6 +88,19 @@ function Cropper({ file, aspect, outputWidth, mime, onCancel, onConfirm }: Omit<
     return { x: Math.min(mx, Math.max(-mx, o.x)), y: Math.min(my, Math.max(-my, o.y)) };
   };
 
+  // Opened on an earlier crop: put the picture back where it was once its size and the frame's are known.
+  const placed = useRef(false);
+  useEffect(() => {
+    if (!initial || placed.current || !nat || !frameW) return;
+    placed.current = true;
+    const s = Math.max(frameW / nat.w, frameW / aspect / nat.h) * zoom;
+    setOffset(clamp({ x: (0.5 - initial.fx) * s * nat.w, y: (0.5 - initial.fy) * s * nat.h }, s));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on the first measure
+  }, [nat, frameW]);
+
+  /** The framing as it is now, in the terms an earlier crop is remembered in. */
+  const frameNow = (): CropFrame => ({ aspect, fx: 0.5 - offset.x / (scale * (nat?.w ?? 1)), fy: 0.5 - offset.y / (scale * (nat?.h ?? 1)), zoom });
+
   const changeZoom = (z: number) => {
     const next = Math.min(MAX_ZOOM, Math.max(1, z));
     setZoom(next);
@@ -75,7 +108,12 @@ function Cropper({ file, aspect, outputWidth, mime, onCancel, onConfirm }: Omit<
   };
 
   const confirm = async () => {
-    if (!nat || !src) return;
+    if (!nat || !shown) return;
+    if (!file) {
+      onConfirmLinked?.(frameNow());
+      return;
+    }
+    if (!src) return;
     setBusy(true);
     try {
       const img = new Image();
@@ -100,7 +138,7 @@ function Cropper({ file, aspect, outputWidth, mime, onCancel, onConfirm }: Omit<
       const blob: Blob | null = await new Promise((r) => canvas.toBlob(r, mime, 0.9));
       if (!blob) throw new Error('blob');
       const ext = mime === 'image/png' ? 'png' : 'jpg';
-      onConfirm(new File([blob], `${file.name.replace(/\.[^.]+$/, '')}-cropped.${ext}`, { type: mime }));
+      onConfirm(new File([blob], `${file!.name.replace(/\.[^.]+$/, '')}-cropped.${ext}`, { type: mime }), frameNow());
     } finally {
       setBusy(false);
     }
@@ -118,6 +156,27 @@ function Cropper({ file, aspect, outputWidth, mime, onCancel, onConfirm }: Omit<
 
   return (
     <div className="flex flex-col gap-4">
+      {shapes && shapes.length > 1 && (
+        <div role="group" aria-label="Shape" className="flex flex-wrap gap-2">
+          {shapes.map((s) => (
+            <button
+              key={s.label}
+              type="button"
+              aria-pressed={aspect === s.aspect}
+              onClick={() => {
+                setAspect(s.aspect);
+                setZoom(1);
+                setOffset({ x: 0, y: 0 });
+              }}
+              className={`min-h-9 rounded-full border-2 px-3 bg-body-sm font-medium focus-visible:outline-2 focus-visible:outline-(--border-focus) ${
+                aspect === s.aspect ? 'border-(--action-primary) bg-(--accent-soft) text-(--text-primary)' : 'border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)'
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
       <div
         ref={frameRef}
         role="application"
@@ -137,10 +196,10 @@ function Cropper({ file, aspect, outputWidth, mime, onCancel, onConfirm }: Omit<
         className="relative w-full overflow-hidden rounded-md bg-(--bg-sunken) cursor-grab active:cursor-grabbing touch-none outline-none focus-visible:ring-2 focus-visible:ring-(--border-focus)"
         style={{ aspectRatio: String(aspect) }}
       >
-        {src && (
-          // eslint-disable-next-line @next/next/no-img-element -- local object URL, not a static asset
+        {shown && (
+          // eslint-disable-next-line @next/next/no-img-element -- a local object URL, or a photo that stays linked from its own site
           <img
-            src={src}
+            src={shown}
             alt=""
             draggable={false}
             onLoad={(e) => setNat({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}

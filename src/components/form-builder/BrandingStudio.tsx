@@ -18,14 +18,15 @@ import { FONT_GROUPS, FORM_FONT_OPTIONS, PAGE_BACKGROUND_OPTIONS, brandCardClass
 import { lookBranding } from '@/lib/layoutPresets';
 import { uploadService } from '@/services/upload';
 import { bx } from '@/lib/utils';
-import type { BannerLink, ButtonRadius, FormTheme, ButtonStyle, CardStyle, CoverFit, CoverPosition, FieldGrouping, FormBranding, FormFont, FormSpacing, FormWidth, LayoutPreset, LogoSize, PageBackground, PanelTreatment, PhotoCredit, TypeScale } from '@/types/form';
+import type { BannerLink, ButtonRadius, CropMemo, FormTheme, ButtonStyle, CardStyle, CoverFit, CoverPosition, FieldGrouping, FormBranding, FormFont, FormSpacing, FormWidth, LayoutPreset, LogoSize, PageBackground, PanelTreatment, PhotoCredit, TypeScale } from '@/types/form';
 import { ImageUploadZone } from './BrandingPanel';
+import type { CropFrame } from './ImageCropModal';
 import { LayoutChooser } from './LayoutChooser';
 import { PictureChoice } from './PicturePicker';
 import { LooksDialog } from './LooksDialog';
 import { currentLook, styleUpdates } from '@/lib/formStyles';
 import { ThankYouControls } from './ThankYouControls';
-import { ButtonsAndDetails, CustomBadge, FieldsLook, FineTune, FormColours, PanelSide, type SetTheme } from './LookControls';
+import { BackgroundLook, ButtonsAndDetails, CoverHeight, CustomBadge, FieldsLook, FineTune, FormColours, PanelSide, type SetTheme } from './LookControls';
 import { ZOOM_STEPS } from '@/lib/previewZoom';
 import { LiveFormPreview } from './LiveFormPreview';
 
@@ -242,9 +243,23 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
   const setLink = (i: number, change: Partial<BannerLink>) => set({ bannerLinks: links.map((l, j) => (j === i ? { ...l, ...change } : l)) });
   const coverFit: CoverFit = branding.coverFit ?? (branding.coverImageUrl ? 'banner' : 'original');
   // A picture change also sets (an Unsplash photo) or clears (anything else) that picture's photographer credit, so a credit never outlives its photo.
-  const setPicture = (slot: 'cover' | 'background', patch: Partial<FormBranding>, credit?: PhotoCredit) => {
-    const had = !!cleanTheme(theme)?.credit?.[slot];
-    set({ ...patch, ...(credit || had ? { theme: withCredit(theme, slot, credit) } : {}) });
+  // The same goes for a remembered crop: it belongs to the picture it made, so a different picture clears it, and a crop sets its own.
+  const setPicture = (slot: 'cover' | 'background', patch: Partial<FormBranding>, credit?: PhotoCredit, memo?: CropMemo) => {
+    const t = cleanTheme(theme);
+    if (!credit && !memo && !t?.credit?.[slot] && !t?.crop?.[slot]) {
+      set(patch);
+      return;
+    }
+    set({ ...patch, theme: patchTheme(withCredit(theme, slot, credit), 'crop', { [slot]: memo } as NonNullable<FormTheme['crop']>) });
+  };
+  const creditOf = (slot: 'cover' | 'background') => cleanTheme(theme)?.credit?.[slot];
+  // The logo is cropped to a square; its crop is remembered the same way, so it opens on the original at the zoom and place it was left at.
+  const setLogo = (logoUrl: string | undefined, memo?: CropMemo) => {
+    if (!memo && !cleanTheme(theme)?.crop?.logo) {
+      set({ logoUrl });
+      return;
+    }
+    set({ logoUrl, theme: patchTheme(theme, 'crop', { logo: memo } as NonNullable<FormTheme['crop']>) });
   };
 
   /** An upload for a place in the theme (the thank-you picture): its address, or nothing after telling the person why. */
@@ -257,12 +272,12 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
     }
   };
 
-  const upload = async (file: File, key: 'logoUrl' | 'coverImageUrl' | 'backgroundImageUrl') => {
+  const upload = async (file: File, key: 'logoUrl' | 'coverImageUrl' | 'backgroundImageUrl', crop?: CropFrame & { from: string }) => {
     try {
       const url = (await uploadService.uploadFile(file)).url;
       // a cover remembers how it was added, so the form shows it the same way (whole, or cropped to the banner)
-      if (key === 'logoUrl') set({ logoUrl: url });
-      else setPicture(key === 'coverImageUrl' ? 'cover' : 'background', { [key]: url, ...(key === 'coverImageUrl' ? { coverFit } : {}) });
+      if (key === 'logoUrl') setLogo(url, crop ? { ...crop, result: url } : undefined);
+      else setPicture(key === 'coverImageUrl' ? 'cover' : 'background', { [key]: url, ...(key === 'coverImageUrl' ? { coverFit } : {}) }, undefined, crop ? { ...crop, result: url } : undefined);
     } catch (err) {
       toast(isAxiosError(err) && err.response?.status === 413 ? 'That image is too large. Use one under 5 MB.' : 'Upload failed. Check your connection.', 'error');
     }
@@ -327,8 +342,9 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
           <PictureChoice label="Pictures to choose from" value={branding.backgroundImageUrl} onPick={(url, credit) => setPicture('background', { backgroundImageUrl: url }, credit)} />
         )}
         {branding.backgroundStyle === 'image' && (
-          <ImageUploadZone label="Page background image" imageUrl={branding.backgroundImageUrl} aspect="banner" freeform onUpload={(file) => upload(file, 'backgroundImageUrl')} onRemove={() => setPicture('background', { backgroundImageUrl: undefined, formWidth: undefined, coverFit: undefined })} />
+          <ImageUploadZone label="Page background image" imageUrl={branding.backgroundImageUrl} aspect="banner" freeform cropMemo={theme?.crop?.background} onUploadSource={uploadForTheme} onUrlChange={(url) => setPicture('background', { backgroundImageUrl: url }, creditOf('background'))} onUpload={(file, crop) => upload(file, 'backgroundImageUrl', crop)} onRemove={() => setPicture('background', { backgroundImageUrl: undefined, formWidth: undefined, coverFit: undefined })} />
         )}
+        <BackgroundLook branding={branding} setTheme={setTheme} />
         {(branding.backgroundStyle ?? 'wash') !== 'plain' && branding.backgroundStyle !== 'image' && (
           <div className="flex flex-col gap-1">
             <span className="bg-label">Page colour</span>
@@ -474,18 +490,19 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
         </div>
         <div className="flex flex-col gap-2">
           <span className="bg-label">Logo</span>
-          <ImageUploadZone label="Logo" imageUrl={branding.logoUrl} aspect="square" onUpload={(file) => upload(file, 'logoUrl')} onRemove={() => set({ logoUrl: undefined })} />
+          <ImageUploadZone label="Logo" imageUrl={branding.logoUrl} aspect="square" cropMemo={theme?.crop?.logo} onUploadSource={uploadForTheme} onUpload={(file, crop) => upload(file, 'logoUrl', crop)} onRemove={() => setLogo(undefined)} />
           <p className="bg-caption text-(--text-muted)">Square, 256 × 256 or larger.</p>
           <ChipChoice<LogoSize> label="Logo size" value={branding.logoSize ?? 'md'} options={[{ value: 'sm', label: 'Small' }, { value: 'md', label: 'Medium' }, { value: 'lg', label: 'Large' }]} onChange={(logoSize) => set({ logoSize })} />
         </div>
         <div className="flex flex-col gap-2">
           <span className="bg-label">Cover image</span>
           <ChipChoice<CoverFit> label="Shape" value={coverFit} columns={2} options={[{ value: 'original', label: 'Whole picture' }, { value: 'banner', label: 'Wide banner' }]} onChange={(next) => set({ coverFit: next })} />
+          {!(branding.coverImageUrl && coverFit === 'original') && <CoverHeight branding={branding} setTheme={setTheme} />}
           {branding.coverImageUrl && coverFit === 'banner' && (
             <ChipChoice<CoverPosition> label="Show the" value={branding.coverPosition ?? 'center'} options={[{ value: 'top', label: 'Top' }, { value: 'center', label: 'Middle' }, { value: 'bottom', label: 'Bottom' }]} onChange={(coverPosition) => set({ coverPosition })} />
           )}
           <PictureChoice label="Pictures to choose from" value={branding.coverImageUrl} onPick={(url, credit) => setPicture('cover', { coverImageUrl: url, coverFit }, credit)} />
-          <ImageUploadZone label="Cover image" imageUrl={branding.coverImageUrl} aspect="banner" freeform={coverFit === 'original'} onUpload={(file) => upload(file, 'coverImageUrl')} onRemove={() => setPicture('cover', { coverImageUrl: undefined })} />
+          <ImageUploadZone label="Cover image" imageUrl={branding.coverImageUrl} aspect="banner" freeform={coverFit === 'original'} cropMemo={theme?.crop?.cover} onUploadSource={uploadForTheme} onUrlChange={(url) => setPicture('cover', { coverImageUrl: url, coverFit }, creditOf('cover'))} onUpload={(file, crop) => upload(file, 'coverImageUrl', crop)} onRemove={() => setPicture('cover', { coverImageUrl: undefined })} />
         </div>
       </>
     ),

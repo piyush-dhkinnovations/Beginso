@@ -2,17 +2,19 @@
 
 import { isAxiosError } from 'axios';
 import { useId, useRef, useState } from 'react';
-import { Loader2, Plus, Upload, X } from 'lucide-react';
-import type { CoverFit, ButtonRadius, ButtonStyle, CardStyle, CoverPosition, FieldGrouping, FormBranding, FormWidth, FormFont, FormSpacing, LayoutPreset, PageBackground, PanelTreatment, TypeScale } from '@/types/form';
+import { Crop, Loader2, Plus, Upload, X } from 'lucide-react';
+import type { CropMemo, CoverFit, ButtonRadius, ButtonStyle, CardStyle, CoverPosition, FieldGrouping, FormBranding, FormWidth, FormFont, FormSpacing, LayoutPreset, PageBackground, PanelTreatment, TypeScale } from '@/types/form';
 import { FORM_FONT_OPTIONS, PAGE_BACKGROUND_OPTIONS } from '@/lib/formTheme';
 import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
 import { shrinkImage } from '@/lib/shrinkImage';
+import { isBuiltInPictureUrl } from '@/lib/formPictures';
+import { cropUnsplash, isUnsplashPhoto, readUnsplashCrop, uncropUnsplash } from '@/lib/unsplashCrop';
 import { uploadSrc } from '@/lib/uploadSrc';
 import { uploadService } from '@/services/upload';
 import { useToast } from '@/components/ui/Toast';
 import { LiveFormPreview } from './LiveFormPreview';
-import { ImageCropModal } from './ImageCropModal';
+import { ImageCropModal, type CropFrame } from './ImageCropModal';
 import { PanelCard } from './PanelCard';
 
 const PRESET_COLORS = ['#1D4ED8', '#0F172A', '#16A34A', '#DC2626', '#9333EA'];
@@ -21,6 +23,23 @@ const HEX_REGEX = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 // ─── Image upload zone (shared by Logo + Cover Image sections) ────────────────
+
+/** The shapes a wide picture can be cropped to. */
+const CROP_SHAPES = [
+  { label: 'Wide banner', aspect: 16 / 5 },
+  { label: 'Landscape', aspect: 16 / 9 },
+  { label: 'Photo', aspect: 4 / 3 },
+  { label: 'Square', aspect: 1 },
+];
+
+/** The reason a chosen picture cannot be cropped here, or undefined when it can. */
+function whyNotCroppable(url: string, canChangeAddress: boolean): string | undefined {
+  if (isUnsplashPhoto(url)) return canChangeAddress ? undefined : 'This picture cannot be cropped here.';
+  // (isBuiltInPictureUrl is a type guard that would narrow a string that is not one to never)
+  const builtIn = (isBuiltInPictureUrl as (u: string) => boolean)(url);
+  if (url.startsWith('blob:') || builtIn || uploadSrc(url)?.startsWith('/api/backend/')) return undefined;
+  return 'Pictures from another site cannot be cropped here. Upload your own copy to crop it.';
+}
 
 export function ImageUploadZone({
   label,
@@ -31,6 +50,9 @@ export function ImageUploadZone({
   freeform,
   onUpload,
   onRemove,
+  onUrlChange,
+  cropMemo,
+  onUploadSource,
 }: {
   label: string;
   imageUrl?: string;
@@ -41,8 +63,15 @@ export function ImageUploadZone({
   compact?: boolean;
   /** No crop step and no fixed frame: the picture goes up as it is and is previewed at its own ratio. */
   freeform?: boolean;
-  onUpload: (file: File) => Promise<void>;
+  /** Gets the picture (a new upload, or a crop); for a crop it also gets how it was framed and where the original is, to keep so the crop can be adjusted later. */
+  onUpload: (file: File, crop?: CropFrame & { from: string }) => Promise<void>;
   onRemove: () => void;
+  /** The crop remembered for this picture: opening the crop shows the original with the frame as it was, not the cropped picture. */
+  cropMemo?: CropMemo;
+  /** Keeps a new upload's original (the picture before it was cropped) on its own, and gives back its address, so the crop can be adjusted later. */
+  onUploadSource?: (file: File) => Promise<string | undefined>;
+  /** Called with the new address when a linked photo (Unsplash) is cropped: it stays linked, the crop is done by Unsplash's image service. */
+  onUrlChange?: (url: string) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -52,6 +81,40 @@ export function ImageUploadZone({
   // A picked image goes through the crop dialog first (so any part of it can be used); a GIF skips it because
   // cropping would flatten its animation.
   const [pendingCrop, setPendingCrop] = useState<File | null>(null);
+  const [linkedCrop, setLinkedCrop] = useState<string | null>(null);
+  // where a crop being made started from: the picture it was cropped from (adjusting an earlier crop), or the file just picked (a new upload)
+  const [cropFrom, setCropFrom] = useState<string | null>(null);
+  const [cropInitial, setCropInitial] = useState<CropFrame | undefined>();
+  const [original, setOriginal] = useState<File | null>(null);
+
+  // The crop icon on a picture that is already chosen. Our own pictures (uploads, the built-in library, one picked on this device) are read back as a
+  // file and go through the same crop dialog as a new upload. A photo from Unsplash stays linked, never copied: its crop is done by Unsplash's image
+  // service, from a shape, a focal point and a zoom (see lib/unsplashCrop), so the photographer's credit stays true.
+  const cropReason = imageUrl ? whyNotCroppable(imageUrl, !!onUrlChange) : undefined;
+  const openCrop = async () => {
+    if (!imageUrl) return;
+    if (isUnsplashPhoto(imageUrl)) {
+      // the crop is in the address: open on the whole photo, framed as it is now
+      setCropInitial(readUnsplashCrop(imageUrl));
+      setLinkedCrop(uncropUnsplash(imageUrl));
+      return;
+    }
+    // a remembered crop that still belongs to this picture: open on the original, framed as it was
+    const memo = cropMemo && cropMemo.result === imageUrl ? cropMemo : undefined;
+    const source = memo?.from ?? imageUrl;
+    try {
+      const res = await fetch(uploadSrc(source) ?? source);
+      if (!res.ok) throw new Error(String(res.status));
+      const blob = await res.blob();
+      const type = ACCEPTED_IMAGE_TYPES.includes(blob.type) ? blob.type : 'image/jpeg';
+      setCropFrom(source);
+      setCropInitial(memo ? { aspect: memo.aspect, fx: memo.fx, fy: memo.fy, zoom: memo.zoom } : undefined);
+      setOriginal(null);
+      setPendingCrop(new File([blob], `${label.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.${type === 'image/png' ? 'png' : 'jpg'}`, { type }));
+    } catch {
+      toast('Could not open this picture to crop it. Upload it again to crop it.', 'error');
+    }
+  };
 
   const uploadNow = async (file: File) => {
     setIsUploading(true);
@@ -59,6 +122,23 @@ export function ImageUploadZone({
       await onUpload(file);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  // A crop is uploaded with how it was framed and where its original is. A crop of a picture that is already up has its original already; a crop made
+  // of a file just picked has its original uploaded first (when the page can keep it), so the crop can be adjusted later instead of started again.
+  const round = (n: number) => Math.round(n * 10000) / 10000;
+  const finishCrop = async (cropped: File, frame: CropFrame) => {
+    const pending = original;
+    setIsUploading(true);
+    try {
+      let from = cropFrom ?? undefined;
+      if (!from && pending && onUploadSource) from = await onUploadSource(pending).catch(() => undefined);
+      await onUpload(cropped, from ? { aspect: round(frame.aspect), fx: round(frame.fx), fy: round(frame.fy), zoom: round(frame.zoom), from } : undefined);
+    } finally {
+      setIsUploading(false);
+      setOriginal(null);
+      setCropFrom(null);
     }
   };
 
@@ -72,6 +152,9 @@ export function ImageUploadZone({
       await uploadNow(freeform ? await shrinkImage(file).catch(() => file) : file);
       return;
     }
+    setCropFrom(null);
+    setCropInitial(undefined);
+    setOriginal(file);
     setPendingCrop(file);
   };
 
@@ -132,6 +215,21 @@ export function ImageUploadZone({
       {hasImage && (
         <button
           type="button"
+          disabled={!!cropReason}
+          onClick={(e) => {
+            e.stopPropagation();
+            void openCrop();
+          }}
+          className="absolute top-1 right-8 h-6 w-6 rounded-full bg-(--surface-card) border border-(--border-default) flex items-center justify-center text-(--text-muted) hover:text-(--text-primary) shadow-(--shadow-sm) disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={`Crop ${label.toLowerCase()}`}
+          title={cropReason ?? 'Crop this picture'}
+        >
+          <Crop size={12} />
+        </button>
+      )}
+      {hasImage && (
+        <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onRemove();
@@ -147,14 +245,24 @@ export function ImageUploadZone({
       <div className="contents" onClick={(e) => e.stopPropagation()} onDragOver={(e) => e.stopPropagation()} onDrop={(e) => e.stopPropagation()}>
         <ImageCropModal
           file={pendingCrop}
-          aspect={aspect === 'square' ? 1 : 16 / 5}
+          linkedUrl={linkedCrop}
+          initial={cropInitial}
+          onConfirmLinked={(c) => {
+            if (imageUrl) onUrlChange?.(cropUnsplash(imageUrl, { ...c, width: aspect === 'square' ? 512 : 1600 }));
+            setLinkedCrop(null);
+          }}
+          aspect={aspect === 'square' ? 1 : freeform ? 16 / 9 : 16 / 5}
+          shapes={aspect === 'square' ? undefined : CROP_SHAPES}
           outputWidth={aspect === 'square' ? 512 : 1600}
           mime={aspect === 'square' ? 'image/png' : 'image/jpeg'}
           title={aspect === 'square' ? 'Crop your logo' : 'Crop your cover image'}
-          onCancel={() => setPendingCrop(null)}
-          onConfirm={(cropped) => {
+          onCancel={() => {
             setPendingCrop(null);
-            void uploadNow(cropped);
+            setLinkedCrop(null);
+          }}
+          onConfirm={(cropped, frame) => {
+            setPendingCrop(null);
+            void finishCrop(cropped, frame);
           }}
         />
       </div>

@@ -54,3 +54,42 @@ describe('Branding studio: Unsplash photos', () => {
     expect(sent.theme).toBeNull();
   });
 });
+
+describe('Branding studio: a remembered crop belongs to its picture', () => {
+  const MEMO = { from: '/api/upload/file/u1/f1/brand/original.png', result: '/api/upload/file/u1/f1/brand/cropped.jpg', aspect: 3.2, fx: 0.3, fy: 0.6, zoom: 1.78 };
+
+  it('a different picture takes the memo away', async () => {
+    const update = draw({ primaryColor: '#1D4ED8', coverImageUrl: MEMO.result, theme: { v: 1, crop: { cover: MEMO } } });
+    await userEvent.click(screen.getByRole('tab', { name: 'Header' }));
+    await userEvent.click(screen.getByRole('button', { name: FORM_PICTURES[0].name }));
+    const sent = lastUpdate(update);
+    expect(sent.coverImageUrl).toBe(`/form-pictures/${FORM_PICTURES[0].id}.jpg`);
+    expect(sent.theme).toBeNull();
+  });
+
+  it('removing the picture takes the memo away', async () => {
+    const update = draw({ primaryColor: '#1D4ED8', coverImageUrl: MEMO.result, theme: { v: 1, crop: { cover: MEMO } } });
+    await userEvent.click(screen.getByRole('tab', { name: 'Header' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove cover image' }));
+    const sent = lastUpdate(update);
+    expect(sent.coverImageUrl).toBeUndefined();
+    expect(sent.theme).toBeNull();
+  });
+
+  it('removing a logo takes its memo away, and leaves the rest of the theme', async () => {
+    const update = draw({ primaryColor: '#1D4ED8', logoUrl: MEMO.result, theme: { v: 1, card: { radius: 8 }, crop: { logo: { ...MEMO, aspect: 1 } } } });
+    await userEvent.click(screen.getByRole('tab', { name: 'Header' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove logo' }));
+    const sent = lastUpdate(update);
+    expect(sent.logoUrl).toBeUndefined();
+    expect(sent.theme).toEqual({ v: 1, card: { radius: 8 } });
+  });
+
+  it('shows a crop icon on the cover and on the logo', async () => {
+    draw({ primaryColor: '#1D4ED8', coverImageUrl: MEMO.result, logoUrl: MEMO.result });
+    await userEvent.click(screen.getByRole('tab', { name: 'Header' }));
+    expect(screen.getByRole('button', { name: 'Crop cover image' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Crop logo' })).toBeEnabled();
+  });
+});
+

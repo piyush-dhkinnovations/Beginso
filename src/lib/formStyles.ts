@@ -28,7 +28,7 @@ export function snapshotStyle(layout: LayoutPreset, branding: FormBranding): { l
   // a style is a look, not one form's own content: a photographer's credit belongs to a photo (and a style keeps no outside photo), and the button
   // text and the note under the form are that form's own words
   // (of the thank-you screen a style keeps the look, the accent colour and the confetti, but not the headline, the picture or where people are sent on)
-  const { credit: _credit, labels: _labels, footer: _footer, success, ...theme } = cleanTheme(branding.theme) ?? { v: 1 as const };
+  const { credit: _credit, labels: _labels, footer: _footer, crop: _crop, success, ...theme } = cleanTheme(branding.theme) ?? { v: 1 as const };
   const look = { ...(success?.colour ? { colour: success.colour } : {}), ...(success?.confetti ? { confetti: true as const } : {}) };
   const kept: FormTheme = { ...theme, ...(Object.keys(look).length ? { success: look } : {}) };
   if (Object.keys(kept).length > 1) out.theme = kept;
@@ -51,6 +51,7 @@ export function styleUpdates(style: { branding: StyleBranding }, current: FormBr
   const keep: Record<string, unknown> = {};
   if (own?.labels) keep.labels = own.labels;
   if (own?.footer) keep.footer = own.footer;
+  if (own?.crop) keep.crop = own.crop; // each remembered crop is only used while its picture is still the one in use
   // the thank-you screen: the form keeps its own headline, picture and redirect; the accent colour and the confetti come from the style
   const ownSuccess: Record<string, unknown> = {};
   if (own?.success?.headline) ownSuccess.headline = own.success.headline;

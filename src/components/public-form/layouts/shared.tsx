@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { LayoutPreset } from '@/types/form';
 import type { PublicFormBranding } from '@/types/publicForm';
-import { UNSPLASH_HOME, brandFooterNote, brandCardClass, brandLookProps, brandTypeStyle, brandWashStyle, creditsToShow } from '@/lib/formTheme';
+import { UNSPLASH_HOME, brandFooterNote, brandCardClass, brandLookProps, brandTypeStyle, brandWashLayers, brandWashStyle, creditsToShow } from '@/lib/formTheme';
 import { Wordmark } from '@/components/landing/Wordmark';
 
 // Sprint 13 (CF2.7), design.md §7. Every layout is a presentation FRAME around the form body that
@@ -29,9 +29,18 @@ export interface LayoutFrameProps {
  *  short form never floats at the top of an empty grey page. `min-h-screen` is dropped in preview so the shell never
  *  forces a second full-viewport box inside the preview frame. Also carries the form's typeface and type scale. */
 export function Backdrop({ branding, previewMode, children }: { branding: PublicFormBranding; previewMode?: boolean; children: ReactNode }) {
-  const style: CSSProperties = { ...brandWashStyle(branding), ...brandTypeStyle(branding) };
+  // A picture the owner darkened or blurred is drawn as layers behind the page (a CSS background cannot be blurred), so it is taken off the page's own style.
+  const layers = brandWashLayers(branding);
+  const style: CSSProperties = { ...brandWashStyle(branding), ...(layers ? { backgroundImage: 'none' } : {}), ...brandTypeStyle(branding) };
   return (
-    <div className={`bg-form-type flex flex-col ${previewMode ? 'min-h-full' : 'min-h-screen'}`} style={style}>
+    <div className={`bg-form-type relative isolate flex flex-col ${previewMode ? 'min-h-full' : 'min-h-screen'}`} style={style}>
+      {layers && (
+        // fixed to the window (like the picture it replaces), and behind everything on the page; inside the studio's preview it stays inside the frame
+        <div aria-hidden="true" className={`pointer-events-none -z-10 overflow-hidden ${previewMode ? 'absolute' : 'fixed'} inset-0`}>
+          <div className="absolute inset-0" style={layers.image} />
+          {layers.veil && <div className="absolute inset-0" style={layers.veil} />}
+        </div>
+      )}
       <LookScope branding={branding} className={`flex flex-1 justify-center items-start md:items-center ${branding.backgroundStyle === 'none' ? 'p-2' : 'p-4 md:p-10'}`}>
         {children}
       </LookScope>

@@ -12,7 +12,7 @@ import type { ButtonHover, ButtonSize, ButtonWidth, ChoiceStyle, FieldStyle, For
 // The groups of controls the branding studio has for the form's colours, how its fields look, and exact sizes. Each choice is drawn (a tile that
 // looks like what it does), "Default" is one click away, and an option the chosen layout cannot show is switched off with the reason, never ignored.
 
-export type ThemeGroup = 'colors' | 'fields' | 'card' | 'layout' | 'fonts' | 'buttons' | 'labels' | 'progress' | 'footer' | 'success';
+export type ThemeGroup = 'colors' | 'fields' | 'card' | 'layout' | 'fonts' | 'buttons' | 'labels' | 'progress' | 'footer' | 'success' | 'crop' | 'background' | 'cover';
 export type SetTheme = <G extends ThemeGroup>(group: G, patch: Partial<NonNullable<FormTheme[G]>>) => void;
 
 const HEX = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
@@ -421,7 +421,7 @@ interface SliderProps {
   onReset: () => void;
 }
 
-function Slider({ label, value, preset, min, max, step = 1, unit = 'px', onChange, onReset }: SliderProps) {
+export function Slider({ label, value, preset, min, max, step = 1, unit = 'px', onChange, onReset }: SliderProps) {
   const id = useId();
   return (
     <div className="flex flex-col gap-1">
@@ -632,5 +632,67 @@ export function ButtonsAndDetails({ branding, layout, setTheme }: { branding: Fo
         onChange={(e) => setTheme('footer', { note: e.target.value.replace(/[<>]/g, '') || undefined })}
       />
     </div>
+  );
+}
+
+// ── The page behind the form, and the cover's height ────────────────────────────────────────────────────────────────
+
+/** A hex colour mixed toward the pale page grey, as the hex a default gradient end shows. */
+function paleHex(hex: string, toward = '#F7F8FB', share = 0.65): string {
+  const parse = (h: string) => {
+    const v = h.length === 4 ? `#${h[1]}${h[1]}${h[2]}${h[2]}${h[3]}${h[3]}` : h;
+    return [1, 3, 5].map((i) => parseInt(v.slice(i, i + 2), 16));
+  };
+  if (!HEX.test(hex)) return toward;
+  const [a, b] = [parse(hex), parse(toward)];
+  return `#${a.map((c, i) => Math.round(c * (1 - share) + b[i] * share).toString(16).padStart(2, '0')).join('').toUpperCase()}`;
+}
+
+/**
+ * The page behind the form. A gradient takes the owner's two colours and the angle they fade at; a picture can be darkened (so a card or text on it reads)
+ * and blurred (so it is a backdrop, not a distraction). Anything else has nothing more to set here.
+ */
+export function BackgroundLook({ branding, setTheme }: { branding: FormBranding; setTheme: SetTheme }) {
+  const bg = branding.theme?.background;
+  const style = branding.backgroundStyle ?? 'wash';
+  const base = branding.backgroundColor ?? branding.primaryColor ?? DEFAULT.brand;
+  if (style === 'gradient') {
+    return (
+      <div className="flex flex-col gap-4">
+        <GroupTitle hint="Your own two colours, and the direction they fade in.">Gradient</GroupTitle>
+        <div className="grid grid-cols-2 gap-3">
+          <ColourRow label="From" value={bg?.from} fallback={base} onPick={(from) => setTheme('background', { from })} onReset={() => setTheme('background', { from: undefined })} />
+          <ColourRow label="To" value={bg?.to} fallback={paleHex(bg?.from ?? base)} onPick={(to) => setTheme('background', { to })} onReset={() => setTheme('background', { to: undefined })} />
+        </div>
+        <Slider label="Angle" value={bg?.angle} preset={135} min={0} max={360} step={15} unit="°" onChange={(angle) => setTheme('background', { angle })} onReset={() => setTheme('background', { angle: undefined })} />
+      </div>
+    );
+  }
+  if (style === 'image' && branding.backgroundImageUrl) {
+    return (
+      <div className="flex flex-col gap-4">
+        <GroupTitle hint="Make the picture calmer, so the form on top is easy to read.">Over the picture</GroupTitle>
+        <Slider label="Darken" value={bg?.darken} preset={0} min={0} max={80} step={5} unit="%" onChange={(darken) => setTheme('background', { darken })} onReset={() => setTheme('background', { darken: undefined })} />
+        <Slider label="Blur" value={bg?.blur} preset={0} min={0} max={20} step={1} unit="px" onChange={(blur) => setTheme('background', { blur })} onReset={() => setTheme('background', { blur: undefined })} />
+      </div>
+    );
+  }
+  return null;
+}
+
+/** How tall the cover banner is, from a slim strip to a tall header. */
+export function CoverHeight({ branding, setTheme }: { branding: FormBranding; setTheme: SetTheme }) {
+  return (
+    <Slider
+      label="Banner height"
+      value={branding.theme?.cover?.height}
+      preset={176}
+      min={120}
+      max={480}
+      step={10}
+      unit="px"
+      onChange={(height) => setTheme('cover', { height })}
+      onReset={() => setTheme('cover', { height: undefined })}
+    />
   );
 }

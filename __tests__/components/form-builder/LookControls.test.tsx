@@ -472,3 +472,65 @@ describe('Details tab: the thank-you screen', () => {
     expect(screen.getByTestId('live-preview')).toHaveAttribute('data-screen', 'form');
   });
 });
+
+describe('Colour tab: gradient colours and angle, darken and blur over a picture', () => {
+  it('a gradient has its own two colours and an angle', async () => {
+    const update = draw({ primaryColor: '#1D4ED8', backgroundStyle: 'gradient' });
+    await open('Colour');
+    expect(screen.getByLabelText('From')).toBeInTheDocument();
+    expect(screen.getByLabelText('To')).toBeInTheDocument();
+    const angle = screen.getByRole('slider', { name: 'Angle' });
+    expect(angle).toHaveValue('135'); // the usual one until it is moved
+    fireEvent.change(angle, { target: { value: '60' } });
+    expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, background: { angle: 60 } } });
+  });
+
+  it('saves a gradient colour, and only a hex', async () => {
+    const update = draw({ primaryColor: '#1D4ED8', backgroundStyle: 'gradient' });
+    await open('Colour');
+    await userEvent.type(screen.getByLabelText('From'), 'red{Enter}');
+    expect(update).not.toHaveBeenCalled();
+    await userEvent.type(screen.getByLabelText('To'), '#9333EA{Enter}');
+    expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, background: { to: '#9333EA' } } });
+  });
+
+  it('the angle goes back to the usual one, and an emptied theme is cleared', async () => {
+    const update = draw({ primaryColor: '#1D4ED8', backgroundStyle: 'gradient', theme: { v: 1, background: { angle: 60 } } });
+    await open('Colour');
+    await userEvent.click(screen.getByRole('button', { name: 'Set angle back to the preset' }));
+    expect(update).toHaveBeenLastCalledWith({ theme: null });
+  });
+
+  it('a picture can be darkened and blurred, once there is a picture', async () => {
+    const update = draw({ primaryColor: '#1D4ED8', backgroundStyle: 'image', backgroundImageUrl: '/form-pictures/aurora-mint.jpg' });
+    await open('Colour');
+    fireEvent.change(screen.getByRole('slider', { name: 'Darken' }), { target: { value: '40' } });
+    expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, background: { darken: 40 } } });
+    fireEvent.change(screen.getByRole('slider', { name: 'Blur' }), { target: { value: '8' } });
+    expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, background: { blur: 8 } } });
+  });
+
+  it('no darken or blur without a picture, and no gradient controls on another page background', async () => {
+    draw({ primaryColor: '#1D4ED8', backgroundStyle: 'image' });
+    await open('Colour');
+    expect(screen.queryByRole('slider', { name: 'Darken' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('slider', { name: 'Angle' })).not.toBeInTheDocument();
+  });
+
+  it('the cover has a banner height, from 120 to 480, in the Header tab', async () => {
+    const update = draw({ primaryColor: '#1D4ED8' });
+    await open('Header');
+    const height = screen.getByRole('slider', { name: 'Banner height' });
+    expect(height).toHaveAttribute('min', '120');
+    expect(height).toHaveAttribute('max', '480');
+    expect(height).toHaveValue('176');
+    fireEvent.change(height, { target: { value: '300' } });
+    expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, cover: { height: 300 } } });
+  });
+
+  it('a cover shown whole has no banner to give a height to', async () => {
+    draw({ primaryColor: '#1D4ED8', coverImageUrl: '/form-pictures/aurora-mint.jpg', coverFit: 'original' });
+    await open('Header');
+    expect(screen.queryByRole('slider', { name: 'Banner height' })).not.toBeInTheDocument();
+  });
+});

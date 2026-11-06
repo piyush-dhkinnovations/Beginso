@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { FieldStyle, FormBranding, FormFont, FormTheme, LayoutPreset, PhotoCredit, ProgressStyle } from '@/types/form';
+import type { CropMemo, FieldStyle, FormBranding, FormFont, FormTheme, LayoutPreset, PhotoCredit, ProgressStyle } from '@/types/form';
 import { safeHttpUrl } from '@/lib/fieldDisplay';
 import { uploadSrc } from '@/lib/uploadSrc';
 import { isBuiltInPictureUrl } from '@/lib/formPictures';
@@ -126,7 +126,7 @@ export const PAGE_BACKGROUND_OPTIONS: { value: NonNullable<FormBranding['backgro
  * The fill of the PAGE behind the form card (never the card). Built from `backgroundColor`, falling back to the brand
  * colour. Patterns are drawn in the same hue at low strength so a card stays the clear foreground.
  */
-export function brandWashStyle(b: Look & Pick<FormBranding, 'backgroundColor' | 'backgroundImageUrl'> & { backgroundStyle?: FormBranding['backgroundStyle'] | 'none' }): CSSProperties {
+export function brandWashStyle(b: Look & Pick<FormBranding, 'backgroundColor' | 'backgroundImageUrl'> & { backgroundStyle?: FormBranding['backgroundStyle'] | 'none'; theme?: FormTheme | null }): CSSProperties {
   const c = b.backgroundColor ?? b.primaryColor ?? DEFAULT_COLOR;
   // Mixed into the theme's own page colour (not a literal white), so patterns stay dark in a dark embed.
   const tint = (pct: number) => `color-mix(in srgb, ${c} ${pct}%, var(--bg-subtle))`;
@@ -147,8 +147,11 @@ export function brandWashStyle(b: Look & Pick<FormBranding, 'backgroundColor' | 
     }
     case 'solid':
       return { backgroundColor: c };
-    case 'gradient':
-      return { backgroundColor: c, backgroundImage: `linear-gradient(135deg, ${c} 0%, ${tint(35)} 100%)` };
+    case 'gradient': {
+      // the owner's two colours and angle when they chose them; otherwise the page colour fading into a tint of itself, at 135 degrees, as it always was
+      const g = cleanTheme(b.theme)?.background;
+      return { backgroundColor: g?.from ?? c, backgroundImage: `linear-gradient(${g?.angle ?? 135}deg, ${g?.from ?? c} 0%, ${g?.to ?? tint(35)} 100%)` };
+    }
     case 'mesh':
       return {
         backgroundColor: tint(14),
@@ -168,6 +171,38 @@ export function brandWashStyle(b: Look & Pick<FormBranding, 'backgroundColor' | 
   }
 }
 
+/** The picture behind the page as an address that is safe to put in a style, or nothing. */
+function pageImageUrl(b: Pick<FormBranding, 'backgroundImageUrl'>): string | undefined {
+  // an uploaded picture is asked for through the app (see uploadSrc), a picture from the app's own library is its own path, any other address must be http(s)
+  const own = uploadSrc(b.backgroundImageUrl);
+  return own?.startsWith('/api/backend/') ? own : isBuiltInPictureUrl(b.backgroundImageUrl) ? b.backgroundImageUrl : safeHttpUrl(b.backgroundImageUrl)?.href;
+}
+
+/**
+ * A picture behind the page that is darkened and/or blurred is drawn as two layers (the picture, blurred; a dark veil over it), because a CSS background
+ * cannot be blurred. Null when the page is not a picture, or the owner has not darkened or blurred it: the page then draws its picture as before.
+ */
+export function brandWashLayers(b: Pick<FormBranding, 'backgroundImageUrl' | 'theme'> & { backgroundStyle?: string }): { image: CSSProperties; veil?: CSSProperties } | null {
+  if (b.backgroundStyle !== 'image') return null;
+  const g = cleanTheme(b.theme)?.background;
+  if (!g?.darken && !g?.blur) return null;
+  const url = pageImageUrl(b);
+  if (!url) return null;
+  return {
+    image: {
+      backgroundImage: `url(${JSON.stringify(url)})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      // scaled up a little so the blurred edge does not show a pale rim
+      ...(g.blur ? { filter: `blur(${g.blur}px)`, transform: 'scale(1.08)' } : {}),
+    },
+    veil: g.darken ? { backgroundColor: `rgba(0, 0, 0, ${(g.darken / 100).toFixed(2)})` } : undefined,
+  };
+}
+
+/** The cover banner's own height in pixels, when the owner chose one. */
+export const brandCoverHeight = (b: Pick<FormBranding, 'theme'>): number | undefined => cleanTheme(b.theme)?.cover?.height;
+
 // ── Colours, fields look and exact sizes (branding.theme) ─────────────────────────────────────────────────────────────────────────────────
 // ONE code path for the public form, the builder's live preview and the studio's own tiles. Every key is optional; a form with no theme gets
 // no inline style and no data attribute from here, and the CSS for them (beginso-ui.css) only matches when the attribute is there, so it is
@@ -176,7 +211,13 @@ export function brandWashStyle(b: Look & Pick<FormBranding, 'backgroundColor' | 
 const THEME_HEX = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
 const THEME_ENUMS = { style: ['outlined', 'filled', 'underline'], label: ['above', 'start'], choice: ['plain', 'tiles'] } as const;
 // the same limits the backend enforces (whole numbers, inclusive)
-const THEME_NUMBERS = { fields: { radius: [0, 32] }, card: { radius: [0, 40], shadow: [0, 100] }, layout: { maxWidth: [360, 1400], fieldGap: [4, 64] } } as const;
+const THEME_NUMBERS = {
+  fields: { radius: [0, 32] },
+  card: { radius: [0, 40], shadow: [0, 100] },
+  layout: { maxWidth: [360, 1400], fieldGap: [4, 64] },
+  background: { angle: [0, 360], darken: [0, 80], blur: [0, 20] },
+  cover: { height: [120, 480] },
+} as const;
 const THEME_COLOURS = ['text', 'heading', 'card', 'field', 'fieldBorder', 'buttonText'] as const;
 
 /**
@@ -198,6 +239,12 @@ export function cleanTheme(raw: unknown): FormTheme | undefined {
     for (const [k, [min, max]] of Object.entries(keys)) {
       const v = t[group]?.[k];
       if (typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max) g[k] = v;
+    }
+    if (group === 'background') {
+      for (const k of ['from', 'to'] as const) {
+        const v = t.background?.[k];
+        if (typeof v === 'string' && THEME_HEX.test(v)) g[k] = v;
+      }
     }
     if (group === 'layout' && t.layout?.panelSide !== undefined && ['start', 'end'].includes(t.layout.panelSide as string)) g.panelSide = t.layout.panelSide;
     if (group === 'fields') {
@@ -234,6 +281,12 @@ export function cleanTheme(raw: unknown): FormTheme | undefined {
   if (note) out.footer = { note };
   const success = cleanSuccess(t.success);
   if (success) out.success = success;
+  const crop: Record<string, CropMemo> = {};
+  for (const slot of ['cover', 'background', 'logo'] as const) {
+    const memo = cleanMemo((t.crop as Record<string, unknown> | undefined)?.[slot]);
+    if (memo) crop[slot] = memo;
+  }
+  if (Object.keys(crop).length) out.crop = crop;
   return Object.keys(out).length ? ({ v: 1, ...out } as FormTheme) : undefined;
 }
 
@@ -267,6 +320,21 @@ function cleanPicture(raw: unknown): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+/** A remembered crop: both pictures valid, and numbers in range. Anything else is nothing. */
+function cleanMemo(raw: unknown): CropMemo | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const m = raw as Record<string, unknown>;
+  const from = cleanPicture(m.from);
+  const result = cleanPicture(m.result);
+  const num = (v: unknown, min: number, max: number) => (typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max ? v : undefined);
+  const aspect = num(m.aspect, 0.2, 10);
+  const fx = num(m.fx, 0, 1);
+  const fy = num(m.fy, 0, 1);
+  const zoom = num(m.zoom, 1, 4);
+  if (!from || !result || aspect === undefined || fx === undefined || fy === undefined || zoom === undefined) return undefined;
+  return { from, result, aspect, fx, fy, zoom };
 }
 
 function cleanSuccess(raw: unknown): NonNullable<FormTheme['success']> | undefined {
@@ -366,7 +434,7 @@ export function effectiveTheme(layout: LayoutPreset, raw?: FormTheme | null): Fo
 }
 
 /** Sets or clears one key of one group; an emptied group, and an emptied theme, are removed so a form returns to having none. */
-export function patchTheme<G extends 'colors' | 'fields' | 'card' | 'layout' | 'fonts' | 'buttons' | 'labels' | 'progress' | 'footer' | 'success'>(theme: FormTheme | null | undefined, group: G, patch: Partial<NonNullable<FormTheme[G]>>): FormTheme | null {
+export function patchTheme<G extends 'colors' | 'fields' | 'card' | 'layout' | 'fonts' | 'buttons' | 'labels' | 'progress' | 'footer' | 'success' | 'background' | 'cover' | 'crop'>(theme: FormTheme | null | undefined, group: G, patch: Partial<NonNullable<FormTheme[G]>>): FormTheme | null {
   const next: FormTheme = { ...(theme ?? { v: 1 }), v: 1 };
   const merged: Record<string, unknown> = { ...(next[group] ?? {}), ...patch };
   for (const k of Object.keys(merged)) if (merged[k] === undefined) delete merged[k];

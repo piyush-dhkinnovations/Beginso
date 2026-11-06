@@ -206,6 +206,24 @@ export interface FormTheme {
   footer?: { note?: string };
   /** The screen a respondent sees after sending. Headline, picture and redirect are this one form's own; the colour and the confetti are look. */
   success?: { headline?: string; colour?: string; picture?: string; confetti?: boolean; redirect?: { url: string; seconds?: number } };
+  /** The page behind the form: the two colours and the angle of a gradient, and how much a picture is darkened (percent) and blurred (pixels). */
+  background?: { from?: string; to?: string; angle?: number; darken?: number; blur?: number };
+  /** How tall the cover banner is, in pixels. */
+  cover?: { height?: number };
+  /** For the cover, the page background and the logo: the original a picture was cropped from and how it was framed, so the crop can be adjusted later. */
+  crop?: { cover?: CropMemo; background?: CropMemo; logo?: CropMemo };
+}
+
+/** A crop that can be opened again: the original picture, the picture it made (the memo is only used while that is still the one in use) and the frame. */
+export interface CropMemo {
+  from: string;
+  result: string;
+  /** Width over height of the cropped picture. */
+  aspect: number;
+  /** The centre of the part kept, as a share of the whole picture (0 to 1 each way), and the zoom (1 to 4). */
+  fx: number;
+  fy: number;
+  zoom: number;
 }
 
 export type ButtonSize = 'small' | 'default' | 'large';
