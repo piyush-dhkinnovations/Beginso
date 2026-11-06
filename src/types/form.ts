@@ -204,6 +204,8 @@ export interface FormTheme {
   progress?: { style?: ProgressStyle };
   /** A short line under the form (contact details, a thank-you for time). Also this one form's own words. */
   footer?: { note?: string };
+  /** The screen a respondent sees after sending. Headline, picture and redirect are this one form's own; the colour and the confetti are look. */
+  success?: { headline?: string; colour?: string; picture?: string; confetti?: boolean; redirect?: { url: string; seconds?: number } };
 }
 
 export type ButtonSize = 'small' | 'default' | 'large';

@@ -505,3 +505,11 @@
 .aa-pulse { animation: aaPulse 2s ease-in-out infinite; }
 @keyframes aaDraw { from { stroke-dashoffset: 32; } to { stroke-dashoffset: 0; } }
 .aa-draw { stroke-dasharray: 32; animation: aaDraw 0.5s 0.45s ease-out both; }
+
+/* Confetti on the thank-you screen (components/public-form/Confetti): each piece falls once, drifting and turning; none for people who ask for less motion. */
+@keyframes aaConfetti {
+  from { transform: translate3d(0, -12vh, 0) rotate(0deg); opacity: 1; }
+  to { transform: translate3d(var(--dx), 112vh, 0) rotate(var(--turn)); opacity: 0.9; }
+}
+.aa-confetti { animation: aaConfetti var(--dur) cubic-bezier(0.2, 0.6, 0.4, 1) var(--delay) both; }
+@media (prefers-reduced-motion: reduce) { .aa-confetti { display: none; } }

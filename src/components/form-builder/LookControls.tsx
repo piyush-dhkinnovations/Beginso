@@ -12,7 +12,7 @@ import type { ButtonHover, ButtonSize, ButtonWidth, ChoiceStyle, FieldStyle, For
 // The groups of controls the branding studio has for the form's colours, how its fields look, and exact sizes. Each choice is drawn (a tile that
 // looks like what it does), "Default" is one click away, and an option the chosen layout cannot show is switched off with the reason, never ignored.
 
-export type ThemeGroup = 'colors' | 'fields' | 'card' | 'layout' | 'fonts' | 'buttons' | 'labels' | 'progress' | 'footer';
+export type ThemeGroup = 'colors' | 'fields' | 'card' | 'layout' | 'fonts' | 'buttons' | 'labels' | 'progress' | 'footer' | 'success';
 export type SetTheme = <G extends ThemeGroup>(group: G, patch: Partial<NonNullable<FormTheme[G]>>) => void;
 
 const HEX = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
@@ -47,7 +47,7 @@ const six = (v: string) => (v.length === 4 ? `#${v[1]}${v[1]}${v[2]}${v[2]}${v[3
 // ── Colours ─────────────────────────────────────────────────────────────────────────────────────────────────────────
 
 /** One colour as a box: a big swatch that opens the picker, its name with a reset, and the hex underneath (empty = the default). */
-function ColourRow({ label, value, fallback, onPick, onReset }: { label: string; value?: string; fallback: string; onPick: (c: string) => void; onReset: () => void }) {
+export function ColourRow({ label, value, fallback, onPick, onReset }: { label: string; value?: string; fallback: string; onPick: (c: string) => void; onReset: () => void }) {
   const id = useId();
   const [typed, setTyped] = useState<string | null>(null);
   const commit = () => {
@@ -548,7 +548,7 @@ function ProgressSample({ style }: { style: ProgressStyle }) {
 }
 
 /** One short line of the owner's own words, with its limit shown and an empty box meaning "use the default". */
-function WordsInput({ id, label, value, placeholder, max, onChange }: { id: string; label: string; value?: string; placeholder: string; max: number; onChange: (v: string | undefined) => void }) {
+export function WordsInput({ id, label, value, placeholder, max, onChange }: { id: string; label: string; value?: string; placeholder: string; max: number; onChange: (v: string | undefined) => void }) {
   return (
     <Input
       id={id}

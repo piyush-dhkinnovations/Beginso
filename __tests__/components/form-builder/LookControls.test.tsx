@@ -17,7 +17,7 @@ import type { FieldRendererProps } from '@/types/publicForm';
 const toast = vi.hoisted(() => vi.fn());
 vi.mock('@/components/ui/Toast', () => ({ useToast: () => ({ toast }) }));
 vi.mock('@/services/upload', () => ({ uploadService: { uploadFile: vi.fn() } }));
-vi.mock('@/components/form-builder/LiveFormPreview', () => ({ LiveFormPreview: () => <div data-testid="live-preview" /> }));
+vi.mock('@/components/form-builder/LiveFormPreview', () => ({ LiveFormPreview: (props: { screen?: string }) => <div data-testid="live-preview" data-screen={props.screen} /> }));
 
 beforeEach(() => toast.mockClear());
 
@@ -320,7 +320,7 @@ describe('Style tab: the picture side', () => {
 describe('Buttons tab: size, width, hover, button text, progress and the footer note', () => {
   it('has the controls, drawn as tiles, with the usual choice marked', async () => {
     draw();
-    await open('Buttons');
+    await open('Details');
     expect(screen.getByRole('group', { name: 'Button size' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Default' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'Fill the row' })).toHaveAttribute('aria-pressed', 'true');
@@ -337,14 +337,14 @@ describe('Buttons tab: size, width, hover, button text, progress and the footer 
     ['Steps', { progress: { style: 'steps' } }],
   ])('%s is saved in branding.theme', async (tile, group) => {
     const update = draw();
-    await open('Buttons');
+    await open('Details');
     await userEvent.click(screen.getByRole('button', { name: tile }));
     expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, ...group } });
   });
 
   it('going back to the usual choice takes it out again, and an emptied theme is cleared', async () => {
     const update = draw({ primaryColor: '#1D4ED8', theme: { v: 1, buttons: { size: 'large' } } });
-    await open('Buttons');
+    await open('Details');
     expect(screen.getByRole('button', { name: 'Large' })).toHaveAttribute('aria-pressed', 'true');
     await userEvent.click(screen.getByRole('button', { name: 'Default' }));
     expect(update).toHaveBeenLastCalledWith({ theme: null });
@@ -352,7 +352,7 @@ describe('Buttons tab: size, width, hover, button text, progress and the footer 
 
   it('writes the owner\'s words for the three buttons, and an empty box goes back to the usual word', async () => {
     const update = draw({ primaryColor: '#1D4ED8', theme: { v: 1, labels: { next: 'Continue' } } });
-    await open('Buttons');
+    await open('Details');
     expect(screen.getByLabelText('Next button')).toHaveValue('Continue');
     await userEvent.type(screen.getByLabelText('Submit button'), 'S');
     expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, labels: { next: 'Continue', submit: 'S' } } });
@@ -362,14 +362,14 @@ describe('Buttons tab: size, width, hover, button text, progress and the footer 
 
   it('limits the button text to 30 characters, and takes markup out', async () => {
     draw();
-    await open('Buttons');
+    await open('Details');
     expect(screen.getByLabelText('Back button')).toHaveAttribute('maxlength', '30');
     expect(screen.getByLabelText('Back button').closest('.bg-field')).toHaveTextContent('0/30');
   });
 
   it('writes the note under the form, up to 200 characters', async () => {
     const update = draw();
-    await open('Buttons');
+    await open('Details');
     const note = screen.getByLabelText('Note');
     expect(note).toHaveAttribute('maxlength', '200');
     fireEvent.change(note, { target: { value: 'Hi <b>' } }); // markup is taken out
@@ -378,8 +378,97 @@ describe('Buttons tab: size, width, hover, button text, progress and the footer 
 
   it.each([['steps', /Steps shows its own step list/], ['guided', /Guided shows its own question counter/]] as const)('%s has its own progress, so the styles are off with the reason', async (layout, reason) => {
     draw({ primaryColor: '#1D4ED8' }, layout);
-    await open('Buttons');
+    await open('Details');
     expect(screen.getByRole('button', { name: 'Dots' })).toBeDisabled();
     expect(screen.getByText(reason)).toBeInTheDocument();
+  });
+});
+
+describe('Details tab: the thank-you screen', () => {
+  it('has its own headline, accent, picture, confetti and redirect controls, with the preview switch off', async () => {
+    draw();
+    await open('Details');
+    expect(screen.getByLabelText('Headline')).toHaveAttribute('maxlength', '60');
+    expect(screen.getByLabelText('Accent')).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Picture' })).toBeInTheDocument();
+    expect(screen.getByLabelText(/Confetti/)).not.toBeChecked();
+    expect(screen.getByLabelText('Address')).toHaveValue('');
+    expect(screen.getByLabelText('Wait before moving on')).toBeDisabled();
+    expect(screen.getByLabelText('Show it in the preview')).not.toBeChecked();
+  });
+
+  it('writes the headline, and an empty box goes back to Thank you!', async () => {
+    const update = draw({ primaryColor: '#1D4ED8', theme: { v: 1, success: { headline: 'You are in' } } });
+    await open('Details');
+    expect(screen.getByLabelText('Headline')).toHaveValue('You are in');
+    await userEvent.clear(screen.getByLabelText('Headline'));
+    expect(update).toHaveBeenLastCalledWith({ theme: null });
+  });
+
+  it('saves an accent colour, and only a hex', async () => {
+    const update = draw();
+    await open('Details');
+    await userEvent.type(screen.getByLabelText('Accent'), 'green{Enter}');
+    expect(update).not.toHaveBeenCalled();
+    await userEvent.type(screen.getByLabelText('Accent'), '#16A34A{Enter}');
+    expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, success: { colour: '#16A34A' } } });
+  });
+
+  it('turns confetti on, and off again takes it out', async () => {
+    const update = draw();
+    await open('Details');
+    await userEvent.click(screen.getByLabelText(/Confetti/));
+    expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, success: { confetti: true } } });
+  });
+
+  it('chooses a picture from our library only (no Unsplash photos, they would need a credit here)', async () => {
+    const update = draw();
+    await open('Details');
+    const group = screen.getByRole('group', { name: 'Picture' });
+    await userEvent.click(within(group).getByRole('button', { name: 'All pictures' }));
+    const dialog = screen.getByRole('dialog');
+    expect(within(dialog).queryByRole('tab', { name: 'Photos from Unsplash' })).not.toBeInTheDocument();
+    const first = within(dialog).getAllByRole('listitem')[0].querySelector('button')!;
+    await userEvent.click(first);
+    const sent = update.mock.calls[update.mock.calls.length - 1][0] as FormBranding;
+    expect(sent.theme?.success?.picture).toMatch(/^\/form-pictures\/[a-z0-9-]+\.jpg$/);
+  });
+
+  it('saves a redirect only once the address is a whole https one, when the box is left', async () => {
+    const update = draw();
+    await open('Details');
+    const address = screen.getByLabelText('Address');
+    await userEvent.type(address, 'http://example.com');
+    await userEvent.tab();
+    expect(await screen.findByText('Use a full address that starts with https://')).toBeInTheDocument();
+    expect(update).not.toHaveBeenCalled();
+    await userEvent.clear(address);
+    await userEvent.type(address, 'https://example.com/welcome');
+    expect(update).not.toHaveBeenCalled(); // not while it is being typed
+    await userEvent.tab();
+    expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, success: { redirect: { url: 'https://example.com/welcome' } } } });
+  });
+
+  it('with a redirect set, chooses how long people have, and clears it by emptying the address', async () => {
+    const update = draw({ primaryColor: '#1D4ED8', theme: { v: 1, success: { redirect: { url: 'https://example.com', seconds: 5 } } } });
+    await open('Details');
+    const seconds = screen.getByLabelText('Wait before moving on');
+    expect(seconds).toBeEnabled();
+    expect(seconds).toHaveValue('5');
+    await userEvent.selectOptions(seconds, '10');
+    expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, success: { redirect: { url: 'https://example.com', seconds: 10 } } } });
+    await userEvent.clear(screen.getByLabelText('Address'));
+    await userEvent.tab();
+    expect(update).toHaveBeenLastCalledWith({ theme: null });
+  });
+
+  it('shows the thank-you screen in the preview while its switch is on, and goes back to the form when the tab is left', async () => {
+    draw();
+    expect(screen.getByTestId('live-preview')).toHaveAttribute('data-screen', 'form');
+    await open('Details');
+    await userEvent.click(screen.getByLabelText('Show it in the preview'));
+    expect(screen.getByTestId('live-preview')).toHaveAttribute('data-screen', 'thanks');
+    await open('Colour');
+    expect(screen.getByTestId('live-preview')).toHaveAttribute('data-screen', 'form');
   });
 });

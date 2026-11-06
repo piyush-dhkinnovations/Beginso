@@ -24,6 +24,7 @@ import { LayoutChooser } from './LayoutChooser';
 import { PictureChoice } from './PicturePicker';
 import { LooksDialog } from './LooksDialog';
 import { currentLook, styleUpdates } from '@/lib/formStyles';
+import { ThankYouControls } from './ThankYouControls';
 import { ButtonsAndDetails, CustomBadge, FieldsLook, FineTune, FormColours, PanelSide, type SetTheme } from './LookControls';
 import { ZOOM_STEPS } from '@/lib/previewZoom';
 import { LiveFormPreview } from './LiveFormPreview';
@@ -39,7 +40,7 @@ const SECTIONS: { id: Section; label: string }[] = [
   { id: 'colour', label: 'Colour' },
   { id: 'text', label: 'Text' },
   { id: 'style', label: 'Style' },
-  { id: 'buttons', label: 'Buttons' },
+  { id: 'buttons', label: 'Details' },
   { id: 'header', label: 'Header' },
 ];
 
@@ -200,6 +201,8 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
   const [looksOpen, setLooksOpen] = useState(false);
   const [section, setSection] = useState<Section>('layout');
   const [device, setDevice] = useState<PreviewDevice>('desktop');
+  // The thank-you screen is shown in the preview on request (nobody sees it until they have sent the form), and only while its controls are open.
+  const [showThanks, setShowThanks] = useState(false);
   // The form is shown at 100%; the - and + step through ZOOM_STEPS, and the percentage between them goes back to 100%.
   const [zoom, setZoom] = useState(1);
   const smaller = [...ZOOM_STEPS].reverse().find((s) => s < zoom - 0.005);
@@ -242,6 +245,16 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
   const setPicture = (slot: 'cover' | 'background', patch: Partial<FormBranding>, credit?: PhotoCredit) => {
     const had = !!cleanTheme(theme)?.credit?.[slot];
     set({ ...patch, ...(credit || had ? { theme: withCredit(theme, slot, credit) } : {}) });
+  };
+
+  /** An upload for a place in the theme (the thank-you picture): its address, or nothing after telling the person why. */
+  const uploadForTheme = async (file: File): Promise<string | undefined> => {
+    try {
+      return (await uploadService.uploadFile(file)).url;
+    } catch (err) {
+      toast(isAxiosError(err) && err.response?.status === 413 ? 'That image is too large. Use one under 5 MB.' : 'Upload failed. Check your connection.', 'error');
+      return undefined;
+    }
   };
 
   const upload = async (file: File, key: 'logoUrl' | 'coverImageUrl' | 'backgroundImageUrl') => {
@@ -431,7 +444,12 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
         <FineTune branding={branding} layout={layout} setTheme={setTheme} />
       </>
     ),
-    buttons: <ButtonsAndDetails branding={branding} layout={layout} setTheme={setTheme} />,
+    buttons: (
+      <>
+        <ButtonsAndDetails branding={branding} layout={layout} setTheme={setTheme} />
+        <ThankYouControls branding={branding} setTheme={setTheme} showPreview={showThanks} onShowPreview={setShowThanks} onUpload={uploadForTheme} />
+      </>
+    ),
     header: (
       <>
         {onTitleChange && <Input id={`${uid}-title`} label="Form title" value={formTitle ?? ''} maxLength={200} onChange={(e) => onTitleChange(e.target.value)} />}
@@ -483,7 +501,7 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
         <Card className="flex min-w-0 flex-col gap-4 p-4 lg:max-h-[calc(100vh-16.5rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* Stays at the top of the card while the controls scroll under it. */}
           <div className="sticky -top-4 z-10 -mx-4 -mt-4 bg-(--surface-card) px-4 pt-4">
-            <Tabs tabs={SECTIONS} activeId={section} onChange={(id) => setSection(id as Section)} ariaLabel="Branding sections" panelId="branding-section" className="gap-4" />
+            <Tabs tabs={SECTIONS} activeId={section} onChange={(id) => { setSection(id as Section); if (id !== 'buttons') setShowThanks(false); }} ariaLabel="Branding sections" panelId="branding-section" className="gap-4" />
           </div>
           <div role="tabpanel" id="branding-section" aria-labelledby={`tab-${section}`} className="flex flex-col gap-5">
             {panels[section]}
@@ -493,7 +511,7 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
         <div className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-20">
           {/* The screen switch sits in the preview's top left, the zoom and Full screen in its bottom right, so the form has the whole column. */}
           <div className="relative h-[calc(100vh-16.5rem)] min-h-96">
-            {formId ? <LiveFormPreview fill zoom={zoom} formId={formId} branding={branding} title={formTitle} layout={layout} device={device} /> : <p className="bg-body-sm text-(--text-muted)">Save the form to see a live preview.</p>}
+            {formId ? <LiveFormPreview fill zoom={zoom} formId={formId} branding={branding} title={formTitle} layout={layout} device={device} screen={showThanks && section === 'buttons' ? 'thanks' : 'form'} /> : <p className="bg-body-sm text-(--text-muted)">Save the form to see a live preview.</p>}
             <Segmented
               ariaLabel="Preview device"
               className="absolute left-3 top-3 z-10 shadow-(--shadow-md)"

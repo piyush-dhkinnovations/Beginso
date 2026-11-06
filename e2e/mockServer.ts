@@ -46,6 +46,8 @@ const LOOK_THEMES: Record<string, NonNullable<PublicFormSchema['branding']['them
   heading: { v: 1, fonts: { heading: 'playfair_display' } },
   panelend: { v: 1, layout: { panelSide: 'end' } },
   multi: undefined, // two pages, so a step list has something to list
+  // the thank-you screen with the owner's own headline, accent colour, picture, confetti, and a redirect after 3 seconds
+  thanks: { v: 1, success: { headline: "You're in!", colour: '#16A34A', picture: '/form-pictures/aurora-mint.jpg', confetti: true, redirect: { url: 'https://example.com/welcome', seconds: 3 } } },
   // two pages, with big buttons that are as wide as their words, lift on hover, carry the owner's words, a step list for the progress, and a note
   buttons: { v: 1, buttons: { size: 'large', width: 'auto', hover: 'lift' }, labels: { next: 'Continue', back: 'Go back', submit: 'Send it' }, progress: { style: 'steps' }, footer: { note: 'Questions? Write to hello@example.com' } },
   body: undefined, // the form's own font is Quicksand (set below)

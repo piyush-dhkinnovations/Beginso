@@ -232,11 +232,75 @@ export function cleanTheme(raw: unknown): FormTheme | undefined {
   if (typeof progressStyle === 'string' && (THEME_PROGRESS as readonly string[]).includes(progressStyle)) out.progress = { style: progressStyle };
   const note = cleanText(t.footer?.note, FOOTER_MAX);
   if (note) out.footer = { note };
+  const success = cleanSuccess(t.success);
+  if (success) out.success = success;
   return Object.keys(out).length ? ({ v: 1, ...out } as FormTheme) : undefined;
 }
 
 export const LABEL_MAX = 30;
 export const FOOTER_MAX = 200;
+export const HEADLINE_MAX = 60;
+export const REDIRECT_SECONDS = { min: 3, max: 30, default: 5 } as const;
+
+/** An address the thank-you screen may send a respondent on to: https only, no credentials, no spaces, quotes or markup. Anything else is nothing. */
+export function cleanRedirectUrl(raw: unknown): string | undefined {
+  if (typeof raw !== 'string') return undefined;
+  const v = raw.trim();
+  if (!v || v.length > 500 || /["'<>\\\s]/.test(v)) return undefined;
+  try {
+    const u = new URL(v);
+    return u.protocol === 'https:' && !u.username && !u.password && u.hostname.includes('.') ? v : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** A picture address for the thank-you screen: one of our uploads, a built-in picture, or an https address; never anything that could leave an attribute. */
+function cleanPicture(raw: unknown): string | undefined {
+  if (typeof raw !== 'string') return undefined;
+  const v = raw.trim();
+  if (!v || v.length > 2048 || /["'()<>\\\s]/.test(v)) return undefined;
+  if (v.startsWith('/api/upload/file/') || isBuiltInPictureUrl(v)) return v;
+  try {
+    const u = new URL(v);
+    return u.protocol === 'https:' && !u.username && !u.password ? v : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function cleanSuccess(raw: unknown): NonNullable<FormTheme['success']> | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const s = raw as Record<string, unknown>;
+  const out: NonNullable<FormTheme['success']> = {};
+  const headline = cleanText(s.headline, HEADLINE_MAX);
+  if (headline) out.headline = headline;
+  if (typeof s.colour === 'string' && THEME_HEX.test(s.colour)) out.colour = s.colour;
+  const picture = cleanPicture(s.picture);
+  if (picture) out.picture = picture;
+  if (s.confetti === true) out.confetti = true;
+  const redirect = s.redirect && typeof s.redirect === 'object' ? (s.redirect as Record<string, unknown>) : undefined;
+  const url = cleanRedirectUrl(redirect?.url);
+  if (url) {
+    const seconds = redirect?.seconds;
+    out.redirect = { url, ...(typeof seconds === 'number' && Number.isInteger(seconds) && seconds >= REDIRECT_SECONDS.min && seconds <= REDIRECT_SECONDS.max ? { seconds } : {}) };
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+/** What the thank-you screen draws: the owner's own words, picture and colour, and where to send people on (with how long they have to stay). */
+export function brandSuccess(b: Pick<FormBranding, 'theme'>): { headline?: string; colour?: string; picture?: string; confetti: boolean; redirect?: { url: string; seconds: number } } {
+  const s = cleanTheme(b.theme)?.success;
+  const own = uploadSrc(s?.picture);
+  const picture = s?.picture ? (own?.startsWith('/api/backend/') ? own : isBuiltInPictureUrl(s.picture) ? s.picture : safeHttpUrl(s.picture)?.href) : undefined;
+  return {
+    headline: s?.headline,
+    colour: s?.colour,
+    picture,
+    confetti: s?.confetti === true,
+    redirect: s?.redirect ? { url: s.redirect.url, seconds: s.redirect.seconds ?? REDIRECT_SECONDS.default } : undefined,
+  };
+}
 const THEME_BUTTONS = { size: ['small', 'default', 'large'], width: ['fill', 'auto'], hover: ['none', 'lift', 'darken'] } as const;
 const THEME_PROGRESS = ['bar', 'dots', 'steps'] as const;
 
@@ -302,7 +366,7 @@ export function effectiveTheme(layout: LayoutPreset, raw?: FormTheme | null): Fo
 }
 
 /** Sets or clears one key of one group; an emptied group, and an emptied theme, are removed so a form returns to having none. */
-export function patchTheme<G extends 'colors' | 'fields' | 'card' | 'layout' | 'fonts' | 'buttons' | 'labels' | 'progress' | 'footer'>(theme: FormTheme | null | undefined, group: G, patch: Partial<NonNullable<FormTheme[G]>>): FormTheme | null {
+export function patchTheme<G extends 'colors' | 'fields' | 'card' | 'layout' | 'fonts' | 'buttons' | 'labels' | 'progress' | 'footer' | 'success'>(theme: FormTheme | null | undefined, group: G, patch: Partial<NonNullable<FormTheme[G]>>): FormTheme | null {
   const next: FormTheme = { ...(theme ?? { v: 1 }), v: 1 };
   const merged: Record<string, unknown> = { ...(next[group] ?? {}), ...patch };
   for (const k of Object.keys(merged)) if (merged[k] === undefined) delete merged[k];

@@ -32,7 +32,7 @@ const tab = (name: string) => screen.getByRole('tab', { name });
 describe('BrandingStudio: one screen', () => {
   it('shows the sections as tabs and the live preview beside them, with nothing to get through first', () => {
     draw();
-    expect(within(screen.getByRole('tablist', { name: 'Branding sections' })).getAllByRole('tab').map((t) => t.textContent)).toEqual(['Layout', 'Colour', 'Text', 'Style', 'Buttons', 'Header']);
+    expect(within(screen.getByRole('tablist', { name: 'Branding sections' })).getAllByRole('tab').map((t) => t.textContent)).toEqual(['Layout', 'Colour', 'Text', 'Style', 'Details', 'Header']);
     expect(tab('Layout')).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByTestId('live-preview')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Layout' })).toBeInTheDocument();

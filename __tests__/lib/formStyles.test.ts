@@ -165,3 +165,30 @@ describe('the ready-made gallery', () => {
     expect(new Set(GALLERY_STYLES.map((g) => g.layout)).size).toBeGreaterThanOrEqual(5);
   });
 });
+
+describe('a style and the thank-you screen', () => {
+  const OWN: FormBranding = {
+    primaryColor: '#112233',
+    theme: { v: 1, success: { headline: 'You are in', colour: '#16A34A', picture: '/form-pictures/aurora-mint.jpg', confetti: true, redirect: { url: 'https://example.com', seconds: 8 } } },
+  };
+
+  it('keeps the accent colour and the confetti, and leaves out the headline, the picture and the redirect', () => {
+    expect(snapshotStyle('classic', OWN).branding.theme).toEqual({ v: 1, success: { colour: '#16A34A', confetti: true } });
+    expect(snapshotStyle('classic', { theme: { v: 1, success: { headline: 'Hi', redirect: { url: 'https://example.com' } } } }).branding.theme).toBeUndefined();
+  });
+
+  it('applying a style keeps the form\'s own headline, picture and redirect, and takes the colour and confetti from the style', () => {
+    const style = { branding: { primaryColor: '#445566', theme: { v: 1 as const, success: { colour: '#DC2626' } } } };
+    expect(styleUpdates(style, OWN).theme).toEqual({ v: 1, success: { headline: 'You are in', picture: '/form-pictures/aurora-mint.jpg', redirect: { url: 'https://example.com', seconds: 8 }, colour: '#DC2626' } });
+  });
+
+  it('a style with no thank-you look turns the form\'s colour and confetti off, and a form with none gets none', () => {
+    const plain = { branding: { primaryColor: '#445566' } };
+    expect(styleUpdates(plain, OWN).theme).toEqual({ v: 1, success: { headline: 'You are in', picture: '/form-pictures/aurora-mint.jpg', redirect: { url: 'https://example.com', seconds: 8 } } });
+    expect(styleUpdates(plain, { primaryColor: '#000000' }).theme).toBeNull();
+  });
+
+  it('undo restores the whole theme exactly', () => {
+    expect(currentLook(OWN).theme).toEqual(OWN.theme);
+  });
+});

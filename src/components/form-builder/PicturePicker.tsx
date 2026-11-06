@@ -178,7 +178,7 @@ function Thumb({ id, name, chosen, onPick }: { id: string; name: string; chosen:
 }
 
 /** A row of a few pictures to pick at once, and "All pictures" for the whole library. */
-export function PictureChoice({ label, value, onPick }: { label: string; value?: string; onPick: (url: string, credit?: PhotoCredit) => void }) {
+export function PictureChoice({ label, value, onPick, photos = true }: { label: string; value?: string; onPick: (url: string, credit?: PhotoCredit) => void; /** False for a picture that has no place for a photographer's credit: only our own library is offered. */ photos?: boolean }) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<'library' | 'photos'>('library');
   const [group, setGroup] = useState<PictureGroup | 'all'>('all');
@@ -216,7 +216,7 @@ export function PictureChoice({ label, value, onPick }: { label: string; value?:
       </div>
       <Modal isOpen={open} onClose={() => setOpen(false)} title="Choose a picture" description="Free to use. To use your own picture, close this and upload it below." size="xl">
         <div className="flex flex-col gap-4">
-          <div role="tablist" aria-label="Where from" className="flex gap-2">
+          {photos && <div role="tablist" aria-label="Where from" className="flex gap-2">
             {([['library', 'Our pictures'], ['photos', 'Photos from Unsplash']] as const).map(([id, text]) => (
               <button
                 key={id}
@@ -232,8 +232,8 @@ export function PictureChoice({ label, value, onPick }: { label: string; value?:
                 {text}
               </button>
             ))}
-          </div>
-          {tab === 'photos' && <PhotosPanel value={value} onPick={pickPhoto} />}
+          </div>}
+          {photos && tab === 'photos' && <PhotosPanel value={value} onPick={pickPhoto} />}
           {tab === 'library' && (
             <div role="group" aria-label="Kind of picture" className="flex flex-wrap gap-2">
             {[{ id: 'all' as const, label: 'All' }, ...PICTURE_GROUPS].map((g) => (
