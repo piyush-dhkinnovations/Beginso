@@ -17,6 +17,7 @@ export function Progress({
   size = "default",
   label,
   className,
+  "aria-label": ariaLabel,
   ...props
 }: ProgressProps) {
   const pct = Math.min(100, Math.max(0, (value / max) * 100));
@@ -32,6 +33,8 @@ export function Progress({
       )}
       <div
         role="progressbar"
+        // the name belongs on the bar itself (a screen reader reads the element with the role), not on the wrapper around it
+        aria-label={ariaLabel}
         aria-valuenow={value}
         aria-valuemin={0}
         aria-valuemax={max}

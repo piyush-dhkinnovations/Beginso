@@ -31,7 +31,69 @@ const builderForm = (id: string, s: { label: string; version: number }) => ({
   fields: [{ fieldId: 'f1', pageId: 'p1', label: s.label, type: 'short_text', required: false, deleted: false, order: 0 }],
 });
 
+// /f/look-<layout>-<variant>: one page with text fields and both kinds of choice, in the named layout, with a look chosen by the variant
+// (none, colours, filled, underline, pill, beside, tiles, exact, all). Used to prove the branding.theme options are drawn, and that a form
+// without a theme is drawn as it always was.
+const LOOK_THEMES: Record<string, NonNullable<PublicFormSchema['branding']['theme']> | undefined> = {
+  none: undefined,
+  colours: { v: 1, colors: { text: '#1F2937', heading: '#7C3AED', card: '#FFF7ED', field: '#FFFFFF', fieldBorder: '#6B7280', buttonText: '#FFFFFF' } },
+  filled: { v: 1, fields: { style: 'filled' } },
+  underline: { v: 1, fields: { style: 'underline' } },
+  pill: { v: 1, fields: { radius: 20 } },
+  beside: { v: 1, fields: { label: 'start' } },
+  tiles: { v: 1, fields: { choice: 'tiles' } },
+  exact: { v: 1, card: { radius: 32, shadow: 90 }, layout: { maxWidth: 520, fieldGap: 28 } },
+  heading: { v: 1, fonts: { heading: 'playfair_display' } },
+  panelend: { v: 1, layout: { panelSide: 'end' } },
+  multi: undefined, // two pages, so a step list has something to list
+  // the page behind the form: a gradient with the owner's colours and angle; a picture darkened and blurred; and a tall cover banner
+  gradient: { v: 1, background: { from: '#FF0000', to: '#0000FF', angle: 90 } },
+  veil: { v: 1, background: { darken: 40, blur: 10 } },
+  tall: { v: 1, cover: { height: 320 } },
+  // the thank-you screen with the owner's own headline, accent colour, picture, confetti, and a redirect after 3 seconds
+  thanks: { v: 1, success: { headline: "You're in!", colour: '#16A34A', picture: '/form-pictures/aurora-mint.jpg', confetti: true, redirect: { url: 'https://example.com/welcome', seconds: 3 } } },
+  // two pages, with big buttons that are as wide as their words, lift on hover, carry the owner's words, a step list for the progress, and a note
+  buttons: { v: 1, buttons: { size: 'large', width: 'auto', hover: 'lift' }, labels: { next: 'Continue', back: 'Go back', submit: 'Send it' }, progress: { style: 'steps' }, footer: { note: 'Questions? Write to hello@example.com' } },
+  body: undefined, // the form's own font is Quicksand (set below)
+  all: {
+    v: 1,
+    colors: { text: '#1F2937', heading: '#7C3AED', card: '#FFF7ED', field: '#FFFFFF', fieldBorder: '#6B7280' },
+    fields: { style: 'filled', radius: 12, label: 'start', choice: 'tiles' },
+    card: { radius: 28, shadow: 70 },
+    layout: { maxWidth: 760, fieldGap: 22 },
+  },
+};
+
+function lookSchema(slug: string): PublicFormSchema | undefined {
+  const m = slug.match(/^look-(classic|card_stack|guided|steps|split_feature|compact|chat|sidebar|open|focus)-([a-z]+)$/);
+  if (!m || !(m[2] in LOOK_THEMES)) return undefined;
+  const theme = LOOK_THEMES[m[2]];
+  return {
+    ...mockPublicFormSchema,
+    title: 'Customer Feedback Survey',
+    pages: m[2] === 'multi' || m[2] === 'buttons' ? [{ id: 'p1', order: 0, title: 'Your details' }, { id: 'p2', order: 1, title: 'Your feedback' }] : [{ id: 'p1', order: 0, title: 'Customer Feedback Survey' }],
+    fields: [
+      { fieldId: 'a', pageId: 'p1', type: 'short_text', label: 'Full name', required: true, deleted: false, order: 0, placeholder: 'Jane Doe' },
+      { fieldId: 'b', pageId: 'p1', type: 'email', label: 'Email address', required: true, deleted: false, order: 1 },
+      { fieldId: 'c', pageId: 'p1', type: 'long_text', label: 'Tell us more', required: false, deleted: false, order: 2 },
+      { fieldId: 'd', pageId: m[2] === 'multi' || m[2] === 'buttons' ? 'p2' : 'p1', type: 'multiple_choice', label: 'How did you hear about us?', required: true, deleted: false, order: 3, options: ['Search', 'Friend', 'Social media'] },
+      { fieldId: 'e', pageId: m[2] === 'multi' || m[2] === 'buttons' ? 'p2' : 'p1', type: 'checkbox', label: 'Which features interest you?', required: false, deleted: false, order: 4, options: ['Forms', 'Analytics'] },
+    ],
+    branding: {
+      primaryColor: '#1D4ED8',
+      bannerText: 'Takes two minutes',
+      ...(m[2] === 'body' ? { fontFamily: 'quicksand' as const } : {}),
+      ...(m[2] === 'gradient' ? { backgroundStyle: 'gradient' as const } : {}),
+      ...(m[2] === 'veil' ? { backgroundStyle: 'image' as const, backgroundImageUrl: '/form-pictures/aurora-mint.jpg' } : {}),
+      ...(theme ? { theme } : {}),
+    },
+    settings: { ...mockPublicFormSchema.settings, layout: m[1] as 'classic' },
+  };
+}
+
 function schemaFor(slug: string): PublicFormSchema {
+  const look = lookSchema(slug);
+  if (look) return look;
   // "Anyone, with a verified email": a short form behind the email gate.
   if (slug.includes('tracked-email')) {
     return {

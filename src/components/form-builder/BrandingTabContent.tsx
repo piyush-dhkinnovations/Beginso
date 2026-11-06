@@ -22,15 +22,17 @@ export interface BrandingTabContentProps {
   onFullScreen?: () => void;
   /** Edits the form's title from the Header section. */
   onTitleChange?: (title: string) => void;
+  /** A workspace slug or 'personal': where "My styles" are kept. */
+  styleScope?: string;
 }
 
-export function BrandingTabContent({ formId, formTitle, branding, settings, fieldCount, isPublic, onBrandingUpdate, onLayoutChange, onFullScreen, onTitleChange }: BrandingTabContentProps) {
+export function BrandingTabContent({ formId, formTitle, branding, settings, fieldCount, isPublic, onBrandingUpdate, onLayoutChange, onFullScreen, onTitleChange, styleScope }: BrandingTabContentProps) {
   const layout = normaliseLayout(settings.layout);
 
   return (
     <>
       <div className="hidden lg:block">
-        <BrandingStudio formId={formId} branding={branding} layout={layout} fieldCount={fieldCount} isPublic={isPublic} onBrandingUpdate={onBrandingUpdate} onLayoutChange={onLayoutChange} onFullScreen={onFullScreen} formTitle={formTitle} onTitleChange={onTitleChange} />
+        <BrandingStudio formId={formId} branding={branding} layout={layout} fieldCount={fieldCount} isPublic={isPublic} onBrandingUpdate={onBrandingUpdate} onLayoutChange={onLayoutChange} onFullScreen={onFullScreen} formTitle={formTitle} onTitleChange={onTitleChange} styleScope={styleScope} />
       </div>
 
       <div className="flex flex-col gap-4 lg:hidden">
@@ -44,7 +46,7 @@ export function BrandingTabContent({ formId, formTitle, branding, settings, fiel
           isPublic={isPublic}
           onPick={(next) => {
             onLayoutChange(next);
-            onBrandingUpdate(lookBranding(next, branding));
+            onBrandingUpdate(lookBranding(next, branding, false, layout));
           }}
         />
         <Alert variant="info" title="Detailed branding needs a larger screen">

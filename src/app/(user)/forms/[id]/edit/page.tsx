@@ -165,6 +165,7 @@ export default function BuilderPageShell() {
                       onLayoutChange={(layout) => setSettings({ layout })}
                       onFullScreen={handlePreviewInNewTab}
                       onTitleChange={setFormTitle}
+                      styleScope={formWorkspaceSlug ?? 'personal'}
                     />
                   </div>
                 ) : activeTab === 'share' && canSeeShare(formRole) && formId ? (

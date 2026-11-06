@@ -38,11 +38,29 @@ export const LAYOUT_LOOKS: Record<LayoutPreset, LayoutLook> = {
   steps: { color: '#EA580C', font: 'work_sans', cardStyle: 'soft', panel: 'pattern', background: 'dots' },
   split_feature: { color: '#BE185D', font: 'lora', cardStyle: 'elevated', panel: 'gradient', background: 'gradient' },
   compact: { color: '#475569', font: 'inter', cardStyle: 'flat', panel: 'solid', background: 'plain' },
+  chat: { color: '#0369A1', font: 'quicksand', cardStyle: 'soft', panel: 'solid', background: 'wash' },
+  sidebar: { color: '#4338CA', font: 'plus_jakarta_sans', cardStyle: 'bordered', panel: 'solid', background: 'plain' },
+  open: { color: '#111827', font: 'source_serif_4', cardStyle: 'flat', panel: 'solid', background: 'plain' },
+  focus: { color: '#BE185D', font: 'outfit', cardStyle: 'flat', panel: 'solid', background: 'plain' },
 };
 
 /** Branding changes for "Use this layout": font, card and panel always follow the preset; the colour only when the owner has not picked their own (`showcase`, used by the gallery preview, always swaps it so each layout reads as its own design). */
-export function lookBranding(layout: LayoutPreset, current: FormBranding, showcase = false): Partial<FormBranding> {
+export function lookBranding(layout: LayoutPreset, current: FormBranding, showcase = false, from?: LayoutPreset): Partial<FormBranding> {
   const look = LAYOUT_LOOKS[layout];
+  // Switching layout (`from` is the layout the form has now) must not undo a design the owner has made: a font, card, panel or page background they
+  // changed from the current layout's own is kept. One they have not touched still follows the new layout, so a fresh form gets the whole look.
+  if (from) {
+    const was = LAYOUT_LOOKS[from];
+    const untouched = <T,>(value: T | undefined, preset: T) => value === undefined || value === preset;
+    const background = untouched(current.backgroundStyle, was.background);
+    return {
+      ...(untouched(current.fontFamily, was.font) ? { fontFamily: look.font } : {}),
+      ...(untouched(current.cardStyle, was.cardStyle) ? { cardStyle: look.cardStyle } : {}),
+      ...(untouched(current.panelTreatment, was.panel) ? { panelTreatment: look.panel } : {}),
+      ...(background ? { backgroundStyle: look.background, backgroundColor: undefined } : {}),
+      ...(untouched(current.primaryColor, was.color) || !current.primaryColor ? { primaryColor: look.color } : {}),
+    };
+  }
   const ownColour = !!current.primaryColor && current.primaryColor.toUpperCase() !== '#1D4ED8' && !Object.values(LAYOUT_LOOKS).some((l) => l.color === current.primaryColor);
   return {
     fontFamily: look.font,
@@ -115,6 +133,46 @@ export const LAYOUT_PRESETS: readonly LayoutPresetInfo[] = [
     a11y: 'Tab order follows rows, not columns, which trips screen-reader users.',
     watch: 'Measurably slower and more error-prone for the public. Do not use on a public form.',
     internalOnly: true,
+  },
+  {
+    id: 'chat',
+    name: 'Chat',
+    tagline: 'Questions asked like messages, one at a time',
+    best: '4–15 short questions',
+    use: 'Friendly surveys, onboarding and feedback where a conversation feels lighter than a form.',
+    mobile: 'Reads like a message thread; the avatar dot hides on the smallest screens.',
+    a11y: 'Same one-question flow as Guided: a visible question counter, a working Back, Enter goes on.',
+    watch: 'Not for long, dense answers; respondents cannot scan ahead. Keep each question short.',
+  },
+  {
+    id: 'sidebar',
+    name: 'Sidebar',
+    tagline: 'A step list down the side, the form beside it',
+    best: '6+ fields in 3–6 named pages',
+    use: 'Applications and onboarding where seeing every step and where you are builds trust.',
+    mobile: 'The list collapses to one line above the form: “Step 2 of 4 · Your details”.',
+    a11y: 'The list is a labelled navigation with the current step marked, and the change is announced.',
+    watch: 'Name every page. A list of “Step 1, Step 2” tells the respondent nothing.',
+  },
+  {
+    id: 'open',
+    name: 'Open',
+    tagline: 'No card: the form sits right on the page',
+    best: '1–10 fields',
+    use: 'Light, modern forms and embeds where a box around the form would feel heavy.',
+    mobile: 'Same single column; the page colour runs edge to edge.',
+    a11y: 'The text sits on the page colour, so pick a plain or soft page (the readability list checks it).',
+    watch: 'A busy picture or pattern behind the questions makes them hard to read.',
+  },
+  {
+    id: 'focus',
+    name: 'Focus',
+    tagline: 'One big question at a time, full screen, no card',
+    best: '3–12 questions',
+    use: 'Quizzes, NPS and sign-ups where each question deserves the whole screen.',
+    mobile: 'The question fills the screen with the answer under it.',
+    a11y: 'A thin progress line and a visible question counter; Back always works.',
+    watch: 'Respondents cannot scan ahead. Add a clear last question and keep it short.',
   },
 ];
 

@@ -17,7 +17,7 @@ export function MultipleChoiceRenderer({ field, control, error, disabled }: Fiel
               <label
                 key={opt}
                 className={cn(
-                  'flex cursor-pointer items-center gap-2.5 min-h-9 bg-body-sm text-(--text-primary)',
+                  'form-choice flex cursor-pointer items-center gap-2.5 min-h-9 bg-body-sm text-(--text-primary)',
                   disabled && 'opacity-60 cursor-not-allowed pointer-events-none'
                 )}
               >
