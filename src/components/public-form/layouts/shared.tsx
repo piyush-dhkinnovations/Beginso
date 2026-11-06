@@ -58,15 +58,15 @@ export function PhotoCredits({ branding }: { branding: PublicFormBranding }) {
   const credits = creditsToShow(branding);
   if (credits.length === 0) return null;
   return (
-    <p className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-4 pb-16 bg-caption text-(--text-muted) md:pb-20">
+    <p className="flex flex-wrap justify-center gap-x-3 gap-y-2 px-4 pb-16 md:pb-20">
       {credits.map((c) => (
-        <span key={c.url} className="rounded-full bg-(--surface-card) px-3 py-1">
+        <span key={c.url} className="rounded-full bg-(--surface-card) px-5 py-2 text-center bg-body-sm text-(--text-secondary) shadow-(--shadow-sm)">
           Photo by{' '}
-          <a href={c.url} target="_blank" rel="noopener noreferrer" className="underline hover:text-(--text-primary)">
+          <a href={c.url} target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2 hover:text-(--text-primary)">
             {c.name}
           </a>{' '}
           on{' '}
-          <a href={UNSPLASH_HOME} target="_blank" rel="noopener noreferrer" className="underline hover:text-(--text-primary)">
+          <a href={UNSPLASH_HOME} target="_blank" rel="noopener noreferrer" className="font-medium underline underline-offset-2 hover:text-(--text-primary)">
             Unsplash
           </a>
         </span>
