@@ -14,8 +14,8 @@ import { focusFirstInvalidSoon } from '@/lib/focusField';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/formDraft';
 import { Button } from '@/components/ui/Button';
 import { normaliseLayout } from '@/lib/layoutPresets';
-import { brandButtonStyle, brandShowsProgress } from '@/lib/formTheme';
-import { LAYOUT_COMPONENTS, fieldsClassFor, isGrouped } from './layouts';
+import { brandButtonStyle, brandLabels, brandProgressStyle, brandShowsProgress, effectiveTheme } from '@/lib/formTheme';
+import { LAYOUT_COMPONENTS, fieldsClassFor, isGrouped, isOneAtATime } from './layouts';
 import { parseEmbedOptions, carryEmbedSearch } from '@/lib/embed/embedParams';
 import { resolvePrefill } from '@/lib/embed/prefill';
 import { FormProgress } from './FormProgress';
@@ -89,7 +89,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   const previewMode = previewProp || embedOpts.preview;
   const sortedPages = useMemo(() => [...schema.pages].sort((a, b) => a.order - b.order), [schema.pages]);
   const layout = normaliseLayout(schema.settings.layout);
-  const isGuided = layout === 'guided';
+  const isGuided = isOneAtATime(layout); // Guided, Chat and Focus ask one question at a time
 
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   // Guided only: which question of the current page is showing. Page-level draft persistence is
@@ -535,6 +535,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
 
   const fieldsContainerClass = fieldsClassFor(layout, schema.branding.spacing, schema.branding.fieldGrouping);
   const buttonTheme = brandButtonStyle(schema.branding);
+  const labels = brandLabels(schema.branding);
   const LayoutFrame = LAYOUT_COMPONENTS[layout];
   // The banner already shows the form's name as a large headline, so the in-body <h1> goes screen-reader-only when it
   // would only repeat it (single page, or a page titled like the form).
@@ -544,7 +545,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   const frameProps = {
     layout,
     // ?bg=0 (embed): no page background, so the host page shows around the card.
-    branding: embedOpts.background ? schema.branding : { ...schema.branding, backgroundStyle: 'none' as const },
+    branding: { ...(embedOpts.background ? schema.branding : { ...schema.branding, backgroundStyle: 'none' as const }), theme: effectiveTheme(layout, schema.branding.theme) },
     title: embedOpts.hideTitle ? '' : schema.title,
     previewMode,
     hideCover: !embedOpts.cover,
@@ -597,6 +598,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
         <Button
           type="button"
           variant="secondary"
+          className="h-auto min-h-(--control-md) w-full whitespace-normal py-2 text-center"
           onClick={() => void methods.handleSubmit(sendTest, onInvalid)()}
           isLoading={testState.status === 'sending'}
         >
@@ -635,10 +637,10 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
           {!showReview && (
             <>
             {layout !== 'steps' && !isGuided && brandShowsProgress(schema.branding) && embedOpts.progress && (
-              <FormProgress currentPage={currentPageIndex + 1} totalPages={totalPages} />
+              <FormProgress currentPage={currentPageIndex + 1} totalPages={totalPages} style={brandProgressStyle(schema.branding)} />
             )}
 
-            <h1 className={embedOpts.hideTitle || headlineInBanner ? 'sr-only' : layout === 'card_stack' ? 'bg-h4 text-(--text-primary) border-b border-(--border-default) pb-3' : 'bg-h3 text-(--text-primary)'}>{currentPage?.title ?? schema.title}</h1>
+            <h1 className={embedOpts.hideTitle || headlineInBanner ? 'sr-only' : layout === 'card_stack' ? 'form-heading bg-h4 text-(--form-heading) border-b border-(--border-default) pb-3' : 'form-heading bg-h3 text-(--form-heading)'}>{currentPage?.title ?? schema.title}</h1>
             {currentPage?.description && <p className="bg-body text-(--text-muted) mt-1">{currentPage.description}</p>}
 
             </>
@@ -673,6 +675,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
               submitError={submitError}
               primaryColor={primaryColor}
               buttonStyle={buttonTheme}
+              labels={labels}
               previewSubmitted={previewMode && previewSubmitted}
               extra={accessExtra}
             />
@@ -698,10 +701,10 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
                   This is a preview — nothing was submitted.
                 </p>
               ) : (
-                <div className="mt-6 flex gap-3">
+                <div className="form-btn-row mt-6 flex gap-3">
                   {(currentPageIndex > 0 || (isGuided && questionIndex > 0)) && (
-                    <Button key="back" type="button" variant="secondary" className="flex-1" onClick={handleBack} disabled={isSubmitting}>
-                      Back
+                    <Button key="back" type="button" variant="secondary" className="form-btn flex-1" onClick={handleBack} disabled={isSubmitting}>
+                      {labels.back}
                     </Button>
                   )}
                   {isLastStep ? (
@@ -709,17 +712,17 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
                       key="submit"
                       type={reviewEnabled ? 'button' : 'submit'}
                       onClick={reviewEnabled ? () => void handleReview() : undefined}
-                      className="flex-1"
+                      className="form-btn flex-1"
                       style={buttonTheme}
                       isLoading={isSubmitting}
                       disabled={submitDisabled}
                       aria-label={isSubmitting ? 'Submitting your response...' : undefined}
                     >
-                      {reviewEnabled ? 'Review answers' : 'Submit'}
+                      {reviewEnabled ? 'Review answers' : labels.submit}
                     </Button>
                   ) : (
-                    <Button key="next" type="button" className="flex-1" style={buttonTheme} onClick={handleNext}>
-                      Next
+                    <Button key="next" type="button" className="form-btn flex-1" style={buttonTheme} onClick={handleNext}>
+                      {labels.next}
                     </Button>
                   )}
                 </div>

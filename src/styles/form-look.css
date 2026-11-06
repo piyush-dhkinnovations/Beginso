@@ -1,0 +1,114 @@
+/* Form look (branding.theme): the owner's colours, fields look and exact sizes. See lib/formTheme.ts brandLookProps.
+   This file is imported WITHOUT a layer (globals.css), on purpose: beginso-ui.css sits in @layer beginso, below Tailwind's utilities, so a rule
+   there can never beat a class such as `flex`, `rounded-2xl` or `gap-y-4` on the same property. An unlayered rule beats every layer. */
+
+/* ---- The owner's colours, fields look and exact values (lib/formTheme.ts brandLookProps) --------------------------------------
+   The defaults are declared on :root and again on .form-look (the element around the card), so a colour set inline there (--surface-card,
+   --text-primary) is what the defaults resolve against. A form that sets none of these is drawn exactly as it always was. The switches
+   below are data attributes, present only when the owner chose that look. */
+:root,
+.form-look {
+  --form-heading: var(--text-primary);
+  --form-field-bg: var(--surface-card);
+  --form-field-bg-filled: var(--bg-sunken);
+  --form-field-border: var(--border-default);
+  --form-field-edge: var(--text-muted); /* the line under a filled or underlined field: AA on every light surface, so at least 3:1 */
+  --form-field-radius: var(--radius-lg); /* what rounded-lg was: 0.625rem */
+}
+
+/* Filled fields: a tinted box with no visible edge until it is focused. Underline: only a line under the text. */
+.form-look[data-field-style="filled"] .form-field-input {
+  background-color: var(--form-field-bg-filled);
+  border-color: transparent transparent var(--form-field-edge);
+  border-bottom-width: 2px;
+}
+.form-look[data-field-style="underline"] .form-field-input {
+  background-color: transparent;
+  border-width: 0 0 2px;
+  border-color: var(--form-field-edge);
+  border-radius: 0;
+  padding-inline: 2px;
+}
+.form-look[data-field-style="filled"] .form-field-input:focus,
+.form-look[data-field-style="underline"] .form-field-input:focus {
+  border-bottom-color: var(--action-primary);
+}
+.form-look[data-field-style="filled"] .form-field-input[aria-invalid="true"],
+.form-look[data-field-style="underline"] .form-field-input[aria-invalid="true"] {
+  border-bottom-color: var(--error);
+}
+
+/* A heading font, when one is chosen: the form title and the page titles (marked .form-heading) */
+.form-look[data-heading-font] .form-heading { font-family: var(--form-heading-font); }
+
+/* Split Feature with its picture on the other side (from tablet width up; on a phone the panel is a header above the form) */
+@media (min-width: 768px) {
+  .form-look[data-panel-end] .split-form { order: 1; }
+  .form-look[data-panel-end] .split-panel { order: 2; }
+}
+
+/* Split Feature: the picture panel's share of the card. The panel is the first column, or the second when it is on the end. */
+@media (min-width: 768px) {
+  .form-look[data-panel-split] .form-card.md\:grid { grid-template-columns: var(--form-panel-split) minmax(0, 1fr); }
+  .form-look[data-panel-split][data-panel-end] .form-card.md\:grid { grid-template-columns: minmax(0, 1fr) var(--form-panel-split); }
+  .form-look[data-panel-split] .split-form,
+  .form-look[data-panel-split] .split-panel { grid-column: auto; }
+}
+
+/* Exact values */
+.form-look[data-card-radius] .form-card { border-radius: var(--form-card-radius); }
+/* Split Feature is a full-width panel on a phone, as it always was: its own corners and shadow are a tablet-and-up thing. */
+@media (max-width: 767px) {
+  .form-look[data-card-radius] .form-card.md\:grid { border-radius: 0; }
+  .form-look[data-card-shadow] .form-card.md\:grid { box-shadow: none; }
+}
+.form-look[data-card-shadow] .form-card { box-shadow: var(--form-card-shadow); }
+.form-look[data-max-width] .form-width { max-width: var(--form-max-width); }
+.form-look[data-field-gap] .form-fields { row-gap: var(--form-field-gap); }
+
+/* Labels beside the field, from tablet width up (a phone keeps them above). The label is always the first child of a field. */
+@media (min-width: 768px) {
+  /* One field per row: a label beside the field in each of two columns leaves too little room for either */
+  .form-look[data-label-start] .form-fields { grid-template-columns: minmax(0, 1fr); }
+  /* Every field takes the one column. Without this, a full-width field (which asks for two columns) makes the grid add a second, auto-sized column and
+     the short fields are squeezed into a sliver beside it. */
+  .form-look[data-label-start] .form-fields > * { grid-column: 1 / -1; }
+  .form-look[data-label-start] [data-field-id]:not(.items-start) {
+    display: grid;
+    grid-template-columns: 9rem minmax(0, 1fr);
+    column-gap: 0.75rem;
+    row-gap: 0.375rem;
+    align-items: start;
+  }
+  .form-look[data-label-start] [data-field-id]:not(.items-start) > :first-child { grid-column: 1; padding-top: 0.625rem; }
+  .form-look[data-label-start] [data-field-id]:not(.items-start) > :not(:first-child) { grid-column: 2; }
+}
+
+/* Radio and checkbox answers as tiles: each answer in its own box, the chosen one marked in the brand colour. */
+.form-look[data-choice-tiles] .form-choice {
+  padding: 0.375rem 0.75rem;
+  border: 1.5px solid var(--form-field-border);
+  border-radius: var(--form-field-radius);
+  background-color: var(--form-field-bg);
+}
+.form-look[data-choice-tiles] .form-choice:has(input:checked) {
+  border-color: var(--action-primary);
+  background-color: color-mix(in srgb, var(--action-primary) 10%, var(--form-field-bg));
+}
+.form-look[data-choice-tiles] .form-choice:has(input:focus-visible) { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+
+/* Buttons and details (theme.buttons). The row and the buttons carry the marker classes form-btn-row and form-btn (never a bg- prefix: cn() drops those). */
+.form-look[data-btn-hover] .form-btn { transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease; }
+@media (prefers-reduced-motion: reduce) { .form-look[data-btn-hover] .form-btn { transition: none; } }
+.form-look[data-btn-size="small"] .form-btn { min-height: 2.25rem; padding-inline: 0.875rem; font-size: 0.8125rem; }
+.form-look[data-btn-size="large"] .form-btn { min-height: 3.25rem; padding-inline: 2rem; font-size: 1.0625rem; }
+/* Buttons as wide as their words, set at the end of the row, instead of sharing the row */
+.form-look[data-btn-width="auto"] .form-btn-row { justify-content: flex-end; }
+.form-look[data-btn-width="auto"] .form-btn { flex: 0 1 auto; }
+@media (max-width: 479px) {
+  /* on a phone a button the width of its words is hard to hit: full width again */
+  .form-look[data-btn-width="auto"] .form-btn-row { justify-content: stretch; }
+  .form-look[data-btn-width="auto"] .form-btn { flex: 1 1 0; }
+}
+.form-look[data-btn-hover="lift"] .form-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 8px 18px color-mix(in srgb, var(--action-primary) 30%, transparent); }
+.form-look[data-btn-hover="darken"] .form-btn:not(:disabled):hover { filter: brightness(0.9); }

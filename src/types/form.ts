@@ -148,7 +148,29 @@ export type ButtonStyle = 'solid' | 'outline';
 export type ButtonRadius = '4px' | '8px' | '16px';
 export type CoverPosition = 'center' | 'top' | 'bottom';
 export type FormSpacing = 'compact' | 'comfortable' | 'spacious';
-export type FormFont = 'dm_sans' | 'inter' | 'work_sans' | 'lora' | 'nunito';
+export type FormFont =
+  | 'dm_sans'
+  | 'inter'
+  | 'work_sans'
+  | 'lora'
+  | 'nunito'
+  | 'poppins'
+  | 'manrope'
+  | 'plus_jakarta_sans'
+  | 'outfit'
+  | 'space_grotesk'
+  | 'montserrat'
+  | 'playfair_display'
+  | 'merriweather'
+  | 'source_serif_4'
+  | 'fraunces'
+  | 'dm_serif_display'
+  | 'quicksand'
+  | 'fredoka'
+  | 'caveat'
+  | 'pacifico'
+  | 'bebas_neue'
+  | 'space_mono';
 export type TypeScale = 'compact' | 'default' | 'large';
 export type CardStyle = 'flat' | 'soft' | 'bordered' | 'elevated';
 export type PanelTreatment = 'solid' | 'gradient' | 'image' | 'pattern';
@@ -156,6 +178,63 @@ export type FieldGrouping = 'auto' | 'single';
 export type CoverFit = 'banner' | 'original';
 export type LogoSize = 'sm' | 'md' | 'lg';
 export type FormWidth = 'narrow' | 'standard' | 'wide';
+export type FieldStyle = 'outlined' | 'filled' | 'underline';
+export type LabelPosition = 'above' | 'start';
+export type ChoiceStyle = 'plain' | 'tiles';
+
+/**
+ * The owner's own colours, fields look and exact sizes: one versioned object, stored as branding.theme. Every key is optional and an absent
+ * one is the default look. The backend validates it (hex colours, bounded whole numbers) and drops keys it does not know.
+ */
+export interface FormTheme {
+  v: 1;
+  colors?: { text?: string; heading?: string; card?: string; field?: string; fieldBorder?: string; buttonText?: string };
+  fields?: { style?: FieldStyle; radius?: number; label?: LabelPosition; choice?: ChoiceStyle };
+  card?: { radius?: number; shadow?: number };
+  layout?: { maxWidth?: number; fieldGap?: number; /** Split Feature: which side the picture panel is on (start = the left in left-to-right languages). */ panelSide?: 'start' | 'end'; /** Split Feature: how much of the card the picture panel takes, 20 to 80 (percent). */ panelSplit?: number };
+  /** The typeface of the headings (the form title and page titles); absent = the same as the form's font. */
+  fonts?: { heading?: FormFont };
+  /** Who took the Unsplash photo used as the cover and/or the page background (one credit each), shown on the form. Only an unsplash.com profile address. */
+  credit?: { cover?: PhotoCredit; background?: PhotoCredit };
+  /** How big and wide the form's buttons are and how they react to the pointer. Absent = size and hover as before, buttons filling the row. */
+  buttons?: { size?: ButtonSize; width?: ButtonWidth; hover?: ButtonHover };
+  /** The owner's own words on the buttons (absent = Submit, Next, Back). They belong to this one form, so a saved style does not carry them. */
+  labels?: { submit?: string; next?: string; back?: string };
+  /** How the multi-page progress is drawn (absent = a bar). */
+  progress?: { style?: ProgressStyle };
+  /** A short line under the form (contact details, a thank-you for time). Also this one form's own words. */
+  footer?: { note?: string };
+  /** The screen a respondent sees after sending. Headline, picture and redirect are this one form's own; the colour and the confetti are look. */
+  success?: { headline?: string; colour?: string; picture?: string; confetti?: boolean; redirect?: { url: string; seconds?: number } };
+  /** The page behind the form: the two colours and the angle of a gradient, and how much a picture is darkened (percent) and blurred (pixels). */
+  background?: { from?: string; to?: string; angle?: number; darken?: number; blur?: number };
+  /** How tall the cover banner is, in pixels. */
+  cover?: { height?: number };
+  /** For the cover, the page background and the logo: the original a picture was cropped from and how it was framed, so the crop can be adjusted later. */
+  crop?: { cover?: CropMemo; background?: CropMemo; logo?: CropMemo };
+}
+
+/** A crop that can be opened again: the original picture, the picture it made (the memo is only used while that is still the one in use) and the frame. */
+export interface CropMemo {
+  from: string;
+  result: string;
+  /** Width over height of the cropped picture. */
+  aspect: number;
+  /** The centre of the part kept, as a share of the whole picture (0 to 1 each way), and the zoom (1 to 4). */
+  fx: number;
+  fy: number;
+  zoom: number;
+}
+
+export type ButtonSize = 'small' | 'default' | 'large';
+export type ButtonWidth = 'fill' | 'auto';
+export type ButtonHover = 'none' | 'lift' | 'darken';
+export type ProgressStyle = 'bar' | 'dots' | 'steps';
+
+export interface PhotoCredit {
+  name: string;
+  url: string;
+}
 export type PageBackground = 'wash' | 'plain' | 'solid' | 'gradient' | 'mesh' | 'dots' | 'grid' | 'image';
 
 /** A form's mark: an uploaded logo, or an icon (name + colour) from the icon library; none of them = picked automatically from the name. */
@@ -190,13 +269,14 @@ export interface FormBranding {
   formWidth?: FormWidth;         // default 'standard' — how wide the form card is
   backgroundImageUrl?: string;   // the owner's own picture, used when backgroundStyle is 'image'
   backgroundColor?: string;      // hex the page background is built from; absent = the primary colour
+  theme?: FormTheme | null;      // colours, fields look and exact sizes; null only in a save, to clear it
   bannerText?: string;           // a line of text under the title on the form's header
   bannerLinks?: BannerLink[];    // up to 5 links on the form's header (http or https only)
 }
 
 // Sprint 13 (builder-publish-respondent), design.md §13. Six presets replace the three V1 layout
 // modes; legacy values stay readable and are mapped by lib/layoutPresets.ts normaliseLayout().
-export type LayoutPreset = 'classic' | 'card_stack' | 'guided' | 'steps' | 'split_feature' | 'compact';
+export type LayoutPreset = 'classic' | 'card_stack' | 'guided' | 'steps' | 'split_feature' | 'compact' | 'chat' | 'sidebar' | 'open' | 'focus';
 export type LegacyLayout = 'single_column' | 'two_column' | 'compact';
 export type AccessMode = 'open' | 'tracked' | 'login';
 

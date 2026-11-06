@@ -2,24 +2,31 @@
 
 import { isAxiosError } from 'axios';
 import { useId, useState, type ReactNode } from 'react';
-import { Check, ImageIcon, Maximize2, Minus, Plus, X } from 'lucide-react';
+import { Check, ImageIcon, Maximize2, Minus, Plus, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { safeHttpUrl } from '@/lib/fieldDisplay';
+import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
 import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { Segmented } from '@/components/ui/Segmented';
 import type { PreviewDevice } from '@/components/preview/DeviceToggle';
-import { FORM_FONT_OPTIONS, PAGE_BACKGROUND_OPTIONS, brandCardClass, brandWashStyle } from '@/lib/formTheme';
+import { FONT_GROUPS, FORM_FONT_OPTIONS, PAGE_BACKGROUND_OPTIONS, brandCardClass, brandWashStyle, cleanTheme, patchTheme, withCredit } from '@/lib/formTheme';
 import { lookBranding } from '@/lib/layoutPresets';
 import { uploadService } from '@/services/upload';
 import { bx } from '@/lib/utils';
-import type { BannerLink, ButtonRadius, ButtonStyle, CardStyle, CoverFit, CoverPosition, FieldGrouping, FormBranding, FormFont, FormSpacing, FormWidth, LayoutPreset, LogoSize, PageBackground, PanelTreatment, TypeScale } from '@/types/form';
+import type { BannerLink, ButtonRadius, CropMemo, FormTheme, ButtonStyle, CardStyle, CoverFit, CoverPosition, FieldGrouping, FormBranding, FormFont, FormSpacing, FormWidth, LayoutPreset, LogoSize, PageBackground, PanelTreatment, PhotoCredit, TypeScale } from '@/types/form';
 import { ImageUploadZone } from './BrandingPanel';
+import type { CropFrame } from './ImageCropModal';
 import { LayoutChooser } from './LayoutChooser';
+import { PictureChoice } from './PicturePicker';
+import { LooksDialog } from './LooksDialog';
+import { currentLook, styleUpdates } from '@/lib/formStyles';
+import { ThankYouControls } from './ThankYouControls';
+import { BackgroundLook, ButtonsAndDetails, CoverHeight, CustomBadge, FieldsLook, FineTune, FormColours, PanelSide, type SetTheme } from './LookControls';
 import { ZOOM_STEPS } from '@/lib/previewZoom';
 import { LiveFormPreview } from './LiveFormPreview';
 
@@ -28,12 +35,13 @@ const DEFAULT_COLOR = '#1D4ED8';
 const MAX_LINKS = 5;
 const HEX = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
 
-type Section = 'layout' | 'colour' | 'text' | 'style' | 'header';
+type Section = 'layout' | 'colour' | 'text' | 'style' | 'buttons' | 'header';
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'layout', label: 'Layout' },
   { id: 'colour', label: 'Colour' },
   { id: 'text', label: 'Text' },
   { id: 'style', label: 'Style' },
+  { id: 'buttons', label: 'Details' },
   { id: 'header', label: 'Header' },
 ];
 
@@ -43,23 +51,24 @@ const COLUMNS = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' } as cons
 const BACKGROUND_NAME: Record<string, string> = { wash: 'Glow', plain: 'Plain', solid: 'Solid', gradient: 'Gradient', mesh: 'Mesh', dots: 'Dots', grid: 'Grid', image: 'Image' };
 
 /** A few set choices, one click each: a row of buttons, the chosen one marked. Faster to use (and to see) than a drop-down. */
-function ChipChoice<T extends string>({ label, value, options, onChange, columns = 3 }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (value: T) => void; columns?: 2 | 3 | 4 }) {
+function ChipChoice<T extends string>({ label, value, options, onChange, columns = 3, custom }: { label: string; value: T; options: { value: T; label: string }[]; onChange: (value: T) => void; columns?: 2 | 3 | 4; custom?: boolean }) {
   const id = useId();
   return (
     <div role="group" aria-labelledby={id} className="flex flex-col gap-2">
       <span id={id} className="bg-label">
         {label}
+        {custom && <CustomBadge />}
       </span>
       <div className={bx('grid gap-2', COLUMNS[columns])}>
         {options.map((o) => (
           <button
             key={o.value}
             type="button"
-            aria-pressed={value === o.value}
+            aria-pressed={!custom && value === o.value}
             onClick={() => onChange(o.value)}
             className={bx(
               'min-h-10 rounded-lg border-2 px-2 bg-body-sm font-medium focus-visible:outline-2 focus-visible:outline-(--border-focus)',
-              value === o.value ? 'border-(--action-primary) bg-(--accent-soft) text-(--text-primary)' : 'border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)',
+              !custom && value === o.value ? 'border-(--action-primary) bg-(--accent-soft) text-(--text-primary)' : 'border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)',
             )}
           >
             {o.label}
@@ -78,21 +87,24 @@ const CARD_STYLES: { value: CardStyle; label: string }[] = [
   { value: 'elevated', label: 'Elevated' },
 ];
 
-function CardStyleTiles({ value, brand, onChange }: { value: CardStyle; brand: string; onChange: (value: CardStyle) => void }) {
+function CardStyleTiles({ value, brand, onChange, custom }: { value: CardStyle; brand: string; onChange: (value: CardStyle) => void; custom?: boolean }) {
   const id = useId();
   return (
     <div role="group" aria-labelledby={id} className="flex flex-col gap-2">
-      <span id={id} className="bg-label">Card</span>
+      <span id={id} className="bg-label">
+        Card
+        {custom && <CustomBadge />}
+      </span>
       <div className="grid grid-cols-2 gap-2">
         {CARD_STYLES.map((o) => (
           <button
             key={o.value}
             type="button"
-            aria-pressed={value === o.value}
+            aria-pressed={!custom && value === o.value}
             onClick={() => onChange(o.value)}
             className={bx(
               'flex flex-col gap-2 rounded-lg border-2 p-2 bg-body-sm font-medium focus-visible:outline-2 focus-visible:outline-(--border-focus)',
-              value === o.value ? 'border-(--action-primary) bg-(--accent-soft) text-(--text-primary)' : 'border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)',
+              !custom && value === o.value ? 'border-(--action-primary) bg-(--accent-soft) text-(--text-primary)' : 'border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)',
             )}
           >
             {/* a page with a card on it, drawn with the same classes as the real form card */}
@@ -177,6 +189,8 @@ export interface BrandingStudioProps {
   /** The form's title, edited on the Header section. Without onTitleChange the title is not shown there. */
   formTitle?: string;
   onTitleChange?: (title: string) => void;
+  /** A workspace slug or 'personal': where "My styles" are kept. Without it only the ready-made looks are offered. */
+  styleScope?: string;
 }
 
 /**
@@ -184,9 +198,12 @@ export interface BrandingStudioProps {
  * beside them, large, changing as each control is touched: there is no step to get through first, no preview to open, and a setting is
  * one click away. Choosing a layout applies it at once, with the typeface, card and colour that go with it.
  */
-export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic, onBrandingUpdate, onLayoutChange, onFullScreen, formTitle, onTitleChange }: BrandingStudioProps) {
+export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic, onBrandingUpdate, onLayoutChange, onFullScreen, formTitle, onTitleChange, styleScope }: BrandingStudioProps) {
+  const [looksOpen, setLooksOpen] = useState(false);
   const [section, setSection] = useState<Section>('layout');
   const [device, setDevice] = useState<PreviewDevice>('desktop');
+  // The thank-you screen is shown in the preview on request (nobody sees it until they have sent the form), and only while its controls are open.
+  const [showThanks, setShowThanks] = useState(false);
   // The form is shown at 100%; the - and + step through ZOOM_STEPS, and the percentage between them goes back to 100%.
   const [zoom, setZoom] = useState(1);
   const smaller = [...ZOOM_STEPS].reverse().find((s) => s < zoom - 0.005);
@@ -194,16 +211,73 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
   const { toast } = useToast();
   const uid = useId();
   const set = onBrandingUpdate;
+  // A whole look in one click (a ready-made one, or one of "My styles"): the layout and every look setting change, the form's own logo, uploads,
+  // title and text stay, and Undo puts back exactly what was there.
+  const applyLook = (look: Parameters<typeof styleUpdates>[0] & { layout: LayoutPreset }, name: string) => {
+    const before = currentLook(branding);
+    const beforeLayout = layout;
+    onLayoutChange(look.layout);
+    set(styleUpdates(look, branding));
+    setLooksOpen(false);
+    toast(`${name} look applied.`, 'success', undefined, {
+      label: 'Undo',
+      onClick: () => {
+        onLayoutChange(beforeLayout);
+        set(before);
+      },
+    });
+  };
+  const theme = branding.theme;
+  // One group of branding.theme at a time; an emptied theme is saved as null, which clears it on the server.
+  const setTheme: SetTheme = (group, patch) => set({ theme: patchTheme(theme, group, patch) });
+  // Choosing a preset where an exact value is in use puts the preset back and says so, with an Undo that restores both.
+  const pickPreset = (apply: Partial<FormBranding>, cleared: FormTheme | null, had: boolean, what: string) => {
+    const before: Partial<FormBranding> = { theme: theme ?? null };
+    for (const k of Object.keys(apply)) (before as Record<string, unknown>)[k] = branding[k as keyof FormBranding];
+    // the theme is only touched when an exact value was in use: a form without one sends exactly what it always sent
+    set({ ...apply, ...(had ? { theme: cleared } : {}) });
+    if (had) toast(`${what} is back to the preset.`, 'info', undefined, { label: 'Undo', onClick: () => set(before) });
+  };
   const brand = branding.primaryColor ?? DEFAULT_COLOR;
   const links = branding.bannerLinks ?? [];
   const setLink = (i: number, change: Partial<BannerLink>) => set({ bannerLinks: links.map((l, j) => (j === i ? { ...l, ...change } : l)) });
   const coverFit: CoverFit = branding.coverFit ?? (branding.coverImageUrl ? 'banner' : 'original');
+  // A picture change also sets (an Unsplash photo) or clears (anything else) that picture's photographer credit, so a credit never outlives its photo.
+  // The same goes for a remembered crop: it belongs to the picture it made, so a different picture clears it, and a crop sets its own.
+  const setPicture = (slot: 'cover' | 'background', patch: Partial<FormBranding>, credit?: PhotoCredit, memo?: CropMemo) => {
+    const t = cleanTheme(theme);
+    if (!credit && !memo && !t?.credit?.[slot] && !t?.crop?.[slot]) {
+      set(patch);
+      return;
+    }
+    set({ ...patch, theme: patchTheme(withCredit(theme, slot, credit), 'crop', { [slot]: memo } as NonNullable<FormTheme['crop']>) });
+  };
+  const creditOf = (slot: 'cover' | 'background') => cleanTheme(theme)?.credit?.[slot];
+  // The logo is cropped to a square; its crop is remembered the same way, so it opens on the original at the zoom and place it was left at.
+  const setLogo = (logoUrl: string | undefined, memo?: CropMemo) => {
+    if (!memo && !cleanTheme(theme)?.crop?.logo) {
+      set({ logoUrl });
+      return;
+    }
+    set({ logoUrl, theme: patchTheme(theme, 'crop', { logo: memo } as NonNullable<FormTheme['crop']>) });
+  };
 
-  const upload = async (file: File, key: 'logoUrl' | 'coverImageUrl' | 'backgroundImageUrl') => {
+  /** An upload for a place in the theme (the thank-you picture): its address, or nothing after telling the person why. */
+  const uploadForTheme = async (file: File): Promise<string | undefined> => {
+    try {
+      return (await uploadService.uploadFile(file)).url;
+    } catch (err) {
+      toast(isAxiosError(err) && err.response?.status === 413 ? 'That image is too large. Use one under 5 MB.' : 'Upload failed. Check your connection.', 'error');
+      return undefined;
+    }
+  };
+
+  const upload = async (file: File, key: 'logoUrl' | 'coverImageUrl' | 'backgroundImageUrl', crop?: CropFrame & { from: string }) => {
     try {
       const url = (await uploadService.uploadFile(file)).url;
       // a cover remembers how it was added, so the form shows it the same way (whole, or cropped to the banner)
-      set({ [key]: url, ...(key === 'coverImageUrl' ? { coverFit } : {}) });
+      if (key === 'logoUrl') setLogo(url, crop ? { ...crop, result: url } : undefined);
+      else setPicture(key === 'coverImageUrl' ? 'cover' : 'background', { [key]: url, ...(key === 'coverImageUrl' ? { coverFit } : {}) }, undefined, crop ? { ...crop, result: url } : undefined);
     } catch (err) {
       toast(isAxiosError(err) && err.response?.status === 413 ? 'That image is too large. Use one under 5 MB.' : 'Upload failed. Check your connection.', 'error');
     }
@@ -217,7 +291,7 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
         isPublic={isPublic}
         onPick={(next) => {
           onLayoutChange(next);
-          set(lookBranding(next, branding));
+          set(lookBranding(next, branding, false, layout));
         }}
       />
     ),
@@ -265,8 +339,12 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
           </div>
         </div>
         {branding.backgroundStyle === 'image' && (
-          <ImageUploadZone label="Page background image" imageUrl={branding.backgroundImageUrl} aspect="banner" freeform onUpload={(file) => upload(file, 'backgroundImageUrl')} onRemove={() => set({ backgroundImageUrl: undefined, formWidth: undefined, coverFit: undefined })} />
+          <PictureChoice label="Pictures to choose from" value={branding.backgroundImageUrl} onPick={(url, credit) => setPicture('background', { backgroundImageUrl: url }, credit)} />
         )}
+        {branding.backgroundStyle === 'image' && (
+          <ImageUploadZone label="Page background image" imageUrl={branding.backgroundImageUrl} aspect="banner" freeform cropMemo={theme?.crop?.background} onUploadSource={uploadForTheme} onUrlChange={(url) => setPicture('background', { backgroundImageUrl: url }, creditOf('background'))} onUpload={(file, crop) => upload(file, 'backgroundImageUrl', crop)} onRemove={() => setPicture('background', { backgroundImageUrl: undefined, formWidth: undefined, coverFit: undefined })} />
+        )}
+        <BackgroundLook branding={branding} setTheme={setTheme} />
         {(branding.backgroundStyle ?? 'wash') !== 'plain' && branding.backgroundStyle !== 'image' && (
           <div className="flex flex-col gap-1">
             <span className="bg-label">Page colour</span>
@@ -278,35 +356,65 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
             )}
           </div>
         )}
+        <FormColours branding={branding} setTheme={setTheme} onBrand={(primaryColor) => set({ primaryColor })} />
       </>
     ),
     text: (
       <>
         <div role="group" aria-label="Font" className="flex flex-col gap-2">
           <span className="bg-label">Font</span>
-          {FORM_FONT_OPTIONS.map((font) => {
-            const chosen = (branding.fontFamily ?? 'dm_sans') === font.value;
-            return (
-              <button
-                key={font.value}
-                type="button"
-                aria-pressed={chosen}
-                onClick={() => set({ fontFamily: font.value as FormFont })}
-                // each option is drawn in its own typeface, so the choice is seen, not imagined
-                style={{ fontFamily: font.stack }}
-                className={bx(
-                  'flex min-h-11 items-center gap-3 rounded-lg border-2 px-3 text-left focus-visible:outline-2 focus-visible:outline-(--border-focus)',
-                  chosen ? 'border-(--action-primary) bg-(--accent-soft)' : 'border-(--border-default) hover:bg-(--surface-hover)',
-                )}
-              >
-                <span aria-hidden="true" className="w-8 text-xl font-semibold text-(--text-primary)">
-                  Aa
-                </span>
-                <span className="min-w-0 flex-1 truncate text-sm text-(--text-primary)">{font.label}</span>
-                {chosen && <Check size={16} className="text-(--action-primary)" aria-hidden="true" />}
-              </button>
-            );
-          })}
+          {FONT_GROUPS.map((group) => (
+            <div key={group.id} role="group" aria-label={group.label} className="flex flex-col gap-2">
+              <span className="pt-1 bg-caption font-semibold text-(--text-muted)">{group.label}</span>
+              <div className="grid grid-cols-2 gap-2">
+                {FORM_FONT_OPTIONS.filter((f) => f.group === group.id).map((font) => {
+                  const chosen = (branding.fontFamily ?? 'dm_sans') === font.value;
+                  const [name, ...rest] = font.label.split(' — ');
+                  return (
+                    <button
+                      key={font.value}
+                      type="button"
+                      aria-pressed={chosen}
+                      title={font.label}
+                      onClick={() => set({ fontFamily: font.value as FormFont })}
+                      // each box is drawn in its own typeface, so the choice is seen, not imagined
+                      style={{ fontFamily: font.stack }}
+                      className={bx(
+                        'relative flex min-h-24 flex-col items-center justify-center gap-1 rounded-lg border-2 px-2 py-3 text-center focus-visible:outline-2 focus-visible:outline-(--border-focus)',
+                        chosen ? 'border-(--action-primary) bg-(--accent-soft)' : 'border-(--border-default) hover:bg-(--surface-hover)',
+                      )}
+                    >
+                      <span aria-hidden="true" className="text-3xl font-semibold leading-none text-(--text-primary)">
+                        Aa
+                      </span>
+                      <span className="text-sm leading-tight text-(--text-primary)">{name}</span>
+                      {rest.length > 0 && <span className="text-xs leading-tight text-(--text-muted)">{rest.join(' — ')}</span>}
+                      {chosen && (
+                        <span className="absolute right-1.5 top-1.5 flex size-5 items-center justify-center rounded-full bg-(--action-primary) text-white">
+                          <Check size={12} aria-hidden="true" />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Select id={`${uid}-heading-font`} label="Heading font" value={theme?.fonts?.heading ?? ''} onChange={(e) => setTheme('fonts', { heading: (e.target.value || undefined) as FormFont | undefined })}>
+            <option value="">Same as the text</option>
+            {FONT_GROUPS.map((group) => (
+              <optgroup key={group.id} label={group.label}>
+                {FORM_FONT_OPTIONS.filter((f) => f.group === group.id).map((f) => (
+                  <option key={f.value} value={f.value}>
+                    {f.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </Select>
+          <p className="bg-caption text-(--text-muted)">Used for the form title and page titles. The questions keep the text font.</p>
         </div>
         <ChipChoice<TypeScale> label="Headline size" value={branding.typeScale ?? 'default'} options={[{ value: 'compact', label: 'Small' }, { value: 'default', label: 'Standard' }, { value: 'large', label: 'Large' }]} onChange={(typeScale) => set({ typeScale })} />
         <ChipChoice<ButtonStyle> label="Buttons" value={branding.buttonStyle ?? 'solid'} columns={2} options={[{ value: 'solid', label: 'Solid' }, { value: 'outline', label: 'Outline' }]} onChange={(buttonStyle) => set({ buttonStyle })} />
@@ -315,9 +423,26 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
     ),
     style: (
       <>
-        <CardStyleTiles value={branding.cardStyle ?? 'soft'} brand={brand} onChange={(cardStyle) => set({ cardStyle })} />
-        <ChipChoice<FormWidth> label="Form width" value={branding.formWidth ?? 'standard'} options={[{ value: 'narrow', label: 'Narrow' }, { value: 'standard', label: 'Standard' }, { value: 'wide', label: 'Wide' }]} onChange={(formWidth) => set({ formWidth })} />
-        <ChipChoice<FormSpacing> label="Spacing" value={branding.spacing ?? 'comfortable'} options={[{ value: 'compact', label: 'Compact' }, { value: 'comfortable', label: 'Comfortable' }, { value: 'spacious', label: 'Spacious' }]} onChange={(spacing) => set({ spacing })} />
+        <CardStyleTiles
+          value={branding.cardStyle ?? 'soft'}
+          brand={brand}
+          custom={theme?.card?.radius !== undefined || theme?.card?.shadow !== undefined}
+          onChange={(cardStyle) => pickPreset({ cardStyle }, patchTheme(theme, 'card', { radius: undefined, shadow: undefined }), theme?.card?.radius !== undefined || theme?.card?.shadow !== undefined, 'The card')}
+        />
+        <ChipChoice<FormWidth>
+          label="Form width"
+          value={branding.formWidth ?? 'standard'}
+          custom={theme?.layout?.maxWidth !== undefined}
+          options={[{ value: 'narrow', label: 'Narrow' }, { value: 'standard', label: 'Standard' }, { value: 'wide', label: 'Wide' }]}
+          onChange={(formWidth) => pickPreset({ formWidth }, patchTheme(theme, 'layout', { maxWidth: undefined }), theme?.layout?.maxWidth !== undefined, 'The form width')}
+        />
+        <ChipChoice<FormSpacing>
+          label="Spacing"
+          value={branding.spacing ?? 'comfortable'}
+          custom={theme?.layout?.fieldGap !== undefined}
+          options={[{ value: 'compact', label: 'Compact' }, { value: 'comfortable', label: 'Comfortable' }, { value: 'spacious', label: 'Spacious' }]}
+          onChange={(spacing) => pickPreset({ spacing }, patchTheme(theme, 'layout', { fieldGap: undefined }), theme?.layout?.fieldGap !== undefined, 'The spacing')}
+        />
         <ChipChoice<FieldGrouping> label="Fields" value={branding.fieldGrouping ?? 'auto'} columns={2} options={[{ value: 'auto', label: 'Side by side' }, { value: 'single', label: 'One per row' }]} onChange={(fieldGrouping) => set({ fieldGrouping })} />
         <div className="flex items-center justify-between gap-3">
           <label htmlFor={`${uid}-progress`} className="bg-body-sm font-medium text-(--text-secondary)">
@@ -325,6 +450,20 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
           </label>
           <Switch id={`${uid}-progress`} checked={branding.showProgress !== false} onChange={(showProgress) => set({ showProgress })} />
         </div>
+        <PanelSide branding={branding} layout={layout} setTheme={setTheme} />
+        <FieldsLook
+          branding={branding}
+          layout={layout}
+          setTheme={setTheme}
+          onCorners={(radius) => pickPreset({}, patchTheme(theme, 'fields', { radius }), theme?.fields?.radius !== undefined && ![0, 8, 20].includes(theme.fields.radius), 'The field corners')}
+        />
+        <FineTune branding={branding} layout={layout} setTheme={setTheme} />
+      </>
+    ),
+    buttons: (
+      <>
+        <ButtonsAndDetails branding={branding} layout={layout} setTheme={setTheme} />
+        <ThankYouControls branding={branding} setTheme={setTheme} showPreview={showThanks} onShowPreview={setShowThanks} onUpload={uploadForTheme} />
       </>
     ),
     header: (
@@ -351,17 +490,19 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
         </div>
         <div className="flex flex-col gap-2">
           <span className="bg-label">Logo</span>
-          <ImageUploadZone label="Logo" imageUrl={branding.logoUrl} aspect="square" onUpload={(file) => upload(file, 'logoUrl')} onRemove={() => set({ logoUrl: undefined })} />
+          <ImageUploadZone label="Logo" imageUrl={branding.logoUrl} aspect="square" cropMemo={theme?.crop?.logo} onUploadSource={uploadForTheme} onUpload={(file, crop) => upload(file, 'logoUrl', crop)} onRemove={() => setLogo(undefined)} />
           <p className="bg-caption text-(--text-muted)">Square, 256 × 256 or larger.</p>
           <ChipChoice<LogoSize> label="Logo size" value={branding.logoSize ?? 'md'} options={[{ value: 'sm', label: 'Small' }, { value: 'md', label: 'Medium' }, { value: 'lg', label: 'Large' }]} onChange={(logoSize) => set({ logoSize })} />
         </div>
         <div className="flex flex-col gap-2">
           <span className="bg-label">Cover image</span>
           <ChipChoice<CoverFit> label="Shape" value={coverFit} columns={2} options={[{ value: 'original', label: 'Whole picture' }, { value: 'banner', label: 'Wide banner' }]} onChange={(next) => set({ coverFit: next })} />
+          {!(branding.coverImageUrl && coverFit === 'original') && <CoverHeight branding={branding} setTheme={setTheme} />}
           {branding.coverImageUrl && coverFit === 'banner' && (
             <ChipChoice<CoverPosition> label="Show the" value={branding.coverPosition ?? 'center'} options={[{ value: 'top', label: 'Top' }, { value: 'center', label: 'Middle' }, { value: 'bottom', label: 'Bottom' }]} onChange={(coverPosition) => set({ coverPosition })} />
           )}
-          <ImageUploadZone label="Cover image" imageUrl={branding.coverImageUrl} aspect="banner" freeform={coverFit === 'original'} onUpload={(file) => upload(file, 'coverImageUrl')} onRemove={() => set({ coverImageUrl: undefined })} />
+          <PictureChoice label="Pictures to choose from" value={branding.coverImageUrl} onPick={(url, credit) => setPicture('cover', { coverImageUrl: url, coverFit }, credit)} />
+          <ImageUploadZone label="Cover image" imageUrl={branding.coverImageUrl} aspect="banner" freeform={coverFit === 'original'} cropMemo={theme?.crop?.cover} onUploadSource={uploadForTheme} onUrlChange={(url) => setPicture('cover', { coverImageUrl: url, coverFit }, creditOf('cover'))} onUpload={(file, crop) => upload(file, 'coverImageUrl', crop)} onRemove={() => setPicture('cover', { coverImageUrl: undefined })} />
         </div>
       </>
     ),
@@ -372,11 +513,12 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
     // the section tabs, so the controls and the form start right under the builder's tabs.
     <div className="flex flex-col gap-4">
       <h2 className="sr-only">Branding</h2>
+      <LooksDialog isOpen={looksOpen} onClose={() => setLooksOpen(false)} layout={layout} branding={branding} scope={styleScope} onApply={applyLook} />
       <div className="grid items-start gap-6 lg:grid-cols-[24rem_minmax(0,1fr)]">
-        <Card className="flex min-w-0 flex-col gap-4 p-4 lg:max-h-[calc(100vh-16.5rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <Card className="flex min-w-0 flex-col gap-4 p-4 lg:max-h-[calc(100vh-17.75rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* Stays at the top of the card while the controls scroll under it. */}
           <div className="sticky -top-4 z-10 -mx-4 -mt-4 bg-(--surface-card) px-4 pt-4">
-            <Tabs tabs={SECTIONS} activeId={section} onChange={(id) => setSection(id as Section)} ariaLabel="Branding sections" panelId="branding-section" />
+            <Tabs tabs={SECTIONS} activeId={section} onChange={(id) => { setSection(id as Section); if (id !== 'buttons') setShowThanks(false); }} ariaLabel="Branding sections" panelId="branding-section" className="gap-4" />
           </div>
           <div role="tabpanel" id="branding-section" aria-labelledby={`tab-${section}`} className="flex flex-col gap-5">
             {panels[section]}
@@ -385,8 +527,8 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
 
         <div className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-20">
           {/* The screen switch sits in the preview's top left, the zoom and Full screen in its bottom right, so the form has the whole column. */}
-          <div className="relative h-[calc(100vh-16.5rem)] min-h-96">
-            {formId ? <LiveFormPreview fill zoom={zoom} formId={formId} branding={branding} title={formTitle} layout={layout} device={device} /> : <p className="bg-body-sm text-(--text-muted)">Save the form to see a live preview.</p>}
+          <div className="relative h-[calc(100vh-17.75rem)] min-h-96">
+            {formId ? <LiveFormPreview fill zoom={zoom} formId={formId} branding={branding} title={formTitle} layout={layout} device={device} screen={showThanks && section === 'buttons' ? 'thanks' : 'form'} /> : <p className="bg-body-sm text-(--text-muted)">Save the form to see a live preview.</p>}
             <Segmented
               ariaLabel="Preview device"
               className="absolute left-3 top-3 z-10 shadow-(--shadow-md)"
@@ -397,6 +539,10 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
                 setZoom(1);
               }}
             />
+            <Button type="button" variant="secondary" size="small" onClick={() => setLooksOpen(true)} className="absolute right-6 top-3 z-10 shadow-(--shadow-md)">
+              <Sparkles size={14} className="mr-1.5" aria-hidden="true" />
+              Looks
+            </Button>
             <div className="absolute bottom-3 right-6 z-10 flex items-center gap-0.5 rounded-lg bg-(--surface-card) p-0.5 shadow-(--shadow-md) ring-1 ring-(--border-default)">
               <div role="group" aria-label="Preview zoom" className="flex items-center gap-0.5">
                 <Button type="button" variant="ghost" size="small" aria-label="Zoom out" disabled={smaller === undefined} onClick={() => smaller !== undefined && setZoom(smaller)} className="min-h-8 min-w-8 p-1.5">

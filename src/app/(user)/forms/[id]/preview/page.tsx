@@ -10,6 +10,7 @@ import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { PublicFormShell } from '@/components/public-form/PublicFormShell';
 import { FormThemeScope } from '@/components/public-form/FormThemeScope';
+import { SuccessScreen } from '@/components/public-form/SuccessScreen';
 import { PreviewBar } from '@/components/preview/PreviewBar';
 import { PreviewFrame } from '@/components/preview/PreviewFrame';
 import type { PreviewDevice } from '@/components/preview/DeviceToggle';
@@ -33,12 +34,12 @@ export default function FormPreviewPage() {
   const [device, setDevice] = useState<PreviewDevice>('desktop');
   // The Branding tab streams its unsaved branding + layout in over postMessage (same-origin only), so its preview is the
   // real form updating as you type, not a saved-copy that lags the autosave.
-  const [live, setLive] = useState<{ branding: FormBranding; layout?: string; title?: string } | null>(null);
+  const [live, setLive] = useState<{ branding: FormBranding; layout?: string; title?: string; screen?: 'form' | 'thanks' } | null>(null);
   useEffect(() => {
     if (!embed) return;
     const onMessage = (e: MessageEvent) => {
       if (e.origin !== window.location.origin || e.data?.type !== 'beginso-live-branding') return;
-      setLive({ branding: e.data.branding ?? {}, layout: e.data.layout, title: e.data.title });
+      setLive({ branding: e.data.branding ?? {}, layout: e.data.layout, title: e.data.title, screen: e.data.screen === 'thanks' ? 'thanks' : 'form' });
     };
     window.addEventListener('message', onMessage);
     window.parent.postMessage({ type: 'beginso-preview-ready' }, window.location.origin);
@@ -112,6 +113,9 @@ export default function FormPreviewPage() {
           <div className="flex items-center justify-center h-full text-(--error-text)">
             Could not load this form. Please go back and try again.
           </div>
+        ) : live?.screen === 'thanks' ? (
+          // The studio's "Show it in the preview": the screen people see after sending, drawn with the unsaved branding. Nothing moves on from here.
+          <SuccessScreen preview title={schema.title} message={schema.settings.successMessage || 'Your response has been submitted successfully.'} branding={schema.branding} again={null} />
         ) : (
           <PublicFormShell
             schema={schema}

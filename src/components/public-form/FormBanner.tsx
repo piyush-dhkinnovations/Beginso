@@ -1,5 +1,6 @@
+import type { CSSProperties } from 'react';
 import type { PublicFormBranding } from '@/types/publicForm';
-import { brandCoverObjectPosition, brandPanelStyle } from '@/lib/formTheme';
+import { brandCoverHeight, brandCoverObjectPosition, brandPanelStyle } from '@/lib/formTheme';
 import { BrandMark, hasBrandMark, logoPx } from './BrandMark';
 import { BannerExtras, hasBannerExtras } from './BannerExtras';
 import { uploadSrc } from '@/lib/uploadSrc';
@@ -31,7 +32,7 @@ export function FormBanner({ branding, title }: FormBannerProps) {
             <div className="flex items-center gap-3">
               {hasMark && <span className="flex-none"><BrandMark branding={branding} size={logoPx(branding)} className="object-contain" /></span>}
               {title && (
-                <p aria-hidden="true" className="font-bold leading-tight text-balance text-(--text-primary)" style={{ fontSize: 'var(--form-headline, 1.75rem)' }}>
+                <p aria-hidden="true" className="form-heading font-bold leading-tight text-balance text-(--form-heading)" style={{ fontSize: 'var(--form-headline, 1.75rem)' }}>
                   {title}
                 </p>
               )}
@@ -43,18 +44,21 @@ export function FormBanner({ branding, title }: FormBannerProps) {
     );
   }
 
+  // The owner's own height for the banner (120 to 480 px); without one it is as it has always been.
+  const height = brandCoverHeight(branding);
+  const sized: CSSProperties = height ? { minHeight: height, ...(hasText ? {} : { height, aspectRatio: 'auto', maxHeight: 'none' }) } : {};
   return (
-    <div className={`relative w-full overflow-hidden ${hasText ? 'min-h-44' : 'aspect-3/1 max-h-56'}`} style={brandPanelStyle(branding)}>
+    <div className={`relative w-full overflow-hidden ${hasText ? 'min-h-44' : 'aspect-3/1 max-h-56'}`} style={{ ...brandPanelStyle(branding), ...sized }}>
       {coverImageUrl && (
         // eslint-disable-next-line @next/next/no-img-element -- arbitrary backend-served upload URL, not a static asset
         <img src={uploadSrc(coverImageUrl)} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: brandCoverObjectPosition(branding) }} />
       )}
       {coverImageUrl && hasText && <div aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />}
       {hasText && (
-        <div className="relative flex h-full min-h-44 flex-col justify-end gap-3 p-6 md:p-8 text-white">
+        <div className={`relative flex h-full ${height ? '' : 'min-h-44'} flex-col justify-end gap-3 p-6 md:p-8 text-white`}>
           {hasMark && <BrandMark branding={branding} size={logoPx(branding)} className="object-contain" />}
           {title && (
-            <p aria-hidden="true" className="font-bold leading-tight text-balance" style={{ fontSize: 'var(--form-headline, 1.75rem)' }}>
+            <p aria-hidden="true" className="form-heading font-bold leading-tight text-balance" style={{ fontSize: 'var(--form-headline, 1.75rem)', color: 'var(--form-heading-header, inherit)' }}>
               {title}
             </p>
           )}

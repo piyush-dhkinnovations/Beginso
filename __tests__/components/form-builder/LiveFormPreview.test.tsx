@@ -24,7 +24,12 @@ describe('LiveFormPreview', () => {
 
   it('posts the branding and layout to the frame, targeting only this origin', () => {
     render(<LiveFormPreview formId="abc" branding={{ primaryColor: '#123456' }} layout="steps" />);
-    expect(postMessage).toHaveBeenCalledWith({ type: 'beginso-live-branding', branding: { primaryColor: '#123456' }, layout: 'steps' }, window.location.origin);
+    expect(postMessage).toHaveBeenCalledWith({ type: 'beginso-live-branding', branding: { primaryColor: '#123456' }, layout: 'steps', screen: 'form' }, window.location.origin);
+  });
+
+  it('asks the frame for the thank-you screen when told to show it', () => {
+    render(<LiveFormPreview formId="abc" branding={{}} screen="thanks" />);
+    expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({ type: 'beginso-live-branding', screen: 'thanks' }), window.location.origin);
   });
 
   it('re-posts whenever branding or layout change', () => {

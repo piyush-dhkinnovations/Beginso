@@ -25,17 +25,19 @@ export interface LiveFormPreviewProps {
   fill?: boolean;
   /** With `fill`: how big the form is drawn, 1 = 100%. The form scrolls inside the stage. */
   zoom?: number;
+  /** What the frame shows: the form (default) or the thank-you screen people see after sending it. */
+  screen?: 'form' | 'thanks';
 }
 
-export function LiveFormPreview({ formId, branding, title, layout, device = 'desktop', fill = false, zoom = 1 }: LiveFormPreviewProps) {
+export function LiveFormPreview({ formId, branding, title, layout, device = 'desktop', fill = false, zoom = 1, screen = 'form' }: LiveFormPreviewProps) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 0, height: 0 });
   const [drawn, setDrawn] = useState(false);
 
   const send = useCallback(() => {
-    frameRef.current?.contentWindow?.postMessage({ type: 'beginso-live-branding', branding, layout, title }, window.location.origin);
-  }, [branding, layout, title]);
+    frameRef.current?.contentWindow?.postMessage({ type: 'beginso-live-branding', branding, layout, title, screen }, window.location.origin);
+  }, [branding, layout, title, screen]);
 
   // Push on every change, and again when the iframe announces it is ready (it mounts after the first push).
   useEffect(send, [send]);

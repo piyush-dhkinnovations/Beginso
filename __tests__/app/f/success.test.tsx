@@ -52,6 +52,32 @@ describe('public form success page', () => {
     expect(second.container.innerHTML).toContain('background-color: rgb(29, 78, 216)');
   });
 
+  it("shows the owner's own thank-you from the form's theme: headline, picture, confetti and a redirect that names the place", async () => {
+    getFormSchema.mockResolvedValue({
+      schema: {
+        branding: {
+          primaryColor: '#7c3aed',
+          theme: { v: 1, success: { headline: "You're in!", colour: '#16A34A', picture: '/form-pictures/aurora-mint.jpg', confetti: true, redirect: { url: 'https://example.com/welcome', seconds: 4 } } },
+        },
+      },
+    });
+    const { container } = await page();
+    expect(screen.getByRole('heading', { name: "You're in!" })).toBeInTheDocument();
+    expect(container.querySelector('img')).toHaveAttribute('src', '/form-pictures/aurora-mint.jpg');
+    expect(container.querySelectorAll('.aa-confetti').length).toBeGreaterThan(0);
+    expect(container.innerHTML).toContain('background-color: rgb(22, 163, 74)');
+    expect(screen.getByTestId('redirect-notice')).toHaveTextContent('Taking you to example.com in 4 seconds.');
+  });
+
+  it('still thanks the respondent when the form can no longer be read, with no picture, confetti or redirect', async () => {
+    getFormSchema.mockRejectedValue(new Error('gone'));
+    const { container } = await page();
+    expect(screen.getByRole('heading', { name: 'Thank you!' })).toBeInTheDocument();
+    expect(container.querySelector('img')).toBeNull();
+    expect(container.querySelector('.aa-confetti')).toBeNull();
+    expect(screen.queryByTestId('redirect-notice')).not.toBeInTheDocument();
+  });
+
   it('offers another response, carrying the embed options, and hides the Beginso footer inside an embed', async () => {
     await page({ title: 'T', embed: '1', theme: 'dark' });
     expect(screen.getByRole('link', { name: 'Submit another response' })).toHaveAttribute('href', '/f/abc?embed=1&theme=dark');

@@ -118,6 +118,28 @@ describe('BFF proxy — allowlist', () => {
     expect(fetch).toHaveBeenCalled();
   });
 
+  // Saved form styles ("Save my style") live under their own root: without the allowlist entry every call 404s through the BFF.
+  it('allows GET, POST, PATCH and DELETE under /api/form-styles', async () => {
+    const { POST, PATCH, DELETE } = await import('@/app/api/backend/[...path]/route');
+    const list = await GET(makeRequest('api/form-styles'), { params: Promise.resolve({ path: ['api', 'form-styles'] }) });
+    expect(list.status).not.toBe(404);
+    for (const [handler, method] of [[POST, 'POST'], [PATCH, 'PATCH'], [DELETE, 'DELETE']] as const) {
+      const path = method === 'POST' ? ['api', 'form-styles'] : ['api', 'form-styles', 's1'];
+      const res = await handler(new NextRequest(`http://localhost/api/backend/${path.join('/')}`, { method, body: method === 'DELETE' ? undefined : '{}' }), { params: Promise.resolve({ path }) });
+      expect(res.status, method).not.toBe(404);
+    }
+  });
+
+  // Photos from Unsplash (the picture picker) live under their own root, like the roots above.
+  it('allows GET and POST under /api/unsplash', async () => {
+    const { POST } = await import('@/app/api/backend/[...path]/route');
+    const res = await GET(makeRequest('api/unsplash/featured'), { params: Promise.resolve({ path: ['api', 'unsplash', 'featured'] }) });
+    expect(res.status).not.toBe(404);
+    const path = ['api', 'unsplash', 'download'];
+    const post = await POST(new NextRequest(`http://localhost/api/backend/${path.join('/')}`, { method: 'POST', body: '{}' }), { params: Promise.resolve({ path }) });
+    expect(post.status).not.toBe(404);
+  });
+
   // The sign-in reply carries the account's colour theme; a readable copy of it is set as a cookie so the first paint of the next visit has the
   // right colours even on a browser with nothing saved (otherwise it shows light until the session check answers).
   it('sets a readable beginso_theme cookie from the sign-in reply, and still keeps the token out of the body', async () => {

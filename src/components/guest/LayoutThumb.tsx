@@ -2,7 +2,7 @@ import type { CSSProperties } from 'react';
 import { LAYOUT_LOOKS } from '@/lib/layoutPresets';
 import type { LayoutPreset } from '@/types/form';
 
-// A tiny, static drawing of a form in one of the six layouts, filled with the template's own questions. Each layout is
+// A tiny, static drawing of a form in one of the layouts, filled with the template's own questions. Each layout is
 // drawn differently so the pick screen shows real variety, and each takes its colour from that layout's own look.
 const box = 'rounded-sm border border-(--border-default) bg-(--surface-card)';
 const input = <div className="h-3 rounded-sm border border-(--border-default) bg-(--bg-subtle)" />;
@@ -80,6 +80,44 @@ export function LayoutThumb({ layout, title, labels }: { layout: LayoutPreset; t
           <div className="truncate text-[10px] font-bold text-(--text-primary)">{title}</div>
           <div className="grid grid-cols-2 gap-1.5">{f(4)}</div>
           <div className="mt-auto">{button}</div>
+        </div>
+      );
+      break;
+    case 'chat':
+      body = (
+        <div className="flex h-full flex-col gap-1.5 p-2.5" style={tint}>
+          <div className="flex items-center gap-1.5"><span className="size-3.5 rounded-full" style={solid} /><div className="truncate text-[10px] font-bold text-(--text-primary)">{title}</div></div>
+          <div className={`${box} rounded-xl rounded-tl-sm p-1.5`}><Field label={q[0]} /></div>
+          <div className="mt-auto self-end">{button}</div>
+        </div>
+      );
+      break;
+    case 'sidebar':
+      body = (
+        <div className="flex h-full">
+          <div className="flex w-1/4 flex-col gap-2 border-r border-(--border-default) bg-(--bg-subtle) p-2">
+            {[0, 1, 2].map((i) => <span key={i} className="size-2.5 rounded-full" style={i === 0 ? solid : { border: '1px solid var(--border-strong)' }} />)}
+          </div>
+          <div className="flex flex-1 flex-col gap-1.5 p-2.5"><div className="truncate text-[10px] font-bold text-(--text-primary)">{title}</div>{f(2)}<div className="mt-auto">{button}</div></div>
+        </div>
+      );
+      break;
+    case 'open':
+      body = (
+        <div className="flex h-full flex-col gap-1.5 p-3" style={tint}>
+          <div className="truncate text-[11px] font-bold text-(--text-primary)">{title}</div>
+          {f(2)}
+          <div className="mt-auto">{button}</div>
+        </div>
+      );
+      break;
+    case 'focus':
+      body = (
+        <div className="flex h-full flex-col justify-center gap-2 p-3">
+          <div className="h-0.5 w-full rounded-full bg-(--border-default)"><div className="h-0.5 w-1/3 rounded-full" style={solid} /></div>
+          <div className="line-clamp-2 text-[12px] font-bold text-(--text-primary)">{q[0]}</div>
+          <div className="h-3 w-4/5 border-b-2 border-(--border-strong)" />
+          {button}
         </div>
       );
       break;

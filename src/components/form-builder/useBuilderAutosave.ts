@@ -2,6 +2,7 @@ import { repairPageRefs } from '@/lib/builderPages';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { isAxiosError } from 'axios';
 import { formsService } from '@/services/forms';
+import { cleanTheme } from '@/lib/formTheme';
 import { useBuilderStore } from '@/store/builderStore';
 import { useToast } from '@/components/ui/Toast';
 import { flushPendingEdits, hasPendingEdits } from '@/lib/pendingEdits';
@@ -20,6 +21,23 @@ export const KEEPALIVE_BODY_LIMIT = 60_000;
 
 export const isFormStale = (err: unknown): boolean =>
   isAxiosError(err) && err.response?.status === 409 && (err.response.data as { error?: { code?: string } } | undefined)?.error?.code === 'FORM_STALE';
+
+/**
+ * The server answered, but its reply has no theme although one was sent: a backend that predates branding.theme drops it without an error. The rest
+ * of the form was saved; the style was not. The local value is kept (the reply is never applied over it), the save is reported as failed so the
+ * leave prompt still protects it, and the person is told in plain words.
+ */
+export class ThemeNotSavedError extends Error {
+  constructor() {
+    super("Couldn't save your style");
+    this.name = 'ThemeNotSavedError';
+  }
+}
+export const STYLE_NOT_SAVED = "Couldn't save your style";
+
+/** True when a theme was sent and the server's reply (which has a branding object) does not contain one. */
+export const themeWasDropped = (sent: FormBranding, saved: { branding?: FormBranding } | undefined): boolean =>
+  !!cleanTheme(sent.theme) && !!saved?.branding && typeof saved.branding === 'object' && !cleanTheme(saved.branding.theme);
 
 // No reply at all (network drop, timeout): the server may or may not have applied the save.
 const gotNoReply = (err: unknown): boolean => isAxiosError(err) && !err.response;
@@ -63,6 +81,7 @@ export function saveFormSnapshot(
         saved = await send();
       }
       if (own && typeof saved?.contentVersion === 'number') useBuilderStore.getState().setContentVersion(saved.contentVersion);
+      if (themeWasDropped(snap.branding, saved)) throw new ThemeNotSavedError();
       return saved;
     } catch (err) {
       if (own && isFormStale(err)) useBuilderStore.getState().markStale();
@@ -98,6 +117,7 @@ export function reloadBuilder() {
 
 // The server's own reason for a rejected save ("Option value cannot be empty"), not just "Save failed".
 export function saveErrorDetail(err: unknown): string | null {
+  if (err instanceof ThemeNotSavedError) return STYLE_NOT_SAVED;
   if (!isAxiosError(err)) return null;
   // No reply at all: offline, or Beginso cannot be reached. Say so instead of a bare "Save failed" (QA D3-002).
   if (!err.response) return "Can't reach Beginso. Check your connection";
@@ -120,6 +140,11 @@ const freshState = () => {
 
 export function useBuilderAutosave() {
   const { toast } = useToast();
+  // read inside the debounced save without making it a dependency (the toast function is a new one on every render)
+  const toastRef = useRef(toast);
+  useEffect(() => {
+    toastRef.current = toast;
+  });
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [saveDetail, setSaveDetail] = useState<string | null>(null);
@@ -180,6 +205,7 @@ export function useBuilderAutosave() {
         }
         setSaveDetail(saveErrorDetail(err));
         setSaveState('error');
+        if (err instanceof ThemeNotSavedError) toastRef.current(STYLE_NOT_SAVED, 'error');
       }
     }, 2000);
 
@@ -266,7 +292,7 @@ export function useBuilderAutosave() {
       const detail = saveErrorDetail(err);
       setSaveDetail(detail);
       setSaveState('error');
-      toast(detail ? `Could not save: ${detail}` : 'Could not save. Please try again.', 'error');
+      toast(err instanceof ThemeNotSavedError ? STYLE_NOT_SAVED : detail ? `Could not save: ${detail}` : 'Could not save. Please try again.', 'error');
     }
   }, [markSaved, toast]);
 

@@ -1,6 +1,6 @@
 import { ThemeInitScript } from '@/components/providers/ThemeInitScript';
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono, DM_Sans, Work_Sans, Lora, Nunito } from "next/font/google";
+import { Inter, JetBrains_Mono, DM_Sans, Work_Sans, Lora, Nunito, Poppins, Manrope, Plus_Jakarta_Sans, Outfit, Space_Grotesk, Montserrat, Playfair_Display, Merriweather, Source_Serif_4, Fraunces, DM_Serif_Display, Quicksand, Fredoka, Caveat, Pacifico, Bebas_Neue, Space_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/authContext";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -29,6 +29,25 @@ const dmSans = DM_Sans({
 const workSans = Work_Sans({ variable: "--font-work-sans", subsets: ["latin"], preload: false });
 const lora = Lora({ variable: "--font-lora", subsets: ["latin"], preload: false });
 const nunito = Nunito({ variable: "--font-nunito", subsets: ["latin"], preload: false });
+
+// More respondent-form typefaces (lib/formTheme.ts FORM_FONT_OPTIONS lists them). Same rule: a file is only fetched by a form that uses it.
+const poppinsFont = Poppins({ variable: "--font-poppins", subsets: ["latin"], preload: false, weight: ['400', '500', '600', '700'] });
+const manropeFont = Manrope({ variable: "--font-manrope", subsets: ["latin"], preload: false });
+const plusjakartasansFont = Plus_Jakarta_Sans({ variable: "--font-plus-jakarta-sans", subsets: ["latin"], preload: false });
+const outfitFont = Outfit({ variable: "--font-outfit", subsets: ["latin"], preload: false });
+const spacegroteskFont = Space_Grotesk({ variable: "--font-space-grotesk", subsets: ["latin"], preload: false });
+const montserratFont = Montserrat({ variable: "--font-montserrat", subsets: ["latin"], preload: false });
+const playfairdisplayFont = Playfair_Display({ variable: "--font-playfair-display", subsets: ["latin"], preload: false });
+const merriweatherFont = Merriweather({ variable: "--font-merriweather", subsets: ["latin"], preload: false, weight: ['400', '700'] });
+const sourceserif4Font = Source_Serif_4({ variable: "--font-source-serif-4", subsets: ["latin"], preload: false });
+const frauncesFont = Fraunces({ variable: "--font-fraunces", subsets: ["latin"], preload: false });
+const dmserifdisplayFont = DM_Serif_Display({ variable: "--font-dm-serif-display", subsets: ["latin"], preload: false, weight: ['400'] });
+const quicksandFont = Quicksand({ variable: "--font-quicksand", subsets: ["latin"], preload: false });
+const fredokaFont = Fredoka({ variable: "--font-fredoka", subsets: ["latin"], preload: false });
+const caveatFont = Caveat({ variable: "--font-caveat", subsets: ["latin"], preload: false });
+const pacificoFont = Pacifico({ variable: "--font-pacifico", subsets: ["latin"], preload: false, weight: ['400'] });
+const bebasneueFont = Bebas_Neue({ variable: "--font-bebas-neue", subsets: ["latin"], preload: false, weight: ['400'] });
+const spacemonoFont = Space_Mono({ variable: "--font-space-mono", subsets: ["latin"], preload: false, weight: ['400', '700'] });
 
 export const metadata: Metadata = {
   title: { default: "Beginso", template: "%s · Beginso" },
@@ -67,7 +86,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${jetBrainsMono.variable} ${dmSans.variable} ${workSans.variable} ${lora.variable} ${nunito.variable} h-full antialiased`}
+      className={`${inter.variable} ${jetBrainsMono.variable} ${dmSans.variable} ${workSans.variable} ${lora.variable} ${nunito.variable} ${poppinsFont.variable} ${manropeFont.variable} ${plusjakartasansFont.variable} ${outfitFont.variable} ${spacegroteskFont.variable} ${montserratFont.variable} ${playfairdisplayFont.variable} ${merriweatherFont.variable} ${sourceserif4Font.variable} ${frauncesFont.variable} ${dmserifdisplayFont.variable} ${quicksandFont.variable} ${fredokaFont.variable} ${caveatFont.variable} ${pacificoFont.variable} ${bebasneueFont.variable} ${spacemonoFont.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
       // THEME_INIT_SCRIPT below legitimately sets data-theme on this element before React
       // hydrates, to avoid a flash of the wrong theme. React doesn't track data-theme here

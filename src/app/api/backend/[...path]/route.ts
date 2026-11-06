@@ -56,6 +56,10 @@ const ALLOWED_API_ROOTS = new Set([
   // 404 silently once the backend route ships.
   'shared-with-me',
   'templates',
+  // Saved form styles ("Save my style") live under their own root: GET/POST /api/form-styles, PATCH/DELETE /api/form-styles/:id.
+  'form-styles',
+  // Photos from Unsplash for a form's page background and cover: GET /api/unsplash/search, /featured and POST /download.
+  'unsplash',
   'upload',
   'users',
   // Sprint 12 (inbox-collaboration, task 1.9) — GET/POST/PATCH/DELETE /api/views (saved views,

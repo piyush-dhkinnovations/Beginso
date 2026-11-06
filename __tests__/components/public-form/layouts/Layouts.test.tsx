@@ -46,6 +46,25 @@ describe.each(FRAMES)('%s layout', (layout, Layout) => {
     expect(screen.getByText('BODY').compareDocumentPosition(badge) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("shows the owner's note under the form, as plain text", () => {
+    render(
+      <Layout {...base(layout, { branding: { primaryColor: '#112233', theme: { v: 1, footer: { note: 'Questions? hello@example.com' } } } })}>
+        <p>BODY</p>
+      </Layout>
+    );
+    const note = screen.getByText('Questions? hello@example.com');
+    expect(screen.getByText('BODY').compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('shows no note when the owner wrote none', () => {
+    render(
+      <Layout {...base(layout)}>
+        <p>BODY</p>
+      </Layout>
+    );
+    expect(screen.queryByText(/Questions\?/)).not.toBeInTheDocument();
+  });
+
   it('keeps the badge in the page on a phone (it floats at the corner only from tablet width up, so it never covers Submit)', () => {
     render(
       <Layout {...base(layout)}>
@@ -229,7 +248,7 @@ describe('layout helpers', () => {
     ['split_feature', 'narrow', 'md:max-w-4xl'],
     ['compact', 'wide', 'max-w-6xl'],
   ])('widthClass(%s, %s) = %s', (layout, formWidth, expected) => {
-    expect(widthClass(layout, { formWidth })).toBe(expected);
+    expect(widthClass(layout, { formWidth })).toBe(`form-width ${expected}`);
   });
 
   it.each<[LayoutPreset, 'auto' | 'single' | undefined, boolean]>([
@@ -259,5 +278,47 @@ describe('layout helpers', () => {
     expect(cardClass({ cardStyle: 'elevated' })).toContain('shadow-2xl');
     expect(cardClass({ cardStyle: 'flat' }, 'extra-x')).toContain('extra-x');
     expect(cardClass({ cardStyle: 'flat' })).not.toContain('border');
+  });
+});
+
+describe('the page behind the form: a picture darkened and blurred', () => {
+  const pic = { primaryColor: '#112233', backgroundStyle: 'image' as const, backgroundImageUrl: '/form-pictures/aurora-mint.jpg' };
+
+  it('is drawn as layers behind the page: the picture blurred, a dark veil over it, and none of it on the page\'s own style', () => {
+    const { container } = render(
+      <ClassicLayout {...base('classic', { branding: { ...pic, theme: { v: 1, background: { blur: 8, darken: 30 } } } })}>
+        <p>BODY</p>
+      </ClassicLayout>,
+    );
+    const root = container.firstChild as HTMLElement;
+    expect(root.style.backgroundImage).toBe('none');
+    const layers = root.querySelector('[aria-hidden="true"].fixed') as HTMLElement;
+    expect(layers).not.toBeNull();
+    expect(layers.classList).toContain('-z-10');
+    const [image, veil] = Array.from(layers.children) as HTMLElement[];
+    expect(image.style.filter).toBe('blur(8px)');
+    expect(image.style.backgroundImage).toContain('/form-pictures/aurora-mint.jpg');
+    expect(veil.style.backgroundColor).toBe('rgba(0, 0, 0, 0.3)');
+  });
+
+  it('inside the builder\'s preview the layers stay in the frame (absolute, not fixed to the window)', () => {
+    const { container } = render(
+      <ClassicLayout {...base('classic', { previewMode: true, branding: { ...pic, theme: { v: 1, background: { darken: 30 } } } })}>
+        <p>BODY</p>
+      </ClassicLayout>,
+    );
+    expect(container.querySelector('[aria-hidden="true"].absolute.inset-0.-z-10')).not.toBeNull();
+    expect(container.querySelector('[aria-hidden="true"].fixed.-z-10')).toBeNull();
+  });
+
+  it('a picture the owner did not darken or blur is drawn exactly as before: on the page\'s own style, no layers', () => {
+    const { container } = render(
+      <ClassicLayout {...base('classic', { branding: pic })}>
+        <p>BODY</p>
+      </ClassicLayout>,
+    );
+    const root = container.firstChild as HTMLElement;
+    expect(root.style.backgroundImage).toContain('/form-pictures/aurora-mint.jpg');
+    expect(container.querySelector('.-z-10')).toBeNull();
   });
 });
