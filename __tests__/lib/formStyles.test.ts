@@ -80,6 +80,45 @@ describe('styleUpdates and currentLook', () => {
   });
 });
 
+describe("a style is a look, not one form's own words", () => {
+  const OWN: FormBranding = {
+    primaryColor: '#112233',
+    coverImageUrl: 'https://images.unsplash.com/photo-1?w=1920',
+    theme: { v: 1, buttons: { size: 'large', hover: 'lift' }, progress: { style: 'dots' }, labels: { submit: 'Send it' }, footer: { note: 'Thanks!' }, credit: { cover: { name: 'Ada', url: 'https://unsplash.com/@ada' } } },
+  };
+  const LOOK = { layout: 'classic' as LayoutPreset, branding: { primaryColor: '#445566', theme: { v: 1 as const, card: { radius: 12 } } } };
+
+  it('keeps the button look and the progress style, and leaves out the button text, the note and the credit', () => {
+    expect(snapshotStyle('classic', OWN).branding.theme).toEqual({ v: 1, buttons: { size: 'large', hover: 'lift' }, progress: { style: 'dots' } });
+    expect(snapshotStyle('classic', { theme: { v: 1, labels: { next: 'Go' }, footer: { note: 'Hi' } } }).branding.theme).toBeUndefined();
+  });
+
+  it("applying a style keeps the form's own words, and the credit of a photo the style leaves alone", () => {
+    const up = styleUpdates(LOOK, OWN);
+    expect(up.theme).toEqual({ v: 1, card: { radius: 12 }, labels: { submit: 'Send it' }, footer: { note: 'Thanks!' }, credit: { cover: { name: 'Ada', url: 'https://unsplash.com/@ada' } } });
+    expect(up.coverImageUrl).toBe(OWN.coverImageUrl);
+  });
+
+  it('drops the credit when the style replaces that picture, but still keeps the words', () => {
+    const up = styleUpdates({ ...LOOK, branding: { ...LOOK.branding, coverImageUrl: '/form-pictures/aurora-mint.jpg' } }, OWN);
+    expect(up.coverImageUrl).toBe('/form-pictures/aurora-mint.jpg');
+    expect(up.theme).toEqual({ v: 1, card: { radius: 12 }, labels: { submit: 'Send it' }, footer: { note: 'Thanks!' } });
+  });
+
+  it('a form with no words of its own gets exactly the style, and none at all when the style has no theme', () => {
+    expect(styleUpdates(LOOK, { primaryColor: '#000000' }).theme).toEqual({ v: 1, card: { radius: 12 } });
+    expect(styleUpdates({ branding: { primaryColor: '#445566' } }, { primaryColor: '#000000' }).theme).toBeNull();
+  });
+
+  it('a form with only its own words keeps them when the style has no theme', () => {
+    expect(styleUpdates({ branding: { primaryColor: '#445566' } }, { theme: { v: 1, labels: { submit: 'Go' } } }).theme).toEqual({ v: 1, labels: { submit: 'Go' } });
+  });
+
+  it('undo restores the whole theme exactly, words included', () => {
+    expect(currentLook(OWN).theme).toEqual(OWN.theme);
+  });
+});
+
 describe('sameLook', () => {
   it('ignores the order of keys and sees a different layout or value', () => {
     const a = { layout: 'classic' as const, branding: { primaryColor: '#111111', fontFamily: 'inter' as const } };

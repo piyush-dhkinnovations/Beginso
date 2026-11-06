@@ -24,7 +24,7 @@ import { LayoutChooser } from './LayoutChooser';
 import { PictureChoice } from './PicturePicker';
 import { LooksDialog } from './LooksDialog';
 import { currentLook, styleUpdates } from '@/lib/formStyles';
-import { CustomBadge, FieldsLook, FineTune, FormColours, PanelSide, type SetTheme } from './LookControls';
+import { ButtonsAndDetails, CustomBadge, FieldsLook, FineTune, FormColours, PanelSide, type SetTheme } from './LookControls';
 import { ZOOM_STEPS } from '@/lib/previewZoom';
 import { LiveFormPreview } from './LiveFormPreview';
 
@@ -33,12 +33,13 @@ const DEFAULT_COLOR = '#1D4ED8';
 const MAX_LINKS = 5;
 const HEX = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
 
-type Section = 'layout' | 'colour' | 'text' | 'style' | 'header';
+type Section = 'layout' | 'colour' | 'text' | 'style' | 'buttons' | 'header';
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'layout', label: 'Layout' },
   { id: 'colour', label: 'Colour' },
   { id: 'text', label: 'Text' },
   { id: 'style', label: 'Style' },
+  { id: 'buttons', label: 'Buttons' },
   { id: 'header', label: 'Header' },
 ];
 
@@ -430,6 +431,7 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
         <FineTune branding={branding} layout={layout} setTheme={setTheme} />
       </>
     ),
+    buttons: <ButtonsAndDetails branding={branding} layout={layout} setTheme={setTheme} />,
     header: (
       <>
         {onTitleChange && <Input id={`${uid}-title`} label="Form title" value={formTitle ?? ''} maxLength={200} onChange={(e) => onTitleChange(e.target.value)} />}
@@ -481,7 +483,7 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
         <Card className="flex min-w-0 flex-col gap-4 p-4 lg:max-h-[calc(100vh-16.5rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* Stays at the top of the card while the controls scroll under it. */}
           <div className="sticky -top-4 z-10 -mx-4 -mt-4 bg-(--surface-card) px-4 pt-4">
-            <Tabs tabs={SECTIONS} activeId={section} onChange={(id) => setSection(id as Section)} ariaLabel="Branding sections" panelId="branding-section" />
+            <Tabs tabs={SECTIONS} activeId={section} onChange={(id) => setSection(id as Section)} ariaLabel="Branding sections" panelId="branding-section" className="gap-4" />
           </div>
           <div role="tabpanel" id="branding-section" aria-labelledby={`tab-${section}`} className="flex flex-col gap-5">
             {panels[section]}

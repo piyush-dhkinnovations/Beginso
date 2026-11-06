@@ -3,14 +3,16 @@
 import { useId, useState, type ReactNode } from 'react';
 import { AlertTriangle, Check, ChevronDown, RotateCcw } from 'lucide-react';
 import { contrastRatio, fixContrast, TEXT_CONTRAST } from '@/lib/contrast';
-import { brandLookProps, themeOptionBlocked, type ThemeOption } from '@/lib/formTheme';
+import { FOOTER_MAX, LABEL_MAX, brandButtonStyle, brandLookProps, themeOptionBlocked, type ThemeOption } from '@/lib/formTheme';
+import { Input } from '@/components/ui/Input';
+import { Textarea } from '@/components/ui/Textarea';
 import { bx } from '@/lib/utils';
-import type { ChoiceStyle, FieldStyle, FormBranding, FormTheme, LabelPosition, LayoutPreset } from '@/types/form';
+import type { ButtonHover, ButtonSize, ButtonWidth, ChoiceStyle, FieldStyle, FormBranding, FormTheme, LabelPosition, LayoutPreset, ProgressStyle } from '@/types/form';
 
 // The groups of controls the branding studio has for the form's colours, how its fields look, and exact sizes. Each choice is drawn (a tile that
 // looks like what it does), "Default" is one click away, and an option the chosen layout cannot show is switched off with the reason, never ignored.
 
-export type ThemeGroup = 'colors' | 'fields' | 'card' | 'layout' | 'fonts';
+export type ThemeGroup = 'colors' | 'fields' | 'card' | 'layout' | 'fonts' | 'buttons' | 'labels' | 'progress' | 'footer';
 export type SetTheme = <G extends ThemeGroup>(group: G, patch: Partial<NonNullable<FormTheme[G]>>) => void;
 
 const HEX = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
@@ -485,6 +487,150 @@ export function FineTune({ branding, layout, setTheme }: { branding: FormBrandin
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Buttons and details ─────────────────────────────────────────────────────────────────────────────────────────────
+
+const BUTTON_SIZES: { value: ButtonSize; label: string; h: number; px: number; fs: number }[] = [
+  { value: 'small', label: 'Small', h: 22, px: 9, fs: 10 },
+  { value: 'default', label: 'Default', h: 28, px: 12, fs: 11 },
+  { value: 'large', label: 'Large', h: 34, px: 16, fs: 13 },
+];
+
+/** A button drawn in the form's own button look (brand colour, corners, text colour), at one of the sizes. */
+function SampleButton({ branding, h = 28, px = 12, fs = 11, text = 'Submit', lift, dark, grow }: { branding: FormBranding; h?: number; px?: number; fs?: number; text?: string; lift?: boolean; dark?: boolean; grow?: boolean }) {
+  const base = brandButtonStyle(branding);
+  return (
+    <span
+      className={bx('inline-flex items-center justify-center font-medium', grow && 'flex-1')}
+      style={{ ...base, height: h, paddingInline: px, fontSize: fs, ...(lift ? { transform: 'translateY(-3px)', boxShadow: '0 6px 10px rgba(0,0,0,.25)' } : {}), ...(dark ? { filter: 'brightness(0.82)' } : {}) }}
+    >
+      {text}
+    </span>
+  );
+}
+
+const PROGRESS_STYLES: { value: ProgressStyle; label: string }[] = [
+  { value: 'bar', label: 'Bar' },
+  { value: 'dots', label: 'Dots' },
+  { value: 'steps', label: 'Steps' },
+];
+
+function ProgressSample({ style }: { style: ProgressStyle }) {
+  if (style === 'dots') {
+    return (
+      <span className="flex items-center gap-1.5">
+        <span className="size-2 rounded-full bg-(--action-primary)" />
+        <span className="h-2 w-4 rounded-full bg-(--action-primary)" />
+        <span className="size-2 rounded-full bg-(--border-strong)" />
+        <span className="size-2 rounded-full bg-(--border-strong)" />
+      </span>
+    );
+  }
+  if (style === 'steps') {
+    return (
+      <span className="flex items-center">
+        <span className="size-4 rounded-full bg-(--action-primary)" />
+        <span className="h-0.5 w-3 bg-(--action-primary)" />
+        <span className="size-4 rounded-full bg-(--action-primary)" />
+        <span className="h-0.5 w-3 bg-(--border-strong)" />
+        <span className="size-4 rounded-full border-2 border-(--border-strong)" />
+      </span>
+    );
+  }
+  return (
+    <span className="block h-1.5 w-full rounded-full bg-(--border-strong)">
+      <span className="block h-full w-2/3 rounded-full bg-(--action-primary)" />
+    </span>
+  );
+}
+
+/** One short line of the owner's own words, with its limit shown and an empty box meaning "use the default". */
+function WordsInput({ id, label, value, placeholder, max, onChange }: { id: string; label: string; value?: string; placeholder: string; max: number; onChange: (v: string | undefined) => void }) {
+  return (
+    <Input
+      id={id}
+      label={label}
+      value={value ?? ''}
+      placeholder={placeholder}
+      maxLength={max}
+      showCount
+      onChange={(e) => onChange(e.target.value.replace(/[<>]/g, '') || undefined)}
+    />
+  );
+}
+
+export function ButtonsAndDetails({ branding, layout, setTheme }: { branding: FormBranding; layout: LayoutPreset; setTheme: SetTheme }) {
+  const theme = branding.theme;
+  const size: ButtonSize = theme?.buttons?.size ?? 'default';
+  const width: ButtonWidth = theme?.buttons?.width ?? 'fill';
+  const hover: ButtonHover = theme?.buttons?.hover ?? 'none';
+  const progress: ProgressStyle = theme?.progress?.style ?? 'bar';
+  const progressBlocked = themeOptionBlocked('progressStyle', layout);
+  const uid = useId();
+  return (
+    <div className="flex flex-col gap-5">
+      <GroupTitle hint="How the Next, Back and Submit buttons look and read.">Buttons</GroupTitle>
+      <TileGroup label="Button size" columns={3}>
+        {BUTTON_SIZES.map((o) => (
+          <LookTile key={o.value} label={o.label} chosen={size === o.value} onClick={() => setTheme('buttons', { size: o.value === 'default' ? undefined : o.value })}>
+            <SampleButton branding={branding} h={o.h} px={o.px} fs={o.fs} />
+          </LookTile>
+        ))}
+      </TileGroup>
+      <TileGroup label="Button width" columns={2} hint="On a phone the buttons always share the row.">
+        <LookTile label="Fill the row" chosen={width === 'fill'} onClick={() => setTheme('buttons', { width: undefined })}>
+          <span className="flex w-full gap-1.5">
+            <SampleButton branding={branding} text="Back" grow />
+            <SampleButton branding={branding} text="Next" grow />
+          </span>
+        </LookTile>
+        <LookTile label="As wide as the words" chosen={width === 'auto'} onClick={() => setTheme('buttons', { width: 'auto' })}>
+          <span className="flex w-full justify-end gap-1.5">
+            <SampleButton branding={branding} text="Back" px={8} />
+            <SampleButton branding={branding} text="Next" px={8} />
+          </span>
+        </LookTile>
+      </TileGroup>
+      <TileGroup label="When the pointer is over a button" columns={3}>
+        <LookTile label="Nothing" chosen={hover === 'none'} onClick={() => setTheme('buttons', { hover: undefined })}>
+          <SampleButton branding={branding} />
+        </LookTile>
+        <LookTile label="Lift" chosen={hover === 'lift'} onClick={() => setTheme('buttons', { hover: 'lift' })}>
+          <SampleButton branding={branding} lift />
+        </LookTile>
+        <LookTile label="Darken" chosen={hover === 'darken'} onClick={() => setTheme('buttons', { hover: 'darken' })}>
+          <SampleButton branding={branding} dark />
+        </LookTile>
+      </TileGroup>
+
+      <GroupTitle hint="Your own words. Leave a box empty to keep the usual word.">Button text</GroupTitle>
+      <WordsInput id={`${uid}-submit`} label="Submit button" placeholder="Submit" max={LABEL_MAX} value={theme?.labels?.submit} onChange={(submit) => setTheme('labels', { submit })} />
+      <WordsInput id={`${uid}-next`} label="Next button" placeholder="Next" max={LABEL_MAX} value={theme?.labels?.next} onChange={(next) => setTheme('labels', { next })} />
+      <WordsInput id={`${uid}-back`} label="Back button" placeholder="Back" max={LABEL_MAX} value={theme?.labels?.back} onChange={(back) => setTheme('labels', { back })} />
+
+      <GroupTitle hint="For forms with more than one page.">Progress</GroupTitle>
+      <TileGroup label="Progress style" columns={3} hint={progressBlocked}>
+        {PROGRESS_STYLES.map((o) => (
+          <LookTile key={o.value} label={o.label} chosen={!progressBlocked && progress === o.value} disabled={!!progressBlocked} onClick={() => setTheme('progress', { style: o.value === 'bar' ? undefined : o.value })}>
+            <ProgressSample style={o.value} />
+          </LookTile>
+        ))}
+      </TileGroup>
+
+      <GroupTitle hint="A short line under the form.">Footer note</GroupTitle>
+      <Textarea
+        id={`${uid}-footer`}
+        label="Note"
+        rows={2}
+        showCount
+        maxLength={FOOTER_MAX}
+        value={theme?.footer?.note ?? ''}
+        placeholder="e.g. Questions? Write to hello@example.com"
+        onChange={(e) => setTheme('footer', { note: e.target.value.replace(/[<>]/g, '') || undefined })}
+      />
     </div>
   );
 }

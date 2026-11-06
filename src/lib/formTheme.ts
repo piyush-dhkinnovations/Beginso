@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import type { FieldStyle, FormBranding, FormFont, FormTheme, LayoutPreset, PhotoCredit } from '@/types/form';
+import type { FieldStyle, FormBranding, FormFont, FormTheme, LayoutPreset, PhotoCredit, ProgressStyle } from '@/types/form';
 import { safeHttpUrl } from '@/lib/fieldDisplay';
 import { uploadSrc } from '@/lib/uploadSrc';
 import { isBuiltInPictureUrl } from '@/lib/formPictures';
@@ -216,7 +216,36 @@ export function cleanTheme(raw: unknown): FormTheme | undefined {
     if (c) credit[slot] = c;
   }
   if (Object.keys(credit).length) out.credit = credit;
+  const buttons: Record<string, unknown> = {};
+  for (const [k, allowed] of Object.entries(THEME_BUTTONS)) {
+    const v = t.buttons?.[k];
+    if (typeof v === 'string' && (allowed as readonly string[]).includes(v)) buttons[k] = v;
+  }
+  if (Object.keys(buttons).length) out.buttons = buttons;
+  const labels: Record<string, unknown> = {};
+  for (const k of ['submit', 'next', 'back'] as const) {
+    const v = cleanText(t.labels?.[k], LABEL_MAX);
+    if (v) labels[k] = v;
+  }
+  if (Object.keys(labels).length) out.labels = labels;
+  const progressStyle = t.progress?.style;
+  if (typeof progressStyle === 'string' && (THEME_PROGRESS as readonly string[]).includes(progressStyle)) out.progress = { style: progressStyle };
+  const note = cleanText(t.footer?.note, FOOTER_MAX);
+  if (note) out.footer = { note };
   return Object.keys(out).length ? ({ v: 1, ...out } as FormTheme) : undefined;
+}
+
+export const LABEL_MAX = 30;
+export const FOOTER_MAX = 200;
+const THEME_BUTTONS = { size: ['small', 'default', 'large'], width: ['fill', 'auto'], hover: ['none', 'lift', 'darken'] } as const;
+const THEME_PROGRESS = ['bar', 'dots', 'steps'] as const;
+
+/** A short line of the owner's own words as the backend accepts it: trimmed, 1 to `max` characters, no control characters and no markup. Anything else is nothing. */
+export function cleanText(raw: unknown, max: number): string | undefined {
+  if (typeof raw !== 'string') return undefined;
+  const s = raw.trim();
+  if (!s || s.length > max || /[\u0000-\u001f\u007f<>]/.test(s)) return undefined;
+  return s;
 }
 
 const CREDIT_URL = /^https:\/\/unsplash\.com\/(@[A-Za-z0-9_.-]{1,60})?(\?[A-Za-z0-9_=&%.-]{0,120})?$/;
@@ -232,7 +261,15 @@ export function cleanCredit(raw: unknown): PhotoCredit | undefined {
 }
 
 /** What each layout can show of the new options, and why not when it cannot. */
-export type ThemeOption = 'fieldStyle' | 'fieldRadius' | 'labelPosition' | 'choiceStyle' | 'cardShape' | 'maxWidth' | 'panelSide';
+export type ThemeOption = 'fieldStyle' | 'fieldRadius' | 'labelPosition' | 'choiceStyle' | 'cardShape' | 'maxWidth' | 'panelSide' | 'progressStyle';
+
+/** Layouts that draw their own progress (a step list, a question counter) instead of the shared bar, so a progress style has nothing to change there. */
+export const OWN_PROGRESS: Partial<Record<LayoutPreset, string>> = {
+  steps: 'Steps shows its own step list.',
+  guided: 'Guided shows its own question counter.',
+  chat: 'Chat shows its own question counter.',
+  focus: 'Focus shows its own question counter.',
+};
 
 export const LABEL_BESIDE_UNSUPPORTED: Partial<Record<LayoutPreset, string>> = {
   guided: 'Guided shows one question per screen, so the label stays above it.',
@@ -246,6 +283,7 @@ export function themeOptionBlocked(option: ThemeOption, layout: LayoutPreset, th
   if (option === 'labelPosition') return LABEL_BESIDE_UNSUPPORTED[layout];
   if (option === 'panelSide' && layout !== 'split_feature') return 'Only the Split Feature layout has a picture panel.';
   if (option === 'fieldRadius' && theme?.fields?.style === 'underline') return 'Underline fields have no corners.';
+  if (option === 'progressStyle') return OWN_PROGRESS[layout];
   return undefined;
 }
 
@@ -258,11 +296,13 @@ export function effectiveTheme(layout: LayoutPreset, raw?: FormTheme | null): Fo
   if (themeOptionBlocked('fieldRadius', layout, theme)) delete fields.radius;
   const layoutGroup = { ...theme.layout };
   if (themeOptionBlocked('panelSide', layout)) delete layoutGroup.panelSide;
-  return { ...theme, fields, layout: layoutGroup };
+  const out: FormTheme = { ...theme, fields, layout: layoutGroup };
+  if (themeOptionBlocked('progressStyle', layout)) delete out.progress;
+  return out;
 }
 
 /** Sets or clears one key of one group; an emptied group, and an emptied theme, are removed so a form returns to having none. */
-export function patchTheme<G extends 'colors' | 'fields' | 'card' | 'layout' | 'fonts'>(theme: FormTheme | null | undefined, group: G, patch: Partial<NonNullable<FormTheme[G]>>): FormTheme | null {
+export function patchTheme<G extends 'colors' | 'fields' | 'card' | 'layout' | 'fonts' | 'buttons' | 'labels' | 'progress' | 'footer'>(theme: FormTheme | null | undefined, group: G, patch: Partial<NonNullable<FormTheme[G]>>): FormTheme | null {
   const next: FormTheme = { ...(theme ?? { v: 1 }), v: 1 };
   const merged: Record<string, unknown> = { ...(next[group] ?? {}), ...patch };
   for (const k of Object.keys(merged)) if (merged[k] === undefined) delete merged[k];
@@ -325,8 +365,23 @@ export function brandLookProps(b: Pick<FormBranding, 'theme'>): { className: str
     'data-max-width': t?.layout?.maxWidth !== undefined ? '' : undefined,
     'data-field-gap': t?.layout?.fieldGap !== undefined ? '' : undefined,
     'data-panel-end': t?.layout?.panelSide === 'end' ? '' : undefined,
+    'data-btn-size': t?.buttons?.size && t.buttons.size !== 'default' ? t.buttons.size : undefined,
+    'data-btn-width': t?.buttons?.width === 'auto' ? 'auto' : undefined,
+    'data-btn-hover': t?.buttons?.hover && t.buttons.hover !== 'none' ? t.buttons.hover : undefined,
   };
 }
+
+/** The words on the form's three buttons: the owner's own, or Submit, Next and Back. */
+export function brandLabels(b: Pick<FormBranding, 'theme'>): { submit: string; next: string; back: string } {
+  const l = cleanTheme(b.theme)?.labels;
+  return { submit: l?.submit ?? 'Submit', next: l?.next ?? 'Next', back: l?.back ?? 'Back' };
+}
+
+/** How the multi-page progress is drawn. */
+export const brandProgressStyle = (b: Pick<FormBranding, 'theme'>): ProgressStyle => cleanTheme(b.theme)?.progress?.style ?? 'bar';
+
+/** The short line under the form, if the owner wrote one. */
+export const brandFooterNote = (b: Pick<FormBranding, 'theme'>): string | undefined => cleanTheme(b.theme)?.footer?.note;
 
 // ── Photographer credit for Unsplash photos ──────────────────────────────────────────────────────────────────────────────────────────────────────────
 // Unsplash asks that a photo used from its library is credited with a link to the photographer and to Unsplash. The credit rides in the theme, one for the

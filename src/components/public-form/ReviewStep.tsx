@@ -36,6 +36,8 @@ export interface ReviewStepProps {
   primaryColor: string;
   /** The owner's button theme (style + radius) — same helper the live preview uses. */
   buttonStyle?: React.CSSProperties;
+  /** The words on the Back and Submit buttons (the owner's own, or the defaults). */
+  labels?: { back: string; submit: string };
   /** Preview mode: shows the "nothing was submitted" note instead of the buttons after Submit. */
   previewSubmitted?: boolean;
   /** Extra content above the buttons — the Mode 2 email step / Mode 3 "responding as" line live here. */
@@ -71,6 +73,7 @@ export function ReviewStep({
   submitDisabled,
   submitError,
   buttonStyle,
+  labels = { back: 'Back', submit: 'Submit' },
   previewSubmitted,
   extra,
 }: ReviewStepProps) {
@@ -189,20 +192,20 @@ export function ReviewStep({
           This is a preview — nothing was submitted.
         </p>
       ) : (
-        <div className="flex gap-3">
-          <Button type="button" variant="secondary" className="flex-1" onClick={onBack} disabled={isSubmitting || editingId !== null}>
-            Back
+        <div className="form-btn-row flex gap-3">
+          <Button type="button" variant="secondary" className="form-btn flex-1" onClick={onBack} disabled={isSubmitting || editingId !== null}>
+            {labels.back}
           </Button>
           <Button
             type="button"
-            className="flex-1"
+            className="form-btn flex-1"
             style={buttonStyle}
             onClick={onSubmit}
             isLoading={isSubmitting}
             disabled={submitDisabled || editingId !== null}
             aria-label={isSubmitting ? 'Submitting your response...' : undefined}
           >
-            Submit
+            {labels.submit}
           </Button>
         </div>
       )}

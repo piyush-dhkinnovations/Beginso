@@ -25,8 +25,9 @@ export function snapshotStyle(layout: LayoutPreset, branding: FormBranding): { l
   const out: Record<string, unknown> = {};
   for (const k of STYLE_KEYS) if (branding[k] !== undefined && branding[k] !== null) out[k] = branding[k];
   for (const k of ['coverImageUrl', 'backgroundImageUrl'] as const) if (isBuiltInPictureUrl(branding[k])) out[k] = branding[k];
-  // a photographer's credit belongs to a photo, and a style keeps no outside photo
-  const { credit: _credit, ...theme } = cleanTheme(branding.theme) ?? { v: 1 as const };
+  // a style is a look, not one form's own content: a photographer's credit belongs to a photo (and a style keeps no outside photo), and the button
+  // text and the note under the form are that form's own words
+  const { credit: _credit, labels: _labels, footer: _footer, ...theme } = cleanTheme(branding.theme) ?? { v: 1 as const };
   if (Object.keys(theme).length > 1) out.theme = theme;
   return { layout, branding: out as StyleBranding };
 }
@@ -42,8 +43,19 @@ export function styleUpdates(style: { branding: StyleBranding }, current: FormBr
   for (const k of ['coverImageUrl', 'backgroundImageUrl'] as const) {
     updates[k] = style.branding[k] ?? (isBuiltInPictureUrl(current[k]) ? undefined : current[k]);
   }
+  // The form keeps its own words (button text, the note under the form) and the credit of a photo the style leaves alone: they are not part of a look.
+  const own = cleanTheme(current.theme);
+  const keep: Record<string, unknown> = {};
+  if (own?.labels) keep.labels = own.labels;
+  if (own?.footer) keep.footer = own.footer;
+  const credit: Record<string, unknown> = {};
+  for (const [slot, key] of [['cover', 'coverImageUrl'], ['background', 'backgroundImageUrl']] as const) {
+    if (own?.credit?.[slot] && updates[key] === current[key]) credit[slot] = own.credit[slot];
+  }
+  if (Object.keys(credit).length) keep.credit = credit;
+  const merged = { ...(style.branding.theme ?? { v: 1 }), ...keep };
   // null is how a save clears a theme on the server
-  updates.theme = style.branding.theme ?? null;
+  updates.theme = Object.keys(merged).length > 1 ? merged : null;
   // a style that sets a page background colour or picture brings its own; one that does not leaves none behind
   return updates as Partial<FormBranding>;
 }

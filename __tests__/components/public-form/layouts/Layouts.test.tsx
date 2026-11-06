@@ -46,6 +46,25 @@ describe.each(FRAMES)('%s layout', (layout, Layout) => {
     expect(screen.getByText('BODY').compareDocumentPosition(badge) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
+  it("shows the owner's note under the form, as plain text", () => {
+    render(
+      <Layout {...base(layout, { branding: { primaryColor: '#112233', theme: { v: 1, footer: { note: 'Questions? hello@example.com' } } } })}>
+        <p>BODY</p>
+      </Layout>
+    );
+    const note = screen.getByText('Questions? hello@example.com');
+    expect(screen.getByText('BODY').compareDocumentPosition(note) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('shows no note when the owner wrote none', () => {
+    render(
+      <Layout {...base(layout)}>
+        <p>BODY</p>
+      </Layout>
+    );
+    expect(screen.queryByText(/Questions\?/)).not.toBeInTheDocument();
+  });
+
   it('leaves the badge out of the builder preview', () => {
     render(
       <Layout {...base(layout, { previewMode: true })}>

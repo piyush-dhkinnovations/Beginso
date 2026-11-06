@@ -14,7 +14,7 @@ import { focusFirstInvalidSoon } from '@/lib/focusField';
 import { saveDraft, loadDraft, clearDraft } from '@/lib/formDraft';
 import { Button } from '@/components/ui/Button';
 import { normaliseLayout } from '@/lib/layoutPresets';
-import { brandButtonStyle, brandShowsProgress, effectiveTheme } from '@/lib/formTheme';
+import { brandButtonStyle, brandLabels, brandProgressStyle, brandShowsProgress, effectiveTheme } from '@/lib/formTheme';
 import { LAYOUT_COMPONENTS, fieldsClassFor, isGrouped, isOneAtATime } from './layouts';
 import { parseEmbedOptions, carryEmbedSearch } from '@/lib/embed/embedParams';
 import { resolvePrefill } from '@/lib/embed/prefill';
@@ -535,6 +535,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
 
   const fieldsContainerClass = fieldsClassFor(layout, schema.branding.spacing, schema.branding.fieldGrouping);
   const buttonTheme = brandButtonStyle(schema.branding);
+  const labels = brandLabels(schema.branding);
   const LayoutFrame = LAYOUT_COMPONENTS[layout];
   // The banner already shows the form's name as a large headline, so the in-body <h1> goes screen-reader-only when it
   // would only repeat it (single page, or a page titled like the form).
@@ -635,7 +636,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
           {!showReview && (
             <>
             {layout !== 'steps' && !isGuided && brandShowsProgress(schema.branding) && embedOpts.progress && (
-              <FormProgress currentPage={currentPageIndex + 1} totalPages={totalPages} />
+              <FormProgress currentPage={currentPageIndex + 1} totalPages={totalPages} style={brandProgressStyle(schema.branding)} />
             )}
 
             <h1 className={embedOpts.hideTitle || headlineInBanner ? 'sr-only' : layout === 'card_stack' ? 'form-heading bg-h4 text-(--form-heading) border-b border-(--border-default) pb-3' : 'form-heading bg-h3 text-(--form-heading)'}>{currentPage?.title ?? schema.title}</h1>
@@ -673,6 +674,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
               submitError={submitError}
               primaryColor={primaryColor}
               buttonStyle={buttonTheme}
+              labels={labels}
               previewSubmitted={previewMode && previewSubmitted}
               extra={accessExtra}
             />
@@ -698,10 +700,10 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
                   This is a preview — nothing was submitted.
                 </p>
               ) : (
-                <div className="mt-6 flex gap-3">
+                <div className="form-btn-row mt-6 flex gap-3">
                   {(currentPageIndex > 0 || (isGuided && questionIndex > 0)) && (
-                    <Button key="back" type="button" variant="secondary" className="flex-1" onClick={handleBack} disabled={isSubmitting}>
-                      Back
+                    <Button key="back" type="button" variant="secondary" className="form-btn flex-1" onClick={handleBack} disabled={isSubmitting}>
+                      {labels.back}
                     </Button>
                   )}
                   {isLastStep ? (
@@ -709,17 +711,17 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
                       key="submit"
                       type={reviewEnabled ? 'button' : 'submit'}
                       onClick={reviewEnabled ? () => void handleReview() : undefined}
-                      className="flex-1"
+                      className="form-btn flex-1"
                       style={buttonTheme}
                       isLoading={isSubmitting}
                       disabled={submitDisabled}
                       aria-label={isSubmitting ? 'Submitting your response...' : undefined}
                     >
-                      {reviewEnabled ? 'Review answers' : 'Submit'}
+                      {reviewEnabled ? 'Review answers' : labels.submit}
                     </Button>
                   ) : (
-                    <Button key="next" type="button" className="flex-1" style={buttonTheme} onClick={handleNext}>
-                      Next
+                    <Button key="next" type="button" className="form-btn flex-1" style={buttonTheme} onClick={handleNext}>
+                      {labels.next}
                     </Button>
                   )}
                 </div>

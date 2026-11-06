@@ -316,3 +316,70 @@ describe('Style tab: the picture side', () => {
     expect(screen.getByText(/Chat shows one question at a time/)).toBeInTheDocument();
   });
 });
+
+describe('Buttons tab: size, width, hover, button text, progress and the footer note', () => {
+  it('has the controls, drawn as tiles, with the usual choice marked', async () => {
+    draw();
+    await open('Buttons');
+    expect(screen.getByRole('group', { name: 'Button size' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Default' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Fill the row' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Nothing' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Bar' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it.each([
+    ['Large', { buttons: { size: 'large' } }],
+    ['As wide as the words', { buttons: { width: 'auto' } }],
+    ['Lift', { buttons: { hover: 'lift' } }],
+    ['Darken', { buttons: { hover: 'darken' } }],
+    ['Dots', { progress: { style: 'dots' } }],
+    ['Steps', { progress: { style: 'steps' } }],
+  ])('%s is saved in branding.theme', async (tile, group) => {
+    const update = draw();
+    await open('Buttons');
+    await userEvent.click(screen.getByRole('button', { name: tile }));
+    expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, ...group } });
+  });
+
+  it('going back to the usual choice takes it out again, and an emptied theme is cleared', async () => {
+    const update = draw({ primaryColor: '#1D4ED8', theme: { v: 1, buttons: { size: 'large' } } });
+    await open('Buttons');
+    expect(screen.getByRole('button', { name: 'Large' })).toHaveAttribute('aria-pressed', 'true');
+    await userEvent.click(screen.getByRole('button', { name: 'Default' }));
+    expect(update).toHaveBeenLastCalledWith({ theme: null });
+  });
+
+  it('writes the owner\'s words for the three buttons, and an empty box goes back to the usual word', async () => {
+    const update = draw({ primaryColor: '#1D4ED8', theme: { v: 1, labels: { next: 'Continue' } } });
+    await open('Buttons');
+    expect(screen.getByLabelText('Next button')).toHaveValue('Continue');
+    await userEvent.type(screen.getByLabelText('Submit button'), 'S');
+    expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, labels: { next: 'Continue', submit: 'S' } } });
+    await userEvent.clear(screen.getByLabelText('Next button'));
+    expect(update).toHaveBeenLastCalledWith({ theme: null });
+  });
+
+  it('limits the button text to 30 characters, and takes markup out', async () => {
+    draw();
+    await open('Buttons');
+    expect(screen.getByLabelText('Back button')).toHaveAttribute('maxlength', '30');
+    expect(screen.getByLabelText('Back button').closest('.bg-field')).toHaveTextContent('0/30');
+  });
+
+  it('writes the note under the form, up to 200 characters', async () => {
+    const update = draw();
+    await open('Buttons');
+    const note = screen.getByLabelText('Note');
+    expect(note).toHaveAttribute('maxlength', '200');
+    fireEvent.change(note, { target: { value: 'Hi <b>' } }); // markup is taken out
+    expect(update).toHaveBeenLastCalledWith({ theme: { v: 1, footer: { note: 'Hi b' } } });
+  });
+
+  it.each([['steps', /Steps shows its own step list/], ['guided', /Guided shows its own question counter/]] as const)('%s has its own progress, so the styles are off with the reason', async (layout, reason) => {
+    draw({ primaryColor: '#1D4ED8' }, layout);
+    await open('Buttons');
+    expect(screen.getByRole('button', { name: 'Dots' })).toBeDisabled();
+    expect(screen.getByText(reason)).toBeInTheDocument();
+  });
+});

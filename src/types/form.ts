@@ -196,7 +196,20 @@ export interface FormTheme {
   fonts?: { heading?: FormFont };
   /** Who took the Unsplash photo used as the cover and/or the page background (one credit each), shown on the form. Only an unsplash.com profile address. */
   credit?: { cover?: PhotoCredit; background?: PhotoCredit };
+  /** How big and wide the form's buttons are and how they react to the pointer. Absent = size and hover as before, buttons filling the row. */
+  buttons?: { size?: ButtonSize; width?: ButtonWidth; hover?: ButtonHover };
+  /** The owner's own words on the buttons (absent = Submit, Next, Back). They belong to this one form, so a saved style does not carry them. */
+  labels?: { submit?: string; next?: string; back?: string };
+  /** How the multi-page progress is drawn (absent = a bar). */
+  progress?: { style?: ProgressStyle };
+  /** A short line under the form (contact details, a thank-you for time). Also this one form's own words. */
+  footer?: { note?: string };
 }
+
+export type ButtonSize = 'small' | 'default' | 'large';
+export type ButtonWidth = 'fill' | 'auto';
+export type ButtonHover = 'none' | 'lift' | 'darken';
+export type ProgressStyle = 'bar' | 'dots' | 'steps';
 
 export interface PhotoCredit {
   name: string;

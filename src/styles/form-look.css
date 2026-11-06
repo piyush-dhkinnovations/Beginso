@@ -85,3 +85,19 @@
   background-color: color-mix(in srgb, var(--action-primary) 10%, var(--form-field-bg));
 }
 .form-look[data-choice-tiles] .form-choice:has(input:focus-visible) { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+
+/* Buttons and details (theme.buttons). The row and the buttons carry the marker classes form-btn-row and form-btn (never a bg- prefix: cn() drops those). */
+.form-look[data-btn-hover] .form-btn { transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease; }
+@media (prefers-reduced-motion: reduce) { .form-look[data-btn-hover] .form-btn { transition: none; } }
+.form-look[data-btn-size="small"] .form-btn { min-height: 2.25rem; padding-inline: 0.875rem; font-size: 0.8125rem; }
+.form-look[data-btn-size="large"] .form-btn { min-height: 3.25rem; padding-inline: 2rem; font-size: 1.0625rem; }
+/* Buttons as wide as their words, set at the end of the row, instead of sharing the row */
+.form-look[data-btn-width="auto"] .form-btn-row { justify-content: flex-end; }
+.form-look[data-btn-width="auto"] .form-btn { flex: 0 1 auto; }
+@media (max-width: 479px) {
+  /* on a phone a button the width of its words is hard to hit: full width again */
+  .form-look[data-btn-width="auto"] .form-btn-row { justify-content: stretch; }
+  .form-look[data-btn-width="auto"] .form-btn { flex: 1 1 0; }
+}
+.form-look[data-btn-hover="lift"] .form-btn:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 8px 18px color-mix(in srgb, var(--action-primary) 30%, transparent); }
+.form-look[data-btn-hover="darken"] .form-btn:not(:disabled):hover { filter: brightness(0.9); }

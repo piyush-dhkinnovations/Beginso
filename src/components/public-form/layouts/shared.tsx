@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import type { LayoutPreset } from '@/types/form';
 import type { PublicFormBranding } from '@/types/publicForm';
-import { UNSPLASH_HOME, brandCardClass, brandLookProps, brandTypeStyle, brandWashStyle, creditsToShow } from '@/lib/formTheme';
+import { UNSPLASH_HOME, brandFooterNote, brandCardClass, brandLookProps, brandTypeStyle, brandWashStyle, creditsToShow } from '@/lib/formTheme';
 import { Wordmark } from '@/components/landing/Wordmark';
 
 // Sprint 13 (CF2.7), design.md §7. Every layout is a presentation FRAME around the form body that
@@ -35,9 +35,21 @@ export function Backdrop({ branding, previewMode, children }: { branding: Public
       <LookScope branding={branding} className={`flex flex-1 justify-center items-start md:items-center ${branding.backgroundStyle === 'none' ? 'p-2' : 'p-4 md:p-10'}`}>
         {children}
       </LookScope>
+      <FooterNote branding={branding} />
       <PhotoCredits branding={branding} />
       {!previewMode && <MadeWithBeginso />}
     </div>
+  );
+}
+
+/** The owner's short line under the form (plain text, never markup), on a card-coloured pill so it reads on any page background. Nothing when there is none. */
+export function FooterNote({ branding }: { branding: PublicFormBranding }) {
+  const note = brandFooterNote(branding);
+  if (!note) return null;
+  return (
+    <p className="mx-auto mb-2 max-w-xl px-4 text-center">
+      <span className="inline-block rounded-xl bg-(--surface-card) px-4 py-2 bg-body-sm text-(--text-secondary)">{note}</span>
+    </p>
   );
 }
 

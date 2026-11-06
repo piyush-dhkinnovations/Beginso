@@ -156,6 +156,35 @@ describe('PublicFormShell submit failures', () => {
   });
 });
 
+describe("PublicFormShell: the owner's own button text", () => {
+  const withLabels = (labels: Record<string, string>) => ({ ...twoPage(), branding: { theme: { v: 1 as const, labels } } });
+
+  it("says Continue and Go back instead of Next and Back, and the review step's Submit button says Send it", async () => {
+    render(<PublicFormShell schema={withLabels({ next: 'Continue', back: 'Go back', submit: 'Send it' })} slug="s" />);
+    expect(screen.queryByRole('button', { name: 'Next' })).not.toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText(/First/), 'one');
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    await userEvent.type(await screen.findByLabelText(/Second/), 'two');
+    expect(screen.getByRole('button', { name: 'Go back' })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Review answers' }));
+    expect(await screen.findByRole('button', { name: 'Send it' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Go back' })).toBeInTheDocument();
+  });
+
+  it('a single page form says Send it on its submit button', () => {
+    render(<PublicFormShell schema={{ ...schema(), branding: { theme: { v: 1, labels: { submit: 'Send it' } } } }} slug="s" />);
+    expect(screen.getByRole('button', { name: 'Send it' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Submit' })).not.toBeInTheDocument();
+  });
+
+  it('marks the buttons for the form look CSS (so size, width and hover can reach them)', () => {
+    render(<PublicFormShell schema={twoPage()} slug="s" />);
+    const next = screen.getByRole('button', { name: 'Next' });
+    expect(next.classList).toContain('form-btn');
+    expect(next.parentElement?.classList).toContain('form-btn-row');
+  });
+});
+
 describe('PublicFormShell multi-page flow', () => {
   it('Next validates the current page, then advances; Back returns with values kept', async () => {
     render(<PublicFormShell schema={twoPage()} slug="s" />);
