@@ -4,7 +4,7 @@
  * style on this device, and reports a failed save.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, cleanup, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const mockUpdateProfile = vi.fn();
@@ -40,10 +40,16 @@ describe('AppearanceTab', () => {
     window.history.pushState({}, '', '/settings');
   });
 
-  it('shows System and Slate selected when nothing is saved', () => {
+  const device = (dark: boolean) => vi.stubGlobal('matchMedia', () => ({ matches: dark, addEventListener() {}, removeEventListener() {} }));
+
+  it('shows System and the default style of the device\'s mode selected when nothing is saved', async () => {
     renderTab();
     expect(screen.getByRole('radio', { name: /^System/ })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('radio', { name: /^Slate/ })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radio', { name: /^Classic/ })).toHaveAttribute('aria-checked', 'true');
+    cleanup();
+    device(true);
+    renderTab();
+    await waitFor(() => expect(radios(/^Slate/)).toHaveAttribute('aria-checked', 'true'));
   });
 
   it('shows the choice saved on this device', async () => {
@@ -117,12 +123,41 @@ describe('AppearanceTab', () => {
     expect(screen.getByText(/Used whenever dark mode is on/)).toBeInTheDocument();
   });
 
-  it('System shows both, each labelled for the mode of the device', async () => {
+  it('System looks at the device: in light mode only the light styles show, with a note that the dark style is kept', () => {
     renderTab();
     expect(radios(/^Classic/)).toBeInTheDocument();
+    expect(radios(/^Slate/)).toBeNull();
+    expect(screen.getByText(/Used while your device is in light mode/)).toBeInTheDocument();
+    expect(screen.getByText(/Your device is in light mode right now, so these are the light styles\. Your dark style is kept/)).toBeInTheDocument();
+    expect(screen.queryByText(/Used while your device is in dark mode/)).not.toBeInTheDocument();
+  });
+
+  it('System in dark mode shows only the dark styles', async () => {
+    device(true);
+    renderTab();
+    await waitFor(() => expect(radios(/^Slate/)).toBeInTheDocument());
+    expect(radios(/^Midnight/)).toBeInTheDocument();
+    expect(radios(/^Classic/)).toBeNull();
+    expect(screen.getByText(/Used while your device is in dark mode/)).toBeInTheDocument();
+    expect(screen.getByText(/Your device is in dark mode right now, so these are the dark styles/)).toBeInTheDocument();
+  });
+
+  it('System follows the device while the page is open: the styles on screen change when the device switches mode', async () => {
+    let listener: ((e: { matches: boolean }) => void) | undefined;
+    vi.stubGlobal('matchMedia', () => ({ matches: false, addEventListener: (_: string, fn: typeof listener) => (listener = fn), removeEventListener() {} }));
+    renderTab();
+    expect(radios(/^Classic/)).toBeInTheDocument();
+    act(() => listener!({ matches: true }));
     expect(radios(/^Slate/)).toBeInTheDocument();
-    expect(screen.getByText(/Used when your device is in light mode/)).toBeInTheDocument();
-    expect(screen.getByText(/Used when your device is in dark mode/)).toBeInTheDocument();
+    expect(radios(/^Classic/)).toBeNull();
+    act(() => listener!({ matches: false }));
+    expect(radios(/^Classic/)).toBeInTheDocument();
+  });
+
+  it('Light and Dark never show the device note', () => {
+    renderTab();
+    fireEvent.click(screen.getByRole('radio', { name: /^Dark/ }));
+    expect(screen.queryByText(/right now/)).not.toBeInTheDocument();
   });
 
   it('the sections change at once when the Theme card changes (no reload)', () => {
@@ -138,15 +173,18 @@ describe('AppearanceTab', () => {
   it('a style choice is never lost when its section is hidden', () => {
     renderTab();
     fireEvent.click(radios(/^Paper/)!);
-    fireEvent.click(radios(/^Midnight/)!);
     fireEvent.click(screen.getByRole('radio', { name: /^Dark/ }));
+    fireEvent.click(radios(/^Midnight/)!);
     expect(radios(/^Paper/)).toBeNull();
     expect(radios(/^Midnight/)).toHaveAttribute('aria-checked', 'true');
     fireEvent.click(screen.getByRole('radio', { name: /^Light/ }));
     expect(radios(/^Paper/)).toHaveAttribute('aria-checked', 'true');
     expect(document.documentElement.getAttribute('data-light')).toBe('paper');
     fireEvent.click(screen.getByRole('radio', { name: /^System/ }));
+    // the device is in light mode: the light choice shows, the dark choice is kept out of sight
     expect(radios(/^Paper/)).toHaveAttribute('aria-checked', 'true');
+    expect(radios(/^Midnight/)).toBeNull();
+    fireEvent.click(screen.getByRole('radio', { name: /^Dark/ }));
     expect(radios(/^Midnight/)).toHaveAttribute('aria-checked', 'true');
   });
 
@@ -166,7 +204,9 @@ describe('AppearanceTab', () => {
   it('System follows the device: the light style in light mode, the dark style in dark mode', () => {
     renderTab();
     fireEvent.click(radios(/^Paper/)!);
+    fireEvent.click(screen.getByRole('radio', { name: /^Dark/ }));
     fireEvent.click(radios(/^Midnight/)!);
+    fireEvent.click(screen.getByRole('radio', { name: /^System/ }));
     expect(document.documentElement.getAttribute('data-light')).toBe('paper');
     vi.stubGlobal('matchMedia', () => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
     applyTheme(readThemePreference(), readDarkVariant(), readLightVariant());
@@ -187,29 +227,29 @@ describe('AppearanceTab', () => {
     unmount(); // a reload: the page is gone, only what is saved on the device is left
     renderTab();
     await waitFor(() => expect(screen.getByRole('radio', { name: new RegExp(`^${theme === 'system' ? 'System' : theme === 'light' ? 'Light' : 'Dark'}`) })).toHaveAttribute('aria-checked', 'true'));
+    // Light shows the light choice, Dark the dark one, System the one for the mode the device is in (light here)
     if (theme !== 'dark') expect(radios(new RegExp(`^${light}`, 'i'))).toHaveAttribute('aria-checked', 'true');
-    if (theme !== 'light') expect(radios(new RegExp(`^${dark}`, 'i'))).toHaveAttribute('aria-checked', 'true');
+    if (theme === 'dark') expect(radios(new RegExp(`^${dark}`, 'i'))).toHaveAttribute('aria-checked', 'true');
+    if (theme !== 'dark') expect(radios(new RegExp(`^${dark}`, 'i'))).toBeNull();
     expect(screen.getByRole('radio', { name: /^Large/ })).toHaveAttribute('aria-checked', 'true');
   });
 
-  it('Text size: a switch with three choices, Default selected, one live preview, and a note that it is saved on this device only', () => {
+  it('Text size: three boxes in one radio group, Default selected, each shown as a letter A, and a note that it is saved on this device only', () => {
     renderTab();
     expect(screen.getByRole('radiogroup', { name: 'Text size' })).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: /^Default/ })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('radio', { name: /^Large/ })).toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: /^Extra large/ })).toBeInTheDocument();
-    expect(screen.getAllByText('Your forms')).toHaveLength(1);
+    expect(screen.getByRole('radio', { name: /^Large/ })).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByRole('radio', { name: /^Extra large/ })).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getAllByText('A')).toHaveLength(3);
     expect(screen.getByText(/Makes text, buttons and spacing bigger/)).toHaveTextContent('Saved on this device only');
   });
 
-  it('Text size: the preview is drawn at the real size of the choice (16px, 18px, 20px), whatever size the page is at now', () => {
+  it('Text size: every box shows its own letter size (36px, 52px, 72px) at once, whatever size the page is at now and whichever is chosen', () => {
     renderTab();
-    const size = () => (screen.getByText('Your forms').parentElement as HTMLElement).style.fontSize;
-    expect(size()).toBe('16px');
-    fireEvent.click(screen.getByRole('radio', { name: /^Large/ }));
-    expect(size()).toBe('18px');
+    const sizes = () => screen.getAllByText('A').map((n) => n.style.width);
+    expect(sizes()).toEqual(['36px', '52px', '72px']);
     fireEvent.click(screen.getByRole('radio', { name: /^Extra large/ }));
-    expect(size()).toBe('20px');
+    expect(sizes()).toEqual(['36px', '52px', '72px']);
   });
 
   it('Text size: choosing one applies it at once, saves it on this device only, and Default clears it', () => {

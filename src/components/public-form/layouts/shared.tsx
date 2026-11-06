@@ -94,11 +94,12 @@ export function LookScope({ branding, className, children }: { branding: PublicF
   );
 }
 
-/** "Made with Beginso", under every form a respondent sees: the wordmark in a pill at the bottom-right (readable on any page colour) that opens
- *  the main website. A new tab, so it never replaces a form someone is half way through, and works inside an embed iframe. */
+/** "Made with Beginso", under every form a respondent sees: the wordmark in a pill (readable on any page colour) that opens the main website.
+ *  A new tab, so it never replaces a form someone is half way through, and works inside an embed iframe. On a phone it sits in the page, centred
+ *  under the form: floating at the corner it covered the Submit button. From tablet width up there is room, so it floats at the bottom-right. */
 function MadeWithBeginso() {
   return (
-    <div className="fixed bottom-4 right-4 z-50 md:bottom-6 md:right-6">
+    <div className="flex justify-center px-4 pb-6 pt-2 md:fixed md:bottom-6 md:right-6 md:z-50 md:p-0">
       <a
         href="/"
         target="_blank"

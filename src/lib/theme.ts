@@ -72,6 +72,18 @@ export function storeTheme(preference: ThemePreference, variant: DarkVariant): v
   } catch {
     // Not saved on this device; the account copy (and the current page) still apply.
   }
+  storeThemeCookie(preference);
+}
+
+/** The cookie the blocking script in app/layout.tsx falls back on when localStorage is empty. Holds only light, dark or system. */
+export const THEME_COOKIE = 'beginso_theme';
+export function storeThemeCookie(preference: ThemePreference): void {
+  try {
+    const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `${THEME_COOKIE}=${preference}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`;
+  } catch {
+    // cookies blocked: the account copy still applies once the session answers
+  }
 }
 
 /** True when the page is (or would be) dark for this preference. */

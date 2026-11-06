@@ -140,6 +140,27 @@ describe('BFF proxy — allowlist', () => {
     expect(post.status).not.toBe(404);
   });
 
+  // The sign-in reply carries the account's colour theme; a readable copy of it is set as a cookie so the first paint of the next visit has the
+  // right colours even on a browser with nothing saved (otherwise it shows light until the session check answers).
+  it('sets a readable beginso_theme cookie from the sign-in reply, and still keeps the token out of the body', async () => {
+    const { POST } = await import('@/app/api/backend/[...path]/route');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ success: true, token: 'real.jwt', user: { theme: 'dark' } }), { status: 200 })));
+    const path = ['api', 'auth', 'session'];
+    const res = await POST(new NextRequest('http://localhost:3000/api/backend/api/auth/session', { method: 'POST', body: '{}' }), { params: Promise.resolve({ path }) });
+    const cookies = res.headers.getSetCookie();
+    expect(cookies.find((c) => c.startsWith('beginso_theme='))).toMatch(/^beginso_theme=dark;/);
+    expect(cookies.find((c) => c.startsWith('beginso_theme='))).not.toMatch(/HttpOnly/i);
+    expect(cookies.find((c) => c.startsWith(`${SESSION_COOKIE_NAME}=`))).toMatch(/HttpOnly/i);
+    expect(JSON.stringify(await res.json())).not.toContain('real.jwt');
+  });
+
+  it('sets no theme cookie when the reply has no valid theme', async () => {
+    const { POST } = await import('@/app/api/backend/[...path]/route');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({ success: true, token: 'real.jwt', user: { theme: 'neon' } }), { status: 200 })));
+    const res = await POST(new NextRequest('http://localhost:3000/api/backend/api/auth/session', { method: 'POST', body: '{}' }), { params: Promise.resolve({ path: ['api', 'auth', 'session'] }) });
+    expect(res.headers.getSetCookie().some((c) => c.startsWith('beginso_theme='))).toBe(false);
+  });
+
   it('rejects an unknown root with 404 "Backend path is not allowed"', async () => {
     const req = makeRequest('api/not-a-real-root');
     const res = await GET(req, { params: Promise.resolve({ path: ['api', 'not-a-real-root'] }) });

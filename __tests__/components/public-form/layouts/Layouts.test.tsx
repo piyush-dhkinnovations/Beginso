@@ -65,6 +65,18 @@ describe.each(FRAMES)('%s layout', (layout, Layout) => {
     expect(screen.queryByText(/Questions\?/)).not.toBeInTheDocument();
   });
 
+  it('keeps the badge in the page on a phone (it floats at the corner only from tablet width up, so it never covers Submit)', () => {
+    render(
+      <Layout {...base(layout)}>
+        <p>BODY</p>
+      </Layout>
+    );
+    const wrapper = screen.getByRole('link', { name: /Made with Beginso/ }).parentElement as HTMLElement;
+    expect(wrapper.classList).not.toContain('fixed');
+    expect(wrapper.classList).toContain('md:fixed');
+    expect(wrapper.classList).toContain('justify-center');
+  });
+
   it('leaves the badge out of the builder preview', () => {
     render(
       <Layout {...base(layout, { previewMode: true })}>

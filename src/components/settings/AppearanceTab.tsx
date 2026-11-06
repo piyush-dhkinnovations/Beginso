@@ -9,7 +9,6 @@ import { useToast } from '@/components/ui/Toast';
 import { SegmentedRadio } from '@/components/ui/SegmentedRadio';
 import { bx } from '@/lib/utils';
 import {
-  TEXT_SCALE,
   applyTextSize,
   applyTheme,
   readDarkVariant,
@@ -66,21 +65,24 @@ const DARK_STYLES: { id: DarkVariant; label: string; hint: string }[] = [
   { id: 'dimmed', label: 'Dimmed', hint: 'Softer, lighter.' },
 ];
 
-const TEXT_SIZES: { id: TextSize; label: string }[] = [
-  { id: 'default', label: 'Default' },
-  { id: 'large', label: 'Large' },
-  { id: 'xlarge', label: 'Extra large' },
+const TEXT_SIZES: { id: TextSize; label: string; hint: string }[] = [
+  { id: 'default', label: 'Default', hint: 'The usual size.' },
+  { id: 'large', label: 'Large', hint: 'A little bigger.' },
+  { id: 'xlarge', label: 'Extra large', hint: 'Bigger still.' },
 ];
 
 const nameOf = <T extends string>(list: { id: T; label: string }[], id: T) => list.find((o) => o.id === id)?.label ?? id;
 
 /** A row of three colour swatches that is one radio group: arrow keys move and choose, Tab lands on the chosen one. */
-function StyleGroup<T extends string>({ labelledBy, options, value, onChange, look }: {
+function StyleGroup<T extends string>({ labelledBy, options, value, onChange, look, thumb, thumbClass = 'h-16' }: {
   labelledBy: string;
   options: { id: T; label: string; hint: string }[];
   value: T;
   onChange: (next: T) => void;
-  look: (id: T) => Look;
+  look?: (id: T) => Look;
+  /** What to draw instead of the colour swatch, with no inner box (the text size boxes draw a letter A at their own size). */
+  thumb?: (id: T) => React.ReactNode;
+  thumbClass?: string;
 }) {
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
   function onKeyDown(e: React.KeyboardEvent, index: number) {
@@ -92,7 +94,7 @@ function StyleGroup<T extends string>({ labelledBy, options, value, onChange, lo
     refs.current[next]?.focus();
   }
   return (
-    <div role="radiogroup" aria-labelledby={labelledBy} className="grid grid-cols-3 gap-3">
+    <div role="radiogroup" aria-labelledby={labelledBy} className={bx(thumb ? 'flex flex-wrap gap-x-6 gap-y-4' : 'grid grid-cols-3 gap-3')}>
       {options.map((o, i) => {
         const checked = value === o.id;
         return (
@@ -106,13 +108,14 @@ function StyleGroup<T extends string>({ labelledBy, options, value, onChange, lo
             onClick={() => onChange(o.id)}
             onKeyDown={(e) => onKeyDown(e, i)}
             className={bx(
-              'flex flex-col gap-2 rounded-xl border p-2 text-left outline-none transition-colors focus-visible:shadow-(--shadow-focus)',
-              checked ? 'border-(--action-primary) bg-(--surface-card) ring-1 ring-(--action-primary)' : 'border-(--border-default) bg-(--surface-card) hover:border-(--border-strong)',
+              'flex flex-col gap-2 rounded-xl p-2 text-left outline-none transition-colors focus-visible:shadow-(--shadow-focus)',
+              // the text size options are bare: the circle itself shows which is chosen, with no card around it
+              thumb ? 'w-36 items-center text-center' : checked ? 'border border-(--action-primary) bg-(--surface-card) ring-1 ring-(--action-primary)' : 'border border-(--border-default) bg-(--surface-card) hover:border-(--border-strong)',
             )}
           >
-            <span className="block h-16 overflow-hidden rounded-lg border border-(--border-subtle)"><Swatch look={look(o.id)} /></span>
-            <span className="flex flex-col px-0.5 pb-0.5">
-              <span className="flex items-center justify-between gap-2 bg-body-sm font-semibold text-(--text-primary)">
+            {thumb ? <span className={bx('block', thumbClass)}>{thumb(o.id)}</span> : <span className={bx('block overflow-hidden rounded-lg border border-(--border-subtle)', thumbClass)}><Swatch look={look!(o.id)} /></span>}
+            <span className={bx('flex flex-col px-0.5 pb-0.5', thumb && 'items-center')}>
+              <span className={bx('flex items-center gap-2', thumb ? 'justify-center' : 'justify-between', 'bg-body-sm font-semibold text-(--text-primary)')}>
                 {o.label}
                 {checked && <Check size={14} className="text-(--action-primary)" aria-hidden="true" />}
               </span>
@@ -125,18 +128,19 @@ function StyleGroup<T extends string>({ labelledBy, options, value, onChange, lo
   );
 }
 
-/** A heading, a line of text and a button at the size chosen. In real pixels on purpose: it shows that size whatever size the page is at now. */
-function TextPreview({ size }: { size: TextSize }) {
+/** A round badge with the letter A in it, at three clearly different sizes, so the choice reads at a glance: small, bigger, biggest. The chosen one has a ring. */
+const BADGE_PX: Record<TextSize, number> = { default: 36, large: 52, xlarge: 72 };
+function TextThumb({ size, checked }: { size: TextSize; checked: boolean }) {
+  const px = BADGE_PX[size];
   return (
-    <div
-      aria-hidden="true"
-      className="flex flex-col gap-1.5 overflow-hidden rounded-xl border border-(--border-default) bg-(--bg-subtle) p-4"
-      style={{ fontSize: `${16 * TEXT_SCALE[size]}px`, lineHeight: 1.3 }}
-    >
-      <span className="font-bold text-(--text-primary)" style={{ fontSize: '1.25em' }}>Your forms</span>
-      <span className="text-(--text-secondary)" style={{ fontSize: '0.8125em' }}>Last edited today, 3 responses waiting.</span>
-      <span className="mt-1 w-fit rounded-md bg-(--action-primary) font-medium text-(--text-on-brand)" style={{ fontSize: '0.8125em', padding: '0.4em 0.9em' }}>Create form</span>
-    </div>
+    <span aria-hidden="true" className="flex h-full items-center justify-center">
+      <span
+        className={bx('flex items-center justify-center rounded-full bg-(--action-primary) font-semibold leading-none text-(--text-on-brand) transition-shadow', checked && 'outline-2 outline-offset-4 outline-(--action-primary)')}
+        style={{ width: px, height: px, fontSize: `${px * 0.45}px` }}
+      >
+        A
+      </span>
+    </span>
   );
 }
 
@@ -166,6 +170,8 @@ export function AppearanceTab() {
   const [dark, setDark] = useState<DarkVariant>('slate');
   const [light, setLight] = useState<LightVariant>('classic');
   const [text, setText] = useState<TextSize>('default');
+  // Whether the device is in dark mode right now (and when it changes): with the System theme only the styles for that mode are shown.
+  const [deviceDark, setDeviceDark] = useState(false);
 
   // Read after mount: the server has no localStorage, so reading it during the first render would not match the HTML.
   useEffect(() => {
@@ -174,7 +180,12 @@ export function AppearanceTab() {
     setDark(readDarkVariant());
     setLight(readLightVariant());
     setText(readTextSize());
+    const media = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+    if (media) setDeviceDark(media.matches);
     /* eslint-enable react-hooks/set-state-in-effect */
+    const onChange = (e: MediaQueryListEvent) => setDeviceDark(e.matches);
+    media?.addEventListener?.('change', onChange);
+    return () => media?.removeEventListener?.('change', onChange);
   }, []);
 
   const save = useMutation({
@@ -212,9 +223,10 @@ export function AppearanceTab() {
     applyTextSize(next);
   }
 
-  const showLight = theme !== 'dark';
-  const showDark = theme !== 'light';
-  const both = showLight && showDark;
+  // Light and Dark show their own styles; System looks at the device and shows the styles for the mode it is in now. The other style is kept.
+  const showLight = theme === 'light' || (theme === 'system' && !deviceDark);
+  const showDark = theme === 'dark' || (theme === 'system' && deviceDark);
+  const following = theme === 'system';
   const lightName = nameOf(LIGHT_STYLES, light);
   const darkName = nameOf(DARK_STYLES, dark);
 
@@ -243,7 +255,7 @@ export function AppearanceTab() {
               id="appearance-light"
               title="Light style"
               icon={<Sun size={16} aria-hidden="true" />}
-              description={`${both ? 'Used when your device is in light mode.' : 'Used whenever light mode is on.'} Saved on this device only.`}
+              description={`${following ? 'Used while your device is in light mode.' : 'Used whenever light mode is on.'} Saved on this device only.`}
             >
               <StyleGroup labelledBy="appearance-light" options={LIGHT_STYLES} value={light} onChange={chooseLight} look={(id) => id} />
             </Section>
@@ -253,26 +265,21 @@ export function AppearanceTab() {
               id="appearance-dark"
               title="Dark style"
               icon={<Moon size={16} aria-hidden="true" />}
-              description={`${both ? 'Used when your device is in dark mode.' : 'Used whenever dark mode is on.'} Saved on this device only.`}
+              description={`${following ? 'Used while your device is in dark mode.' : 'Used whenever dark mode is on.'} Saved on this device only.`}
             >
               <StyleGroup labelledBy="appearance-dark" options={DARK_STYLES} value={dark} onChange={chooseDark} look={(id) => id} />
             </Section>
+          )}
+          {following && (
+            <p className="bg-body-sm text-(--text-secondary)" aria-live="polite">
+              Your device is in {deviceDark ? 'dark' : 'light'} mode right now, so these are the {deviceDark ? 'dark' : 'light'} styles. Your {deviceDark ? 'light' : 'dark'} style is kept and shows when your device switches, or choose {deviceDark ? 'Light' : 'Dark'} above to change it.
+            </p>
           )}
         </div>
       )}
 
       <Section id="appearance-text" title="Text size" description="Makes text, buttons and spacing bigger across Beginso. Saved on this device only.">
-        <div className="flex flex-col gap-3">
-          <div>
-            <SegmentedRadio
-              ariaLabel="Text size"
-              value={text}
-              onChange={(id) => chooseText(id as TextSize)}
-              options={TEXT_SIZES.map((s) => ({ id: s.id, label: s.label, icon: s.id === text ? <Check size={14} aria-hidden="true" /> : undefined }))}
-            />
-          </div>
-          <TextPreview size={text} />
-        </div>
+        <StyleGroup labelledBy="appearance-text" options={TEXT_SIZES} value={text} onChange={chooseText} thumb={(id) => <TextThumb size={id} checked={text === id} />} thumbClass="h-20" />
       </Section>
     </div>
   );

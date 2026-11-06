@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, type ReactNode } from 'react';
+import { Bell, Building2, Database, Gauge, GitBranch, MonitorSmartphone, Palette, Paintbrush, ShieldCheck, Tag, User } from 'lucide-react';
 import { bx } from '@/lib/utils';
 
 export type SettingsTab = 'profile' | 'appearance' | 'workspace' | 'branding' | 'notifications' | 'security' | 'sessions' | 'tags' | 'stages' | 'scoring' | 'data';
@@ -38,6 +39,21 @@ const TABS: { id: SettingsTab; label: string }[] = [
   // Account-level export/delete — split out of the old Workspace tab.
   { id: 'data', label: 'Data & account' },
 ];
+
+// One small icon at the start of each section, so the list can be scanned by shape as well as by word.
+const ICONS: Record<SettingsTab, ReactNode> = {
+  profile: <User size={16} />,
+  appearance: <Palette size={16} />,
+  workspace: <Building2 size={16} />,
+  branding: <Paintbrush size={16} />,
+  notifications: <Bell size={16} />,
+  security: <ShieldCheck size={16} />,
+  sessions: <MonitorSmartphone size={16} />,
+  tags: <Tag size={16} />,
+  stages: <GitBranch size={16} />,
+  scoring: <Gauge size={16} />,
+  data: <Database size={16} />,
+};
 
 const GROUPS: { title: string; ids: SettingsTab[] }[] = [
   { title: 'General', ids: ['profile', 'appearance', 'workspace', 'branding', 'notifications'] },
@@ -105,7 +121,12 @@ export function SettingsTabs({ activeTab, onChange, dirtyTabs, visible, labels }
                     : 'text-(--text-secondary) hover:bg-(--surface-hover) hover:text-(--text-primary)'
                 )}
               >
-                {labels?.[tab.id] ?? tab.label}
+                <span className="flex min-w-0 items-center gap-2.5">
+                  <span aria-hidden="true" className="flex shrink-0 items-center">
+                    {ICONS[tab.id]}
+                  </span>
+                  {labels?.[tab.id] ?? tab.label}
+                </span>
                 {dirtyTabs?.has(tab.id) && (
                   <span className="h-1.5 w-1.5 rounded-full bg-(--action-primary)" aria-label="Unsaved changes" />
                 )}

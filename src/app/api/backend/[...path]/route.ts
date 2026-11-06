@@ -211,6 +211,12 @@ async function forward(request: NextRequest, pathParts: string[]): Promise<NextR
         path: '/',
         maxAge: SESSION_MAX_AGE_SECONDS,
       });
+      // A copy of the account's colour theme that the page's first paint can read (see THEME_INIT_SCRIPT in app/layout.tsx): without it a
+      // browser with nothing saved shows the light page for a few seconds, until the session check says the account is dark.
+      const theme = (payload.user as { theme?: unknown } | undefined)?.theme;
+      if (theme === 'light' || theme === 'dark' || theme === 'system') {
+        response.cookies.set('beginso_theme', theme, { httpOnly: false, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 365 * 24 * 60 * 60 });
+      }
       response.headers.set('cache-control', 'no-store');
       return response;
     }

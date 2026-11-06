@@ -10,7 +10,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
+import { Avatar } from '@/components/ui/Avatar';
 import { Alert } from '@/components/ui/Alert';
 import { Table, type TableColumn } from '@/components/ui/Table';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -18,8 +18,14 @@ import { formAccessService } from '@/services/formAccess';
 import { formAccessKeys } from '@/lib/queryKeys';
 import { formAccessSchema, type FormAccessValues } from '@/lib/schemas/formAccessSchema';
 import { ROLE_LABELS } from '@/lib/roles';
+import type { Role } from '@/types/workspace';
 import { useToast } from '@/components/ui/Toast';
 import type { FormAccessGrant } from '@/types/team';
+
+/** The three roles a person can hold on one form. The server also knows editor and reviewer as other names for member and viewer. */
+type GrantRole = Exclude<Role, 'owner' | 'editor' | 'reviewer'>;
+const asGrantRole = (role: string): GrantRole => (role === 'admin' ? 'admin' : role === 'viewer' || role === 'reviewer' ? 'viewer' : 'member');
+const displayName = (g: FormAccessGrant) => (g.name && g.name !== 'User' ? g.name : g.email);
 
 export interface FormAccessPanelProps {
   formId: string;
@@ -97,9 +103,51 @@ export function FormAccessPanel({ formId, formTitle, isOpen, onClose }: FormAcce
     onError: (error) => toast(getFriendlyErrorMessage(error, { action: 'change access to this form', fallback: 'Access was not revoked. Please try again.' }), 'error'),
   });
 
+  // Changing a role is the same call as granting (the server saves it again with the new role), so it needs no remove-and-add.
+  const changeRoleMutation = useMutation({
+    mutationFn: ({ grant, role }: { grant: FormAccessGrant; role: GrantRole }) => formAccessService.grant(formId, grant.email, role),
+    onSuccess: (_saved, { grant, role }) => {
+      queryClient.invalidateQueries({ queryKey: formAccessKeys.grants(formId) });
+      toast(`${displayName(grant)} is now ${ROLE_LABELS[role] === 'Admin' ? 'an' : 'a'} ${ROLE_LABELS[role]}`, 'success');
+    },
+    onError: (error) => toast(getFriendlyErrorMessage(error, { action: 'change access to this form', fallback: 'The role was not changed. Please try again.' }), 'error'),
+  });
+
   const columns: TableColumn<FormAccessGrant>[] = [
-    { key: 'email', header: 'Email', render: (g) => <span className="bg-body-sm font-medium">{g.email}</span> },
-    { key: 'role', header: 'Role', render: (g) => <Badge variant="outline">{ROLE_LABELS[g.role]}</Badge> },
+    {
+      key: 'member',
+      header: 'Member',
+      render: (g) => (
+        <span className="flex min-w-0 items-center gap-3">
+          <Avatar src={g.user?.avatarUrl ?? undefined} name={displayName(g)} size="sm" />
+          <span className="min-w-0">
+            <span className="block truncate bg-body-sm font-medium text-(--text-primary)">{displayName(g)}</span>
+            {displayName(g) !== g.email && <span className="block truncate bg-caption text-(--text-muted)">{g.email}</span>}
+          </span>
+        </span>
+      ),
+    },
+    {
+      key: 'role',
+      header: 'Role',
+      render: (g) => (
+        <Select
+          id={`form-access-role-${g.userId}`}
+          aria-label={`Role for ${g.email}`}
+          className="bg-input-sm w-36"
+          value={asGrantRole(g.role)}
+          disabled={changeRoleMutation.isPending && changeRoleMutation.variables?.grant.userId === g.userId}
+          onChange={(e) => {
+            const role = e.target.value as GrantRole;
+            if (role !== asGrantRole(g.role)) changeRoleMutation.mutate({ grant: g, role });
+          }}
+        >
+          <option value="member">Editor</option>
+          <option value="viewer">Reviewer</option>
+          <option value="admin">Admin</option>
+        </Select>
+      ),
+    },
     {
       key: 'revoke',
       header: '',
