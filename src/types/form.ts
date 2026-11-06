@@ -191,7 +191,7 @@ export interface FormTheme {
   colors?: { text?: string; heading?: string; card?: string; field?: string; fieldBorder?: string; buttonText?: string };
   fields?: { style?: FieldStyle; radius?: number; label?: LabelPosition; choice?: ChoiceStyle };
   card?: { radius?: number; shadow?: number };
-  layout?: { maxWidth?: number; fieldGap?: number; /** Split Feature: which side the picture panel is on (start = the left in left-to-right languages). */ panelSide?: 'start' | 'end' };
+  layout?: { maxWidth?: number; fieldGap?: number; /** Split Feature: which side the picture panel is on (start = the left in left-to-right languages). */ panelSide?: 'start' | 'end'; /** Split Feature: how much of the card the picture panel takes, 20 to 80 (percent). */ panelSplit?: number };
   /** The typeface of the headings (the form title and page titles); absent = the same as the form's font. */
   fonts?: { heading?: FormFont };
   /** Who took the Unsplash photo used as the cover and/or the page background (one credit each), shown on the form. Only an unsplash.com profile address. */

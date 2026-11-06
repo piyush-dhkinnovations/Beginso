@@ -45,6 +45,8 @@ const LOOK_THEMES: Record<string, NonNullable<PublicFormSchema['branding']['them
   exact: { v: 1, card: { radius: 32, shadow: 90 }, layout: { maxWidth: 520, fieldGap: 28 } },
   heading: { v: 1, fonts: { heading: 'playfair_display' } },
   panelend: { v: 1, layout: { panelSide: 'end' } },
+  splitnarrow: { v: 1, layout: { panelSplit: 30 } },
+  splitwideend: { v: 1, layout: { panelSide: 'end', panelSplit: 70 } },
   multi: undefined, // two pages, so a step list has something to list
   // the page behind the form: a gradient with the owner's colours and angle; a picture darkened and blurred; and a tall cover banner
   gradient: { v: 1, background: { from: '#FF0000', to: '#0000FF', angle: 90 } },

@@ -214,7 +214,7 @@ const THEME_ENUMS = { style: ['outlined', 'filled', 'underline'], label: ['above
 const THEME_NUMBERS = {
   fields: { radius: [0, 32] },
   card: { radius: [0, 40], shadow: [0, 100] },
-  layout: { maxWidth: [360, 1400], fieldGap: [4, 64] },
+  layout: { maxWidth: [360, 1400], fieldGap: [4, 64], panelSplit: [20, 80] },
   background: { angle: [0, 360], darken: [0, 80], blur: [0, 20] },
   cover: { height: [120, 480] },
 } as const;
@@ -427,7 +427,10 @@ export function effectiveTheme(layout: LayoutPreset, raw?: FormTheme | null): Fo
   if (themeOptionBlocked('labelPosition', layout)) delete fields.label;
   if (themeOptionBlocked('fieldRadius', layout, theme)) delete fields.radius;
   const layoutGroup = { ...theme.layout };
-  if (themeOptionBlocked('panelSide', layout)) delete layoutGroup.panelSide;
+  if (themeOptionBlocked('panelSide', layout)) {
+    delete layoutGroup.panelSide;
+    delete layoutGroup.panelSplit;
+  }
   const out: FormTheme = { ...theme, fields, layout: layoutGroup };
   if (themeOptionBlocked('progressStyle', layout)) delete out.progress;
   return out;
@@ -482,6 +485,7 @@ export function brandLookProps(b: Pick<FormBranding, 'theme'>): { className: str
   if (t?.card?.shadow !== undefined) style['--form-card-shadow'] = cardShadowValue(t.card.shadow);
   if (t?.layout?.maxWidth !== undefined) style['--form-max-width'] = `${t.layout.maxWidth}px`;
   if (t?.layout?.fieldGap !== undefined) style['--form-field-gap'] = `${t.layout.fieldGap}px`;
+  if (t?.layout?.panelSplit !== undefined) style['--form-panel-split'] = `${t.layout.panelSplit}%`;
   const headingFont = t?.fonts?.heading ? FORM_FONT_OPTIONS.find((f) => f.value === t.fonts?.heading)?.stack : undefined;
   if (headingFont) style['--form-heading-font'] = headingFont;
   const fieldStyle: FieldStyle | undefined = f?.style && f.style !== 'outlined' ? f.style : undefined;
@@ -497,6 +501,7 @@ export function brandLookProps(b: Pick<FormBranding, 'theme'>): { className: str
     'data-max-width': t?.layout?.maxWidth !== undefined ? '' : undefined,
     'data-field-gap': t?.layout?.fieldGap !== undefined ? '' : undefined,
     'data-panel-end': t?.layout?.panelSide === 'end' ? '' : undefined,
+    'data-panel-split': t?.layout?.panelSplit !== undefined ? '' : undefined,
     'data-btn-size': t?.buttons?.size && t.buttons.size !== 'default' ? t.buttons.size : undefined,
     'data-btn-width': t?.buttons?.width === 'auto' ? 'auto' : undefined,
     'data-btn-hover': t?.buttons?.hover && t.buttons.hover !== 'none' ? t.buttons.hover : undefined,

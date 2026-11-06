@@ -268,6 +268,20 @@ describe('the Split Feature picture side', () => {
     expect(effectiveTheme('split_feature', { v: 1, layout: { panelSide: 'end' } })?.layout).toEqual({ panelSide: 'end' });
   });
 
+  it('keeps a picture width of 20 to 80 whole percent, and switches the CSS on with it', () => {
+    expect(cleanTheme({ v: 1, layout: { panelSplit: 35 } })).toEqual({ v: 1, layout: { panelSplit: 35 } });
+    for (const bad of [19, 81, 40.5, '40', null]) expect(cleanTheme({ v: 1, layout: { panelSplit: bad } })).toBeUndefined();
+    const p = brandLookProps({ theme: { v: 1, layout: { panelSplit: 35 } } });
+    expect(p['data-panel-split']).toBe('');
+    expect((p.style as Record<string, string>)['--form-panel-split']).toBe('35%');
+    expect(brandLookProps({ theme: { v: 1, card: { radius: 4 } } })['data-panel-split']).toBeUndefined();
+  });
+
+  it('is left out on a layout without a picture panel', () => {
+    expect(effectiveTheme('classic', { v: 1, layout: { panelSplit: 35, maxWidth: 800 } })?.layout).toEqual({ maxWidth: 800 });
+    expect(effectiveTheme('split_feature', { v: 1, layout: { panelSplit: 35 } })?.layout).toEqual({ panelSplit: 35 });
+  });
+
   it('is sent on a save', () => {
     expect(sanitizeTheme({ v: 1, layout: { panelSide: 'end' } })).toEqual({ v: 1, layout: { panelSide: 'end' } });
   });

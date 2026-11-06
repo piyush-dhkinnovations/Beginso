@@ -44,15 +44,26 @@ export function LookPreview({ look }: { look: Look }) {
   );
 }
 
-function LookCard({ name, note, look, actions }: { name: string; note?: string; look: Look; actions: React.ReactNode }) {
+function LookCard({ name, note, look, actions, onUse }: { name: string; note?: string; look: Look; actions?: React.ReactNode; onUse?: () => void }) {
   return (
-    <li className="flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--surface-card) p-2">
-      <LookPreview look={look} />
+    <li className="group flex flex-col gap-2 rounded-xl border border-(--border-default) bg-(--surface-card) p-2">
+      <div className="relative">
+        <LookPreview look={look} />
+        {onUse && (
+          // shown on hover or keyboard focus; always shown on a screen with no hover (touch)
+          <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/35 opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 [@media(hover:none)]:opacity-100">
+            <Button type="button" size="small" aria-label={`Use the ${name} look`} onClick={onUse}>
+              Use
+            </Button>
+          </div>
+        )}
+      </div>
       <div className="flex flex-col gap-0.5 px-1">
         <span className="bg-body-sm font-semibold text-(--text-primary)">{name}</span>
         <span className="bg-caption text-(--text-muted)">{note ?? LAYOUT_NAME[look.layout] ?? look.layout}</span>
       </div>
-      <div className="flex flex-wrap items-center gap-2 px-1 pb-1">{actions}</div>
+      {actions && <div className="flex flex-wrap items-center gap-2 px-1 pb-1">{actions}</div>}
+      {!actions && <div className="pb-1" />}
     </li>
   );
 }
@@ -211,11 +222,7 @@ export function LooksDialog({ isOpen, onClose, layout, branding, scope, onApply 
                   name={g.name}
                   note={g.note}
                   look={g}
-                  actions={
-                    <Button type="button" size="small" aria-label={`Use the ${g.name} look`} onClick={() => onApply(g, g.name)}>
-                      Use this look
-                    </Button>
-                  }
+                  onUse={() => onApply(g, g.name)}
                 />
               ))}
             </ul>

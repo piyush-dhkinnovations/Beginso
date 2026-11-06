@@ -79,6 +79,20 @@ test('split feature: the picture panel is on the left by default and on the righ
   expect(await sides('/f/look-split_feature-panelend')).toBe('right');
 });
 
+test('split feature: the picture width is your own share of the card, on either side', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const share = async (slug: string) => {
+    await page.goto(slug);
+    await expect(page.getByLabel(/Full name/)).toBeVisible({ timeout: 60000 });
+    const panel = (await page.locator('.split-panel').boundingBox())!;
+    const card = (await page.locator('.form-card').first().boundingBox())!;
+    return Math.round((panel.width / card.width) * 100);
+  };
+  expect(await share('/f/look-split_feature-none')).toBe(40);
+  expect(Math.abs((await share('/f/look-split_feature-splitnarrow')) - 30)).toBeLessThanOrEqual(1);
+  expect(Math.abs((await share('/f/look-split_feature-splitwideend')) - 70)).toBeLessThanOrEqual(1);
+});
+
 test('split feature on a phone: the panel stays above the form whichever side is chosen', async ({ page }) => {
   await page.setViewportSize({ width: 768 - 1, height: 900 });
   await page.goto('/f/look-split_feature-panelend');

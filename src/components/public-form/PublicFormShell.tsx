@@ -598,6 +598,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
         <Button
           type="button"
           variant="secondary"
+          className="h-auto min-h-(--control-md) w-full whitespace-normal py-2 text-center"
           onClick={() => void methods.handleSubmit(sendTest, onInvalid)()}
           isLoading={testState.status === 'sending'}
         >

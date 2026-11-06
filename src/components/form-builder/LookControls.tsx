@@ -457,7 +457,7 @@ export function FineTune({ branding, layout, setTheme }: { branding: FormBrandin
   const [open, setOpen] = useState(false);
   const panel = useId();
   const t = branding.theme;
-  const touched = [t?.card?.radius, t?.card?.shadow, t?.layout?.maxWidth, t?.layout?.fieldGap, t?.fields?.radius].some((v) => v !== undefined);
+  const touched = [t?.card?.radius, t?.card?.shadow, t?.layout?.maxWidth, t?.layout?.fieldGap, t?.layout?.panelSplit, t?.fields?.radius].some((v) => v !== undefined);
   const cornersBlocked = themeOptionBlocked('fieldRadius', layout, t);
   return (
     <div className="flex flex-col gap-3 border-t border-(--border-subtle) pt-4">
@@ -474,6 +474,9 @@ export function FineTune({ branding, layout, setTheme }: { branding: FormBrandin
           <Slider label="Card shadow" value={t?.card?.shadow} preset={40} min={0} max={100} unit="" onChange={(shadow) => setTheme('card', { shadow })} onReset={() => setTheme('card', { shadow: undefined })} />
           <Slider label="Biggest form width" value={t?.layout?.maxWidth} preset={WIDTH_PRESET[branding.formWidth ?? 'standard']} min={360} max={1400} step={10} onChange={(maxWidth) => setTheme('layout', { maxWidth })} onReset={() => setTheme('layout', { maxWidth: undefined })} />
           <Slider label="Space between fields" value={t?.layout?.fieldGap} preset={GAP_PRESET[branding.spacing ?? 'comfortable']} min={4} max={64} onChange={(fieldGap) => setTheme('layout', { fieldGap })} onReset={() => setTheme('layout', { fieldGap: undefined })} />
+          {!themeOptionBlocked('panelSide', layout) && (
+            <Slider label="Picture width" value={t?.layout?.panelSplit} preset={40} min={20} max={80} step={5} unit="%" onChange={(panelSplit) => setTheme('layout', { panelSplit })} onReset={() => setTheme('layout', { panelSplit: undefined })} />
+          )}
           {cornersBlocked ? (
             <p className="bg-caption text-(--text-muted)">Field corners: {cornersBlocked}</p>
           ) : (
@@ -481,7 +484,7 @@ export function FineTune({ branding, layout, setTheme }: { branding: FormBrandin
           )}
           <p className="bg-caption text-(--text-muted)">The form width is a biggest width: on a small screen the form still fits the screen.</p>
           {touched && (
-            <button type="button" onClick={() => { setTheme('card', { radius: undefined, shadow: undefined }); setTheme('layout', { maxWidth: undefined, fieldGap: undefined }); setTheme('fields', { radius: undefined }); }} className="self-start rounded-md bg-body-sm text-(--text-muted) underline underline-offset-2 hover:text-(--text-secondary)">
+            <button type="button" onClick={() => { setTheme('card', { radius: undefined, shadow: undefined }); setTheme('layout', { maxWidth: undefined, fieldGap: undefined, panelSplit: undefined }); setTheme('fields', { radius: undefined }); }} className="self-start rounded-md bg-body-sm text-(--text-muted) underline underline-offset-2 hover:text-(--text-secondary)">
               Back to the presets
             </button>
           )}
