@@ -515,7 +515,7 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
       <h2 className="sr-only">Branding</h2>
       <LooksDialog isOpen={looksOpen} onClose={() => setLooksOpen(false)} layout={layout} branding={branding} scope={styleScope} onApply={applyLook} />
       <div className="grid items-start gap-6 lg:grid-cols-[24rem_minmax(0,1fr)]">
-        <Card className="flex min-w-0 flex-col gap-4 p-4 lg:max-h-[calc(100vh-16.5rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <Card className="flex min-w-0 flex-col gap-4 p-4 lg:max-h-[calc(100vh-17.75rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* Stays at the top of the card while the controls scroll under it. */}
           <div className="sticky -top-4 z-10 -mx-4 -mt-4 bg-(--surface-card) px-4 pt-4">
             <Tabs tabs={SECTIONS} activeId={section} onChange={(id) => { setSection(id as Section); if (id !== 'buttons') setShowThanks(false); }} ariaLabel="Branding sections" panelId="branding-section" className="gap-4" />
@@ -527,7 +527,7 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
 
         <div className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-20">
           {/* The screen switch sits in the preview's top left, the zoom and Full screen in its bottom right, so the form has the whole column. */}
-          <div className="relative h-[calc(100vh-16.5rem)] min-h-96">
+          <div className="relative h-[calc(100vh-17.75rem)] min-h-96">
             {formId ? <LiveFormPreview fill zoom={zoom} formId={formId} branding={branding} title={formTitle} layout={layout} device={device} screen={showThanks && section === 'buttons' ? 'thanks' : 'form'} /> : <p className="bg-body-sm text-(--text-muted)">Save the form to see a live preview.</p>}
             <Segmented
               ariaLabel="Preview device"

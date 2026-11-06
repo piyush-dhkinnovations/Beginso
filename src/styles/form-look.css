@@ -47,6 +47,14 @@
   .form-look[data-panel-end] .split-panel { order: 2; }
 }
 
+/* Split Feature: the picture panel's share of the card. The panel is the first column, or the second when it is on the end. */
+@media (min-width: 768px) {
+  .form-look[data-panel-split] .form-card.md\:grid { grid-template-columns: var(--form-panel-split) minmax(0, 1fr); }
+  .form-look[data-panel-split][data-panel-end] .form-card.md\:grid { grid-template-columns: minmax(0, 1fr) var(--form-panel-split); }
+  .form-look[data-panel-split] .split-form,
+  .form-look[data-panel-split] .split-panel { grid-column: auto; }
+}
+
 /* Exact values */
 .form-look[data-card-radius] .form-card { border-radius: var(--form-card-radius); }
 /* Split Feature is a full-width panel on a phone, as it always was: its own corners and shadow are a tablet-and-up thing. */
