@@ -17,6 +17,11 @@ describe('thumbVariant', () => {
     expect(thumbVariant(tpl('HR'))).toBe('profile');
     expect(thumbVariant(tpl('weird', 'abc'))).toBe(thumbVariant(tpl('weird', 'abc')));
   });
+
+  it('covers every category in the expanded catalog', () => {
+    const cats = ['lead generation', 'e-commerce', 'contact us', 'reservation/booking', 'education', 'real estate', 'non-profit', 'medicine', 'personal'];
+    for (const c of cats) expect(['sheet', 'ticket', 'survey', 'profile', 'steps', 'chat']).toContain(thumbVariant(tpl(c)));
+  });
 });
 
 describe('TemplateThumb', () => {

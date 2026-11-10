@@ -8,7 +8,9 @@ import { Menu } from '@/components/ui/Menu';
 import { TemplateThumb } from '@/components/templates/TemplateThumb';
 import { bx } from '@/lib/utils';
 
-// One tint per category, drawn from semantic tokens so it follows every theme. Unknown
+// One tint per category, drawn from semantic tokens so it follows every theme. Only six token pairs
+// exist (success/warning/error/info/accent-soft/bg-sunken), so several categories share a family —
+// TemplateThumb's per-category layout is what keeps those visually apart, not the tint alone. Unknown
 // categories (the backend's list is open-ended) fall back to a neutral tint.
 const TINTS: Record<string, { surface: string; ink: string }> = {
   advanced: { surface: 'var(--accent-soft)', ink: 'var(--accent-soft-text)' },
@@ -17,6 +19,15 @@ const TINTS: Record<string, { surface: string; ink: string }> = {
   hr: { surface: 'var(--warning-surface)', ink: 'var(--warning-text)' },
   events: { surface: 'var(--accent-soft)', ink: 'var(--accent-soft-text)' },
   sales: { surface: 'var(--bg-sunken)', ink: 'var(--text-secondary)' },
+  'lead generation': { surface: 'var(--accent-soft)', ink: 'var(--accent-soft-text)' },
+  'e-commerce': { surface: 'var(--warning-surface)', ink: 'var(--warning-text)' },
+  'contact us': { surface: 'var(--info-surface)', ink: 'var(--info-text)' },
+  'reservation/booking': { surface: 'var(--error-surface)', ink: 'var(--error-text)' },
+  education: { surface: 'var(--success-surface)', ink: 'var(--success-text)' },
+  'real estate': { surface: 'var(--warning-surface)', ink: 'var(--warning-text)' },
+  'non-profit': { surface: 'var(--success-surface)', ink: 'var(--success-text)' },
+  medicine: { surface: 'var(--info-surface)', ink: 'var(--info-text)' },
+  personal: { surface: 'var(--accent-soft)', ink: 'var(--accent-soft-text)' },
 };
 const FALLBACK_TINT = { surface: 'var(--bg-sunken)', ink: 'var(--text-secondary)' };
 

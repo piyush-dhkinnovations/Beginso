@@ -18,6 +18,15 @@ const BY_CATEGORY: Record<string, ThumbVariant> = {
   advanced: 'steps',
   sales: 'chat',
   contact: 'chat',
+  'lead generation': 'chat',
+  'e-commerce': 'sheet',
+  'contact us': 'chat',
+  'reservation/booking': 'ticket',
+  education: 'steps',
+  'real estate': 'profile',
+  'non-profit': 'profile',
+  medicine: 'profile',
+  personal: 'sheet',
 };
 const ALL: ThumbVariant[] = ['sheet', 'ticket', 'survey', 'profile', 'steps', 'chat'];
 
