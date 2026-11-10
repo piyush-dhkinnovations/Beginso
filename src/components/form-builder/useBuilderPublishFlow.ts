@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useBuilderStore } from '@/store/builderStore';
 import { useToast } from '@/components/ui/Toast';
 import { saveFormSnapshot, syncBuilderVersion } from './useBuilderAutosave';
-import type { BuilderTab } from './BuilderTabs';
+import type { BuilderTarget } from './BuilderTabs';
 import type { Form, FormStatus } from '@/types/form';
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
@@ -15,7 +15,7 @@ export function useBuilderPublishFlow({
   setSaveState,
 }: {
   id: string;
-  setActiveTab: (tab: BuilderTab) => void;
+  setActiveTab: (tab: BuilderTarget) => void;
   setSaveState: (s: SaveState) => void;
 }) {
   const router = useRouter();
@@ -70,7 +70,7 @@ export function useBuilderPublishFlow({
     setShowPublishModal(true);
   }, [dirty, formId, fields, formTitle, pages, branding, settings, markSaved, toast, setSaveState]);
 
-  // "Change" on a pre-flight row → Settings; "Fix in editor" → the offending field on the Build tab.
+  // "Change" on a pre-flight row → the Settings section of Share & Settings; "Fix in editor" → the offending field on the Build tab.
   const handleChangeSetting = useCallback(() => {
     setShowPublishModal(false);
     setActiveTab('settings');

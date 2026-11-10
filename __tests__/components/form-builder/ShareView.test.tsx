@@ -237,11 +237,11 @@ describe('ShareView: layout', () => {
     expect(screen.getByText('Published')).toBeInTheDocument();
   });
 
-  it('says who can respond and sends the owner to Settings to change it', async () => {
+  it('says who can respond and sends the owner to the Settings section to change it', async () => {
     const onOpenSettings = vi.fn();
     renderView({ embedded: true, onOpenSettings });
     expect(await screen.findByText(/Anyone with the link can respond/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Change who can respond in Settings' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Change who can respond' }));
     expect(onOpenSettings).toHaveBeenCalled();
   });
 
