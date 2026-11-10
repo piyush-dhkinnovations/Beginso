@@ -413,6 +413,10 @@ export interface FormMark {
 
 export interface Template {
   _id: string;
+  // The public gallery's URL segment (/discover-templates/:slug) — a readable name instead of the
+  // raw id. Absent on a template from a backend that predates this field; the gallery falls back
+  // to the id in that case (lib/templateSlug.ts).
+  slug?: string;
   name: string;
   description: string;
   category: string;      // e.g. 'contact' | 'event' | 'feedback' | 'hiring'

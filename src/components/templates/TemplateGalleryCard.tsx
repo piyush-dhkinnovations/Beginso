@@ -4,6 +4,7 @@ import type { Template } from "@/types/form";
 import { TemplateThumb } from "@/components/templates/TemplateThumb";
 import { IconArt } from "@/components/forms/FormIcon";
 import { suggestFormIcon } from "@/lib/formIcons";
+import { templateHref } from "@/lib/templateSlug";
 
 // A public-gallery card: a real miniature of the template's own branded form (TemplateThumb) — no badge overlaid on
 // top of it, so nothing competes with the form's own real title and cover. Category is still how the sidebar filters,
@@ -14,7 +15,7 @@ export function TemplateGalleryCard({ template }: { template: Template }) {
 
   return (
     <Link
-      href={`/discover-templates/${template._id}`}
+      href={templateHref(template)}
       className="lift group flex flex-col overflow-hidden rounded-(--bg-radius-md) border border-(--border-default) bg-(--surface-card) transition-colors hover:bg-(--surface-hover)"
     >
       <TemplateThumb template={template} />

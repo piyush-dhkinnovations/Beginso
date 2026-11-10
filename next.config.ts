@@ -136,8 +136,11 @@ const nextConfig: NextConfig = {
       { source: "/forms/:id/preview", headers: framePreviewHeaders },
       // The guest builder previews the logged-out draft in the same way (src/app/try/preview).
       { source: "/try/preview", headers: framePreviewHeaders },
+      // The template detail page's device preview embeds this same-origin route in an <iframe>
+      // (components/templates/TemplatePreviewFrame). Same narrow carve-out, same reasoning.
+      { source: "/discover-templates/:slug/preview", headers: framePreviewHeaders },
       { source: "/f/:path*", headers: publicFormHeaders },
-      { source: "/((?!dev/ui/frame$)(?!forms/[^/]+/preview$)(?!try/preview$)(?!r/)(?!f/).*)", headers: securityHeaders },
+      { source: "/((?!dev/ui/frame$)(?!forms/[^/]+/preview$)(?!try/preview$)(?!discover-templates/[^/]+/preview$)(?!r/)(?!f/).*)", headers: securityHeaders },
     ];
   },
 };
