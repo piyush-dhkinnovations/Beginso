@@ -1,14 +1,14 @@
 'use client';
 
 import { usePendingEdits } from '@/lib/pendingEdits';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
 import { useBuilderStore } from '@/store/builderStore';
 import { BuilderHeader } from '@/components/form-builder/BuilderHeader';
 import { FormLogoButton } from '@/components/forms/FormLogoButton';
-import { BuilderTabs, BuilderTab } from '@/components/form-builder/BuilderTabs';
+import { BuilderTabs, type BuilderTab, type BuilderTarget } from '@/components/form-builder/BuilderTabs';
 import { SettingsPanel } from '@/components/form-builder/SettingsPanel';
 import { AddFieldSheet } from '@/components/form-builder/AddFieldSheet';
 import { BrandingTabContent } from '@/components/form-builder/BrandingTabContent';
@@ -26,7 +26,7 @@ import { useBuilderDnd } from '@/components/form-builder/useBuilderDnd';
 import { canSeeShare, canPublishForm } from '@/lib/roles';
 import type { FieldType } from '@/types/form';
 
-const VALID_TABS: BuilderTab[] = ['build', 'branding', 'settings', 'share'];
+const VALID_TABS: BuilderTab[] = ['build', 'branding', 'share'];
 
 export default function BuilderPageShell() {
   const router = useRouter();
@@ -36,12 +36,21 @@ export default function BuilderPageShell() {
   // The URL is the single source of truth for the active tab (?tab=settings), so the form sidebar's
   // Settings link, deep links, reload and the tab bar all agree. State copied from the URL once at mount
   // ignored in-page navigation (the sidebar link changed the URL but not the tab).
-  const tabFromUrl = searchParams.get('tab') as BuilderTab | null;
+  const tabFromUrl = searchParams.get('tab');
   // Arriving from the guest builder's claim: say where the form is and offer the one next step.
   const justClaimed = searchParams.get('claimed') === '1';
-  const activeTab: BuilderTab = tabFromUrl && VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'build';
-  const setActiveTab = (tab: BuilderTab) => {
+  // Share and Settings are one tab. ?tab=settings (the sidebar's "Form settings", the publish check's "Change", older links)
+  // opens it scrolled to the Settings section; ?tab=share and the tab itself open it at the top.
+  const wantsSettings = tabFromUrl === 'settings';
+  const activeTab: BuilderTab = wantsSettings ? 'share' : VALID_TABS.includes(tabFromUrl as BuilderTab) ? (tabFromUrl as BuilderTab) : 'build';
+  // A ref, not state: the publish flow keeps setActiveTab in a callback with no dependencies, so the scroll must not read the current tab.
+  const settingsRef = useRef<HTMLDivElement>(null);
+  const scrollToSettings = (behavior: ScrollBehavior) => settingsRef.current?.scrollIntoView({ block: 'start', behavior });
+  const setActiveTab = (tab: BuilderTarget) => {
     router.replace(`/forms/${id}/edit?tab=${tab}`, { scroll: false });
+    // Already on the tab, the URL may not change, so nothing below re-runs: scroll now. From another tab the section
+    // is not mounted yet and this is a no-op; the effect below scrolls once it is.
+    if (tab === 'settings') requestAnimationFrame(() => scrollToSettings('smooth'));
   };
 
   // Sprint 13 (CF2.12): touch-width builder UI — bottom-sheet toolbox and Reorder mode.
@@ -74,6 +83,11 @@ export default function BuilderPageShell() {
   const canRedo = redoStack.length > 0;
 
   const { isLoading, formWorkspaceSlug, formsListHref, overviewHref, formRole } = useBuilderForm(id);
+
+  // Landing on ?tab=settings (or switching to it from another tab): the section exists once the builder has loaded.
+  useEffect(() => {
+    if (wantsSettings && !isLoading) settingsRef.current?.scrollIntoView({ block: 'start' });
+  }, [wantsSettings, isLoading]);
 
   const { saveState, setSaveState, savedAt, saveDetail, handleRetrySave } = useBuilderAutosave();
   const stale = useBuilderStore((state) => state.stale);
@@ -168,14 +182,16 @@ export default function BuilderPageShell() {
                       styleScope={formWorkspaceSlug ?? 'personal'}
                     />
                   </div>
-                ) : activeTab === 'share' && canSeeShare(formRole) && formId ? (
-                  <div className="min-w-0 flex-1">
-                    <ShareView formId={formId} embedded onOpenPublish={handlePublishClick} onOpenSettings={() => setActiveTab('settings')} />
-                  </div>
-                ) : activeTab === 'settings' ? (
-                  // Settings is an ordinary page in a form-width column: it scrolls with the page.
-                  <div className="min-w-0 flex-1">
-                    <SettingsPanel settings={settings} onUpdate={setSettings} />
+                ) : activeTab === 'share' ? (
+                  // Share & Settings: distribution first (what people come here for once a form is live), then the form's settings.
+                  // Reviewers cannot share, so they get only the Settings section. It scrolls with the page like any other.
+                  <div className="flex min-w-0 flex-1 flex-col gap-12">
+                    {canSeeShare(formRole) && formId && (
+                      <ShareView formId={formId} embedded onOpenPublish={handlePublishClick} onOpenSettings={() => scrollToSettings('smooth')} />
+                    )}
+                    <div ref={settingsRef} id="form-settings" className="scroll-mt-24">
+                      <SettingsPanel settings={settings} onUpdate={setSettings} />
+                    </div>
                   </div>
                 ) : null}
               </div>

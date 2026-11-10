@@ -98,8 +98,9 @@ export function SettingsPanel({ settings, onUpdate }: SettingsPanelProps) {
     // Each group is a card of rows (name and help on the left, the control on the right). From 1024px the groups sit in two columns:
     // who can respond and its limits on the left, what happens after and protection on the right.
     <div className="flex flex-col gap-8">
+      {/* A section of Share & Settings, under Share & Embed: same heading level and size as that one. */}
       <div>
-        <h1 className="bg-h3 font-bold text-(--text-primary)">Settings</h1>
+        <h2 className="bg-h4 font-bold text-(--text-primary)">Settings</h2>
         <p className="bg-body text-(--text-muted) mt-1">Control who can respond and how this form behaves.</p>
       </div>
 
