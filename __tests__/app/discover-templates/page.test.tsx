@@ -51,4 +51,17 @@ describe('discover-templates page', () => {
     expect(screen.getByText('Donation')).toBeInTheDocument();
     expect(screen.queryByText('Hiring')).not.toBeInTheDocument();
   });
+
+  it('scrolls back to the top of the page when a category is picked, even from a long sidebar list', async () => {
+    mockTemplates.mockReturnValue({
+      data: [{ _id: '1', title: 'Hiring', category: 'HR' }],
+      isLoading: false,
+      error: null,
+    });
+    const scrollTo = vi.fn();
+    window.scrollTo = scrollTo;
+    render(<DiscoverTemplatesPage />);
+    await userEvent.click(screen.getByRole('button', { name: /HR/ }));
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+  });
 });

@@ -26,7 +26,7 @@ import { useBuilderDnd } from '@/components/form-builder/useBuilderDnd';
 import { canSeeShare, canPublishForm } from '@/lib/roles';
 import type { FieldType } from '@/types/form';
 
-const VALID_TABS: BuilderTab[] = ['build', 'branding', 'share'];
+const VALID_TABS: BuilderTab[] = ['build', 'branding', 'settings'];
 
 export default function BuilderPageShell() {
   const router = useRouter();
@@ -39,18 +39,20 @@ export default function BuilderPageShell() {
   const tabFromUrl = searchParams.get('tab');
   // Arriving from the guest builder's claim: say where the form is and offer the one next step.
   const justClaimed = searchParams.get('claimed') === '1';
-  // Share and Settings are one tab. ?tab=settings (the sidebar's "Form settings", the publish check's "Change", older links)
-  // opens it scrolled to the Settings section; ?tab=share and the tab itself open it at the top.
-  const wantsSettings = tabFromUrl === 'settings';
-  const activeTab: BuilderTab = wantsSettings ? 'share' : VALID_TABS.includes(tabFromUrl as BuilderTab) ? (tabFromUrl as BuilderTab) : 'build';
+  // Settings is the tab (Settings first, Share & Embed below it — not the other way around). ?tab=share (the old tab
+  // name, the "Share & embed" links in PublishModal/ResponsesTable/ResponsesLoadErrors) opens the Settings tab scrolled
+  // down to the Share & Embed section; ?tab=settings and the tab itself open it at the top, where Settings now lives.
+  const wantsShare = tabFromUrl === 'share';
+  const activeTab: BuilderTab = wantsShare ? 'settings' : VALID_TABS.includes(tabFromUrl as BuilderTab) ? (tabFromUrl as BuilderTab) : 'build';
   // A ref, not state: the publish flow keeps setActiveTab in a callback with no dependencies, so the scroll must not read the current tab.
-  const settingsRef = useRef<HTMLDivElement>(null);
-  const scrollToSettings = (behavior: ScrollBehavior) => settingsRef.current?.scrollIntoView({ block: 'start', behavior });
+  const shareRef = useRef<HTMLDivElement>(null);
+  const settingsTopRef = useRef<HTMLDivElement>(null);
+  const scrollToShare = (behavior: ScrollBehavior) => shareRef.current?.scrollIntoView({ block: 'start', behavior });
   const setActiveTab = (tab: BuilderTarget) => {
     router.replace(`/forms/${id}/edit?tab=${tab}`, { scroll: false });
     // Already on the tab, the URL may not change, so nothing below re-runs: scroll now. From another tab the section
     // is not mounted yet and this is a no-op; the effect below scrolls once it is.
-    if (tab === 'settings') requestAnimationFrame(() => scrollToSettings('smooth'));
+    if (tab === 'share') requestAnimationFrame(() => scrollToShare('smooth'));
   };
 
   // Sprint 13 (CF2.12): touch-width builder UI — bottom-sheet toolbox and Reorder mode.
@@ -84,10 +86,10 @@ export default function BuilderPageShell() {
 
   const { isLoading, formWorkspaceSlug, formsListHref, overviewHref, formRole } = useBuilderForm(id);
 
-  // Landing on ?tab=settings (or switching to it from another tab): the section exists once the builder has loaded.
+  // Landing on ?tab=share (or switching to it from another tab): the section exists once the builder has loaded.
   useEffect(() => {
-    if (wantsSettings && !isLoading) settingsRef.current?.scrollIntoView({ block: 'start' });
-  }, [wantsSettings, isLoading]);
+    if (wantsShare && !isLoading) shareRef.current?.scrollIntoView({ block: 'start' });
+  }, [wantsShare, isLoading]);
 
   const { saveState, setSaveState, savedAt, saveDetail, handleRetrySave } = useBuilderAutosave();
   const stale = useBuilderStore((state) => state.stale);
@@ -182,16 +184,24 @@ export default function BuilderPageShell() {
                       styleScope={formWorkspaceSlug ?? 'personal'}
                     />
                   </div>
-                ) : activeTab === 'share' ? (
-                  // Share & Settings: distribution first (what people come here for once a form is live), then the form's settings.
-                  // Reviewers cannot share, so they get only the Settings section. It scrolls with the page like any other.
+                ) : activeTab === 'settings' ? (
+                  // Settings: the tab's own content, first and at the top. Share & Embed lives below it — a form's
+                  // settings are what someone comes to this tab for; distribution is secondary once a form is live.
+                  // Reviewers cannot share, so they get only Settings. It scrolls with the page like any other.
                   <div className="flex min-w-0 flex-1 flex-col gap-12">
-                    {canSeeShare(formRole) && formId && (
-                      <ShareView formId={formId} embedded onOpenPublish={handlePublishClick} onOpenSettings={() => scrollToSettings('smooth')} />
-                    )}
-                    <div ref={settingsRef} id="form-settings" className="scroll-mt-24">
+                    <div ref={settingsTopRef} className="scroll-mt-24">
                       <SettingsPanel settings={settings} onUpdate={setSettings} />
                     </div>
+                    {canSeeShare(formRole) && formId && (
+                      <div ref={shareRef} id="form-share" className="scroll-mt-24">
+                        <ShareView
+                          formId={formId}
+                          embedded
+                          onOpenPublish={handlePublishClick}
+                          onOpenSettings={() => settingsTopRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })}
+                        />
+                      </div>
+                    )}
                   </div>
                 ) : null}
               </div>

@@ -30,6 +30,14 @@ const LOOKS: Record<string, TemplateLook> = {
   medicine: { layout: 'steps', branding: { primaryColor: '#0891b2', fontFamily: 'inter', panelTreatment: 'solid', backgroundStyle: 'wash', cardStyle: 'bordered', buttonRadius: '8px' } },
   personal: { layout: 'card_stack', branding: { primaryColor: '#9333ea', fontFamily: 'fredoka', panelTreatment: 'gradient', backgroundStyle: 'gradient', cardStyle: 'elevated', buttonRadius: '16px' } },
   sales: { layout: 'compact', branding: { primaryColor: '#ea580c', panelTreatment: 'solid', backgroundStyle: 'plain', cardStyle: 'elevated', fontFamily: 'inter', buttonRadius: '16px' } },
+  business: { layout: 'classic', branding: { primaryColor: '#334155', fontFamily: 'inter', panelTreatment: 'solid', backgroundStyle: 'wash', cardStyle: 'soft', buttonRadius: '8px' } },
+  order: { layout: 'compact', branding: { primaryColor: '#c2410c', fontFamily: 'poppins', panelTreatment: 'gradient', backgroundStyle: 'wash', cardStyle: 'soft', buttonRadius: '8px' } },
+  'working forms': { layout: 'classic', branding: { primaryColor: '#475569', fontFamily: 'work_sans', panelTreatment: 'solid', backgroundStyle: 'plain', cardStyle: 'bordered', buttonRadius: '4px' } },
+  requests: { layout: 'guided', branding: { primaryColor: '#7c3aed', fontFamily: 'manrope', panelTreatment: 'pattern', backgroundStyle: 'dots', cardStyle: 'bordered', buttonRadius: '8px' } },
+  registration: { layout: 'steps', branding: { primaryColor: '#2563eb', fontFamily: 'outfit', panelTreatment: 'gradient', backgroundStyle: 'mesh', cardStyle: 'elevated', buttonRadius: '16px' } },
+  membership: { layout: 'card_stack', branding: { primaryColor: '#a21caf', fontFamily: 'montserrat', panelTreatment: 'gradient', backgroundStyle: 'gradient', cardStyle: 'elevated', buttonRadius: '16px' } },
+  consent: { layout: 'classic', branding: { primaryColor: '#0f766e', fontFamily: 'source_serif_4', panelTreatment: 'solid', backgroundStyle: 'plain', cardStyle: 'bordered', buttonRadius: '4px' } },
+  'inspection forms': { layout: 'steps', branding: { primaryColor: '#ca8a04', fontFamily: 'space_grotesk', panelTreatment: 'pattern', backgroundStyle: 'grid', cardStyle: 'flat', buttonRadius: '4px' } },
 };
 const LOOK_ORDER = Object.keys(LOOKS);
 const ALIASES: Record<string, string> = {
@@ -57,6 +65,12 @@ export function templateLook(template: Template): TemplateLook {
   return LOOKS[LOOK_ORDER[sum % LOOK_ORDER.length]];
 }
 
+/** A template's real branding when it has one, else its category's computed look — the one place this fallback is decided, so the
+ * gallery card thumbnail, the detail-page live preview and the eventual created form never disagree on which branding "is" the template's. */
+export function effectiveBranding(template: Template): FormBranding {
+  return template.branding ?? templateLook(template).branding;
+}
+
 // Template has no `pages`/`branding` of its own (see .kiro/specs/public-template-gallery
 // design.md "Detail Page") — this derives a synthetic PublicFormSchema for read-only preview
 // rendering via PublicFormShell's previewMode. Pages are grouped from whichever distinct
@@ -80,7 +94,7 @@ export function templateToPreviewSchema(template: Template): PublicFormSchema {
   // A template that names a modern layout itself keeps it; an absent or legacy one (single_column, two_column) takes its category's.
   const layout = settings.layout && MODERN.has(settings.layout) ? settings.layout : look.layout;
   // The template's own branding wins when it has one; only a template that predates it falls back to the computed category look.
-  const branding = template.branding ?? look.branding;
+  const branding = effectiveBranding(template);
 
   return {
     title: template.name,

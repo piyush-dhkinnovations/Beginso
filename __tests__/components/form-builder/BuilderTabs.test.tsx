@@ -7,14 +7,14 @@ const base = { activeTab: 'build' as const, onChange: vi.fn(), canUndo: true, ca
 const tabNames = () => screen.getAllByRole('tab').map((t) => t.textContent);
 
 describe('BuilderTabs', () => {
-  it('renders Build, Branding and Share & Settings as tabs, with the active one selected', () => {
+  it('renders Build, Branding and Settings as tabs, with the active one selected', () => {
     render(<BuilderTabs {...base} activeTab="branding" />);
-    expect(tabNames()).toEqual(['Build', 'Branding', 'Share & Settings']);
+    expect(tabNames()).toEqual(['Build', 'Branding', 'Settings']);
     expect(screen.getByRole('tab', { name: 'Branding' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('tab', { name: 'Build' })).toHaveAttribute('aria-selected', 'false');
   });
 
-  it('names the tab Settings for a role that cannot share', () => {
+  it('names the tab Settings whether or not the role can share', () => {
     render(<BuilderTabs {...base} showShare={false} />);
     expect(tabNames()).toEqual(['Build', 'Branding', 'Settings']);
   });
@@ -29,8 +29,8 @@ describe('BuilderTabs', () => {
   it('clicking a tab reports its id', async () => {
     const onChange = vi.fn();
     render(<BuilderTabs {...base} onChange={onChange} />);
-    await userEvent.click(screen.getByRole('tab', { name: 'Share & Settings' }));
-    expect(onChange).toHaveBeenCalledWith('share');
+    await userEvent.click(screen.getByRole('tab', { name: 'Settings' }));
+    expect(onChange).toHaveBeenCalledWith('settings');
   });
 
   it('undo and redo fire, and are disabled per their flags', async () => {

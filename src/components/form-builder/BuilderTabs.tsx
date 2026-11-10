@@ -4,10 +4,10 @@ import { Undo2, Redo2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 
-// Share and Settings are one tab: the link and embed first, the form's settings under them.
-export type BuilderTab = 'build' | 'branding' | 'share';
-/** Where a caller can send the editor: a tab, or 'settings' — the Share tab scrolled to its Settings section. */
-export type BuilderTarget = BuilderTab | 'settings';
+// Settings and Share are one tab, named Settings: the form's settings first, Share & Embed below them.
+export type BuilderTab = 'build' | 'branding' | 'settings';
+/** Where a caller can send the editor: a tab, or 'share' — the Settings tab scrolled down to its Share & Embed section. */
+export type BuilderTarget = BuilderTab | 'share';
 
 interface BuilderTabsProps {
   activeTab: BuilderTab;
@@ -16,17 +16,17 @@ interface BuilderTabsProps {
   canRedo: boolean;
   onUndo: () => void;
   onRedo: () => void;
-  /** Whether the sharing half of the Share tab is shown (Reviewers only get Settings, and the tab is named for it). */
+  /** Unused by the tab bar itself (the tab is always named Settings) — kept so callers that still pass it don't break. */
   showShare?: boolean;
   /** Non-deleted field count; shown on the Build tab when above zero. */
   fieldCount?: number;
 }
 
-export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onRedo, showShare = true, fieldCount = 0 }: BuilderTabsProps) {
+export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onRedo, fieldCount = 0 }: BuilderTabsProps) {
   const tabs: { id: BuilderTab; label: string }[] = [
     { id: 'build', label: 'Build' },
     { id: 'branding', label: 'Branding' },
-    { id: 'share', label: showShare ? 'Share & Settings' : 'Settings' },
+    { id: 'settings', label: 'Settings' },
   ];
   return (
     <nav className="flex shrink-0 items-center justify-between border-b border-(--border-default)" aria-label="Form Builder Tabs">

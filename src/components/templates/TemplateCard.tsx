@@ -8,31 +8,6 @@ import { Menu } from '@/components/ui/Menu';
 import { TemplateThumb } from '@/components/templates/TemplateThumb';
 import { bx } from '@/lib/utils';
 
-// One tint per category, drawn from semantic tokens so it follows every theme. Only six token pairs
-// exist (success/warning/error/info/accent-soft/bg-sunken), so several categories share a family —
-// TemplateThumb's per-category layout is what keeps those visually apart, not the tint alone. Unknown
-// categories (the backend's list is open-ended) fall back to a neutral tint.
-const TINTS: Record<string, { surface: string; ink: string }> = {
-  advanced: { surface: 'var(--accent-soft)', ink: 'var(--accent-soft-text)' },
-  general: { surface: 'var(--success-surface)', ink: 'var(--success-text)' },
-  feedback: { surface: 'var(--info-surface)', ink: 'var(--info-text)' },
-  hr: { surface: 'var(--warning-surface)', ink: 'var(--warning-text)' },
-  events: { surface: 'var(--accent-soft)', ink: 'var(--accent-soft-text)' },
-  sales: { surface: 'var(--bg-sunken)', ink: 'var(--text-secondary)' },
-  'lead generation': { surface: 'var(--accent-soft)', ink: 'var(--accent-soft-text)' },
-  'e-commerce': { surface: 'var(--warning-surface)', ink: 'var(--warning-text)' },
-  'contact us': { surface: 'var(--info-surface)', ink: 'var(--info-text)' },
-  'reservation/booking': { surface: 'var(--error-surface)', ink: 'var(--error-text)' },
-  education: { surface: 'var(--success-surface)', ink: 'var(--success-text)' },
-  'real estate': { surface: 'var(--warning-surface)', ink: 'var(--warning-text)' },
-  'non-profit': { surface: 'var(--success-surface)', ink: 'var(--success-text)' },
-  medicine: { surface: 'var(--info-surface)', ink: 'var(--info-text)' },
-  personal: { surface: 'var(--accent-soft)', ink: 'var(--accent-soft-text)' },
-};
-const FALLBACK_TINT = { surface: 'var(--bg-sunken)', ink: 'var(--text-secondary)' };
-
-export const categoryTint = (category: string) => TINTS[category.toLowerCase()] ?? FALLBACK_TINT;
-
 export interface TemplateCardProps {
   template: Template;
   onUse: (id: string) => void;
@@ -43,22 +18,12 @@ export interface TemplateCardProps {
 }
 
 export function TemplateCard({ template, onUse, onPreview, isLoading, wide }: TemplateCardProps) {
-  const tint = categoryTint(template.category);
   const count = template.fields.length;
 
   return (
     <Card padded={false} className={bx('overflow-hidden', wide && 'sm:col-span-2 sm:flex-row')}>
-      <div
-        className={bx('relative flex items-center justify-center', wide ? 'shrink-0 py-8 sm:w-80' : 'h-44')}
-        style={{ background: `linear-gradient(135deg, ${tint.surface}, var(--bg-subtle))` }}
-      >
-        <span
-          className="absolute left-3 top-3 z-10 inline-flex items-center rounded-full bg-(--surface-card) px-2.5 py-0.5 bg-caption font-semibold capitalize"
-          style={{ color: tint.ink }}
-        >
-          {template.category}
-        </span>
-        <TemplateThumb template={template} ink={tint.ink} surface={tint.surface} />
+      <div className={bx(wide && 'shrink-0 sm:w-80')}>
+        <TemplateThumb template={template} />
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">

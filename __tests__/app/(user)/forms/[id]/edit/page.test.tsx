@@ -1,6 +1,7 @@
 /**
- * The editor's Share & Settings tab: Share & Embed and the form's Settings on one tab. The builder's hooks and the other
- * tabs are stubbed; this covers which tab a URL opens, what each role sees on the merged tab, and the jumps to Settings.
+ * The editor's Settings tab: the form's Settings and Share & Embed on one tab, named Settings, Settings first and
+ * Share & Embed below it. The builder's hooks and the other tabs are stubbed; this covers which tab a URL opens,
+ * what each role sees on the merged tab, and the jumps between the two sections.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -63,7 +64,7 @@ function renderAt(tab?: string) {
   return render(<BuilderPageShell />);
 }
 
-describe('Form editor: Share & Settings tab', () => {
+describe('Form editor: Settings tab', () => {
   beforeEach(() => {
     role = 'owner';
     replace.mockReset();
@@ -76,53 +77,53 @@ describe('Form editor: Share & Settings tab', () => {
     useBuilderStore.setState({ formId: 'f1' });
   });
 
-  it('has three tabs, the last one named Share & Settings', () => {
+  it('has three tabs, the last one named Settings', () => {
     renderAt();
-    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Build', 'Branding', 'Share & Settings']);
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Build', 'Branding', 'Settings']);
   });
 
-  it('shows Share & Embed and Settings together, sharing first, without scrolling on ?tab=share', () => {
-    renderAt('share');
-    expect(screen.getByRole('tab', { name: 'Share & Settings' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['Share & Embed', 'Settings']);
+  it('shows Settings above Share & Embed, without scrolling, on ?tab=settings', () => {
+    renderAt('settings');
+    expect(screen.getByRole('tab', { name: 'Settings' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual(['Settings', 'Share & Embed']);
     expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
-  it('opens the same tab at its Settings section on ?tab=settings', () => {
-    renderAt('settings');
-    expect(screen.getByRole('tab', { name: 'Share & Settings' })).toHaveAttribute('aria-selected', 'true');
-    expect(screen.getByRole('heading', { name: 'Share & Embed' })).toBeInTheDocument();
+  it('opens the same tab scrolled down to Share & Embed on ?tab=share', () => {
+    renderAt('share');
+    expect(screen.getByRole('tab', { name: 'Settings' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
-    expect(scrollIntoView.mock.contexts[0]).toBe(document.getElementById('form-settings'));
+    expect(scrollIntoView.mock.contexts[0]).toBe(document.getElementById('form-share'));
   });
 
-  it('gives a Reviewer only Settings, on a tab named for it', () => {
+  it('gives a Reviewer only Settings, with no Share & Embed section at all', () => {
     role = 'reviewer';
-    renderAt('share');
+    renderAt('settings');
     expect(screen.getByRole('tab', { name: 'Settings' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.queryByRole('heading', { name: 'Share & Embed' })).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
   });
 
-  it('"Change who can respond" scrolls to Settings without leaving the tab', async () => {
-    renderAt('share');
+  it('"Change who can respond" scrolls up to Settings without leaving the tab', async () => {
+    renderAt('settings');
     await userEvent.click(screen.getByRole('button', { name: 'Change who can respond' }));
     expect(replace).not.toHaveBeenCalled();
     expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' });
   });
 
-  it('the publish check\'s "Change" goes to ?tab=settings and scrolls when the tab is already open', () => {
-    renderAt('share');
+  it('the publish check\'s "Change" goes straight to the Settings tab, no scroll needed', () => {
+    renderAt('settings');
     publishSetActiveTab!('settings');
     expect(replace).toHaveBeenCalledWith('/forms/f1/edit?tab=settings', { scroll: false });
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: 'start', behavior: 'smooth' });
+    expect(scrollIntoView).not.toHaveBeenCalled();
   });
 
-  it('clicking the tab opens it at the top', async () => {
+  it('clicking the tab opens it at the top (Settings), not scrolled to Share & Embed', async () => {
     renderAt('build');
     expect(screen.getByText('build panel')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('tab', { name: 'Share & Settings' }));
-    expect(replace).toHaveBeenCalledWith('/forms/f1/edit?tab=share', { scroll: false });
+    await userEvent.click(screen.getByRole('tab', { name: 'Settings' }));
+    expect(replace).toHaveBeenCalledWith('/forms/f1/edit?tab=settings', { scroll: false });
     expect(scrollIntoView).not.toHaveBeenCalled();
   });
 });

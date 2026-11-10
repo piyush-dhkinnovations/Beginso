@@ -19,6 +19,14 @@ import {
   Sparkles,
   FileText,
   DollarSign,
+  Building2,
+  Package,
+  ClipboardList,
+  Inbox,
+  UserPlus,
+  IdCard,
+  FileSignature,
+  ClipboardCheck,
   type LucideIcon,
 } from "lucide-react";
 import Navbar from "@/components/landing/Navbar";
@@ -47,6 +55,14 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   medicine: Stethoscope,
   personal: User,
   sales: DollarSign,
+  business: Building2,
+  order: Package,
+  "working forms": ClipboardList,
+  requests: Inbox,
+  registration: UserPlus,
+  membership: IdCard,
+  consent: FileSignature,
+  "inspection forms": ClipboardCheck,
 };
 const categoryIcon = (category: string): LucideIcon => CATEGORY_ICONS[category.toLowerCase()] ?? LayoutTemplate;
 
@@ -58,11 +74,22 @@ export default function DiscoverTemplatesPage() {
   const categories = ["All", ...Array.from(new Set((templates ?? []).map((t) => t.category)))];
   const filtered = category === "All" ? templates : templates?.filter((t) => t.category === category);
 
+  // Clicking a category near the bottom of the (now 20-long) sidebar list left the page scrolled
+  // wherever it was, with the newly-filtered grid rendering above the fold — looking like nothing
+  // happened. Jump back to the top of the page so the result is the first thing in view.
+  const selectCategory = (c: string) => {
+    setCategory(c);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <main className="min-h-screen bg-(--bg-page)">
       <Navbar />
 
-      <section className="pt-28 pb-16 md:pt-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Wider than blog/templates' own max-w-7xl: this page carries a sidebar beside a multi-column
+          grid, so the same 1280px cap left large, unused margins either side on anything wider than
+          a laptop screen — the exact "wasted space" the sidebar + cards design made worse, not the cards themselves. */}
+      <section className="pt-28 pb-16 md:pt-32 max-w-[96rem] mx-auto px-4 sm:px-6 lg:px-8">
         <div ref={headerRef} className={`reveal ${headerVisible ? "is-visible" : ""} text-center max-w-2xl mx-auto mb-10`}>
           <h1 className="bg-h1 text-(--text-primary) mb-3">Start from a template</h1>
           <p className="bg-body-lg text-(--text-secondary)">
@@ -111,7 +138,7 @@ export default function DiscoverTemplatesPage() {
                   <button
                     key={c}
                     type="button"
-                    onClick={() => setCategory(c)}
+                    onClick={() => selectCategory(c)}
                     aria-pressed={active}
                     className={bx(
                       "flex min-h-10 shrink-0 items-center gap-2.5 whitespace-nowrap rounded-full border px-4 text-[13px] font-medium capitalize transition-colors",
