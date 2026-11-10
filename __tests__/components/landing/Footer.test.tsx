@@ -46,4 +46,12 @@ describe('Footer component', () => {
     const hrefs = screen.getAllByRole('link').map((a) => a.getAttribute('href'));
     for (const dead of ['/docs', '/docs/api', '/help', '/about', '/contact']) expect(hrefs).not.toContain(dead);
   });
+
+  // Shared by the blog, legal and template pages: a bare #features there points at nothing, and /templates is the signed-in page.
+  it('links Templates to the public gallery and the section links back to the landing page', () => {
+    render(<Footer />);
+    expect(screen.getByRole('link', { name: 'Templates' })).toHaveAttribute('href', '/discover-templates');
+    expect(screen.getByRole('link', { name: 'Features' })).toHaveAttribute('href', '/#features');
+    expect(screen.getByRole('link', { name: 'How it works' })).toHaveAttribute('href', '/#how-it-works');
+  });
 });

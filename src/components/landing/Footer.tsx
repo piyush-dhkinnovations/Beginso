@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Wordmark } from "./Wordmark";
 import { CookieSettingsButton } from "./CookieSettingsButton";
 
@@ -5,9 +6,11 @@ const COLUMNS = [
   {
     title: "Product",
     links: [
-      { label: "Features", href: "#features" },
-      { label: "How it works", href: "#how-it-works" },
-      { label: "Templates", href: "/templates" },
+      // Rooted at "/" so they also work from the blog, legal and template pages that share this footer.
+      { label: "Features", href: "/#features" },
+      { label: "How it works", href: "/#how-it-works" },
+      // The public gallery: /templates is the signed-in workspace page and sends visitors to log in.
+      { label: "Templates", href: "/discover-templates" },
       { label: "Changelog", href: "/blog?category=Changelog" },
     ],
   },
@@ -47,9 +50,9 @@ export default function Footer() {
               <ul>
                 {column.links.map((link) => (
                   <li key={link.label}>
-                    <a href={link.href} className="inline-flex min-h-10 items-center bg-body-sm text-(--text-on-brand)/80 hover:text-(--text-on-brand) transition-colors">
+                    <Link href={link.href} className="inline-flex min-h-10 items-center bg-body-sm text-(--text-on-brand)/80 hover:text-(--text-on-brand) transition-colors">
                       {link.label}
-                    </a>
+                    </Link>
                   </li>
                 ))}
                 {column.title === "Legal" && (
