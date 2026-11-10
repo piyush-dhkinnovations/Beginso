@@ -37,4 +37,12 @@ describe('TemplateGalleryCard — preview and icon', () => {
     expect(container.querySelector('[aria-hidden="true"]')).toBeInTheDocument();
     expect(container.querySelectorAll('svg[viewBox="0 0 24 24"]').length).toBeGreaterThan(0);
   });
+
+  it('renders every category added by the catalog expansion without falling back to the neutral tint', () => {
+    const cats = ['Lead Generation', 'E-commerce', 'Contact us', 'Reservation/Booking', 'Education', 'Real Estate', 'Non-profit', 'Medicine', 'Personal'];
+    for (const category of cats) {
+      render(<TemplateGalleryCard template={tpl({ category })} />);
+      expect(screen.getByText(category)).toBeInTheDocument();
+    }
+  });
 });

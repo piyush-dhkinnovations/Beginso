@@ -63,6 +63,25 @@ describe('templateToPreviewSchema', () => {
     expect(templateToPreviewSchema({ ...BASE, category: 'general', settings: { honeypotEnabled: true, layout: 'guided' } }).settings.layout).toBe('guided');
     expect(templateToPreviewSchema({ ...BASE, category: 'hiring' }).branding).toEqual(templateToPreviewSchema({ ...BASE, category: 'hr' }).branding);
   });
+
+  it('gives every new catalog category its own layout and colour too', () => {
+    const cats = ['lead generation', 'e-commerce', 'contact us', 'reservation/booking', 'education', 'real estate', 'non-profit', 'medicine', 'personal'];
+    const schemas = cats.map((category) => templateToPreviewSchema({ ...BASE, category, settings: { honeypotEnabled: true } }));
+    expect(new Set(schemas.map((s) => s.branding.primaryColor)).size).toBe(cats.length);
+  });
+
+  it('uses the template\'s own real branding when it has one, instead of the computed category look', () => {
+    const real = { primaryColor: '#000000', fontFamily: 'caveat' as const, cardStyle: 'flat' as const };
+    const schema = templateToPreviewSchema({ ...BASE, category: 'hr', branding: real });
+    expect(schema.branding).toMatchObject(real);
+    // A category look's layout is only the fallback for a settings.layout a template doesn't name; branding bypasses it independently.
+    expect(schema.branding.primaryColor).not.toBe(templateToPreviewSchema({ ...BASE, category: 'hr' }).branding.primaryColor);
+  });
+
+  it('still falls back to the computed look when a template has no branding of its own', () => {
+    const schema = templateToPreviewSchema({ ...BASE, category: 'hr', branding: undefined });
+    expect(schema.branding.primaryColor).toBe('#0369a1');
+  });
 });
 
 describe('templatePreviewSlug', () => {
