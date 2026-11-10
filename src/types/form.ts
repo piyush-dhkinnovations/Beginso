@@ -413,6 +413,10 @@ export interface FormMark {
 
 export interface Template {
   _id: string;
+  // The public gallery's URL segment (/discover-templates/:slug) — a readable name instead of the
+  // raw id. Absent on a template from a backend that predates this field; the gallery falls back
+  // to the id in that case (lib/templateSlug.ts).
+  slug?: string;
   name: string;
   description: string;
   category: string;      // e.g. 'contact' | 'event' | 'feedback' | 'hiring'
@@ -422,6 +426,11 @@ export interface Template {
   isActive: boolean;
   showInGallery?: boolean; // false = internal/demo template, hidden from the public gallery
   source?: 'workspace' | 'beginso'; // Backend contract to confirm (BE 0.13) — absent = beginso
+  // Template catalog expansion (Nov 2026): a curated built-in template, or one published from a real
+  // form, can carry its own real branding — copied onto the new form the moment "Use this template"
+  // runs (see POST /api/templates/:id/use), not just a client-computed look for the gallery preview.
+  // Absent on an older template, which still falls back to templatePreview.ts's computed `templateLook()`.
+  branding?: FormBranding;
 }
 
 // ─── File Upload ──────────────────────────────────────────────────────────────

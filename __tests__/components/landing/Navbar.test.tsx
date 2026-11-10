@@ -87,4 +87,22 @@ describe('Navbar component', () => {
     fireEvent.keyDown(window, { key: 'Escape' });
     expect(document.getElementById('mobile-menu')).toBeNull();
   });
+
+  // A <button> inside an <a> is invalid HTML and is focused twice with Tab: the calls to action are links styled as buttons.
+  it('renders its calls to action as links, never a button inside a link', () => {
+    render(<Navbar />);
+    fireEvent.click(screen.getByLabelText('Open main menu'));
+    expect(document.querySelectorAll('a button')).toHaveLength(0);
+    expect(screen.getAllByRole('link', { name: 'Create a form' })[0]).toHaveAttribute('href', '/try');
+    expect(screen.getAllByRole('link', { name: 'Log in' }).map((a) => a.getAttribute('href'))).toContain('/login');
+  });
+
+  it('stops the page scrolling while the mobile menu is open, and restores it on close', () => {
+    render(<Navbar />);
+    expect(document.body.style.overflow).toBe('');
+    fireEvent.click(screen.getByLabelText('Open main menu'));
+    expect(document.body.style.overflow).toBe('hidden');
+    fireEvent.click(screen.getByLabelText('Close main menu'));
+    expect(document.body.style.overflow).toBe('');
+  });
 });

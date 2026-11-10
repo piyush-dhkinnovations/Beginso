@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/Button";
+import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Wordmark } from "./Wordmark";
@@ -40,6 +40,16 @@ export default function Navbar() {
     window.addEventListener("keydown", handleEscape);
     return () => window.removeEventListener("keydown", handleEscape);
   }, []);
+
+  // The open menu covers the whole screen: the page under it must not scroll with it.
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [isMobileMenuOpen]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -82,9 +92,7 @@ export default function Navbar() {
 
           <div className="hidden md:flex items-center gap-4">
             {isAuthenticated ? (
-              <Link href="/dashboard">
-                <Button variant="primary">Go to dashboard</Button>
-              </Link>
+              <ButtonLink href="/dashboard" variant="primary">Go to dashboard</ButtonLink>
             ) : (
               <>
                 <Link
@@ -93,9 +101,7 @@ export default function Navbar() {
                 >
                   Log in
                 </Link>
-                <Link href="/try">
-                  <Button variant="primary" className="btn-try">Create a form</Button>
-                </Link>
+                <ButtonLink href="/try" variant="primary" className="btn-try">Create a form</ButtonLink>
               </>
             )}
           </div>
@@ -133,23 +139,17 @@ export default function Navbar() {
           </nav>
           <div className="mt-6 border-t border-(--border-default) pt-6">
             {isAuthenticated ? (
-              <Link href="/dashboard" onClick={() => setIsMobileMenuOpen(false)}>
-                <Button variant="primary" className="w-full justify-center">
-                  Go to dashboard
-                </Button>
-              </Link>
+              <ButtonLink href="/dashboard" variant="primary" className="w-full justify-center" onClick={() => setIsMobileMenuOpen(false)}>
+                Go to dashboard
+              </ButtonLink>
             ) : (
               <div className="flex flex-col gap-3">
-                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button variant="secondary" className="w-full justify-center">
-                    Log in
-                  </Button>
-                </Link>
-                <Link href="/try" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Button variant="primary" className="w-full justify-center">
-                    Create a form
-                  </Button>
-                </Link>
+                <ButtonLink href="/login" variant="secondary" className="w-full justify-center" onClick={() => setIsMobileMenuOpen(false)}>
+                  Log in
+                </ButtonLink>
+                <ButtonLink href="/try" variant="primary" className="w-full justify-center" onClick={() => setIsMobileMenuOpen(false)}>
+                  Create a form
+                </ButtonLink>
               </div>
             )}
           </div>

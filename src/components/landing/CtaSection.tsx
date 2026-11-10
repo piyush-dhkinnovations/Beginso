@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { Button } from "@/components/ui/Button";
+import { ButtonLink } from "@/components/ui/ButtonLink";
 import { useReveal } from "@/hooks/useReveal";
 
 export default function CtaSection() {
@@ -16,19 +15,16 @@ export default function CtaSection() {
           Start working your responses instead.
         </h2>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link href="/try" className="w-full sm:w-auto">
-            <Button
-              variant="primary"
-              className="btn-try w-full sm:w-auto h-12 px-10 bg-body-lg bg-(--surface-card) text-(--text-primary) hover:bg-(--bg-sunken) border-none shadow-(--shadow-md)"
-            >
-              Create a form
-            </Button>
-          </Link>
-          <Link href="/discover-templates" className="w-full sm:w-auto">
-            <Button variant="ghost" className="w-full sm:w-auto h-12 px-10 bg-body-lg text-(--text-on-brand) hover:bg-(--surface-card)/10">
-              Browse templates
-            </Button>
-          </Link>
+          <ButtonLink
+            href="/try"
+            variant="primary"
+            className="btn-try w-full sm:w-auto h-12 px-10 justify-center bg-body-lg bg-(--surface-card) text-(--text-primary) hover:bg-(--bg-sunken) border-none shadow-(--shadow-md)"
+          >
+            Create a form
+          </ButtonLink>
+          <ButtonLink href="/discover-templates" variant="ghost" className="w-full sm:w-auto h-12 px-10 justify-center bg-body-lg text-(--text-on-brand) hover:bg-(--surface-card)/10">
+            Browse templates
+          </ButtonLink>
         </div>
       </div>
     </section>

@@ -38,6 +38,25 @@ describe('security headers', () => {
     expect(headerValue('X-Frame-Options')).toBe('SAMEORIGIN');
   });
 
+  it('allows the template detail page to embed its own device-preview route in a same-origin iframe', async () => {
+    const getHeaders = nextConfig.headers as (() => Promise<HeaderRule[]>) | undefined;
+    const rules = await getHeaders!();
+    const frameRule = rules.find((rule) => rule.source === '/discover-templates/:slug/preview');
+    const headerValue = (key: string) => frameRule?.headers.find((header) => header.key === key)?.value;
+
+    expect(frameRule).toBeDefined();
+    expect(headerValue('Content-Security-Policy')).toContain("frame-ancestors 'self'");
+    expect(headerValue('X-Frame-Options')).toBe('SAMEORIGIN');
+
+    // The blanket rule's own negative lookahead must also exclude this path, or CSP's "multiple
+    // matching rules combine by intersection" (next.config.ts's own comment) would silently
+    // re-tighten it back to frame-ancestors 'none'. The catch-all is the one rule whose source is
+    // itself a regex (starts with the negative-lookahead group), not the other, more specific
+    // rules (like /r/:path*) that also happen to carry frame-ancestors 'none'.
+    const blanket = rules.find((rule) => rule.source.startsWith('/((?!'));
+    expect(blanket?.source).toContain('discover-templates');
+  });
+
   it('serves static art with a day of caching and no X-Powered-By (these were revalidated on every load)', async () => {
     const rules = await (nextConfig.headers as () => Promise<HeaderRule[]>)();
     const cacheOf = (source: string) => rules.find((r) => r.source === source)?.headers.find((h) => h.key === 'Cache-Control')?.value;

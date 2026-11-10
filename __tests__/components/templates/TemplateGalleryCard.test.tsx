@@ -12,10 +12,9 @@ describe('TemplateGalleryCard', () => {
     expect(screen.getByRole('link')).toHaveAttribute('href', '/discover-templates/t1');
   });
 
-  it('shows name, category, description and field count', () => {
+  it('shows name, description and field count (no category badge over the real form preview)', () => {
     render(<TemplateGalleryCard template={tpl()} />);
     expect(screen.getByRole('heading', { name: 'Job Application' })).toBeInTheDocument();
-    expect(screen.getByText('hr')).toBeInTheDocument();
     expect(screen.getByText('Collect CVs')).toBeInTheDocument();
     expect(screen.getByText('3 fields')).toBeInTheDocument();
   });
@@ -36,5 +35,12 @@ describe('TemplateGalleryCard — preview and icon', () => {
     const { container } = render(<TemplateGalleryCard template={tpl({ name: 'Event Registration', category: 'events' })} />);
     expect(container.querySelector('[aria-hidden="true"]')).toBeInTheDocument();
     expect(container.querySelectorAll('svg[viewBox="0 0 24 24"]').length).toBeGreaterThan(0);
+  });
+
+  it('renders without throwing for every category added by the catalog expansion', () => {
+    const cats = ['Lead Generation', 'E-commerce', 'Contact us', 'Reservation/Booking', 'Education', 'Real Estate', 'Non-profit', 'Medicine', 'Personal', 'Business', 'Order', 'Working Forms', 'Requests', 'Registration', 'Membership', 'Consent', 'Inspection Forms'];
+    for (const category of cats) {
+      expect(() => render(<TemplateGalleryCard template={tpl({ category })} />)).not.toThrow();
+    }
   });
 });
