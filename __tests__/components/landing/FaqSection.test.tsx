@@ -27,4 +27,10 @@ describe('FaqSection', () => {
     render(<FaqSection />);
     expect(screen.getByText(/Raw IPs are never saved/)).toBeInTheDocument();
   });
+
+  // Forms can ask respondents to confirm their email first (Settings > Who can respond): the answer must not say "never".
+  it('says respondents need no account, and mentions the optional email check', () => {
+    render(<FaqSection />);
+    expect(screen.getByText(/confirm their email with a one-time code first: still no account/)).toBeInTheDocument();
+  });
 });

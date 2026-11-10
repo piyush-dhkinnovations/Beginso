@@ -1,8 +1,7 @@
 "use client";
 
 import { Fragment } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/Button";
+import { ButtonLink } from "@/components/ui/ButtonLink";
 import { Play } from "lucide-react";
 import { useReveal } from "@/hooks/useReveal";
 import ProductMockup from "./ProductMockup";
@@ -59,17 +58,13 @@ export default function HeroSection() {
             className={`reveal ${ctasVisible ? "is-visible" : ""} flex flex-col sm:flex-row items-center gap-4`}
             style={{ "--reveal-delay": "240ms" } as React.CSSProperties}
           >
-            <Link href="/try" className="w-full sm:w-auto">
-              <Button variant="primary" size="default" className="btn-try w-full sm:w-auto h-11 px-8">
-                Create a form
-              </Button>
-            </Link>
-            <a href="#how-it-works" className="w-full sm:w-auto">
-              <Button variant="ghost" size="default" className="w-full sm:w-auto h-11 px-8 gap-2">
-                <Play size={16} aria-hidden="true" />
-                See how it works
-              </Button>
-            </a>
+            <ButtonLink href="/try" variant="primary" className="btn-try w-full sm:w-auto h-11 px-8 justify-center">
+              Create a form
+            </ButtonLink>
+            <ButtonLink href="#how-it-works" variant="ghost" className="w-full sm:w-auto h-11 px-8 gap-2 justify-center">
+              <Play size={16} aria-hidden="true" />
+              See how it works
+            </ButtonLink>
           </div>
 
           <p className="bg-caption text-(--text-muted) mt-4">

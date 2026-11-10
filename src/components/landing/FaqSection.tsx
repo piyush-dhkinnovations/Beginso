@@ -6,7 +6,7 @@ import { useReveal } from "@/hooks/useReveal";
 const FAQS = [
   {
     q: "Do respondents need an account?",
-    a: "No. They open the link and fill it in. Nothing to sign up for and nothing to install.",
+    a: "No. They open the link and fill it in. Nothing to sign up for and nothing to install. If you need to know who responded, you can ask them to confirm their email with a one-time code first: still no account.",
   },
   {
     q: "What happens after someone submits?",
