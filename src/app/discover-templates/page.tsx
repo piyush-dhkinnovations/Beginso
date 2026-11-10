@@ -125,12 +125,20 @@ export default function DiscoverTemplatesPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-8 md:flex-row md:items-start">
-            {/* A horizontal scroller under md (same buttons as the reference's sidebar, just laid out for a thumb),
-                a sticky vertical list of categories from md up — one icon each, like the reference screenshot. */}
-            <nav
-              aria-label="Template categories"
-              className="flex shrink-0 gap-2 overflow-x-auto pb-1 md:sticky md:top-28 md:w-56 md:flex-col md:gap-1 md:overflow-visible md:pb-0"
-            >
+            {/* A horizontal scroller under md (same buttons as the reference's sidebar, just laid out for a thumb);
+                pinned in place as the page scrolls from md up. `sticky` and the list's own scrolling (20
+                categories is taller than most viewports) deliberately live on two different elements, not one:
+                combining them on a single element made a click on any button inside it escalate to scrolling
+                the whole page, not just the list — a sticky element doesn't establish a proper scroll boundary
+                of its own, so the browser's "bring the clicked thing into view" search kept walking past it to
+                the document. This outer div only ever does the sticky pinning; the nav inside it only ever does
+                the internal scroll (scrollbar hidden — still scrolls by wheel/touch/drag — same trick
+                LiveFormPreview.tsx already uses for a scrollable preview stage). */}
+            <div className="shrink-0 md:sticky md:top-28">
+              <nav
+                aria-label="Template categories"
+                className="flex gap-2 overflow-x-auto pb-1 md:max-h-[calc(100vh-8rem)] md:w-56 md:flex-col md:gap-1 md:overflow-y-auto md:overflow-x-visible md:pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
               {categories.map((c) => {
                 const Icon = c === "All" ? LayoutGrid : categoryIcon(c);
                 const active = category === c;
@@ -153,7 +161,8 @@ export default function DiscoverTemplatesPage() {
                   </button>
                 );
               })}
-            </nav>
+              </nav>
+            </div>
 
             <div className="grid min-w-0 flex-1 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filtered?.map((template) => (

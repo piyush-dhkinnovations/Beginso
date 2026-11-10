@@ -22,6 +22,10 @@ import type { Template } from '@/types/form';
 
 type SortKey = 'relevant' | 'name' | 'fields';
 
+// Beyond this many pills (counting "All"), the row wraps across two or three lines once the
+// catalog has 20 categories — collapsed to one row, with the rest a click away.
+const VISIBLE_CATEGORY_COUNT = 6;
+
 // Sprint 13 (B6.1–B6.3). One page for both contexts, like FormsPage: `scope` is 'personal' (Beginso templates
 // only — A4.1) or a workspace slug (the workspace's OWN templates first, section hidden when empty, then
 // Beginso's). Never "My templates" — they belong to the workspace, same rule as forms.
@@ -34,6 +38,7 @@ export default function TemplatesPage({ scope = 'personal' }: TemplatesPageProps
   const isWorkspace = scope !== 'personal';
   const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState('All');
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortKey>('relevant');
   const [usingId, setUsingId] = useState<string | null>(null);
@@ -64,6 +69,14 @@ export default function TemplatesPage({ scope = 'personal' }: TemplatesPageProps
   });
 
   const categories = ['All', ...new Set((templates ?? []).map((t) => t.category))];
+  // The active category always stays visible even once collapsed, so picking one from the
+  // overflow and collapsing back again doesn't hide which filter is actually applied.
+  const collapsible = categories.length > VISIBLE_CATEGORY_COUNT;
+  const shownCategories =
+    showAllCategories || !collapsible
+      ? categories
+      : Array.from(new Set([...categories.slice(0, VISIBLE_CATEGORY_COUNT), activeCategory]));
+  const hiddenCount = categories.length - shownCategories.length;
 
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -128,8 +141,8 @@ export default function TemplatesPage({ scope = 'personal' }: TemplatesPageProps
       ) : (
         <>
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by category">
-              {categories.map((category) => (
+            <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filter by category">
+              {shownCategories.map((category) => (
                 <button
                   key={category}
                   type="button"
@@ -145,6 +158,16 @@ export default function TemplatesPage({ scope = 'personal' }: TemplatesPageProps
                   {category}
                 </button>
               ))}
+              {collapsible && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllCategories((v) => !v)}
+                  aria-expanded={showAllCategories}
+                  className="min-h-8 rounded-full px-4 bg-body-sm font-semibold text-(--text-link) underline underline-offset-2 hover:text-(--text-primary)"
+                >
+                  {showAllCategories ? 'Show fewer' : `View more (+${hiddenCount})`}
+                </button>
+              )}
             </div>
             <div className="flex w-full gap-2 sm:w-auto">
               <div className="flex-1 sm:w-56 sm:flex-none">
