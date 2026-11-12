@@ -105,7 +105,7 @@ jobs:
 
       # Next keeps what it compiled last time here; restoring it makes an unchanged build much faster. A cache miss only costs time.
       - name: Restore the Next build cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .next/cache
           key: next-build-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'next.config.ts') }}
