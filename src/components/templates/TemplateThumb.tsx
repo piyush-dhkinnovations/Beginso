@@ -65,6 +65,9 @@ export function TemplateThumb({ template }: { template: Template }) {
   const fields = schema.fields.filter((f) => !f.deleted);
   const shown = oneAtATime ? fields.slice(0, 1) : fields.slice(0, 3);
   const buttonStyle = brandButtonStyle(schema.branding);
+  // A card shows the TOP of the form: its title and first questions. A template whose cover is set to "show the whole picture" would fill the whole
+  // card with a photo (or a plain colour when the photo is dark or missing) and hide the form, so the card always draws the cover as a banner strip.
+  const branding = { ...schema.branding, coverFit: 'banner' as const };
 
   // Measured, not assumed: the card's real rendered width varies by grid column count and viewport, so the scale factor
   // is read back from the frame itself (same technique LiveFormPreview.tsx already uses for the Branding studio's preview).
@@ -95,7 +98,7 @@ export function TemplateThumb({ template }: { template: Template }) {
         >
           <LayoutFrame
             layout={layout}
-            branding={schema.branding}
+            branding={branding}
             title={schema.title}
             previewMode
             stepNames={stepNames}

@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { DeviceToggle, type PreviewDevice } from '@/components/preview/DeviceToggle';
 import { TemplatePreviewFrame } from '@/components/templates/TemplatePreviewFrame';
 import { templateHref } from '@/lib/templateSlug';
+import { groupLabel } from '@/lib/templateGallery';
 import { IconArt } from '@/components/forms/FormIcon';
 import { suggestFormIcon } from '@/lib/formIcons';
 import { LAYOUT_PRESETS, normaliseLayout } from '@/lib/layoutPresets';
@@ -93,7 +94,7 @@ export default function TemplateDetailPage() {
               if it is taller than that, so the form is always on screen next to them without anything tracking the other. */}
           <div className="flex flex-col gap-8 md:h-[calc(100vh-11rem)] md:flex-row md:gap-10">
             <div className="md:h-full md:w-1/3 md:overflow-y-auto md:pr-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
-              <Badge variant="primary" pill className="mb-3 capitalize">{template.category}</Badge>
+              <Badge variant="primary" pill className="mb-3 capitalize">{groupLabel(template.category)}</Badge>
               <h1 className="text-[28px] md:text-[36px] font-extrabold text-(--text-primary) leading-[1.15] mb-3">
                 {template.name}
               </h1>
@@ -149,7 +150,7 @@ export default function TemplateDetailPage() {
 
               {related.length > 0 && (
                 <section aria-labelledby="related-heading" className="mt-10">
-                  <h2 id="related-heading" className="bg-h5 mb-3 text-(--text-primary)">More in {template.category}</h2>
+                  <h2 id="related-heading" className="bg-h5 mb-3 text-(--text-primary)">More in {groupLabel(template.category)}</h2>
                   <ul className="grid gap-2.5 sm:grid-cols-2 md:grid-cols-1 xl:grid-cols-2">
                     {related.map((t) => {
                       const icon = suggestFormIcon(t.name);

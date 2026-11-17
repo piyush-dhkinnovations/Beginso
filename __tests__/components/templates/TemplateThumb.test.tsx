@@ -73,3 +73,22 @@ describe('TemplateThumb', () => {
     expect(container.querySelector('img[alt=""]')).toHaveAttribute('src', expect.stringContaining('images.unsplash.com'));
   });
 });
+
+describe('TemplateThumb: a cover photo never hides the form', () => {
+  const withCover = (coverFit: 'original' | 'banner') =>
+    tpl({ branding: { coverImageUrl: '/form-pictures/sand-dunes.jpg', coverFit, primaryColor: '#92400E' } as never });
+
+  it('draws a "whole picture" cover as a banner strip, so the title and the first questions still show', () => {
+    const { container } = render(<TemplateThumb template={withCover('original')} />);
+    const img = container.querySelector('img') as HTMLImageElement;
+    expect(img).not.toBeNull();
+    expect(img.className).toContain('absolute'); // cropped to the strip
+    expect(img.className).not.toContain('h-auto'); // not the picture at its own full height
+    expect(screen.getByText('Full name')).toBeInTheDocument();
+  });
+
+  it('leaves a banner cover as it was', () => {
+    const { container } = render(<TemplateThumb template={withCover('banner')} />);
+    expect((container.querySelector('img') as HTMLImageElement).className).toContain('absolute');
+  });
+});
