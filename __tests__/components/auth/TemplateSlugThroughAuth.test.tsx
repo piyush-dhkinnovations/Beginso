@@ -98,9 +98,10 @@ describe('email sign-up and sign-in carry it too', () => {
     render(<SignupForm />);
     fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: 'Asha Rao' } });
     fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: 'asha@example.com' } });
-    fireEvent.change(screen.getByLabelText(/^password$/i), { target: { value: 'Str0ng-pass!word' } });
-    fireEvent.change(screen.getByLabelText(/confirm password/i), { target: { value: 'Str0ng-pass!word' } });
-    fireEvent.click(screen.getByRole('button', { name: /create account|sign up/i }));
+    const passwords = document.querySelectorAll('input[type="password"]');
+    fireEvent.change(passwords[0] as HTMLElement, { target: { value: 'Str0ng-pass!word' } });
+    fireEvent.change(passwords[1] as HTMLElement, { target: { value: 'Str0ng-pass!word' } });
+    fireEvent.click(screen.getByRole('button', { name: /sign up$/i }));
     await waitFor(() => expect(mockPush).toHaveBeenCalled());
     expect(mockPush).toHaveBeenCalledWith(`/verify-email?next=${encodeURIComponent(APPLY)}`);
   });

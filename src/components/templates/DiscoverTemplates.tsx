@@ -120,7 +120,6 @@ export function DiscoverTemplates({ initial, initialCategory, initialQuery }: Di
   useEffect(() => {
     if (appliedInitial.current || !data) return;
     appliedInitial.current = true;
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- the address's category can only be resolved once the groups are known
     setCategory(resolveCategory(initialCategory, data.groups));
   }, [data, initialCategory]);
 

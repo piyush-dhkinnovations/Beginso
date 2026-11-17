@@ -15,15 +15,13 @@ import { useTemplateHref, type GalleryCard } from '@/lib/templateGallery';
 /** True once the element is within a screen's height of the viewport (always true where IntersectionObserver is missing). */
 function useNearViewport<T extends HTMLElement>(): [React.RefObject<T | null>, boolean] {
   const ref = useRef<T>(null);
-  const [near, setNear] = useState(false);
+  // Without IntersectionObserver (an old browser, the server) there is nothing to wait for. On the server the picture is a placeholder either way
+  // (the full list is not loaded there), so the first paint is the same.
+  const [near, setNear] = useState(() => typeof IntersectionObserver === 'undefined');
   useEffect(() => {
     if (near) return;
     const el = ref.current;
-    if (!el) return;
-    if (typeof IntersectionObserver === 'undefined') {
-      setNear(true);
-      return;
-    }
+    if (!el || typeof IntersectionObserver === 'undefined') return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {

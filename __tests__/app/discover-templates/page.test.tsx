@@ -50,7 +50,8 @@ describe('the gallery page: body', () => {
   it('puts the cards in the server-rendered HTML', async () => {
     fetchGallery.mockResolvedValue(DATA);
     const page = await DiscoverTemplatesPage({ searchParams: Promise.resolve({}) });
-    const html = renderToString(page);
+    // renderToString puts a comment between two pieces of text that sit next to each other; a reader of the HTML does not see it
+    const html = renderToString(page).replace(/<!-- -->/g, '');
     expect(html).toContain('Start from a template');
     expect(html).toContain('Job Application');
     expect(html).toContain('Wedding RSVP');

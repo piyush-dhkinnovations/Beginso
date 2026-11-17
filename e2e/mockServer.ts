@@ -170,6 +170,22 @@ const server = http.createServer(async (req, res) => {
     ] }));
     return;
   }
+  // The gallery's slim cards (GET /api/templates/gallery), featured first, with the groups and their counts. The page asks for this on the server.
+  if (url.pathname === '/api/templates/gallery') {
+    const c = (slug: string, name: string, category: string, description: string, over: Record<string, unknown> = {}) => ({ slug, name, description, category, tags: [], fieldCount: 6, estimatedMinutes: 2, featured: false, sortOrder: 100, layout: 'card_stack', thumbnail: null, ...over });
+    const data = [
+      c('volunteer-signup', 'Volunteer Signup', 'Community & Membership', 'Recruit volunteers and learn about their interests and availability.', { featured: true, sortOrder: 1 }),
+      c('donation-form', 'Donation Form', 'Orders & Payments', 'Accept a gift and let the donor say what it is for.', { featured: true, sortOrder: 2, fieldCount: 5 }),
+      c('job-application', 'Job Application', 'HR & Hiring', 'Collect CVs and cover letters from candidates.', { sortOrder: 10 }),
+      c('exit-interview', 'Exit Interview', 'HR & Hiring', 'Learn why someone is leaving.', { sortOrder: 11, fieldCount: 4 }),
+      c('wedding-rsvp', 'Wedding RSVP', 'Events & RSVPs', 'A warm RSVP for a wedding, with a meal choice.', { sortOrder: 20, fieldCount: 5 }),
+      c('long-survey', 'Long Survey', 'Feedback & Surveys', 'Fourteen questions, for testing a long form.', { sortOrder: 30, fieldCount: 14, estimatedMinutes: 4 }),
+    ];
+    const names = [...new Set(data.map((d) => d.category))];
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ success: true, data, categories: names.map((name) => ({ name, count: data.filter((d) => d.category === name).length })) }));
+    return;
+  }
   if (url.pathname === '/api/auth/me') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ success: true, user: { id: 'e2e-user', name: 'E2E User', email: 'e2e@example.com', onboardingCompleted: true } }));
