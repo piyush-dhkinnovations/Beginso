@@ -42,6 +42,29 @@ beforeEach(() => {
 
 const cardNames = () => screen.queryAllByRole('heading', { level: 3 }).map((h) => h.textContent);
 
+describe('the gallery: a server list that leaves templates out', () => {
+  it('shows every group, not only the two the server counted, and the counts add up to All', () => {
+    const partial: GalleryData = {
+      cards: [
+        card('a', 'Job Application', 'HR'),
+        card('b', 'Exit Interview', 'HR'),
+        card('c', 'Wedding RSVP', 'Events'),
+        card('d', 'Course Signup', 'Education'),
+        card('e', 'Tour Booking', 'Real Estate'),
+      ],
+      groups: [{ name: 'Education', count: 1 }, { name: 'Real Estate', count: 1 }],
+    };
+    render(<DiscoverTemplates initial={partial} />);
+    const nav = screen.getByRole('navigation', { name: 'Template categories' });
+    const names = within(nav).getAllByRole('button').map((b) => b.textContent ?? '');
+    expect(names.some((n) => n.startsWith('HR'))).toBe(true);
+    expect(names.some((n) => n.startsWith('Events'))).toBe(true);
+    expect(names.some((n) => n.startsWith('Education'))).toBe(true);
+    expect(names.some((n) => n.startsWith('Real Estate'))).toBe(true);
+    expect(names[0]).toContain('5');
+  });
+});
+
 describe('the gallery: what the server sent', () => {
   it('has every card in the HTML a server renders, before any script runs', () => {
     const html = renderToString(<DiscoverTemplates initial={DATA} />);

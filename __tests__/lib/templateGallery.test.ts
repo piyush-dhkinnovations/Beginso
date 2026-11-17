@@ -8,6 +8,7 @@ import {
   cleanQuery,
   filterCards,
   groupsFromCards,
+  groupsThatAddUp,
   resolveCategory,
   useTemplateHref,
   type GalleryCard,
@@ -153,5 +154,28 @@ describe('the page title and description', () => {
     expect(DISCOVER_DESCRIPTION).toMatch(/events/);
     expect(DISCOVER_DESCRIPTION).toMatch(/feedback/);
     expect(DISCOVER_TITLE.length).toBeGreaterThan(10);
+  });
+});
+
+describe('groupsThatAddUp', () => {
+  const c = (category: string) => cardFromTemplate({ _id: category, slug: category, name: category, category, fields: [], isActive: true } as never, 1);
+  it('keeps the server groups when they account for every card', () => {
+    const cards = [c('HR & Hiring'), c('HR & Hiring'), c('Healthcare')];
+    const groups = [{ name: 'HR & Hiring', count: 2 }, { name: 'Healthcare', count: 1 }];
+    expect(groupsThatAddUp(cards, groups)).toBe(groups);
+  });
+
+  it('works the groups out from the cards when the server list leaves cards out', () => {
+    const cards = [c('HR'), c('HR'), c('Events'), c('Education'), c('Real Estate')];
+    const partial = [{ name: 'Education', count: 1 }, { name: 'Real Estate', count: 1 }];
+    const groups = groupsThatAddUp(cards, partial);
+    expect(groups.map((g) => g.name).sort()).toEqual(['Education', 'Events', 'HR', 'Real Estate']);
+    expect(groups.reduce((n, g) => n + g.count, 0)).toBe(cards.length);
+  });
+
+  it('works them out when the server sends none, or counts that do not add up', () => {
+    const cards = [c('A'), c('B')];
+    expect(groupsThatAddUp(cards, [])).toEqual([{ name: 'A', count: 1 }, { name: 'B', count: 1 }]);
+    expect(groupsThatAddUp(cards, [{ name: 'A', count: 1 }, { name: 'B', count: 5 }]).map((g) => g.count)).toEqual([1, 1]);
   });
 });

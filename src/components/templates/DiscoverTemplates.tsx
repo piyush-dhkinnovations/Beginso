@@ -36,6 +36,7 @@ import {
   cleanQuery,
   filterCards,
   groupsFromCards,
+  groupsThatAddUp,
   resolveCategory,
   type GalleryData,
 } from '@/lib/templateGallery';
@@ -105,13 +106,13 @@ export function DiscoverTemplates({ initial, initialCategory, initialQuery }: Di
   const { data: full, isLoading, error } = usePublicTemplates({ enabled: !initial });
 
   const data = useMemo<GalleryData | null>(() => {
-    if (initial) return { cards: initial.cards, groups: initial.groups.length ? initial.groups : groupsFromCards(initial.cards) };
+    if (initial) return { cards: initial.cards, groups: groupsThatAddUp(initial.cards, initial.groups) };
     if (!full) return null;
     const cards = full.filter((t) => t.showInGallery !== false).map((t, i) => cardFromTemplate(t, i + 1));
     return { cards, groups: groupsFromCards(cards) };
   }, [initial, full]);
 
-  const [category, setCategory] = useState<string>(() => (initial ? resolveCategory(initialCategory, initial.groups.length ? initial.groups : groupsFromCards(initial.cards)) : ALL));
+  const [category, setCategory] = useState<string>(() => (initial ? resolveCategory(initialCategory, groupsThatAddUp(initial.cards, initial.groups)) : ALL));
   const [text, setText] = useState<string>(() => cleanQuery(initialQuery));
   const q = cleanQuery(text);
 
