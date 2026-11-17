@@ -87,7 +87,14 @@ export type UrlDisplay = 'card' | 'inline';
 
 /** Fields with no settings beyond the common ones. */
 export interface SimpleField extends BaseField {
-  type: 'rating' | 'yes_no' | 'time' | 'datetime' | 'address' | 'signature';
+  type: 'rating' | 'time' | 'datetime' | 'address' | 'signature';
+}
+
+/** A Yes / No question. The words on the two buttons can be changed; the answer stored is still "Yes" or "No". */
+export interface YesNoField extends BaseField {
+  type: 'yes_no';
+  yesLabel?: string; // default "Yes"
+  noLabel?: string;  // default "No"
 }
 
 export interface CurrencyField extends BaseField, NumberConstraints {
@@ -114,7 +121,7 @@ export interface ImageUploadField extends BaseField {
   previewSize?: ImagePreviewSize;       // default 'large'
 }
 
-export type FormField = TextField | ChoiceField | FileUploadField | SimpleField | CurrencyField | UrlField | ImageUploadField;
+export type FormField = TextField | ChoiceField | FileUploadField | SimpleField | YesNoField | CurrencyField | UrlField | ImageUploadField;
 
 // ─── Pages (multi-page / multi-step forms) ───────────────────────────────────
 // Every form has at least one page, even simple single-page forms — a page is

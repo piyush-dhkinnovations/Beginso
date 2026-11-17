@@ -53,6 +53,12 @@ export function validateImage(file: File, maxSizeMb: number): string | null {
 
 // ─── URL ─────────────────────────────────────────────────────────────────────
 
+/** The words on a Yes / No question's two buttons. The stored answer is always "Yes" or "No"; only what is shown changes. */
+export function yesNoWords(field?: { type?: string; yesLabel?: string; noLabel?: string }): { yes: string; no: string } {
+  const f = field?.type === 'yes_no' ? field : undefined;
+  return { yes: f?.yesLabel?.trim() || 'Yes', no: f?.noLabel?.trim() || 'No' };
+}
+
 export interface UrlSettings {
   style: UrlPreviewStyle;
   display: UrlDisplay;

@@ -157,3 +157,16 @@ describe('address and signature', () => {
     expect(isDrawnSignature(`data:image/png;base64,${'A'.repeat(300_001)}`)).toBe(false);
   });
 });
+
+describe('yesNoWords', () => {
+  it('defaults to Yes and No, and for any other field type', async () => {
+    const { yesNoWords } = await import('@/lib/fieldDisplay');
+    expect(yesNoWords({ type: 'yes_no' })).toEqual({ yes: 'Yes', no: 'No' });
+    expect(yesNoWords({ type: 'short_text', yesLabel: 'Going' })).toEqual({ yes: 'Yes', no: 'No' });
+    expect(yesNoWords(undefined)).toEqual({ yes: 'Yes', no: 'No' });
+  });
+  it('uses the trimmed words the owner set', async () => {
+    const { yesNoWords } = await import('@/lib/fieldDisplay');
+    expect(yesNoWords({ type: 'yes_no', yesLabel: ' Going ', noLabel: 'Not going' })).toEqual({ yes: 'Going', no: 'Not going' });
+  });
+});
