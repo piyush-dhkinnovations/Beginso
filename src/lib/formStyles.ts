@@ -3,7 +3,7 @@
 // "My styles" are saved through /api/form-styles; the ready-made gallery (GALLERY_STYLES) is code, no server needed.
 import { cleanTheme } from '@/lib/formTheme';
 import { isBuiltInPictureUrl } from '@/lib/formPictures';
-import type { FormBranding, FormFont, FormTheme, LayoutPreset } from '@/types/form';
+import type { FormBranding, FormTheme, LayoutPreset } from '@/types/form';
 
 /** The branding keys a style carries. The images are handled on their own (only a library picture is kept). */
 const STYLE_KEYS = [
@@ -94,153 +94,26 @@ function sortKeys(value: unknown): unknown {
 }
 
 // ── The ready-made gallery ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-// Each one is a whole look (layout, colours, typeface, card, fields, background). Colours are chosen to pass the studio's own readability checks
-// (see __tests__/lib/formStyles.test.ts): text 4.5 to 1, a field border 3 to 1.
+// The Looks live in ONE file the backend owns (Beginso-Backend/src/data/formLooks.json), served by GET /api/form-looks. `src/data/formLooks.json` is a
+// copy of it (npm run sync:looks) that the app uses when the API cannot be reached; useFormLooks prefers the live list. Each one is a whole look (layout,
+// colours, typeface, card, fields, background); their colours are checked for readability in the backend's tests and again here
+// (__tests__/lib/formStyles.test.ts): text 4.5 to 1, a field border 3 to 1.
+import bundled from '@/data/formLooks.json';
 
 export interface GalleryStyle extends FormStyle {
   note: string;
+  /** What it suits, in a few words. */
+  goodFor?: string;
 }
 
-const border = '#7B8498';
-const font = (f: FormFont) => f;
+/** Reads a list of Looks (from the file or the API) and keeps only well-formed ones: an id, a name, a layout and a branding object. */
+export function readLooks(raw: unknown): GalleryStyle[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((r): GalleryStyle[] => {
+    const l = r as Partial<GalleryStyle> | null;
+    if (!l || typeof l.id !== 'string' || typeof l.name !== 'string' || typeof l.layout !== 'string' || !l.branding || typeof l.branding !== 'object') return [];
+    return [{ id: l.id, name: l.name, note: typeof l.note === 'string' ? l.note : '', goodFor: typeof l.goodFor === 'string' ? l.goodFor : undefined, layout: l.layout as LayoutPreset, branding: l.branding as StyleBranding }];
+  });
+}
 
-export const GALLERY_STYLES: readonly GalleryStyle[] = [
-  {
-    id: 'clean',
-    name: 'Clean',
-    note: 'White and blue, nothing in the way.',
-    layout: 'classic',
-    branding: { primaryColor: '#1D4ED8', fontFamily: font('dm_sans'), cardStyle: 'soft', panelTreatment: 'solid', backgroundStyle: 'plain', theme: { v: 1, colors: { fieldBorder: border } } },
-  },
-  {
-    id: 'corporate',
-    name: 'Corporate',
-    note: 'Steady navy, a firm border, a grid behind.',
-    layout: 'steps',
-    branding: { primaryColor: '#0F4C81', fontFamily: font('work_sans'), cardStyle: 'bordered', panelTreatment: 'solid', backgroundStyle: 'grid', theme: { v: 1, colors: { fieldBorder: border }, fields: { radius: 4 } } },
-  },
-  {
-    id: 'editorial',
-    name: 'Editorial',
-    note: 'A serif headline, underlined fields.',
-    layout: 'classic',
-    branding: {
-      primaryColor: '#111827',
-      fontFamily: font('source_serif_4'),
-      cardStyle: 'flat',
-      panelTreatment: 'solid',
-      backgroundStyle: 'plain',
-      theme: { v: 1, colors: { fieldBorder: border }, fields: { style: 'underline' }, fonts: { heading: font('dm_serif_display') } },
-    },
-  },
-  {
-    id: 'playful',
-    name: 'Playful',
-    note: 'Rounded, pink and bouncy, answers as tiles.',
-    layout: 'guided',
-    branding: {
-      primaryColor: '#C2185B',
-      fontFamily: font('fredoka'),
-      cardStyle: 'elevated',
-      panelTreatment: 'gradient',
-      backgroundStyle: 'mesh',
-      theme: { v: 1, colors: { fieldBorder: border }, fields: { style: 'filled', radius: 20, choice: 'tiles' } },
-    },
-  },
-  {
-    id: 'midnight',
-    name: 'Midnight',
-    note: 'A dark card on a night sky.',
-    layout: 'card_stack',
-    branding: {
-      primaryColor: '#8AB4FF',
-      fontFamily: font('manrope'),
-      cardStyle: 'soft',
-      panelTreatment: 'solid',
-      backgroundStyle: 'image',
-      backgroundImageUrl: '/form-pictures/midnight-glow.jpg',
-      theme: { v: 1, colors: { text: '#F3F4F6', card: '#111827', field: '#1F2937', fieldBorder: '#8A93A6', buttonText: '#0B1020' } },
-    },
-  },
-  {
-    id: 'sunset',
-    name: 'Sunset',
-    note: 'Warm orange, a picture beside the form.',
-    layout: 'split_feature',
-    branding: { primaryColor: '#B93815', fontFamily: font('poppins'), cardStyle: 'elevated', panelTreatment: 'gradient', backgroundStyle: 'gradient', theme: { v: 1, colors: { fieldBorder: border } } },
-  },
-  {
-    id: 'mint',
-    name: 'Mint',
-    note: 'Fresh green, pill-shaped fields.',
-    layout: 'classic',
-    branding: {
-      primaryColor: '#0F766E',
-      fontFamily: font('quicksand'),
-      cardStyle: 'bordered',
-      panelTreatment: 'solid',
-      backgroundStyle: 'image',
-      backgroundImageUrl: '/form-pictures/aurora-mint.jpg',
-      theme: { v: 1, colors: { text: '#0F2A2A', fieldBorder: border }, fields: { radius: 20 } },
-    },
-  },
-  {
-    id: 'paper',
-    name: 'Warm paper',
-    note: 'Cream card, brown ink, a serif.',
-    layout: 'card_stack',
-    branding: {
-      primaryColor: '#9A4A06',
-      fontFamily: font('merriweather'),
-      cardStyle: 'soft',
-      panelTreatment: 'solid',
-      backgroundStyle: 'plain',
-      theme: { v: 1, colors: { text: '#3B2F2F', card: '#FFFBF2', fieldBorder: '#8C7B6A' } },
-    },
-  },
-  {
-    id: 'tech',
-    name: 'Tech',
-    note: 'Indigo, tight and flat, filled fields.',
-    layout: 'compact',
-    branding: { primaryColor: '#4338CA', fontFamily: font('space_grotesk'), cardStyle: 'flat', panelTreatment: 'solid', backgroundStyle: 'dots', theme: { v: 1, colors: { fieldBorder: border }, fields: { style: 'filled', radius: 6 } } },
-  },
-  {
-    id: 'calm',
-    name: 'Calm waves',
-    note: 'Soft blue waves behind a quiet form.',
-    layout: 'classic',
-    branding: { primaryColor: '#1D4ED8', fontFamily: font('outfit'), cardStyle: 'soft', panelTreatment: 'solid', backgroundStyle: 'image', backgroundImageUrl: '/form-pictures/calm-waves.jpg', theme: { v: 1, colors: { fieldBorder: border } } },
-  },
-  {
-    id: 'bold',
-    name: 'Bold',
-    note: 'Black on yellow, big type.',
-    layout: 'steps',
-    branding: {
-      primaryColor: '#111111',
-      fontFamily: font('montserrat'),
-      typeScale: 'large',
-      cardStyle: 'flat',
-      panelTreatment: 'solid',
-      backgroundStyle: 'solid',
-      backgroundColor: '#FACC15',
-      theme: { v: 1, colors: { fieldBorder: '#6B7280' }, fields: { style: 'underline' }, fonts: { heading: font('bebas_neue') } },
-    },
-  },
-  {
-    id: 'handwritten',
-    name: 'Handwritten',
-    note: 'A friendly hand for the title, lavender around.',
-    layout: 'guided',
-    branding: {
-      primaryColor: '#6D28D9',
-      fontFamily: font('nunito'),
-      cardStyle: 'elevated',
-      panelTreatment: 'solid',
-      backgroundStyle: 'image',
-      backgroundImageUrl: '/form-pictures/lavender-haze.jpg',
-      theme: { v: 1, colors: { fieldBorder: border }, fields: { radius: 14 }, fonts: { heading: font('caveat') } },
-    },
-  },
-];
+export const GALLERY_STYLES: readonly GalleryStyle[] = readLooks(bundled);
