@@ -1,12 +1,12 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Ellipsis, Loader2, Search, Upload, X } from 'lucide-react';
+import { Ban, Ellipsis, Loader2, Search, Upload, X } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { Modal } from '@/components/ui/Modal';
 import { cn } from '@/lib/utils';
 import { uploadService } from '@/services/upload';
-import { FEATURED_ICON_NAMES, ICON_CREDIT, getFormIcon, searchFormIcons, suggestFormIcon, type FormIconDef } from '@/lib/formIcons';
+import { FEATURED_ICON_NAMES, ICON_CREDIT, getFormIcon, searchFormIcons, type FormIconDef } from '@/lib/formIcons';
 import { FormIcon } from '@/components/forms/FormIcon';
 import type { FormMark } from '@/types/form';
 
@@ -16,8 +16,6 @@ const ACCEPTED = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
 export interface FormMarkPickerProps {
   value: FormMark;
   onChange: (mark: FormMark) => void;
-  /** The form's name: the icon that suits it is selected until you choose another. */
-  title?: string;
   disabled?: boolean;
 }
 
@@ -27,11 +25,10 @@ const TILE = 'flex aspect-square items-center justify-center rounded-[26%] outli
 const RING = 'ring-2 ring-(--text-primary) ring-offset-2 ring-offset-(--surface-card)';
 
 /**
- * Choosing a form's icon: one grid of colourful icons, the logo you upload as one more tile, and "More icons" for the rest of
- * the set. The icon that suits the form's name is selected to begin with (so there is nothing to decide), and picking any other
- * tile replaces it. Every tile is a real radio button, so it works with a keyboard and a screen reader.
+ * Choosing a form's icon: "No icon" first (selected to begin with: nothing is chosen for you), then a grid of colourful icons, the logo you upload as one more tile, and
+ * "More icons" for the rest of the set. Every tile is a real radio button, so it works with a keyboard and a screen reader.
  */
-export function FormMarkPicker({ value, onChange, title = '', disabled }: FormMarkPickerProps) {
+export function FormMarkPicker({ value, onChange, disabled }: FormMarkPickerProps) {
   const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -40,17 +37,17 @@ export function FormMarkPicker({ value, onChange, title = '', disabled }: FormMa
   const [moreOpen, setMoreOpen] = useState(false);
   const [query, setQuery] = useState('');
 
-  const suggestion = suggestFormIcon(title);
   const chosenIcon = value.logoUrl ? undefined : getFormIcon(value.iconName);
-  // Nothing chosen yet: the suggestion is what the form gets, so it shows as selected.
-  const selectedName = value.logoUrl ? null : (chosenIcon ?? suggestion).name;
+  const selectedName = value.logoUrl ? null : (chosenIcon?.name ?? null);
+  // No logo and no icon: "No icon", whether it was chosen or the form never chose.
+  const noneSelected = !value.logoUrl && !chosenIcon;
 
   // 14 up-front tiles. A selected icon that is not one of them takes the last place, so the choice is always visible.
   const featured = FEATURED_ICON_NAMES.map((n) => getFormIcon(n)).filter((i): i is FormIconDef => !!i);
   if (selectedName && !featured.some((i) => i.name === selectedName)) featured.splice(featured.length - 1, 1, getFormIcon(selectedName) as FormIconDef);
 
   const pickIcon = (i: FormIconDef) => {
-    onChange({ logoUrl: null, iconName: i.name});
+    onChange({ logoUrl: null, iconName: i.name, iconNone: false });
     setMoreOpen(false);
   };
 
@@ -62,7 +59,7 @@ export function FormMarkPicker({ value, onChange, title = '', disabled }: FormMa
     try {
       const res = await uploadService.uploadFile(file);
       setUploadedUrl(res.url);
-      onChange({ logoUrl: res.url, iconName: null});
+      onChange({ logoUrl: res.url, iconName: null, iconNone: false });
     } catch {
       toast('Upload failed. Please try again.', 'error');
     } finally {
@@ -72,7 +69,7 @@ export function FormMarkPicker({ value, onChange, title = '', disabled }: FormMa
   }
 
   function onUploadTile() {
-    if (uploadedUrl) onChange({ logoUrl: uploadedUrl, iconName: null});
+    if (uploadedUrl) onChange({ logoUrl: uploadedUrl, iconName: null, iconNone: false });
     else fileRef.current?.click();
   }
 
@@ -83,7 +80,18 @@ export function FormMarkPicker({ value, onChange, title = '', disabled }: FormMa
     <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0" disabled={disabled}>
       <legend className="mb-1 bg-label">Form icon</legend>
 
-      <div role="radiogroup" aria-label="Form icon" className="grid grid-cols-8 gap-3">
+      <div role="radiogroup" aria-label="Form icon" className="grid grid-cols-9 gap-3">
+        <button
+          type="button"
+          role="radio"
+          aria-checked={noneSelected}
+          aria-label="No icon"
+          title="No icon"
+          onClick={() => onChange({ logoUrl: null, iconName: null, iconNone: true })}
+          className={cn(TILE, 'border border-(--border-default) text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-primary)', noneSelected && RING)}
+        >
+          <Ban size={20} aria-hidden="true" />
+        </button>
         {featured.map((i) => (
           <button
             key={i.name}
@@ -129,7 +137,7 @@ export function FormMarkPicker({ value, onChange, title = '', disabled }: FormMa
               aria-label="Remove logo"
               onClick={() => {
                 setUploadedUrl(null);
-                if (value.logoUrl) onChange({ logoUrl: null, iconName: null});
+                if (value.logoUrl) onChange({ logoUrl: null, iconName: null, iconNone: true });
               }}
               className="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full border border-(--border-default) bg-(--surface-card) text-(--text-muted) shadow-(--shadow-sm) hover:text-(--error-text)"
             >
@@ -150,7 +158,7 @@ export function FormMarkPicker({ value, onChange, title = '', disabled }: FormMa
       </div>
 
       <p className="bg-caption text-(--text-muted)">
-        {logoSelected ? 'Using your logo.' : value.iconName ? 'Pick another any time, or upload your own logo.' : 'Chosen from the name. Pick another or upload your own logo.'}
+        {logoSelected ? 'Using your logo.' : value.iconName ? 'Pick another any time, or upload your own logo.' : 'No icon on the form. Pick one or upload your own logo.'}
       </p>
       <input ref={fileRef} type="file" accept={ACCEPTED.join(',')} className="sr-only" tabIndex={-1} aria-label="Upload form logo" onChange={(e) => void pickFile(e.target.files?.[0])} />
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useForm, useWatch } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -19,7 +19,6 @@ import { Textarea } from '@/components/ui/Textarea';
 import { SplitFlowLayout } from '@/components/flow/SplitFlowLayout';
 import { FormIllustration } from '@/components/flow/FlowIllustrations';
 import { FormMarkPicker } from '@/components/forms/FormMarkPicker';
-import { suggestFormIcon } from '@/lib/formIcons';
 import type { FormMark } from '@/types/form';
 import type { FormDestination } from '@/types/workspace';
 
@@ -49,9 +48,7 @@ export function CreateFormPage() {
     register,
     handleSubmit,
     formState: { errors },
-    control,
   } = useForm<CreateFormValues>({ resolver: zodResolver(createFormSchema) });
-  const title = useWatch({ control, name: 'title' }) ?? '';
 
   const goBack = () => (window.history.length > 1 ? router.back() : router.push(ws ? `/w/${target?.slug ?? ws}/forms` : '/forms'));
 
@@ -59,13 +56,11 @@ export function CreateFormPage() {
     mutationFn: async (data: CreateFormValues) => {
       const destination: FormDestination = target ? { type: 'workspace', workspaceId: target.id } : { type: 'personal' };
       // The form's own mark (logo, or icon + colour) wins over whatever the workspace's default branding carries.
-      // Untouched, the form gets the icon that suits its name (what the picker showed as selected).
-      const suggested = suggestFormIcon(data.title);
-      const chosen: FormMark = mark.logoUrl || mark.iconName ? mark : { iconName: suggested.name };
+      // Nothing is guessed from the name: untouched, the form has "No icon" (stored as a choice, so it stays that way).
+      const { iconName: _workspaceIcon, ...workspaceBranding } = workspace?.branding ?? {};
       const branding = {
-        ...(workspace?.branding ?? {}),
-        ...(chosen.logoUrl ? { logoUrl: chosen.logoUrl } : {}),
-        ...(chosen.iconName ? { iconName: chosen.iconName } : {}),
+        ...workspaceBranding,
+        ...(mark.logoUrl ? { logoUrl: mark.logoUrl } : mark.iconName ? { iconName: mark.iconName } : { iconNone: true }),
       };
       const created = await formsService.createForm({
         ...data,
@@ -129,7 +124,7 @@ export function CreateFormPage() {
           error={errors.description?.message}
           {...register('description')}
         />
-        <FormMarkPicker value={mark} onChange={setMark} title={title} disabled={mutation.isPending} />
+        <FormMarkPicker value={mark} onChange={setMark} disabled={mutation.isPending} />
         <div>
           <Button type="submit" variant="primary" isLoading={mutation.isPending} className="min-h-12 px-6">
             Create Form

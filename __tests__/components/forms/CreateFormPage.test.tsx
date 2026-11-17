@@ -87,8 +87,8 @@ describe('CreateFormPage', () => {
       destination: { type: 'personal' },
       destinationWorkspaceId: null,
     }));
-    // Nothing was picked, so the form gets only the icon that suits its name.
-    expect(createForm.mock.calls[0][0].branding).toEqual({ iconName: 'common-file-text' });
+    // Nothing was picked: the form is stored as having "No icon", not given a guess.
+    expect(createForm.mock.calls[0][0].branding).toEqual({ iconNone: true });
     expect(spy).toHaveBeenCalledWith({ queryKey: ['forms'] });
     const seeded = useBuilderStore.getState();
     expect(seeded).toMatchObject({ formId: 'new1', formTitle: 'My form', status: 'draft', fields: [] });
@@ -112,20 +112,13 @@ describe('CreateFormPage', () => {
     expect(createForm.mock.calls[0][0].branding).toEqual({ iconName: 'rocket' });
   });
 
-  it('left untouched, the form gets the icon that suits its name', async () => {
+  it('left untouched, the form gets no icon, whatever its name says', async () => {
     renderPage();
     await userEvent.type(screen.getByLabelText('Form Title'), 'Event Registration');
     await userEvent.click(screen.getByRole('button', { name: /Create Form/ }));
     await waitFor(() => expect(createForm).toHaveBeenCalled());
-    expect(createForm.mock.calls[0][0].branding).toEqual({ iconName: 'calendar-1' });
-  });
-
-  it('a name that says nothing gets the plain document icon', async () => {
-    renderPage();
-    await userEvent.type(screen.getByLabelText('Form Title'), 'My form');
-    await userEvent.click(screen.getByRole('button', { name: /Create Form/ }));
-    await waitFor(() => expect(createForm).toHaveBeenCalled());
-    expect(createForm.mock.calls[0][0].branding).toEqual({ iconName: 'common-file-text' });
+    expect(createForm.mock.calls[0][0].branding).toEqual({ iconNone: true });
+    expect(createForm.mock.calls[0][0].branding.iconName).toBeUndefined();
   });
 
   it('creates inside the workspace named by ?ws=, inheriting its branding, and keeps ?ws= on the builder URL', async () => {
