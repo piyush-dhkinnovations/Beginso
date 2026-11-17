@@ -86,7 +86,8 @@ export function LoginForm({ redirectTo, submitLabel = 'Log In' }: LoginFormProps
       setIsEmailLoading(false);
 
       if ((error as { code?: string })?.code === 'auth/email-not-verified') {
-        router.push('/verify-email');
+        // The address the person was heading for (a template being applied, an invite) goes along, as it does from the sign-up form.
+        router.push(nextParam ? `/verify-email?next=${encodeURIComponent(nextParam)}` : '/verify-email');
         return;
       }
 

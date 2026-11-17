@@ -17,9 +17,13 @@ const tpl = (over: Partial<Template> = {}) =>
   }) as unknown as Template;
 
 describe('TemplateThumb', () => {
-  it('is hidden from assistive tech', () => {
+  it('is one picture with an accessible name, and nothing inside it can be focused', () => {
     const { container } = render(<TemplateThumb template={tpl()} />);
-    expect(container.firstElementChild).toHaveAttribute('aria-hidden', 'true');
+    const root = container.firstElementChild as HTMLElement;
+    expect(root).toHaveAttribute('role', 'img');
+    expect(root.getAttribute('aria-label')).toMatch(/^Preview of the .+ form$/);
+    // the drawn form is inert: a tab key or a screen reader never lands on its fields
+    expect(root.querySelector('[inert]')).not.toBeNull();
   });
 
   it("shows the template's own real question labels and a call to action, using the real field renderer", () => {
