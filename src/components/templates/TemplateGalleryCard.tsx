@@ -6,7 +6,7 @@ import { Clock } from 'lucide-react';
 import { ButtonLink } from '@/components/ui/ButtonLink';
 import { TemplateThumb, THUMB_ASPECT } from '@/components/templates/TemplateThumb';
 import { usePublicTemplates } from '@/hooks/usePublicTemplates';
-import { useTemplateHref, type GalleryCard } from '@/lib/templateGallery';
+import { groupLabel, useTemplateHref, type GalleryCard } from '@/lib/templateGallery';
 
 // A card in the public gallery. The whole card is one link to the template's page (a stretched link on the name), and two buttons sit above it:
 // "Preview" (the same page) and "Use template". The buttons show on hover and on keyboard focus, and are always shown on a screen with no hover.
@@ -78,7 +78,7 @@ export function TemplateGalleryCard({ card, signedIn }: { card: GalleryCard; sig
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
-        <span className="w-fit rounded-full bg-(--accent-soft) px-2.5 py-0.5 bg-caption font-medium text-(--accent-soft-text)">{card.category}</span>
+        <span className="w-fit rounded-full bg-(--accent-soft) px-2.5 py-0.5 bg-caption font-medium text-(--accent-soft-text)">{groupLabel(card.category)}</span>
         <h3 className="bg-h5 text-(--text-primary)">
           {/* the stretched link: the whole card is the click target */}
           <Link href={detail} className="after:absolute after:inset-0 after:content-[''] focus-visible:outline-none">

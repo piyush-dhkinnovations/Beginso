@@ -9,6 +9,7 @@ import {
   filterCards,
   groupsFromCards,
   groupKey,
+  groupLabel,
   groupsThatAddUp,
   resolveCategory,
   useTemplateHref,
@@ -199,5 +200,31 @@ describe('groupKey', () => {
 
   it('leaves an unknown name as it is (it then gets the generic icon)', () => {
     expect(groupKey('Something New')).toBe('something new');
+  });
+});
+
+describe('groupLabel and merging old names', () => {
+  it('shows short names for the long groups, and the other names as they are', () => {
+    expect(groupLabel('Internal Requests & Inspections')).toBe('Internal');
+    expect(groupLabel('Consent & Legal')).toBe('Legal');
+    expect(groupLabel('Leads & Contact')).toBe('Leads');
+    expect(groupLabel('Community & Membership')).toBe('Community');
+    expect(groupLabel('HR & Hiring')).toBe('HR');
+    expect(groupLabel('Healthcare')).toBe('Healthcare');
+    expect(groupLabel('Something New')).toBe('Something New');
+  });
+
+  it('gives an old category name the short name of its group', () => {
+    expect(groupLabel('Working Forms')).toBe('Internal');
+    expect(groupLabel('Consent')).toBe('Legal');
+    expect(groupLabel('Non-profit')).toBe('Community');
+  });
+
+  it('merges old names that belong to one group into one entry, and filters by the group', () => {
+    const c = (category: string) => cardFromTemplate({ _id: category, slug: category, name: category, category, fields: [], isActive: true } as never, 1);
+    const cards = [c('Events'), c('Personal'), c('Events & RSVPs'), c('HR')];
+    const groups = groupsFromCards(cards);
+    expect(groups).toEqual([{ name: 'Events & RSVPs', count: 3 }, { name: 'HR & Hiring', count: 1 }]);
+    expect(filterCards(cards, { category: 'Events & RSVPs', q: '' })).toHaveLength(3);
   });
 });

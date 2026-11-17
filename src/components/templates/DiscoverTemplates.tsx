@@ -37,6 +37,7 @@ import {
   filterCards,
   groupsFromCards,
   groupKey,
+  groupLabel,
   groupsThatAddUp,
   resolveCategory,
   type GalleryData,
@@ -217,7 +218,7 @@ export function DiscoverTemplates({ initial, initialCategory, initialQuery }: Di
                   )}
                 >
                   <Icon size={16} className="shrink-0" aria-hidden="true" />
-                  <span className="flex-1 text-left">{g.name === ALL ? 'All templates' : g.name}</span>
+                  <span className="flex-1 text-left">{g.name === ALL ? 'All templates' : groupLabel(g.name)}</span>
                   <span className="tabular-nums text-(--text-muted)">{g.count}</span>
                 </button>
               );
@@ -256,7 +257,7 @@ export function DiscoverTemplates({ initial, initialCategory, initialQuery }: Di
               {rest.length > 0 && (
                 <section aria-labelledby="all-heading">
                   <h2 id="all-heading" className={bx('bg-h4 mb-4 text-(--text-primary)', !featured.length && 'sr-only')}>
-                    {category === ALL ? 'All templates' : category}
+                    {category === ALL ? 'All templates' : groupLabel(category)}
                   </h2>
                   <div className={GRID}>
                     {rest.map((card) => (

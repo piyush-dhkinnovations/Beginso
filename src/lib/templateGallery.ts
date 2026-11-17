@@ -40,23 +40,57 @@ const LEGACY_GROUP: Record<string, string> = {
   general: 'Leads & Contact',
   'e-commerce': 'Orders & Payments',
   order: 'Orders & Payments',
+  orders: 'Orders & Payments',
   events: 'Events & RSVPs',
   personal: 'Events & RSVPs',
   'reservation/booking': 'Bookings',
+  reservations: 'Bookings',
   feedback: 'Feedback & Surveys',
   hr: 'HR & Hiring',
   education: 'Education',
   medicine: 'Healthcare',
+  medical: 'Healthcare',
   'real estate': 'Real Estate',
   'non-profit': 'Community & Membership',
+  'non profit': 'Community & Membership',
   membership: 'Community & Membership',
   registration: 'Community & Membership',
   'working forms': 'Internal Requests & Inspections',
+  workshops: 'Internal Requests & Inspections',
   requests: 'Internal Requests & Inspections',
   'inspection forms': 'Internal Requests & Inspections',
   advanced: 'Internal Requests & Inspections',
   consent: 'Consent & Legal',
 };
+
+const CURRENT_GROUPS = ['Leads & Contact', 'Orders & Payments', 'Events & RSVPs', 'Bookings', 'Feedback & Surveys', 'HR & Hiring', 'Education', 'Healthcare', 'Real Estate', 'Community & Membership', 'Internal Requests & Inspections', 'Consent & Legal'];
+
+/** The current group a category name belongs to: a current group as it is, an old name through the map, anything else as written. */
+export const canonicalGroup = (name: string): string => {
+  const k = name.trim().toLowerCase();
+  return CURRENT_GROUPS.find((g) => g.toLowerCase() === k) ?? LEGACY_GROUP[k] ?? name.trim();
+};
+
+// The names people read. The stored group names stay as they are (links, the backend and the sync use them); the list and the badges show these.
+const SHORT_LABEL: Record<string, string> = {
+  'Leads & Contact': 'Leads',
+  'Orders & Payments': 'Orders',
+  'Events & RSVPs': 'Events',
+  'Feedback & Surveys': 'Feedback',
+  'HR & Hiring': 'HR',
+  'Community & Membership': 'Community',
+  'Internal Requests & Inspections': 'Internal',
+  'Consent & Legal': 'Legal',
+};
+
+/** The short name shown for a group or a category (an old name too): "Internal" for Internal Requests & Inspections. Other names are shown as they are. */
+export const groupLabel = (name: string): string => {
+  const g = canonicalGroup(name);
+  return SHORT_LABEL[g] ?? g;
+};
+
+/** A group or category name as the lower-case name of its current group, for choosing its icon. */
+export const groupKey = (name: string): string => canonicalGroup(name).toLowerCase();
 
 /** A ?category= value as one of the groups on offer (a current group, or an old category name), or ALL when it is none of them. */
 export function resolveCategory(value: string | null | undefined, groups: GalleryGroup[]): string {
@@ -74,7 +108,7 @@ const words = (text: string): string[] => text.toLowerCase().split(/\s+/).filter
 export function filterCards(cards: GalleryCard[], opts: { category: string; q: string }): GalleryCard[] {
   const needles = words(opts.q);
   return cards.filter((c) => {
-    if (opts.category !== ALL && c.category !== opts.category) return false;
+    if (opts.category !== ALL && canonicalGroup(c.category) !== opts.category) return false;
     if (!needles.length) return true;
     const haystack = `${c.name} ${c.description}`.toLowerCase();
     return needles.every((n) => haystack.includes(n));
@@ -122,7 +156,10 @@ export function cardFromTemplate(t: Template, order: number): GalleryCard {
 /** The groups with their counts, worked out from cards. */
 export function groupsFromCards(cards: GalleryCard[]): GalleryGroup[] {
   const counts = new Map<string, number>();
-  for (const c of cards) counts.set(c.category, (counts.get(c.category) ?? 0) + 1);
+  for (const c of cards) {
+    const g = canonicalGroup(c.category);
+    counts.set(g, (counts.get(g) ?? 0) + 1);
+  }
   return [...counts.entries()].map(([name, count]) => ({ name, count }));
 }
 
@@ -137,39 +174,3 @@ export function groupsThatAddUp(cards: GalleryCard[], groups: GalleryGroup[]): G
   const complete = groups.length > 0 && total === cards.length && cards.every((c) => names.has(c.category));
   return complete ? groups : groupsFromCards(cards);
 }
-
-/** The old category names (before the regrouping) and the group each one belongs to, in lower case. A catalogue that has not been synced yet still
- * carries them; the list uses this only to pick the right icon, so the same map as the backend's (src/utils/templateCatalog.ts) is repeated here. */
-const GROUP_OF_OLD_NAME: Record<string, string> = {
-  'lead generation': 'leads & contact',
-  'contact us': 'leads & contact',
-  business: 'leads & contact',
-  general: 'leads & contact',
-  'e-commerce': 'orders & payments',
-  order: 'orders & payments',
-  orders: 'orders & payments',
-  events: 'events & rsvps',
-  personal: 'events & rsvps',
-  'reservation/booking': 'bookings',
-  reservations: 'bookings',
-  feedback: 'feedback & surveys',
-  hr: 'hr & hiring',
-  medicine: 'healthcare',
-  medical: 'healthcare',
-  'non-profit': 'community & membership',
-  'non profit': 'community & membership',
-  membership: 'community & membership',
-  registration: 'community & membership',
-  'working forms': 'internal requests & inspections',
-  workshops: 'internal requests & inspections',
-  requests: 'internal requests & inspections',
-  'inspection forms': 'internal requests & inspections',
-  advanced: 'internal requests & inspections',
-  consent: 'consent & legal',
-};
-
-/** A category or group name as the lower-case name of its current group (an old name through the map), for choosing its icon. */
-export const groupKey = (name: string): string => {
-  const k = name.trim().toLowerCase();
-  return GROUP_OF_OLD_NAME[k] ?? k;
-};

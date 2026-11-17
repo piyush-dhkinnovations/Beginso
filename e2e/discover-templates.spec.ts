@@ -48,8 +48,8 @@ test('a group filters the cards, shows its count, and goes in the address; a sha
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/discover-templates');
   const nav = page.getByRole('navigation', { name: 'Template categories' });
-  await expect(nav.getByRole('button', { name: /HR & Hiring\s*2/ })).toBeVisible();
-  await nav.getByRole('button', { name: /HR & Hiring/ }).click();
+  await expect(nav.getByRole('button', { name: /^HR\s*2/ })).toBeVisible();
+  await nav.getByRole('button', { name: /^HR/ }).click();
   await expect(card(page, 'Job Application')).toBeVisible();
   await expect(card(page, 'Exit Interview')).toBeVisible();
   await expect(card(page, 'Wedding RSVP')).toHaveCount(0);
