@@ -11,9 +11,9 @@ const get = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/axios', () => ({ default: { get } }));
 
 import bundled from '@/data/formLooks.json';
-import { GALLERY_STYLES, readLooks } from '@/lib/formStyles';
+import { BUNDLED_LOOKS_VERSION, GALLERY_STYLES, readLooks, visibleLooks } from '@/lib/formStyles';
 import { readabilityChecks } from '@/components/form-builder/LookControls';
-import { resetFormLooksCache, useFormLooks } from '@/hooks/useFormLooks';
+import { resetFormLooksCache, useFormLooks, warnIfLooksBehind } from '@/hooks/useFormLooks';
 import { formLooksService } from '@/services/formLooks';
 import type { FormBranding } from '@/types/form';
 
@@ -32,7 +32,9 @@ describe('the bundled Looks', () => {
   // that differs fails here, and `npm run sync:looks` fixes it. At run time the app uses the live list anyway (see below).
   const sibling = resolve(process.cwd(), '../Beginso-Backend/src/data/formLooks.json');
   it.skipIf(!existsSync(sibling))('match the backend file byte for byte (run npm run sync:looks when they do not)', () => {
-    expect(readFileSync(resolve(process.cwd(), 'src/data/formLooks.json'), 'utf8')).toBe(readFileSync(sibling, 'utf8'));
+    // line endings are the checkout's business, not the data's
+    const text = (file: string) => readFileSync(file, 'utf8').replaceAll('\r\n', '\n');
+    expect(text(resolve(process.cwd(), 'src/data/formLooks.json'))).toBe(text(sibling));
   });
 
   it.each(GALLERY_STYLES.map((g) => [g.name, g] as const))('%s is readable: text 4.5 to 1, field border and brand colour 3 to 1', (_n, g) => {
@@ -55,7 +57,7 @@ describe('readLooks', () => {
     const ok = { id: 'a', name: 'A', note: 'n', layout: 'classic', branding: { primaryColor: '#111111' } };
     expect(readLooks([ok, null, 'x', { id: 'b' }, { ...ok, id: 'c', branding: null }]).map((l) => l.id)).toEqual(['a']);
     expect(readLooks({ data: [ok] })).toEqual([]);
-    expect(readLooks(bundled)).toHaveLength(bundled.length);
+    expect(readLooks(bundled.looks)).toHaveLength(bundled.looks.length);
   });
 });
 
@@ -63,10 +65,10 @@ describe('formLooksService', () => {
   beforeEach(() => get.mockReset());
 
   it('reads { data, version } and a bare list', async () => {
-    get.mockResolvedValueOnce({ data: { success: true, version: 'abc', data: bundled } });
-    expect(await formLooksService.list()).toMatchObject({ version: 'abc' });
-    get.mockResolvedValueOnce({ data: bundled });
-    expect((await formLooksService.list()).looks).toHaveLength(bundled.length);
+    get.mockResolvedValueOnce({ data: { success: true, version: 2, data: bundled.looks } });
+    expect(await formLooksService.list()).toMatchObject({ version: 2 });
+    get.mockResolvedValueOnce({ data: bundled.looks });
+    expect((await formLooksService.list()).looks).toHaveLength(bundled.looks.length);
   });
 
   it('refuses a reply with no readable Look', async () => {
@@ -94,5 +96,45 @@ describe('useFormLooks', () => {
     const { result } = renderHook(() => useFormLooks());
     await waitFor(() => expect(get).toHaveBeenCalled());
     expect(result.current).toBe(GALLERY_STYLES);
+  });
+});
+
+describe('retired Looks', () => {
+  it('stay in the bundled copy (a form may use one) but are hidden from the gallery', () => {
+    const retired = GALLERY_STYLES.filter((g) => g.retired).map((g) => g.id).sort();
+    expect(retired).toEqual(['handwritten', 'playful', 'sunset', 'tech']);
+    expect(GALLERY_STYLES.some((g) => g.id === 'tech')).toBe(true);
+    const shown = visibleLooks(GALLERY_STYLES).map((g) => g.id);
+    for (const id of retired) expect(shown).not.toContain(id);
+    expect(shown).toHaveLength(GALLERY_STYLES.length - 4);
+  });
+});
+
+describe('the Looks version', () => {
+  beforeEach(() => resetFormLooksCache());
+
+  it('is a whole number in the bundled file', () => {
+    expect(Number.isInteger(BUNDLED_LOOKS_VERSION)).toBe(true);
+  });
+
+  it('warns once in development when the live version differs, and never when it matches or is unknown', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    warnIfLooksBehind(BUNDLED_LOOKS_VERSION);
+    warnIfLooksBehind(null);
+    expect(warn).not.toHaveBeenCalled();
+    warnIfLooksBehind(BUNDLED_LOOKS_VERSION + 1);
+    warnIfLooksBehind(BUNDLED_LOOKS_VERSION + 1);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain('npm run sync:looks');
+    warn.mockRestore();
+  });
+
+  it('stays silent in production', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubEnv('NODE_ENV', 'production');
+    warnIfLooksBehind(BUNDLED_LOOKS_VERSION + 5);
+    vi.unstubAllEnvs();
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

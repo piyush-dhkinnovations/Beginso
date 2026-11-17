@@ -104,6 +104,8 @@ export interface GalleryStyle extends FormStyle {
   note: string;
   /** What it suits, in a few words. */
   goodFor?: string;
+  /** Hidden from the Looks gallery; a form or template that already uses it is not touched. */
+  retired?: boolean;
 }
 
 /** Reads a list of Looks (from the file or the API) and keeps only well-formed ones: an id, a name, a layout and a branding object. */
@@ -112,8 +114,15 @@ export function readLooks(raw: unknown): GalleryStyle[] {
   return raw.flatMap((r): GalleryStyle[] => {
     const l = r as Partial<GalleryStyle> | null;
     if (!l || typeof l.id !== 'string' || typeof l.name !== 'string' || typeof l.layout !== 'string' || !l.branding || typeof l.branding !== 'object') return [];
-    return [{ id: l.id, name: l.name, note: typeof l.note === 'string' ? l.note : '', goodFor: typeof l.goodFor === 'string' ? l.goodFor : undefined, layout: l.layout as LayoutPreset, branding: l.branding as StyleBranding }];
+    return [{ id: l.id, name: l.name, note: typeof l.note === 'string' ? l.note : '', goodFor: typeof l.goodFor === 'string' ? l.goodFor : undefined, ...(l.retired === true ? { retired: true } : {}), layout: l.layout as LayoutPreset, branding: l.branding as StyleBranding }];
   });
 }
 
-export const GALLERY_STYLES: readonly GalleryStyle[] = readLooks(bundled);
+/** The version of the Looks file this copy was made from (the backend raises it whenever the Looks change). */
+export const BUNDLED_LOOKS_VERSION: number = bundled.version;
+
+/** Every Look in the bundled copy, retired ones included: a form that uses one still needs it. */
+export const GALLERY_STYLES: readonly GalleryStyle[] = readLooks(bundled.looks);
+
+/** What the Looks gallery offers: the Looks that are not retired. */
+export const visibleLooks = (looks: readonly GalleryStyle[]): GalleryStyle[] => looks.filter((l) => !l.retired);
