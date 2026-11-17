@@ -20,7 +20,7 @@ test('a ready-made look changes the layout and the live form, and Undo puts them
 
   await page.getByRole('button', { name: /Looks/ }).click();
   const dialog = page.getByRole('dialog', { name: 'Looks' });
-  await expect(dialog.getByRole('listitem')).toHaveCount(12);
+  await expect(dialog.getByRole('listitem')).toHaveCount(18); // 22 Looks in the file, 4 of them retired (hidden)
   await dialog.getByRole('button', { name: 'Use the Midnight look' }).click();
   await expect(dialog).toHaveCount(0);
 
