@@ -265,7 +265,7 @@ function LookTile({ label, chosen, onClick, disabled, children }: { label: strin
         chosen ? 'border-(--action-primary) bg-(--accent-soft) text-(--text-primary)' : 'border-(--border-default) text-(--text-secondary) enabled:hover:bg-(--surface-hover)',
       )}
     >
-      <span aria-hidden="true" className="flex h-14 items-center justify-center rounded-md bg-(--bg-subtle) px-3">
+      <span aria-hidden="true" data-theme="light" className="flex h-14 items-center justify-center rounded-md bg-(--bg-subtle) px-3">
         {children}
       </span>
       {label}

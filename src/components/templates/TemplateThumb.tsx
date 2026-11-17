@@ -81,6 +81,8 @@ export function TemplateThumb({ template }: { template: Template }) {
       ref={frameRef}
       role="img"
       aria-label={`Preview of the ${template.name} form`}
+      // the light scope: a picture of a form is drawn the way the form really looks, never in the viewer's dark theme
+      data-theme="light"
       className="relative w-full overflow-hidden border-b border-(--border-default)"
       style={{ aspectRatio: THUMB_ASPECT, backgroundColor: backdrop }}
     >

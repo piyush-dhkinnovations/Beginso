@@ -31,7 +31,7 @@ export function LookPreview({ look }: { look: Look }) {
   const theme = effectiveTheme(look.layout, b.theme);
   const { className, style, ...attrs } = brandLookProps({ theme });
   return (
-    <div aria-hidden="true" className="bg-form-type relative flex h-32 items-center justify-center overflow-hidden rounded-lg border border-(--border-default)" style={{ ...brandTypeStyle(b), ...brandWashStyle(b), backgroundAttachment: 'scroll' }}>
+    <div aria-hidden="true" data-theme="light" className="bg-form-type relative flex h-32 items-center justify-center overflow-hidden rounded-lg border border-(--border-default)" style={{ ...brandTypeStyle(b), ...brandWashStyle(b), backgroundAttachment: 'scroll' }}>
       <div {...attrs} className={bx(className, 'flex w-full justify-center px-4')} style={style}>
         <div className={bx(brandCardClass(b), 'flex w-full max-w-44 flex-col gap-1.5 p-2.5')}>
           <p className="form-heading text-sm font-bold leading-tight text-(--form-heading)">Your form</p>
