@@ -455,11 +455,21 @@ export const cardShadowValue = (strength: number): string => {
 };
 
 /** The class, inline style and data attributes for the element that wraps the form's card and fields. */
-export function brandLookProps(b: Pick<FormBranding, 'theme'>): { className: string; style: CSSProperties; [attr: `data-${string}`]: string | undefined } {
+export function brandLookProps(b: Pick<FormBranding, 'theme'> & { primaryColor?: string | null }): { className: string; style: CSSProperties; [attr: `data-${string}`]: string | undefined } {
   const t = cleanTheme(b.theme);
   const c = t?.colors;
   const f = t?.fields;
   const style: Record<string, string> = {};
+  // A form that has a theme (a look) paints the form's own accents with its brand colour: the progress bar, the chosen answer and the focus ring.
+  // A form without one is left as it was, drawn with the app's blue.
+  if (t && b.primaryColor && /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(b.primaryColor)) {
+    const brand = b.primaryColor;
+    style['--action-primary'] = brand;
+    style['--action-primary-hover'] = `color-mix(in srgb, ${brand} 86%, black)`;
+    style['--accent-soft'] = `color-mix(in srgb, ${brand} 12%, var(--surface-card))`;
+    style['--accent-soft-hover'] = `color-mix(in srgb, ${brand} 18%, var(--surface-card))`;
+    style['--accent-soft-text'] = 'var(--text-primary)';
+  }
   if (c?.text) {
     style['--text-primary'] = c.text;
     style['--text-secondary'] = mix(c.text, 82);
