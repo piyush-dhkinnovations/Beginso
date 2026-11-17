@@ -92,7 +92,7 @@ export default function TemplateDetailPage() {
           {/* Not `sticky`: the whole row is bounded to roughly one viewport's height, and the details column scrolls WITHIN itself
               if it is taller than that, so the form is always on screen next to them without anything tracking the other. */}
           <div className="flex flex-col gap-8 md:h-[calc(100vh_-_11rem)] md:flex-row md:gap-10">
-            <div className="md:h-full md:w-2/5 md:overflow-y-auto md:pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="md:h-full md:w-1/3 md:overflow-y-auto md:pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <Badge variant="primary" pill className="mb-3 capitalize">{template.category}</Badge>
               <h1 className="text-[28px] md:text-[36px] font-extrabold text-(--text-primary) leading-[1.15] mb-3">
                 {template.name}
@@ -180,7 +180,7 @@ export default function TemplateDetailPage() {
 
             {/* The real preview, switchable between what a phone, a tablet and a desktop visitor actually see. It fills the box, so the
                 form's own page background covers all of it. */}
-            <div className="flex min-w-0 flex-1 flex-col md:h-full md:w-3/5">
+            <div className="flex min-w-0 flex-1 flex-col md:h-full md:w-2/3">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                 <DeviceToggle device={device} onChange={setDevice} />
                 <p className="bg-caption text-(--text-muted)">Try it: nothing you type is saved or sent.</p>

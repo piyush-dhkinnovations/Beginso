@@ -20,10 +20,12 @@ test('the template page shows the details and a preview whose page fills the who
   const stage = page.locator('iframe[title="Volunteer Signup preview"]').locator('xpath=ancestor::div[contains(@class,"overflow-hidden")][1]');
   await expect(frame.locator('label').first()).toBeVisible({ timeout: 60000 });
 
+  const cardWidth: Record<string, number> = {};
   for (const device of ['Desktop', 'Tablet', 'Mobile']) {
     await page.getByRole('tab', { name: device }).click();
     await expect(frame.locator('label').first()).toBeVisible({ timeout: 30000 });
     await page.waitForTimeout(400);
+    cardWidth[device] = (await frame.locator('.form-card').first().boundingBox())!.width;
     if (D) await page.screenshot({ path: `${D}template-${device.toLowerCase()}.png` });
     // the stage is painted with the form's page (a gradient image) from edge to edge, and the iframe on it is see-through
     const paint = await stage.evaluate((el) => ({ image: getComputedStyle(el).backgroundImage, w: el.getBoundingClientRect().width }));
@@ -45,6 +47,9 @@ test('the template page shows the details and a preview whose page fills the who
     const seeThrough = await frame.locator('body').evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(seeThrough, `${device}: the frame itself paints nothing`).toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
   }
+  // three devices, three sizes: the tablet's form is bigger than the desktop's (which is scaled down to fit), and the phone's is the narrowest
+  expect(cardWidth.Tablet, `tablet ${Math.round(cardWidth.Tablet)} vs desktop ${Math.round(cardWidth.Desktop)}`).toBeGreaterThan(cardWidth.Desktop * 1.15);
+  expect(cardWidth.Mobile, `phone ${Math.round(cardWidth.Mobile)} vs tablet ${Math.round(cardWidth.Tablet)}`).toBeLessThan(cardWidth.Tablet * 0.8);
 });
 
 test('a form taller than the preview keeps its margin above it and scrolls, with no scrollbar drawn over the page', async ({ page }) => {
@@ -54,6 +59,9 @@ test('a form taller than the preview keeps its margin above it and scrolls, with
   const iframe = page.locator('iframe[title="Long Survey preview"]');
   const frame = page.frameLocator('iframe[title="Long Survey preview"]');
   await expect(frame.locator('label').first()).toBeVisible({ timeout: 60000 });
+  // on a phone the 14 questions are one long column, taller than the preview (on a desktop, drawn at 1280 and scaled, they fit)
+  await page.getByRole('tab', { name: 'Mobile' }).click();
+  await expect(frame.locator('label').first()).toBeVisible({ timeout: 30000 });
   await page.waitForTimeout(400);
   if (D) await page.screenshot({ path: `${D}template-tall.png` });
 

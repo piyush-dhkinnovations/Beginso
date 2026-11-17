@@ -30,6 +30,11 @@ describe('TemplatePreviewFrame', () => {
     expect(desktop.firstElementChild?.className).toBe(mobile.firstElementChild?.className);
   });
 
+  it('draws each device at its own real width, so a desktop, a tablet and a phone are different sizes', () => {
+    const width = (device: 'desktop' | 'tablet' | 'mobile') => (render(<TemplatePreviewFrame slug="s" device={device} title="t" />).container.querySelector('iframe') as HTMLIFrameElement).style.width;
+    expect([width('desktop'), width('tablet'), width('mobile')]).toEqual(['1280px', '768px', '375px']);
+  });
+
   it('draws the page of the form over the whole stage, whatever the device, with nothing but the form changing size', () => {
     const page = { backgroundImage: 'linear-gradient(135deg, rgb(22, 163, 74), rgb(167, 217, 183))' };
     const { container } = render(<TemplatePreviewFrame slug="job-application" device="mobile" title="t" pageStyle={page} />);

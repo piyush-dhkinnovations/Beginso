@@ -7,8 +7,8 @@ import { DEVICE_WIDTH, type PreviewDevice } from '@/components/preview/DeviceTog
 // width (so its @media breakpoints respond correctly: an iframe has its own independent viewport, a width-constrained div never does).
 //
 // ONE box, not two. The stage carries the form's own page (its colour, gradient or picture, passed in as `pageStyle`) over its whole area,
-// whatever the device. The iframe inside it is see-through (`?embed=1&bg=0`), so only the FORM changes size: full width on a desktop, 768 px
-// on a tablet, 375 px on a phone, centred on the same page. Nothing is cropped to the device's width.
+// whatever the device. The iframe inside it is see-through (`?embed=1&bg=0`), so only the FORM changes size: 1280 px (scaled to fit) on a desktop,
+// 768 px on a tablet, 375 px on a phone, centred on the same page. Nothing is cropped to the device's width.
 const FALLBACK_HEIGHT = 600;
 
 function useSize(): [(node: HTMLElement | null) => void, { w: number; h: number }] {
@@ -36,10 +36,11 @@ export interface TemplatePreviewFrameProps {
 export function TemplatePreviewFrame({ slug, device, title, pageStyle }: TemplatePreviewFrameProps) {
   const [stageRef, { w, h }] = useSize();
   const baseWidth = DEVICE_WIDTH[device];
-  // A desktop form is as wide as the stage (real size); a tablet or phone keeps its real width, scaled down only if the stage is narrower.
-  const desktop = device === 'desktop' && w > 0;
-  const scale = desktop ? 1 : w > 0 ? Math.min(1, w / baseWidth) : 1;
-  const frameWidth = desktop ? w : baseWidth;
+  // Every device is drawn at its REAL width (desktop 1280, tablet 768, phone 375) and scaled down only when the stage is narrower than that. The stage
+  // here is about as wide as a tablet, so a desktop form is scaled to fit it (and its layout is the desktop one), a tablet form fills it, and a phone
+  // form is a narrow column in the middle: the three are clearly different sizes and layouts.
+  const frameWidth = baseWidth;
+  const scale = w > 0 ? Math.min(1, w / baseWidth) : 1;
   const height = h > 0 ? h : FALLBACK_HEIGHT;
 
   return (
