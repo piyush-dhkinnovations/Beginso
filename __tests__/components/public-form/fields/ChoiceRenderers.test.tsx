@@ -92,6 +92,21 @@ describe('YesNoRenderer', () => {
     expect(screen.getByRole('radio', { name: 'Yes' })).toHaveAttribute('aria-checked', 'false');
   });
 
+  it('shows the words the owner chose, and still stores Yes or No', async () => {
+    const worded = makeField({ type: 'yes_no', label: 'Attending?', yesLabel: 'Joyfully accepts', noLabel: 'Regretfully declines' });
+    render(<Harness Renderer={YesNoRenderer} field={worded} />);
+    expect(screen.queryByRole('radio', { name: 'Yes' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('radio', { name: 'Joyfully accepts' }));
+    expect(values()).toEqual({ f1: 'Yes' });
+    await userEvent.click(screen.getByRole('radio', { name: 'Regretfully declines' }));
+    expect(values()).toEqual({ f1: 'No' });
+  });
+
+  it('falls back to Yes / No for a blank word', () => {
+    render(<Harness Renderer={YesNoRenderer} field={makeField({ type: 'yes_no', yesLabel: '  ' })} />);
+    expect(screen.getByRole('radio', { name: 'Yes' })).toBeInTheDocument();
+  });
+
   it('cannot be clicked while disabled', async () => {
     render(<Harness Renderer={YesNoRenderer} field={field} disabled />);
     await userEvent.click(screen.getByRole('radio', { name: 'Yes' }));

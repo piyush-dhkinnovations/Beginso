@@ -44,6 +44,12 @@ describe('FieldPreview', () => {
     expect(screen.getByText('No')).toBeInTheDocument();
   });
 
+  it('a yes / no field previews the words the owner chose', () => {
+    render(<FieldPreview field={makeField('yes_no', { yesLabel: 'Going', noLabel: 'Not going' } as never)} />);
+    expect(screen.getByText('Going')).toBeInTheDocument();
+    expect(screen.getByText('Not going')).toBeInTheDocument();
+  });
+
   it('choice fields list up to three options and summarise the rest', () => {
     render(<FieldPreview field={makeField('multiple_choice', { options: ['A', 'B', 'C', 'D', 'E'] } as never)} />);
     expect(screen.getByText('A')).toBeInTheDocument();

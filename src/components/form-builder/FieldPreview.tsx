@@ -2,7 +2,7 @@
 
 import { Calendar, CalendarClock, Clock, Image as ImageIcon, Link2, MapPin, PenLine, Star, Upload } from 'lucide-react';
 import type { FormField } from '@/types/form';
-import { currencyOf, currencySymbol, imageSettings } from '@/lib/fieldDisplay';
+import { currencyOf, currencySymbol, imageSettings, yesNoWords } from '@/lib/fieldDisplay';
 
 // ─── Live, non-interactive preview of a field's public-form appearance ────────
 // Rendered inside FieldCard for every field, selected or not — shows what a
@@ -121,7 +121,7 @@ export function FieldPreview({ field }: { field: FormField }) {
     case 'yes_no':
       return (
         <div className="flex gap-2">
-          {['Yes', 'No'].map((label) => (
+          {[yesNoWords(field).yes, yesNoWords(field).no].map((label) => (
             <span key={label} className="min-w-20 rounded-md border border-(--border-default) bg-(--bg-subtle) px-4 py-1.5 text-center bg-body-sm text-(--text-secondary)">
               {label}
             </span>

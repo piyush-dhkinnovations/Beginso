@@ -92,11 +92,33 @@ describe('FieldInlineEditor: common controls', () => {
     expect(onUpdate).toHaveBeenCalledWith(f.fieldId, { required: false });
   });
 
-  it.each(['rating', 'yes_no', 'time', 'datetime', 'address', 'signature'] as const)('%s offers only label, help text and required', (type) => {
+  it.each(['rating', 'time', 'datetime', 'address', 'signature'] as const)('%s offers only label, help text and required', (type) => {
     setup(makeField(type));
     expect(screen.getByPlaceholderText('Field label')).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: 'Required field' })).toBeInTheDocument();
     expect(screen.queryByText('Placeholder text')).not.toBeInTheDocument();
+  });
+});
+
+describe('FieldInlineEditor: yes / no button words', () => {
+  it('offers label, help text, required and the two button words', () => {
+    setup(makeField('yes_no'));
+    expect(screen.getByPlaceholderText('Field label')).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'Required field' })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Yes')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('No')).toBeInTheDocument();
+  });
+
+  it('commits a typed word on blur, and a cleared word goes back to the default', async () => {
+    const f = makeField('yes_no', { yesLabel: 'Going' });
+    const { onUpdate } = setup(f);
+    await userEvent.type(screen.getByPlaceholderText('No'), 'Not going');
+    await userEvent.tab();
+    expect(onUpdate).toHaveBeenCalledWith(f.fieldId, { noLabel: 'Not going' });
+    const yes = screen.getByPlaceholderText('Yes');
+    await userEvent.clear(yes);
+    await userEvent.tab();
+    expect(onUpdate).toHaveBeenCalledWith(f.fieldId, { yesLabel: undefined });
   });
 });
 
