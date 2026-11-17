@@ -91,7 +91,7 @@ export function LiveFormPreview({ formId, branding, title, layout, device = 'des
   return (
     <div
       ref={boxRef}
-      className={bx('relative w-full rounded-xl border border-(--border-default) bg-(--bg-subtle) shadow-(--shadow-md)', fill && !desktop ? 'overflow-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'overflow-hidden', fill && 'h-full')}
+      className={bx('relative w-full rounded-xl border border-(--border-default) bg-(--bg-subtle) shadow-(--shadow-md)', fill && !desktop ? 'overflow-auto scrollbar-none [&::-webkit-scrollbar]:hidden' : 'overflow-hidden', fill && 'h-full')}
       style={fill ? undefined : { height: stageHeight }}
     >
       {fillsStage ? (

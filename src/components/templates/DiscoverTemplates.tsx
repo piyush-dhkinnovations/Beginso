@@ -195,7 +195,7 @@ export function DiscoverTemplates({ initial, initialCategory, initialQuery }: Di
         <div className="shrink-0 md:sticky md:top-28">
           <nav
             aria-label="Template categories"
-            className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] md:max-h-[calc(100vh-8rem)] md:w-60 md:flex-col md:gap-1 md:overflow-y-auto md:overflow-x-visible md:pb-4 [&::-webkit-scrollbar]:hidden"
+            className="flex gap-2 overflow-x-auto pb-1 scrollbar-none md:max-h-[calc(100vh-8rem)] md:w-60 md:flex-col md:gap-1 md:overflow-y-auto md:overflow-x-visible md:pb-4 [&::-webkit-scrollbar]:hidden"
           >
             {[{ name: ALL, count: total }, ...data.groups].map((g) => {
               const Icon = g.name === ALL ? LayoutGrid : groupIcon(g.name);

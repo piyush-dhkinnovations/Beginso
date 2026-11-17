@@ -82,7 +82,7 @@ export default function TemplateDetailPage() {
 
       <article className="pt-28 pb-24 md:pt-32 md:pb-16">
         {/* Wider than the old max-w-4xl: a two-column split needs the room a single text column didn't. */}
-        <div className="max-w-[96rem] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-384 mx-auto px-4 sm:px-6 lg:px-8">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 bg-caption text-(--text-muted) mb-6">
             <Link href="/discover-templates" className="hover:text-(--text-primary)">Templates</Link>
             <ChevronRight size={12} />
@@ -91,8 +91,8 @@ export default function TemplateDetailPage() {
 
           {/* Not `sticky`: the whole row is bounded to roughly one viewport's height, and the details column scrolls WITHIN itself
               if it is taller than that, so the form is always on screen next to them without anything tracking the other. */}
-          <div className="flex flex-col gap-8 md:h-[calc(100vh_-_11rem)] md:flex-row md:gap-10">
-            <div className="md:h-full md:w-1/3 md:overflow-y-auto md:pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex flex-col gap-8 md:h-[calc(100vh-11rem)] md:flex-row md:gap-10">
+            <div className="md:h-full md:w-1/3 md:overflow-y-auto md:pr-1 scrollbar-none [&::-webkit-scrollbar]:hidden">
               <Badge variant="primary" pill className="mb-3 capitalize">{template.category}</Badge>
               <h1 className="text-[28px] md:text-[36px] font-extrabold text-(--text-primary) leading-[1.15] mb-3">
                 {template.name}
@@ -185,7 +185,7 @@ export default function TemplateDetailPage() {
                 <DeviceToggle device={device} onChange={setDevice} />
                 <p className="bg-caption text-(--text-muted)">Try it: nothing you type is saved or sent.</p>
               </div>
-              <div className="h-[28rem] min-h-0 flex-1 md:h-auto">
+              <div className="h-112 min-h-0 flex-1 md:h-auto">
                 <TemplatePreviewFrame slug={slug} device={device} title={`${template.name} preview`} pageStyle={pageStyle} />
               </div>
             </div>

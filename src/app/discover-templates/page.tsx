@@ -31,7 +31,7 @@ export default async function DiscoverTemplatesPage({ searchParams }: { searchPa
     <main className="min-h-screen bg-(--bg-page)">
       <Navbar />
       {/* Wider than blog/templates' own max-w-7xl: this page carries a sidebar beside a multi-column grid. */}
-      <section className="mx-auto max-w-[96rem] px-4 pb-16 pt-28 sm:px-6 md:pt-32 lg:px-8">
+      <section className="mx-auto max-w-384 px-4 pb-16 pt-28 sm:px-6 md:pt-32 lg:px-8">
         <div className="mx-auto mb-8 max-w-2xl text-center">
           <h1 className="bg-h1 mb-3 text-(--text-primary)">Start from a template</h1>
           <GalleryIntro />
