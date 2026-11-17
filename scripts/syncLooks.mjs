@@ -18,7 +18,8 @@ if (!existsSync(from)) {
   console.error(`Not found: ${from}`);
   process.exit(1);
 }
-const same = readFileSync(from, 'utf8') === readFileSync(to, 'utf8');
+const text = (file) => readFileSync(file, 'utf8').replaceAll('\r\n', '\n');
+const same = text(from) === text(to);
 if (args.includes('--check')) {
   console.log(same ? 'The bundled Looks match the backend file.' : 'The bundled Looks DIFFER from the backend file. Run: npm run sync:looks');
   process.exit(same ? 0 : 1);

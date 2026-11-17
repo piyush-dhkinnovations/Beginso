@@ -7,7 +7,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { LooksDialog, LookPreview } from '@/components/form-builder/LooksDialog';
-import { GALLERY_STYLES, type FormStyle } from '@/lib/formStyles';
+import { GALLERY_STYLES, visibleLooks, type FormStyle } from '@/lib/formStyles';
 import type { FormBranding } from '@/types/form';
 
 const toast = vi.hoisted(() => vi.fn());
@@ -41,7 +41,7 @@ describe('Ready-made', () => {
   it('shows every ready-made look as a card with a preview, and hands the chosen one over with its name', async () => {
     const { onApply } = draw();
     const dialog = screen.getByRole('dialog', { name: 'Looks' });
-    expect(within(dialog).getAllByRole('listitem')).toHaveLength(GALLERY_STYLES.length);
+    expect(within(dialog).getAllByRole('listitem')).toHaveLength(visibleLooks(GALLERY_STYLES).length);
     await userEvent.click(within(dialog).getByRole('button', { name: 'Use the Midnight look' }));
     expect(onApply).toHaveBeenCalledTimes(1);
     expect(onApply.mock.calls[0][0]).toMatchObject({ id: 'midnight', layout: 'card_stack' });
@@ -51,7 +51,7 @@ describe('Ready-made', () => {
   it('has no "My styles" tab when there is nowhere to keep them', () => {
     draw({ scope: undefined });
     expect(screen.queryByRole('tab', { name: 'My styles' })).not.toBeInTheDocument();
-    expect(screen.getAllByRole('listitem')).toHaveLength(GALLERY_STYLES.length);
+    expect(screen.getAllByRole('listitem')).toHaveLength(visibleLooks(GALLERY_STYLES).length);
   });
 
   it('draws a preview with the look\'s own colours and card, and hides it from a screen reader', () => {
