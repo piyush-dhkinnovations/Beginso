@@ -51,3 +51,7 @@ next-env.d.ts
 /docs
 /qa-screenshots
 public/build-info.json
+# screenshots the local helper specs save when SHOT_DIR is set
+/shots/
+/shots-look/
+/undefined/
