@@ -36,6 +36,7 @@ import {
   cleanQuery,
   filterCards,
   groupsFromCards,
+  groupKey,
   groupsThatAddUp,
   resolveCategory,
   type GalleryData,
@@ -57,7 +58,7 @@ const GROUP_ICONS: Record<string, LucideIcon> = {
   'internal requests & inspections': ClipboardList,
   'consent & legal': FileSignature,
 };
-const groupIcon = (name: string): LucideIcon => GROUP_ICONS[name.toLowerCase()] ?? LayoutTemplate;
+const groupIcon = (name: string): LucideIcon => GROUP_ICONS[groupKey(name)] ?? LayoutTemplate;
 
 const GRID = 'grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3';
 

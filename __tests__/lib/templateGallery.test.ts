@@ -8,6 +8,7 @@ import {
   cleanQuery,
   filterCards,
   groupsFromCards,
+  groupKey,
   groupsThatAddUp,
   resolveCategory,
   useTemplateHref,
@@ -177,5 +178,26 @@ describe('groupsThatAddUp', () => {
     const cards = [c('A'), c('B')];
     expect(groupsThatAddUp(cards, [])).toEqual([{ name: 'A', count: 1 }, { name: 'B', count: 1 }]);
     expect(groupsThatAddUp(cards, [{ name: 'A', count: 1 }, { name: 'B', count: 5 }]).map((g) => g.count)).toEqual([1, 1]);
+  });
+});
+
+describe('groupKey', () => {
+  it('gives a current group its own lower-case name', () => {
+    expect(groupKey('Healthcare')).toBe('healthcare');
+    expect(groupKey(' Real Estate ')).toBe('real estate');
+  });
+
+  it('gives every old category name the group it belongs to now, so it gets that group\'s icon', () => {
+    expect(groupKey('HR')).toBe('hr & hiring');
+    expect(groupKey('Medicine')).toBe('healthcare');
+    expect(groupKey('Non-profit')).toBe('community & membership');
+    expect(groupKey('Reservation/Booking')).toBe('bookings');
+    expect(groupKey('E-commerce')).toBe('orders & payments');
+    expect(groupKey('Working Forms')).toBe('internal requests & inspections');
+    expect(groupKey('Lead Generation')).toBe('leads & contact');
+  });
+
+  it('leaves an unknown name as it is (it then gets the generic icon)', () => {
+    expect(groupKey('Something New')).toBe('something new');
   });
 });
