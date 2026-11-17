@@ -89,3 +89,35 @@ describe('templatePreviewSlug', () => {
     expect(templatePreviewSlug('abc')).toBe('template-preview-abc');
   });
 });
+
+describe('templateToPreviewSchema: no guessed icon', () => {
+  it('adds no icon the template does not carry, whatever its name suggests', () => {
+    expect(templateToPreviewSchema(BASE).branding?.iconName).toBeUndefined();
+  });
+
+  it('keeps an icon the template itself names', () => {
+    const t = { ...BASE, branding: { iconName: 'rocket' } } as Template;
+    expect(templateToPreviewSchema(t).branding?.iconName).toBe('rocket');
+  });
+});
+
+describe('templateToPreviewSchema: the template\'s own pages', () => {
+  it('keeps the titles and descriptions the template wrote, so a step shows its own name', () => {
+    const t = {
+      ...BASE,
+      pages: [
+        { id: 'page-1', order: 0, title: 'About you', description: 'Where we can reach you.' },
+        { id: 'page-2', order: 1, title: 'Your work' },
+      ],
+      fields: [field('a', 'page-1', 0), field('b', 'page-2', 0)],
+    } as Template;
+    expect(templateToPreviewSchema(t).pages).toEqual([
+      { id: 'page-1', order: 0, title: 'About you', description: 'Where we can reach you.' },
+      { id: 'page-2', order: 1, title: 'Your work' },
+    ]);
+  });
+
+  it('a template with no pages of its own keeps the stand-in: its name on the first page', () => {
+    expect(templateToPreviewSchema({ ...BASE, pages: undefined } as Template).pages[0].title).toBe('Job Application');
+  });
+});

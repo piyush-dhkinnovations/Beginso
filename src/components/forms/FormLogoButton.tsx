@@ -20,7 +20,7 @@ interface FormLogoButtonProps {
   canEdit?: boolean;
 }
 
-const same = (a: FormMark, b: FormMark) => (a.logoUrl ?? null) === (b.logoUrl ?? null) && (a.iconName ?? null) === (b.iconName ?? null);
+const same = (a: FormMark, b: FormMark) => (a.logoUrl ?? null) === (b.logoUrl ?? null) && (a.iconName ?? null) === (b.iconName ?? null) && Boolean(a.iconNone) === Boolean(b.iconNone);
 
 /**
  * The form's icon in its page header. With edit rights it carries a small pencil; clicking opens the same
@@ -68,7 +68,7 @@ export function FormLogoButton({ mark, title, onSave, canEdit = true }: FormLogo
 
       <Modal isOpen={open} onClose={() => setOpen(false)} title="Change form icon" description="Pick the icon shown for this form.">
         <div className="flex flex-col gap-5">
-          <FormMarkPicker value={draft} onChange={setDraft} title={title} disabled={saving} />
+          <FormMarkPicker value={draft} onChange={setDraft} disabled={saving} />
           <div className="flex items-center justify-end gap-3 border-t border-(--border-default) pt-4">
             <Button variant="secondary" onClick={() => setOpen(false)} disabled={saving}>
               Cancel

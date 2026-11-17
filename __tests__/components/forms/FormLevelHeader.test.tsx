@@ -155,7 +155,7 @@ describe('FormLevelHeader', () => {
   it('saving a logo writes the whole branding object with the logo swapped in, then refreshes caches', async () => {
     const { spy } = renderHeader();
     await userEvent.click(await screen.findByRole('button', { name: 'logo-true' }));
-    await waitFor(() => expect(updateForm).toHaveBeenCalledWith('f1', { branding: { primaryColor: '#123456', logoUrl: '/logo.png' } }));
+    await waitFor(() => expect(updateForm).toHaveBeenCalledWith('f1', { branding: { primaryColor: '#123456', logoUrl: '/logo.png', iconNone: false } }));
     await waitFor(() => expect(spy).toHaveBeenCalledWith({ queryKey: ['form', 'f1'] }));
     expect(spy).toHaveBeenCalledWith({ queryKey: ['forms'] });
   });

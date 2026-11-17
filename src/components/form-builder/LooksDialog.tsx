@@ -9,7 +9,8 @@ import { Modal } from '@/components/ui/Modal';
 import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { brandButtonStyle, brandCardClass, brandLookProps, brandTypeStyle, brandWashStyle, effectiveTheme } from '@/lib/formTheme';
-import { GALLERY_STYLES, snapshotStyle, type FormStyle } from '@/lib/formStyles';
+import { snapshotStyle, visibleLooks, type FormStyle } from '@/lib/formStyles';
+import { useFormLooks } from '@/hooks/useFormLooks';
 import { formStylesService } from '@/services/formStyles';
 import { bx } from '@/lib/utils';
 import type { FormBranding, LayoutPreset } from '@/types/form';
@@ -29,9 +30,9 @@ const LAYOUT_NAME: Record<string, string> = { classic: 'Classic', card_stack: 'C
 export function LookPreview({ look }: { look: Look }) {
   const b = look.branding as FormBranding;
   const theme = effectiveTheme(look.layout, b.theme);
-  const { className, style, ...attrs } = brandLookProps({ theme });
+  const { className, style, ...attrs } = brandLookProps({ theme, primaryColor: b.primaryColor });
   return (
-    <div aria-hidden="true" className="bg-form-type relative flex h-32 items-center justify-center overflow-hidden rounded-lg border border-(--border-default)" style={{ ...brandTypeStyle(b), ...brandWashStyle(b), backgroundAttachment: 'scroll' }}>
+    <div aria-hidden="true" data-theme="light" className="bg-form-type relative flex h-32 items-center justify-center overflow-hidden rounded-lg border border-(--border-default)" style={{ ...brandTypeStyle(b), ...brandWashStyle(b), backgroundAttachment: 'scroll' }}>
       <div {...attrs} className={bx(className, 'flex w-full justify-center px-4')} style={style}>
         <div className={bx(brandCardClass(b), 'flex w-full max-w-44 flex-col gap-1.5 p-2.5')}>
           <p className="form-heading text-sm font-bold leading-tight text-(--form-heading)">Your form</p>
@@ -208,6 +209,7 @@ export interface LooksDialogProps {
 
 export function LooksDialog({ isOpen, onClose, layout, branding, scope, onApply }: LooksDialogProps) {
   const [tab, setTab] = useState('ready');
+  const looks = visibleLooks(useFormLooks());
   const tabs = scope ? TABS : TABS.slice(0, 1);
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Looks" description="Give the form a whole new look in one click. Your fields and answers stay as they are, and you can undo it." size="xl">
@@ -216,7 +218,7 @@ export function LooksDialog({ isOpen, onClose, layout, branding, scope, onApply 
         <div role="tabpanel" id="looks-panel" aria-labelledby={`tab-${tab}`} className="max-h-[62vh] overflow-y-auto p-1">
           {tab === 'ready' || !scope ? (
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {GALLERY_STYLES.map((g) => (
+              {looks.map((g) => (
                 <LookCard
                   key={g.id}
                   name={g.name}

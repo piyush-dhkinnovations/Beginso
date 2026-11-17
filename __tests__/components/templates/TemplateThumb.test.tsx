@@ -17,9 +17,13 @@ const tpl = (over: Partial<Template> = {}) =>
   }) as unknown as Template;
 
 describe('TemplateThumb', () => {
-  it('is hidden from assistive tech', () => {
+  it('is one picture with an accessible name, and nothing inside it can be focused', () => {
     const { container } = render(<TemplateThumb template={tpl()} />);
-    expect(container.firstElementChild).toHaveAttribute('aria-hidden', 'true');
+    const root = container.firstElementChild as HTMLElement;
+    expect(root).toHaveAttribute('role', 'img');
+    expect(root.getAttribute('aria-label')).toMatch(/^Preview of the .+ form$/);
+    // the drawn form is inert: a tab key or a screen reader never lands on its fields
+    expect(root.querySelector('[inert]')).not.toBeNull();
   });
 
   it("shows the template's own real question labels and a call to action, using the real field renderer", () => {
@@ -67,5 +71,24 @@ describe('TemplateThumb', () => {
       <TemplateThumb template={tpl({ branding: { coverImageUrl: 'https://images.unsplash.com/photo-123' } })} />
     );
     expect(container.querySelector('img[alt=""]')).toHaveAttribute('src', expect.stringContaining('images.unsplash.com'));
+  });
+});
+
+describe('TemplateThumb: a cover photo never hides the form', () => {
+  const withCover = (coverFit: 'original' | 'banner') =>
+    tpl({ branding: { coverImageUrl: '/form-pictures/sand-dunes.jpg', coverFit, primaryColor: '#92400E' } as never });
+
+  it('draws a "whole picture" cover as a banner strip, so the title and the first questions still show', () => {
+    const { container } = render(<TemplateThumb template={withCover('original')} />);
+    const img = container.querySelector('img') as HTMLImageElement;
+    expect(img).not.toBeNull();
+    expect(img.className).toContain('absolute'); // cropped to the strip
+    expect(img.className).not.toContain('h-auto'); // not the picture at its own full height
+    expect(screen.getByText('Full name')).toBeInTheDocument();
+  });
+
+  it('leaves a banner cover as it was', () => {
+    const { container } = render(<TemplateThumb template={withCover('banner')} />);
+    expect((container.querySelector('img') as HTMLImageElement).className).toContain('absolute');
   });
 });

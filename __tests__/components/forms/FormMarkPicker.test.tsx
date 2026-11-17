@@ -16,12 +16,11 @@ import { FormMarkPicker } from '@/components/forms/FormMarkPicker';
 import { FEATURED_ICON_NAMES, getFormIcon } from '@/lib/formIcons';
 import type { FormMark } from '@/types/form';
 
-function Harness({ initial = {}, title = '', onChange }: { initial?: FormMark; title?: string; onChange?: (m: FormMark) => void }) {
+function Harness({ initial = {}, onChange }: { initial?: FormMark; onChange?: (m: FormMark) => void }) {
   const [value, setValue] = useState<FormMark>(initial);
   return (
     <FormMarkPicker
       value={value}
-      title={title}
       onChange={(m) => {
         setValue(m);
         onChange?.(m);
@@ -40,38 +39,39 @@ describe('FormMarkPicker', () => {
     uploadFile.mockReset();
   });
 
-  it('shows one grid: 14 illustrated icons, the upload tile and More icons', () => {
+  it('shows one grid: No icon, 14 illustrated icons, the upload tile and More icons', () => {
     render(<Harness />);
-    expect(main().getAllByRole('radio')).toHaveLength(15); // 14 icons + the upload tile; "More icons" is a plain button
+    expect(main().getAllByRole('radio')).toHaveLength(16); // No icon + 14 icons + the upload tile; "More icons" is a plain button
     expect(screen.getByRole('button', { name: 'More icons' })).toBeInTheDocument();
-    expect(main().getAllByRole('radio').filter((r) => r.querySelector('svg'))).toHaveLength(15);
+    expect(main().getAllByRole('radio').filter((r) => r.querySelector('svg'))).toHaveLength(16);
     expect(screen.queryByRole('radio', { name: /Automatic/ })).not.toBeInTheDocument();
   });
 
-  it('selects the icon that suits the form name to begin with, and follows the name until another is chosen', () => {
-    const { rerender } = render(<FormMarkPicker value={{}} title="Product Order Form" onChange={vi.fn()} />);
-    expect(main().getByRole('radio', { name: label('shopping-cart-full') })).toHaveAttribute('aria-checked', 'true');
-    rerender(<FormMarkPicker value={{}} title="Customer Feedback" onChange={vi.fn()} />);
-    expect(main().getByRole('radio', { name: label('rating-star') })).toHaveAttribute('aria-checked', 'true');
-    expect(main().getByRole('radio', { name: label('shopping-cart-full') })).toHaveAttribute('aria-checked', 'false');
+  it('selects No icon to begin with: nothing is chosen from the form name', () => {
+    render(<Harness />);
+    expect(main().getByRole('radio', { name: 'No icon' })).toHaveAttribute('aria-checked', 'true');
+    expect(main().getAllByRole('radio').filter((r) => r.getAttribute('aria-checked') === 'true')).toHaveLength(1);
   });
 
-  it('a suggestion outside the up-front set takes a place in the grid so it is visible', () => {
-    render(<FormMarkPicker value={{}} title="Restaurant menu" onChange={vi.fn()} />);
-    expect(main().getByRole('radio', { name: label('fast-food-french-fries') })).toHaveAttribute('aria-checked', 'true');
-    expect(main().getAllByRole('radio')).toHaveLength(15);
+  it('No icon clears a chosen icon and records the choice', async () => {
+    const onChange = vi.fn();
+    render(<Harness initial={{ iconName: 'startup-launch' }} onChange={onChange} />);
+    await userEvent.click(main().getByRole('radio', { name: 'No icon' }));
+    expect(onChange).toHaveBeenLastCalledWith({ logoUrl: null, iconName: null, iconNone: true });
+    expect(main().getByRole('radio', { name: 'No icon' })).toHaveAttribute('aria-checked', 'true');
+    expect(main().getByRole('radio', { name: label('startup-launch') })).toHaveAttribute('aria-checked', 'false');
   });
 
   it('picking an icon selects it and clears any logo (icons carry their own colours, so no colour is stored)', async () => {
     const onChange = vi.fn();
     render(<Harness onChange={onChange} />);
     await userEvent.click(main().getByRole('radio', { name: label('startup-launch') }));
-    expect(onChange).toHaveBeenLastCalledWith({ logoUrl: null, iconName: 'startup-launch' });
+    expect(onChange).toHaveBeenLastCalledWith({ logoUrl: null, iconName: 'startup-launch', iconNone: false });
     expect(main().getByRole('radio', { name: label('startup-launch') })).toHaveAttribute('aria-checked', 'true');
   });
 
   it('shows a stored icon as selected', () => {
-    render(<Harness initial={{ iconName: 'startup-launch' }} title="Event Registration" />);
+    render(<Harness initial={{ iconName: 'startup-launch' }} />);
     expect(main().getByRole('radio', { name: label('startup-launch') })).toHaveAttribute('aria-checked', 'true');
     expect(main().queryByRole('radio', { name: label('calendar-1') })).not.toBeInTheDocument(); // the suggestion is not shown as selected when another icon is stored
   });
@@ -104,7 +104,7 @@ describe('FormMarkPicker', () => {
     render(<Harness initial={{ iconName: 'startup-launch' }} onChange={onChange} />);
     expect(main().getByRole('radio', { name: 'Upload your logo' })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Upload form logo'), { target: { files: [file('logo.png', 'image/png')] } });
-    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith({ logoUrl: '/uploads/logo.png', iconName: null }));
+    await waitFor(() => expect(onChange).toHaveBeenLastCalledWith({ logoUrl: '/uploads/logo.png', iconName: null, iconNone: false }));
     expect(main().getByRole('radio', { name: 'Your logo' })).toHaveAttribute('aria-checked', 'true');
     expect(main().getByRole('radio', { name: label('startup-launch') })).toHaveAttribute('aria-checked', 'false');
   });
@@ -115,7 +115,7 @@ describe('FormMarkPicker', () => {
     await userEvent.click(main().getByRole('radio', { name: label('rating-star') }));
     expect(main().getByRole('radio', { name: 'Your logo' })).toHaveAttribute('aria-checked', 'false');
     await userEvent.click(main().getByRole('radio', { name: 'Your logo' }));
-    expect(onChange).toHaveBeenLastCalledWith({ logoUrl: '/logo.png', iconName: null });
+    expect(onChange).toHaveBeenLastCalledWith({ logoUrl: '/logo.png', iconName: null, iconNone: false });
     expect(main().getByRole('radio', { name: 'Your logo' })).toHaveAttribute('aria-checked', 'true');
   });
 
@@ -139,17 +139,17 @@ describe('FormMarkPicker', () => {
     expect(main().getByRole('radio', { name: 'Upload your logo' })).toHaveAttribute('aria-checked', 'false');
   });
 
-  it('removing the uploaded logo goes back to the suggested icon', async () => {
+  it('removing the uploaded logo goes back to No icon', async () => {
     const onChange = vi.fn();
-    render(<Harness initial={{ logoUrl: '/logo.png' }} title="Job Application" onChange={onChange} />);
+    render(<Harness initial={{ logoUrl: '/logo.png' }} onChange={onChange} />);
     await userEvent.click(screen.getByRole('button', { name: 'Remove logo' }));
-    expect(onChange).toHaveBeenLastCalledWith({ logoUrl: null, iconName: null });
-    expect(main().getByRole('radio', { name: label('cash-briefcase') })).toHaveAttribute('aria-checked', 'true');
+    expect(onChange).toHaveBeenLastCalledWith({ logoUrl: null, iconName: null, iconNone: true });
+    expect(main().getByRole('radio', { name: 'No icon' })).toHaveAttribute('aria-checked', 'true');
     expect(main().getByRole('radio', { name: 'Upload your logo' })).toBeInTheDocument();
   });
 
   it('the up-front icons are exactly the featured set', () => {
-    render(<Harness title="Customer Feedback" />);
+    render(<Harness />);
     const names = main().getAllByRole('radio').map((r) => r.getAttribute('aria-label'));
     for (const n of FEATURED_ICON_NAMES) expect(names).toContain(label(n));
   });

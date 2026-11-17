@@ -8,7 +8,7 @@ import { FORM_FONT_OPTIONS, cleanTheme } from '@/lib/formTheme';
 import { readabilityChecks } from '@/components/form-builder/LookControls';
 import type { FormBranding, LayoutPreset } from '@/types/form';
 
-const LAYOUTS: LayoutPreset[] = ['classic', 'card_stack', 'guided', 'steps', 'split_feature', 'compact'];
+const LAYOUTS: LayoutPreset[] = ['classic', 'card_stack', 'guided', 'steps', 'split_feature', 'compact', 'chat', 'sidebar', 'open', 'focus'];
 
 const FORM: FormBranding = {
   primaryColor: '#16A34A',

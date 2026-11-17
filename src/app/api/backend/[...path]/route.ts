@@ -41,6 +41,8 @@ const ALLOWED_API_ROOTS = new Set([
   // Custom Home layouts (GET/PUT/DELETE /api/dashboards/home) — a separate root from 'dashboard' (analytics).
   'dashboards',
   'forms',
+  // The ready-made Looks (GET /api/form-looks): public and read-only, with its own root. Without this entry the call 404s "Backend path is not allowed".
+  'form-looks',
   // Sprint 9 (team-permissions, task 2.2) — the public/token-based invitation routes
   // (GET/POST /api/invitations/:token/...) live under their own root, not /workspaces, so
   // they need their own allowlist entry (CLAUDE.md's named trap: without this every call

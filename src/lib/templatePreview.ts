@@ -1,5 +1,4 @@
 import type { Template, FormPage, FormBranding, LayoutPreset, FormSettings } from '@/types/form';
-import { suggestFormIcon } from '@/lib/formIcons';
 import type { PublicFormSchema } from '@/types/publicForm';
 
 // What a template looks like in its preview: a layout and a branding, by category, so a Contact form, an Event RSVP, a Survey and a
@@ -79,11 +78,18 @@ export function effectiveBranding(template: Template): FormBranding {
 // always single-page.
 export function templateToPreviewSchema(template: Template): PublicFormSchema {
   const pageIds = Array.from(new Set(template.fields.map((f) => f.pageId)));
-  const pages: FormPage[] = pageIds.map((id, index) => ({
-    id,
-    order: index,
-    title: index === 0 ? template.name : undefined,
-  }));
+  // The template's own pages carry the titles and descriptions its author wrote ("About you", "Your work"); a template without them
+  // (an older one) keeps the old stand-in: its name on the first page and nothing on the rest.
+  const own = new Map((template.pages ?? []).map((p) => [p.id, p]));
+  const pages: FormPage[] = pageIds.map((id, index) => {
+    const real = own.get(id);
+    return {
+      id,
+      order: index,
+      title: real?.title ?? (index === 0 ? template.name : undefined),
+      ...(real?.description ? { description: real.description } : {}),
+    };
+  });
 
   // Backend fixed `settings` being absent on every live template (26 Sep 2026, same day it was
   // found — see docs/backend-contract/api-reference.md), so this default is no longer covering a
@@ -100,7 +106,7 @@ export function templateToPreviewSchema(template: Template): PublicFormSchema {
     title: template.name,
     pages,
     fields: template.fields,
-    branding: { ...branding, iconName: branding.iconName ?? suggestFormIcon(template.name)?.name },
+    branding,
     settings: {
       honeypotEnabled: false,
       successMessage: settings.successMessage,

@@ -8,10 +8,11 @@ import { templatesService } from '@/services/templates';
 // Phase 2 (.kiro/specs/public-template-gallery/tasks.md, task 7): GET /api/templates/public
 // confirmed live in production 26 Sep 2026 (curl-verified: 200, no cookie, real data) — this now
 // calls it directly. The Phase 1 mock/fixture has been removed.
-export function usePublicTemplates() {
+export function usePublicTemplates(options: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: ['public-templates'],
     queryFn: templatesService.getPublicTemplates,
+    enabled: options.enabled ?? true,
     staleTime: 5 * 60_000, // templates are static — no need to refetch on every page visit
   });
 }

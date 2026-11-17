@@ -55,8 +55,8 @@ describe('Looks in the studio', () => {
   it('says so with an Undo, and Undo puts back the layout and every look setting exactly', async () => {
     const { onBrandingUpdate, onLayoutChange } = draw();
     await userEvent.click(screen.getByRole('button', { name: /Looks/ }));
-    await userEvent.click(screen.getByRole('button', { name: 'Use the Playful look' }));
-    expect(toast).toHaveBeenCalledWith('Playful look applied.', 'success', undefined, expect.objectContaining({ label: 'Undo' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Use the Midnight look' }));
+    expect(toast).toHaveBeenCalledWith('Midnight look applied.', 'success', undefined, expect.objectContaining({ label: 'Undo' }));
     onLayoutChange.mockClear();
     onBrandingUpdate.mockClear();
     toast.mock.calls[0][3].onClick();
