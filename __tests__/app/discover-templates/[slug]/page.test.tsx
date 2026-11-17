@@ -68,17 +68,40 @@ describe('TemplateDetailPage', () => {
   it('sends a logged-out visitor to sign up first, carrying the template along in `next`', () => {
     mockTemplates.mockReturnValue({ data: [tpl()], isLoading: false });
     render(<TemplateDetailPage />);
-    expect(screen.getByRole('link', { name: 'Use this template' })).toHaveAttribute(
-      'href',
-      `/signup?next=${encodeURIComponent('/templates/apply/t1')}`
-    );
+    // one beside the title, one in the sticky bar on a phone: both go the same way
+    const links = screen.getAllByRole('link', { name: 'Use this template' });
+    expect(links).toHaveLength(2);
+    for (const link of links) expect(link).toHaveAttribute('href', `/signup?next=${encodeURIComponent('/templates/apply/t1')}`);
   });
 
   it('sends an already-authenticated visitor straight to apply the template, no signup step', () => {
     authenticated = true;
     mockTemplates.mockReturnValue({ data: [tpl()], isLoading: false });
     render(<TemplateDetailPage />);
-    expect(screen.getByRole('link', { name: 'Use this template' })).toHaveAttribute('href', '/templates/apply/t1');
+    for (const link of screen.getAllByRole('link', { name: 'Use this template' })) expect(link).toHaveAttribute('href', '/templates/apply/t1');
+  });
+
+  it('lists the questions inside the template, hiding the ones that were deleted, with a way to open the full preview', () => {
+    mockTemplates.mockReturnValue({
+      data: [tpl({ fields: [{ ...field('Full name'), required: true }, field('Email'), { ...field('Old question'), deleted: true }] })],
+      isLoading: false,
+    });
+    render(<TemplateDetailPage />);
+    expect(screen.getByRole('heading', { name: 'What is inside' })).toBeInTheDocument();
+    expect(screen.getByText('Full name')).toBeInTheDocument();
+    expect(screen.getByText('Required')).toBeInTheDocument();
+    expect(screen.queryByText('Old question')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Open full preview/ })).toHaveAttribute('href', '/discover-templates/job-application/preview');
+  });
+
+  it('says how many steps it has only when there is more than one', () => {
+    mockTemplates.mockReturnValue({ data: [tpl({ pages: [{ id: 'a', order: 0 }, { id: 'b', order: 1 }] })], isLoading: false });
+    const { unmount } = render(<TemplateDetailPage />);
+    expect(screen.getByText('2 steps')).toBeInTheDocument();
+    unmount();
+    mockTemplates.mockReturnValue({ data: [tpl()], isLoading: false });
+    render(<TemplateDetailPage />);
+    expect(screen.queryByText(/steps/)).not.toBeInTheDocument();
   });
 
   it('suggests other templates in the same category, excluding the one being viewed', () => {
