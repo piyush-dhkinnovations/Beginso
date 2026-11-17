@@ -33,7 +33,7 @@ describe('TemplateGalleryCard', () => {
 
   it('shows the category, the name, one line of description, the question count and about how many minutes', () => {
     render(<TemplateGalleryCard card={card()} signedIn={false} />);
-    expect(screen.getByText('HR & Hiring')).toBeInTheDocument();
+    expect(screen.getByText('HR')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Job Application' })).toBeInTheDocument();
     const description = screen.getByText('Collect CVs');
     expect(description.className).toMatch(/line-clamp-2/);

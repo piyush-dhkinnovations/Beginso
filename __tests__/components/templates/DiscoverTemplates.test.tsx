@@ -84,7 +84,7 @@ describe('the gallery: what the server sent', () => {
     render(<DiscoverTemplates initial={DATA} />);
     const nav = screen.getByRole('navigation', { name: 'Template categories' });
     const buttons = within(nav).getAllByRole('button').map((b) => b.textContent);
-    expect(buttons).toEqual(['All templates5', 'HR & Hiring2', 'Events & RSVPs2', 'Healthcare1']);
+    expect(buttons).toEqual(['All templates5', 'HR2', 'Events2', 'Healthcare1']);
     expect(within(nav).getByRole('button', { name: /All templates/ })).toHaveAttribute('aria-pressed', 'true');
   });
 });
@@ -94,7 +94,7 @@ describe('category filtering', () => {
     window.scrollTo = vi.fn() as never;
     vi.useFakeTimers({ shouldAdvanceTime: true });
     render(<DiscoverTemplates initial={DATA} />);
-    await userEvent.click(screen.getByRole('button', { name: /Events & RSVPs/ }));
+    await userEvent.click(screen.getByRole('button', { name: /^Events/ }));
     expect(cardNames()).toEqual(['Event Registration', 'Wedding RSVP']);
     // no Featured strip while a group is chosen
     expect(screen.queryByRole('region', { name: 'Featured' })).not.toBeInTheDocument();
