@@ -30,7 +30,7 @@ const LAYOUT_NAME: Record<string, string> = { classic: 'Classic', card_stack: 'C
 export function LookPreview({ look }: { look: Look }) {
   const b = look.branding as FormBranding;
   const theme = effectiveTheme(look.layout, b.theme);
-  const { className, style, ...attrs } = brandLookProps({ theme });
+  const { className, style, ...attrs } = brandLookProps({ theme, primaryColor: b.primaryColor });
   return (
     <div aria-hidden="true" data-theme="light" className="bg-form-type relative flex h-32 items-center justify-center overflow-hidden rounded-lg border border-(--border-default)" style={{ ...brandTypeStyle(b), ...brandWashStyle(b), backgroundAttachment: 'scroll' }}>
       <div {...attrs} className={bx(className, 'flex w-full justify-center px-4')} style={style}>
