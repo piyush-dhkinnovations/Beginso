@@ -89,3 +89,14 @@ describe('templatePreviewSlug', () => {
     expect(templatePreviewSlug('abc')).toBe('template-preview-abc');
   });
 });
+
+describe('templateToPreviewSchema: no guessed icon', () => {
+  it('adds no icon the template does not carry, whatever its name suggests', () => {
+    expect(templateToPreviewSchema(BASE).branding?.iconName).toBeUndefined();
+  });
+
+  it('keeps an icon the template itself names', () => {
+    const t = { ...BASE, branding: { iconName: 'rocket' } } as Template;
+    expect(templateToPreviewSchema(t).branding?.iconName).toBe('rocket');
+  });
+});

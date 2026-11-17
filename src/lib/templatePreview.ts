@@ -1,5 +1,4 @@
 import type { Template, FormPage, FormBranding, LayoutPreset, FormSettings } from '@/types/form';
-import { suggestFormIcon } from '@/lib/formIcons';
 import type { PublicFormSchema } from '@/types/publicForm';
 
 // What a template looks like in its preview: a layout and a branding, by category, so a Contact form, an Event RSVP, a Survey and a
@@ -100,7 +99,7 @@ export function templateToPreviewSchema(template: Template): PublicFormSchema {
     title: template.name,
     pages,
     fields: template.fields,
-    branding: { ...branding, iconName: branding.iconName ?? suggestFormIcon(template.name)?.name },
+    branding,
     settings: {
       honeypotEnabled: false,
       successMessage: settings.successMessage,
