@@ -4,8 +4,10 @@ import { Controller } from 'react-hook-form';
 import { cn } from '@/lib/utils';
 import type { FieldRendererProps } from '@/types/publicForm';
 import { FieldShell } from './FieldShell';
+import { yesNoWords } from '@/lib/fieldDisplay';
 
 export function YesNoRenderer({ field, control, error, disabled, inline }: FieldRendererProps) {
+  const words = yesNoWords(field);
   return (
     <FieldShell fieldId={field.fieldId} label={field.label} required={field.required} helpText={field.helpText} error={error} inline={inline} asGroup>
       <Controller
@@ -13,7 +15,7 @@ export function YesNoRenderer({ field, control, error, disabled, inline }: Field
         control={control}
         render={({ field: c }) => (
           <div id={field.fieldId} role="radiogroup" aria-labelledby={`${field.fieldId}-label`} className="flex gap-2">
-            {['Yes', 'No'].map((option) => {
+            {(['Yes', 'No'] as const).map((option) => {
               const selected = c.value === option;
               return (
                 <button
@@ -32,7 +34,7 @@ export function YesNoRenderer({ field, control, error, disabled, inline }: Field
                     disabled && 'opacity-60 pointer-events-none'
                   )}
                 >
-                  {option}
+                  {option === 'Yes' ? words.yes : words.no}
                 </button>
               );
             })}

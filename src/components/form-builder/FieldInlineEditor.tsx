@@ -24,7 +24,7 @@ const TEXT_TYPES = new Set([
 ]);
 
 // Types with nothing to configure beyond label, help text and required.
-const BASIC_TYPES = new Set(['rating', 'yes_no', 'time', 'datetime', 'address', 'signature']);
+const BASIC_TYPES = new Set(['rating', 'time', 'datetime', 'address', 'signature']);
 
 // Platform-enforced allowlist — not configurable per-field, so it's a constant, not state.
 const ALLOWED_FILE_TYPE_LABELS = ['PDF', 'Word', 'Excel', 'Images', 'Video (MP4)', 'ZIP', 'Plain text'];
@@ -664,6 +664,38 @@ export function FieldInlineEditor({ field, onUpdate, onUpdateOptions }: FieldInl
           <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
 
           <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
+        </>
+      )}
+
+      {field.type === 'yes_no' && (
+        <>
+          <LabelField uid={uid} fieldId={field.fieldId} label={field.label} onUpdate={onUpdate} />
+
+          <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
+
+          <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
+
+          <PanelSection label="Button words">
+            <BlurField
+              id={`${uid}-yes`}
+              label=""
+              defaultValue={field.yesLabel ?? ''}
+              placeholder="Yes"
+              allowEmpty={true}
+              maxLength={30}
+              onCommit={(v) => onUpdate(field.fieldId, { yesLabel: v || undefined })}
+            />
+            <BlurField
+              id={`${uid}-no`}
+              label=""
+              defaultValue={field.noLabel ?? ''}
+              placeholder="No"
+              allowEmpty={true}
+              maxLength={30}
+              onCommit={(v) => onUpdate(field.fieldId, { noLabel: v || undefined })}
+            />
+            <p className="bg-caption text-(--text-muted)">Only the words change. Answers and exports still read Yes or No.</p>
+          </PanelSection>
         </>
       )}
 
