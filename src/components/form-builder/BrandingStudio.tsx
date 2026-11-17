@@ -515,7 +515,7 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
       <h2 className="sr-only">Branding</h2>
       <LooksDialog isOpen={looksOpen} onClose={() => setLooksOpen(false)} layout={layout} branding={branding} scope={styleScope} onApply={applyLook} />
       <div className="grid items-start gap-6 lg:grid-cols-[24rem_minmax(0,1fr)]">
-        <Card className="flex min-w-0 flex-col gap-4 p-4 lg:max-h-[calc(100vh-17.75rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <Card className="flex min-w-0 flex-col gap-4 p-4 lg:max-h-[calc(100vh-17.75rem)] lg:overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
           {/* Stays at the top of the card while the controls scroll under it. */}
           <div className="sticky -top-4 z-10 -mx-4 -mt-4 bg-(--surface-card) px-4 pt-4">
             <Tabs tabs={SECTIONS} activeId={section} onChange={(id) => { setSection(id as Section); if (id !== 'buttons') setShowThanks(false); }} ariaLabel="Branding sections" panelId="branding-section" className="gap-4" />

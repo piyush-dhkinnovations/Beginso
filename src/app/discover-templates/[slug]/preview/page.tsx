@@ -54,7 +54,7 @@ export default function TemplatePreviewPage() {
 
   return (
     <FormThemeScope>
-      <div className={`fixed inset-0 z-50 overflow-y-auto ${seeThrough ? 'flex flex-col bg-transparent [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'bg-(--bg-subtle)'}`}>
+      <div className={`fixed inset-0 z-50 overflow-y-auto ${seeThrough ? 'flex flex-col bg-transparent scrollbar-none [&::-webkit-scrollbar]:hidden' : 'bg-(--bg-subtle)'}`}>
         {/* On its own (a new tab) the form fills the page. In the detail page's stage it sits in the middle of the page, not at the top; auto margins
             centre it, the padding keeps a tall form off the edges, and a form taller than the stage scrolls (without a scrollbar drawn over the page). */}
         {seeThrough ? <div className="my-auto w-full shrink-0 py-6 md:py-8">{shell}</div> : shell}

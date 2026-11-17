@@ -124,7 +124,7 @@ export function Toolbox({ onAdd }: ToolboxProps) {
     // Sprint 13 (CF2.12): the rail is full width from 1024px and icon-only on tablet (768-1023px). On phones the toolbox is the
     // AddFieldSheet bottom sheet, opened from the build bar under the canvas.
     // Flat rail (no card): sticks under the top bar while the canvas scrolls with the page.
-    <aside className="sticky top-16 hidden w-16 shrink-0 flex-col gap-4 self-start rounded-xl border border-(--border-default) bg-(--surface-card) p-2 md:flex lg:w-72 lg:p-4 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+    <aside className="sticky top-16 hidden w-16 shrink-0 flex-col gap-4 self-start rounded-xl border border-(--border-default) bg-(--surface-card) p-2 md:flex lg:w-72 lg:p-4 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
       <div className="hidden border-b border-(--border-subtle) pb-3 lg:block">
         <h3 className="bg-body font-bold text-(--text-primary) tracking-tight">Add fields</h3>
         <p className="bg-body-sm mt-1 text-(--text-muted)">Click or drag a field onto the form.</p>

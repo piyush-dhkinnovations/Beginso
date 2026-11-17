@@ -24,7 +24,7 @@ export default function GuestPreviewPage() {
       {/* The document itself must never scroll or show a bar: the fixed box below is the single scroll area. */}
       <style>{'html,body{overflow:hidden;scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none}'}</style>
       {/* One scroll area that fills the frame; its scrollbar is hidden so it cannot leave a blank strip (wheel, touch and keys still scroll). */}
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-(--bg-subtle) [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-(--bg-subtle) scrollbar-none [&::-webkit-scrollbar]:hidden">
         <PublicFormShell schema={schema} slug="preview" previewMode />
       </div>
     </FormThemeScope>
