@@ -41,3 +41,15 @@ test('in the dark theme the live preview is the form in its own light look', asy
   await expect(frame.locator('label').first()).toBeVisible({ timeout: 60000 });
   expect(lightness(await frame.locator('.form-card').first().evaluate((el) => getComputedStyle(el).backgroundColor))).toBeGreaterThan(200);
 });
+
+test('a look that is dark by its own design stays dark when the app is dark (the light scope does not force it light)', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/forms/e2e-branding/edit?tab=branding');
+  await expect(page.getByRole('tablist', { name: 'Branding sections' })).toBeVisible({ timeout: 60000 });
+  await page.getByRole('button', { name: /Looks/ }).click();
+  const dialog = page.getByRole('dialog', { name: 'Looks' });
+  const cardOf = (name: string) => dialog.getByRole('listitem').filter({ hasText: name }).locator('.form-card').first();
+  await expect(cardOf('Clean')).toBeVisible();
+  expect(lightness(await cardOf('Clean').evaluate((el) => getComputedStyle(el).backgroundColor)), 'Clean is light').toBeGreaterThan(200);
+  expect(lightness(await cardOf('Midnight').evaluate((el) => getComputedStyle(el).backgroundColor)), 'Midnight is dark').toBeLessThan(80);
+});
