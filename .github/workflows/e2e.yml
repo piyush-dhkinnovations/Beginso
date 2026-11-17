@@ -7,7 +7,8 @@ name: e2e
 # most of the suite's time. The build is made here with the mock backend's address baked in (the same values playwright.config.ts uses).
 on:
   pull_request:
-    branches: [main]
+    # develop too: the checks run on a pull request before it is merged into develop. Nothing is deployed from here.
+    branches: [main, develop]
   push:
     branches: [main]
 
