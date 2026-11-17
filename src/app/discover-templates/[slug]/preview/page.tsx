@@ -5,6 +5,7 @@ import { usePublicTemplates } from '@/hooks/usePublicTemplates';
 import { findTemplateBySlugOrId } from '@/lib/templateSlug';
 import { templateToPreviewSchema, templatePreviewSlug } from '@/lib/templatePreview';
 import { PublicFormShell } from '@/components/public-form/PublicFormShell';
+import { FormThemeScope } from '@/components/public-form/FormThemeScope';
 import { Skeleton } from '@/components/ui/Skeleton';
 
 // A bare, iframe-only route: the detail page's device preview (components/templates/TemplatePreviewFrame)
@@ -31,5 +32,10 @@ export default function TemplatePreviewPage() {
     );
   }
 
-  return <PublicFormShell schema={templateToPreviewSchema(template)} slug={templatePreviewSlug(template._id)} previewMode />;
+  // The whole document is the form, so it keeps the form's own light look whatever the visitor's theme (see FormThemeScope).
+  return (
+    <FormThemeScope>
+      <PublicFormShell schema={templateToPreviewSchema(template)} slug={templatePreviewSlug(template._id)} previewMode />
+    </FormThemeScope>
+  );
 }

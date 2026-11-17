@@ -33,9 +33,9 @@ function parseVars(block: string): Record<string, string> {
   return vars;
 }
 
-// :root is the first `:root {` block; [data-theme="dark"] excludes the midnight/dimmed variant
+// :root is the first `:root, [data-theme="light"] {` block (also the light scope); [data-theme="dark"] excludes the midnight/dimmed variant
 // blocks that follow it (extractBlock takes the first match of each selector string).
-const rootVars = parseVars(extractBlock(css, ':root {'));
+const rootVars = parseVars(extractBlock(css.replace(/\r\n/g, '\n'), ':root,\n[data-theme="light"] {'));
 const darkVars = parseVars(extractBlock(css, '[data-theme="dark"] {'));
 
 function resolve(value: string, vars: Record<string, string>, depth = 0): string {
