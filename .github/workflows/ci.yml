@@ -1,6 +1,6 @@
 name: ci
 
-# Runs on every pull request to main and on every push to main. GitHub-hosted runner only: a pull request's code never runs on a
+# Runs on every pull request to main or develop and on every push to main. GitHub-hosted runner only: a pull request's code never runs on a
 # self-hosted machine.
 #
 # The checks run side by side (static checks, unit tests, build) instead of one after another, so the run takes as long as the slowest
@@ -8,7 +8,8 @@ name: ci
 # check name.
 on:
   pull_request:
-    branches: [main]
+    # develop too: the checks run on a pull request before it is merged into develop. Nothing is deployed from here.
+    branches: [main, develop]
   push:
     branches: [main]
 
