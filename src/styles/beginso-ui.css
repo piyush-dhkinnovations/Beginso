@@ -14,7 +14,8 @@
    1. TOKENS
    ========================================================================== */
 
-:root {
+:root,
+[data-theme="light"] {
   /* ---- Brand primitives ------------------------------------------------ */
   --primary-50:  #ECF1FB;
   --primary-100: #D9E3F7;
@@ -181,6 +182,10 @@
   --standard: 250ms;
   --large: 400ms;
 }
+
+/* A light scope inside a dark page: a picture of a form (a template card, a Looks tile, a layout tile) is drawn the way the form really looks, which is
+   light unless the owner chose otherwise, never in the viewer's own dark theme. It re-declares the light tokens above on that element. */
+[data-theme="light"] { color-scheme: light; }
 
 /* ---- Type tokens: size, weight and typeface of every heading, label and button -------------------------------------------------------
    Declared on :root AND on .bg-form-type (the wrapper of a respondent form, set up in lib/formTheme.ts). A custom property that uses

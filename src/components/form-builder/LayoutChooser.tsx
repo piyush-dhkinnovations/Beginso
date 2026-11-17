@@ -57,6 +57,7 @@ export function LayoutChooser({ current, fieldCount, isPublic, onPick }: LayoutC
               )}
             >
               <span
+                data-theme="light"
                 className="relative flex h-24 items-center justify-center overflow-hidden rounded-lg border border-(--border-subtle)"
                 style={{ '--action-primary': look.color, ...brandWashStyle({ primaryColor: look.color, backgroundStyle: look.background }) } as CSSProperties}
               >

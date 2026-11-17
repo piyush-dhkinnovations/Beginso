@@ -12,7 +12,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const css = fs.readFileSync(path.join(root, 'src/styles/beginso-ui.css'), 'utf8');
+const css = fs.readFileSync(path.join(root, 'src/styles/beginso-ui.css'), 'utf8').replace(/\r\n/g, '\n');
 const baselinePath = path.join(root, 'scripts/contrast-baseline.json');
 
 // ---- tokens per style --------------------------------------------------------------------------------------------------------------
@@ -25,7 +25,8 @@ function block(selector) {
   for (const m of body.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) out[m[1]] = m[2].trim();
   return out;
 }
-const base = block(':root');
+// the light tokens are declared on :root and on [data-theme="light"] (the light scope inside a dark page), one block
+const base = block(':root,\n[data-theme="light"]');
 const slate = block('[data-theme="dark"]');
 const STYLES = {
   classic: { dark: false, tokens: { ...base } },

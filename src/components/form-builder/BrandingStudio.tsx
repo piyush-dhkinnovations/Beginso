@@ -108,7 +108,7 @@ function CardStyleTiles({ value, brand, onChange, custom }: { value: CardStyle; 
             )}
           >
             {/* a page with a card on it, drawn with the same classes as the real form card */}
-            <span aria-hidden="true" className="flex h-14 items-center justify-center rounded-md bg-(--bg-subtle) px-4" style={{ ['--action-primary' as string]: brand }}>
+            <span aria-hidden="true" data-theme="light" className="flex h-14 items-center justify-center rounded-md bg-(--bg-subtle) px-4" style={{ ['--action-primary' as string]: brand }}>
               <span className={bx(brandCardClass({ cardStyle: o.value }), 'block h-9 w-full')} />
             </span>
             {o.label}
@@ -324,7 +324,7 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
                   )}
                 >
                   {/* each tile is drawn with the very style it picks, in the brand colour, so the choice is seen, not described */}
-                  <span aria-hidden="true" className="relative flex h-10 w-full items-center justify-center overflow-hidden rounded-md border border-(--border-subtle)" style={{ ...brandWashStyle({ primaryColor: brand, backgroundColor: branding.backgroundColor, backgroundImageUrl: branding.backgroundImageUrl, backgroundStyle: option.value }), backgroundAttachment: 'scroll' }}>
+                  <span aria-hidden="true" data-theme="light" className="relative flex h-10 w-full items-center justify-center overflow-hidden rounded-md border border-(--border-subtle)" style={{ ...brandWashStyle({ primaryColor: brand, backgroundColor: branding.backgroundColor, backgroundImageUrl: branding.backgroundImageUrl, backgroundStyle: option.value }), backgroundAttachment: 'scroll' }}>
                     {option.value === 'image' && !branding.backgroundImageUrl && <ImageIcon size={16} className="text-(--text-muted)" />}
                     {chosen && (
                       <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-(--text-primary) text-(--surface-card)">

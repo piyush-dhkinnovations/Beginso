@@ -70,7 +70,7 @@ export function TemplateThumb({ template }: { template: Template }) {
   const scale = frameWidth > 0 ? frameWidth / STAGE_WIDTH : 0;
 
   return (
-    <div ref={frameRef} aria-hidden="true" className="relative w-full overflow-hidden" style={{ aspectRatio: THUMB_ASPECT }}>
+    <div ref={frameRef} aria-hidden="true" data-theme="light" className="relative w-full overflow-hidden" style={{ aspectRatio: THUMB_ASPECT }}>
       {scale > 0 && (
         <div
           className="absolute left-0 top-0 origin-top-left"
