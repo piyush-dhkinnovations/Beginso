@@ -9,7 +9,8 @@ import { Modal } from '@/components/ui/Modal';
 import { Tabs } from '@/components/ui/Tabs';
 import { useToast } from '@/components/ui/Toast';
 import { brandButtonStyle, brandCardClass, brandLookProps, brandTypeStyle, brandWashStyle, effectiveTheme } from '@/lib/formTheme';
-import { GALLERY_STYLES, snapshotStyle, type FormStyle } from '@/lib/formStyles';
+import { snapshotStyle, type FormStyle } from '@/lib/formStyles';
+import { useFormLooks } from '@/hooks/useFormLooks';
 import { formStylesService } from '@/services/formStyles';
 import { bx } from '@/lib/utils';
 import type { FormBranding, LayoutPreset } from '@/types/form';
@@ -208,6 +209,7 @@ export interface LooksDialogProps {
 
 export function LooksDialog({ isOpen, onClose, layout, branding, scope, onApply }: LooksDialogProps) {
   const [tab, setTab] = useState('ready');
+  const looks = useFormLooks();
   const tabs = scope ? TABS : TABS.slice(0, 1);
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Looks" description="Give the form a whole new look in one click. Your fields and answers stay as they are, and you can undo it." size="xl">
@@ -216,7 +218,7 @@ export function LooksDialog({ isOpen, onClose, layout, branding, scope, onApply 
         <div role="tabpanel" id="looks-panel" aria-labelledby={`tab-${tab}`} className="max-h-[62vh] overflow-y-auto p-1">
           {tab === 'ready' || !scope ? (
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {GALLERY_STYLES.map((g) => (
+              {looks.map((g) => (
                 <LookCard
                   key={g.id}
                   name={g.name}

@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "sync:looks": "node scripts/syncLooks.mjs",
     "type-check": "tsc --noEmit",
     "check:contrast": "node scripts/check-contrast.mjs",
     "generate:form-icons": "node scripts/generateFormIcons.mjs"
