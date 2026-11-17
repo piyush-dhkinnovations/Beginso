@@ -171,7 +171,7 @@ describe('groupsThatAddUp', () => {
     const cards = [c('HR'), c('HR'), c('Events'), c('Education'), c('Real Estate')];
     const partial = [{ name: 'Education', count: 1 }, { name: 'Real Estate', count: 1 }];
     const groups = groupsThatAddUp(cards, partial);
-    expect(groups.map((g) => g.name).sort()).toEqual(['Education', 'Events', 'HR', 'Real Estate']);
+    expect(groups.map((g) => g.name).sort()).toEqual(['Education', 'Events & RSVPs', 'HR & Hiring', 'Real Estate']);
     expect(groups.reduce((n, g) => n + g.count, 0)).toBe(cards.length);
   });
 
