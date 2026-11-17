@@ -241,6 +241,8 @@ export type PageBackground = 'wash' | 'plain' | 'solid' | 'gradient' | 'mesh' | 
 export interface FormMark {
   logoUrl?: string | null;
   iconName?: string | null;
+  /** The owner chose "No icon" on purpose (a form that never chose has neither this nor an icon, and is drawn the same). */
+  iconNone?: boolean;
 }
 
 export interface BannerLink {
@@ -264,6 +266,7 @@ export interface FormBranding {
   fieldGrouping?: FieldGrouping; // default 'auto' — short fields pair into two columns
   backgroundStyle?: PageBackground; // default 'wash' — how the PAGE behind the form card is filled (not the card)
   iconName?: string;             // the form's icon when it has no uploaded logo (lib/formIcons)
+  iconNone?: boolean;            // "No icon" chosen on purpose; the default for a new form
   coverFit?: CoverFit;
   logoSize?: LogoSize;           // default 'md' — how big the logo is drawn on the form's header           // 'banner' crops the cover to a strip; 'original' shows the whole image at its own ratio
   formWidth?: FormWidth;         // default 'standard' — how wide the form card is
@@ -409,6 +412,8 @@ export interface UpdateFormPayload {
 export interface FormMark {
   logoUrl?: string | null;
   iconName?: string | null;
+  /** The owner chose "No icon" on purpose (a form that never chose has neither this nor an icon, and is drawn the same). */
+  iconNone?: boolean;
 }
 
 export interface Template {

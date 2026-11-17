@@ -59,7 +59,7 @@ export function FormLevelHeader() {
   // Saves the whole branding object with the logo swapped in (a form's branding is written as one object); no logo = key omitted.
   const logoMutation = useMutation({
     mutationFn: (mark: FormMark) =>
-      formsService.updateForm(formId, { branding: { ...(form?.branding ?? {}), logoUrl: mark.logoUrl ?? undefined, iconName: mark.iconName ?? undefined} }),
+      formsService.updateForm(formId, { branding: { ...(form?.branding ?? {}), logoUrl: mark.logoUrl ?? undefined, iconName: mark.iconName ?? undefined, iconNone: mark.logoUrl || mark.iconName ? false : true } }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['form', formId] });
       void queryClient.invalidateQueries({ queryKey: ['forms'] });
