@@ -125,3 +125,15 @@ export function groupsFromCards(cards: GalleryCard[]): GalleryGroup[] {
   for (const c of cards) counts.set(c.category, (counts.get(c.category) ?? 0) + 1);
   return [...counts.entries()].map(([name, count]) => ({ name, count }));
 }
+
+/**
+ * The groups to show beside the cards. The server's list is used only when it accounts for every card (its counts add up to the number of cards and
+ * each card's category is one of its groups). Otherwise (an older server, or a catalogue that still has old category names) the groups are worked
+ * out from the cards themselves, so a template can never be left out of the list and the counts always add up.
+ */
+export function groupsThatAddUp(cards: GalleryCard[], groups: GalleryGroup[]): GalleryGroup[] {
+  const names = new Set(groups.map((g) => g.name));
+  const total = groups.reduce((n, g) => n + g.count, 0);
+  const complete = groups.length > 0 && total === cards.length && cards.every((c) => names.has(c.category));
+  return complete ? groups : groupsFromCards(cards);
+}
