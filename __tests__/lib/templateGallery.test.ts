@@ -1,0 +1,157 @@
+import { describe, it, expect } from 'vitest';
+import {
+  ALL,
+  DISCOVER_DESCRIPTION,
+  DISCOVER_TITLE,
+  buildGalleryHref,
+  cardFromTemplate,
+  cleanQuery,
+  filterCards,
+  groupsFromCards,
+  resolveCategory,
+  useTemplateHref,
+  type GalleryCard,
+} from '@/lib/templateGallery';
+import type { Template } from '@/types/form';
+
+const card = (over: Partial<GalleryCard> = {}): GalleryCard => ({
+  slug: 'job-application',
+  name: 'Job Application',
+  description: 'Collect CVs and cover letters from candidates.',
+  category: 'HR & Hiring',
+  tags: [],
+  fieldCount: 6,
+  estimatedMinutes: 3,
+  featured: false,
+  sortOrder: 1,
+  layout: 'classic',
+  thumbnail: null,
+  ...over,
+});
+
+const CARDS = [
+  card(),
+  card({ slug: 'event-registration', name: 'Event Registration', description: 'Sign people up for your event.', category: 'Events & RSVPs' }),
+  card({ slug: 'wedding-rsvp', name: 'Wedding RSVP', description: 'A warm RSVP for a wedding, with a meal choice.', category: 'Events & RSVPs' }),
+  card({ slug: 'exit-interview', name: 'Exit Interview', description: 'Learn why someone is leaving.', category: 'HR & Hiring' }),
+];
+const GROUPS = [
+  { name: 'HR & Hiring', count: 2 },
+  { name: 'Events & RSVPs', count: 2 },
+  { name: 'Healthcare', count: 1 },
+];
+
+describe('filterCards', () => {
+  it('keeps every card, in order, for All and no search', () => {
+    expect(filterCards(CARDS, { category: ALL, q: '' }).map((c) => c.slug)).toEqual(['job-application', 'event-registration', 'wedding-rsvp', 'exit-interview']);
+  });
+
+  it('keeps one group', () => {
+    expect(filterCards(CARDS, { category: 'Events & RSVPs', q: '' }).map((c) => c.slug)).toEqual(['event-registration', 'wedding-rsvp']);
+  });
+
+  it('searches the name and the description, ignoring case', () => {
+    expect(filterCards(CARDS, { category: ALL, q: 'WEDDING' }).map((c) => c.slug)).toEqual(['wedding-rsvp']);
+    expect(filterCards(CARDS, { category: ALL, q: 'leaving' }).map((c) => c.slug)).toEqual(['exit-interview']);
+  });
+
+  it('wants every word searched for, in either place', () => {
+    expect(filterCards(CARDS, { category: ALL, q: 'rsvp meal' }).map((c) => c.slug)).toEqual(['wedding-rsvp']);
+    expect(filterCards(CARDS, { category: ALL, q: 'rsvp cv' })).toEqual([]);
+  });
+
+  it('combines a group and a search', () => {
+    expect(filterCards(CARDS, { category: 'HR & Hiring', q: 'interview' }).map((c) => c.slug)).toEqual(['exit-interview']);
+    expect(filterCards(CARDS, { category: 'Healthcare', q: 'interview' })).toEqual([]);
+  });
+
+  it('ignores extra spaces in the search', () => {
+    expect(filterCards(CARDS, { category: ALL, q: '   exit    interview  ' }).map((c) => c.slug)).toEqual(['exit-interview']);
+  });
+});
+
+describe('the address of a view (?category= and ?q=)', () => {
+  it('has no parameter for the plain page', () => {
+    expect(buildGalleryHref({ category: ALL, q: '' })).toBe('/discover-templates');
+    expect(buildGalleryHref({ category: ALL, q: '   ' })).toBe('/discover-templates');
+  });
+
+  it('carries the group and the search, encoded', () => {
+    expect(buildGalleryHref({ category: 'Events & RSVPs', q: '' })).toBe('/discover-templates?category=Events+%26+RSVPs');
+    expect(buildGalleryHref({ category: ALL, q: 'job form' })).toBe('/discover-templates?q=job+form');
+    expect(buildGalleryHref({ category: 'Bookings', q: 'spa' })).toBe('/discover-templates?category=Bookings&q=spa');
+  });
+
+  it('keeps a search to a sensible length', () => {
+    expect(cleanQuery('  hello  ')).toBe('hello');
+    expect(cleanQuery('x'.repeat(500))).toHaveLength(80);
+    expect(cleanQuery(null)).toBe('');
+  });
+});
+
+describe('resolveCategory', () => {
+  it('takes a group name in any case', () => {
+    expect(resolveCategory('healthcare', GROUPS)).toBe('Healthcare');
+    expect(resolveCategory('Events & RSVPs', GROUPS)).toBe('Events & RSVPs');
+  });
+
+  it('maps an old category name onto its group, so an old link still works', () => {
+    expect(resolveCategory('Medicine', GROUPS)).toBe('Healthcare');
+    expect(resolveCategory('hr', GROUPS)).toBe('HR & Hiring');
+    expect(resolveCategory('Events', GROUPS)).toBe('Events & RSVPs');
+  });
+
+  it('is All for nothing, All, or something that is not there', () => {
+    expect(resolveCategory(null, GROUPS)).toBe(ALL);
+    expect(resolveCategory('', GROUPS)).toBe(ALL);
+    expect(resolveCategory('all', GROUPS)).toBe(ALL);
+    expect(resolveCategory('nonsense', GROUPS)).toBe(ALL);
+    // an old name whose group is not on offer here
+    expect(resolveCategory('Consent', GROUPS)).toBe(ALL);
+  });
+});
+
+describe('useTemplateHref: the slug travels through sign-up', () => {
+  it('goes straight to apply when signed in', () => {
+    expect(useTemplateHref('job-application', true)).toBe('/templates/apply/job-application');
+  });
+
+  it('goes through sign-up first when signed out, carrying the slug in `next`', () => {
+    const href = useTemplateHref('job-application', false);
+    expect(href).toBe('/signup?next=%2Ftemplates%2Fapply%2Fjob-application');
+    expect(decodeURIComponent(new URL(href, 'http://x').searchParams.get('next')!)).toBe('/templates/apply/job-application');
+  });
+});
+
+describe('a card made from a full template, and the groups', () => {
+  const full = { _id: 'id1', slug: 'job-application', name: 'Job Application', description: 'd', category: 'HR', fields: [{ deleted: false }, { deleted: true }, { deleted: false }], settings: { layout: 'steps' } } as unknown as Template;
+
+  it('counts only the questions that are not deleted', () => {
+    const c = cardFromTemplate(full, 4);
+    expect(c).toEqual(expect.objectContaining({ slug: 'job-application', fieldCount: 2, layout: 'steps', sortOrder: 4, thumbnail: null, featured: false }));
+    expect(c.estimatedMinutes).toBeGreaterThanOrEqual(1);
+  });
+
+  it('uses the id when a template has no slug yet', () => {
+    expect(cardFromTemplate({ ...full, slug: undefined } as unknown as Template, 1).slug).toBe('id1');
+  });
+
+  it('counts a group from its cards', () => {
+    expect(groupsFromCards(CARDS)).toEqual([
+      { name: 'HR & Hiring', count: 2 },
+      { name: 'Events & RSVPs', count: 2 },
+    ]);
+  });
+});
+
+describe('the page title and description', () => {
+  it('has a real description of about 150 characters, not a placeholder', () => {
+    expect(DISCOVER_DESCRIPTION).not.toMatch(/Automated/i);
+    expect(DISCOVER_DESCRIPTION.length).toBeGreaterThanOrEqual(120);
+    expect(DISCOVER_DESCRIPTION.length).toBeLessThanOrEqual(160);
+    expect(DISCOVER_DESCRIPTION).toMatch(/hiring/);
+    expect(DISCOVER_DESCRIPTION).toMatch(/events/);
+    expect(DISCOVER_DESCRIPTION).toMatch(/feedback/);
+    expect(DISCOVER_TITLE.length).toBeGreaterThan(10);
+  });
+});

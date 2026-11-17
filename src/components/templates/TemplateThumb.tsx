@@ -48,8 +48,10 @@ const LAYOUTS: Record<LayoutPreset, ComponentType<LayoutFrameProps>> = {
 // A virtual desktop stage every template is drawn at before being shrunk to fit the card — wide enough that a Split
 // Feature or Sidebar template's md: side panel renders the way a desktop respondent actually sees it. The card's own
 // aspect ratio is fixed to this same W:H, so the measured width-only scale fills it exactly, no cropping, no gap.
-const STAGE_WIDTH = 1040;
-const STAGE_HEIGHT = 600;
+// 800 x 500 (a 16:10 card): narrower than a desktop, but still wide enough for a Split Feature or Sidebar template's side panel (it appears from 768 px).
+// The form is drawn about a third larger than it was at 1040, and only the TOP of it is shown (the title, the first questions), cropped by the card.
+const STAGE_WIDTH = 800;
+const STAGE_HEIGHT = 500;
 export const THUMB_ASPECT = `${STAGE_WIDTH}/${STAGE_HEIGHT}`;
 
 export function TemplateThumb({ template }: { template: Template }) {
@@ -69,12 +71,27 @@ export function TemplateThumb({ template }: { template: Template }) {
   const [frameRef, frameWidth] = useWidth(0);
   const scale = frameWidth > 0 ? frameWidth / STAGE_WIDTH : 0;
 
+  // A light backdrop in the template's own colour and a hairline edge, so a form on a plain page (a white card on a white page) still reads as a card
+  // instead of a blank box. The brand colour is a hex the backend validated; anything else falls back to a neutral tint.
+  const brand = typeof schema.branding.primaryColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(schema.branding.primaryColor) ? schema.branding.primaryColor : '#64748b';
+  const backdrop = `color-mix(in srgb, ${brand} 12%, #f8fafc)`;
+
   return (
-    <div ref={frameRef} aria-hidden="true" data-theme="light" className="relative w-full overflow-hidden" style={{ aspectRatio: THUMB_ASPECT }}>
+    <div
+      ref={frameRef}
+      role="img"
+      aria-label={`Preview of the ${template.name} form`}
+      // the light scope: a picture of a form is drawn the way the form really looks, never in the viewer's dark theme
+      data-theme="light"
+      className="relative w-full overflow-hidden border-b border-(--border-default)"
+      style={{ aspectRatio: THUMB_ASPECT, backgroundColor: backdrop }}
+    >
       {scale > 0 && (
         <div
           className="absolute left-0 top-0 origin-top-left"
           style={{ width: STAGE_WIDTH, height: STAGE_HEIGHT, transform: `scale(${scale})`, pointerEvents: 'none' }}
+          // a picture, not a form: nothing in it can be focused or read out as a field
+          inert
         >
           <LayoutFrame
             layout={layout}
