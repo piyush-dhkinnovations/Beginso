@@ -137,3 +137,39 @@ export function groupsThatAddUp(cards: GalleryCard[], groups: GalleryGroup[]): G
   const complete = groups.length > 0 && total === cards.length && cards.every((c) => names.has(c.category));
   return complete ? groups : groupsFromCards(cards);
 }
+
+/** The old category names (before the regrouping) and the group each one belongs to, in lower case. A catalogue that has not been synced yet still
+ * carries them; the list uses this only to pick the right icon, so the same map as the backend's (src/utils/templateCatalog.ts) is repeated here. */
+const GROUP_OF_OLD_NAME: Record<string, string> = {
+  'lead generation': 'leads & contact',
+  'contact us': 'leads & contact',
+  business: 'leads & contact',
+  general: 'leads & contact',
+  'e-commerce': 'orders & payments',
+  order: 'orders & payments',
+  orders: 'orders & payments',
+  events: 'events & rsvps',
+  personal: 'events & rsvps',
+  'reservation/booking': 'bookings',
+  reservations: 'bookings',
+  feedback: 'feedback & surveys',
+  hr: 'hr & hiring',
+  medicine: 'healthcare',
+  medical: 'healthcare',
+  'non-profit': 'community & membership',
+  'non profit': 'community & membership',
+  membership: 'community & membership',
+  registration: 'community & membership',
+  'working forms': 'internal requests & inspections',
+  workshops: 'internal requests & inspections',
+  requests: 'internal requests & inspections',
+  'inspection forms': 'internal requests & inspections',
+  advanced: 'internal requests & inspections',
+  consent: 'consent & legal',
+};
+
+/** A category or group name as the lower-case name of its current group (an old name through the map), for choosing its icon. */
+export const groupKey = (name: string): string => {
+  const k = name.trim().toLowerCase();
+  return GROUP_OF_OLD_NAME[k] ?? k;
+};
