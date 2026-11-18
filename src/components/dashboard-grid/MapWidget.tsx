@@ -3,7 +3,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Expand, MapPin, Minimize2, X } from 'lucide-react';
+import { Expand, Flame, MapPin, Minimize2, X } from 'lucide-react';
 import type { Map as LeafletMap } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Card } from '@/components/ui/Card';
@@ -17,12 +17,19 @@ import type { LocationMetric } from './types';
 const TILE_URL = process.env.NEXT_PUBLIC_MAP_TILE_URL ?? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
 const ATTRIBUTION = process.env.NEXT_PUBLIC_MAP_ATTRIBUTION ?? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
 
+type MapMode = 'pins' | 'heat';
+
 const placeName = (p: LocationMetric['points'][number]) => [p.city, p.region, p.country].filter(Boolean).join(', ') || p.country;
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
 
+// Heat mode has no separate tile/plugin: it's the same points drawn as large, soft, border-less circles that
+// run warmer (gold to red) the busier the place is. Overlapping translucent circles already blend into a
+// heat-style glow under normal alpha compositing, so this needs nothing beyond what Leaflet/Google already do.
+const heatColor = (intensity: number) => `hsl(${28 - 28 * intensity}, 90%, 50%)`;
+
 // The interactive map itself. Mounted client-side only (Leaflet touches `window`); sized by its container, so the same
 // component serves the card and the full-screen view.
-function LeafletCanvas({ metric, height, fitKey }: { metric: LocationMetric; height: string; fitKey: string }) {
+function LeafletCanvas({ metric, height, fitKey, mode }: { metric: LocationMetric; height: string; fitKey: string; mode: MapMode }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<LeafletMap | null>(null);
 
@@ -41,9 +48,13 @@ function LeafletCanvas({ metric, height, fitKey }: { metric: LocationMetric; hei
       const max = Math.max(...metric.points.map((p) => p.count), 1);
       const color = getComputedStyle(el.current).getPropertyValue('--action-primary').trim() || '#1D4ED8';
       const markers = metric.points.map((p) => {
-        // Area-proportional bubbles: the busiest place is 34px across, a single response 12px.
-        const radius = 6 + 11 * Math.sqrt(p.count / max);
-        const marker = L.circleMarker([p.lat, p.lng], { radius, color: '#fff', weight: 2, fillColor: color, fillOpacity: 0.78 }).addTo(m);
+        const intensity = Math.sqrt(p.count / max);
+        // Area-proportional bubbles: the busiest place is 20px across, a single response 8px.
+        // Heat mode trades the crisp pin for a larger, soft, border-less glow that blends where places overlap.
+        const radius = mode === 'heat' ? 16 + 34 * intensity : 4 + 6 * intensity;
+        const marker = mode === 'heat'
+          ? L.circleMarker([p.lat, p.lng], { radius, stroke: false, fillColor: heatColor(intensity), fillOpacity: 0.32 }).addTo(m)
+          : L.circleMarker([p.lat, p.lng], { radius, color: '#fff', weight: 2, fillColor: color, fillOpacity: 0.78 }).addTo(m);
         marker.bindTooltip(`<strong>${escapeHtml(placeName(p))}</strong><br/>${p.count} response${p.count === 1 ? '' : 's'}`, { direction: 'top', offset: [0, -radius] });
         return marker;
       });
@@ -62,7 +73,7 @@ function LeafletCanvas({ metric, height, fitKey }: { metric: LocationMetric; hei
       map.current = null;
     };
     // fitKey changes when the map is moved between the card and the full-screen frame, which rebuilds it at the new size.
-  }, [metric, fitKey]);
+  }, [metric, fitKey, mode]);
 
   return <div ref={el} role="application" aria-label="Map of where responses came from" className="z-0 w-full rounded-lg" style={{ height }} />;
 }
@@ -96,7 +107,7 @@ function loadGoogleMaps(key: string): Promise<void> {
   return googleLoading;
 }
 
-function GoogleCanvas({ metric, height, onFail }: { metric: LocationMetric; height: string; onFail: () => void }) {
+function GoogleCanvas({ metric, height, onFail, mode }: { metric: LocationMetric; height: string; onFail: () => void; mode: MapMode }) {
   const el = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -122,13 +133,12 @@ function GoogleCanvas({ metric, height, onFail }: { metric: LocationMetric; heig
         const info = new g.InfoWindow();
         const bounds = new g.LatLngBounds();
         for (const p of metric.points) {
-          const scale = 6 + 11 * Math.sqrt(p.count / max);
-          const marker = new g.Marker({
-            map,
-            position: { lat: p.lat, lng: p.lng },
-            icon: { path: g.SymbolPath.CIRCLE, scale, fillColor: color, fillOpacity: 0.78, strokeColor: '#fff', strokeWeight: 2 },
-            title: `${placeName(p)}: ${p.count}`,
-          });
+          const intensity = Math.sqrt(p.count / max);
+          const scale = mode === 'heat' ? 16 + 34 * intensity : 4 + 6 * intensity;
+          const icon = mode === 'heat'
+            ? { path: g.SymbolPath.CIRCLE, scale, fillColor: heatColor(intensity), fillOpacity: 0.32, strokeWeight: 0 }
+            : { path: g.SymbolPath.CIRCLE, scale, fillColor: color, fillOpacity: 0.78, strokeColor: '#fff', strokeWeight: 2 };
+          const marker = new g.Marker({ map, position: { lat: p.lat, lng: p.lng }, icon, title: `${placeName(p)}: ${p.count}` });
           marker.addListener('mouseover', () => {
             info.setContent(`<strong>${escapeHtml(placeName(p))}</strong><br/>${p.count} response${p.count === 1 ? '' : 's'}`);
             info.open({ map, anchor: marker });
@@ -143,20 +153,21 @@ function GoogleCanvas({ metric, height, onFail }: { metric: LocationMetric; heig
       })
       .catch(() => { if (!cancelled) onFail(); });
     return () => { cancelled = true; };
-  }, [metric, onFail]);
+  }, [metric, onFail, mode]);
 
   return <div ref={el} role="application" aria-label="Map of where responses came from" className="z-0 w-full rounded-lg" style={{ height }} />;
 }
 
 // Google when a key is configured (and accepted), the keyless OpenStreetMap map otherwise.
-function MapCanvas({ metric, height, fitKey }: { metric: LocationMetric; height: string; fitKey: string }) {
+function MapCanvas({ metric, height, fitKey, mode }: { metric: LocationMetric; height: string; fitKey: string; mode: MapMode }) {
   const [googleFailed, setGoogleFailed] = useState(false);
-  if (GOOGLE_KEY && !googleFailed) return <GoogleCanvas key={fitKey} metric={metric} height={height} onFail={() => setGoogleFailed(true)} />;
-  return <LeafletCanvas metric={metric} height={height} fitKey={fitKey} />;
+  if (GOOGLE_KEY && !googleFailed) return <GoogleCanvas key={fitKey} metric={metric} height={height} mode={mode} onFail={() => setGoogleFailed(true)} />;
+  return <LeafletCanvas metric={metric} height={height} fitKey={fitKey} mode={mode} />;
 }
 
 export function MapWidget({ metric, title, preview }: { metric: LocationMetric; title?: string; preview?: boolean }) {
   const [full, setFull] = useState(false);
+  const [mode, setMode] = useState<MapMode>('pins');
   const label = title ?? metric.label;
   const top = [...metric.points].sort((a, b) => b.count - a.count).slice(0, 8);
 
@@ -194,14 +205,38 @@ export function MapWidget({ metric, title, preview }: { metric: LocationMetric; 
         </p>
       </div>
       {!empty && (
-        <button
-          type="button"
-          onClick={() => setFull((f) => !f)}
-          aria-label={full ? 'Exit full screen' : 'View map full screen'}
-          className="pointer-events-auto flex size-8 flex-none items-center justify-center rounded-lg border border-(--border-default) bg-(--surface-card) text-(--text-secondary) hover:bg-(--surface-hover)"
-        >
-          {full ? <Minimize2 size={16} /> : <Expand size={16} />}
-        </button>
+        <div className="flex flex-none items-center gap-2">
+          <div role="group" aria-label="Map style" className="flex items-center rounded-lg border border-(--border-default) bg-(--surface-card) p-0.5">
+            <button
+              type="button"
+              onClick={() => setMode('pins')}
+              aria-pressed={mode === 'pins'}
+              aria-label="Show pins"
+              title="Pins"
+              className={bx('flex size-7 items-center justify-center rounded-md', mode === 'pins' ? 'bg-(--surface-hover) text-(--text-primary)' : 'text-(--text-muted) hover:text-(--text-secondary)')}
+            >
+              <MapPin size={14} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('heat')}
+              aria-pressed={mode === 'heat'}
+              aria-label="Show heatmap"
+              title="Heatmap"
+              className={bx('flex size-7 items-center justify-center rounded-md', mode === 'heat' ? 'bg-(--surface-hover) text-(--text-primary)' : 'text-(--text-muted) hover:text-(--text-secondary)')}
+            >
+              <Flame size={14} />
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFull((f) => !f)}
+            aria-label={full ? 'Exit full screen' : 'View map full screen'}
+            className="pointer-events-auto flex size-8 flex-none items-center justify-center rounded-lg border border-(--border-default) bg-(--surface-card) text-(--text-secondary) hover:bg-(--surface-hover)"
+          >
+            {full ? <Minimize2 size={16} /> : <Expand size={16} />}
+          </button>
+        </div>
       )}
     </div>
   );
@@ -225,7 +260,7 @@ export function MapWidget({ metric, title, preview }: { metric: LocationMetric; 
       <Card className={bx('flex h-full flex-col gap-3', full && 'invisible')}>
         {header}
         {/* In the card the map is only mounted while the full-screen copy is closed, so there is never a second live map. */}
-        <div className="min-h-64 flex-1">{!full && <MapCanvas metric={metric} height="100%" fitKey="card" />}</div>
+        <div className="min-h-64 flex-1">{!full && <MapCanvas metric={metric} height="100%" fitKey="card" mode={mode} />}</div>
         {unlocated > 0 && <p className="bg-caption text-(--text-muted)">{unlocated.toLocaleString()} response{unlocated === 1 ? '' : 's'} had no location and are not shown.</p>}
       </Card>
 
@@ -241,7 +276,7 @@ export function MapWidget({ metric, title, preview }: { metric: LocationMetric; 
             </button>
           </div>
           <div className="relative min-h-0 flex-1">
-            <MapCanvas metric={metric} height="100%" fitKey="full" />
+            <MapCanvas metric={metric} height="100%" fitKey="full" mode={mode} />
             <aside className="absolute right-4 top-4 z-1000 hidden max-h-[calc(100%-2rem)] w-64 flex-col gap-2 overflow-auto rounded-xl border border-(--border-default) bg-(--surface-card) p-4 shadow-(--shadow-md) md:flex">
               <h3 className="bg-overline text-(--text-muted)">Top places</h3>
               <ol className="m-0 flex list-none flex-col gap-1.5 p-0">
