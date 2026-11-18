@@ -43,11 +43,14 @@ export interface BuilderState {
   // sets `stale`: another tab or person saved first, so saving stops until the user reloads.
   contentVersion: number | null;
   stale: boolean;
+  /** Once published, an edit is staged on a draft instead of the live form; true while that draft exists (the orange "Publish changes" button). */
+  hasUnpublishedChanges: boolean;
   // undoStack depth at the last successful save: how many edits are unsaved is the difference.
   savedUndoDepth: number;
 
   initForm: (form: Form) => void;
   setContentVersion: (contentVersion: number) => void;
+  setHasUnpublishedChanges: (value: boolean) => void;
   markStale: () => void;
   setFormTitle: (title: string) => void;
   addField: (type: FieldType, insertIndex?: number) => void;
@@ -147,6 +150,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   pendingLeaveUrl: null,
   contentVersion: null,
   stale: false,
+  hasUnpublishedChanges: false,
   savedUndoDepth: 0,
 
   setPendingLeaveUrl: (url) => set({ pendingLeaveUrl: url }),
@@ -193,6 +197,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
         redoStack: [],
         contentVersion: form.contentVersion ?? 0,
         stale: false,
+        hasUnpublishedChanges: form.hasUnpublishedChanges ?? false,
         savedUndoDepth: 0,
       };
     }),
@@ -481,6 +486,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
     })),
 
   setContentVersion: (contentVersion) => set({ contentVersion }),
+  setHasUnpublishedChanges: (hasUnpublishedChanges) => set({ hasUnpublishedChanges }),
   markStale: () => set({ stale: true }),
 
   setBranding: (updates) =>

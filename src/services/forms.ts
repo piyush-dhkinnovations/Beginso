@@ -253,5 +253,13 @@ export const formsService = {
 
   closeForm: (id: string) =>
     axiosInstance.post<{ _id: string; status: 'closed' }>(`/api/forms/${id}/close`).then(r => r.data),
+
+  // Unpublished changes: once a form is published, an edit is staged instead of changing the live form (updateForm above). These two act on
+  // that staged draft — "Publish changes" copies it onto the live form; "Discard" throws it away, leaving the live form as it was.
+  publishDraftChanges: (id: string): Promise<Form> =>
+    axiosInstance.post<Form>(`/api/forms/${id}/publish-changes`).then((r) => r.data),
+
+  discardDraftChanges: (id: string): Promise<Form> =>
+    axiosInstance.post<Form>(`/api/forms/${id}/discard-draft`).then((r) => r.data),
 };
 

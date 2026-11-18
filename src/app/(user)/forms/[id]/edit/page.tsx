@@ -96,8 +96,9 @@ export default function BuilderPageShell() {
   const unsavedCount = useBuilderStore((state) => Math.max(1, state.undoStack.length - state.savedUndoDepth));
   useBuilderUndoShortcuts();
 
-  const { showPublishModal, setShowPublishModal, handleStatusChange, handlePublishClick, handleChangeSetting, handleFixField, handlePreview, handlePreviewInNewTab } =
+  const { showPublishModal, setShowPublishModal, handleStatusChange, handlePublishClick, handlePublishChanges, handleDiscardDraft, handleChangeSetting, handleFixField, handlePreview, handlePreviewInNewTab } =
     useBuilderPublishFlow({ id, setActiveTab, setSaveState });
+  const hasUnpublishedChanges = useBuilderStore((state) => state.hasUnpublishedChanges);
 
   const { showLeaveModal, handleBack, handleLeaveWithoutSaving, handleStay } = useBuilderLeaveGuard({ overviewHref, formsListHref });
 
@@ -138,6 +139,9 @@ export default function BuilderPageShell() {
             savedAt={savedAt}
             onRetrySave={handleRetrySave}
             status={status}
+            hasUnpublishedChanges={hasUnpublishedChanges}
+            onPublishChanges={handlePublishChanges}
+            onDiscardDraft={handleDiscardDraft}
             onTitleChange={setFormTitle}
             onPreview={handlePreview}
             canPublish={canPublishForm(formRole)}

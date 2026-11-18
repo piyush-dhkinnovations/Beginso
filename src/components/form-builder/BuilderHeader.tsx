@@ -2,7 +2,7 @@
 
 import { CharCount } from '@/components/ui/CharCount';
 import { useState } from 'react';
-import { CheckCircle2, ExternalLink } from 'lucide-react';
+import { CheckCircle2, ExternalLink, UploadCloud, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { FormHeader } from '@/components/forms/FormHeader';
@@ -26,6 +26,11 @@ export interface BuilderHeaderProps {
   /** The caller may publish (Owner/Admin). Without it there is no Publish button — a convenience; the server enforces. */
   canPublish: boolean;
   status: FormStatus;
+  /** True once an edit is staged on the draft (the form is published and someone changed it since): shows the orange "Publish changes" button
+   * instead of the green "Published" one. Anyone who can save the form may use it — not only someone who can publish. */
+  hasUnpublishedChanges?: boolean;
+  onPublishChanges?: () => void;
+  onDiscardDraft?: () => void;
   onTitleChange: (title: string) => void;
   onPreview: () => void;
   onPublish: () => void;
@@ -52,6 +57,9 @@ export function BuilderHeader({
   onRetrySave,
   canPublish,
   status,
+  hasUnpublishedChanges,
+  onPublishChanges,
+  onDiscardDraft,
   onTitleChange,
   onPreview,
   onPublish,
@@ -108,7 +116,30 @@ export function BuilderHeader({
             <ExternalLink size={14} aria-hidden="true" className="ml-1.5" />
           </Button>
 
-          {status === 'published' ? (
+          {status === 'published' && hasUnpublishedChanges ? (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="secondary"
+                onClick={onPublishChanges}
+                className="border-(--warning-border) bg-(--warning-surface) text-(--warning-text) hover:bg-(--warning-surface)"
+                title="Your edits are not live yet. Click to update the real form."
+              >
+                <UploadCloud size={15} className="mr-1.5" aria-hidden="true" />
+                Publish changes
+              </Button>
+              {onDiscardDraft && (
+                <button
+                  type="button"
+                  onClick={onDiscardDraft}
+                  aria-label="Discard unpublished changes"
+                  title="Discard these changes"
+                  className="flex size-8 items-center justify-center rounded-md text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-primary)"
+                >
+                  <X size={15} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          ) : status === 'published' ? (
             canPublish ? (
               <Button variant="secondary" onClick={onPublish} title="Manage publishing">
                 <CheckCircle2 size={15} className="mr-1.5 text-(--success-text)" aria-hidden="true" />
