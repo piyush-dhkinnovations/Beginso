@@ -22,9 +22,7 @@ type MapMode = 'pins' | 'heat';
 const placeName = (p: LocationMetric['points'][number]) => [p.city, p.region, p.country].filter(Boolean).join(', ') || p.country;
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
 
-// Heat mode has no separate tile/plugin: it's the same points drawn as large, soft, border-less circles that
-// run warmer (gold to red) the busier the place is. Overlapping translucent circles already blend into a
-// heat-style glow under normal alpha compositing, so this needs nothing beyond what Leaflet/Google already do.
+// Heat mode falls back to the same translucent-circle treatment on Google Maps, which has no canvas heatmap plugin here.
 const heatColor = (intensity: number) => `hsl(${28 - 28 * intensity}, 90%, 50%)`;
 
 // The interactive map itself. Mounted client-side only (Leaflet touches `window`); sized by its container, so the same
@@ -37,7 +35,7 @@ function LeafletCanvas({ metric, height, fitKey, mode }: { metric: LocationMetri
     let cancelled = false;
     let observer: ResizeObserver | null = null;
     (async () => {
-      const L = (await import('leaflet')).default;
+      const [L, { HeatLayer }] = await Promise.all([import('leaflet').then((m) => m.default), import('leaflet.heat')]);
       if (cancelled || !el.current) return;
       const m = L.map(el.current, { zoomControl: true, scrollWheelZoom: false, worldCopyJump: true, minZoom: 2 });
       map.current = m;
@@ -46,20 +44,31 @@ function LeafletCanvas({ metric, height, fitKey, mode }: { metric: LocationMetri
       L.tileLayer(TILE_URL, { attribution: ATTRIBUTION, maxZoom: 18 }).addTo(m);
 
       const max = Math.max(...metric.points.map((p) => p.count), 1);
-      const color = getComputedStyle(el.current).getPropertyValue('--action-primary').trim() || '#1D4ED8';
-      const markers = metric.points.map((p) => {
-        const intensity = Math.sqrt(p.count / max);
-        // Area-proportional bubbles: the busiest place is 20px across, a single response 8px.
-        // Heat mode trades the crisp pin for a larger, soft, border-less glow that blends where places overlap.
-        const radius = mode === 'heat' ? 16 + 34 * intensity : 4 + 6 * intensity;
-        const marker = mode === 'heat'
-          ? L.circleMarker([p.lat, p.lng], { radius, stroke: false, fillColor: heatColor(intensity), fillOpacity: 0.32 }).addTo(m)
-          : L.circleMarker([p.lat, p.lng], { radius, color: '#fff', weight: 2, fillColor: color, fillOpacity: 0.78 }).addTo(m);
-        marker.bindTooltip(`<strong>${escapeHtml(placeName(p))}</strong><br/>${p.count} response${p.count === 1 ? '' : 's'}`, { direction: 'top', offset: [0, -radius] });
-        return marker;
-      });
-      if (markers.length > 0) m.fitBounds(L.featureGroup(markers).getBounds().pad(0.3), { maxZoom: 6 });
-      else m.setView([20, 0], 2);
+
+      if (mode === 'heat') {
+        // The classic blue/green/yellow/red blurred heatmap, drawn on one canvas layer rather than per-point DOM markers.
+        // Cast: leaflet.heat ships its own `Layer` types, which don't structurally line up with this project's @types/leaflet
+        // even though HeatLayer really does extend the same runtime Leaflet Layer class and `addLayer` works at runtime.
+        const heat = new HeatLayer(
+          metric.points.map((p) => [p.lat, p.lng, p.count]),
+          { radius: 32, blur: 24, max, minOpacity: 0.35, gradient: { 0.2: '#3b82f6', 0.45: '#22c55e', 0.7: '#eab308', 1: '#ef4444' } },
+        );
+        m.addLayer(heat as unknown as L.Layer);
+        if (metric.points.length > 0) m.fitBounds(L.latLngBounds(metric.points.map((p) => [p.lat, p.lng] as [number, number])).pad(0.3), { maxZoom: 6 });
+        else m.setView([20, 0], 2);
+      } else {
+        const color = getComputedStyle(el.current).getPropertyValue('--action-primary').trim() || '#1D4ED8';
+        const markers = metric.points.map((p) => {
+          const intensity = Math.sqrt(p.count / max);
+          // Area-proportional bubbles: the busiest place is 20px across, a single response 8px.
+          const radius = 4 + 6 * intensity;
+          const marker = L.circleMarker([p.lat, p.lng], { radius, color: '#fff', weight: 2, fillColor: color, fillOpacity: 0.78 }).addTo(m);
+          marker.bindTooltip(`<strong>${escapeHtml(placeName(p))}</strong><br/>${p.count} response${p.count === 1 ? '' : 's'}`, { direction: 'top', offset: [0, -radius] });
+          return marker;
+        });
+        if (markers.length > 0) m.fitBounds(L.featureGroup(markers).getBounds().pad(0.3), { maxZoom: 6 });
+        else m.setView([20, 0], 2);
+      }
 
       // Zoom with the wheel only while the pointer is on the map and Ctrl/Cmd is held, so scrolling the dashboard past it never gets stuck.
       el.current.addEventListener('wheel', (e) => { if (e.ctrlKey || e.metaKey) m.scrollWheelZoom.enable(); else m.scrollWheelZoom.disable(); }, { passive: true });
