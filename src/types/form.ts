@@ -437,6 +437,8 @@ export interface Template {
   settings: FormSettings;
   isActive: boolean;
   showInGallery?: boolean; // false = internal/demo template, hidden from the public gallery
+  /** Old slugs this template replaces (it was renamed): an old link to one of them opens this template. */
+  replaces?: string[];
   source?: 'workspace' | 'beginso'; // Backend contract to confirm (BE 0.13) — absent = beginso
   // Template catalog expansion (Nov 2026): a curated built-in template, or one published from a real
   // form, can carry its own real branding — copied onto the new form the moment "Use this template"

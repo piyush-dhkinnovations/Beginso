@@ -15,6 +15,7 @@ import {
   LayoutGrid,
   LayoutTemplate,
   Megaphone,
+  PartyPopper,
   Search,
   ShoppingCart,
   Star,
@@ -58,6 +59,7 @@ const GROUP_ICONS: Record<string, LucideIcon> = {
   'community & membership': HeartHandshake,
   'internal requests & inspections': ClipboardList,
   'consent & legal': FileSignature,
+  'fun & polls': PartyPopper,
 };
 const groupIcon = (name: string): LucideIcon => GROUP_ICONS[groupKey(name)] ?? LayoutTemplate;
 
