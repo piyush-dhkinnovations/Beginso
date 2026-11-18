@@ -1,15 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { ChevronRight, ExternalLink } from 'lucide-react';
 import Navbar from '@/components/landing/Navbar';
 import Footer from '@/components/landing/Footer';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { usePublicTemplates } from '@/hooks/usePublicTemplates';
-import { findTemplateBySlugOrId } from '@/lib/templateSlug';
+import { findTemplateBySlugOrId, renamedTo } from '@/lib/templateSlug';
 import { useAuth } from '@/hooks/useAuth';
 import { DeviceToggle, type PreviewDevice } from '@/components/preview/DeviceToggle';
 import { TemplatePreviewFrame } from '@/components/templates/TemplatePreviewFrame';
@@ -29,6 +29,12 @@ export default function TemplateDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: templates, isLoading } = usePublicTemplates();
   const template = findTemplateBySlugOrId(templates, slug);
+  // an old slug of a renamed template (general-contact-form -> contact-us): send the visitor on to the new address
+  const router = useRouter();
+  const renamed = renamedTo(templates, slug);
+  useEffect(() => {
+    if (renamed) router.replace(`/discover-templates/${renamed}`);
+  }, [renamed, router]);
   const [device, setDevice] = useState<PreviewDevice>('desktop');
   // src/proxy.ts redirects an unauthenticated visit to a protected route to a bare `/login` with
   // no `?next=` preserved (unlike the invite-link flow, which isn't proxy-protected and decides

@@ -228,3 +228,11 @@ describe('groupLabel and merging old names', () => {
     expect(filterCards(cards, { category: 'Events & RSVPs', q: '' })).toHaveLength(3);
   });
 });
+
+describe('the Fun & Polls group', () => {
+  it('shows as Fun, keeps its stored name, and merges nothing else into it', () => {
+    expect(groupLabel('Fun & Polls')).toBe('Fun');
+    expect(groupKey('Fun & Polls')).toBe('fun & polls');
+    expect(groupLabel('Fun')).toBe('Fun');
+  });
+});

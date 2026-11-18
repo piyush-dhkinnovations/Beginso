@@ -34,3 +34,31 @@ describe('findTemplateBySlugOrId', () => {
     expect(findTemplateBySlugOrId(undefined, 'job-application')).toBeUndefined();
   });
 });
+
+describe('a renamed template (old slug)', () => {
+  const list = [tpl({ _id: 'a', slug: 'contact-us', replaces: ['general-contact-form'] }), tpl({ _id: 'b', slug: 'waitlist', replaces: ['product-waitlist'] }), tpl({ _id: 'c', slug: 'job-application' })];
+
+  it('is found by the old slug, as the template that replaced it', async () => {
+    const { findTemplateBySlugOrId } = await import('@/lib/templateSlug');
+    expect(findTemplateBySlugOrId(list, 'general-contact-form')?._id).toBe('a');
+    expect(findTemplateBySlugOrId(list, 'product-waitlist')?._id).toBe('b');
+    expect(findTemplateBySlugOrId(list, 'contact-us')?._id).toBe('a');
+    expect(findTemplateBySlugOrId(list, 'nothing-like-it')).toBeUndefined();
+  });
+
+  it('says where an old slug now lives, and nothing for a current slug, an id or an unknown one', async () => {
+    const { renamedTo } = await import('@/lib/templateSlug');
+    expect(renamedTo(list, 'general-contact-form')).toBe('contact-us');
+    expect(renamedTo(list, 'contact-us')).toBeUndefined();
+    expect(renamedTo(list, 'a')).toBeUndefined();
+    expect(renamedTo(list, 'nothing-like-it')).toBeUndefined();
+    expect(renamedTo(undefined, 'general-contact-form')).toBeUndefined();
+  });
+
+  it('a current slug wins over an old one: a template still called by that name is shown, not redirected', async () => {
+    const { findTemplateBySlugOrId, renamedTo } = await import('@/lib/templateSlug');
+    const both = [tpl({ _id: 'x', slug: 'waitlist', replaces: ['product-waitlist'] }), tpl({ _id: 'y', slug: 'product-waitlist' })];
+    expect(findTemplateBySlugOrId(both, 'product-waitlist')?._id).toBe('y');
+    expect(renamedTo(both, 'product-waitlist')).toBeUndefined();
+  });
+});

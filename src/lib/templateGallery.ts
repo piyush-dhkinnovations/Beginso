@@ -63,7 +63,7 @@ const LEGACY_GROUP: Record<string, string> = {
   consent: 'Consent & Legal',
 };
 
-const CURRENT_GROUPS = ['Leads & Contact', 'Orders & Payments', 'Events & RSVPs', 'Bookings', 'Feedback & Surveys', 'HR & Hiring', 'Education', 'Healthcare', 'Real Estate', 'Community & Membership', 'Internal Requests & Inspections', 'Consent & Legal'];
+const CURRENT_GROUPS = ['Leads & Contact', 'Orders & Payments', 'Events & RSVPs', 'Bookings', 'Feedback & Surveys', 'HR & Hiring', 'Education', 'Healthcare', 'Real Estate', 'Community & Membership', 'Internal Requests & Inspections', 'Consent & Legal', 'Fun & Polls'];
 
 /** The current group a category name belongs to: a current group as it is, an old name through the map, anything else as written. */
 export const canonicalGroup = (name: string): string => {
@@ -81,6 +81,7 @@ const SHORT_LABEL: Record<string, string> = {
   'Community & Membership': 'Community',
   'Internal Requests & Inspections': 'Internal',
   'Consent & Legal': 'Legal',
+  'Fun & Polls': 'Fun',
 };
 
 /** The short name shown for a group or a category (an old name too): "Internal" for Internal Requests & Inspections. Other names are shown as they are. */
