@@ -3,7 +3,9 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useBuilderStore } from '@/store/builderStore';
 import { useToast } from '@/components/ui/Toast';
-import { saveFormSnapshot, syncBuilderVersion } from './useBuilderAutosave';
+import { reloadBuilder, saveFormSnapshot, syncBuilderVersion } from './useBuilderAutosave';
+import { formsService } from '@/services/forms';
+import { isAxiosError } from 'axios';
 import type { BuilderTarget } from './BuilderTabs';
 import type { Form, FormStatus } from '@/types/form';
 
@@ -69,6 +71,50 @@ export function useBuilderPublishFlow({
 
     setShowPublishModal(true);
   }, [dirty, formId, fields, formTitle, pages, branding, settings, markSaved, toast, setSaveState]);
+
+  // The orange "Publish changes" button: copies the staged draft onto the live, public form. A flush first, same
+  // reasoning as handlePublishClick — the published copy must be the one just typed, not an older autosave.
+  const handlePublishChanges = useCallback(async () => {
+    if (!formId || formId === 'undefined') return;
+    if (dirty) {
+      try {
+        setSaveState('saving');
+        await saveFormSnapshot(formId, { fields, formTitle, pages, branding, settings });
+        markSaved();
+        setSaveState('saved');
+      } catch {
+        setSaveState('error');
+        toast('Could not save your changes, so they were not published. Please try again.', 'error');
+        return;
+      }
+    }
+    try {
+      const updated = await formsService.publishDraftChanges(formId);
+      useBuilderStore.getState().setHasUnpublishedChanges(false);
+      if (typeof updated.contentVersion === 'number') useBuilderStore.getState().setContentVersion(updated.contentVersion);
+      queryClient.setQueryData<Form>(['form', formId], (old) => (old ? { ...old, ...updated } : old));
+      queryClient.invalidateQueries({ queryKey: ['forms'] });
+      toast('Your changes are now live.', 'success');
+    } catch (err) {
+      if (isAxiosError(err) && err.response?.status === 409) {
+        toast('This form changed elsewhere since your last edit. Reload before publishing changes.', 'error');
+      } else {
+        toast('Could not publish your changes. Please try again.', 'error');
+      }
+    }
+  }, [formId, dirty, fields, formTitle, pages, branding, settings, markSaved, toast, setSaveState, queryClient]);
+
+  // Throws the staged draft away; the live form is untouched. A full reload is the simplest way to put the
+  // editor back on the live content (same pattern the stale-save conflict's own "Reload" already uses).
+  const handleDiscardDraft = useCallback(async () => {
+    if (!formId || formId === 'undefined') return;
+    try {
+      await formsService.discardDraftChanges(formId);
+      reloadBuilder();
+    } catch {
+      toast('Could not discard your changes. Please try again.', 'error');
+    }
+  }, [formId, toast]);
 
   // "Change" on a pre-flight row → the Settings section of Share & Settings; "Fix in editor" → the offending field on the Build tab.
   const handleChangeSetting = useCallback(() => {
@@ -137,5 +183,5 @@ export function useBuilderPublishFlow({
     else toast('Your browser blocked the new tab. Allow pop-ups for this site, or use Preview.', 'error');
   }, [dirty, formId, fields, formTitle, pages, branding, settings, markSaved, id, queryClient, toast, setSaveState]);
 
-  return { showPublishModal, setShowPublishModal, handleStatusChange, handlePublishClick, handleChangeSetting, handleFixField, handlePreview, handlePreviewInNewTab };
+  return { showPublishModal, setShowPublishModal, handleStatusChange, handlePublishClick, handlePublishChanges, handleDiscardDraft, handleChangeSetting, handleFixField, handlePreview, handlePreviewInNewTab };
 }

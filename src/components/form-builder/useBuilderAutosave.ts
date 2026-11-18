@@ -81,6 +81,7 @@ export function saveFormSnapshot(
         saved = await send();
       }
       if (own && typeof saved?.contentVersion === 'number') useBuilderStore.getState().setContentVersion(saved.contentVersion);
+      if (own && typeof saved?.hasUnpublishedChanges === 'boolean') useBuilderStore.getState().setHasUnpublishedChanges(saved.hasUnpublishedChanges);
       if (themeWasDropped(snap.branding, saved)) throw new ThemeNotSavedError();
       return saved;
     } catch (err) {
@@ -100,6 +101,7 @@ export function syncBuilderVersion(formId: string) {
       const form = await formsService.getFormById(formId);
       const store = useBuilderStore.getState();
       if (store.formId === formId && typeof form?.contentVersion === 'number' && !store.stale) store.setContentVersion(form.contentVersion);
+      if (store.formId === formId && typeof form?.hasUnpublishedChanges === 'boolean') store.setHasUnpublishedChanges(form.hasUnpublishedChanges);
     } catch {
       // keep the version we have; a real conflict will still be caught by the server
     }
