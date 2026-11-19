@@ -94,8 +94,8 @@ describe('MapWidget', () => {
     const MapWidget = await loadMapWidget();
     render(<MapWidget metric={metric()} />);
     await waitFor(() => expect(leaflet.markers).toHaveLength(2));
-    expect(leaflet.markers[0].opts.radius).toBeCloseTo(17); // busiest = 6 + 11
-    expect(leaflet.markers[1].opts.radius).toBeCloseTo(6 + 11 * Math.sqrt(1 / 4));
+    expect(leaflet.markers[0].opts.radius).toBeCloseTo(10); // busiest = 4 + 6
+    expect(leaflet.markers[1].opts.radius).toBeCloseTo(4 + 6 * Math.sqrt(1 / 4));
     expect(leaflet.markers[0].tooltip).toBe('<strong>Pune, Maharashtra, India</strong><br/>4 responses');
     expect(leaflet.markers[1].tooltip).toBe('<strong>France</strong><br/>1 response');
     expect(leaflet.mapObj.fitBounds).toHaveBeenCalledWith('bounds-0.3', { maxZoom: 6 });
