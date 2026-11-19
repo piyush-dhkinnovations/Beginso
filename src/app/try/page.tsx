@@ -113,7 +113,7 @@ export default function TryPage() {
         ) : (
           <>
             {error && <p className="bg-body-sm text-(--text-muted)">Templates did not load. You can still start with a blank form.</p>}
-            <ul className="grid min-h-0 flex-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:grid-rows-3">
+            <ul className="grid min-h-0 flex-1 auto-rows-[12rem] gap-4 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
               {cards.map((c, idx) => (
                 <li key={c.id} className="min-h-0">
                   <button type="button" disabled={authLoading} onClick={() => choose(c.template)} className="group grid h-full w-full grid-cols-[minmax(0,5fr)_minmax(0,4fr)] gap-4 rounded-xl border border-(--border-default) bg-(--surface-card) p-3 text-left transition-colors hover:border-(--border-focus) hover:bg-(--accent-soft) focus-visible:outline-2 focus-visible:outline-(--border-focus) max-sm:h-48">
