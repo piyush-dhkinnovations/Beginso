@@ -11,7 +11,7 @@ import { Card } from '@/components/ui/Card';
 import { ChartWidget } from './ChartWidget';
 import { bx } from '@/lib/utils';
 import { MapWidget } from './MapWidget';
-import { TONES, WIDTHS, isKpi, isLocations, isSegments, isSeries, type MetricMap, type Widget, type WidgetWidth } from './types';
+import { TONES, TONE_COLOR, WIDTHS, isKpi, isLocations, isSegments, isSeries, type MetricMap, type Widget, type WidgetWidth } from './types';
 
 // Literal class names so Tailwind sees them. Mobile: always full width; tablet: 3/4 -> half.
 const SPAN: Record<WidgetWidth, string> = {
@@ -20,7 +20,6 @@ const SPAN: Record<WidgetWidth, string> = {
   6: 'md:col-span-6 xl:col-span-6',
   12: 'md:col-span-6 xl:col-span-12',
 };
-const TONE_DOT: Record<KpiTone, string> = { primary: 'var(--action-primary)', success: 'var(--success)', warning: 'var(--warning)', error: 'var(--error)', purple: '#8B5CF6' };
 const WIDTH_LABEL: Record<WidgetWidth, string> = { 3: 'Small (1/4)', 4: 'Medium (1/3)', 6: 'Wide (1/2)', 12: 'Full width' };
 // Rows share one track height so cards line up; a map spans three tracks, a chart over time two, a KPI card or a chart of a few
 // categories one (its row grows to fit the chart, rather than leaving the card a tall frame with a small chart in the middle).
@@ -73,7 +72,7 @@ function SortableWidget({
       ? TONES.map((t) => ({
           id: `t${t.value}`,
           label: `Colour: ${t.label}`,
-          icon: <span className="inline-flex size-4 items-center justify-center"><span className="size-3 rounded-full" style={{ backgroundColor: TONE_DOT[t.value] }} />{(widget.config as { tone?: KpiTone }).tone === t.value || (!(widget.config as { tone?: KpiTone }).tone && t.value === 'primary') ? <Check size={10} className="absolute text-white" /> : null}</span>,
+          icon: <span className="inline-flex size-4 items-center justify-center"><span className="size-3 rounded-full" style={{ backgroundColor: TONE_COLOR[t.value] }} />{(widget.config as { tone?: KpiTone }).tone === t.value || (!(widget.config as { tone?: KpiTone }).tone && t.value === 'primary') ? <Check size={10} className="absolute text-white" /> : null}</span>,
           onSelect: () => onRecolor(t.value),
         }))
       : []),

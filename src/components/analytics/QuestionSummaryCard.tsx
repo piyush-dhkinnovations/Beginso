@@ -3,7 +3,7 @@
 import { Card } from '@/components/ui/Card';
 import { BarsChart } from '@/components/ui/charts';
 import { toSegments } from '@/lib/chartSegments';
-import { QuestionCardHeader, type QuestionCardControls } from './QuestionBreakdownChart';
+import { QuestionCardHeader, barStyle, type QuestionCardControls } from './QuestionBreakdownChart';
 import type { QuestionBreakdown } from '@/types/analytics';
 
 const fmt = (n: number) => (Number.isInteger(n) ? n.toLocaleString() : n.toLocaleString(undefined, { maximumFractionDigits: 2 }));
@@ -17,7 +17,7 @@ interface QuestionSummaryCardProps extends QuestionCardControls {
 
 // Rating, number and yes/no questions have no options to count, so the choice chart does not fit: ratings get an average and the
 // spread, numbers get average / lowest / highest / total, yes/no gets the split (QA A7-008).
-export function QuestionSummaryCard({ question, handle, actions }: QuestionSummaryCardProps) {
+export function QuestionSummaryCard({ question, handle, actions, color }: QuestionSummaryCardProps) {
   const { rating, numeric, yesNo } = question;
 
   return (
@@ -32,11 +32,13 @@ export function QuestionSummaryCard({ question, handle, actions }: QuestionSumma
           <p className="mb-2 bg-body-sm text-(--text-muted)">
             {rating.count} {rating.count === 1 ? 'person' : 'people'} rated
           </p>
-          <BarsChart
-            horizontal
-            data={toSegments(rating.distribution.map((d) => ({ label: `${d.value}`, value: d.count }))).map((seg, i) => ({ ...seg, percentage: rating.distribution[i].percentage }))}
-            ariaLabel={`${question.label} — how many gave each rating`}
-          />
+          <div style={barStyle(color)}>
+            <BarsChart
+              horizontal
+              data={toSegments(rating.distribution.map((d) => ({ label: `${d.value}`, value: d.count }))).map((seg, i) => ({ ...seg, percentage: rating.distribution[i].percentage }))}
+              ariaLabel={`${question.label} — how many gave each rating`}
+            />
+          </div>
         </>
       )}
 
@@ -69,14 +71,16 @@ export function QuestionSummaryCard({ question, handle, actions }: QuestionSumma
           <p className="mb-2 bg-body-sm text-(--text-muted)">
             {yesNo.yes} yes · {yesNo.no} no
           </p>
-          <BarsChart
-            horizontal
-            data={toSegments([
-              { label: 'Yes', value: yesNo.yes },
-              { label: 'No', value: yesNo.no },
-            ]).map((seg) => seg)}
-            ariaLabel={`${question.label} — yes and no answers`}
-          />
+          <div style={barStyle(color)}>
+            <BarsChart
+              horizontal
+              data={toSegments([
+                { label: 'Yes', value: yesNo.yes },
+                { label: 'No', value: yesNo.no },
+              ])}
+              ariaLabel={`${question.label} — yes and no answers`}
+            />
+          </div>
         </>
       )}
     </Card>

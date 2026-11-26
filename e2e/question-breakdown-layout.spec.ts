@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 
-/** Per-question cards on a form's Insights page: drag them by the handle, pick S / M / L, and both survive a reload. */
+/** Per-question cards on a form's Insights page: drag them by the handle, pick a size and colour from the card menu, and all of it survives a reload. */
 const choice = (fieldId: string, label: string, order: number) => ({ fieldId, pageId: 'p1', label, type: 'dropdown', options: ['General', 'VIP'], required: false, deleted: false, order });
 
 async function mockInsights(page: Page) {
@@ -43,15 +43,33 @@ test('question cards can be resized and dragged, and stay that way after a reloa
   await expect(titles).toHaveText(['Ticket', 'Dietary Preference', 'Team Size'], { timeout: 60000 });
   // The card is the grid cell: the heading's nearest ancestor that carries a column span.
   const widthOf = async (name: string) => (await section.locator('div[class*="col-span"]').filter({ has: page.getByRole('heading', { name }) }).boundingBox())!.width;
-  const size = (name: string, letter: 'S' | 'M' | 'L') => section.getByRole('radiogroup', { name: `Size of ${name}` }).getByRole('radio', { name: letter }).click();
+  const pick = async (name: string, option: string) => {
+    const trigger = section.getByRole('button', { name: `Options for ${name}` });
+    // The menu closes when the page scrolls, so finish scrolling to its button before opening it.
+    await trigger.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(150);
+    await trigger.click();
+    await page.getByRole('menuitem', { name: option, exact: false }).click();
+  };
+  const barFill = (name: string) =>
+    section.locator('div[class*="col-span"]').filter({ has: page.getByRole('heading', { name }) }).locator('svg[role="group"] rect[height="18"]').nth(1).evaluate((el) => getComputedStyle(el).fill);
 
   const medium = await widthOf('Ticket');
-  await size('Ticket', 'L');
+  await pick('Ticket', 'Large');
   expect(await widthOf('Ticket')).toBeGreaterThan(medium * 1.9);
-  await size('Ticket', 'S');
+  await pick('Ticket', 'Small');
   expect(await widthOf('Ticket')).toBeLessThan(medium * 0.75);
-  await size('Dietary Preference', 'S');
-  await size('Team Size', 'S');
+  await pick('Dietary Preference', 'Small');
+  await pick('Team Size', 'Small');
+
+  const blue = await barFill('Ticket');
+  await pick('Ticket', 'Green');
+  const green = await barFill('Ticket');
+  expect(green).not.toBe(blue);
+  expect(await barFill('Dietary Preference')).toBe(blue);
+  await section.getByRole('button', { name: 'Options for Ticket' }).click();
+  await page.screenshot({ path: testInfo.outputPath('questions-menu.png') });
+  await page.keyboard.press('Escape');
   await page.screenshot({ path: testInfo.outputPath('questions-small.png'), fullPage: true });
 
   const from = (await section.getByRole('button', { name: 'Reorder question Team Size' }).boundingBox())!;
@@ -62,10 +80,11 @@ test('question cards can be resized and dragged, and stay that way after a reloa
   await page.mouse.up();
   await expect(titles).toHaveText(['Team Size', 'Ticket', 'Dietary Preference']);
 
-  await size('Team Size', 'L');
+  await pick('Team Size', 'Large');
   await page.reload();
   await expect(titles).toHaveText(['Team Size', 'Ticket', 'Dietary Preference'], { timeout: 60000 });
   expect(await widthOf('Team Size')).toBeGreaterThan(medium * 1.9);
+  expect(await barFill('Ticket')).toBe(green);
   await page.screenshot({ path: testInfo.outputPath('questions-reordered.png'), fullPage: true });
   await context.close();
 });

@@ -165,28 +165,56 @@ describe('QuestionBreakdownSection layout', () => {
   ];
   const view = () => render(<QuestionBreakdownSection form={makeForm([dropdownField, rating])} breakdown={breakdown} isLoading={false} />);
   const titles = () => screen.getAllByRole('heading', { level: 4 }).map((h) => h.textContent);
-  const sizes = (label: string) => within(screen.getByRole('radiogroup', { name: `Size of ${label}` }));
+  const openMenu = (label: string) => {
+    fireEvent.click(screen.getByRole('button', { name: `Options for ${label}` }));
+    return within(screen.getByRole('menu', { name: `Options for ${label}` }));
+  };
+  const pick = (label: string, option: string) => fireEvent.click(openMenu(label).getByRole('menuitem', { name: option }));
+  const bars = (label: string) => screen.getByRole('heading', { name: label }).closest('[class*="col-span"]')!.querySelector<HTMLElement>('[style*="--action-primary"]');
   const cell = (label: string) => screen.getByRole('heading', { name: label }).closest('[class*="col-span"]');
   beforeEach(() => localStorage.clear());
 
-  it('gives every card a drag handle and starts at medium', () => {
+  it('gives every card a drag handle and a three-dot menu, starting at medium and blue', () => {
     view();
     expect(screen.getByRole('button', { name: 'Reorder question Referral source' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Reorder question Rate us' })).toBeInTheDocument();
-    expect(sizes('Referral source').getByRole('radio', { name: 'M' })).toBeChecked();
-    expect(sizes('Rate us').getByRole('radio', { name: 'M' })).toBeChecked();
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    const menu = openMenu('Referral source');
+    expect(menu.getByRole('menuitem', { name: 'Medium, selected' })).toBeInTheDocument();
+    expect(menu.getByRole('menuitem', { name: 'Blue, selected' })).toBeInTheDocument();
+    expect(bars('Referral source')).toBeNull();
   });
 
-  it('S / M / L resizes only that card and is remembered for the form', () => {
+  it('the size choice resizes only that card and is remembered for the form', () => {
     const first = view();
-    fireEvent.click(sizes('Rate us').getByRole('radio', { name: 'L' }));
+    pick('Rate us', 'Large');
     expect(cell('Rate us')).toHaveClass('xl:col-span-6');
     expect(cell('Referral source')).toHaveClass('xl:col-span-3');
     first.unmount();
     view();
-    expect(sizes('Rate us').getByRole('radio', { name: 'L' })).toBeChecked();
-    fireEvent.click(sizes('Rate us').getByRole('radio', { name: 'S' }));
+    expect(cell('Rate us')).toHaveClass('xl:col-span-6');
+    pick('Rate us', 'Small');
     expect(cell('Rate us')).toHaveClass('xl:col-span-2');
+  });
+
+  it('the colour choice recolours only that card, is remembered, and Blue goes back to the theme', () => {
+    const first = view();
+    pick('Rate us', 'Green');
+    expect(bars('Rate us')?.style.getPropertyValue('--action-primary')).toBe('var(--success)');
+    expect(bars('Referral source')).toBeNull();
+    first.unmount();
+    view();
+    expect(bars('Rate us')?.style.getPropertyValue('--action-primary')).toBe('var(--success)');
+    pick('Rate us', 'Blue');
+    expect(bars('Rate us')).toBeNull();
+  });
+
+  it('a number question offers sizes but no colour', () => {
+    const qty = field({ fieldId: 'n1', type: 'number', label: 'How many' });
+    render(<QuestionBreakdownSection form={makeForm([qty])} breakdown={[{ fieldId: 'n1', label: 'How many', options: [], numeric: { count: 1, average: 2, min: 2, max: 2, sum: 2 } }]} isLoading={false} />);
+    const menu = openMenu('How many');
+    expect(menu.getByRole('menuitem', { name: 'Large' })).toBeInTheDocument();
+    expect(menu.queryByRole('menuitem', { name: 'Green' })).not.toBeInTheDocument();
   });
 
   it('shows cards in the saved order', () => {

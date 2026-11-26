@@ -1,10 +1,13 @@
 'use client';
 
+import { Check, MoreHorizontal } from 'lucide-react';
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { SegmentedRadio } from '@/components/ui/SegmentedRadio';
+import { Menu, type MenuItem } from '@/components/ui/Menu';
+import { TONES, TONE_COLOR } from '@/components/dashboard-grid/types';
+import type { KpiTone } from '@/components/ui/KpiCard';
 import { useQuestionLayout } from '@/hooks/useQuestionLayout';
 import { CARD_GRID, CARD_SPAN, SortableCard } from './SortableCard';
 import { QuestionBreakdownChart } from './QuestionBreakdownChart';
@@ -12,12 +15,6 @@ import { QuestionSummaryCard, hasSummary } from './QuestionSummaryCard';
 import type { Form, FormField } from '@/types/form';
 import type { QuestionBreakdown } from '@/types/analytics';
 import type { ChartSize } from '@/types/charts';
-
-const SIZE_OPTIONS = [
-  { id: 'small', label: 'S', title: 'Small' },
-  { id: 'medium', label: 'M', title: 'Medium' },
-  { id: 'large', label: 'L', title: 'Large' },
-];
 
 const CHOICE_FIELD_TYPES = new Set<FormField['type']>(['dropdown', 'multiple_choice', 'checkbox']);
 
@@ -30,6 +27,42 @@ const SUMMARY_FIELD_TYPES = new Set<FormField['type']>(['rating', 'number', 'cur
 
 function isSummaryField(field: FormField): boolean {
   return !field.deleted && SUMMARY_FIELD_TYPES.has(field.type);
+}
+
+const SIZES: { id: ChartSize; label: string }[] = [
+  { id: 'small', label: 'Small' },
+  { id: 'medium', label: 'Medium' },
+  { id: 'large', label: 'Large' },
+];
+
+/** The three-dot menu of a question card: its size and, when it has bars, their colour. */
+function QuestionCardMenu({ label, size, tone, onSize, onTone }: { label: string; size: ChartSize; tone: KpiTone; onSize: (size: ChartSize) => void; onTone?: (tone: KpiTone) => void }) {
+  const picked = (selected: boolean) => selected && <span className="sr-only">, selected</span>;
+  const tick = (selected: boolean) => (selected ? <Check size={14} className="ml-auto" aria-hidden="true" /> : null);
+  const items: MenuItem[] = [
+    { id: 'size', label: 'Size', heading: true, onSelect: () => {} },
+    ...SIZES.map((s) => ({
+      id: s.id,
+      label: <span className="flex flex-1 items-center gap-2">{s.label}{picked(size === s.id)}{tick(size === s.id)}</span>,
+      onSelect: () => onSize(s.id),
+    })),
+    ...(onTone
+      ? [
+          { id: 'colour', label: 'Colour', heading: true, onSelect: () => {} },
+          ...TONES.map((t) => ({
+            id: t.value,
+            label: (
+              <span className="flex flex-1 items-center gap-2">
+                <span className="size-3 shrink-0 rounded-full" style={{ backgroundColor: TONE_COLOR[t.value] }} aria-hidden="true" />
+                {t.label}{picked(tone === t.value)}{tick(tone === t.value)}
+              </span>
+            ),
+            onSelect: () => onTone(t.value),
+          })),
+        ]
+      : []),
+  ];
+  return <Menu align="end" triggerLabel={`Options for ${label}`} trigger={<MoreHorizontal size={18} aria-hidden="true" />} items={items} />;
 }
 
 interface QuestionBreakdownSectionProps {
@@ -144,20 +177,24 @@ export function QuestionBreakdownSection({ form, breakdown, isLoading, isError =
                 <div className={CARD_GRID}>
                   {cards.map(({ field, question }) => {
                     const CardBody = isSummaryField(field) ? QuestionSummaryCard : QuestionBreakdownChart;
+                    const id = field.fieldId;
+                    const tone = layout.colors[id] ?? 'primary';
                     return (
-                      <SortableCard key={field.fieldId} id={field.fieldId} size={sizeOf(field.fieldId)} handleLabel={`Reorder question ${question.label}`}>
+                      <SortableCard key={id} id={id} size={sizeOf(id)} handleLabel={`Reorder question ${question.label}`}>
                         {(handle) => (
                           <CardBody
                             question={question}
                             handle={handle}
+                            // Blue is the theme's own colour: re-pointing the token at itself would blank the bars.
+                            color={tone === 'primary' ? undefined : TONE_COLOR[tone]}
                             actions={
-                              // Phones show every card full width, so there is no size to pick there.
-                              <SegmentedRadio
-                                className="max-md:hidden"
-                                ariaLabel={`Size of ${question.label}`}
-                                options={SIZE_OPTIONS}
-                                value={sizeOf(field.fieldId)}
-                                onChange={(size) => saveLayout({ ...layout, sizes: { ...layout.sizes, [field.fieldId]: size as ChartSize } })}
+                              <QuestionCardMenu
+                                label={question.label}
+                                size={sizeOf(id)}
+                                tone={tone}
+                                onSize={(size) => saveLayout({ ...layout, sizes: { ...layout.sizes, [id]: size } })}
+                                // Number questions show figures only: there is nothing to colour.
+                                onTone={field.type === 'number' || field.type === 'currency' ? undefined : (next) => saveLayout({ ...layout, colors: { ...layout.colors, [id]: next } })}
                               />
                             }
                           />
