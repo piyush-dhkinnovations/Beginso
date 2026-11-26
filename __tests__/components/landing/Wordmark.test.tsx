@@ -12,6 +12,15 @@ describe('Wordmark', () => {
     for (const src of sources) expect(existsSync(`public${src!.split('?')[0]}`)).toBe(true);
   });
 
+  it('draws the logo wide enough to fill most of the height it is given', () => {
+    render(<Wordmark height={32} />);
+    const [logo] = screen.getAllByRole('img', { name: 'Beginso' });
+    const [, , artWidth, artHeight] = readFileSync('public/logo-full-light.svg', 'utf8').match(/viewBox="([^"]+)"/)![1].split(' ').map(Number);
+    // The picture is fitted inside the box: the height it is really drawn at is the box's width over the artwork's proportions.
+    expect(Number(logo.getAttribute('width')) / (artWidth / artHeight)).toBeGreaterThan(32 * 0.88);
+    expect(Number(logo.getAttribute('width')) / (artWidth / artHeight)).toBeLessThanOrEqual(32);
+  });
+
   it('can be forced to one version, for a surface that is always dark', () => {
     render(<Wordmark force="dark" />);
     expect(screen.getByRole('img', { name: 'Beginso' })).toHaveAttribute('src', WORDMARK_DARK);
@@ -28,7 +37,7 @@ describe('Wordmark', () => {
 describe('logo files', () => {
   // A merge conflict left inside an SVG once shipped a broken logo to the live site.
   it('are each one valid drawing, with no merge conflict left inside', () => {
-    for (const file of ['name-light', 'name-dark', 'favicon', 'favicon-light', 'favicon-dark']) {
+    for (const file of ['logo-full-light', 'logo-full-dark', 'name-light', 'name-dark', 'favicon', 'favicon-light', 'favicon-dark']) {
       const text = readFileSync(`public/${file}.svg`, 'utf8');
       expect(text, file).not.toMatch(/^(<{7}|={7}|>{7})/m);
       const drawing = new DOMParser().parseFromString(text, 'image/svg+xml');

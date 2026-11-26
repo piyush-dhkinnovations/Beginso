@@ -458,8 +458,8 @@
   .tilt-card { transform: none !important; }
 }
 
-/* Wordmark theme swap. name-light.svg (navy/blue) reads on a light surface;
-   name-dark.svg (white knockout) reads on a dark one — pick by data-theme,
+/* Wordmark theme swap. logo-full-light.svg (navy/blue) reads on a light surface;
+   logo-full-dark.svg (white knockout) reads on a dark one — pick by data-theme,
    not by page background, since the footer is always dark regardless of theme. */
 .wordmark-dark { display: none; }
 [data-theme="dark"] .wordmark-light { display: none; }
