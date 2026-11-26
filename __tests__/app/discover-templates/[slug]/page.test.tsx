@@ -3,7 +3,9 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 let routeSlug = 'job-application';
-vi.mock('next/navigation', () => ({ useParams: () => ({ slug: routeSlug }) }));
+const replace = vi.fn();
+const router = { replace };
+vi.mock('next/navigation', () => ({ useParams: () => ({ slug: routeSlug }), useRouter: () => router }));
 vi.mock('@/components/landing/Navbar', () => ({ default: () => null }));
 vi.mock('@/components/landing/Footer', () => ({ default: () => null }));
 vi.mock('@/components/templates/TemplatePreviewFrame', () => ({
@@ -26,6 +28,7 @@ const tpl = (over: Record<string, unknown> = {}) => ({
 describe('TemplateDetailPage', () => {
   beforeEach(() => {
     mockTemplates.mockReset();
+    replace.mockReset();
     authenticated = false;
     routeSlug = 'job-application';
   });
@@ -46,6 +49,17 @@ describe('TemplateDetailPage', () => {
     routeSlug = 't1';
     mockTemplates.mockReturnValue({ data: [tpl()], isLoading: false });
     render(<TemplateDetailPage />);
+    expect(screen.getByRole('heading', { name: 'Job Application', level: 1 })).toBeInTheDocument();
+  });
+
+  it('sends the old slug of a renamed template on to its new address, and leaves a current one alone', () => {
+    mockTemplates.mockReturnValue({ data: [tpl({ replaces: ['job-form'] })], isLoading: false });
+    const { unmount } = render(<TemplateDetailPage />);
+    expect(replace).not.toHaveBeenCalled();
+    unmount();
+    routeSlug = 'job-form';
+    render(<TemplateDetailPage />);
+    expect(replace).toHaveBeenCalledWith('/discover-templates/job-application');
     expect(screen.getByRole('heading', { name: 'Job Application', level: 1 })).toBeInTheDocument();
   });
 
