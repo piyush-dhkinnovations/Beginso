@@ -6,6 +6,9 @@ import { Button } from '@/components/ui/Button';
 // Sprint 13 (CF2.12), requirements.md 4.1 / 4.3. Sticky bar under the canvas below 1024px: Add field
 // (opens the bottom sheet) and the Reorder-mode toggle. Reorder mode is explicit because free
 // drag-and-drop fights page scroll on touch; per-row Up/Down buttons are the accepted fallback.
+// Shown at every width below 1024px (lg:hidden, not md:hidden) — FieldCard's drag handle only
+// appears from 1024px up (`hidden lg:flex`), so a cutoff at 768px left the 768-1023px tablet
+// range with neither free drag nor this fallback to reorder with.
 export interface MobileBuildBarProps {
   isReordering: boolean;
   canReorder: boolean;
@@ -15,7 +18,7 @@ export interface MobileBuildBarProps {
 
 export function MobileBuildBar({ isReordering, canReorder, onAddField, onToggleReorder }: MobileBuildBarProps) {
   return (
-    <div className="relative z-10 md:hidden flex shrink-0 gap-3 border-t bg-(--surface-card) p-3 shadow-(--shadow-sm)">
+    <div className="relative z-10 lg:hidden flex shrink-0 gap-3 border-t bg-(--surface-card) p-3 shadow-(--shadow-sm)">
       <Button type="button" className="flex-1" onClick={onAddField} disabled={isReordering}>
         <Plus size={16} aria-hidden="true" /> Add field
       </Button>
