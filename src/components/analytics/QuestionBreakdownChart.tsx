@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Card } from '@/components/ui/Card';
 import { BarsChart } from '@/components/ui/charts';
 import { toSegments } from '@/lib/chartSegments';
@@ -28,11 +29,27 @@ export function computeOptionPercentages(options: QuestionOption[], totalAnswere
   }));
 }
 
-interface QuestionBreakdownChartProps {
+/** The drag handle and size control a card is given by the breakdown grid. */
+export interface QuestionCardControls {
+  handle?: ReactNode;
+  actions?: ReactNode;
+}
+
+export function QuestionCardHeader({ label, handle, actions }: QuestionCardControls & { label: string }) {
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2">
+      {handle}
+      <h4 className="min-w-0 flex-1 bg-body font-semibold text-(--text-primary)">{label}</h4>
+      {actions}
+    </div>
+  );
+}
+
+interface QuestionBreakdownChartProps extends QuestionCardControls {
   question: QuestionBreakdown;
 }
 
-export function QuestionBreakdownChart({ question }: QuestionBreakdownChartProps) {
+export function QuestionBreakdownChart({ question, handle, actions }: QuestionBreakdownChartProps) {
   const ticks = question.options.reduce((sum, o) => sum + o.count, 0);
   const answered = question.totalAnswered ?? ticks;
   const total = Math.max(ticks, answered);
@@ -40,8 +57,8 @@ export function QuestionBreakdownChart({ question }: QuestionBreakdownChartProps
   const multi = ticks > answered;
 
   return (
-    <Card>
-      <h4 className="bg-body font-semibold text-(--text-primary) mb-3">{question.label}</h4>
+    <Card className="h-full">
+      <QuestionCardHeader label={question.label} handle={handle} actions={actions} />
       {total === 0 ? (
         <p className="bg-body-sm text-(--text-muted)">No answers yet in this range.</p>
       ) : (

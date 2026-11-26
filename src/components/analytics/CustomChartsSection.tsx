@@ -3,11 +3,11 @@
 import { useContext, useMemo, useState, type ReactNode } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { similarResponsesHref } from '@/lib/similarResponses';
-import { AlertCircle, GripVertical, LockKeyhole, Plus } from 'lucide-react';
+import { AlertCircle, LockKeyhole, Plus } from 'lucide-react';
 import { isAxiosError } from 'axios';
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { CARD_GRID, CARD_SPAN, SortableCard } from './SortableCard';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -41,43 +41,6 @@ interface CustomChartsSectionProps {
   range: AnalyticsRangeParams;
   /** Opens the chart builder (the page's "Add chart" button and the empty state both go there). */
   onAddRequest: () => void;
-}
-
-// Desktop (>= 1280): small 1/3, medium 1/2, large full. Tablet: large stays full, small and medium become a
-// half. Mobile: everything is full width. Literal class names so Tailwind sees them.
-const SPAN: Record<ChartSize, string> = {
-  small: 'md:col-span-3 xl:col-span-2',
-  medium: 'md:col-span-3 xl:col-span-3',
-  large: 'md:col-span-6 xl:col-span-6',
-};
-
-// Cards in one row are the same height (the grid stretches them). Inside a card the title stays at the top, the chart is centred in the space that
-// is left, and its notes and "Show as a table" sit at the bottom, so a short chart beside a tall one is spaced out, not left with an empty half.
-const GRID = 'grid grid-cols-1 gap-4 md:grid-cols-6';
-
-function SortableChart({ chart, children }: { chart: SavedChart; children: (handle: ReactNode) => ReactNode }) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id: chart._id });
-  return (
-    <div
-      ref={setNodeRef}
-      style={{ transform: CSS.Translate.toString(transform), transition, opacity: isDragging ? 0.6 : 1, zIndex: isDragging ? 5 : undefined }}
-      className={`${SPAN[chart.size]} min-w-0`}
-    >
-      {children(
-        <Button
-          type="button"
-          variant="ghost"
-          ref={setActivatorNodeRef}
-          {...attributes}
-          {...listeners}
-          aria-label={`Reorder chart ${chart.title}`}
-          className="bg-btn-icon shrink-0 cursor-grab touch-none"
-        >
-          <GripVertical size={16} className="bg-icon" />
-        </Button>,
-      )}
-    </div>
-  );
 }
 
 function ResponseOverlay({ responseId, formId, scope, formTitle, onClose }: { responseId: string; formId: string; scope: string; formTitle?: string; onClose: () => void }) {
@@ -286,9 +249,9 @@ export function CustomChartsSection({ form, formId, scope, range, onAddRequest }
       <h3 id="custom-charts-heading" className="bg-h5 font-bold text-(--text-primary)">Charts</h3>
 
       {chartsQuery.isLoading ? (
-        <div className={GRID} aria-busy="true" aria-label="Loading your charts">
+        <div className={CARD_GRID} aria-busy="true" aria-label="Loading your charts">
           {(['small', 'small', 'small', 'medium', 'medium'] as ChartSize[]).map((s, i) => (
-            <div key={i} className={SPAN[s]}>
+            <div key={i} className={CARD_SPAN[s]}>
               <Card>
                 <Skeleton variant="block" height={220} className="w-full rounded-lg" />
               </Card>
@@ -336,11 +299,11 @@ export function CustomChartsSection({ form, formId, scope, range, onAddRequest }
               }}
             >
               <SortableContext items={mine.map((c) => c._id)} strategy={rectSortingStrategy}>
-                <div className={GRID}>
+                <div className={CARD_GRID}>
                   {mine.map((chart) => (
-                    <SortableChart key={chart._id} chart={chart}>
+                    <SortableCard key={chart._id} id={chart._id} size={chart.size} handleLabel={`Reorder chart ${chart.title}`}>
                       {(handle) => renderCard(chart, true, handle)}
-                    </SortableChart>
+                    </SortableCard>
                   ))}
                 </div>
               </SortableContext>
@@ -349,9 +312,9 @@ export function CustomChartsSection({ form, formId, scope, range, onAddRequest }
           {shared.length > 0 && (
             <>
               {mine.length > 0 && <h4 className="bg-overline text-(--text-muted)">Shared with the workspace</h4>}
-              <div className={GRID}>
+              <div className={CARD_GRID}>
                 {shared.map((chart) => (
-                  <div key={chart._id} className={`${SPAN[chart.size]} min-w-0`}>
+                  <div key={chart._id} className={`${CARD_SPAN[chart.size]} min-w-0`}>
                     {renderCard(chart, false)}
                   </div>
                 ))}
