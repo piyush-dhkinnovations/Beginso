@@ -6,8 +6,8 @@
  * Requirements: 6.1-6.6, 13.1
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 
 vi.mock('@/components/charts/EChartContainer', () => ({
   EChartContainer: ({ option, ariaLabel }: { option: unknown; ariaLabel: string }) => (
@@ -154,6 +154,51 @@ describe('QuestionBreakdownSection', () => {
     expect(rows[0]).toContain('75%');
     expect(rows[1]).toContain('Social');
     expect(rows[1]).toContain('25%');
+  });
+});
+
+describe('QuestionBreakdownSection layout', () => {
+  const rating = field({ fieldId: 'r1', type: 'rating', label: 'Rate us' });
+  const breakdown: QuestionBreakdown[] = [
+    { fieldId: 'f1', label: 'Referral source', options: [{ option: 'Social', count: 3 }] },
+    { fieldId: 'r1', label: 'Rate us', options: [], rating: { count: 1, average: 5, max: 5, distribution: [{ value: 5, count: 1, percentage: 100 }] } },
+  ];
+  const view = () => render(<QuestionBreakdownSection form={makeForm([dropdownField, rating])} breakdown={breakdown} isLoading={false} />);
+  const titles = () => screen.getAllByRole('heading', { level: 4 }).map((h) => h.textContent);
+  const sizes = (label: string) => within(screen.getByRole('radiogroup', { name: `Size of ${label}` }));
+  const cell = (label: string) => screen.getByRole('heading', { name: label }).closest('[class*="col-span"]');
+  beforeEach(() => localStorage.clear());
+
+  it('gives every card a drag handle and starts at medium', () => {
+    view();
+    expect(screen.getByRole('button', { name: 'Reorder question Referral source' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reorder question Rate us' })).toBeInTheDocument();
+    expect(sizes('Referral source').getByRole('radio', { name: 'M' })).toBeChecked();
+    expect(sizes('Rate us').getByRole('radio', { name: 'M' })).toBeChecked();
+  });
+
+  it('S / M / L resizes only that card and is remembered for the form', () => {
+    const first = view();
+    fireEvent.click(sizes('Rate us').getByRole('radio', { name: 'L' }));
+    expect(cell('Rate us')).toHaveClass('xl:col-span-6');
+    expect(cell('Referral source')).toHaveClass('xl:col-span-3');
+    first.unmount();
+    view();
+    expect(sizes('Rate us').getByRole('radio', { name: 'L' })).toBeChecked();
+    fireEvent.click(sizes('Rate us').getByRole('radio', { name: 'S' }));
+    expect(cell('Rate us')).toHaveClass('xl:col-span-2');
+  });
+
+  it('shows cards in the saved order', () => {
+    localStorage.setItem('beginso.questionLayout.form-1', JSON.stringify({ order: ['r1', 'f1'], sizes: {} }));
+    view();
+    expect(titles()).toEqual(['Rate us', 'Referral source']);
+  });
+
+  it('ignores a damaged saved layout', () => {
+    localStorage.setItem('beginso.questionLayout.form-1', '{nonsense');
+    view();
+    expect(titles()).toEqual(['Referral source', 'Rate us']);
   });
 });
 

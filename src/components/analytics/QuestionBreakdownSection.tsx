@@ -1,11 +1,23 @@
 'use client';
 
+import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { SegmentedRadio } from '@/components/ui/SegmentedRadio';
+import { useQuestionLayout } from '@/hooks/useQuestionLayout';
+import { CARD_GRID, CARD_SPAN, SortableCard } from './SortableCard';
 import { QuestionBreakdownChart } from './QuestionBreakdownChart';
 import { QuestionSummaryCard, hasSummary } from './QuestionSummaryCard';
 import type { Form, FormField } from '@/types/form';
 import type { QuestionBreakdown } from '@/types/analytics';
+import type { ChartSize } from '@/types/charts';
+
+const SIZE_OPTIONS = [
+  { id: 'small', label: 'S', title: 'Small' },
+  { id: 'medium', label: 'M', title: 'Medium' },
+  { id: 'large', label: 'L', title: 'Large' },
+];
 
 const CHOICE_FIELD_TYPES = new Set<FormField['type']>(['dropdown', 'multiple_choice', 'checkbox']);
 
@@ -33,6 +45,8 @@ interface QuestionBreakdownSectionProps {
 export function QuestionBreakdownSection({ form, breakdown, isLoading, isError = false, onRetry, chartedFieldIds }: QuestionBreakdownSectionProps) {
   const choiceFields = (form?.fields ?? []).filter(isChoiceField);
   const summaryFields = (form?.fields ?? []).filter(isSummaryField);
+  const [layout, saveLayout] = useQuestionLayout(form?._id ?? '');
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
   // The form's own field label wins over whatever label the analytics payload carries (it can be the bare type name,
   // e.g. two cards both titled "Multiple Choice"); if two questions still share a label, number them.
@@ -66,6 +80,32 @@ export function QuestionBreakdownSection({ form, breakdown, isLoading, isError =
   const empty = isLoading ? [] : [...rest.filter(isEmpty), ...summaryRows.filter((r) => !hasSummary(r.question))];
   const shown = isLoading ? rest : rest.filter((r) => !isEmpty(r));
 
+  // Saved places first; a question the user never moved keeps its natural place after them.
+  const place = (id: string) => {
+    const at = layout.order.indexOf(id);
+    return at === -1 ? layout.order.length : at;
+  };
+  const cards = [...shown, ...(isLoading ? summaryRows : summaryShown)].sort((a, b) => place(a.field.fieldId) - place(b.field.fieldId));
+  const ids = cards.map((c) => c.field.fieldId);
+  const sizeOf = (id: string): ChartSize => layout.sizes[id] ?? 'medium';
+
+  function onDragEnd({ active, over }: DragEndEvent) {
+    if (!over || active.id === over.id) return;
+    const moved = arrayMove(ids, ids.indexOf(String(active.id)), ids.indexOf(String(over.id)));
+    // Questions with no card right now (no answers in this range) keep their saved place for later.
+    saveLayout({ ...layout, order: [...moved, ...layout.order.filter((id) => !moved.includes(id))] });
+  }
+
+  const nameOf = (id: string | number) => cards.find((c) => c.field.fieldId === id)?.question.label ?? 'question';
+  const positionOf = (id: string | number) => `position ${ids.indexOf(String(id)) + 1} of ${ids.length}`;
+  type Dragged = { active: { id: string | number }; over: { id: string | number } | null };
+  const announcements = {
+    onDragStart: ({ active }: { active: { id: string | number } }) => `Picked up ${nameOf(active.id)}, ${positionOf(active.id)}.`,
+    onDragOver: ({ active, over }: Dragged) => (over ? `${nameOf(active.id)} is over ${positionOf(over.id)}.` : undefined),
+    onDragEnd: ({ active, over }: Dragged) => (over ? `${nameOf(active.id)} dropped at ${positionOf(over.id)}.` : `${nameOf(active.id)} dropped where it was.`),
+    onDragCancel: ({ active }: { active: { id: string | number } }) => `${nameOf(active.id)} did not move.`,
+  };
+
   return (
     <section aria-labelledby="question-breakdown-heading" className="flex flex-col gap-4">
       <h3 id="question-breakdown-heading" className="bg-h5 text-(--text-primary) font-bold">
@@ -84,26 +124,51 @@ export function QuestionBreakdownSection({ form, breakdown, isLoading, isError =
         <>
           {charted.length > 0 && (
             <p className="bg-caption text-(--text-muted)">
-              Shown as a chart below: {charted.map(({ field, i }) => labelOf(field, i)).join(', ')}
+              Shown as a chart above: {charted.map(({ field, i }) => labelOf(field, i)).join(', ')}
             </p>
           )}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {[...shown, ...(isLoading ? summaryRows : [])].map(({ field, question }) =>
-              isLoading ? (
-                <Card key={field.fieldId}>
+          {isLoading ? (
+            <div className={CARD_GRID}>
+              {cards.map(({ field }) => (
+                <Card key={field.fieldId} className={CARD_SPAN[sizeOf(field.fieldId)]}>
                   <div className="animate-pulse space-y-3" aria-busy="true" aria-label={`Loading ${field.label} breakdown`}>
                     <div className="h-4 bg-(--border-default) rounded w-1/2" />
                     <div className="h-24 bg-(--bg-sunken) rounded" />
                   </div>
                 </Card>
-              ) : (
-                <QuestionBreakdownChart key={field.fieldId} question={question} />
-              )
-            )}
-            {summaryShown.map(({ field, question }) => (
-              <QuestionSummaryCard key={field.fieldId} question={question} />
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} accessibility={{ announcements }}>
+              <SortableContext items={ids} strategy={rectSortingStrategy}>
+                <div className={CARD_GRID}>
+                  {cards.map(({ field, question }) => {
+                    const CardBody = isSummaryField(field) ? QuestionSummaryCard : QuestionBreakdownChart;
+                    return (
+                      <SortableCard key={field.fieldId} id={field.fieldId} size={sizeOf(field.fieldId)} handleLabel={`Reorder question ${question.label}`}>
+                        {(handle) => (
+                          <CardBody
+                            question={question}
+                            handle={handle}
+                            actions={
+                              // Phones show every card full width, so there is no size to pick there.
+                              <SegmentedRadio
+                                className="max-md:hidden"
+                                ariaLabel={`Size of ${question.label}`}
+                                options={SIZE_OPTIONS}
+                                value={sizeOf(field.fieldId)}
+                                onChange={(size) => saveLayout({ ...layout, sizes: { ...layout.sizes, [field.fieldId]: size as ChartSize } })}
+                              />
+                            }
+                          />
+                        )}
+                      </SortableCard>
+                    );
+                  })}
+                </div>
+              </SortableContext>
+            </DndContext>
+          )}
           {empty.length > 0 && (
             <Card>
               <details>
