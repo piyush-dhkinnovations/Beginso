@@ -68,10 +68,13 @@ export interface ChoiceField extends BaseField {
   options: string[];     // min 1 option required before save/publish
 }
 
-// File type and size are platform-enforced (lib/validateFile.ts on the client, the backend's upload limits on the server);
-// the builder has no per-field setting for them, so this field has no extra keys.
+// The builder has no UI to set these, but seeded/imported templates can still carry a per-field maxFileSize or
+// allowedMimeTypes (the backend enforces both regardless — see form.controller.ts's public submit handler), so the
+// client validates against them too rather than only the platform-wide default in lib/validateFile.ts.
 export interface FileUploadField extends BaseField {
   type: 'file_upload';
+  maxFileSize?: number;        // MB; falls back to the platform default when unset
+  allowedMimeTypes?: string[]; // falls back to the platform default list when unset/empty
 }
 
 // ─── V2 field types ──────────────────────────────────────────────────────────

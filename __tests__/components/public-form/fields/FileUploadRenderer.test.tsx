@@ -60,6 +60,21 @@ describe('FileUploadRenderer', () => {
     expect(screen.getByText(/File type not supported/)).toBeInTheDocument();
   });
 
+  it("enforces the field's own maxFileSize instead of the generic 25 MB default", async () => {
+    const strictField = makeField({ type: 'file_upload', label: 'Resume / CV', maxFileSize: 10 });
+    render(<Harness Renderer={FileUploadRenderer} field={strictField} />);
+    expect(screen.getByText(/up to 10 MB/)).toBeInTheDocument();
+    await userEvent.upload(document.getElementById('f1') as HTMLInputElement, makeFile('resume.pdf', 'application/pdf', 11 * MB));
+    expect(screen.getByText('File exceeds the 10 MB limit.')).toBeInTheDocument();
+  });
+
+  it("enforces the field's own allowedMimeTypes instead of the generic default list", async () => {
+    const strictField = makeField({ type: 'file_upload', label: 'Resume / CV', allowedMimeTypes: ['application/pdf'] });
+    render(<Harness Renderer={FileUploadRenderer} field={strictField} />);
+    await userEvent.upload(document.getElementById('f1') as HTMLInputElement, makeFile('photo.png', 'image/png'));
+    expect(screen.getByText('File type not supported.')).toBeInTheDocument();
+  });
+
   it('hands the File up, stores the name, progresses to Ready, and reports upload states', async () => {
     const onFileChange = vi.fn();
     const states: UploadState[] = [];

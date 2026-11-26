@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Upload, Check, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Spinner } from '@/components/ui/Spinner';
-import { validateFile } from '@/lib/validateFile';
+import { ALLOWED_MIME_TYPES, MAX_SIZE_BYTES, validateFile } from '@/lib/validateFile';
 import type { FileUploadRendererProps, UploadState } from '@/types/publicForm';
 import { FieldShell } from './FieldShell';
 
@@ -65,8 +65,11 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
     return () => clearInterval(interval);
   }, [state.status]);
 
+  const fieldMaxSizeBytes = 'maxFileSize' in field && field.maxFileSize ? field.maxFileSize * 1024 * 1024 : MAX_SIZE_BYTES;
+  const fieldAllowedTypes = 'allowedMimeTypes' in field && field.allowedMimeTypes?.length ? field.allowedMimeTypes : ALLOWED_MIME_TYPES;
+
   function handleFile(file: File) {
-    const validationError = validateFile(file);
+    const validationError = validateFile(file, fieldAllowedTypes, fieldMaxSizeBytes);
     if (validationError) {
       setPreview(null);
       setState({ status: 'failed', fileName: file.name, error: validationError });
@@ -124,7 +127,7 @@ export function FileUploadRenderer({ field, setValue, error, disabled, onFileCha
           <Upload size={20} className="text-(--text-disabled)" />
           <p className="bg-body-sm text-(--text-primary)">Click or drag and drop a file</p>
           <p className="bg-caption text-(--text-disabled)">
-            PDF, Word, Excel, images, video (MP4), ZIP, plain text — up to 25 MB
+            PDF, Word, Excel, images, video (MP4), ZIP, plain text — up to {Math.round(fieldMaxSizeBytes / (1024 * 1024))} MB
           </p>
         </div>
       )}
