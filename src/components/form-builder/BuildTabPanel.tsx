@@ -71,7 +71,8 @@ export function BuildTabPanel({
         onAddPage={addPage}
         onDeletePage={deletePage}
       />
-      <div className="flex min-w-0 flex-1 flex-col">
+      {/* Stretched to the rail's height, so the blank space under the last field is still the canvas and takes a drop. */}
+      <div className="flex min-w-0 flex-1 flex-col self-stretch">
       <PageSwitcher pages={pages} activePageId={activePageId} onSelectPage={setActivePageId} onAddPage={addPage} />
       <Canvas
         fields={fields}
@@ -99,7 +100,7 @@ export function BuildTabPanel({
       </div>
       <DragOverlay dropAnimation={dnd.dropAnimation}>
         {activeDragConfig ? (
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-md bg-(--surface-card) border border-(--border-focus) shadow-(--shadow-lg) opacity-90 min-h-11 cursor-grabbing pointer-events-none">
+          <div className="flex w-max items-center gap-3 whitespace-nowrap px-3 py-2.5 rounded-md bg-(--surface-card) border border-(--border-focus) shadow-(--shadow-lg) opacity-90 min-h-11 cursor-grabbing pointer-events-none">
             <activeDragConfig.icon size={16} className="text-(--action-primary) shrink-0" />
             <span className="bg-body font-medium text-(--text-secondary)">
               {activeDragConfig.label}

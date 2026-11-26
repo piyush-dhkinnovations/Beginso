@@ -144,6 +144,7 @@ export function FieldCard({
           <div
             {...listeners}
             {...attributes}
+            data-drag-handle
             onClick={(e) => e.stopPropagation()}
             style={{ touchAction: 'none' }}
             aria-label={`Reorder ${field.label}. Press Space, then arrow keys, then Space.`}
