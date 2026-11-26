@@ -36,8 +36,9 @@ const COLUMNS = [
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
+  // A navy brand band in every theme. Not the "inverse" tokens: they turn white in dark mode, which hid the white logo.
   return (
-    <footer className="bg-(--surface-inverse) pt-12 pb-8">
+    <footer className="bg-(--ink-900) pt-12 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-8 gap-y-8">
           <div>
@@ -46,25 +47,25 @@ export default function Footer() {
 
           {COLUMNS.map((column) => (
             <div key={column.title}>
-              <div className="bg-body-sm font-semibold text-(--text-on-brand)/70 mb-2">{column.title}</div>
+              <div className="bg-body-sm font-semibold text-(--neutral-0)/70 mb-2">{column.title}</div>
               <ul>
                 {column.links.map((link) => (
                   <li key={link.label}>
-                    <Link href={link.href} className="inline-flex min-h-10 items-center bg-body-sm text-(--text-on-brand)/80 hover:text-(--text-on-brand) transition-colors">
+                    <Link href={link.href} className="inline-flex min-h-10 items-center bg-body-sm text-(--neutral-0)/80 hover:text-(--neutral-0) transition-colors">
                       {link.label}
                     </Link>
                   </li>
                 ))}
                 {column.title === "Legal" && (
                   <li>
-                    <CookieSettingsButton className="inline-flex min-h-10 items-center bg-body-sm text-(--text-on-brand)/80 hover:text-(--text-on-brand) transition-colors" />
+                    <CookieSettingsButton className="inline-flex min-h-10 items-center bg-body-sm text-(--neutral-0)/80 hover:text-(--neutral-0) transition-colors" />
                   </li>
                 )}
               </ul>
             </div>
           ))}
         </div>
-        <p className="mt-10 border-t border-(--text-on-brand)/15 pt-6 bg-body-sm text-(--text-on-brand)/60">&copy; {currentYear} Beginso. All rights reserved.</p>
+        <p className="mt-10 border-t border-(--neutral-0)/15 pt-6 bg-body-sm text-(--neutral-0)/60">&copy; {currentYear} Beginso. All rights reserved.</p>
       </div>
     </footer>
   );
