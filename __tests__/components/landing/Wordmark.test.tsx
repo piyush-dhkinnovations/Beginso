@@ -12,12 +12,12 @@ describe('Wordmark', () => {
     for (const src of sources) expect(existsSync(`public${src!.split('?')[0]}`)).toBe(true);
   });
 
-  it('draws the logo wide enough to fill most of the height it is given', () => {
+  it('draws the logo 2.85 times as wide as the height it is given, inside that height', () => {
     render(<Wordmark height={32} />);
     const [logo] = screen.getAllByRole('img', { name: 'Beginso' });
+    expect(Number(logo.getAttribute('width'))).toBeCloseTo(91.2);
     const [, , artWidth, artHeight] = readFileSync('public/logo-full-light.svg', 'utf8').match(/viewBox="([^"]+)"/)![1].split(' ').map(Number);
-    // The picture is fitted inside the box: the height it is really drawn at is the box's width over the artwork's proportions.
-    expect(Number(logo.getAttribute('width')) / (artWidth / artHeight)).toBeGreaterThan(32 * 0.88);
+    // The picture is fitted inside the box: the height it is really drawn at must not exceed it.
     expect(Number(logo.getAttribute('width')) / (artWidth / artHeight)).toBeLessThanOrEqual(32);
   });
 
