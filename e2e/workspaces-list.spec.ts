@@ -31,7 +31,7 @@ test.describe('All workspaces', () => {
 
     const card = (name: string | RegExp) => page.getByRole('heading', { name }).locator('xpath=ancestor::a[1]');
     await expect(card('Kala Chashma Entertainment').locator('img')).toHaveAttribute('src', '/avatars/05.svg');
-    await expect(card('Test').locator('img')).toHaveAttribute('src', '/favicon.svg');
+    await expect(card('Test').locator('img')).toHaveAttribute('src', '/favicon.svg?v=2');
 
     // the logo is level with the name, to its left, and a comfortable size
     const kala = card('Kala Chashma Entertainment');
