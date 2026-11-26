@@ -4,8 +4,7 @@ import userEvent from '@testing-library/user-event';
 
 let routeSlug = 'job-application';
 const replace = vi.fn();
-const router = { replace };
-vi.mock('next/navigation', () => ({ useParams: () => ({ slug: routeSlug }), useRouter: () => router }));
+vi.mock('next/navigation', () => ({ useParams: () => ({ slug: routeSlug }), useRouter: () => ({ replace, push: vi.fn() }) }));
 vi.mock('@/components/landing/Navbar', () => ({ default: () => null }));
 vi.mock('@/components/landing/Footer', () => ({ default: () => null }));
 vi.mock('@/components/templates/TemplatePreviewFrame', () => ({
@@ -134,5 +133,23 @@ describe('TemplateDetailPage', () => {
     mockTemplates.mockReturnValue({ data: [tpl()], isLoading: false });
     render(<TemplateDetailPage />);
     expect(screen.queryByText(/More in/)).not.toBeInTheDocument();
+  });
+
+  it('opens the template that replaced an old slug, and sends the visitor on to the new address', () => {
+    routeSlug = 'general-contact-form';
+    mockTemplates.mockReturnValue({ data: [tpl({ _id: 'n1', slug: 'contact-us', name: 'Contact Us', replaces: ['general-contact-form'] })], isLoading: false });
+    render(<TemplateDetailPage />);
+    expect(screen.getByRole('heading', { level: 1, name: 'Contact Us' })).toBeInTheDocument();
+    expect(replace).toHaveBeenCalledWith('/discover-templates/contact-us');
+  });
+
+  it('does not redirect a current slug, an id, or a slug nothing replaced', () => {
+    mockTemplates.mockReturnValue({ data: [tpl({ replaces: ['old-job-application'] })], isLoading: false });
+    render(<TemplateDetailPage />);
+    expect(replace).not.toHaveBeenCalled();
+    routeSlug = 'nothing-like-it';
+    render(<TemplateDetailPage />);
+    expect(screen.getByText('Template not found')).toBeInTheDocument();
+    expect(replace).not.toHaveBeenCalled();
   });
 });
