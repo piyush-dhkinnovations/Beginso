@@ -112,6 +112,7 @@ export function StagesTab({ draft, onChange, personal, workspaceStages }: Stages
                     id: token,
                     label: COLOUR_LABEL[token],
                     icon: <Dot colour={token} />,
+                    selected: token === stage.colour,
                     onSelect: () => setStage(index, { colour: token }),
                   }))}
                 />

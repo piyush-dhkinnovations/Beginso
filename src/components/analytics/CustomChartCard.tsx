@@ -1,11 +1,11 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { Check, Copy, Maximize2, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { Copy, Maximize2, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Menu, type MenuItem } from '@/components/ui/Menu';
+import { Menu, menuChoices, type MenuItem } from '@/components/ui/Menu';
 import { ChartBody } from './ChartBody';
 import type { DrillTarget } from './ChartView';
 import { useFieldDistribution } from '@/hooks/useFieldDistribution';
@@ -44,12 +44,7 @@ export function CustomChartCard({ formId, scope, chart, field, range, canManage,
       ? ([
           { id: 'edit', label: 'Edit', icon: <Pencil size={14} />, onSelect: () => onEdit(chart), disabled: fieldGone },
           { id: 'duplicate', label: 'Duplicate', icon: <Copy size={14} />, onSelect: () => onDuplicate(chart), disabled: fieldGone },
-          ...SIZES.map((s) => ({
-            id: `size-${s}`,
-            label: `Size: ${SIZE_LABEL[s]}`,
-            icon: chart.size === s ? <Check size={14} /> : <span className="inline-block w-3.5" />,
-            onSelect: () => onResize(chart, s),
-          })),
+          ...menuChoices('Size', SIZES.map((s) => ({ value: s, label: SIZE_LABEL[s] })), chart.size, (size) => onResize(chart, size)),
           { id: 'remove', label: 'Remove', icon: <Trash2 size={14} />, danger: true, onSelect: () => onRemove(chart) },
         ] satisfies MenuItem[])
       : []),
@@ -67,12 +62,7 @@ export function CustomChartCard({ formId, scope, chart, field, range, canManage,
           </p>
         </div>
         {chart.visibility === 'workspace' && canManage && <Badge variant="info">Shared</Badge>}
-        <Menu
-          align="end"
-          triggerLabel={`Chart options for ${title}`}
-          trigger={<MoreHorizontal size={18} aria-hidden="true" />}
-          items={items}
-        />
+        <Menu align="end" triggerLabel={`Chart options for ${title}`} items={items} />
       </div>
 
       {fieldGone ? (

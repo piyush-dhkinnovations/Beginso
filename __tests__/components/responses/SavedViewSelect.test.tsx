@@ -38,7 +38,7 @@ describe('SavedViewSelect', () => {
     const user = userEvent.setup();
     render(<SavedViewSelect {...baseProps} />);
     await user.click(screen.getByRole('button', { name: 'Saved views: All responses' }));
-    const labels = screen.getAllByRole('menuitem').map((el) => el.textContent?.trim());
+    const labels = screen.getAllByRole('menuitemradio').map((el) => el.textContent?.trim());
     // The group names are labels, not menu items: nothing to click or tab to.
     expect(labels).toEqual(['All responses', 'My shortlist', 'Needs screening']);
     expect(screen.getByText('My views')).toBeInTheDocument();
@@ -50,7 +50,7 @@ describe('SavedViewSelect', () => {
     const user = userEvent.setup();
     render(<SavedViewSelect {...baseProps} activeViewId="v1" />);
     await user.click(screen.getByRole('button', { name: 'Saved views: My shortlist' }));
-    expect(screen.getByRole('menuitem', { name: 'My shortlist' }).querySelector('svg')).not.toBeNull();
+    expect(screen.getByRole('menuitemradio', { name: 'My shortlist' }).querySelector('svg')).not.toBeNull();
   });
 
   it('applying a view fires onApply with that view', async () => {
@@ -58,7 +58,7 @@ describe('SavedViewSelect', () => {
     const onApply = vi.fn();
     render(<SavedViewSelect {...baseProps} onApply={onApply} />);
     await user.click(screen.getByRole('button', { name: /saved views/i }));
-    await user.click(screen.getByRole('menuitem', { name: 'My shortlist' }));
+    await user.click(screen.getByRole('menuitemradio', { name: 'My shortlist' }));
     expect(onApply).toHaveBeenCalledWith(MY_VIEW);
   });
 
@@ -67,7 +67,7 @@ describe('SavedViewSelect', () => {
     const onClearApplied = vi.fn();
     render(<SavedViewSelect {...baseProps} activeViewId="v1" onClearApplied={onClearApplied} />);
     await user.click(screen.getByRole('button', { name: /saved views/i }));
-    await user.click(screen.getByRole('menuitem', { name: 'All responses' }));
+    await user.click(screen.getByRole('menuitemradio', { name: 'All responses' }));
     expect(onClearApplied).toHaveBeenCalled();
   });
 

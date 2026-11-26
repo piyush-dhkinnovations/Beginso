@@ -89,10 +89,10 @@ describe('ResponsesToolbar', () => {
     const onFilterChange = vi.fn();
     render(<ResponsesToolbar {...baseProps} members={[]} onFilterChange={onFilterChange} />);
     await user.click(screen.getByRole('button', { name: 'Assignee' }));
-    const items = screen.getAllByRole('menuitem').map((i) => i.textContent);
+    const items = screen.getAllByRole('menuitemradio').map((i) => i.textContent);
     expect(items.slice(0, 3)).toEqual(['Anyone', 'Me', 'Unassigned']);
 
-    await user.click(screen.getByRole('menuitem', { name: 'Unassigned' }));
+    await user.click(screen.getByRole('menuitemradio', { name: 'Unassigned' }));
     expect(onFilterChange).toHaveBeenCalledWith({ assigneeId: 'unassigned' });
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
@@ -110,7 +110,7 @@ describe('ResponsesToolbar', () => {
 
     rerender(<ResponsesToolbar {...baseProps} tags={[{ id: 't1', name: 'VIP', colour: 'primary' }]} onFilterChange={onFilterChange} />);
     await user.click(screen.getByRole('button', { name: 'Tags' }));
-    await user.click(screen.getByRole('menuitem', { name: 'VIP' }));
+    await user.click(screen.getByRole('menuitemradio', { name: 'VIP' }));
     expect(onFilterChange).toHaveBeenCalledWith({ tagIds: ['t1'] });
   });
 
@@ -119,7 +119,7 @@ describe('ResponsesToolbar', () => {
     const onFilterChange = vi.fn();
     render(<ResponsesToolbar {...baseProps} onFilterChange={onFilterChange} />);
     await user.click(screen.getByRole('button', { name: 'Date' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Last 7 days' }));
+    await user.click(screen.getByRole('menuitemradio', { name: 'Last 7 days' }));
     expect(onFilterChange).toHaveBeenCalledWith({ from: expect.any(String), to: undefined });
   });
 

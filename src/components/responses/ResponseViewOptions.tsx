@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import { MoreHorizontal } from 'lucide-react';
+import { MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { SegmentedRadio } from '@/components/ui/SegmentedRadio';
@@ -66,7 +66,7 @@ export function ResponseViewOptions({ view, onChange, useForAll, onUseForAll, on
         onClick={() => setOpen((v) => !v)}
         className="px-2 max-md:min-h-10 max-md:min-w-10"
       >
-        <MoreHorizontal size={16} aria-hidden="true" />
+        <MoreVertical size={16} aria-hidden="true" />
       </Button>
 
       {open && (

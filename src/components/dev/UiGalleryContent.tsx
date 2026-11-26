@@ -345,7 +345,7 @@ export function UiGalleryContent() {
             <div className={GRID_3}>
               {FORMS.map((f) => (
                 <FormCard key={f._id} form={f} href="#cards" maxResponses={142} menu={
-                  <Menu trigger="⋮" triggerLabel="More options" align="end" items={[{ id: "e", label: "Edit", onSelect: () => {} }]} />
+                  <Menu triggerLabel="More options" align="end" items={[{ id: "e", label: "Edit", onSelect: () => {} }]} />
                 } />
               ))}
             </div>

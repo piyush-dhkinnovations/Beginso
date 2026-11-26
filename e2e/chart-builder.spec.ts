@@ -433,11 +433,11 @@ test.describe('Chart builder', () => {
 
     // size: the same Small / Medium / Large as the wizard, from the card's menu
     await openCardMenu(page, 'Plans by tier');
-    await expect(page.getByRole('menuitem', { name: 'Size: Medium' })).toBeVisible();
-    await page.getByRole('menuitem', { name: 'Size: Large' }).click();
+    await expect(page.getByRole('menuitemradio', { name: 'Medium' })).toBeVisible();
+    await page.getByRole('menuitemradio', { name: 'Large' }).click();
     await expect.poll(() => fake.patched().at(-1)).toMatchObject({ id: 'c1', size: 'large' });
     await openCardMenu(page, 'Plans by tier');
-    await expect(page.getByRole('menuitem', { name: 'Size: Large' })).toBeVisible();
+    await expect(page.getByRole('menuitemradio', { name: 'Large' })).toBeVisible();
     await page.keyboard.press('Escape');
 
     // remove: the card asks first
