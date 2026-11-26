@@ -7,6 +7,7 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { QueryProvider } from "@/components/providers/QueryProvider";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { BRAND_MARK } from '@/lib/brand';
 
 const inter = Inter({
   variable: "--font-inter",
@@ -53,7 +54,7 @@ export const metadata: Metadata = {
   title: { default: "Beginso", template: "%s · Beginso" },
   description: "Automated Beginso",
   icons: {
-    icon: "/favicon.svg",
+    icon: BRAND_MARK,
   },
 };
 

@@ -1,4 +1,5 @@
 import { Avatar } from "@/components/ui/Avatar";
+import { BRAND_MARK } from '@/lib/brand';
 
 // "Beginso Team" is the product/company itself, not a person — show the
 // brand icon mark instead of a generated-initials avatar.
@@ -10,7 +11,7 @@ export function AuthorAvatar({ name, size = 24 }: { name: string; size?: number 
         style={{ height: size + 8, width: size + 8 }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/favicon.svg" alt={name} height={size} width={size} style={{ height: size, width: size }} />
+        <img src={BRAND_MARK} alt={name} height={size} width={size} style={{ height: size, width: size }} />
       </span>
     );
   }

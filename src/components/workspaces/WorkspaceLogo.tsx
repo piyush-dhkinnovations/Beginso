@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { bx } from '@/lib/utils';
 import { uploadSrc } from '@/lib/uploadSrc';
+import { BRAND_MARK } from '@/lib/brand';
 
 const SIZE = { sm: 'size-8 rounded', md: 'size-11 rounded-md' } as const;
 
@@ -23,7 +24,7 @@ export function WorkspaceLogo({ logo, size = 'md', className }: { logo?: string 
   return (
     <span aria-hidden="true" className={bx('flex shrink-0 items-center justify-center overflow-hidden border border-(--border-default) bg-(--surface-card)', SIZE[size], className)}>
       {/* eslint-disable-next-line @next/next/no-img-element -- local brand mark */}
-      <img src="/favicon.svg" alt="" className={size === 'md' ? 'size-6' : 'size-4'} />
+      <img src={BRAND_MARK} alt="" className={size === 'md' ? 'size-6' : 'size-4'} />
     </span>
   );
 }

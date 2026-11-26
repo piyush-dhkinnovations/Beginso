@@ -6,6 +6,7 @@ import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/utils';
 import { uploadService } from '@/services/upload';
 import { uploadSrc } from '@/lib/uploadSrc';
+import { BRAND_MARK } from '@/lib/brand';
 
 const MAX_MB = 2;
 const ACCEPTED = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
@@ -78,7 +79,7 @@ export function LogoChoice({ value, onChange, subject, disabled }: LogoChoicePro
             )
           ) : (
             // eslint-disable-next-line @next/next/no-img-element -- local brand mark
-            <img src="/favicon.svg" alt="" className="size-11" />
+            <img src={BRAND_MARK} alt="" className="size-11" />
           )}
         </span>
 

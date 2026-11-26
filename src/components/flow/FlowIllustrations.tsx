@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { BarChart3, Building2, ImageIcon, Link2, Type, Users } from 'lucide-react';
+import { BRAND_MARK } from '@/lib/brand';
 
 // Decorative illustrations for the create flows: one calm "product" card in the middle, a few floating chips
 // around it joined by faint dashed lines. Pure markup, no images, theme tokens only (so dark mode works).
@@ -44,7 +45,7 @@ export function FormIllustration() {
       <div className="animate-pop-in absolute left-1/2 top-1/2 w-72 -translate-x-1/2 -translate-y-1/2 -rotate-1">
         <div className="rounded-2xl border border-(--border-default) bg-(--surface-card) p-5 shadow-(--shadow-lg)">
           {/* eslint-disable-next-line @next/next/no-img-element -- local brand mark */}
-          <img src="/favicon.svg" alt="" className="size-7" />
+          <img src={BRAND_MARK} alt="" className="size-7" />
           <p className="mt-4 bg-h5 font-bold text-(--text-primary)">Event Registration</p>
           <p className="bg-caption text-(--text-muted)">A simple form for your event</p>
           <div className="mt-4 flex flex-col gap-3">
@@ -72,7 +73,7 @@ export function WorkspaceIllustration() {
         <div className="rounded-2xl border border-(--border-default) bg-(--surface-card) p-4 shadow-(--shadow-lg)">
           <div className="flex items-center gap-3 rounded-xl border border-(--border-default) bg-(--bg-subtle) p-3">
             {/* eslint-disable-next-line @next/next/no-img-element -- local brand mark */}
-            <img src="/favicon.svg" alt="" className="size-10 rounded-lg bg-(--surface-card) p-1.5" />
+            <img src={BRAND_MARK} alt="" className="size-10 rounded-lg bg-(--surface-card) p-1.5" />
             <div className="min-w-0">
               <p className="truncate bg-body-sm font-semibold text-(--text-primary)">Your workspace</p>
               <p className="bg-caption text-(--text-muted)">Owner · 3 members</p>

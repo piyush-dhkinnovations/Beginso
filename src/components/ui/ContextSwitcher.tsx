@@ -5,6 +5,7 @@ import { Menu } from "./Menu";
 import type { MenuItem } from "./Menu";
 import { Badge } from "./Badge";
 import { roleLabel } from "@/lib/roles";
+import { BRAND_MARK } from '@/lib/brand';
 
 export interface ContextSwitcherWorkspace {
   id: string;
@@ -47,7 +48,7 @@ function ContextAvatar({ logo, Icon, size }: { logo?: string | null; Icon: typeo
     return (
       <span aria-hidden="true" className={bx("flex shrink-0 items-center justify-center", size === "lg" ? "size-10" : "size-6")}>
         {/* eslint-disable-next-line @next/next/no-img-element -- local brand mark */}
-        <img src="/favicon.svg" alt="" className={size === "lg" ? "size-7" : "size-5"} />
+        <img src={BRAND_MARK} alt="" className={size === "lg" ? "size-7" : "size-5"} />
       </span>
     );
   }

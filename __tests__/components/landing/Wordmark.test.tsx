@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { existsSync, readFileSync } from 'node:fs';
 import { Wordmark } from '@/components/landing/Wordmark';
+import { BRAND_MARK } from '@/lib/brand';
 
 describe('Wordmark', () => {
   it('draws the light and dark logo from files the app serves itself', () => {
@@ -23,3 +24,12 @@ describe('Wordmark', () => {
     expect(readFileSync('public/old-logo/favicon.svg', 'utf8')).not.toBe(readFileSync('public/favicon.svg', 'utf8'));
   });
 });
+
+describe('BRAND_MARK', () => {
+  it('is the served mark, under an address that is not the one browsers cached the old logo at', () => {
+    const [file, version] = BRAND_MARK.split('?');
+    expect(existsSync(`public${file}`)).toBe(true);
+    expect(version).toMatch(/^v=\d+$/);
+  });
+});
+
