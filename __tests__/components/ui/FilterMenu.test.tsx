@@ -37,8 +37,8 @@ describe('FilterMenu', () => {
     const user = userEvent.setup();
     const { onSelect } = setup();
     await user.click(screen.getByRole('button', { name: 'Assignee' }));
-    expect(screen.getAllByRole('menuitem').map((m) => m.textContent)).toEqual(['Any', 'Alice', 'Bob']);
-    await user.click(screen.getByRole('menuitem', { name: 'Alice' }));
+    expect(screen.getAllByRole('menuitemradio').map((m) => m.textContent)).toEqual(['Any', 'Alice', 'Bob']);
+    await user.click(screen.getByRole('menuitemradio', { name: 'Alice' }));
     expect(onSelect).toHaveBeenCalledWith('a');
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
@@ -47,7 +47,7 @@ describe('FilterMenu', () => {
     const user = userEvent.setup();
     const { onClear } = setup({ clearLabel: 'Everyone', selectedIds: ['a'] });
     await user.click(screen.getByRole('button', { name: 'Assignee: Alice' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Everyone' }));
+    await user.click(screen.getByRole('menuitemradio', { name: 'Everyone' }));
     expect(onClear).toHaveBeenCalled();
   });
 });

@@ -1,11 +1,10 @@
 'use client';
 
-import { Check, MoreHorizontal } from 'lucide-react';
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Menu, type MenuItem } from '@/components/ui/Menu';
+import { Menu, menuChoices } from '@/components/ui/Menu';
 import { TONES, TONE_COLOR } from '@/components/dashboard-grid/types';
 import type { KpiTone } from '@/components/ui/KpiCard';
 import { useQuestionLayout } from '@/hooks/useQuestionLayout';
@@ -29,40 +28,19 @@ function isSummaryField(field: FormField): boolean {
   return !field.deleted && SUMMARY_FIELD_TYPES.has(field.type);
 }
 
-const SIZES: { id: ChartSize; label: string }[] = [
-  { id: 'small', label: 'Small' },
-  { id: 'medium', label: 'Medium' },
-  { id: 'large', label: 'Large' },
+const SIZES: { value: ChartSize; label: string }[] = [
+  { value: 'small', label: 'Small' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'large', label: 'Large' },
 ];
 
 /** The three-dot menu of a question card: its size and, when it has bars, their colour. */
 function QuestionCardMenu({ label, size, tone, onSize, onTone }: { label: string; size: ChartSize; tone: KpiTone; onSize: (size: ChartSize) => void; onTone?: (tone: KpiTone) => void }) {
-  const picked = (selected: boolean) => selected && <span className="sr-only">, selected</span>;
-  const tick = (selected: boolean) => (selected ? <Check size={14} className="ml-auto" aria-hidden="true" /> : null);
-  const items: MenuItem[] = [
-    { id: 'size', label: 'Size', heading: true, onSelect: () => {} },
-    ...SIZES.map((s) => ({
-      id: s.id,
-      label: <span className="flex flex-1 items-center gap-2">{s.label}{picked(size === s.id)}{tick(size === s.id)}</span>,
-      onSelect: () => onSize(s.id),
-    })),
-    ...(onTone
-      ? [
-          { id: 'colour', label: 'Colour', heading: true, onSelect: () => {} },
-          ...TONES.map((t) => ({
-            id: t.value,
-            label: (
-              <span className="flex flex-1 items-center gap-2">
-                <span className="size-3 shrink-0 rounded-full" style={{ backgroundColor: TONE_COLOR[t.value] }} aria-hidden="true" />
-                {t.label}{picked(tone === t.value)}{tick(tone === t.value)}
-              </span>
-            ),
-            onSelect: () => onTone(t.value),
-          })),
-        ]
-      : []),
+  const items = [
+    ...menuChoices('Size', SIZES, size, onSize),
+    ...(onTone ? menuChoices('Colour', TONES.map((t) => ({ ...t, swatch: TONE_COLOR[t.value] })), tone, onTone) : []),
   ];
-  return <Menu align="end" triggerLabel={`Options for ${label}`} trigger={<MoreHorizontal size={18} aria-hidden="true" />} items={items} />;
+  return <Menu align="end" triggerLabel={`Options for ${label}`} items={items} />;
 }
 
 interface QuestionBreakdownSectionProps {

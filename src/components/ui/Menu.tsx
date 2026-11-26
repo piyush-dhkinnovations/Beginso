@@ -2,12 +2,17 @@
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Check, MoreVertical } from "lucide-react";
 import { bx } from "@/lib/utils";
 
 export interface MenuItem {
   id: string;
   label: React.ReactNode;
   icon?: React.ReactNode;
+  /** A colour dot in the icon's place. */
+  swatch?: string;
+  /** Makes the item a choice: the current one carries the tick, at the end. Leave unset for an action. */
+  selected?: boolean;
   onSelect: () => void;
   danger?: boolean;
   disabled?: boolean;
@@ -16,8 +21,22 @@ export interface MenuItem {
   heading?: boolean;
 }
 
+/** A titled set of choices ("Size", "Colour") with the current one ticked. */
+export function menuChoices<T extends string | number>(
+  heading: string,
+  options: readonly { value: T; label: string; swatch?: string }[],
+  current: T,
+  onSelect: (value: T) => void
+): MenuItem[] {
+  return [
+    { id: heading, label: heading, heading: true, onSelect: () => {} },
+    ...options.map((o) => ({ id: `${heading}-${o.value}`, label: o.label, swatch: o.swatch, selected: o.value === current, onSelect: () => onSelect(o.value) })),
+  ];
+}
+
 export interface MenuProps {
-  trigger: React.ReactNode;
+  /** Leave unset for the app's three-dot button. Set only for a button that says something else ("Export", a current value). */
+  trigger?: React.ReactNode;
   triggerLabel?: string;
   items: MenuItem[];
   align?: "start" | "end";
@@ -31,6 +50,12 @@ export interface MenuProps {
   footer?: React.ReactNode;
 }
 
+// The one menu format of the app. Callers pass data only; how it looks is decided here:
+//   trigger   three vertical dots unless the button needs words
+//   actions   icon, then label; destructive ones last, in red, under a line
+//   choices   under a heading, the current one ticked at the end (see menuChoices)
+// Do not draw ticks, "Size: …" prefixes or a custom three-dot button at a call site.
+//
 // beginso-ui.css classes — see src/styles/beginso-ui.css §14 OVERLAYS ("Dropdown menu").
 // Outside-click + keyboard nav follows the existing pattern in
 // src/components/responses/StatusDropdown.tsx rather than introducing a positioning library —
@@ -44,7 +69,7 @@ interface MenuPosition {
   width?: number;
 }
 
-export function Menu({ trigger, triggerLabel, items, align = "start", className, triggerClassName, containerClassName, footer }: MenuProps) {
+export function Menu({ trigger = <MoreVertical className="bg-icon" aria-hidden="true" />, triggerLabel, items, align = "start", className, triggerClassName, containerClassName, footer }: MenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [position, setPosition] = useState<MenuPosition | null>(null);
@@ -53,6 +78,9 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
   const triggerRef = useRef<HTMLButtonElement>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const isFullWidth = containerClassName?.includes("w-full") ?? false;
+
+  // Once one item has an icon or dot, the others keep its space so every label starts on the same line.
+  const hasIconColumn = items.some((item) => !item.heading && (item.icon || item.swatch));
 
   const enabledIndexes = items.reduce<number[]>((acc, item, i) => {
     if (!item.disabled && !item.heading) acc.push(i);
@@ -199,28 +227,43 @@ export function Menu({ trigger, triggerLabel, items, align = "start", className,
             className
           )}
         >
-          {items.map((item, i) => item.heading ? (
-            <div key={item.id} role="presentation" className="px-3 pb-1 pt-2 bg-body-sm font-semibold text-(--text-muted)">
-              {item.label}
-            </div>
-          ) : (
-            <button
-              key={item.id}
-              ref={(el) => {
-                itemRefs.current[i] = el;
-              }}
-              role="menuitem"
-              type="button"
-              disabled={item.disabled}
-              tabIndex={-1}
-              onClick={() => select(item)}
-              className={bx("bg-menu-item", item.danger && "is-danger")}
-            >
-              {item.icon && <span className="bg-icon">{item.icon}</span>}
-              {item.label}
-              {item.shortcut && <kbd>{item.shortcut}</kbd>}
-            </button>
-          ))}
+          {items.map((item, i) => {
+            const before = items[i - 1];
+            // A line sets apart each titled group, and the destructive actions, from what is above them.
+            const separated = !!before && ((item.heading && !before.heading) || (!!item.danger && !before.danger));
+            return (
+              <React.Fragment key={item.id}>
+                {separated && <div role="separator" className="bg-menu-sep" />}
+                {item.heading ? (
+                  <div role="presentation" className="px-3 pb-1 pt-2 bg-body-sm font-semibold text-(--text-muted)">
+                    {item.label}
+                  </div>
+                ) : (
+                  <button
+                    ref={(el) => {
+                      itemRefs.current[i] = el;
+                    }}
+                    role={item.selected === undefined ? "menuitem" : "menuitemradio"}
+                    aria-checked={item.selected}
+                    type="button"
+                    disabled={item.disabled}
+                    tabIndex={-1}
+                    onClick={() => select(item)}
+                    className={bx("bg-menu-item", item.danger && "is-danger")}
+                  >
+                    {hasIconColumn && (
+                      <span className="bg-icon" aria-hidden="true">
+                        {item.swatch ? <span className="size-3 rounded-full" style={{ backgroundColor: item.swatch }} /> : item.icon}
+                      </span>
+                    )}
+                    {item.label}
+                    {item.shortcut && <kbd>{item.shortcut}</kbd>}
+                    {item.selected && <Check size={16} className="ml-auto shrink-0" aria-hidden="true" />}
+                  </button>
+                )}
+              </React.Fragment>
+            );
+          })}
           {footer && (
             <div className="border-t border-(--border-subtle) mt-1 pt-1">
               {footer}

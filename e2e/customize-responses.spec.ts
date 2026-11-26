@@ -246,8 +246,8 @@ test.describe('Customize responses', () => {
     const fake = await installBackend(context, 'admin');
     await open(page);
     await page.getByRole('button', { name: 'Stage: New. Press to change it.' }).click();
-    await expect(page.getByRole('menuitem')).toHaveText(['New', 'In Progress', 'Completed']);
-    await page.getByRole('menuitem', { name: 'In Progress' }).click();
+    await expect(page.getByRole('menuitemradio')).toHaveText(['New', 'In Progress', 'Completed']);
+    await page.getByRole('menuitemradio', { name: 'In Progress' }).click();
     await expect.poll(() => fake.patches().length).toBe(1);
     expect(fake.patches()[0]).toEqual({ id: 'r1', body: { stageId: 'w-prog' } });
     await expect(page).not.toHaveURL(/responseId=/); // the response was not opened

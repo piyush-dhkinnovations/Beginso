@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, ChevronDown, MoreHorizontal } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { Alert } from '@/components/ui/Alert';
 import { Input } from '@/components/ui/Input';
@@ -61,8 +61,7 @@ export function SavedViewSelect({
 
   if (views.length === 0 && !activeViewId) return null;
 
-  const check = (on: boolean) => (on ? <Check size={14} aria-hidden="true" /> : <span className="inline-block w-3.5" />);
-  const viewItem = (v: SavedView) => ({ id: v.id, label: v.name, icon: check(v.id === activeViewId), onSelect: () => onApply(v) });
+  const viewItem = (v: SavedView) => ({ id: v.id, label: v.name, selected: v.id === activeViewId, onSelect: () => onApply(v) });
 
   const menuItems = (view: SavedView): MenuItem[] => {
     if (!canManageView(view, currentUserId, role)) return [];
@@ -85,7 +84,7 @@ export function SavedViewSelect({
             </>
           }
           items={[
-            { id: '__all', label: 'All responses', icon: check(!activeViewId), onSelect: onClearApplied },
+            { id: '__all', label: 'All responses', selected: !activeViewId, onSelect: onClearApplied },
             ...(myViews.length > 0 ? [{ id: '__my', label: 'My views', heading: true, onSelect: () => {} }] : []),
             ...myViews.map(viewItem),
             ...(teamViews.length > 0 ? [{ id: '__team', label: 'Team views', heading: true, onSelect: () => {} }] : []),
@@ -95,8 +94,8 @@ export function SavedViewSelect({
 
         {activeView && (
           <Menu
-            trigger={<MoreHorizontal size={16} aria-hidden="true" />}
-            triggerClassName="bg-btn bg-btn-ghost bg-btn-sm"
+            // The small size of the standard three-dot button, to match the picker beside it.
+            triggerClassName="bg-btn bg-btn-ghost bg-btn-icon bg-btn-sm"
             triggerLabel={`Manage the "${activeView.name}" saved view`}
             items={menuItems(activeView)}
           />

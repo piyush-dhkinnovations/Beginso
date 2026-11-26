@@ -49,7 +49,7 @@ test('question cards can be resized and dragged, and stay that way after a reloa
     await trigger.scrollIntoViewIfNeeded();
     await page.waitForTimeout(150);
     await trigger.click();
-    await page.getByRole('menuitem', { name: option, exact: false }).click();
+    await page.getByRole('menuitemradio', { name: option }).click();
   };
   const barFill = (name: string) =>
     section.locator('div[class*="col-span"]').filter({ has: page.getByRole('heading', { name }) }).locator('svg[role="group"] rect[height="18"]').nth(1).evaluate((el) => getComputedStyle(el).fill);

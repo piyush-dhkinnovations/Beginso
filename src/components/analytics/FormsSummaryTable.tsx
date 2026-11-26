@@ -4,7 +4,7 @@ import { completionRateUnavailableReason } from '@/lib/completionRate';
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { BarChart2, FileText, MoreVertical, Plus, Search } from 'lucide-react';
+import { BarChart2, FileText, Plus, Search } from 'lucide-react';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -193,7 +193,6 @@ export function FormsSummaryTable({
       align: 'right',
       render: (form) => (
         <Menu
-          trigger={<MoreVertical className="bg-icon" />}
           triggerLabel="More Options"
           align="end"
           items={[{ id: 'analytics', label: 'View analytics', icon: <BarChart2 className="bg-icon" />, onSelect: () => goToForm(form._id) }]}

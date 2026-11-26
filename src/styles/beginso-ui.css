@@ -1598,7 +1598,9 @@ body {
   transition: background-color var(--micro) var(--ease);
 }
 .bg-menu-item:hover { background-color: var(--surface-hover); color: var(--text-primary); text-decoration: none; }
-.bg-menu-item .bg-icon { width: 16px; height: 16px; flex-shrink: 0; color: var(--text-muted); }
+.bg-menu-item .bg-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; flex-shrink: 0; color: var(--text-muted); }
+/* One icon size in every menu, whatever size the caller's icon asks for. */
+.bg-menu-item .bg-icon > svg { width: 16px; height: 16px; }
 .bg-menu-item kbd { margin-left: auto; font-family: var(--bg-font-mono); font-size: 11px; color: var(--text-disabled); }
 .bg-menu-item.is-danger { color: var(--error); }
 .bg-menu-item.is-danger .bg-icon { color: var(--error); }

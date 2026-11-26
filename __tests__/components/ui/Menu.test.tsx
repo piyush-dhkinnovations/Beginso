@@ -7,7 +7,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { Menu } from '@/components/ui/Menu';
+import { Menu, menuChoices } from '@/components/ui/Menu';
 
 const items = [
   { id: 'edit', label: 'Edit', onSelect: vi.fn() },
@@ -86,3 +86,36 @@ describe('Menu component', () => {
     expect(onSelect).not.toHaveBeenCalled();
   });
 });
+
+describe('Menu: the one format', () => {
+  const noop = () => {};
+
+  it('without a trigger shows the three-dot button', () => {
+    render(<Menu triggerLabel="More" items={[{ id: 'a', label: 'Edit', onSelect: noop }]} />);
+    expect(screen.getByRole('button', { name: 'More' }).querySelector('svg.lucide-ellipsis-vertical')).not.toBeNull();
+  });
+
+  it('ticks the current choice, titles the group and lines off destructive actions', async () => {
+    const user = userEvent.setup();
+    const onSize = vi.fn();
+    render(
+      <Menu
+        triggerLabel="More"
+        items={[
+          ...menuChoices('Size', [{ value: 's', label: 'Small' }, { value: 'l', label: 'Large' }], 's', onSize),
+          { id: 'remove', label: 'Remove', danger: true, onSelect: noop },
+        ]}
+      />
+    );
+    await user.click(screen.getByRole('button', { name: 'More' }));
+    expect(screen.getByText('Size')).toBeInTheDocument();
+    expect(screen.getByRole('menuitemradio', { name: 'Small' })).toBeChecked();
+    expect(screen.getByRole('menuitemradio', { name: 'Small' }).querySelector('svg')).not.toBeNull();
+    expect(screen.getByRole('menuitemradio', { name: 'Large' })).not.toBeChecked();
+    expect(screen.getByRole('menuitemradio', { name: 'Large' }).querySelector('svg')).toBeNull();
+    expect(screen.getAllByRole('separator')).toHaveLength(1);
+    await user.click(screen.getByRole('menuitemradio', { name: 'Large' }));
+    expect(onSize).toHaveBeenCalledWith('l');
+  });
+});
+

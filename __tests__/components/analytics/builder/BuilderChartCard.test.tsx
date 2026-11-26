@@ -54,9 +54,9 @@ describe('the chart card menu: size', () => {
     const onResize = draw();
     const u = userEvent.setup();
     await u.click(screen.getByRole('button', { name: 'Chart options for Plans' }));
-    expect(screen.getByRole('menuitem', { name: 'Size: Small' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: 'Size: Medium' })).toBeInTheDocument();
-    await u.click(screen.getByRole('menuitem', { name: 'Size: Large' }));
+    expect(screen.getByRole('menuitemradio', { name: 'Small' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitemradio', { name: 'Medium' })).toBeInTheDocument();
+    await u.click(screen.getByRole('menuitemradio', { name: 'Large' }));
     expect(onResize).toHaveBeenCalledWith(CHART, 'large');
   });
 

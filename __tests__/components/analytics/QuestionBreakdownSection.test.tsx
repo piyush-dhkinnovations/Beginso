@@ -169,7 +169,7 @@ describe('QuestionBreakdownSection layout', () => {
     fireEvent.click(screen.getByRole('button', { name: `Options for ${label}` }));
     return within(screen.getByRole('menu', { name: `Options for ${label}` }));
   };
-  const pick = (label: string, option: string) => fireEvent.click(openMenu(label).getByRole('menuitem', { name: option }));
+  const pick = (label: string, option: string) => fireEvent.click(openMenu(label).getByRole('menuitemradio', { name: option }));
   const bars = (label: string) => screen.getByRole('heading', { name: label }).closest('[class*="col-span"]')!.querySelector<HTMLElement>('[style*="--action-primary"]');
   const cell = (label: string) => screen.getByRole('heading', { name: label }).closest('[class*="col-span"]');
   beforeEach(() => localStorage.clear());
@@ -180,8 +180,8 @@ describe('QuestionBreakdownSection layout', () => {
     expect(screen.getByRole('button', { name: 'Reorder question Rate us' })).toBeInTheDocument();
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     const menu = openMenu('Referral source');
-    expect(menu.getByRole('menuitem', { name: 'Medium, selected' })).toBeInTheDocument();
-    expect(menu.getByRole('menuitem', { name: 'Blue, selected' })).toBeInTheDocument();
+    expect(menu.getByRole('menuitemradio', { name: 'Medium' })).toBeChecked();
+    expect(menu.getByRole('menuitemradio', { name: 'Blue' })).toBeChecked();
     expect(bars('Referral source')).toBeNull();
   });
 
@@ -213,8 +213,8 @@ describe('QuestionBreakdownSection layout', () => {
     const qty = field({ fieldId: 'n1', type: 'number', label: 'How many' });
     render(<QuestionBreakdownSection form={makeForm([qty])} breakdown={[{ fieldId: 'n1', label: 'How many', options: [], numeric: { count: 1, average: 2, min: 2, max: 2, sum: 2 } }]} isLoading={false} />);
     const menu = openMenu('How many');
-    expect(menu.getByRole('menuitem', { name: 'Large' })).toBeInTheDocument();
-    expect(menu.queryByRole('menuitem', { name: 'Green' })).not.toBeInTheDocument();
+    expect(menu.getByRole('menuitemradio', { name: 'Large' })).toBeInTheDocument();
+    expect(menu.queryByRole('menuitemradio', { name: 'Green' })).not.toBeInTheDocument();
   });
 
   it('shows cards in the saved order', () => {

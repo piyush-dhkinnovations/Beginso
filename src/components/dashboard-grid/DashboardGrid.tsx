@@ -4,8 +4,8 @@ import { useState, type ReactNode } from 'react';
 import { DndContext, KeyboardSensor, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, arrayMove, rectSortingStrategy, sortableKeyboardCoordinates, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Check, MoreVertical, Trash2 } from 'lucide-react';
-import { Menu, type MenuItem } from '@/components/ui/Menu';
+import { Trash2 } from 'lucide-react';
+import { Menu, menuChoices, type MenuItem } from '@/components/ui/Menu';
 import { KpiCard, type KpiData, type KpiTone } from '@/components/ui/KpiCard';
 import { Card } from '@/components/ui/Card';
 import { ChartWidget } from './ChartWidget';
@@ -20,7 +20,7 @@ const SPAN: Record<WidgetWidth, string> = {
   6: 'md:col-span-6 xl:col-span-6',
   12: 'md:col-span-6 xl:col-span-12',
 };
-const WIDTH_LABEL: Record<WidgetWidth, string> = { 3: 'Small (1/4)', 4: 'Medium (1/3)', 6: 'Wide (1/2)', 12: 'Full width' };
+const WIDTH_LABEL: Record<WidgetWidth, string> = { 3: 'Small', 4: 'Medium', 6: 'Large', 12: 'Full width' };
 // Rows share one track height so cards line up; a map spans three tracks, a chart over time two, a KPI card or a chart of a few
 // categories one (its row grows to fit the chart, rather than leaving the card a tall frame with a small chart in the middle).
 const rows = (w: Widget, metrics: MetricMap) =>
@@ -62,19 +62,9 @@ function SortableWidget({
   // The whole card is the drag handle (a click still just selects it: the pointer must move 6px to start a drag).
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: widget.id });
   const items: MenuItem[] = [
-    ...WIDTHS.map((w) => ({
-      id: `w${w}`,
-      label: `Width: ${WIDTH_LABEL[w]}`,
-      icon: widget.w === w ? <Check size={16} /> : <span className="inline-block size-4" />,
-      onSelect: () => onResize(w),
-    })),
+    ...menuChoices('Size', WIDTHS.map((w) => ({ value: w, label: WIDTH_LABEL[w] })), widget.w, onResize),
     ...(widget.config.type === 'kpi'
-      ? TONES.map((t) => ({
-          id: `t${t.value}`,
-          label: `Colour: ${t.label}`,
-          icon: <span className="inline-flex size-4 items-center justify-center"><span className="size-3 rounded-full" style={{ backgroundColor: TONE_COLOR[t.value] }} />{(widget.config as { tone?: KpiTone }).tone === t.value || (!(widget.config as { tone?: KpiTone }).tone && t.value === 'primary') ? <Check size={10} className="absolute text-white" /> : null}</span>,
-          onSelect: () => onRecolor(t.value),
-        }))
+      ? menuChoices('Colour', TONES.map((t) => ({ ...t, swatch: TONE_COLOR[t.value] })), widget.config.tone ?? 'primary', onRecolor)
       : []),
     { id: 'remove', label: 'Remove widget', icon: <Trash2 size={16} />, danger: true, onSelect: onRemove },
   ];
@@ -100,13 +90,8 @@ function SortableWidget({
         onKeyDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
       >
-        <Menu
-          align="end"
-          trigger={<MoreVertical className="size-4" />}
-          triggerLabel="Edit widget"
-          triggerClassName="flex size-8 items-center justify-center rounded-full border border-(--border-default) bg-(--surface-card) text-(--text-secondary) shadow-(--shadow-sm) hover:bg-(--surface-hover) hover:text-(--text-primary)"
-          items={items}
-        />
+        {/* The standard three-dot button, on a solid background because it sits over the card's corner. */}
+        <Menu align="end" triggerLabel="Edit widget" triggerClassName="bg-btn bg-btn-secondary bg-btn-icon" items={items} />
       </div>
       <div className="pointer-events-none h-full min-h-0 *:h-full">
         <WidgetBody widget={widget} metrics={metrics} onRemove={onRemove} />
