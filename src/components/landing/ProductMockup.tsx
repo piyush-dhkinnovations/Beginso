@@ -305,9 +305,9 @@ export default function ProductMockup() {
           <div className="flex-1 flex justify-center">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-(--surface-card) border border-(--border-default) px-3 py-1 bg-caption text-(--text-muted)">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="https://storage.beginso.com/assets/logo-light.svg" alt="" height={12} width={12} style={{ height: 12, width: 12 }} aria-hidden="true" className="brand-icon-light" />
+              <img src="/favicon-light.svg" alt="" height={12} width={12} style={{ height: 12, width: 12 }} aria-hidden="true" className="brand-icon-light" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="https://storage.beginso.com/assets/logo-dark.svg" alt="" height={12} width={12} style={{ height: 12, width: 12 }} aria-hidden="true" className="brand-icon-dark" />
+              <img src="/favicon-dark.svg" alt="" height={12} width={12} style={{ height: 12, width: 12 }} aria-hidden="true" className="brand-icon-dark" />
               beginso.com/w/acme/inbox
             </span>
           </div>
