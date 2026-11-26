@@ -90,8 +90,8 @@ function DraggableToolboxItem({ config, onAdd }: DraggableItemProps) {
   });
 
   const style: React.CSSProperties = {
-    // pan-y, not none: a vertical swipe scrolls the rail; dragging sideways towards the canvas still picks the field up.
-    touchAction: 'pan-y',
+    // A swipe scrolls the rail; a short hold picks the field up (see BuilderTouchSensor).
+    touchAction: 'manipulation',
     opacity: isDragging ? 0.4 : 1,
   };
 

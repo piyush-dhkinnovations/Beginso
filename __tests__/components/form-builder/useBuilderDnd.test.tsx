@@ -152,9 +152,9 @@ describe('drag end', () => {
 });
 
 describe('sensors and collision detection', () => {
-  it('exposes pointer and keyboard sensors and a collision function', () => {
+  it('exposes mouse, touch and keyboard sensors and a collision function', () => {
     const { result } = renderHook(() => useBuilderDnd());
-    expect(result.current.sensors).toHaveLength(2);
+    expect(result.current.sensors).toHaveLength(3);
     expect(typeof result.current.collisionDetection).toBe('function');
   });
 });
