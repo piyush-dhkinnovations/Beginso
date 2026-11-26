@@ -1,12 +1,13 @@
 import { WORDMARK_DARK, WORDMARK_LIGHT } from "@/lib/brand";
 
 // The full logo (mark and name), served from /public. The logos used before are kept in /public/old-logo.
-// name-light.svg (navy/blue) reads on a light surface; name-dark.svg
+// logo-full-light.svg (navy/blue) reads on a light surface; logo-full-dark.svg
 // (white knockout) reads on a dark one. Swapped by [data-theme] via .wordmark-*
 // in globals.css, not hardcoded to one, since the same component renders on
 // both light surfaces (nav) and the always-dark footer (see `force`).
 export function Wordmark({ height = 24, force }: { height?: number; force?: "light" | "dark" }) {
-  const width = height * 2.4; // the artwork is wider than this box (1646:492), so it is drawn centred at the box's width
+  // The artwork is 1795:492, so in this box it is drawn the box's full width and about 0.9 of its height.
+  const width = height * 3.3;
 
   if (force) {
     return (

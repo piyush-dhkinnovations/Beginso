@@ -60,7 +60,7 @@ describe('security headers', () => {
   it('serves static art with a day of caching and no X-Powered-By (these were revalidated on every load)', async () => {
     const rules = await (nextConfig.headers as () => Promise<HeaderRule[]>)();
     const cacheOf = (source: string) => rules.find((r) => r.source === source)?.headers.find((h) => h.key === 'Cache-Control')?.value;
-    for (const source of ['/favicon.svg', '/favicon-light.svg', '/favicon-dark.svg', '/name-light.svg', '/name-dark.svg', '/avatars/:path*', '/blog/covers/:path*', '/email/:path*']) {
+    for (const source of ['/favicon.svg', '/favicon-light.svg', '/favicon-dark.svg', '/name-light.svg', '/name-dark.svg', '/logo-full-light.svg', '/logo-full-dark.svg', '/avatars/:path*', '/blog/covers/:path*', '/email/:path*']) {
       expect(cacheOf(source), source).toMatch(/max-age=86400/);
     }
     expect(nextConfig.poweredByHeader).toBe(false);
