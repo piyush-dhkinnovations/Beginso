@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ExternalLink, FileText, CheckSquare, MoreVertical, Trash2 } from 'lucide-react';
+import { ExternalLink, FileText, CheckSquare, Trash2 } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -253,7 +253,6 @@ export function ResponsesTable({
       align: 'right',
       render: (r) => (
         <Menu
-          trigger={<MoreVertical className="bg-icon" />}
           triggerLabel={`Actions for response from ${respondentLabel(r)}`}
           align="end"
           items={[

@@ -88,7 +88,7 @@ test('saved views: switching from one view to another replaces its filters, and 
   const before = (await picker.boundingBox())!;
 
   await picker.click();
-  await page.getByRole('menuitem', { name: 'test', exact: true }).click();
+  await page.getByRole('menuitemradio', { name: 'test', exact: true }).click();
   await expect(page).toHaveURL(/duplicate=1/);
   await expect(page.getByRole('button', { name: /^Saved views: test/ })).toBeVisible();
   // The manage button appears: it must not push the row up or down.
@@ -101,13 +101,13 @@ test('saved views: switching from one view to another replaces its filters, and 
 
   await page.getByRole('button', { name: /^Saved views:/ }).click();
   await page.screenshot({ path: testInfo.outputPath('views-menu.png'), clip: { x: 900, y: 60, width: 540, height: 340 } });
-  await page.getByRole('menuitem', { name: 'fgdf', exact: true }).click();
+  await page.getByRole('menuitemradio', { name: 'fgdf', exact: true }).click();
   await expect(page).toHaveURL(/unread=1/);
   await expect(page).not.toHaveURL(/duplicate=1/);
   await expect(page.getByRole('button', { name: /^Saved views: fgdf/ })).toBeVisible();
 
   await page.getByRole('button', { name: /^Saved views:/ }).click();
-  await page.getByRole('menuitem', { name: 'All responses' }).click();
+  await page.getByRole('menuitemradio', { name: 'All responses' }).click();
   await expect(page).not.toHaveURL(/unread=1/);
   await expect(page.getByRole('button', { name: 'Saved views: All responses' })).toBeVisible();
 });

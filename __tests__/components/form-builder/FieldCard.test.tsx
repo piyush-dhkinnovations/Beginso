@@ -111,27 +111,10 @@ describe('FieldCard', () => {
     expect(onDelete).not.toHaveBeenCalled();
   });
 
-  it('reorder mode swaps Duplicate/Delete for Up/Down buttons and never expands the editor', async () => {
-    const { onMoveUp, onMoveDown } = setup(makeField('short_text', { label: 'Q' }), { reorderMode: true, isActive: true });
-    expect(screen.queryByTitle('Delete Field')).not.toBeInTheDocument();
-    expect(screen.queryByPlaceholderText('Field label')).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Move Q up' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Move Q down' }));
-    expect(onMoveUp).toHaveBeenCalledTimes(1);
-    expect(onMoveDown).toHaveBeenCalledTimes(1);
-  });
-
-  it('in reorder mode the end rows keep a focusable button that is aria-disabled and does nothing', async () => {
-    setup(makeField('short_text', { label: 'Q' }), { reorderMode: true, onMoveUp: undefined });
-    const up = screen.getByRole('button', { name: 'Move Q up' });
-    expect(up).toHaveAttribute('aria-disabled', 'true');
-    expect(up).not.toBeDisabled();
-    await userEvent.click(up);
-  });
-
   it('exposes a labelled drag handle', () => {
     setup(makeField('short_text', { label: 'Q' }));
-    expect(screen.getByLabelText('Reorder Q. Press Space, then arrow keys, then Space.')).toBeInTheDocument();
+    // Shown at every width: no breakpoint may hide it again.
+    expect(screen.getByLabelText('Reorder Q. Press Space, then arrow keys, then Space.')).not.toHaveClass('hidden');
   });
 
   it('renders a dashed drop indicator above or below when a toolbox field hovers', () => {

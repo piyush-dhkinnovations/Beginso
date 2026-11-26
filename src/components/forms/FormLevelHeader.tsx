@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useParams, usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ExternalLink, Link2, MoreVertical, Pin, PinOff, Pencil, Settings, Share2 } from 'lucide-react';
+import { ExternalLink, Link2, Pin, PinOff, Pencil, Settings, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { ButtonLink } from '@/components/ui/ButtonLink';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
@@ -135,7 +135,7 @@ export function FormLevelHeader() {
                 Edit form
               </ButtonLink>
             )}
-            {menu.length > 0 && <Menu align="end" triggerLabel="More form actions" trigger={<MoreVertical size={18} aria-hidden="true" />} items={menu} />}
+            {menu.length > 0 && <Menu align="end" triggerLabel="More form actions" items={menu} />}
           </>
         }
       />

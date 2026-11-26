@@ -158,8 +158,8 @@ describe('ResponsesTable: changing the stage from the row', () => {
     const onViewResponse = vi.fn();
     render(<ResponsesTable {...baseProps} onViewResponse={onViewResponse} responses={rows} isLoading={false} selectedIds={new Set()} formId="form-1" stages={stages} onChangeStage={onChangeStage} />);
     fireEvent.click(screen.getByRole('button', { name: 'Stage: New. Press to change it.' }));
-    expect(screen.getAllByRole('menuitem').map((m) => m.textContent)).toEqual(['New', 'On Hold', 'Done']);
-    fireEvent.click(screen.getByRole('menuitem', { name: 'On Hold' }));
+    expect(screen.getAllByRole('menuitemradio').map((m) => m.textContent)).toEqual(['New', 'On Hold', 'Done']);
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'On Hold' }));
     expect(onChangeStage).toHaveBeenCalledWith('r1', 's-hold');
     expect(onViewResponse).not.toHaveBeenCalled();
   });
@@ -168,7 +168,7 @@ describe('ResponsesTable: changing the stage from the row', () => {
     const onChangeStage = vi.fn();
     render(<ResponsesTable {...baseProps} responses={rows} isLoading={false} selectedIds={new Set()} formId="form-1" stages={stages} onChangeStage={onChangeStage} />);
     fireEvent.click(screen.getByRole('button', { name: /Stage: New/ }));
-    fireEvent.click(screen.getByRole('menuitem', { name: 'New' }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'New' }));
     expect(onChangeStage).not.toHaveBeenCalled();
   });
 

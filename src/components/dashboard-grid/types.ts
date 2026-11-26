@@ -9,6 +9,8 @@ export const TONES: { value: KpiTone; label: string }[] = [
   { value: 'purple', label: 'Purple' },
 ];
 
+export const TONE_COLOR: Record<KpiTone, string> = { primary: 'var(--action-primary)', success: 'var(--success)', warning: 'var(--warning)', error: 'var(--error)', purple: '#8B5CF6' };
+
 export const WIDTHS = [3, 4, 6, 12] as const;
 export type WidgetWidth = (typeof WIDTHS)[number];
 

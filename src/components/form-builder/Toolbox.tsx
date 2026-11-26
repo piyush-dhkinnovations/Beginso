@@ -90,7 +90,8 @@ function DraggableToolboxItem({ config, onAdd }: DraggableItemProps) {
   });
 
   const style: React.CSSProperties = {
-    touchAction: 'none',
+    // A swipe scrolls the rail; a short hold picks the field up (see BuilderTouchSensor).
+    touchAction: 'manipulation',
     opacity: isDragging ? 0.4 : 1,
   };
 
@@ -121,10 +122,10 @@ export function Toolbox({ onAdd }: ToolboxProps) {
   const q = query.trim().toLowerCase();
   const fields = q ? FIELD_TYPE_CONFIG.filter((c) => c.label.toLowerCase().includes(q)) : FIELD_TYPE_CONFIG;
   return (
-    // Sprint 13 (CF2.12): the rail is full width from 1024px and icon-only on tablet (768-1023px). On phones the toolbox is the
-    // AddFieldSheet bottom sheet, opened from the build bar under the canvas.
-    // Flat rail (no card): sticks under the top bar while the canvas scrolls with the page.
-    <aside className="sticky top-16 hidden w-16 shrink-0 flex-col gap-4 self-start rounded-xl border border-(--border-default) bg-(--surface-card) p-2 md:flex lg:w-72 lg:p-4 lg:max-h-[calc(100vh-5rem)] lg:overflow-y-auto scrollbar-none [&::-webkit-scrollbar]:hidden">
+    // The rail is full width from 1024px and icon-only from 640px. On phones (below 640px) the toolbox is the AddFieldSheet
+    // bottom sheet, opened from the build bar under the canvas.
+    // Flat rail (no card): sticks under the top bar while the canvas scrolls with the page, and scrolls inside the screen height.
+    <aside className="sticky top-16 hidden w-16 shrink-0 flex-col gap-4 self-start rounded-xl border border-(--border-default) bg-(--surface-card) p-2 max-h-[calc(100vh-5rem)] overflow-y-auto sm:flex lg:w-72 lg:p-4 scrollbar-none [&::-webkit-scrollbar]:hidden">
       <div className="hidden border-b border-(--border-subtle) pb-3 lg:block">
         <h3 className="bg-body font-bold text-(--text-primary) tracking-tight">Add fields</h3>
         <p className="bg-body-sm mt-1 text-(--text-muted)">Click or drag a field onto the form.</p>

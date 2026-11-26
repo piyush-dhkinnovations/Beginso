@@ -55,7 +55,7 @@ describe('StagesTab', () => {
     await userEvent.type(screen.getByLabelText('Name of stage 1'), 'X');
     expect(onChange.mock.calls.at(-1)![0].stages[0].name).toBe('NewX');
     await userEvent.click(screen.getByRole('button', { name: /Colour of In Progress/ }));
-    await userEvent.click(screen.getByRole('menuitem', { name: 'Red' }));
+    await userEvent.click(screen.getByRole('menuitemradio', { name: 'Red' }));
     expect(onChange.mock.calls.at(-1)![0].stages[1].colour).toBe('error');
     await userEvent.selectOptions(screen.getByLabelText('Completed counts as'), 'in_progress');
     expect(onChange.mock.calls.at(-1)![0].stages[2].category).toBe('in_progress');

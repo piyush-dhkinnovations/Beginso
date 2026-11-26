@@ -1,6 +1,6 @@
 'use client';
 
-import { Eye, FileText, MoreVertical, Plus } from 'lucide-react';
+import { Eye, FileText, Plus } from 'lucide-react';
 import type { Template } from '@/types/form';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -30,7 +30,6 @@ export function TemplateCard({ template, onUse, onPreview, isLoading, wide }: Te
         <div className="flex items-start justify-between gap-2">
           <h3 className="bg-h5 text-(--text-primary)">{template.name}</h3>
           <Menu
-            trigger={<MoreVertical className="bg-icon" />}
             triggerLabel={`More options for ${template.name}`}
             align="end"
             items={[

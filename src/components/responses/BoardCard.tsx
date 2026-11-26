@@ -1,6 +1,6 @@
 'use client';
 
-import { GripVertical, MoreHorizontal } from 'lucide-react';
+import { GripVertical } from 'lucide-react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { ResponseSignals } from './ResponseSignals';
@@ -111,9 +111,8 @@ export function BoardCard({ response, stages, stageId, canAct, onView, onChangeS
             </button>
             {canAct && moveItems.length > 0 && (
               <Menu
-                trigger={<MoreHorizontal size={16} aria-hidden="true" />}
                 triggerLabel={`Move ${name}'s response to a different stage`}
-                triggerClassName="bg-btn bg-btn-ghost bg-btn-sm -mr-1 -mt-0.5 shrink-0"
+                triggerClassName="bg-btn bg-btn-ghost bg-btn-icon bg-btn-sm -mr-1 -mt-0.5 shrink-0"
                 items={moveItems}
                 align="end"
               />

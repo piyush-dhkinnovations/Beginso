@@ -92,7 +92,7 @@ describe('DashboardGrid edit mode', () => {
     const user = userEvent.setup();
     const onChange = setup();
     await user.click(screen.getAllByRole('button', { name: 'Edit widget' })[0]);
-    await user.click(screen.getByRole('menuitem', { name: /Width: Full width/ }));
+    await user.click(screen.getByRole('menuitemradio', { name: 'Full width' }));
     const next = onChange.mock.calls[0][0] as Widget[];
     expect(next[0]).toMatchObject({ id: 'a', w: 12 });
     expect(next.slice(1)).toEqual(widgets.slice(1));
@@ -105,7 +105,7 @@ describe('DashboardGrid edit mode', () => {
     expect(screen.queryByRole('menuitem', { name: /Colour:/ })).not.toBeInTheDocument();
     await user.keyboard('{Escape}');
     await user.click(screen.getAllByRole('button', { name: 'Edit widget' })[0]);
-    await user.click(screen.getByRole('menuitem', { name: /Colour: Green/ }));
+    await user.click(screen.getByRole('menuitemradio', { name: 'Green' }));
     const next = onChange.mock.calls[0][0] as Widget[];
     expect(next[0].config).toMatchObject({ type: 'kpi', tone: 'success' });
   });

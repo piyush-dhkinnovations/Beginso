@@ -75,7 +75,7 @@ describe('WorkspacesPage', () => {
     await screen.findByText('Acme Inc');
     const cards = Array.from(container.querySelectorAll('h3')).map((h) => h.closest('a')!);
     expect(cards[0].querySelector('img')).toHaveAttribute('src', 'https://cdn.example.com/acme.png');
-    expect(cards[1].querySelector('img')).toHaveAttribute('src', '/favicon.svg');
+    expect(cards[1].querySelector('img')).toHaveAttribute('src', '/favicon.svg?v=2');
     expect(cards[0].querySelector('img')).toHaveAttribute('aria-hidden', 'true'); // decorative: the name is right beside it
   });
 

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { isAxiosError } from 'axios';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { LayoutTemplate, MoreHorizontal, Plus, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { LayoutTemplate, Plus, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Menu } from '@/components/ui/Menu';
 import { DashboardGridSkeleton, SkeletonRegion } from '@/components/ui/PageSkeletons';
@@ -88,7 +88,6 @@ export function useCustomDashboard({ scope, defaults, metrics, canEdit = true, e
       {editing ? (
         <>
           <Menu
-            trigger={<MoreHorizontal className="bg-icon" />}
             triggerLabel="More dashboard options"
             align="end"
             items={[{ id: 'reset', label: 'Reset to default', icon: <RotateCcw size={16} />, disabled: reset.isPending || !data, onSelect: () => reset.mutate() }]}

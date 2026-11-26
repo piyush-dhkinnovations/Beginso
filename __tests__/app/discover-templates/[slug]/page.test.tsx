@@ -51,6 +51,17 @@ describe('TemplateDetailPage', () => {
     expect(screen.getByRole('heading', { name: 'Job Application', level: 1 })).toBeInTheDocument();
   });
 
+  it('sends the old slug of a renamed template on to its new address, and leaves a current one alone', () => {
+    mockTemplates.mockReturnValue({ data: [tpl({ replaces: ['job-form'] })], isLoading: false });
+    const { unmount } = render(<TemplateDetailPage />);
+    expect(replace).not.toHaveBeenCalled();
+    unmount();
+    routeSlug = 'job-form';
+    render(<TemplateDetailPage />);
+    expect(replace).toHaveBeenCalledWith('/discover-templates/job-application');
+    expect(screen.getByRole('heading', { name: 'Job Application', level: 1 })).toBeInTheDocument();
+  });
+
   it('shows the real question count, the description, and a device-switchable preview, both on screen together', () => {
     mockTemplates.mockReturnValue({ data: [tpl()], isLoading: false });
     render(<TemplateDetailPage />);

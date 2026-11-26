@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, ChevronDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { Menu } from '@/components/ui/Menu';
 import { StageBadge } from './StageBadge';
 import { StageDot } from './StageDot';
@@ -32,16 +32,12 @@ export function StageMenu({ response, stages, onChange }: StageMenuProps) {
           <ChevronDown size={12} className="text-(--text-muted)" aria-hidden="true" />
         </>
       }
-      // Each stage with its colour dot, the one the response is in ticked at the end.
+      // Each stage with its colour dot, the one the response is in ticked.
       items={stages.map((s) => ({
         id: s.id,
-        label: (
-          <span className="flex min-w-0 flex-1 items-center justify-between gap-3">
-            <span className="truncate">{s.name}</span>
-            {s.id === currentId && <Check size={14} className="shrink-0" aria-hidden="true" />}
-          </span>
-        ),
+        label: <span className="min-w-0 truncate">{s.name}</span>,
         icon: <StageDot colour={s.colour} />,
+        selected: s.id === currentId,
         onSelect: () => {
           if (s.id !== currentId) onChange(response._id, s.id);
         },

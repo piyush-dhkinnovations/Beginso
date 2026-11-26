@@ -1,5 +1,6 @@
 'use client';
 
+import type { CSSProperties, ReactNode } from 'react';
 import { Card } from '@/components/ui/Card';
 import { BarsChart } from '@/components/ui/charts';
 import { toSegments } from '@/lib/chartSegments';
@@ -28,11 +29,31 @@ export function computeOptionPercentages(options: QuestionOption[], totalAnswere
   }));
 }
 
-interface QuestionBreakdownChartProps {
+/** The drag handle, options menu and bar colour a card is given by the breakdown grid. */
+export interface QuestionCardControls {
+  handle?: ReactNode;
+  actions?: ReactNode;
+  color?: string;
+}
+
+/** Re-points the colour the bar charts draw with, around the picture only. No colour = the theme's own. */
+export const barStyle = (color?: string) => (color ? ({ '--action-primary': color } as CSSProperties) : undefined);
+
+export function QuestionCardHeader({ label, handle, actions }: QuestionCardControls & { label: string }) {
+  return (
+    <div className="mb-3 flex flex-wrap items-center gap-2">
+      {handle}
+      <h4 className="min-w-0 flex-1 bg-body font-semibold text-(--text-primary)">{label}</h4>
+      {actions}
+    </div>
+  );
+}
+
+interface QuestionBreakdownChartProps extends QuestionCardControls {
   question: QuestionBreakdown;
 }
 
-export function QuestionBreakdownChart({ question }: QuestionBreakdownChartProps) {
+export function QuestionBreakdownChart({ question, handle, actions, color }: QuestionBreakdownChartProps) {
   const ticks = question.options.reduce((sum, o) => sum + o.count, 0);
   const answered = question.totalAnswered ?? ticks;
   const total = Math.max(ticks, answered);
@@ -40,8 +61,8 @@ export function QuestionBreakdownChart({ question }: QuestionBreakdownChartProps
   const multi = ticks > answered;
 
   return (
-    <Card>
-      <h4 className="bg-body font-semibold text-(--text-primary) mb-3">{question.label}</h4>
+    <Card className="h-full">
+      <QuestionCardHeader label={question.label} handle={handle} actions={actions} />
       {total === 0 ? (
         <p className="bg-body-sm text-(--text-muted)">No answers yet in this range.</p>
       ) : (
@@ -50,7 +71,9 @@ export function QuestionBreakdownChart({ question }: QuestionBreakdownChartProps
             {answered} {answered === 1 ? 'person' : 'people'} answered
             {multi ? ' · each option is a share of those people, so the total can exceed 100%' : ''}
           </p>
-          <BarsChart horizontal data={toSegments(sorted.map((o) => ({ label: o.option, value: o.count }))).map((seg, i) => ({ ...seg, percentage: sorted[i].percentage }))} ariaLabel={`${question.label} — answer breakdown`} />
+          <div style={barStyle(color)}>
+            <BarsChart horizontal data={toSegments(sorted.map((o) => ({ label: o.option, value: o.count }))).map((seg, i) => ({ ...seg, percentage: sorted[i].percentage }))} ariaLabel={`${question.label} — answer breakdown`} />
+          </div>
           <div className="sr-only"><table>
             <caption>{question.label} — answer breakdown</caption>
             <thead>

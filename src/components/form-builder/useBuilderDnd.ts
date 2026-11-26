@@ -8,8 +8,9 @@ import {
   DragStartEvent,
   KeyboardSensor,
   Over,
-  PointerSensor,
+  MouseSensor,
   pointerWithin,
+  TouchSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -34,6 +35,15 @@ function isDroppingBelow(active: Active, over: Over | null): boolean {
 const collisionDetection: CollisionDetection = (args) =>
   args.pointerCoordinates ? pointerWithin(args) : closestCenter(args);
 
+// A finger on a field's drag handle (touch-action: none) can only mean "drag", so it starts on movement. Anywhere else
+// (the rail's icons) a swipe has to scroll, so a drag needs a short hold.
+class BuilderTouchSensor extends TouchSensor {
+  constructor(props: ConstructorParameters<typeof TouchSensor>[0]) {
+    const onHandle = (props.event.target as Element | null)?.closest?.('[data-drag-handle]');
+    super(onHandle ? { ...props, options: { ...props.options, activationConstraint: { distance: 5 } } } : props);
+  }
+}
+
 export function useBuilderDnd() {
   const fields = useBuilderStore((state) => state.fields);
   const activePageId = useBuilderStore((state) => state.activePageId);
@@ -45,10 +55,13 @@ export function useBuilderDnd() {
   // true when a toolbox item hovers over the canvas droppable (to tint the canvas)
   const [isToolboxOver, setIsToolboxOver] = useState(false);
 
-  // Sensors: require 8px movement before drag activates (preserves click)
+  // Mouse: 8px of movement before a drag starts (preserves click). Touch: see BuilderTouchSensor.
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: { distance: 8 },
+    }),
+    useSensor(BuilderTouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 8 },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,

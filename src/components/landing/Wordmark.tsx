@@ -1,12 +1,13 @@
-const LOGO_FULL_LIGHT = "https://storage.beginso.com/assets/logo-full-light.svg";
-const LOGO_FULL_DARK = "https://storage.beginso.com/assets/logo-full-dark.svg";
+// The full logo (mark and name), served from /public. The logos used before are kept in /public/old-logo.
+const LOGO_FULL_LIGHT = "/name-light.svg";
+const LOGO_FULL_DARK = "/name-dark.svg";
 
-// logo-full-light.svg (navy/blue) reads on a light surface; logo-full-dark.svg
+// name-light.svg (navy/blue) reads on a light surface; name-dark.svg
 // (white knockout) reads on a dark one. Swapped by [data-theme] via .wordmark-*
 // in globals.css, not hardcoded to one, since the same component renders on
 // both light surfaces (nav) and the always-dark footer (see `force`).
 export function Wordmark({ height = 24, force }: { height?: number; force?: "light" | "dark" }) {
-  const width = height * 2.4; // logo-full-*.svg aspect ratio is 1200:500
+  const width = height * 2.4; // the artwork is wider than this box (1616:492), so it is drawn centred at the box's width
 
   if (force) {
     return (

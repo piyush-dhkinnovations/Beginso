@@ -2,11 +2,11 @@
 
 import { useState, type ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Check, Copy, MoreHorizontal, Pencil, Share2, Trash2, Users } from 'lucide-react';
+import { Copy, Pencil, Share2, Trash2, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { Menu, type MenuItem } from '@/components/ui/Menu';
+import { Menu, menuChoices, type MenuItem } from '@/components/ui/Menu';
 import { chartBuilderService } from '@/services/chartBuilder';
 import { ChartResult } from './ChartResult';
 import { DrillChart } from './DrillChart';
@@ -61,12 +61,7 @@ export function BuilderChartCard({ formId, scope, chart, canManage, dragHandle, 
         { id: 'edit', label: 'Edit', icon: <Pencil size={14} />, onSelect: () => onEdit(chart) },
         { id: 'duplicate', label: 'Duplicate', icon: <Copy size={14} />, onSelect: () => onDuplicate(chart) },
         { id: 'share', label: shared ? 'Stop sharing' : 'Share with workspace', icon: shared ? <Users size={14} /> : <Share2 size={14} />, onSelect: () => onToggleShare(chart) },
-        ...SIZES.map((s) => ({
-          id: `size-${s}`,
-          label: `Size: ${SIZE_LABEL[s]}`,
-          icon: chart.size === s ? <Check size={14} /> : <span className="inline-block w-3.5" />,
-          onSelect: () => onResize(chart, s),
-        })),
+        ...menuChoices('Size', SIZES.map((s) => ({ value: s, label: SIZE_LABEL[s] })), chart.size, (size) => onResize(chart, size)),
         { id: 'remove', label: 'Remove', icon: <Trash2 size={14} />, danger: true, onSelect: () => setConfirming(true) },
       ]
     : [];
@@ -83,7 +78,7 @@ export function BuilderChartCard({ formId, scope, chart, canManage, dragHandle, 
         </div>
         {drill && <Badge variant="neutral">Drill-down</Badge>}
         {shared && canManage && <Badge variant="info">Shared</Badge>}
-        {canManage && <Menu align="end" triggerLabel={`Chart options for ${title}`} trigger={<MoreHorizontal size={18} aria-hidden="true" />} items={items} />}
+        {canManage && <Menu align="end" triggerLabel={`Chart options for ${title}`} items={items} />}
       </div>
 
       {confirming ? (

@@ -6,8 +6,8 @@
  * Requirements: 6.1-6.6, 13.1
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 
 vi.mock('@/components/charts/EChartContainer', () => ({
   EChartContainer: ({ option, ariaLabel }: { option: unknown; ariaLabel: string }) => (
@@ -154,6 +154,79 @@ describe('QuestionBreakdownSection', () => {
     expect(rows[0]).toContain('75%');
     expect(rows[1]).toContain('Social');
     expect(rows[1]).toContain('25%');
+  });
+});
+
+describe('QuestionBreakdownSection layout', () => {
+  const rating = field({ fieldId: 'r1', type: 'rating', label: 'Rate us' });
+  const breakdown: QuestionBreakdown[] = [
+    { fieldId: 'f1', label: 'Referral source', options: [{ option: 'Social', count: 3 }] },
+    { fieldId: 'r1', label: 'Rate us', options: [], rating: { count: 1, average: 5, max: 5, distribution: [{ value: 5, count: 1, percentage: 100 }] } },
+  ];
+  const view = () => render(<QuestionBreakdownSection form={makeForm([dropdownField, rating])} breakdown={breakdown} isLoading={false} />);
+  const titles = () => screen.getAllByRole('heading', { level: 4 }).map((h) => h.textContent);
+  const openMenu = (label: string) => {
+    fireEvent.click(screen.getByRole('button', { name: `Options for ${label}` }));
+    return within(screen.getByRole('menu', { name: `Options for ${label}` }));
+  };
+  const pick = (label: string, option: string) => fireEvent.click(openMenu(label).getByRole('menuitemradio', { name: option }));
+  const bars = (label: string) => screen.getByRole('heading', { name: label }).closest('[class*="col-span"]')!.querySelector<HTMLElement>('[style*="--action-primary"]');
+  const cell = (label: string) => screen.getByRole('heading', { name: label }).closest('[class*="col-span"]');
+  beforeEach(() => localStorage.clear());
+
+  it('gives every card a drag handle and a three-dot menu, starting at medium and blue', () => {
+    view();
+    expect(screen.getByRole('button', { name: 'Reorder question Referral source' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reorder question Rate us' })).toBeInTheDocument();
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    const menu = openMenu('Referral source');
+    expect(menu.getByRole('menuitemradio', { name: 'Medium' })).toBeChecked();
+    expect(menu.getByRole('menuitemradio', { name: 'Blue' })).toBeChecked();
+    expect(bars('Referral source')).toBeNull();
+  });
+
+  it('the size choice resizes only that card and is remembered for the form', () => {
+    const first = view();
+    pick('Rate us', 'Large');
+    expect(cell('Rate us')).toHaveClass('xl:col-span-6');
+    expect(cell('Referral source')).toHaveClass('xl:col-span-3');
+    first.unmount();
+    view();
+    expect(cell('Rate us')).toHaveClass('xl:col-span-6');
+    pick('Rate us', 'Small');
+    expect(cell('Rate us')).toHaveClass('xl:col-span-2');
+  });
+
+  it('the colour choice recolours only that card, is remembered, and Blue goes back to the theme', () => {
+    const first = view();
+    pick('Rate us', 'Green');
+    expect(bars('Rate us')?.style.getPropertyValue('--action-primary')).toBe('var(--success)');
+    expect(bars('Referral source')).toBeNull();
+    first.unmount();
+    view();
+    expect(bars('Rate us')?.style.getPropertyValue('--action-primary')).toBe('var(--success)');
+    pick('Rate us', 'Blue');
+    expect(bars('Rate us')).toBeNull();
+  });
+
+  it('a number question offers sizes but no colour', () => {
+    const qty = field({ fieldId: 'n1', type: 'number', label: 'How many' });
+    render(<QuestionBreakdownSection form={makeForm([qty])} breakdown={[{ fieldId: 'n1', label: 'How many', options: [], numeric: { count: 1, average: 2, min: 2, max: 2, sum: 2 } }]} isLoading={false} />);
+    const menu = openMenu('How many');
+    expect(menu.getByRole('menuitemradio', { name: 'Large' })).toBeInTheDocument();
+    expect(menu.queryByRole('menuitemradio', { name: 'Green' })).not.toBeInTheDocument();
+  });
+
+  it('shows cards in the saved order', () => {
+    localStorage.setItem('beginso.questionLayout.form-1', JSON.stringify({ order: ['r1', 'f1'], sizes: {} }));
+    view();
+    expect(titles()).toEqual(['Rate us', 'Referral source']);
+  });
+
+  it('ignores a damaged saved layout', () => {
+    localStorage.setItem('beginso.questionLayout.form-1', '{nonsense');
+    view();
+    expect(titles()).toEqual(['Referral source', 'Rate us']);
   });
 });
 

@@ -457,6 +457,15 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
                   />
                 </div>
               ),
+              customCharts: formScope ? (
+                <CustomChartsSection
+                  form={form}
+                  formId={formId}
+                  scope={formScope}
+                  range={range}
+                  onAddRequest={addChart}
+                />
+              ) : undefined,
               questions: (
                 <QuestionBreakdownSection
                   form={form}
@@ -469,16 +478,6 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
               ),
             }}
           />
-
-          {formScope && (
-            <CustomChartsSection
-              form={form}
-              formId={formId}
-              scope={formScope}
-              range={range}
-              onAddRequest={addChart}
-            />
-          )}
         </>
       ) : (
         <>

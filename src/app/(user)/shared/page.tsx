@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { notificationsService } from '@/services/notifications';
 import { notificationKeys } from '@/lib/queryKeys';
-import { Calendar, FileText, Lock, MoreVertical, Search, Table2, Users, LayoutDashboard } from 'lucide-react';
+import { Calendar, FileText, Lock, Search, Table2, Users, LayoutDashboard } from 'lucide-react';
 import { sharedService } from '@/services/shared';
 import { sharedKeys } from '@/lib/queryKeys';
 import { ROLE_LABELS } from '@/lib/roles';
@@ -92,7 +92,6 @@ export default function SharedWithMePage() {
 
   const rowMenu = (item: SharedFormItem) => (
     <Menu
-      trigger={<MoreVertical className="bg-icon" />}
       triggerLabel="More Options"
       align="end"
       items={[

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { Menu, type MenuItem } from "./Menu";
 
 export interface FilterMenuOption {
@@ -29,7 +29,6 @@ export interface FilterMenuProps {
 export function FilterMenu({ label, options, selectedIds = [], valueLabel, onSelect, onClear, clearLabel = "Any", extraItems = [] }: FilterMenuProps) {
   const active = selectedIds.length > 0;
   const value = valueLabel ?? (active ? options.find((o) => o.id === selectedIds[0])?.label : undefined);
-  const check = (on: boolean) => (on ? <Check size={14} aria-hidden="true" /> : <span className="inline-block w-3.5" />);
   return (
     <Menu
       triggerLabel={active && value ? `${label}: ${value}` : label}
@@ -45,8 +44,8 @@ export function FilterMenu({ label, options, selectedIds = [], valueLabel, onSel
         </>
       }
       items={[
-        { id: "__any", label: clearLabel, icon: check(!active), onSelect: onClear },
-        ...options.map((o) => ({ id: o.id, label: o.label, icon: check(selectedIds.includes(o.id)), onSelect: () => onSelect(o.id) })),
+        { id: "__any", label: clearLabel, selected: !active, onSelect: onClear },
+        ...options.map((o) => ({ id: o.id, label: o.label, selected: selectedIds.includes(o.id), onSelect: () => onSelect(o.id) })),
         ...extraItems,
       ]}
     />

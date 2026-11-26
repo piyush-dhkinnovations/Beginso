@@ -1,4 +1,4 @@
-import { Copy, Table2, Trash2, Edit2, BarChart2, MoreVertical, CheckSquare, FolderSymlink, LayoutDashboard, LayoutTemplate, Share2, Pin, PinOff, Archive, ArchiveRestore } from 'lucide-react';
+import { Copy, Table2, Trash2, Edit2, BarChart2, CheckSquare, FolderSymlink, LayoutDashboard, LayoutTemplate, Share2, Pin, PinOff, Archive, ArchiveRestore } from 'lucide-react';
 import { Menu, type MenuItem } from '@/components/ui/Menu';
 import { PinButton } from '@/components/forms/PinButton';
 import { formHref } from '@/components/forms/formsListUtils';
@@ -96,7 +96,7 @@ export function buildFormMenuItems(form: Form, s: FormsPageState, context: Forms
 }
 
 export function renderRowMenu(form: Form, s: FormsPageState, context: FormsContext) {
-  return <Menu trigger={<MoreVertical className="bg-icon" />} triggerLabel={`Actions for ${form.title}`} items={buildFormMenuItems(form, s, context)} align="end" />;
+  return <Menu triggerLabel={`Actions for ${form.title}`} items={buildFormMenuItems(form, s, context)} align="end" />;
 }
 
 // Archived forms cannot be pinned (backend 409), so no pin affordance on that tab.
