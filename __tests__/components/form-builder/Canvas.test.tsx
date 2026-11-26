@@ -102,31 +102,15 @@ describe('Canvas', () => {
     expect(onPageDescriptionChange).toHaveBeenCalledWith('Hello');
   });
 
-  describe('reorder mode', () => {
+  describe('keyboard reorder', () => {
     const fields = () => [makeField('short_text', { label: 'First' }), makeField('short_text', { label: 'Second' }), makeField('short_text', { label: 'Third' })];
 
-    it('Move down swaps with the next field and announces the new position', async () => {
+    it('Alt+ArrowUp swaps with the previous field and announces the new position', () => {
       const [a, b, c] = fields();
-      const { onFieldReorder } = setup([a, b, c], { isReordering: true });
-      await userEvent.click(screen.getByRole('button', { name: 'Move First down' }));
-      expect(onFieldReorder).toHaveBeenCalledWith(a.fieldId, b.fieldId);
-      expect(screen.getByText('Moved First to position 2 of 3')).toBeInTheDocument();
-    });
-
-    it('Move up swaps with the previous field', async () => {
-      const [a, b, c] = fields();
-      const { onFieldReorder } = setup([a, b, c], { isReordering: true });
-      await userEvent.click(screen.getByRole('button', { name: 'Move Third up' }));
+      const { onFieldReorder } = setup([a, b, c], { activeFieldId: c.fieldId });
+      fireEvent.keyDown(screen.getByRole('button', { name: 'Select Third field' }), { key: 'ArrowUp', altKey: true });
       expect(onFieldReorder).toHaveBeenCalledWith(c.fieldId, b.fieldId);
       expect(screen.getByText('Moved Third to position 2 of 3')).toBeInTheDocument();
-    });
-
-    it('the first row cannot move up and the last cannot move down', async () => {
-      const [a, b, c] = fields();
-      const { onFieldReorder } = setup([a, b, c], { isReordering: true });
-      await userEvent.click(screen.getByRole('button', { name: 'Move First up' }));
-      await userEvent.click(screen.getByRole('button', { name: 'Move Third down' }));
-      expect(onFieldReorder).not.toHaveBeenCalled();
     });
 
     it('Alt+ArrowDown on the active card also reorders', () => {

@@ -3,7 +3,7 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Trash2, Copy, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
+import { Trash2, Copy, GripVertical } from 'lucide-react';
 import type { FormField, LogicRule } from '@/types/form';
 import { FIELD_TYPE_CONFIG } from './Toolbox';
 import { FieldInlineEditor } from './FieldInlineEditor';
@@ -28,8 +28,6 @@ interface FieldCardProps {
   onMoveDown?: () => void;
   /** Shows a dashed drop-zone card above/below this card while a toolbox field is dragged over it */
   insertIndicator?: 'above' | 'below' | null;
-  /** Sprint 13 (CF2.12) — Reorder mode on touch widths: handle + Up/Down on every row, no inline editor. */
-  reorderMode?: boolean;
 }
 
 // ─── Dashed drop-zone card ────────────────────────────────────────────────────
@@ -59,7 +57,6 @@ export function FieldCard({
   onMoveUp,
   onMoveDown,
   insertIndicator = null,
-  reorderMode = false,
 }: FieldCardProps) {
   const {
     attributes,
@@ -110,7 +107,7 @@ export function FieldCard({
 
   // Collapse the inline editor while the card is being dragged so the sortable
   // placeholder doesn't leave an oversized gap in the list mid-drag.
-  const showInlinePanel = isActive && !isDragging && !reorderMode;
+  const showInlinePanel = isActive && !isDragging;
 
   return (
     // Outer wrapper keeps layout space and holds the drop-zone indicators.
@@ -150,62 +147,25 @@ export function FieldCard({
             onClick={(e) => e.stopPropagation()}
             style={{ touchAction: 'none' }}
             aria-label={`Reorder ${field.label}. Press Space, then arrow keys, then Space.`}
-            // Below 1024px fields are only draggable inside Reorder mode (requirements.md 4.3).
-            className={`text-(--text-disabled) hover:text-(--text-secondary) cursor-grab active:cursor-grabbing p-1 -ml-1 rounded transition-colors shrink-0 min-w-11 min-h-11 items-center justify-center ${
-              reorderMode ? 'flex' : 'hidden lg:flex'
-            }`}
+            className="flex text-(--text-disabled) hover:text-(--text-secondary) cursor-grab active:cursor-grabbing p-1 -ml-1 rounded transition-colors shrink-0 min-w-11 min-h-11 items-center justify-center"
           >
             <GripVertical size={16} />
           </div>
 
           {Icon && (
-            <Icon size={16} className="text-(--text-muted) shrink-0 mt-2" />
+            <Icon size={16} className="hidden text-(--text-muted) shrink-0 mt-2 sm:block" />
           )}
 
           {/* Label row + live preview — both live in the same flex-1 column so the
               preview aligns under the label, not under the grip/icon. */}
           <div className="flex-1 min-w-0 flex flex-col gap-2">
-            <div className="flex items-center justify-between gap-2 min-h-6">
-              <span className="bg-body font-medium text-(--text-primary) truncate">
+            {/* On phones the name takes its own line: beside the grip and the actions it was cut to a few letters. */}
+            <div className="flex items-center justify-between gap-2 min-h-6 max-sm:flex-wrap">
+              <span className="bg-body font-medium text-(--text-primary) truncate max-sm:basis-full max-sm:pt-3">
                 {field.label}
               </span>
 
-              {reorderMode ? (
-                <div className="flex items-center gap-1 shrink-0">
-                  {/* aria-disabled (not disabled) at the ends so focus is not lost when a row reaches the top/bottom. */}
-                  <button
-                    type="button"
-                    data-move="up"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onMoveUp?.();
-                    }}
-                    aria-disabled={!onMoveUp}
-                    aria-label={`Move ${field.label} up`}
-                    className={`flex min-h-11 min-w-11 items-center justify-center rounded-md border border-(--border-default) text-(--text-secondary) ${
-                      onMoveUp ? 'hover:bg-(--surface-hover)' : 'opacity-40'
-                    }`}
-                  >
-                    <ChevronUp size={18} aria-hidden="true" />
-                  </button>
-                  <button
-                    type="button"
-                    data-move="down"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onMoveDown?.();
-                    }}
-                    aria-disabled={!onMoveDown}
-                    aria-label={`Move ${field.label} down`}
-                    className={`flex min-h-11 min-w-11 items-center justify-center rounded-md border border-(--border-default) text-(--text-secondary) ${
-                      onMoveDown ? 'hover:bg-(--surface-hover)' : 'opacity-40'
-                    }`}
-                  >
-                    <ChevronDown size={18} aria-hidden="true" />
-                  </button>
-                </div>
-              ) : (
-              // Hover-reveal on desktop; always visible below 1024px where there is no hover.
+              {/* Hover-reveal on desktop; always visible below 1024px where there is no hover. */}
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 max-lg:opacity-100 transition-all shrink-0">
                 <FieldMoveMenus field={field} />
                 <button
@@ -231,7 +191,6 @@ export function FieldCard({
                   <Trash2 size={16} />
                 </button>
               </div>
-              )}
             </div>
 
             <p className="bg-caption text-(--text-muted) -mt-1">
