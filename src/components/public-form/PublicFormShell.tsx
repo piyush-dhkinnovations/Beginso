@@ -653,7 +653,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
             tabIndex={-1}
             autoComplete="off"
             aria-hidden="true"
-            className="absolute -left-[9999px] w-px h-px overflow-hidden"
+            className="absolute left-[-9999px] w-px h-px overflow-hidden"
             {...methods.register('_hp')}
           />
 
