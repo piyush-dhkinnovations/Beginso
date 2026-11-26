@@ -105,8 +105,6 @@ interface CanvasProps {
   dragOverPosition?: 'above' | 'below' | null;
   /** Whether a toolbox item is currently being dragged over the canvas area */
   isToolboxOver?: boolean;
-  /** Sprint 13 (CF2.12) — Reorder mode on touch widths. */
-  isReordering?: boolean;
 }
 
 // ─── Main Canvas component ────────────────────────────────────────────────────
@@ -131,10 +129,8 @@ export function Canvas({
   dragOverFieldId = null,
   dragOverPosition = null,
   isToolboxOver = false,
-  isReordering = false,
 }: CanvasProps) {
-  // Screen-reader announcement of a Reorder-mode move (aria-live) — the new position is spoken, not
-  // only shown.
+  // Screen-reader announcement of a keyboard (Alt+Arrow) move: the new position is spoken, not only shown.
   const [announcement, setAnnouncement] = useState('');
   // Only the active page's fields are ever shown on the canvas at once.
   const visibleFields = fields.filter((f) => !f.deleted && f.pageId === activePageId);
@@ -146,12 +142,6 @@ export function Canvas({
     if (!target || !moved) return;
     onFieldReorder(moved.fieldId, target.fieldId);
     setAnnouncement(`Moved ${moved.label} to position ${index + delta + 1} of ${visibleFields.length}`);
-    // React moves the keyed node, which can drop focus — put it back on the button just used.
-    requestAnimationFrame(() => {
-      document
-        .querySelector<HTMLElement>(`[data-field-id="${moved.fieldId}"] [data-move="${delta < 0 ? 'up' : 'down'}"]`)
-        ?.focus();
-    });
   }
 
   return (
@@ -190,7 +180,6 @@ export function Canvas({
                 onDeleteLogicRule={onDeleteLogicRule}
                 onMoveUp={index > 0 ? () => moveBy(index, -1) : undefined}
                 onMoveDown={index < visibleFields.length - 1 ? () => moveBy(index, 1) : undefined}
-                reorderMode={isReordering}
                 insertIndicator={dragOverFieldId === field.fieldId ? dragOverPosition : null}
               />
             ))}

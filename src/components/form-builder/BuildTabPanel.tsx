@@ -13,14 +13,10 @@ import type { BuilderDnd } from './useBuilderDnd';
 // The Build tab: toolbox, pages panel, canvas and the drag overlay inside one DndContext.
 export function BuildTabPanel({
   dnd,
-  isReordering,
   onAddField,
-  onToggleReorder,
 }: {
   dnd: BuilderDnd;
-  isReordering: boolean;
   onAddField: () => void;
-  onToggleReorder: () => void;
 }) {
   const fields = useBuilderStore((state) => state.fields);
   const pages = useBuilderStore((state) => state.pages);
@@ -44,8 +40,6 @@ export function BuildTabPanel({
   const deleteLogicRule = useBuilderStore((state) => state.deleteLogicRule);
 
   const { activeDragConfig, activeDragField, activeDragFieldConfig } = dnd;
-
-  const activePageFieldCount = fields.filter((f) => !f.deleted && f.pageId === activePageId).length;
 
   // Non-deleted field count per page, for the Pages panel's badges
   const pageFieldCounts = useMemo(() => {
@@ -100,14 +94,8 @@ export function BuildTabPanel({
         dragOverFieldId={dnd.dragOverInfo?.fieldId ?? null}
         dragOverPosition={dnd.dragOverInfo?.position ?? null}
         isToolboxOver={dnd.isToolboxOver}
-        isReordering={isReordering}
       />
-      <MobileBuildBar
-        isReordering={isReordering}
-        canReorder={activePageFieldCount > 1}
-        onAddField={onAddField}
-        onToggleReorder={onToggleReorder}
-      />
+      <MobileBuildBar onAddField={onAddField} />
       </div>
       <DragOverlay dropAnimation={dnd.dropAnimation}>
         {activeDragConfig ? (

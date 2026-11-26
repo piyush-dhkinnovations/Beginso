@@ -55,9 +55,8 @@ export default function BuilderPageShell() {
     if (tab === 'share') requestAnimationFrame(() => scrollToShare('smooth'));
   };
 
-  // Sprint 13 (CF2.12): touch-width builder UI — bottom-sheet toolbox and Reorder mode.
+  // Phone widths have no field rail: fields are added from a bottom sheet.
   const [showAddSheet, setShowAddSheet] = useState(false);
-  const [isReordering, setIsReordering] = useState(false);
 
   const formId = useBuilderStore((state) => state.formId);
   const formTitle = useBuilderStore((state) => state.formTitle);
@@ -73,7 +72,6 @@ export default function BuilderPageShell() {
 
   const setFormTitle = useBuilderStore((state) => state.setFormTitle);
   const addField = useBuilderStore((state) => state.addField);
-  const setActiveFieldId = useBuilderStore((state) => state.setActiveFieldId);
   const setBranding = useBuilderStore((state) => state.setBranding);
   const setSettings = useBuilderStore((state) => state.setSettings);
   const undo = useBuilderStore((state) => state.undo);
@@ -106,11 +104,6 @@ export default function BuilderPageShell() {
 
   // Add-field sheet: append to the active page. The store opens the new card and FieldCard scrolls it into view.
   const handleAddFromSheet = (type: FieldType) => addField(type);
-
-  const toggleReorder = () => {
-    setIsReordering((on) => !on);
-    setActiveFieldId(null); // the inline editor is hidden in Reorder mode; don't leave a field "selected"
-  };
 
   const liveFieldCount = fields.filter((f) => !f.deleted).length;
 
@@ -168,9 +161,7 @@ export default function BuilderPageShell() {
                 {activeTab === 'build' ? (
                   <BuildTabPanel
                     dnd={dnd}
-                    isReordering={isReordering}
                     onAddField={() => setShowAddSheet(true)}
-                    onToggleReorder={toggleReorder}
                   />
                 ) : activeTab === 'branding' ? (
                   <div className="min-w-0 flex-1">

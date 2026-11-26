@@ -39,7 +39,7 @@ function seed(over: Partial<Form> = {}) {
 }
 
 const renderPanel = (props: Partial<React.ComponentProps<typeof BuildTabPanel>> = {}) =>
-  render(<BuildTabPanel dnd={dnd} isReordering={false} onAddField={vi.fn()} onToggleReorder={vi.fn()} {...props} />);
+  render(<BuildTabPanel dnd={dnd} onAddField={vi.fn()} {...props} />);
 
 describe('BuildTabPanel', () => {
   beforeEach(() => {
@@ -132,35 +132,10 @@ describe('BuildTabPanel', () => {
     expect(screen.getByTitle('First page — 1 field')).toBeInTheDocument();
   });
 
-  it('the mobile bar can reorder only when the active page has 2+ fields', () => {
-    useBuilderStore.getState().addField('short_text');
-    const { unmount } = renderPanel();
-    expect(screen.getByRole('button', { name: 'Reorder' })).toBeDisabled();
-    unmount();
-    useBuilderStore.getState().addField('email');
-    renderPanel();
-    expect(screen.getByRole('button', { name: 'Reorder' })).toBeEnabled();
-  });
-
-  it('the mobile bar callbacks come from the parent', async () => {
-    useBuilderStore.getState().addField('short_text');
-    useBuilderStore.getState().addField('email');
+  it('the mobile bar callback comes from the parent', async () => {
     const onAddField = vi.fn();
-    const onToggleReorder = vi.fn();
-    renderPanel({ onAddField, onToggleReorder });
+    renderPanel({ onAddField });
     await userEvent.click(screen.getByRole('button', { name: /Add field/ }));
-    await userEvent.click(screen.getByRole('button', { name: 'Reorder' }));
     expect(onAddField).toHaveBeenCalled();
-    expect(onToggleReorder).toHaveBeenCalled();
-  });
-
-  it('reorder mode moves a field through the store', async () => {
-    useBuilderStore.getState().addField('short_text');
-    useBuilderStore.getState().addField('email');
-    const [a, b] = useBuilderStore.getState().fields;
-    renderPanel({ isReordering: true });
-    await userEvent.click(screen.getByRole('button', { name: `Move ${a.label} down` }));
-    const ordered = [...useBuilderStore.getState().fields].sort((x, y) => x.order - y.order).map((f) => f.fieldId);
-    expect(ordered).toEqual([b.fieldId, a.fieldId]);
   });
 });

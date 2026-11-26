@@ -28,7 +28,11 @@ const builderForm = (id: string, s: { label: string; version: number }) => ({
   _id: id, workspaceId: null, title: 'E2E form', description: '', status: 'draft', schemaVersion: 1, responseCount: 0, contentVersion: s.version,
   createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
   pages: [{ id: 'p1', order: 0, title: 'E2E form' }], branding: {}, settings: { honeypotEnabled: true },
-  fields: [{ fieldId: 'f1', pageId: 'p1', label: s.label, type: 'short_text', required: false, deleted: false, order: 0 }],
+  fields: [
+    { fieldId: 'f1', pageId: 'p1', label: s.label, type: 'short_text', required: false, deleted: false, order: 0 },
+    // builder-small-widths.spec.ts drags one field above another, so its forms carry a second one.
+    ...(id.startsWith('e2e-grip') ? [{ fieldId: 'f2', pageId: 'p1', label: 'Second question', type: 'email', required: false, deleted: false, order: 1 }] : []),
+  ],
 });
 
 // /f/look-<layout>-<variant>: one page with text fields and both kinds of choice, in the named layout, with a look chosen by the variant
