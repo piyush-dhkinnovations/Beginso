@@ -84,7 +84,10 @@ describe('FileUploadRenderer', () => {
 
     expect(onFileChange).toHaveBeenCalledWith(file);
     expect(readValues(screen.getByTestId('values'))).toEqual({ f1: 'cv.pdf' });
-    await waitFor(() => expect(screen.getByText(/Ready · 2\.0 KB/)).toBeInTheDocument());
+    // The state is reported from an effect, which runs just after "Ready" is drawn: wait for the report, not for the text.
+    // The longer limit is for a loaded CI runner: the progress bar alone takes four 100 ms steps.
+    await waitFor(() => expect(states.at(-1)?.status).toBe('uploaded'), { timeout: 3000 });
+    expect(screen.getByText(/Ready · 2\.0 KB/)).toBeInTheDocument();
     const seq = states.map((s) => s.status);
     expect(seq[0]).toBe('idle');
     expect(seq).toContain('uploading');
@@ -95,7 +98,7 @@ describe('FileUploadRenderer', () => {
     setup();
     await userEvent.upload(document.getElementById('f1') as HTMLInputElement, makeFile('p.png', 'image/png'));
     expect(createUrl).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(screen.getByText(/Ready/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/Ready/)).toBeInTheDocument(), { timeout: 3000 });
     expect(document.querySelector('img')).toHaveAttribute('src', 'blob:preview');
   });
 
