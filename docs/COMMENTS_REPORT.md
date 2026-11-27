@@ -1,4 +1,67 @@
-# Comments report: frontend (Step 0, report only)
+# Comments report: frontend
+
+## Final result
+
+All ten folder groups are done. The sections below the first report give each group's counts, proof, gate and ten samples.
+
+### Counts
+
+| | Before | After |
+|---|---|---|
+| Comments | 4896 | 4810 |
+| Comment lines | 10130 | 9321 |
+
+525 code files changed (plus `CLAUDE.md` and this report). About 1,000 comments were edited and about 90 removed entirely. The count falls little because most of the work removed labels and corrected text inside comments that were to be kept.
+
+### Proof and gate
+
+- Proof across the whole branch against `develop`: **525 code files, 0 mismatches** (compiled output without comments, code tokens, directives).
+- Every group, and the final state: type-check and lint clean, 4901 unit tests in 504 files, build route table identical, e2e 284 passed and 19 skipped. All the same as the baseline.
+- Lint excludes `.next-proof/`, an untracked build folder on the machine that ran the checks.
+
+### TODOs and disable comments
+
+- Kept TODOs: none. The only two were already done and are removed.
+- Reasons were added to 18 disable comments. Ten more already had their reason in the comment above.
+- **Without a reason (3):** `src/components/auth/LoginForm.tsx:48` (`react-hooks/set-state-in-effect`), `src/components/landing/BlogCard.tsx:27` and `src/components/dashboard/UserProfileDropdown.tsx:100` (`@next/next/no-img-element`).
+
+### Possible bugs (code not changed, none reproduced in a browser)
+
+1. An export limited to one stage would show no stage name: the backend never sends `stage` on a report job, and `ReportJobRow` reads the name only from it.
+2. `src/app/onboarding/layout.tsx` forces the dark-ink logo on a background that follows the theme, so in dark mode the logo is likely hard to see.
+3. `src/app/w/[slug]/page.tsx:181` labels every form that is not published as "Draft", including closed ones.
+
+### Possible dead code (code not changed)
+
+- `components/workspaces/CreateWorkspaceModal.tsx` is imported nowhere.
+- Four analytics tests mock `@/components/charts/EChartContainer`, which does not exist.
+- No caller passes `embedded` to `ReportsView` or `compact` to `TemplateFormSheet`.
+- The account-level Danger Zone branch in `WorkspaceTab.tsx` looks unreachable: account settings do not offer that tab.
+- `formatBucketLabel` in `TrendChart.tsx` never reads `_bucket`. `showShare` in `BuilderTabs.tsx` and `UploadState.key` are never used.
+- Smaller ones are listed in the group notes below.
+
+### Not built yet in the backend (the comments now say so)
+
+Report job `stage` name, a `cap` field on the bulk limit error, stage ids on activity entries, `attachmentCount`, the `score` object, the assignee "removed" flag, and an endpoint listing who can access a form.
+
+### Not touched
+
+- `shared/types/` (93 comments): its README says the backend developer owns it.
+- `CreateFormPage.tsx`, its test and `formSchema.ts`: `fix/create-form-title` is not merged.
+- Generated files, `public/`, CSS, YAML, JSON and other markdown.
+- `{/* */}` comments in JSX are never removed, only reworded: removing one changes the compiled output.
+
+### Left as they are, for you to decide
+
+- Comment blocks that sit above the wrong code in `PublicFormShell.tsx`, `formsListUtils.ts` and `e2e/mockServer.ts`.
+- `src/lib/layoutPresets.ts` says all layout copy comes from the V2 wireframe; there are now ten layouts and that cannot be confirmed here.
+- Links to documents that are not in the repository (`docs/status/fix-log.md`, `SPRINT6_HANDOFF.md`).
+- `CLAUDE.md` has other outdated lines: the settings tabs now live in `SettingsView.tsx`; the `ci` and `e2e` workflows also run for pull requests into `develop`; `docs/` is ignored by git.
+
+---
+
+
+## First report (Step 0, before any change)
 
 Base: `origin/develop` at `9a79333`. No code or comment has been changed.
 
