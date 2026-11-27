@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import WorkspaceHomePage from '@/app/w/[slug]/page';
@@ -110,6 +110,21 @@ describe('WorkspaceHomePage (/w/[slug]/page)', () => {
     expect(screen.getAllByText('Customer Survey').length).toBeGreaterThanOrEqual(1);
     // Quick actions
     expect(screen.getByRole('link', { name: /All responses/ })).toBeInTheDocument();
+  });
+
+  it('labels a closed form Closed and a draft Draft in Recent forms', async () => {
+    const form = (_id: string, status: string) => ({
+      _id, title: `Form ${_id}`, status, responseCount: 3,
+      updatedAt: new Date().toISOString(), fields: [], pages: [], branding: {},
+      settings: { honeypotEnabled: true }, workspaceId: 'w1', schemaVersion: 1,
+      createdAt: new Date().toISOString(),
+    });
+    mockGetForms.mockResolvedValue({ forms: [form('c1', 'closed'), form('d1', 'draft')], total: 2, page: 1, limit: 20 });
+    renderPage();
+
+    const recent = (await screen.findByRole('heading', { name: 'Recent forms' })).closest('div')!.parentElement!;
+    expect(within(recent).getByText('Closed')).toBeInTheDocument();
+    expect(within(recent).getAllByText('Draft')).toHaveLength(1);
   });
 
   it('links to the correct edit URL for each pinned form', async () => {
