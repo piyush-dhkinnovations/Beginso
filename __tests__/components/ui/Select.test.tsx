@@ -1,6 +1,4 @@
 /**
- * __tests__/components/ui/Select.test.tsx
- * Feature: sprint-7-foundation
  * Tests: Select — renders options, label association, error state
  */
 

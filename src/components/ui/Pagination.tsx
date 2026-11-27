@@ -10,7 +10,7 @@ export interface PaginationProps extends Omit<React.HTMLAttributes<HTMLElement>,
 
 // beginso-ui.css §12 NAVIGATION ("Pagination"). Prop shape mirrors the existing
 // src/components/responses/PaginationControls.tsx so list pages can adopt this without
-// a data-shape change (requirements.md 2.3).
+// a data-shape change.
 function pageRange(page: number, totalPages: number): (number | "ellipsis")[] {
   if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
   const pages = new Set([1, totalPages, page, page - 1, page + 1]);

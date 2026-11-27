@@ -1,8 +1,3 @@
-/**
- * __tests__/components/ui/ContextSwitcher.test.tsx
- * Feature: sprint-7-foundation
- */
-
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -30,7 +25,6 @@ describe('ContextSwitcher marks are one shape', () => {
   });
 });
 
-// sprint-8-workspaces-context, requirements.md §7.2 — the real dropdown Sprint 7 deferred.
 describe('ContextSwitcher — real dropdown (sprint-8, Day 2)', () => {
   const workspaces = [
     { id: 'w1', name: 'Acme Inc', slug: 'acme', role: 'owner' },

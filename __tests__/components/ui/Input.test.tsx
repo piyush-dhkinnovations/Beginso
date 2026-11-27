@@ -1,8 +1,5 @@
 /**
- * __tests__/Input.test.tsx
- * Feature: sprint-1-frontend-auth
  * Tests: Input component — disabled rejects input, error displays, label renders
- * Requirements: 3.2, 3.9, 15.5
  */
 
 import { describe, it, expect } from 'vitest';

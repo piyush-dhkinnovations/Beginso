@@ -1,8 +1,3 @@
-/**
- * __tests__/components/ui/Sidebar.test.tsx
- * Feature: sprint-7-foundation
- */
-
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Sidebar } from '@/components/ui/Sidebar';
@@ -13,7 +8,7 @@ describe('Sidebar component', () => {
     render(<Sidebar groups={[{ items: [{ label: 'Responses', href: '/r', count: 70, countLabel: 'unread' }, { label: 'Plain', href: '/p', count: 3 }] }]} />);
     expect(screen.getByRole('link', { name: 'Responses 70 unread' })).toBeInTheDocument();
     expect(screen.getByText('70').closest('span')).toHaveAttribute('title', '70 unread');
-    // A badge without a label keeps its old, bare form.
+    // A badge without a label keeps the bare form.
     expect(screen.getByRole('link', { name: 'Plain 3' })).toBeInTheDocument();
   });
 

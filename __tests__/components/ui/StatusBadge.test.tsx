@@ -1,7 +1,4 @@
 /**
- * __tests__/components/ui/StatusBadge.test.tsx
- * Feature: sprint-7-foundation (rename coverage — behavior carried over unchanged from the
- * former src/components/ui/Badge.tsx)
  * Tests: StatusBadge — renders text, truncates long text, applies per-status color tokens
  */
 

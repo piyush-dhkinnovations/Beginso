@@ -1,9 +1,6 @@
 /**
- * __tests__/components/analytics/TrendChart.test.tsx
- * Feature: sprint-5-analytics-reports
  * Tests: TrendChart — chart wiring, empty state (both copy variants), loading,
  * error, sr-only table content
- * Requirements: 4.1-4.6, 13.1
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -61,7 +58,7 @@ describe('TrendChart', () => {
     const data = mockAnalyticsTrends();
     render(<TrendChart data={data} isLoading={false} />);
 
-    // The SVG line chart is role=img with the same accessible name the old canvas chart had.
+    // The SVG line chart is role=img with an accessible name.
     expect(screen.getByRole('group', { name: 'Response trend over time' })).toBeInTheDocument();
 
     const table = document.querySelector('.sr-only table') as HTMLTableElement;

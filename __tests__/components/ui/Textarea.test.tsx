@@ -1,6 +1,4 @@
 /**
- * __tests__/components/ui/Textarea.test.tsx
- * Feature: sprint-7-foundation
  * Tests: Textarea — renders label, shows error, forwards ref
  */
 

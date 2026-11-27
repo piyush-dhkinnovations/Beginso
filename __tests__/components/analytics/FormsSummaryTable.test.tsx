@@ -1,9 +1,6 @@
 /**
- * __tests__/components/analytics/FormsSummaryTable.test.tsx
- * Feature: sprint-5-analytics-reports
  * Tests: FormsSummaryTable — renders rows, Change column (vs previousForms), Completion Rate
  * column, pagination, row click navigates, empty state
- * Requirements: 7.1-7.7
  */
 
 import { describe, it, expect, vi } from 'vitest';

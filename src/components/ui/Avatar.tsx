@@ -43,14 +43,13 @@ export function Avatar({ src: rawSrc, name, alt, size = "default", square, tone 
       {...props}
     >
       {showImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
+        // eslint-disable-next-line @next/next/no-img-element -- plain img on purpose, see the note above Avatar
         <img src={src} alt={alt ?? name ?? ""} referrerPolicy="no-referrer" onError={() => setFailed(true)} />
       ) : initials ? (
         initials
       ) : (
-        // Real bug found and fixed: an unknown name (e.g. a workspace form's owner — not yet
-        // returned by GET /api/forms, per forms/page.tsx's own comment) rendered as a blank
-        // colored circle with no visible content, reading as broken rather than "unknown."
+        // An unknown or empty name gets a person glyph: a blank
+        // colored circle with no visible content reads as broken rather than "unknown."
         <User aria-hidden="true" style={{ width: "60%", height: "60%" }} />
       )}
     </span>

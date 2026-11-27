@@ -29,9 +29,8 @@ interface DateRangeValue {
 }
 
 interface DateRangeFilterProps {
-  /** Controlled mode (Reports' staged, non-URL filters, Thursday) — omit to let the filter own
-   * `?from=&to=` in the URL directly (Auto-Dashboard / Workspace Analytics), the same
-   * `updateParams` pattern the Responses Hub uses. */
+  /** Controlled mode (Reports' staged, non-URL filters) — omit to let the filter own
+   * `?from=&to=` in the URL directly. */
   value?: DateRangeValue;
   onChange?: (range: DateRangeValue) => void;
   /** Render only part of the control so a page can place them apart — the preset chips below the

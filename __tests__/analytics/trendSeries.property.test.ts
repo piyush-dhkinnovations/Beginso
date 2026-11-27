@@ -1,7 +1,5 @@
 /**
- * __tests__/analytics/trendSeries.property.test.ts
- * Feature: sprint-5-analytics-reports, Property 2: Trend series mapping preserves shape
- * Validates: Requirement 4.1
+ * Property: trend series mapping preserves shape
  */
 
 import { describe, it } from 'vitest';

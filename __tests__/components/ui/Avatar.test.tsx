@@ -1,6 +1,4 @@
 /**
- * __tests__/components/ui/Avatar.test.tsx
- * Feature: sprint-7-foundation
  * Tests: Avatar — initials fallback, image rendering, size class
  */
 

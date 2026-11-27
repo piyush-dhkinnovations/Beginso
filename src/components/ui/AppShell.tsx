@@ -23,16 +23,15 @@ export interface AppShellProps {
 }
 
 // Composes Sidebar + TopBar + a content region. Geometry derived from the V2 wireframe:
-// TopBar full-bleed (height 56px), Sidebar left-docked (width 220-240px / 64px rail).
+// TopBar full-bleed (height 52px), Sidebar left-docked (width 220px / 64px rail).
 // Content pane owns the app's page width in this one place: 16/24/32px horizontal padding
 // at <768/768-1279/>=1280px, 24/32px top padding below/above 768px, 64px bottom padding so
 // the last element never sits flush against the viewport, capped at 2400px (3600px from a 2560px
 // screen) and centred beyond that: a laptop, a 1920 monitor, a 2K screen and a curved ultrawide all
-// fill their width (a table shows every column) with only the padding at the sides. The cap used to
-// be 1600px, which left a 40px margin on each side of a 1920px screen.
+// fill their width (a table shows every column) with only the padding at the sides.
 // Pages render straight into this — no per-page max-w/mx-auto wrapper.
 // Collapse state follows the existing sidebar_collapsed cookie pattern.
-// Supports mobile off-canvas drawer with focus trap and backdrop (task 3.3).
+// Supports mobile off-canvas drawer with focus trap and backdrop.
 export function AppShell({
   initialCollapsed = false,
   forceCollapsed = false,
@@ -132,9 +131,9 @@ export function AppShell({
 
       <div className="flex flex-1">
         {/* The page itself scrolls (native, edge-flush scrollbar); the sidebar is pinned to the
-            viewport with position:fixed inside a same-width spacer. It was `sticky`, which only
+            viewport with position:fixed inside a same-width spacer. `sticky` only
             holds while the row is as tall as the scrollable area — any page whose scroll extent
-            outran the row (e.g. the Responses chart view) carried the sidebar up with it.
+            outruns the row would carry the sidebar up with it.
             overflow-y-auto is a safety net for a viewport too short for every nav item, not the
             primary scroll mechanism. bg-topbar is 52px and .bg-sidenav 220px / .bg-sidenav-rail
             64px (beginso-ui.css §12) — keep the spacer widths in step with those. */}
@@ -147,14 +146,12 @@ export function AppShell({
           id="main-content"
           tabIndex={-1}
           className={bx(
-            // sprint-11-v2a-hardening 5.1 — real bug found by the width pass: a flex item's
-            // default min-width is `auto`, not 0, so this column refused to shrink below its
+            // A flex item's
+            // default min-width is `auto`, not 0, so without min-w-0 this column refuses to shrink below its
             // widest child's intrinsic width. Any page with a wide inner table (Roles matrix,
-            // Audit log, any `.bg-table-wrap`) grew the *entire page* past the viewport instead
-            // of scrolling inside its own `overflow-x: auto` wrapper — a page-level horizontal
-            // scroll bug on every such screen, not just the two with a documented "scrolls
-            // inside its container" exception. One shared fix here (every V2a/V1 page routes
-            // through this single `<main>`), not five per-page patches.
+            // Audit log, any `.bg-table-wrap`) then grows the *entire page* past the viewport instead
+            // of scrolling inside its own `overflow-x: auto` wrapper. Fixed once here (every page
+            // routes through this single `<main>`), not per page.
             "flex-1 min-w-0 flex flex-col gap-4 w-full max-w-[2400px] min-[160rem]:max-w-[3600px] mx-auto",
             "px-4 pt-6 pb-16 md:px-6 md:pt-8 xl:px-8 focus:outline-none",
             contentClassName

@@ -23,7 +23,7 @@ function Gradient({ id, color = CHART_COLOR.primary, from = 0.28 }: { id: string
   );
 }
 
-// ── Lines ─────────────────────────────────────────────────────────────────────
+// Lines
 
 export interface LineProps {
   values: number[];
@@ -86,7 +86,7 @@ function SparkOnScale({ values, max, height, filled, color = CHART_COLOR.primary
   );
 }
 
-// ── Bars ──────────────────────────────────────────────────────────────────────
+// Bars
 
 const rel = (v: number, max: number) => `${Math.max(14, (v / Math.max(max, 1)) * 100)}%`;
 
