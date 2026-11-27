@@ -881,3 +881,111 @@ Proof: **0 mismatches**. Type-check and lint clean, 4901 unit tests in 504 files
 - `analytics/TrendChart.tsx`: `formatBucketLabel` takes a `_bucket` argument it never reads.
 - `AnalyticsView`, `AnalyticsViewRange`, `QuestionBreakdownSection` and `QuestionSummaryCard` tests mock `@/components/charts/EChartContainer`, which no longer exists.
 
+
+---
+
+## Group 7: `components/public-form`, `settings`, `forms` and their tests
+
+### Counts
+
+| | Before | After |
+|---|---|---|
+| Comments | 506 | 497 |
+| Comment lines | 1034 | 941 |
+
+64 files changed: 9 comments removed entirely, 113 edited.
+
+### Proof and gate
+
+Proof: **0 mismatches**. Type-check and lint clean, 4901 unit tests in 504 files, build route table identical, e2e 284 passed and 19 skipped: all the same as the baseline.
+
+### Ten samples to spot-check
+
+**1. `__tests__/components/forms/BulkActionBar.test.tsx:35`**
+```diff
+-  // Sprint 11 5.3: computed role, not JSX presence — role="status" gives an implicit
++  // Computed role, not JSX presence — role="status" gives an implicit
+```
+
+**2. `__tests__/components/public-form/FormUnavailable.test.tsx:1`**
+```diff
+- * Feature: sprint-3-public-form
+```
+
+**3. `__tests__/components/settings/NotificationsTab.test.tsx:116`**
+```diff
+-  // sprint-11-v2a-hardening 1.4 — token pass regression: no raw neutral/white/brand class left in source.
++  // Token pass regression: no raw neutral/white/brand class left in source.
+```
+
+**4. `__tests__/components/settings/WorkspaceTab.test.tsx:32`**
+```diff
+-// itself now also calls useAuth() for the orphaned-account "Log out" action.
++// itself also calls useAuth() for the orphaned-account "Log out" action.
+```
+
+**5. `src/components/forms/BulkActionBar.tsx:16`**
+```diff
+-// sprint-10-events-migration, task 6.4. Sequential per-id calls (task 6.4's own stated reasoning) — no batch
+-// endpoint assumed or built. Sprint 13: Archive now exists (`archivedAt`, CF5.6) and is offered only when the
+-// caller can archive; Delete means "move to Trash" (CF5.5).
++// Sequential per-id calls — no batch
++// endpoint assumed or built. Archive is offered only when the
++// caller can archive; Delete means "move to Trash".
+```
+
+**6. `src/components/forms/FormsDialogs.tsx:20`**
+```diff
+-      {/* requirements.md §7.8 — works identically on a personal or workspace form; this same
+-          FormsPage/FormRow is already shared between (user)/forms and /w/[slug]/forms (Sprint 8),
+-          so no per-context branching is needed here (design.md §4). */}
++      {/* Works identically on a personal or workspace form; this same
++          FormsPage is already shared between (user)/forms and /w/[slug]/forms,
++          so no per-context branching is needed here. */}
+```
+
+**7. `src/components/public-form/PublicFormShell.tsx:648`**
+```diff
+-              behavior does, and that value is passed through to the backend as-is (Requirement 6.5). */}
++              behavior does, and that value is passed through to the backend as-is. */}
+```
+
+**8. `src/components/public-form/layouts/index.ts:11`**
+```diff
+-// using Classic never pays for them (requirements.md §15).
++// using Classic never pays for them.
+```
+
+**9. `src/components/settings/NotificationsTab.tsx:121`**
+```diff
+-  // Correctness Property 2: after any sequence of flips (including failed ones), the displayed
++  // After any sequence of flips (including failed ones), the displayed
+```
+
+**10. `src/components/settings/SettingsTabs.tsx:64`**
+```diff
+-// Vertical section nav (spec Phase 6): grouped, one column on desktop, a scrolling row below `lg`.
++// Vertical section nav: grouped, one column on desktop, a scrolling row below `lg`.
+```
+
+### Notes
+
+- The two stale TODOs about workspace roles are removed (`DangerZoneSection.tsx`, `WorkspaceTab.tsx`).
+- "Guided only" comments now say one-at-a-time layouts, because Chat and Focus use the same flow (`PublicFormShell.tsx`, `layouts/shared.tsx`). `GuidedLayout.tsx` no longer says review-before-submit does not exist yet.
+- Also corrected in the public form: which layouts show step names, Compact always having two columns, and what appears above the submit buttons (only the preview's test controls) in `PublicFormShell.tsx` and `ReviewStep.tsx`.
+- Form headers: only Overview and the builder share `FormHeader`, and there is no tab bar (`FormHeader.tsx`, `FormLevelHeader.tsx`, `FormDataHeader.tsx`). `FormRow` no longer exists (`FormsDialogs.tsx`).
+- Form activity: the card receives up to 50 events, and the response has no total (`FormActivityCard.tsx`, `FormActivityDrawer.tsx`). Views are tracked now, so the completion-rate comment in `FormOverviewStats.tsx` is reworded.
+- Settings: tab hosting is in `SettingsView`, not the settings page (`TagManager.tsx`, its test, `unsavedTabState.property.test.tsx`, `ProfileTab.tsx`). Column widths in `SettingsView.tsx`, shared caches in `DataTab.tsx` and `NotificationsTab.tsx`, the Appearance tab note in `SettingsTabs.tsx`, and how the delete modal is reached (`DeleteWorkspaceModal.tsx`) are corrected. `TagManager.tsx` no longer claims it checks `canManageTags` itself.
+- Tests: corrected the tab count note (`SettingsTabs.test.tsx`), the mocked component (`BrandingTab.test.tsx`) and who calls `validateFile` (`avatarFileValidation.property.test.ts`). A wrong comment about why `ProfileTab.test.tsx` mocks Firebase is removed.
+- Backend checked on `develop`: session list, export status, account deletion, field ids on submit errors, pinning archived forms and stage counts have all shipped. Nothing in this group is marked "Not built yet in the backend".
+- Disable comments, reasons added: `OwnerMonogram.tsx`, `AvatarUploader.tsx`, `TimezoneSelect.tsx`, `WorkspaceTab.tsx`.
+- Disable comments, reason confirmed as the comment above: `SignatureRenderer.tsx`, `DeleteWorkspaceModal.tsx`. For `AvatarUploader.tsx` the comment above is about `referrerPolicy`, not the disable, so it got its own reason. None are left without one.
+- Left unchanged: two comment blocks sit above the wrong function (the "final-submit validation" part in `PublicFormShell.tsx` belongs to `onInvalid`; the "every link this page builds" part in `formsListUtils.ts` belongs to `formHref`). Moving them needs new lines.
+- Left unchanged: test names that still mention sprint labels or `ui/Tabs`, because they are code. `CLAUDE.md` still says settings tabs live in `settings/page.tsx` and that Settings uses `BrandingPanel`.
+
+### Findings (code not changed)
+
+- `WorkspaceTab.tsx`: the `!scope` account-level Danger Zone looks unreachable. Account settings do not offer the Workspace tab, and workspace settings always pass `scope`.
+- `ProfileTab.test.tsx`: the Firebase mock looks unneeded, since `ProfileTab` does not import Firebase.
+- `PublicFormShell.tsx`: `accessExtra` and `hasAccessExtra` only wrap `testControls` (leftover indirection).
+
