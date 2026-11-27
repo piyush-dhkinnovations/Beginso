@@ -1212,3 +1212,104 @@ Proof: **0 mismatches**. Type-check and lint clean, 4901 unit tests in 504 files
 - Possible bug: `src/app/onboarding/layout.tsx` forces the light-surface (dark ink) wordmark while its background follows the theme, so in dark mode the logo is likely hard to see. Not checked in a browser.
 - Possible bug: `src/app/w/[slug]/page.tsx` "Recent forms" labels every form that is not published as "Draft", including closed ones.
 
+
+---
+
+## Group 10: `e2e`, `scripts` and the root files
+
+### Counts
+
+| | Before | After |
+|---|---|---|
+| Comments | 337 | 331 |
+| Comment lines | 610 | 600 |
+
+24 files changed: 6 comments removed entirely, 38 edited.
+
+### Proof and gate
+
+Proof: **0 mismatches**. Type-check and lint clean, 4901 unit tests in 504 files, build route table identical, e2e 284 passed and 19 skipped: all the same as the baseline.
+
+### Ten samples to spot-check
+
+**1. `e2e/event-avatars.spec.ts:106`**
+```diff
+-    // initials are two letters now, like the Activity feed, not one
++    // initials are two letters, like the Activity feed, not one
+```
+
+**2. `e2e/mocks/publicFormMocks.ts:2`**
+```diff
+- * Mock GET /api/public/:slug fixture used to unblock SSR/component development
+- * ahead of the backend endpoint (targeted Wed 22 Jul). Swap for the real fetch
+- * once it lands — no code shape change expected.
++ * Mock GET /api/public/:slug fixture for the E2E suite.
+```
+
+**3. `e2e/public-form-file-upload.spec.ts:7`**
+```diff
+- * Requirement 4.29–4.36 (file upload UI states). The actual upload transfer is
+- * deferred to the final submit (see tasks.md task 4.10) — this renderer only
++ * File upload UI states. The actual upload transfer is
++ * deferred to the final submit: this renderer only
+```
+
+**4. `e2e/public-form-render.spec.ts:4`**
+```diff
+- * Requirements 1–2, 9: SSR schema load, branding/layout, mobile responsiveness.
++ * SSR schema load, branding/layout, mobile responsiveness.
+```
+
+**5. `e2e/public-form-success-page.spec.ts:3`**
+```diff
+-/** Requirement 8 (Success screen) — both the normal (via submission) and direct-navigation paths. */
++/** Success screen: both the normal (via submission) and direct-navigation paths. */
+```
+
+**6. `e2e/response-layouts.spec.ts:317`**
+```diff
+-  // axe-core is not a direct dependency (it ships inside eslint-plugin-jsx-a11y); it is injected from there.
+```
+
+**7. `e2e/responses-calendar.spec.ts:238`**
+```diff
+-    void calendar; // the Table / Board / Calendar buttons are in the header's second row now
++    void calendar; // the Table / Board / Calendar buttons are in the header's second row
+```
+
+**8. `e2e/status-distribution.spec.ts:69`**
+```diff
+-  // and the card is no taller than the chart row it sits in
+```
+
+**9. `next.config.ts:134`**
+```diff
+-      // Sprint 13: the form preview and the layout gallery embed this same-origin route in an
++      // The form preview and the layout gallery embed this same-origin route in an
+```
+
+**10. `scripts/build-illustrations.mjs:16`**
+```diff
+-  // second batch — icon fallback until the file exists
+```
+
+### Notes
+
+- Report item 7 (`playwright.config.ts`): now names `e2e/mockServer.ts`. Also dropped "public form pipeline" (the suite covers the app) and a link to `docs/backend-contract/known-issues/`, which does not exist. The timeout comment no longer says CI runs on `next dev` (CI runs a production build).
+- Report item 8 (`e2e/mocks/publicFormMocks.ts`): described as a permanent E2E fixture.
+- `e2e/mockServer.ts`: no longer says the whole mock is stateless (it keeps builder forms), points to `LOOK_THEMES` instead of an incomplete variant list, and says three templates, not two.
+- `e2e/response-layouts.spec.ts`: the e2e app is not always a dev server. Removed there and in `responses-calendar.spec.ts` the "axe-core is not a direct dependency" comment (it is one in `package.json`).
+- Also corrected: `summary-filters.spec.ts` (page is Insights), `responses-board.spec.ts` (some cases use a workspace with its own stages), `shell-a11y.spec.ts` (the builder is not the only page with the icon rail), `status-distribution.spec.ts` (removed a comment describing a check the code does not make), `vitest.setup.ts` (`EChartContainer` no longer exists in `src/`), `scripts/build-illustrations.mjs` (no `_unused/` folder; every slot has its file).
+- Nothing in this group is marked "Not built yet in the backend".
+- Disable comments: none in this group.
+- Left unchanged: `e2e/mockServer.ts` lines 159-160 (about the session check) sit above the templates block, not above `/api/auth/me`; moving a comment is outside this pass. Its slug list says "anything else" returns the plain schema, but `look-*` and `own-font` slugs do not (each is described beside its code).
+- Left unchanged: `next.config.ts` "ambiguous in 11 specs" (the count cannot be checked) and its "e2e suite runs against `next dev`" (true by default, CI uses a production build).
+- Left unchanged: test headers that explain what went wrong before (QA ids, "the same pale blue", "used to have"), and the date beside the "Next silently submits" bug.
+
+### Findings (code not changed)
+
+- Four tests in `__tests__/components/analytics/` mock `@/components/charts/EChartContainer`, but `src/components/charts/` does not exist.
+- `e2e/status-distribution.spec.ts`: nothing checks the card height against the chart row.
+- `e2e/responses-calendar.spec.ts`: `void calendar;` only silences an unused variable.
+- `CLAUDE.md` points to `docs/backend-contract/api-reference.md`, but that folder is not in the repository. It also says e2e does not run for pull requests into `develop`; `.github/workflows/e2e.yml` now includes `develop`.
+
