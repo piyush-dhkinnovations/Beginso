@@ -37,7 +37,7 @@ export function CookieBanner() {
 
   return (
     <>
-      <div aria-hidden="true" data-testid="cookie-backdrop" className="fixed inset-0 z-40 bg-(--surface-inverse)/30 backdrop-blur-[3px]" />
+      <div aria-hidden="true" data-testid="cookie-backdrop" className="fixed inset-0 z-40 bg-(--ink-900)/30 backdrop-blur-[3px]" />
       <section aria-label="Cookies" className="fixed inset-x-0 bottom-0 z-50 p-4 sm:p-6">
         <div className="mx-auto flex max-w-5xl flex-col gap-5 rounded-2xl border border-(--border-default) bg-(--surface-card) p-6 shadow-(--shadow-hover) sm:p-8 md:flex-row md:items-center md:gap-8">
           <Cookie className="hidden size-10 shrink-0 text-(--action-primary) md:block" aria-hidden="true" />
