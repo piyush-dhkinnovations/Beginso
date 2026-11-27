@@ -584,3 +584,108 @@ Proof: **0 mismatches**. Type-check and lint clean, 4901 unit tests in 504 files
 
 - `UploadState.key` is declared but never set.
 
+
+---
+
+## Group 4: `components/responses` and its tests
+
+### Counts
+
+| | Before | After |
+|---|---|---|
+| Comments | 486 | 481 |
+| Comment lines | 920 | 884 |
+
+39 files changed: 5 comments removed entirely, 78 edited.
+
+### Proof and gate
+
+Proof: **0 mismatches**. Type-check and lint clean, 4901 unit tests in 504 files, build route table identical, e2e 284 passed and 19 skipped: all the same as the baseline.
+
+### Ten samples to spot-check
+
+**1. `__tests__/components/responses/BulkActionBar.test.tsx:2`**
+```diff
+- * __tests__/components/responses/BulkActionBar.test.tsx
+- * sprint-12-inbox-collaboration, requirements.md §7.5 (5.1), design.md §15, task 2.4 rebuild:
+- * role-gated actions (omitted, not disabled), "Select all N matching" sends a filter, a 200-id
++ * Role-gated actions (omitted, not disabled), "Select all N matching" sends a filter, a 200-id
+```
+
+**2. `__tests__/components/responses/ResponseRow.test.tsx:2`**
+```diff
+- * __tests__/components/responses/ResponseRow.test.tsx
+- * sprint-12-inbox-collaboration, requirements.md §7.2 (2.1) — `ResponseRow.tsx` no longer exports
+- * one `<tr>` component (task 1.7's own note: `ui/Table`'s render-function column API doesn't fit
++ * `ResponseRow.tsx` no longer exports
++ * one `<tr>` component (`ui/Table`'s render-function column API doesn't fit
+```
+
+**3. `__tests__/components/responses/ResponsesToolbar.test.tsx:2`**
+```diff
+- * __tests__/components/responses/ResponsesToolbar.test.tsx
+- * sprint-12-inbox-collaboration, requirements.md §7.2 (2.2) — stage/assignee filters now come
+- * from workspace data (`stages`/`members` props), not the removed status union (task 1.7).
++ * Stage/assignee filters come
++ * from workspace data (`stages`/`members` props).
+```
+
+**4. `__tests__/components/responses/viewSignals.test.tsx:58`**
+```diff
+-  // Unread — rendered textually somewhere, never colour-only (requirements.md §11).
++  // Unread — rendered textually somewhere, never colour-only.
+```
+
+**5. `src/components/responses/BoardColumn.tsx:47`**
+```diff
+- * Sprint 12 (inbox-collaboration), requirements.md §7.4 (4.1), design.md §20 (task 3.2): "each
+- * column paginates independently" — a `useInfiniteQuery` per column (not one combined list query)
++ * Each
++ * column paginates independently: a `useInfiniteQuery` per column (not one combined list query)
+```
+
+**6. `src/components/responses/MentionPicker.tsx:25`**
+```diff
+- * Sprint 12 (inbox-collaboration), requirements.md §9.2, design.md §6. Full ARIA combobox/listbox
+- * pattern (the one place this sprint requires it, unlike TagPicker's lighter listbox): arrow keys
++ * Full ARIA combobox/listbox
++ * pattern (unlike TagPicker's lighter listbox): arrow keys
+```
+
+**7. `src/components/responses/ResponseDrawer.tsx:540`**
+```diff
+-              {/* "Edited after review" indicator — Sprint 13 (A5.2), space reserved, not built. */}
++              {/* "Edited after review" is shown by WorkflowSidebar, not here. */}
+```
+
+**8. `src/components/responses/ResponsesCalendar.tsx:194`**
+```diff
+-      {/* Mobile agenda — a 7-column grid is unreadable at 375px (design.md §16's own note) */}
++      {/* Mobile agenda — a 7-column grid is unreadable at 375px */}
+```
+
+**9. `src/components/responses/ResponsesToolbar.tsx:26`**
+```diff
+-  /** View switcher (Table · Board · Calendar · Chart) lives on this bar when provided. */
++  /** View switcher (Table · Board · Calendar) lives on this bar when provided. */
+```
+
+**10. `src/components/responses/TagPicker.tsx:26`**
+```diff
+- * Sprint 12 (inbox-collaboration), requirements.md §7.7 (7.1), design.md §6. Tag picker for the
+- * detail sidebar/bulk bar: search the workspace library, create inline when permitted (OQ-5).
+- * A lighter custom listbox rather than a full ARIA combobox (`MentionPicker`, task 4.2, is where
+- * that full pattern is required by requirements.md §9.2) — every control here is still a real,
++ * Tag picker for the
++ * detail sidebar/bulk bar: search the workspace library, create inline when permitted.
++ * A lighter custom listbox rather than a full ARIA combobox (`MentionPicker` is where
++ * that full pattern is required) — every control here is still a real,
+```
+
+### Notes
+
+- `{/* */}` comments in JSX are never removed, only reworded: removing one changes the compiled output, which the proof forbids. One placeholder that said an indicator was "not built" now says the notice is in `WorkflowSidebar`.
+- Corrected because the code had moved on: mentions of a "Chart" view (only Table, Board and Calendar exist), `DashboardShell` as the scrolling element, and "only Submitted is sorted by the server" in `ResponsesTable`.
+- Marked "Not built yet in the backend": an endpoint listing who can access a form (`MentionPicker`).
+- History removed: a retired test case's note and "was hardcoded to 'table'".
+
