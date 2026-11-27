@@ -58,7 +58,7 @@ interface ResponseDrawerProps {
   responseId: string | null;
   /** Undefined on the all-forms view — invalidations target the workspace-wide 'all' cache key. */
   formId?: string;
-  /** Workspace slug, or 'personal' (OQ-1). */
+  /** Workspace slug, or 'personal'. */
   scope?: string;
   stages?: readonly StageRef[];
   formTitle?: string;
@@ -74,8 +74,8 @@ interface ResponseDrawerProps {
   onExpand?: (response: ResponseDetail) => void;
   collapseHref?: string;
   onClose: () => void;
-  /** Navigates to another response by id — wired to the duplicate callout's "view original" link
-   * (task 5.5). Optional: a caller with no cross-response navigation (e.g. the standalone
+  /** Navigates to another response by id — wired to the duplicate callout's "view original" link.
+   * Optional: a caller with no cross-response navigation (e.g. the standalone
    * `/responses/[id]` page) simply doesn't render the callout's link as clickable-elsewhere. */
   /** "Show all with this email" on a similar-response notice: the page lists those responses and this drawer closes. */
   onSeeSimilar?: (email: string) => void;
@@ -200,7 +200,7 @@ export function ResponseDrawer({
   // Locks the page behind the drawer while it's open — without this, the drawer's own content
   // and the Responses table underneath both scroll independently (two visible scrollbars,
   // confusing which one the wheel/trackpad is about to move). The actual scrolling element for
-  // every (user) route is DashboardShell's <main>, not <body> — this repo has no scroll-lock
+  // every (user) route is the app shell's <main>, not <body> — this repo has no scroll-lock
   // precedent to follow (Modal.tsx has the same gap), so both are locked: <main> for the real
   // fix, <body> as a harmless no-op safety net if this drawer is ever mounted somewhere else.
   useEffect(() => {
@@ -340,7 +340,7 @@ export function ResponseDrawer({
   // The layout choice, the search and the arranged answers are shared by the toolbar under the header and the card below it.
   const sr = useSubmittedResponse({ responseId, formId: formId ?? response?.formId, scope, items: answerItems, hasSchema: !!responseForm?.fields });
 
-  // Opening a response marks it read for the caller via an explicit request (design.md §11.2:
+  // Opening a response marks it read for the caller via an explicit request (the rule is
   // "GET never mutates") — never as a side effect of the detail fetch above. Runs once per
   // responseId, and only when the response is actually known unread (an absent `unread` field
   // defaults to "already read", matching IResponse's own documented convention).
@@ -379,8 +379,8 @@ export function ResponseDrawer({
 
   function downloadResponse(format: ReportFormat) {
     if (!response) return;
-    // Response-level "Download" — single-response export through the export path, without notes
-    // (requirements.md §9.3/B4.16); reuses the same `exportPayloadFromTarget` the Inbox's own
+    // Response-level "Download" — single-response export through the export path, without notes;
+    // reuses the same `exportPayloadFromTarget` the Inbox's own
     // Export/BulkActionBar already build from, rather than a bespoke download call. The person picks the format
     // (CSV or PDF, the two the Exports page offers) from the Download menu.
     reportsService
@@ -478,7 +478,7 @@ export function ResponseDrawer({
       className={cn(
         displayMode === 'drawer'
           ? 'bg-scrim justify-end p-0'
-          // Bug fix, Sprint 12 close-out: this set its own max-w-6xl cap, directly against
+          // Bug fix: this set its own max-w-6xl cap, directly against
           // CLAUDE.md's "pages never set their own width" rule (AppShell already owns that) —
           // the full-page view read as a slightly-wider card, not an actual full-screen view.
           : 'flex min-h-[calc(100vh-104px)] w-full animate-fade-in'
@@ -506,7 +506,7 @@ export function ResponseDrawer({
         {/* Below 640px the six action buttons (about 290px) left the name almost no room, so the header wraps: the respondent's name gets its own row and the actions sit under it. */}
         <header className={cn('flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-(--border-default)', displayMode === 'drawer' ? 'px-4 py-3 sm:px-6' : 'pb-4')}>
           <div className="flex min-w-0 items-center gap-3 max-sm:basis-full">
-            {/* Full-screen sheet with a back chevron below 768px (requirements.md §9.1) — the
+            {/* Full-screen sheet with a back chevron below 768px — the
                 close/back control is the same handler either way, only the icon changes. */}
             <button
               type="button"
@@ -537,7 +537,7 @@ export function ResponseDrawer({
                   {identity.email && identity.label ? ` · ${identity.email}` : ''}
                 </p>
               )}
-              {/* "Edited after review" indicator — Sprint 13 (A5.2), space reserved, not built. */}
+              {/* "Edited after review" is shown by WorkflowSidebar, not here. */}
             </div>
           </div>
           {/* Search sits in the top bar, between the name and the actions; below 640px it takes its own row under the name. The action buttons keep their words only from 1536px: the drawer is 80% of the screen, and with the search here the words no longer fit before that. */}

@@ -17,13 +17,13 @@ interface ResponsesToolbarProps {
   search: string;
   filters: ResponseFilters;
   stages?: readonly StageRef[];
-  /** Undefined/empty for the personal shell — the assignee filter is hidden there (OQ-9). */
+  /** Undefined/empty for the personal shell — the assignee filter is hidden there. */
   members?: MemberListItem[];
   /** Workspace tag library; undefined/empty hides the Tags button. */
   tags?: Tag[];
   onSearchChange: (v: string) => void;
   onFilterChange: (patch: Partial<ResponseFilters>) => void;
-  /** View switcher (Table · Board · Calendar · Chart) lives on this bar when provided. */
+  /** View switcher (Table · Board · Calendar) lives on this bar when provided. */
   /** Controls for the right end of the bar (the saved views and Save view). */
   trailing?: ReactNode;
   /** Lets the bar take the width left in the row it sits in (the form header's). */

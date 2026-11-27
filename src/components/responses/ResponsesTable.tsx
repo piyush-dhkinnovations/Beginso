@@ -27,7 +27,7 @@ interface ResponsesTableProps {
   onViewResponse: (id: string) => void;
   onDeleteResponse: (id: string) => void;
   /** True when any filter (search, stage, tag, assignee, unread, ...) is active — swaps the empty
-   * state to the "no matches" variant (requirements.md §12: a distinct screen, never the
+   * state to the "no matches" variant (a distinct screen, never the
    * zero-items copy). */
   hasActiveFilters?: boolean;
   onClearFilters?: () => void;
@@ -214,7 +214,7 @@ export function ResponsesTable({
       if (header === undefined) return []; // a question that has since been deleted
       // The first column that is drawn carries the picture and the unread dot, whatever it shows.
       const lead = key === firstColumn;
-      // Every column has the sort arrows like Submitted. Submitted is sorted by the server; the rest only while every match is on screen.
+      // Every column has the sort arrows like Submitted. Some are sorted by the server across every page; the rest only while every match is on screen.
       const sortable = serverSortable(key) || everythingLoaded;
       const column: TableColumn<IResponse> = {
         key,

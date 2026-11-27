@@ -35,9 +35,8 @@ export interface ResponsesBoardProps {
 }
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.4 (4.1), design.md §6/§15/§16 (task 3.2).
  * Columns = the workspace's pipeline stages in order, each a `BoardColumn` owning its own
- * pagination. Horizontal scroll with snap below desktop (design.md §16); `lg:snap-none` matches
+ * pagination. Horizontal scroll with snap below desktop; `lg:snap-none` matches
  * the design's own 1024px breakpoint rather than Tailwind's default `md`.
  */
 export function ResponsesBoard({

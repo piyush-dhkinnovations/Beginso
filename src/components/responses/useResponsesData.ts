@@ -60,7 +60,7 @@ export function useResponsesData({ scope, formId, filters, page, pageLimit, setP
     queryKey: listKey,
     queryFn: () => responsesService.getResponses({ formId, ...filters, ...order, page, limit: pageLimit }, scope),
     placeholderData: keepPreviousInScope(listKey),
-    // Polling stays on the list only (design.md §10/§20); must not clear selection or open detail —
+    // Polling stays on the list only; must not clear selection or open detail —
     // neither selection nor the drawer's responseId lives in this query, so a refetch can't touch them.
     refetchInterval: 30_000,
     refetchIntervalInBackground: false,

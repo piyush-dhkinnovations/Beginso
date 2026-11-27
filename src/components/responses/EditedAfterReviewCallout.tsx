@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { formatRelativeTime } from '@/lib/formatters';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 
-// Sprint 13 (A5.2), wireframe 12's reserved slot. Shown only when the respondent edited a response AFTER a
+// Wireframe 12's reserved slot. Shown only when the respondent edited a response AFTER a
 // reviewer had already looked at it. "Mark as reviewed" clears the flag (responses:write — the server decides).
 export interface EditedAfterReviewCalloutProps {
   responseId: string;

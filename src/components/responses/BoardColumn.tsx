@@ -44,8 +44,8 @@ export interface BoardColumnProps {
 }
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.4 (4.1), design.md §20 (task 3.2): "each
- * column paginates independently" — a `useInfiniteQuery` per column (not one combined list query)
+ * Each
+ * column paginates independently: a `useInfiniteQuery` per column (not one combined list query)
  * so a column with more than a page of responses gets a "Load more" instead of silently
  * truncating.
  */

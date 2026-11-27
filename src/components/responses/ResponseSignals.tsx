@@ -16,7 +16,7 @@ export interface ResponseSignalsData {
   noteCount?: number;
   attachmentCount?: number;
   duplicateOfId?: string | null;
-  /** Sprint 13: a test submission (only present when the inbox opted in) and the respondent-edited flag. */
+  /** A test submission (only present when the inbox opted in) and the respondent-edited flag. */
   isTest?: boolean;
   editedAfterReviewAt?: string | null;
   lastEditedByRespondentAt?: string | null;
@@ -24,9 +24,9 @@ export interface ResponseSignalsData {
 
 export interface ResponseSignalsProps {
   response: ResponseSignalsData;
-  /** 'row' (Table), 'card' (Board), 'compact' (Calendar/day list) — design.md §6: "one shared
+  /** 'row' (Table), 'card' (Board), 'compact' (Calendar/day list). "One shared
    * ResponseSignals component so views cannot drift." Required, not defaulted: every caller must
-   * make a deliberate choice, per requirements.md §7.4's "every view carries the same signals." */
+   * make a deliberate choice, so every view carries the same signals. */
   density: 'row' | 'card' | 'compact';
   className?: string;
 }
@@ -34,10 +34,10 @@ export interface ResponseSignalsProps {
 const MAX_VISIBLE_TAGS = 2;
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.2 (2.1) / §7.4 (4.1), design.md §6. The one
- * place unread/assignee/tags/notes/attachments/duplicate render, so Table/Board/Calendar/Chart
- * cannot independently drift (guarded by `__tests__/components/responses/viewSignals.test.tsx`,
- * task 3.5). Pure render — no fetching (design.md §7).
+ * The one
+ * place unread/assignee/tags/notes/attachments/duplicate render, so Table/Board/Calendar
+ * cannot independently drift (guarded by `__tests__/components/responses/viewSignals.test.tsx`).
+ * Pure render — no fetching.
  */
 export function ResponseSignals({ response, density, className }: ResponseSignalsProps) {
   const { unread, assignee, tags = [], noteCount = 0, attachmentCount = 0, duplicateOfId, isTest, editedAfterReviewAt, lastEditedByRespondentAt } = response;
@@ -54,7 +54,7 @@ export function ResponseSignals({ response, density, className }: ResponseSignal
       )}
       data-density={density}
     >
-      {/* Unread — requirements.md §11: "exposed textually ('Unread') ... not colour alone." */}
+      {/* Unread: exposed textually ('Unread'), not colour alone. */}
       <span className="inline-flex items-center gap-1 shrink-0">
         <span
           aria-hidden="true"
@@ -65,7 +65,7 @@ export function ResponseSignals({ response, density, className }: ResponseSignal
 
       {duplicateOfId && <DuplicateBadge />}
 
-      {/* Sprint 13: the same two signals in every view, because every view renders THIS component. Text, not colour alone. */}
+      {/* The same two signals in every view, because every view renders THIS component. Text, not colour alone. */}
       {editedAfterReviewAt && (
         <span className="shrink-0 rounded-full bg-(--warning-surface) px-2 bg-caption font-semibold text-(--warning-text)" title="The respondent edited this after it was reviewed">
           Edited
@@ -82,11 +82,10 @@ export function ResponseSignals({ response, density, className }: ResponseSignal
         </span>
       )}
 
-      {/* Assignee — requirements.md §7.2: "Unassigned renders a — with accessible name 'Unassigned'."
+      {/* Assignee: unassigned renders a — with accessible name 'Unassigned'.
           `aria-label` names the assignee even at `compact` density, where the visible name is
           hidden and only the avatar's initials show — without it, "who is this assigned to" has
-          no accessible representation at all in that density (caught by the viewSignals guard,
-          task 3.5). */}
+          no accessible representation at all in that density (caught by the viewSignals guard). */}
       <span
         role="img"
         className="inline-flex min-w-0 items-center gap-1.5 shrink-0"
@@ -109,7 +108,7 @@ export function ResponseSignals({ response, density, className }: ResponseSignal
         )}
       </span>
 
-      {/* Tags — requirements.md §7.2: "more than 2 tags collapse to '+N' with the rest in a tooltip." */}
+      {/* Tags: more than 2 collapse to '+N' with the rest in a tooltip. */}
       {visibleTags.length > 0 && (
         <span className="inline-flex min-w-0 items-center gap-1 flex-wrap">
           {visibleTags.map((tag) => (

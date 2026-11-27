@@ -1,7 +1,3 @@
-/**
- * __tests__/components/responses/SaveViewModal.test.tsx
- * sprint-12-inbox-collaboration, requirements.md §7.6 (6.1), task 2.6.
- */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

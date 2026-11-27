@@ -14,7 +14,7 @@ export interface ActiveFilterChipsProps {
 }
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.2 (2.2): "Active filters render as removable
+ * "Active filters render as removable
  * chips + 'Clear all'." Reads the stage name from `stages` for the stage chip so it never shows a
  * raw id.
  */

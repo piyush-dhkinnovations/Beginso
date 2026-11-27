@@ -8,7 +8,7 @@ import { useRespondentFrom } from './RespondentFromContext';
 import type { IResponse, ResponseTag } from '@/types/response';
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.2 (2.1). Cell-building helpers for
+ * Cell-building helpers for
  * `ResponsesTable`'s `ui/Table` columns — a bare `<tr>` component no longer fits `ui/Table`'s
  * render-function column API, so this file's job shifted from "one full row" to "the cells that
  * carry response-specific logic," reused by both the Respondent and Tags/Assignee columns.
@@ -58,7 +58,7 @@ export function RespondentCell({ response, withAvatar = true }: { response: IRes
       <div className="flex min-w-0 flex-col">
         <span className="flex items-center gap-1.5">
           <span className="truncate font-medium text-(--text-primary)">{name}</span>
-          {/* Sprint 13: same two signals the Board and Calendar show (ResponseSignals), as text badges. */}
+          {/* Same two signals the Board and Calendar show (ResponseSignals), as text badges. */}
           {response.editedAfterReviewAt && (
             <span className="shrink-0 rounded-full bg-(--warning-surface) px-2 bg-caption font-semibold text-(--warning-text)">Edited</span>
           )}

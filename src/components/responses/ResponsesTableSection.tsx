@@ -44,9 +44,9 @@ interface Props {
 }
 
 /**
- * Sprint 12 (inbox-collaboration), task 3.1: selection/bulk and pagination are Table-only —
- * selectedIds only ever gets populated via the Table's own checkboxes, and Board/Calendar/
- * Chart each own their data fetching (per-column/per-month/per-range), not this page's
+ * Selection/bulk and pagination are Table-only:
+ * selectedIds only ever gets populated via the Table's own checkboxes, and Board and Calendar
+ * each own their data fetching (per-column/per-month), not this page's
  * single `data` query.
  */
 export function ResponsesTableSection({

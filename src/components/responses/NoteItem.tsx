@@ -13,8 +13,8 @@ import type { MemberListItem } from '@/types/team';
 export interface NoteItemProps {
   note: Note;
   members: readonly MemberListItem[];
-  /** Own note = the caller authored it; canDeleteAny = Admin+ (design.md §11.3 "delete others'
-   * notes: Owner/Admin"). Edit is always author-only, matching requirements.md §9.2. */
+  /** Own note = the caller authored it; canDeleteAny = Admin+ (deleting others'
+   * notes is Owner/Admin). Edit is always author-only. */
   isOwn: boolean;
   canDeleteAny: boolean;
   onEdit: (body: string, mentionIds: string[]) => void;
