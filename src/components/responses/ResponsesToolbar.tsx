@@ -96,7 +96,7 @@ export function ResponsesToolbar({
 
   useEffect(() => {
     if (debounced !== search) onSearchChange(debounced);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs only when the debounced text changes
   }, [debounced]);
 
   const tagIds = filters.tagIds ?? [];

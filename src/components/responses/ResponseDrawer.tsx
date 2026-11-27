@@ -349,7 +349,7 @@ export function ResponseDrawer({
     if (!response || markedReadRef.current === response._id) return;
     markedReadRef.current = response._id;
     if (response.unread) mutations.markRead(response._id, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs per response id and unread state; the ref guard marks each response once
   }, [response?._id, response?.unread]);
 
   const deleteMutation = useMutation({
