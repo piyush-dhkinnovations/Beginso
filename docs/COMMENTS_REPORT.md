@@ -477,3 +477,110 @@ No eslint-disable line is in this group. The `CLAUDE.md` correction will be its 
 ### Disable comments
 
 One reason added (`authContext.tsx`). 18 of the 19 without a reason remain, in groups not yet done.
+
+---
+
+## Group 3: `src/types`, `src/hooks`, `src/store` and their tests
+
+### Counts
+
+| | Before | After |
+|---|---|---|
+| Comments | 567 | 566 |
+| Comment lines | 1034 | 982 |
+
+42 files changed: 1 comments removed entirely, 144 edited.
+
+### Proof and gate
+
+Proof: **0 mismatches**. Type-check and lint clean, 4901 unit tests in 504 files, build route table identical, e2e 284 passed and 19 skipped: all the same as the baseline.
+
+### Ten samples to spot-check
+
+**1. `__tests__/hooks/useInboxMutations.test.tsx:179`**
+```diff
+-// design.md §21 property: "undo of a bulk action restores the exact previous state". Exercised
++// Property: "undo of a bulk action restores the exact previous state". Exercised
+```
+
+**2. `src/hooks/useFormsPage.ts:154`**
+```diff
+-  // may include `owner` on the row (contract to confirm — form.ts), so read it defensively.
++  // may include `owner` on the row, so read it defensively.
+```
+
+**3. `src/hooks/useMembers.ts:6`**
+```diff
+- * Sprint 12 (inbox-collaboration), design.md §6/§10: the assignee/mention pickers reuse
+- * `teamService.listMembers` (already built for Sprint 9's Team page) rather than a new endpoint.
+- * Only meaningful for a workspace scope — the personal shell has no team (OQ-9).
++ * The assignee/mention pickers reuse
++ * `teamService.listMembers` (already built for the Team page) rather than a new endpoint.
++ * Only meaningful for a workspace scope — the personal shell has no team.
+```
+
+**4. `src/hooks/usePublicTemplates.ts:8`**
+```diff
+-// Phase 2 (.kiro/specs/public-template-gallery/tasks.md, task 7): GET /api/templates/public
+-// confirmed live in production 26 Sep 2026 (curl-verified: 200, no cookie, real data) — this now
+-// calls it directly. The Phase 1 mock/fixture has been removed.
++// GET /api/templates/public
++// confirmed live in production 26 Sep 2026 (curl-verified: 200, no cookie, real data).
+```
+
+**5. `src/hooks/useTags.ts:6`**
+```diff
+- * Sprint 12 (inbox-collaboration), design.md §10/§12, tasks 2.4/2.5. Only meaningful for a
+- * workspace scope — the personal shell has no tag library endpoint (OQ-9's tags-default applies
+- * to notes more than a workspace-owned library; the tag picker/manager are workspace-only here,
+- * same gate `useMembers` already applies).
++ * Only meaningful for a
++ * workspace scope — the personal shell has no tag library endpoint, so the tag picker/manager
++ * are workspace-only,
++ * same gate `useMembers` already applies.
+```
+
+**6. `src/store/builderStore.ts:624`**
+```diff
+-  // ─── Pages ────────────────────────────────────────────────────────────────
++  // Pages
+```
+
+**7. `src/types/event.ts:18`**
+```diff
+-  // Sprint 14 (B5.3): free-form per action - e.g. `rows` (row count) and `format` on report.create /
++  // Free-form per action - e.g. `rows` (row count) and `format` on report.create /
+```
+
+**8. `src/types/publicForm.ts:88`**
+```diff
+-// ─── Field Renderer Contract ─────────────────────────────────────────────────────
++// Field Renderer Contract
+```
+
+**9. `src/types/savedView.ts:0`**
+```diff
+-/**
+- * Sprint 12 (inbox-collaboration), requirements.md §7.6, design.md §11.1/§11.2. Backend contract
+- * to confirm — field names are a proposal.
+- */
+```
+
+**10. `src/types/stage.ts:45`**
+```diff
+-// Bug fix, Sprint 12 close-out: OQ-9's resolution ("stages fixed to defaults" for the personal
++// Bug fix: "stages fixed to defaults" for the personal
+```
+
+### Notes
+
+- **`shared/types/` was left unchanged** (93 comments). Its README and file headers say the backend developer owns these files and the frontend does not edit them. Say if you want them cleaned anyway.
+- "Contract to confirm" notes were checked against the backend's `develop`. Shipped ones lost the status sentence. Written as **"Not built yet in the backend"**: stage ids on activity entries, the report job's `stage` snapshot, `attachmentCount`, the `score` object, and the "removed" flag on an assignee.
+- The stale `form.ts` comment is fixed: the cover-fit sentence now sits on `coverFit`.
+- Rewritten because the code or backend had moved on: the `FormAccessGrant` and shared-form item notes in `types/team.ts` (the backend now sends email and names), the form overview and owner notes in `types/form.ts`, `useWorkspaceRole`, `useWorkspaceTimezone`.
+- An `@deprecated` sentence in `types/analytics.ts` that sat on the current `categoryCounts` field was removed, so editors no longer show that field as deprecated.
+
+### Findings (code not changed)
+
+- `UploadState.key` is declared but never set.
+
