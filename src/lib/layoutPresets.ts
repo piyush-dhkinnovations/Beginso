@@ -1,8 +1,8 @@
 import type { CardStyle, FormBranding, FormFont, LayoutPreset, PageBackground, PanelTreatment } from '@/types/form';
 
-// Sprint 13 (CF2.7), requirements.md 2.1–2.3. The six presets and the ONE mapper from a stored
+// The presets and the ONE mapper from a stored
 // layout value to a preset — builder, preview and public form all import normaliseLayout(); nothing
-// else may interpret `settings.layout`. Legacy mapping is OQ-2's default: single_column → classic,
+// else may interpret `settings.layout`. Legacy mapping: single_column → classic,
 // two_column and compact → compact. Unknown/missing → classic, never an error.
 //
 // All copy below is taken from the V2 wireframe's FORM_LAYOUTS (Beginso V2/wireframes/index.html),
@@ -21,7 +21,7 @@ export interface LayoutPresetInfo {
   internalOnly?: boolean;
 }
 
-/** The starting look each preset ships with — a distinct colour, typeface, card style and panel, so the six read as six designs. */
+/** The starting look each preset ships with — a distinct colour, typeface, card style and panel, so each reads as its own design. */
 export interface LayoutLook {
   color: string;
   font: FormFont;

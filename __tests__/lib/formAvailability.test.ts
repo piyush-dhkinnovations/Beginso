@@ -1,5 +1,5 @@
 /**
- * Feature: sprint-3-public-form (post-launch addition — client-side closeDate courtesy check)
+ * Client-side closeDate courtesy check.
  */
 
 import { describe, it, expect } from 'vitest';

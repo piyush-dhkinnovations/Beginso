@@ -1,5 +1,4 @@
 /**
- * __tests__/lib/analyticsChange.test.ts
  * Tests: computeChangePercent, formatChangeLabel — Workspace Analytics' "vs previous period" math
  */
 

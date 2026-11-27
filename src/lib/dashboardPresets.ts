@@ -1,13 +1,12 @@
-// Sprint 14 (B5.5 pt 1, requirements 1.4): which built-in cards a per-form dashboard shows, in
+// Which built-in cards a per-form dashboard shows, in
 // order, chosen by the form's source-template category. Pure — no component knowledge beyond ids.
 // Category values come from the real Template.category data (seedTemplates: General, Feedback, HR,
 // Events, Sales, advanced; the frontend's own doc also names contact/event/hiring). Unknown or
-// missing category (every pre-existing form, OQ-4) → generic.
+// missing category (every pre-existing form) → generic.
 // 'charts' is the existing responses-over-time + status-distribution pair (they share a grid row).
 // 'customCharts' is the form's own saved charts (CustomChartsSection) - always placed right before
 // 'questions' in every preset below, so the Per-Question Breakdown a user has to scroll past to
-// reach it never grows between them (requirements.md note added when this stopped being a fixed
-// trailer after the whole dashboard and became an ordered card like the others).
+// reach it never grows between them.
 export type DashboardCardId = 'stats' | 'charts' | 'customCharts' | 'questions';
 
 export type DashboardPresetId = 'generic' | 'hiring' | 'event' | 'feedback' | 'sales';

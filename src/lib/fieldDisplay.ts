@@ -13,7 +13,7 @@ import type {
   UrlPreviewStyle,
 } from '@/types/form';
 
-// ─── Image upload settings ───────────────────────────────────────────────────
+// Image upload settings
 
 export const IMAGE_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 export const IMAGE_ACCEPT = IMAGE_MIME_TYPES.join(',');
@@ -51,7 +51,7 @@ export function validateImage(file: File, maxSizeMb: number): string | null {
   return null;
 }
 
-// ─── URL ─────────────────────────────────────────────────────────────────────
+// URL
 
 /** The words on a Yes / No question's two buttons. The stored answer is always "Yes" or "No"; only what is shown changes. */
 export function yesNoWords(field?: { type?: string; yesLabel?: string; noLabel?: string }): { yes: string; no: string } {
@@ -112,7 +112,7 @@ export function signInService(url: URL): string | null {
   return SIGN_IN_HOSTS.find(([suffix]) => host === suffix || host.endsWith(`.${suffix}`))?.[1] ?? null;
 }
 
-// ─── Currency ────────────────────────────────────────────────────────────────
+// Currency
 
 export const CURRENCY_OPTIONS: { code: CurrencyCode; label: string; symbol: string }[] = [
   { code: 'INR', label: 'Indian rupee (₹)', symbol: '₹' },
@@ -130,7 +130,7 @@ export function formatCurrency(value: number, code: CurrencyCode): string {
   return new Intl.NumberFormat(code === 'INR' ? 'en-IN' : 'en-US', { style: 'currency', currency: code, maximumFractionDigits: 2 }).format(value);
 }
 
-// ─── Time & date-time ────────────────────────────────────────────────────────
+// Time & date-time
 
 /** "14:30" → "2:30 PM"; anything that is not HH:MM is returned unchanged. */
 export function formatTime12(value: string): string {
@@ -155,14 +155,14 @@ export function formatDateTime(value: string): string {
   return `${Number(m[3])} ${MONTHS[Number(m[2]) - 1] ?? m[2]} ${m[1]}, ${formatTime12(m[4])}`;
 }
 
-// ─── Address ─────────────────────────────────────────────────────────────────
+// Address
 
 export const ADDRESS_PARTS = ['Street', 'City', 'State', 'ZIP / PIN'] as const;
 
 /** Address answers are stored as four newline-separated lines (street, city, state, ZIP); empty lines are dropped for display. */
 export const addressLines = (value: string): string[] => value.split('\n').map((l) => l.trim()).filter(Boolean);
 
-// ─── Signature ───────────────────────────────────────────────────────────────
+// Signature
 
 const SIGNATURE_PNG_RE = /^data:image\/png;base64,[A-Za-z0-9+/=]+$/;
 

@@ -1,5 +1,4 @@
 /**
- * Feature: sprint-3-public-form
  * Example-based tests for validateFile — exact size boundary and MIME allowlist.
  */
 

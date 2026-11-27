@@ -1,5 +1,5 @@
 /**
- * Sprint 9 task 3.5 / requirements §7.5.1, §14: sanitizeNextParam is the open-redirect guard
+ * sanitizeNextParam is the open-redirect guard
  * behind ?next= on /login and /signup — a crafted external or protocol-relative value must
  * never reach router.replace/login().
  */

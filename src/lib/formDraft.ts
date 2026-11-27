@@ -3,7 +3,6 @@ import type { FieldValue } from '@/types/publicForm';
 /**
  * Persists in-progress public-form answers to localStorage, keyed by slug, so a
  * reload or lost connection mid-fill doesn't force the respondent to start over.
- * Not part of the original Sprint 3 requirements — added on request (24 Jul 2026).
  *
  * localStorage can throw (private browsing, quota exceeded, disabled) — every
  * operation is wrapped so a storage failure degrades to "no draft," never a crash.

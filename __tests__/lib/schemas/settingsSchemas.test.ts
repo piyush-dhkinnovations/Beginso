@@ -1,8 +1,5 @@
 /**
- * __tests__/lib/schemas/settingsSchemas.test.ts
- * Feature: sprint-6-settings
  * Tests: profileNameSchema, workspaceNameSchema, changePasswordSchema
- * Requirements: 14.1
  */
 
 import { describe, it, expect } from 'vitest';

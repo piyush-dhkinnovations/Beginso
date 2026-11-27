@@ -1,9 +1,6 @@
 /**
- * __tests__/lib/reportFileProxy.test.ts
- * Feature: sprint-5-analytics-reports
  * Tests: src/app/api/reports/[reportId]/file/route.ts — same-origin secure file download proxy,
  * verbatim security posture of the responses file-proxy route
- * Requirements: 12.1
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

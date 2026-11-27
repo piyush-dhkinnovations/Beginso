@@ -1,5 +1,4 @@
 /**
- * Feature: sprint-3-public-form
  * Example-based tests for buildPublicFormSchema — specific error messages and hidden-field skipping.
  */
 

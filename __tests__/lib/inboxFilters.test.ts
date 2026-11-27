@@ -1,7 +1,3 @@
-/**
- * __tests__/lib/inboxFilters.test.ts
- * sprint-12-inbox-collaboration, requirements.md §7.1 (1.3), task 1.5.
- */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import {

@@ -1,8 +1,5 @@
 /**
- * __tests__/schemas.property.test.ts
- * Feature: sprint-1-frontend-auth
  * Tests: Property 1, 2, 3, 9 — Zod schema invariants using fast-check
- * Requirements: 5.2, 5.3, 5.4, 7.2, 5.10
  */
 
 import { describe, it, expect } from 'vitest';
@@ -10,7 +7,7 @@ import * as fc from 'fast-check';
 import { signupSchema } from '@/lib/schemas/signupSchema';
 import { loginSchema } from '@/lib/schemas/loginSchema';
 
-// ─── Arbitraries ───────────────────────────────────────────────────────────────
+// Arbitraries
 
 /** A valid RFC-ish email arbitrary — guaranteed safe local + domain + tld */
 const validEmailArb = fc
@@ -44,7 +41,7 @@ const validNameArb = fc
 /** Valid password (8–128 chars) */
 const validPasswordArb = fc.string({ minLength: 8, maxLength: 128 });
 
-// ─── Property 1: Zod Schemas Reject Invalid Emails ────────────────────────────
+// Property 1: Zod Schemas Reject Invalid Emails
 
 describe('Property 1: Zod Schemas Reject Invalid Emails', () => {
   it('signupSchema rejects emails without @', () => {
@@ -106,7 +103,7 @@ describe('Property 1: Zod Schemas Reject Invalid Emails', () => {
   });
 });
 
-// ─── Property 2: Signup Schema Rejects Out-of-Range Passwords ─────────────────
+// Property 2: Signup Schema Rejects Out-of-Range Passwords
 
 describe('Property 2: Signup Schema Rejects Out-of-Range Passwords', () => {
   it('rejects passwords shorter than 8 characters', () => {
@@ -148,7 +145,7 @@ describe('Property 2: Signup Schema Rejects Out-of-Range Passwords', () => {
   });
 });
 
-// ─── Property 3: Signup Schema Rejects Password Mismatch ──────────────────────
+// Property 3: Signup Schema Rejects Password Mismatch
 
 describe('Property 3: Signup Schema Rejects Password Mismatch', () => {
   it('rejects when password !== confirmPassword', () => {
@@ -180,7 +177,7 @@ describe('Property 3: Signup Schema Rejects Password Mismatch', () => {
   });
 });
 
-// ─── Property 9: Signup Schema Accepts All Valid Inputs ───────────────────────
+// Property 9: Signup Schema Accepts All Valid Inputs
 
 describe('Property 9: Signup Schema Accepts All Valid Inputs', () => {
   it('passes for valid name / email / password / confirmPassword combos', () => {

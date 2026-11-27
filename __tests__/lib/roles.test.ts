@@ -1,7 +1,6 @@
 /**
- * __tests__/lib/roles.test.ts
- * Feature: sprint-9-team-permissions, requirements.md §7.1, §16 — the ROLE_LABELS/CAPABILITIES
- * coverage regression test named as the minimum bar for task 1.1.
+ * The ROLE_LABELS/CAPABILITIES
+ * coverage regression test.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -68,7 +67,7 @@ describe('canManageMembers', () => {
   });
 });
 
-// Sprint 10, tasks.md 1.4 — one more entry in the single CAPABILITIES source, not a second matrix.
+// One more entry in the single CAPABILITIES source, not a second matrix.
 describe('workspace:audit / canViewAudit', () => {
   it('is granted to owner and admin only', () => {
     expect(hasCapability('owner', 'workspace:audit')).toBe(true);
@@ -102,7 +101,7 @@ describe('canDeleteForm', () => {
   });
 });
 
-// Sprint 12 (inbox-collaboration), requirements.md §14 — 4 roles × 3 new capabilities (task 1.2).
+// 4 roles × 3 capabilities.
 // `member`/`viewer` are listed directly on CAPABILITIES; `editor`/`reviewer` are asserted here as
 // their automatic aliases (withAliases()) rather than listed a second time in roles.ts.
 describe('responses:act / canActOnResponses', () => {

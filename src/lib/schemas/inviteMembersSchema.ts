@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Zod schema for the Invite Members modal (requirements.md §7.4, design.md §14).
+ * Zod schema for the Invite Members modal.
  * Accepts one or more comma-separated emails and a single role applied to all of them.
  * Owner is deliberately not an option — ownership only transfers, never gets invited into.
  *

@@ -1,7 +1,4 @@
 /**
- * __tests__/lib/reducedMotion.test.ts
- * sprint-11-v2a-hardening, task 5.3 (requirements.md §11 — "reduced motion respected").
- *
  * Reads the real stylesheet (no jsdom `matchMedia` mock needed) and asserts a global
  * `prefers-reduced-motion: reduce` rule exists and actually neutralises every `transition`/
  * `animation` declaration in the file, including the two infinite animations (spinner, skeleton

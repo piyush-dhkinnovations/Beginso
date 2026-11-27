@@ -1,8 +1,3 @@
-/**
- * __tests__/lib/workspaceServer.test.ts
- * Feature: sprint-8-workspaces-context, requirements.md §7.1
- */
-
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { resolveWorkspaceBySlug } from '@/lib/workspaceServer';
 

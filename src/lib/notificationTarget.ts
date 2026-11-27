@@ -1,6 +1,6 @@
 import type { AppNotification } from '@/types/notification';
 
-// Sprint 14 (B9.1): the bell and the Notifications page share one routing rule. Mention/assignment
+// The bell and the Notifications page share one routing rule. Mention/assignment
 // notifications carry a `responseId` and open the Inbox at that response (the existing
 // `?responseId=` contract). Returns null for notifications with nowhere to go. `formId` and
 // `responseId` come from server data, never from a URL param.

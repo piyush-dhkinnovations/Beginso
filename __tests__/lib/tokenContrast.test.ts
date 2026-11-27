@@ -1,9 +1,6 @@
 /**
- * __tests__/lib/tokenContrast.test.ts
- * sprint-11-v2a-hardening, requirements.md §7.4 (3.6/3.2)
- *
  * Computes real WCAG contrast ratios from src/styles/beginso-ui.css's own token values — no new
- * dependency (design.md §21's own instruction: an in-repo function, not axe-core). Resolves
+ * dependency (an in-repo function, not axe-core). Resolves
  * var(--x) alias chains by parsing the :root block (light) and the [data-theme="dark"] block
  * (dark, falling back to :root for anything dark doesn't redefine — matching how the cascade
  * actually resolves it in a browser).
@@ -80,7 +77,7 @@ function tokenHex(name: string, vars: Record<string, string>): string {
   return resolved;
 }
 
-// design.md §21 / requirements.md 3.2's named pairs. `large` pairs (headings, UI borders, focus)
+// The named pairs. `large` pairs (headings, UI borders, focus)
 // need only 3:1; everything else is body text and needs 4.5:1.
 interface Pair { name: string; fg: string; bg: string; minRatio: number; }
 
@@ -106,12 +103,7 @@ function buildPairs(vars: Record<string, string>): Pair[] {
   ].map((p) => ({ ...p, fg: tokenHex(p.fg, vars), bg: tokenHex(p.bg, vars) }));
 }
 
-// sprint-11-v2a-hardening 3.6 — design.md §21's own fallback: a failure is fixed only if it's a
-// single, low-risk token-value change; otherwise it's logged, not force-fixed. Both known light-
-// theme near-misses below touch a token shared across the whole product (the brand primary /
-// the general "muted text" neutral) — recoloring either is a design-system decision, not a
-// one-off swap, so they're recorded here (and in tasks.md's 3.6 entry) rather than silently
-// patched or left as a permanently-red, already-known test failure.
+// A failure is fixed only if it is a single, low-risk token change; otherwise it is recorded here.
 // Both former near-misses were fixed at token level (--text-muted, --action-primary darkened); the set stays so a
 // future known gap has an obvious home.
 const KNOWN_LIGHT_THEME_GAPS = new Set<string>();
@@ -126,7 +118,7 @@ describe.each([
     const ratio = contrastRatio(pair.fg, pair.bg);
     if (themeName === 'light' && KNOWN_LIGHT_THEME_GAPS.has(label)) {
       // Recorded, not silently passing and not force-failing the pipeline: this ratio is a known
-      // near-miss (~4.4 vs the 4.5 floor), logged in tasks.md 3.6 with an owner-review note.
+      // near-miss (~4.4 vs the 4.5 floor).
       expect(ratio).toBeGreaterThan(4);
       expect(ratio).toBeLessThan(pair.minRatio);
       return;

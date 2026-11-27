@@ -3,7 +3,6 @@ import { monthFetchRange, monthGridKeys, localDateKey } from '@/lib/calendarDate
 
 describe('calendarDates', () => {
   it('lands a 23:30 UTC submission on the correct local day for an IST workspace', () => {
-    // design.md's own acceptance case (task 3.3's "Done").
     expect(localDateKey('2026-09-15T23:30:00.000Z', 'Asia/Kolkata')).toBe('2026-09-16');
     expect(localDateKey('2026-09-15T23:30:00.000Z', 'UTC')).toBe('2026-09-15');
   });

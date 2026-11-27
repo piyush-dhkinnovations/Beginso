@@ -1,8 +1,5 @@
 /**
- * __tests__/lib/dateRange.test.ts
- * Feature: sprint-5-analytics-reports
  * Tests: resolveDateRangePreset, normalizeDateRange, resolveTrendBucket
- * Requirements: 3.2-3.4, 4 (bucket note)
  */
 
 import { describe, it, expect, vi, afterEach } from 'vitest';

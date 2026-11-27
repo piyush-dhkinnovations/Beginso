@@ -1,5 +1,4 @@
 /**
- * __tests__/lib/authContext.retry.test.ts
  * Tests: getMeSettlingOnboarding — the bounded poll that closes the real race found via live
  * testing 18 Aug 2026, where a brand-new signup's GET /api/auth/me can come back missing
  * onboardingCompleted entirely (mid-write) for longer than one 800ms retry, sending the user to
