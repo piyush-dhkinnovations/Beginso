@@ -6,8 +6,8 @@ import { WORDMARK_DARK, WORDMARK_LIGHT } from "@/lib/brand";
 // in globals.css, not hardcoded to one, since the same component renders on
 // both light surfaces (nav) and the always-dark footer (see `force`).
 export function Wordmark({ height = 24, force }: { height?: number; force?: "light" | "dark" }) {
-  // The artwork is 1795:492, so in this box it is drawn the box's full width and about 0.9 of its height.
-  const width = height * 3.3;
+  // The artwork is 1795:492, so in this box it is drawn the box's full width and about 0.8 of its height.
+  const width = height * 2.85;
 
   if (force) {
     return (
