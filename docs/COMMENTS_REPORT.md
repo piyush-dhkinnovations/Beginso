@@ -229,3 +229,139 @@ Seen while reading, not part of this task: `showShare` in `src/components/form-b
 - The baseline gate (type-check, lint, unit tests and count, build and route table, e2e) will be taken before the first folder.
 - The proof script (compile with comments removed, compare byte for byte) will be written outside the repository.
 - The backend repository is out of scope: work is limited to this repository.
+
+---
+
+# Progress
+
+## Group 1: `src/services` and `__tests__/services`
+
+### Counts
+
+| | Before | After |
+|---|---|---|
+| Comments | 204 | 199 |
+| Comment lines | 690 | 597 |
+
+39 files changed: 5 comments removed entirely, 82 edited.
+
+### Proof and gate
+
+| Check | Baseline | After group 1 |
+|---|---|---|
+| Proof (compiled output without comments, code tokens, directives) | | 39 files, **0 mismatches** |
+| Type-check | pass | pass |
+| Lint (`.next-proof`, a local build folder, excluded) | clean | clean |
+| Unit tests | 4901 in 504 files | 4901 in 504 files |
+| Build route table | | identical |
+| E2E (production build) | 284 passed, 19 skipped | 284 passed, 19 skipped |
+
+The proof script is kept outside the repository. Besides comparing compiled output, it compares code tokens, because compiling drops types.
+
+### Ten samples to spot-check
+
+**1. `src/services/stages.ts` (shipped)**
+```diff
+- * BE 0.1 — new infrastructure, not yet built (design.md §11.2). Built against the documented
+- * contract; the backend developer owns final field naming ("Backend contract to confirm").
+- * Envelope unwrapped defensively (design.md §12's own instruction) since nothing here has been
+- * exercised against a live response yet.
++ * Envelope unwrapped defensively.
+```
+
+**2. `src/services/reports.ts` (not shipped)**
+```diff
+- // Sprint 12 (inbox-collaboration), design.md §11.2 — Backend contract to confirm: the stage
+- // name snapshot replacing `responseStatus`. Uncertain/not yet live (BE 0.4), so both are read
+- // defensively; `responseStatus` stays for a job created before this sprint (OQ-2's alias).
++ // Not built yet in the backend: the stage name snapshot replacing `responseStatus`. Both are read
++ // defensively; `responseStatus` stays for a job created before it.
+```
+
+**3. `src/services/responses.ts` (partly shipped)**
+```diff
+- // POST /api/responses/bulk (design.md §11.2, task 2.2): "413 batch over cap (cap stated in
+- // response)". Surfaced as a typed error rather than a generic axios failure so
+- // `useInboxMutations`/`BulkActionBar` can show a specific message instead of the default
+- // "failed to update" toast. `cap` is read defensively — the exact response shape for the cap is
+- // itself "Backend contract to confirm".
++ // POST /api/responses/bulk answers 413 for a batch over the cap. Surfaced as a typed error rather
++ // than a generic axios failure so `useInboxMutations`/`BulkActionBar` can show a specific message
++ // instead of the default "failed to update" toast. `cap` is read defensively. Not built yet in the
++ // backend: a `cap` field (the limit is only named in the message).
+```
+
+**4. `src/services/analytics.ts` (stale)**
+```diff
+- // Bug fix, Sprint 12 close-out: none of these four calls ever sent a workspace header at all —
+- // (...5 lines...) Explicit
+- // 'personal' is unconditionally correct here — no /w/[slug]/analytics route exists yet, same
+- // reasoning `ReportsView`'s own `formsService.getForms(..., { type: 'personal' })` already
+- // established for this page family.
++ // Every call names its context (`scope`, 'personal' by default). With no workspace header the
++ // backend's `getVerifiedWorkspaceId` falls through header, query and body to the caller's default
++ // workspace, so the Personal analytics page showed that workspace's forms instead of nothing.
+```
+
+**5. `src/services/forms.ts` (stale: contradicted the line above it)**
+```diff
+- // Real bug found and fixed: the comment above already flagged this as unconfirmed — now
+- // confirmed live. (...) `workspaceId=personal`
+- // isn't honored server-side for this case. Filtered here as a client-side safety net
+- // (...)
++ // It was added when a new user whose default workspace was the one they had just joined saw that
++ // workspace's forms in their *personal* list. Never trust the backend's scoping without checking:
++ // Personal space must not show a workspace-owned form, whatever the query returned.
+```
+
+**6. `src/services/publicForm.ts` (wrong: the file does use Axios)**
+```diff
+- * fetch() only — no Axios, no auth headers, no cookies.
++ * Public calls use fetch() with no auth headers and no cookies; only getSubmitTicket() goes through Axios and the BFF.
+```
+
+**7. `src/services/invitations.ts` (stale: the Accept page uses it)**
+```diff
+- // Public, token-based — Wednesday's Invite Accept page (task 5.1) is the consumer. Built now
+- // since task 2.2 bundles all seven methods as one unit; not wired into any UI today.
++ // Public, token-based: used by the Invite Accept page.
+```
+
+**8. `src/services/responses.ts` (history only, removed)**
+```diff
+- // Sprint 12 (inbox-collaboration), task 1.3: replaces the old 3-request client-side computation
+- // with the confirmed-live single GET /api/responses/stats call (closes the known low-severity
+- // issue in PROJECT_STATUS.md), extended for stages (design.md §2/§11.2).
+```
+
+**9. `__tests__/services/auth.service.test.ts` (labels, old path, heading)**
+```diff
+- * __tests__/auth.service.test.ts
+- * Feature: sprint-1-frontend-auth
+   * Tests: Auth Service — signup, login, getMe, logout functions
+- * Requirements: 6.1, 6.4, 6.5, 8.1, 13.1, 13.5
+- // ─── Mock Firebase auth ─────────────────────────────────────────
++ // Mock Firebase auth
+```
+
+**10. `__tests__/services/tags.service.test.ts` (whole header was labels and an outdated status)**
+```diff
+- /**
+-  * __tests__/services/tags.service.test.ts
+-  * sprint-12-inbox-collaboration, requirements.md §7.7, design.md §11.2/§12, task 2.2.
+-  * Built against the documented (not yet live) contract — see tagsService's own comment.
+-  */
+```
+
+### Judgement calls to confirm
+
+- The first line of a test header that only repeats the file's own path was removed (restating, and sometimes wrong).
+- Kept: dates inside a reason ("confirmed live 12 Aug 2026"), links to documents (`docs/...`, `Beginso-Report/...`, handoff files), and the QA id that sits beside a reason.
+- Outdated comments found here beyond the first list, now corrected: `publicForm.ts` header, `invitations.ts` (preview), `analytics.ts` (two), `forms.ts` (two), `workspaces.ts` (delete endpoint "is needed"), `reports.ts` (list keys).
+
+### Findings (code not changed)
+
+1. **Possible gap:** the backend never sends `stage` on a report job (`Report` model and list reply, backend `develop`). `ReportJobRow` shows the stage name only from `job.stage`, so an export limited to one stage would show no stage name. Not reproduced in the app.
+2. `showShare` in `BuilderTabs.tsx` is passed by the edit page but never read.
+
+No eslint-disable line is in this group. The `CLAUDE.md` correction will be its own commit, with the `layout.tsx` comment it matches.
