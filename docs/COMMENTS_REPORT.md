@@ -689,3 +689,92 @@ Proof: **0 mismatches**. Type-check and lint clean, 4901 unit tests in 504 files
 - Marked "Not built yet in the backend": an endpoint listing who can access a form (`MentionPicker`).
 - History removed: a retired test case's note and "was hardcoded to 'table'".
 
+
+---
+
+## Group 5: `components/form-builder` and its tests
+
+### Counts
+
+| | Before | After |
+|---|---|---|
+| Comments | 414 | 414 |
+| Comment lines | 646 | 639 |
+
+26 files changed: 0 comments removed entirely, 56 edited.
+
+### Proof and gate
+
+Proof: **0 mismatches**. Type-check and lint clean, 4901 unit tests in 504 files, build route table identical, e2e 284 passed and 19 skipped: all the same as the baseline.
+
+### Ten samples to spot-check
+
+**1. `__tests__/components/form-builder/OptionsEditor.test.tsx:3`**
+```diff
+- * Requirements: 2.1-2.7
+```
+
+**2. `src/components/form-builder/BrandingPanel.tsx:25`**
+```diff
+-// ─── Image upload zone (shared by Logo + Cover Image sections) ────────────────
++// Image upload zone (shared by Logo + Cover Image sections)
+```
+
+**3. `src/components/form-builder/Canvas.tsx:110`**
+```diff
+-// ─── Main Canvas component ────────────────────────────────────────────────────
++// Main Canvas component
+```
+
+**4. `src/components/form-builder/FieldCard.tsx:33`**
+```diff
+-// ─── Dashed drop-zone card ────────────────────────────────────────────────────
++// Dashed drop-zone card
+```
+
+**5. `src/components/form-builder/FieldPreview.tsx:7`**
+```diff
+-// ─── Live, non-interactive preview of a field's public-form appearance ────────
++// Live, non-interactive preview of a field's public-form appearance
+```
+
+**6. `src/components/form-builder/LeaveBuilderModal.tsx:7`**
+```diff
+-// Sprint 13 (CF2.9), requirements.md 1.2 / wireframe 39. Autosave is the save mechanism, so the
+-// old "Save and leave" button is gone (OQ-1 default): this guard exists only for the window where
++// Wireframe 39. Autosave is the save mechanism, so there is no
++// "Save and leave" button: this guard exists only for the window where
+```
+
+**7. `src/components/form-builder/PagesPanel.tsx:136`**
+```diff
+-// ─── Compact page switcher (< 1024px) ───────────────────────────────────────
+-// Sprint 13 (CF2.12, requirements.md 4.4). Below 1024px the Pages panel is gone, but editing the
++// Compact page switcher (< 1024px)
++// Below 1024px the Pages panel is gone, but editing the
+```
+
+**8. `src/components/form-builder/SettingsPanel.tsx:111`**
+```diff
+-            (OQ-9); this control only reads and writes `settings.accessMode`. */}
++            to make; this control only reads and writes `settings.accessMode`. */}
+```
+
+**9. `src/components/form-builder/embed/EmbedStudio.tsx:23`**
+```diff
+-// Share & Embed, CF6.2a. One state object drives the code block, the live preview and the Advanced list through
++// One state object drives the code block, the live preview and the Advanced list through
+```
+
+**10. `src/components/form-builder/useBuilderFormMutations.ts:55`**
+```diff
+-      // Delete means Trash since Sprint 13 (CF5.5): reversible for 30 days.
++      // Delete means Trash: reversible for 30 days.
+```
+
+### Notes
+
+- Corrected because the code had moved on: the add-field sheet is for phones below 640px (not 1024px), the layout tiles are no longer "six", the embed builder has four methods, and "Generate new link" exists in the publish flow.
+- History removed: the note on a missing accessibility pass in `BuilderTabs` and the "replaces the old PropertiesPanel" note.
+- Disable comment: reason added in `useBuilderLeaveGuard.ts`.
+
