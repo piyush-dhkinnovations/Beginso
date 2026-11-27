@@ -30,10 +30,7 @@ export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onR
   ];
   return (
     <nav className="flex shrink-0 items-center justify-between border-b border-(--border-default)" aria-label="Form Builder Tabs">
-      {/* Real role="tablist"/role="tab"/aria-selected semantics — confirmed missing during Sprint
-          6 (SettingsTabs.tsx was built with its own correct semantics rather than copied from
-          here, since this component lacked them), fixed here per that sprint's Friday
-          accessibility-pass task. */}
+      {/* Real role="tablist"/role="tab"/aria-selected semantics. */}
       <div className="flex min-w-0 items-center overflow-x-auto" role="tablist" aria-label="Form Builder sections">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;

@@ -12,10 +12,10 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { FieldCard } from './FieldCard';
 import { CanvasFormHeader } from './CanvasFormHeader';
 
-// ─── Canvas droppable ID ─────────────────────────────────────────────────────
+// Canvas droppable ID
 export const CANVAS_ID = 'builder-canvas';
 
-// ─── Droppable canvas inner component ────────────────────────────────────────
+// Droppable canvas inner component
 function DroppableCanvas({
   children,
   isEmpty,
@@ -81,7 +81,7 @@ function DroppableCanvas({
   );
 }
 
-// ─── Props ────────────────────────────────────────────────────────────────────
+// Props
 interface CanvasProps {
   fields: FormField[];
   activePageId: string | null;
@@ -107,7 +107,7 @@ interface CanvasProps {
   isToolboxOver?: boolean;
 }
 
-// ─── Main Canvas component ────────────────────────────────────────────────────
+// Main Canvas component
 export function Canvas({
   fields,
   activePageId,

@@ -10,7 +10,7 @@ export interface CanvasFormHeaderProps {
   onPageDescriptionChange: (description: string) => void;
 }
 
-// ─── Canvas form header — per-page title + description, always visible ───────
+// Canvas form header — per-page title + description, always visible
 // Sits above the field list regardless of whether the active page has any
 // fields yet. Editing here writes to the CURRENTLY ACTIVE PAGE's own
 // title/description — every page holds an independent value, switching pages

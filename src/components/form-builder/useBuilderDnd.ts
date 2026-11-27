@@ -68,7 +68,7 @@ export function useBuilderDnd() {
     })
   );
 
-  // ─── Drag start: track which item is being dragged ────────────────────────
+  // Drag start: track which item is being dragged
   // dropAnimation is set here (not derived from activeDragId state) so it
   // stays correct during the re-render triggered by setActiveDragId(null) in
   // handleDragEnd — otherwise activeDragId is already null and dnd-kit picks
@@ -80,7 +80,7 @@ export function useBuilderDnd() {
     setActiveDragId(id);
   }
 
-  // ─── Drag over: track exact insertion point for toolbox → canvas drops ────
+  // Drag over: track exact insertion point for toolbox → canvas drops
   function handleDragOver(event: DragOverEvent) {
     const { active, over } = event;
 
@@ -110,7 +110,7 @@ export function useBuilderDnd() {
     setIsToolboxOver(true);
   }
 
-  // ─── Drag end: determine action based on source and over target ───────────
+  // Drag end: determine action based on source and over target
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveDragId(null);
@@ -144,7 +144,7 @@ export function useBuilderDnd() {
     }
   }
 
-  // ─── DragOverlay preview content ───────────────────────────────────────────
+  // DragOverlay preview content
   const activeDragConfig = activeDragId?.startsWith('toolbox-')
     ? FIELD_TYPE_CONFIG.find(
         (c) => `toolbox-${c.type}` === activeDragId

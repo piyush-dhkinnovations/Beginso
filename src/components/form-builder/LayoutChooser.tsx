@@ -23,7 +23,7 @@ export interface LayoutChooserProps {
 }
 
 /**
- * The six layouts as tiles, each a thumbnail and a name. Picking one applies it at once. There is no separate "Preview" and "Use this
+ * The layouts as tiles, each a thumbnail and a name. Picking one applies it at once. There is no separate "Preview" and "Use this
  * layout" step: the live preview next to the controls already shows the result, and a wrong pick is one click from being undone.
  */
 export function LayoutChooser({ current, fieldCount, isPublic, onPick }: LayoutChooserProps) {

@@ -7,7 +7,7 @@ import { BrandingStudio } from './BrandingStudio';
 import { LayoutChooser } from './LayoutChooser';
 
 // The Branding tab is one screen: the controls and a large live preview side by side (BrandingStudio), with no layout gallery to get
-// through first. Below 1024px detailed branding is desktop-only (CF2.12a): choosing a layout still works on a phone (the tiles are the
+// through first. Below 1024px detailed branding is desktop-only: choosing a layout still works on a phone (the tiles are the
 // same ones the studio starts with) and the rest is replaced by a plain notice.
 export interface BrandingTabContentProps {
   formId?: string;

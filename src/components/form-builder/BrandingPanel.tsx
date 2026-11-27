@@ -22,7 +22,7 @@ const DEFAULT_COLOR = '#1D4ED8';
 const HEX_REGEX = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
 const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-// ─── Image upload zone (shared by Logo + Cover Image sections) ────────────────
+// Image upload zone (shared by Logo + Cover Image sections)
 
 /** The shapes a wide picture can be cropped to. */
 const CROP_SHAPES = [

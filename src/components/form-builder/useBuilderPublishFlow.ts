@@ -138,7 +138,7 @@ export function useBuilderPublishFlow({
     [setActivePageId, setActiveFieldId]
   );
 
-  // Preview opens in the SAME tab (requirements.md 3.1) so "Back to editor" has somewhere to return
+  // Preview opens in the SAME tab so "Back to editor" has somewhere to return
   // to. The save is flushed first and a failed save blocks navigation — leaving would otherwise lose
   // the unsaved edits (the old new-tab version could shrug a failure off; this one cannot). The
   // cached ['form', id] is dropped so both Preview and the returning editor refetch the autosaved

@@ -23,10 +23,10 @@ import { EmbedStudio } from './embed/EmbedStudio';
 
 const STATUS_LABEL = { draft: 'Draft', published: 'Published', closed: 'Closed' } as const;
 
-// Sprint 13 (CF6.1) + CF6.2a. Share & Embed is the single home for ongoing distribution. It is the bottom half of the editor's
+// Share & Embed is the single home for ongoing distribution. It is the bottom half of the editor's
 // Settings tab, under the form's own settings - the earlier standalone page (wireframe 34) now redirects here. Publishing itself is owned by the publish flow, not
-// this page. The embed builder (five methods, live snippet and preview) lives in ./embed; "Share as a copy" (CF6.3) is still not planned,
-// and "Generate new link" lands with the publish flow (needs BE 0.4).
+// this page. The embed builder (four methods, live snippet and preview) lives in ./embed; "Share as a copy" is not planned,
+// and "Generate new link" belongs to the publish flow.
 export interface ShareViewProps {
   formId: string;
   /** Inside the builder's Settings tab: no page header/breadcrumb (the tab is the heading). */

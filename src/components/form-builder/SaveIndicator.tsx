@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { CloudAlert, CloudCheck, CloudOff, LoaderCircle } from 'lucide-react';
 
-// Sprint 13 (CF2.8), requirements.md 1.1. Pure derived label — owns no save state. The three
+// Pure derived label — owns no save state. The three
 // states from the feature list are Unsaved changes → Saving… → All changes saved, plus a failure
 // state with Retry. It never renders blank once a form is loaded.
 export interface SaveIndicatorProps {
@@ -27,7 +27,7 @@ export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedC
   // A conflict outranks everything: "All changes saved" would be a lie while this tab's edits cannot be saved.
   const label: Label = conflict ? 'conflict' : saving ? 'saving' : error ? 'error' : dirty ? 'unsaved' : 'saved';
 
-  // Announce once the label has been stable for 500 ms (design.md §18) — not on every keystroke,
+  // Announce once the label has been stable for 500 ms — not on every keystroke,
   // which flips Unsaved ⇄ Saving… constantly while typing.
   const [announced, setAnnounced] = useState<Label>(label);
   useEffect(() => {

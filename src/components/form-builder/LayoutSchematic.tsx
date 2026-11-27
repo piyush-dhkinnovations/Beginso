@@ -10,7 +10,7 @@ const FIELD = 'h-3 rounded-sm bg-(--bg-sunken) border border-(--border-subtle)';
 const LABEL = 'h-1 w-1/3 rounded-full bg-(--border-strong)';
 const BTN = 'h-3.5 rounded-sm bg-(--action-primary)';
 
-// Each preset draws its own card surface (flat / soft / bordered / elevated), so the six thumbnails are not one white box.
+// Each preset draws its own card surface (flat / soft / bordered / elevated), so the thumbnails are not all one white box.
 const SURFACE: Record<LayoutLook['cardStyle'], string> = {
   flat: 'rounded-sm',
   soft: 'rounded-md shadow-(--shadow-md)',
