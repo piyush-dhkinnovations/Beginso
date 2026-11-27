@@ -1,6 +1,3 @@
-/**
- * sprint-10-events-migration, tasks.md 3.2 — requirements.md §7.5, design.md §17.
- */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

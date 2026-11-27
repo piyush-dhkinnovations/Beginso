@@ -48,7 +48,7 @@ interface PublicFormShellProps {
   /** User-only "see it as a respondent would" mode — disables the real submit network call. */
   previewMode?: boolean;
   /**
-   * Preview only (Sprint 13, CF2.6). When given, a secondary "Send a test submission" button appears: it runs the
+   * Preview only. When given, a secondary "Send a test submission" button appears: it runs the
    * form's own validation and hands the answers to this callback, which posts them as an `isTest` response. The
    * normal Submit still submits nothing. Rejects with a message for a role that may not send one.
    */
@@ -92,12 +92,12 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   const isGuided = isOneAtATime(layout); // Guided, Chat and Focus ask one question at a time
 
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  // Guided only: which question of the current page is showing. Page-level draft persistence is
+  // One-at-a-time layouts only: which question of the current page is showing. Page-level draft persistence is
   // unchanged; a restored draft resumes at the first question of its page.
   const [questionIndex, setQuestionIndex] = useState(0);
-  // Review-before-submit (D1.2). The review screen replaces the page body; values stay in RHF.
+  // Review-before-submit. The review screen replaces the page body; values stay in RHF.
   const [showReview, setShowReview] = useState(false);
-  // Access modes (Sprint 13, D1.1). The mode is read from the schema; the SERVER enforces it independently.
+  // Access modes. The mode is read from the schema; the SERVER enforces it independently.
   //   tracked → "Anyone, with a verified email": an email gate before the form (a 6-digit code, Google, or a Beginso sign-in).
   // "login" is the old name of the same gate (signed-in accounts only); it now just has more ways in.
   const accessMode = schema.settings.accessMode === 'login' ? 'tracked' : (schema.settings.accessMode ?? 'open');
@@ -136,7 +136,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
       )) as Resolver<Record<string, FieldValue>>,
   });
 
-  // eslint-disable-next-line react-hooks/incompatible-library -- watch() must return live values every render for real-time logic evaluation (Requirement 5.1); this is inherent to RHF's watch() API, not a bug.
+  // eslint-disable-next-line react-hooks/incompatible-library -- watch() must return live values every render for real-time logic evaluation; this is inherent to RHF's watch() API, not a bug.
   const watchedValues = methods.watch();
   const hiddenFieldIds = evaluateLogicRules(schema.fields, watchedValues);
   const hiddenFieldIdsKey = Array.from(hiddenFieldIds).sort().join(',');
@@ -147,7 +147,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
 
   // Count this visit once per tab session so the completion rate on Form Overview has a denominator
   // (the backend also counts one view per visitor per hour, so a reload cannot inflate it).
-  // Sprint 13 (F15, requirements.md 3.3): a preview is never a view — the owner opening Preview must
+  // A preview is never a view — the owner opening Preview must
   // not move the completion-rate denominator.
   useEffect(() => {
     if (previewMode) return;
@@ -162,7 +162,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   }, [slug, previewMode]);
 
   // Fields hidden by a logic rule are unmounted from RHF state so they're never submitted
-  // and never contribute a required-validation error (Requirements 5.3, 5.5).
+  // and never contribute a required-validation error.
   useEffect(() => {
     hiddenFieldIds.forEach((fieldId) => {
       methods.unregister(fieldId);
@@ -221,14 +221,14 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   const isLastPage = currentPageIndex === totalPages - 1;
   const primaryColor = schema.branding.primaryColor ?? '#1D4ED8';
 
-  // Guided shows one question at a time; every other layout shows the whole page.
+  // One-at-a-time layouts show one question; every other layout shows the whole page.
   const shownFields = isGuided ? currentPageFields.slice(questionIndex, questionIndex + 1) : currentPageFields;
   const isLastStep = isLastPage && (!isGuided || questionIndex >= currentPageFields.length - 1);
-  // Decision 18: on for 2+ page forms, off for single-page, and ALWAYS on for Guided (it hides earlier
-  // answers by design, so it owes the respondent a summary).
+  // Review is on for 2+ page forms, off for single-page, and ALWAYS on for one-at-a-time layouts (they hide earlier
+  // answers by design, so they owe the respondent a summary).
   const reviewEnabled = totalPages >= 2 || isGuided;
 
-  // Guided progress: question N of M across every page, counting only fields currently visible.
+  // One-at-a-time progress: question N of M across every page, counting only fields currently visible.
   const guidedQuestion = isGuided
     ? (() => {
         const perPage = sortedPages.map((p) => getVisiblePageFields(schema.fields, p.id, hiddenFieldIds).length);
@@ -357,11 +357,9 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
       } else if (result.status === 429) {
         setSubmitError('Too many submissions from your connection. Please wait a minute and try again.');
       } else if ((result.status === 422 || result.status === 400) && result.message) {
-        // Bug fix: a 400 used to always show one hardcoded "file too large / too many files"
-        // guess, discarding whatever specific message the backend actually sent — including for
-        // Multer errors that have nothing to do with file size at all (e.g. a field value too
-        // long). The backend's message now states the real limit for whichever check actually
-        // failed; show that instead of guessing.
+        // Show the backend's own message: it states the real limit for whichever check actually
+        // failed, including Multer errors that have nothing to do with file size at all (e.g. a field
+        // value too long). A generic "file too large / too many files" guess would hide that.
         setSubmitError(result.message);
       } else if (result.status === 413) {
         setSubmitError('Your answers are too large. Please shorten them and try again.');
@@ -442,7 +440,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
     }
     if (!isLastStep) {
       e.preventDefault();
-      // Guided: Enter on a question advances, like Next.
+      // One-at-a-time layouts: Enter on a question advances, like Next.
       if (isGuided) void handleNext();
       return;
     }
@@ -614,7 +612,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
       </div>
     ) : null;
 
-  // Shown above the submit buttons: the Mode 2 email step, or who a Mode 3 respondent is submitting as.
+  // Shown above the submit buttons: the preview's test-submission controls.
   const accessExtra = (
     <>
       {testControls}
@@ -647,7 +645,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
           )}
 
           {/* Honeypot: real respondents never see or reach this; a bot's scripted fill-everything
-              behavior does, and that value is passed through to the backend as-is (Requirement 6.5). */}
+              behavior does, and that value is passed through to the backend as-is. */}
           <input
             type="text"
             tabIndex={-1}

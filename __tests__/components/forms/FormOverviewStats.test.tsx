@@ -1,6 +1,3 @@
-/**
- * sprint-10-events-migration, tasks.md 3.1 / 7.2 — requirements.md §7.3, §7.4, design.md §18.
- */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -47,7 +44,7 @@ describe('FormOverviewStats', () => {
     expect(onOpenAccess).toHaveBeenCalledTimes(1);
   });
 
-  // Sprint 11 5.3: computed accessibility, not JSX presence — keyboard reachability asserted by
+  // Computed accessibility, not JSX presence — keyboard reachability asserted by
   // actually tabbing and pressing a key, not by reading the source for a tabIndex prop.
   it('the "who can see it" button is reachable by Tab and activates on Enter, not just click', async () => {
     const onOpenAccess = vi.fn();

@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/Button';
 import { WorkspaceBrandingEditor } from './WorkspaceBrandingEditor';
 
 // Workspace branding DEFAULTS for new forms. Edits are a draft: nothing is saved until "Save changes", and
-// "Cancel" returns to what is saved. (The previous version saved on every click, which made a mis-click on the
+// "Cancel" returns to what is saved. (Saving on every click would make a mis-click on the
 // colour or a logo permanent.) The save bar stays pinned to the bottom of the viewport while the page scrolls.
 const KEYS: (keyof FormBranding)[] = ['primaryColor', 'logoUrl', 'coverImageUrl', 'buttonStyle', 'buttonRadius', 'coverPosition', 'showProgress', 'spacing'];
 

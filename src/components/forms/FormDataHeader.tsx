@@ -19,7 +19,7 @@ const STATUS_LABEL = { draft: 'Draft', published: 'Published', closed: 'Closed' 
 /**
  * The header for a form's data pages (/forms/:id/inbox and /insights): breadcrumb back to Responses, the form's
  * name and status, the form's own actions, and under them the Insights / Responses switch with room for the page's own controls
- * (see lib/formHeaderSlot.ts). The form's own pages (Overview, Edit, Settings) use FormLevelHeader instead.
+ * (see lib/formHeaderSlot.ts). The Overview page uses FormLevelHeader and the builder renders FormHeader itself.
  */
 export function FormDataHeader() {
   const { id: formId } = useParams<{ id: string }>();

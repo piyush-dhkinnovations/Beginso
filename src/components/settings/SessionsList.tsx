@@ -12,7 +12,7 @@ import { Modal } from '@/components/ui/Modal';
 import { PaginationControls } from '@/components/responses/PaginationControls';
 import { SessionRow } from './SessionRow';
 
-// Backend returns the full session list unpaginated (confirmed contract) — paged client-side.
+// Backend returns the session list unpaginated — paged client-side.
 const PAGE_SIZE = 10;
 
 export function SessionsList() {

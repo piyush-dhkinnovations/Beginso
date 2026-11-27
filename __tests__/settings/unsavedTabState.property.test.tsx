@@ -1,17 +1,15 @@
 /**
- * __tests__/settings/unsavedTabState.property.test.tsx
- * Feature: sprint-6-settings, Property 1: Unsaved edits survive a tab switch
- * Requirements: 12.1
+ * Property: Unsaved edits survive a tab switch
  *
- * Tests the exact mount-persistence mechanism `src/app/(user)/settings/page.tsx` uses (a
+ * Tests the exact mount-persistence mechanism `src/components/settings/SettingsView.tsx` uses (a
  * `visitedTabs` Set that only grows, rendering every visited tab's content permanently — CSS
  * `hidden` when inactive, never JSX-omitted) against a minimal harness with a synthetic
- * local-state child, rather than the full SettingsPage — mirrors this repo's established PBT
+ * local-state child, rather than the full SettingsView — mirrors this repo's established PBT
  * convention of testing the underlying mechanism directly (see reportPolling.property.test.ts,
- * responses.optimistic.property.test.ts) instead of a full page render with five real tabs' worth
- * of service/firebase/auth mocks. The real bug this validates: the original
- * `{activeTab === 'x' && <XTab/>}` rendering unmounted the previous tab on every switch, resetting
- * its local RHF state — found while writing this test, fixed in page.tsx the same pass.
+ * responses.optimistic.property.test.ts) instead of a full page render with every real tab's worth
+ * of service/firebase/auth mocks. The bug this guards against:
+ * `{activeTab === 'x' && <XTab/>}` rendering unmounts the previous tab on every switch, resetting
+ * its local RHF state.
  */
 
 import { describe, it } from 'vitest';
@@ -27,7 +25,7 @@ function TextField({ testId }: { testId: string }) {
   return <input data-testid={testId} value={value} onChange={(e) => setValue(e.target.value)} />;
 }
 
-// Same shape as SettingsPage's actual tab-hosting logic: a Set that only grows, each visited
+// Same shape as SettingsView's actual tab-hosting logic: a Set that only grows, each visited
 // tab's content rendered permanently once added, hidden (not omitted) when inactive.
 function TabHost({ activeTab, onActiveTabChange }: { activeTab: Tab; onActiveTabChange: (t: Tab) => void }) {
   const [visitedTabs, setVisitedTabs] = useState<Set<Tab>>(new Set([activeTab]));

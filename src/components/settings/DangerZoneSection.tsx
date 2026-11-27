@@ -19,9 +19,6 @@ interface DangerZoneSectionProps {
   workspaceName: string;
 }
 
-// TODO: gate this whole section on workspace role once a real contract exists (same hook point
-// as WorkspaceTab's name field — see that file's identical TODO / design.md §23 Risk 6). Every
-// signed-in user is the sole owner of their one workspace today, so there's nothing real to gate.
 export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
   const { toast } = useToast();
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
@@ -39,10 +36,8 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
     onError: (err) => toast(getFriendlyErrorMessage(err, { action: 'export this data', fallback: 'Export did not start. Please try again.' }), 'error'),
   });
 
-  // Confirmed live 17 Aug 2026 (settingsService.getExportStatus) — same queued/processing-until-
-  // terminal auto-poll pattern Sprint 5's shouldPollReportJob already established for Reports,
-  // now that a real status endpoint exists (this was a manual "Check if ready" button until then;
-  // see tasks.md's Notes for why that interim design existed).
+  // Auto-polls while the job is queued/processing, until it is terminal: the same pattern
+  // shouldPollReportJob sets for Reports.
   const statusQuery = useQuery({
     queryKey: ['workspace-export-status', jobId],
     queryFn: () => settingsService.getExportStatus(jobId as string),

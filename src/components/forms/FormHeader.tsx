@@ -28,7 +28,7 @@ export function formatFormDate(iso?: string | null): string {
 }
 
 /**
- * The one header every form page shares — Overview, Responses, Insights, Edit and Settings — so moving between
+ * The header the Overview and Edit (builder) pages share, so moving between
  * them never changes the frame: [back] [icon] title + status + dates ............ actions. Page navigation is the breadcrumb and the app sidebar.
  */
 export function FormHeader({ onBack, backLabel, title, badge, meta, actions, icon }: FormHeaderProps) {

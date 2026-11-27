@@ -52,18 +52,15 @@ export function SettingsView({ title, description, tabs, scope, labels, note }: 
   const tabFromUrl = searchParams.get('tab') as SettingsTab | null;
   const activeTab: SettingsTab = tabFromUrl && tabs.includes(tabFromUrl) ? tabFromUrl : tabs[0];
 
-  // Per-tab dirty state (Requirement 12.1/12.2).
+  // Per-tab dirty state.
   const [dirtyTabs, setDirtyTabs] = useState<Set<SettingsTab>>(new Set());
   const [pendingTab, setPendingTab] = useState<SettingsTab | null>(null);
 
-  // Requirement 12.1: an unsaved edit on a tab must survive switching away and back. Rendering
+  // An unsaved edit on a tab must survive switching away and back. Rendering
   // tabs as `{activeTab === 'x' && <XTab/>}` unmounts the previous tab entirely on switch,
-  // destroying its local RHF state — real bug, found while writing Property 1's test (a switched-
-  // away-from tab's typed-but-unsaved value was lost on return, not preserved as required). Fixed
-  // by keeping every tab mounted once first visited (CSS `hidden`, not JSX-omitted) rather than
-  // never unmounting at all — still true that a tab never visited this session never fires its
-  // query (design.md §20's "no over-fetching on mount" principle), since it never mounts until
-  // its tab is actually clicked at least once.
+  // destroying its local RHF state, so every tab stays mounted once first visited (CSS `hidden`,
+  // not JSX-omitted). A tab never visited this session never fires its query (no over-fetching on
+  // mount), since it never mounts until it is clicked at least once.
   const [visitedTabs, setVisitedTabs] = useState<Set<SettingsTab>>(new Set([activeTab]));
   if (!visitedTabs.has(activeTab)) {
     setVisitedTabs(new Set(visitedTabs).add(activeTab));
@@ -114,12 +111,8 @@ export function SettingsView({ title, description, tabs, scope, labels, note }: 
       <div className="flex flex-col gap-4 lg:flex-row lg:gap-10 lg:items-start">
       <SettingsTabs activeTab={activeTab} onChange={handleTabChange} dirtyTabs={dirtyTabs} visible={tabs} labels={labels} />
 
-      {/* Branding gets its own wider column (BrandingPanel needs >=620px of container width to
-          place Preview beside the colour card — see its container-query comment) — every other
-          tab is a narrow single-column form and stays capped at 440px for readability. Capped at
-          the same max-w-4xl BrandingPanel already applies to itself internally, not left
-          unbounded — otherwise its own `mx-auto` has extra room to center it away from the left
-          edge that every other tab's content starts flush against. */}
+      {/* Branding, Tags, Stages and Scoring take the full width; every other tab is a narrow
+          single-column form, capped at 640px (max-w-160) for readability. */}
       <div className={`min-w-0 flex-1 ${activeTab === 'branding' || activeTab === 'tags' || activeTab === 'stages' || activeTab === 'scoring' ? '' : 'max-w-160'}`}>
         {visitedTabs.has('profile') && (
           <div className={activeTab === 'profile' ? '' : 'hidden'}>

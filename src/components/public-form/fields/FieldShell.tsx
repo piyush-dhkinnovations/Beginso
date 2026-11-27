@@ -29,7 +29,7 @@ interface FieldShellProps {
   children: ReactNode;
 }
 
-/** Shared label/helpText/error chrome around every field renderer's input (Requirement 4, shared rules 1–4). */
+/** Shared label/helpText/error chrome around every field renderer's input. */
 export function FieldShell({ fieldId, label, required, helpText, error, inline, asGroup, children }: FieldShellProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const errorId = `${fieldId}-error`;
@@ -97,7 +97,7 @@ export function FieldShell({ fieldId, label, required, helpText, error, inline, 
   );
 }
 
-/** Live `{current}/{max}` counter shared by ShortText and LongText (Requirements 4.8, 4.10). */
+/** Live `{current}/{max}` counter shared by ShortText and LongText. */
 export function CharCounter({ current, max }: { current: number; max: number }) {
   return (
     <p className={`bg-caption ${current >= max ? 'text-(--error-text)' : 'text-(--text-disabled)'}`}>

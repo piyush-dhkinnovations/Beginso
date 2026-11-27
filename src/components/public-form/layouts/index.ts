@@ -8,7 +8,7 @@ export type { LayoutFrameProps } from './shared';
 export { fieldsClassFor, isGrouped, isOneAtATime } from './shared';
 
 // Classic is the default and ships in the main bundle; the others are code-split so a form
-// using Classic never pays for them (requirements.md §15).
+// using Classic never pays for them.
 export const LAYOUT_COMPONENTS: Record<LayoutPreset, ComponentType<LayoutFrameProps>> = {
   classic: ClassicLayout,
   card_stack: dynamic(() => import('./CardStackLayout').then((m) => m.CardStackLayout)),

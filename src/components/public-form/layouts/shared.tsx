@@ -4,7 +4,7 @@ import type { PublicFormBranding } from '@/types/publicForm';
 import { UNSPLASH_HOME, brandFooterNote, brandCardClass, brandLookProps, brandTypeStyle, brandWashLayers, brandWashStyle, creditsToShow } from '@/lib/formTheme';
 import { Wordmark } from '@/components/landing/Wordmark';
 
-// Sprint 13 (CF2.7), design.md §7. Every layout is a presentation FRAME around the form body that
+// Every layout is a presentation FRAME around the form body that
 // PublicFormShell still owns (RHF state, validation, drafts, submit). A layout never holds form
 // values; it only decides the chrome around them and how fields are arranged.
 export interface LayoutFrameProps {
@@ -12,11 +12,11 @@ export interface LayoutFrameProps {
   branding: PublicFormBranding;
   title: string;
   previewMode?: boolean;
-  /** Step names, one per form page — Steps layout shows them; others ignore. */
+  /** Step names, one per form page — Steps, Sidebar and Split Feature show them; others ignore. */
   stepNames: string[];
   /** Zero-based index of the current page. */
   currentPage: number;
-  /** Guided only — question N of M across the whole form. */
+  /** One-at-a-time layouts only — question N of M across the whole form. */
   question?: { current: number; total: number };
   /** Embed ?cover=0: no banner / cover image. */
   hideCover?: boolean;
@@ -137,13 +137,13 @@ export const cardClass = (branding: PublicFormBranding, extra = '') => `${brandC
 export const ONE_AT_A_TIME: readonly LayoutPreset[] = ['guided', 'chat', 'focus'];
 export const isOneAtATime = (layout: LayoutPreset) => ONE_AT_A_TIME.includes(layout);
 
-/** Short fields pair up into two columns by default; the owner can switch to a single column, and one-at-a-time layouts are always one. */
+/** Short fields pair up into two columns by default; the owner can switch to a single column (not in Compact), and one-at-a-time layouts are always one. */
 export const isGrouped = (layout: LayoutPreset, grouping: PublicFormBranding['fieldGrouping']) =>
   layout === 'compact' || (!isOneAtATime(layout) && grouping !== 'single');
 
 /** How the fields inside the form body are arranged for each preset. */
 export function fieldsClassFor(layout: LayoutPreset, spacing: PublicFormBranding['spacing'] = 'comfortable', grouping: PublicFormBranding['fieldGrouping'] = 'auto'): string {
-  // Sprint 13 (CF2.3): the owner's spacing choice sets the vertical rhythm between fields.
+  // The owner's spacing choice sets the vertical rhythm between fields.
   const gap = spacing === 'compact' ? 'gap-3' : spacing === 'spacious' ? 'gap-7' : 'gap-4';
   const gapY = spacing === 'compact' ? 'gap-y-3' : spacing === 'spacious' ? 'gap-y-7' : 'gap-y-4';
   return isGrouped(layout, grouping)

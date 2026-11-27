@@ -181,7 +181,7 @@ export function WorkspaceBrandingEditor({ branding, onChange }: WorkspaceBrandin
         </Section>
       </div>
 
-      {/* Live preview — always the form's own LIGHT theme (CF2.11): the admin's dark mode must not change what respondents see. */}
+      {/* Live preview — always the form's own LIGHT theme: the admin's dark mode must not change what respondents see. */}
       <section aria-label="Live preview" className="rounded-lg border border-(--border-default) bg-(--surface-card) shadow-(--shadow-sm) p-5 flex flex-col gap-4 xl:sticky xl:top-4">
         <header className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">

@@ -1,9 +1,6 @@
 /**
- * __tests__/components/settings/ProfileTab.test.tsx
- * Feature: sprint-6-settings
  * Tests: ProfileTab — renders profile, name save success/error, no-op guard, validation error,
  * loading skeleton, load-error retry
- * Requirements: 2.1-2.6
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -24,9 +21,6 @@ vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
-// ProfileTab now renders ChangePasswordModal (closed by default) alongside the name form —
-// @/lib/firebase's real getAuth() throws in this test env without a valid API key, so it needs
-// the same mock ChangePasswordModal's own test file uses, even though these tests never open it.
 vi.mock('@/lib/firebase', () => ({ auth: {} }));
 
 // AvatarUploader has its own dedicated test file — mocked here so ProfileTab's test stays

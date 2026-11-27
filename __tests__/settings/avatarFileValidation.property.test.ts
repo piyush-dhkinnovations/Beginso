@@ -1,12 +1,8 @@
 /**
- * __tests__/settings/avatarFileValidation.property.test.ts
- * Feature: sprint-6-settings, Property 4: File validation never false-accepts
- * Requirements: 3.2, 6.1
+ * Property: File validation never false-accepts
  *
- * validateFile() returns an error message string when invalid, or null when valid (not a
- * `.valid` boolean, as an earlier draft of this property assumed before checking the real
- * signature in src/lib/validateFile.ts) — AvatarUploader/BrandingTab both call it exactly this
- * way with their own narrower allowedTypes/maxSizeBytes.
+ * validateFile() returns an error message string when invalid, or null when valid. AvatarUploader
+ * calls it exactly this way, with its own narrower allowedTypes/maxSizeBytes.
  */
 
 import { describe, it } from 'vitest';

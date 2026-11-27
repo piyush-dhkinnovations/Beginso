@@ -1,10 +1,7 @@
 /**
- * __tests__/components/settings/DangerZoneSection.test.tsx
- * Feature: sprint-6-settings
  * Tests: DangerZoneSection — export request flow, status-driven rendering (queued/processing
  * shows "preparing", completed shows Download, failed shows the safe error message + retry),
  * Delete account opens DeleteWorkspaceModal
- * Requirements: 10.1-10.3
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
