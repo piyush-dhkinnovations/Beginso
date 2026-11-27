@@ -365,3 +365,115 @@ The proof script is kept outside the repository. Besides comparing compiled outp
 2. `showShare` in `BuilderTabs.tsx` is passed by the edit page but never read.
 
 No eslint-disable line is in this group. The `CLAUDE.md` correction will be its own commit, with the `layout.tsx` comment it matches.
+
+---
+
+## Group 2: `src/lib` and `__tests__/lib`
+
+### Counts
+
+| | Before | After |
+|---|---|---|
+| Comments | 739 | 729 |
+| Comment lines | 1652 | 1529 |
+
+64 files changed: 10 comments removed entirely, 137 edited. `src/lib/schemas/formSchema.ts` was skipped (`fix/create-form-title` is not merged).
+
+### Proof and gate
+
+| Check | Result against the baseline |
+|---|---|
+| Proof (compiled output without comments, code tokens, directives) | 64 files, **0 mismatches** |
+| Type-check, lint (`.next-proof` excluded) | clean, as before |
+| Unit tests | 4901 in 504 files, as before |
+| Build route table | identical |
+| E2E (production build) | 284 passed, 19 skipped, as before |
+
+### Ten samples to spot-check
+
+**1. `src/lib/queryKeys.ts` (a 26-line audit note that was wholly outdated)**
+```diff
+- // sprint-11-v2a-hardening, requirements.md §7.3 (2.6) — query-key audit (...) every one of these renders only under
+- // the personal (user) shell — no /w/[slug]/responses|analytics|reports|dashboard route exists (...)
+- // **Backend contract to confirm:** do these personal-shell pages actually receive personal-scoped data (...)
++ // Every key factory keeps one context's cached rows apart from another's, in one of two ways:
++ //
++ // (a) The context is a key segment: `scope` (a workspace slug or 'personal') or the workspace itself, (...)
++ // (b) The key is already unique or per-caller, so a workspace segment would be redundant: (...)
+```
+
+**2. `src/lib/workspaceServer.ts` (the backend now returns the role)**
+```diff
+- // role/isOwner are optional because GET /api/workspaces/:id does not return them yet —
+- // requirements.md §4/§8.7 (sprint-9-team-permissions, BE 0.1) names this as a required backend
+- // change, not yet shipped. Until it lands, these are always undefined at runtime; every consumer
++ // role/isOwner are optional because they are read defensively from the reply. Every consumer
+```
+
+**3. `src/lib/roles.ts` (the backend does gate templates)**
+```diff
+- // Templates is an already-shipped feature visible to every current user, not a new one gated
+- // behind BE 0.1 landing — (...) nothing server-side actually gates this route by role either).
++ // Templates is visible to every other role, and hiding it while the role is still loading would
++ // take it from everyone, for a purely cosmetic nav filter. The server decides who may read
++ // templates.
+```
+
+**4. `src/lib/schemas/publicFormSchema.ts` (stale item 6)**
+```diff
+- // Value is the uploaded file's R2 key once the file finishes uploading.
++ // Value is the picked file's name (a placeholder); the file itself travels outside the form values.
+```
+
+**5. `src/lib/chartOptions.ts` (rating is a field type now)**
+```diff
+- // server re-validates. Rating is not a builder field type yet - it is accepted defensively so a
+- // future 'rating' field charts without a code change.
++ // server re-validates.
+```
+
+**6. `src/lib/layoutPresets.ts` (there are ten presets)**
+```diff
+- // Sprint 13 (CF2.7), requirements.md 2.1–2.3. The six presets and the ONE mapper from a stored
++ // The presets and the ONE mapper from a stored
+```
+
+**7. `src/lib/authContext.tsx` (reason added to a disable comment)**
+```diff
+- // eslint-disable-next-line react-hooks/exhaustive-deps
++ // eslint-disable-next-line react-hooks/exhaustive-deps -- initAuth keeps one identity, so the mount effect below runs it once
+```
+
+**8. `src/lib/responseList.ts` (history only, removed)**
+```diff
+- // runSequentially() removed (task 2.3, design.md §2): retired for bulk in favor of one-request
+- // `POST /api/responses/bulk` (`useInboxMutations.bulk`). Confirmed it had no other importer
+- // before deleting (design.md §2's own instruction).
+```
+
+**9. `__tests__/lib/noHardcodedColors.test.ts` (described files that no longer exist)**
+```diff
+-  * Files deliberately NOT in this list, and why:
+-  * - src/components/dashboard/{Sidebar,TopNav,DashboardShell,WelcomeSection}.tsx — dead code (...)
+-  * - src/app/onboarding/layout.tsx — one deliberate `bg-neutral-50` (...)
++  * Reads an explicit array of source files (not a glob over src/) and fails if any of them
++  * contain a banned raw-palette class.
+```
+
+**10. `src/lib/chartBuilder.ts` (section heading)**
+```diff
+- // ── what can be charted ──────────────────────────────────────────────────────
++ // what can be charted
+```
+
+### Outdated comments corrected beyond the first list
+
+`queryKeys.ts`, `workspaceServer.ts`, `workspaceHeaders.ts`, `roles.ts`, `chartOptions.ts`, `layoutPresets.ts`, `fetchAllResponses.ts` (a chart view that no longer calls it), `templatePreview.ts` (templates now have pages and branding), `noHardcodedColors.test.ts`, `tokenContrast.test.ts` (the two near-misses were already fixed).
+
+### Left unchanged, not sure
+
+`src/lib/layoutPresets.ts:8` says all copy comes from the V2 wireframe and must not be reworded. There are now ten presets; whether the newer ones came from that wireframe cannot be told from this repository.
+
+### Disable comments
+
+One reason added (`authContext.tsx`). 18 of the 19 without a reason remain, in groups not yet done.
