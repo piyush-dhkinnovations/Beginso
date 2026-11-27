@@ -1,8 +1,3 @@
-/**
- * __tests__/components/workspaces/WorkspaceSidebar.test.tsx
- * Feature: sprint-8-workspaces-context, requirements.md §7.3
- */
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -61,9 +56,8 @@ describe('WorkspaceSidebar', () => {
     expect(screen.getByRole('link', { name: /Responses/ })).not.toHaveAttribute('aria-current');
   });
 
-  // Real bug found and fixed: Templates/Responses/Analytics/Reports/Settings linked to routes
-  // that don't exist under /w/[slug] (only forms/, team/, roles/ do) — dead links, always 404.
-  // Removed until each page actually ships.
+  // A link to a page that does not exist under /w/[slug] is a dead link (always 404). The old
+  // "Analytics" and "Reports" names are not sidebar items.
   it('does not render links to pages that do not exist yet under /w/[slug]', () => {
     renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc', role: 'owner' });
     ['Analytics', 'Reports'].forEach((label) => {
@@ -72,7 +66,7 @@ describe('WorkspaceSidebar', () => {
   });
 
   it('renders the context switcher as the sidebar\'s own header, showing the workspace name', () => {
-    // Corrected against the real wireframe (design.md §23): the switcher lives in the sidebar
+    // The switcher lives in the sidebar
     // itself, not the top bar — this is the regression test for that placement.
     renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc' });
     expect(screen.getByText('Acme Inc')).toBeInTheDocument();
@@ -99,7 +93,7 @@ describe('WorkspaceSidebar', () => {
     expect(screen.getByRole('link', { name: 'Forms' })).not.toHaveAttribute('aria-current');
   });
 
-  // Sprint 9 (team-permissions), requirements.md §7.7 — role-gated "Team" nav item.
+  // Role-gated "Team" nav item.
   describe('Team nav item (role-gated)', () => {
     it('is hidden when role is undefined (BE 0.1 not yet shipped — fails closed)', () => {
       renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc' });
@@ -117,7 +111,7 @@ describe('WorkspaceSidebar', () => {
     });
   });
 
-  // Sprint 10, requirements.md §7.7 — role-gated "Audit Log", same fail-closed pattern as Team.
+  // Role-gated "Audit Log", same fail-closed pattern as Team.
   describe('Audit Log nav item (role-gated)', () => {
     it.each([undefined, 'viewer', 'member'] as const)('is hidden for role=%s', (role) => {
       renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc', role });
@@ -130,7 +124,7 @@ describe('WorkspaceSidebar', () => {
     });
   });
 
-  // Sprint 10, requirements.md §7.6 — "Activity" is visible to every role, unlike Team.
+  // "Activity" is visible to every role, unlike Team.
   describe('Activity nav item (all roles)', () => {
     it.each([undefined, 'viewer', 'member', 'admin', 'owner'] as const)('is visible for role=%s', (role) => {
       renderSidebar({ slug: 'acme', currentLabel: 'Acme Inc', role });

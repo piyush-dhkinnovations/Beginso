@@ -1,8 +1,8 @@
 /**
  * src/app/(user)/templates/page.tsx — the in-app template picker's category filter.
- * Scoped to the collapse/expand behaviour added when the catalog grew to 20 categories (the pill
- * row used to wrap across two or three lines); the rest of the page (search, sort, use template)
- * has no prior coverage and is out of scope for this change.
+ * Scoped to the collapse/expand behaviour of the category pill row (with 20 categories it
+ * would wrap across two or three lines); the rest of the page (search, sort, use template)
+ * is not covered here.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';

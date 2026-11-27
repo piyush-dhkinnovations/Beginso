@@ -29,8 +29,8 @@ interface Options {
 }
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.6 (task 2.6). Views are a workspace
- * concept (OQ-9) — not fetched for the personal shell, same gate `useTags`/`useMembers` apply.
+ * Views are a workspace
+ * concept — not fetched for the personal shell, same gate `useTags`/`useMembers` apply.
  */
 export function useSavedViews({ scope, formId, filters, view, setFilters, role, clearSelection }: Options) {
   const { toast } = useToast();
@@ -66,8 +66,7 @@ export function useSavedViews({ scope, formId, filters, view, setFilters, role, 
   }
 
   function saveView(values: { name: string; visibility: 'personal' | 'team' }) {
-    // Sprint 12 (inbox-collaboration), task 3.1: was hardcoded to 'table' (yesterday's report) —
-    // Save view now captures whichever view is actually active.
+    // Save view captures whichever view is actually active.
     viewsService
       .create(scope, { name: values.name, visibility: values.visibility, formId: formId ?? null, filters, viewMode: view })
       .then((savedView) => {

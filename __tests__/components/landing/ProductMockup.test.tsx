@@ -1,5 +1,4 @@
 /**
- * __tests__/components/landing/ProductMockup.test.tsx
  * Tests: ProductMockup — renders the dashboard scene (nav, stats, inbox, chart)
  * without crashing, and applies the scroll-driven tilt transform.
  *

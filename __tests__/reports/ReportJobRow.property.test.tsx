@@ -1,7 +1,5 @@
 /**
- * __tests__/reports/ReportJobRow.property.test.tsx
- * Feature: sprint-5-analytics-reports, Property 5: Report download never caches the URL
- * Validates: Requirement 12.2
+ * Property: Report download never caches the URL
  */
 
 import { describe, it, vi, beforeEach } from 'vitest';
@@ -28,7 +26,7 @@ describe('ReportJobRow — property test', () => {
   });
 
   it('calls getReportFileBlobUrl exactly once per Download click — never a cached value', async () => {
-    // Component-mount PBT: fewer iterations than the pure-logic properties above, since each
+    // Component-mount PBT: fewer iterations than pure-logic properties, since each
     // run mounts/clicks/unmounts a real component tree.
     await fc.assert(
       fc.asyncProperty(fc.integer({ min: 1, max: 5 }), async (clicks) => {

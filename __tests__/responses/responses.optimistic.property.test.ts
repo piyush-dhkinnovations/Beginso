@@ -1,8 +1,5 @@
 /**
- * __tests__/responses/responses.optimistic.property.test.ts
- * sprint-12-inbox-collaboration, requirements.md §7.1 (1.1) — migrated to stage optimistic
- * updates; the removed `ResponseStatus` union is no longer what gets patched into the cache.
- * Feature: sprint-4-responses, Property 1: Stage optimistic update is exact
+ * Property: Stage optimistic update is exact
  */
 
 import { describe, it } from 'vitest';
@@ -28,7 +25,7 @@ describe('optimistic stage update — property test', () => {
         const initial = mockResponseDetail('resp-1');
         queryClient.setQueryData(key, initial);
 
-        // Same onMutate pattern used in ResponseDrawer.tsx.
+        // Same onMutate pattern used in useInboxMutations.
         queryClient.setQueryData<ResponseDetail>(key, (old) =>
           old ? { ...old, stage: old.stage ? { ...old.stage, id: stageId } : old.stage } : old
         );

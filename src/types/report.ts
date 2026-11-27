@@ -1,10 +1,9 @@
 /**
  * Shared TypeScript interfaces for Reports export.
- * Shapes match the backend contract in docs/backend-contract/api-reference.md §4, extended by
- * Sprint 12 (inbox-collaboration) design.md §11.2 (`POST /api/reports` — Extends) / §13: the
- * `status` scope becomes `stageId` (B2.3). `responseStatus`/the fixed union on `ReportJob` are
- * DEPRECATED — kept only so a saved report job created before this sprint still renders (design.md
- * §11.1, OQ-2's alias). New code reads `job.stage` (a name snapshot, requirements.md §7.3 #4).
+ * Shapes match the backend contract in docs/backend-contract/api-reference.md §4. The
+ * `status` scope becomes `stageId`. `responseStatus`/the fixed union on `ReportJob` are
+ * DEPRECATED — kept only so an older saved report job still renders.
+ * New code reads `job.stage` (a name snapshot).
  */
 
 import type { StageCategory, StageColorToken } from './stage';
@@ -22,11 +21,11 @@ export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
 };
 
 /**
- * POST /api/reports (design.md §11.2 — Extends, task 2.7): "Accept the ResponseFilters object
+ * POST /api/reports: "Accept the ResponseFilters object
  * (or ids[]) in place of the single status." `stageId`/`search`/`from`/`to` kept as individual
- * top-level fields for ReportsView's existing personal-shell callers (predates this sprint);
- * `filters`/`ids` are the new Inbox-driven shape (B2.3: "the export IS the list: same rows, same
- * permission scoping"). Backend contract to confirm.
+ * top-level fields for ReportsView's existing personal-shell callers;
+ * `filters`/`ids` are the Inbox-driven shape ("the export IS the list: same rows, same
+ * permission scoping").
  */
 export interface CreateReportPayload {
   format: ReportFormat;
@@ -50,11 +49,10 @@ export interface ReportJob {
   status: ReportStatus;
   formId?: string;
   formTitle?: string;      // denormalized for display; falls back to "All Forms" when absent with no formId
-  /** Name snapshot of the stage this job was scoped to (design.md §11.2's "job row shows the stage
-   * name snapshot") — Backend contract to confirm. Uncertain until BE 0.4 ships. */
+  /** Name snapshot of the stage this job was scoped to ("job row shows the stage
+   * name snapshot"). Not built yet in the backend. */
   stage?: { id: string; name: string; colour: StageColorToken; category: StageCategory };
-  /** @deprecated superseded by `stage` above — kept only for a report job created before this
-   * sprint (OQ-2's deprecated-status alias). */
+  /** @deprecated superseded by `stage` above — kept only for an older report job. */
   responseStatus?: 'new' | 'in_progress' | 'completed';
   from?: string;            // ISO 8601
   to?: string;              // ISO 8601

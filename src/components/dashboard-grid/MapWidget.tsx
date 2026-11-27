@@ -93,7 +93,7 @@ declare global {
   }
 }
 
-// ── Google Maps (used when NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is set) ─────────────────────────────────────────────────
+// Google Maps (used when NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is set)
 // The key is a browser key: restrict it in the Google Cloud console to your site's domains and to the "Maps JavaScript API"
 // only. If Google refuses it (bad key, no billing, domain not allowed) the card quietly falls back to the OpenStreetMap map.
 const GOOGLE_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;

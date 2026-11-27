@@ -36,7 +36,7 @@ const STATUS_LABEL: Record<FormStatus, string> = {
 const YOUR_FORMS_LIMIT = 10; // fetched; the list shows the first YOUR_FORMS_SHOWN
 const YOUR_FORMS_SHOWN = 5;
 
-// Personal Home (A1.4). First run (no personal forms) is one illustrated call to action plus a
+// Personal Home. First run (no personal forms) is one illustrated call to action plus a
 // three-step path — not a wall of zeros. Once forms exist: the stat cards lead
 // (split graphs where the data supports one), then two columns — "Your forms" on the left, quick
 // actions and recent activity on the right. All cards share the Tinted surface (.bg-card).
@@ -73,8 +73,8 @@ export default function DashboardPage() {
   const effectiveCounts = analytics && {
     ...analytics,
     totalForms: formsLoaded ? formsData.total : analytics.totalForms,
-    // Can't exceed the corrected total — caps the same leaked-form case without needing to know
-    // exactly which of the (at most 5) previewed rows are published.
+    // Can't exceed the forms list's total: caps the count without needing to know
+    // which forms are published.
     publishedForms: formsLoaded ? Math.min(analytics.publishedForms, formsData.total) : analytics.publishedForms,
   };
 
@@ -91,13 +91,11 @@ export default function DashboardPage() {
   });
   const homeLoading = authLoading || formsLoading || (hasForms && (analyticsLoading || dashboard.loading));
 
-  // Real bug found and fixed: `analytics.totalForms` comes from GET /api/dashboard/analytics,
-  // a separate backend aggregate that has the identical workspace-leak bug formsService.getForms()
-  // was already fixed for (a brand-new user's "default workspace" — the one they just joined via
-  // invite accept — bleeds into personal counts). That endpoint returns no per-form breakdown to
-  // filter, but `formsData` (the already-filtered, already-fetched query right below) is ground
-  // truth for "how many personal forms actually exist" — trust it exclusively, so the page can't
-  // show "1 form" in the stat cards while "Your forms" and /forms both correctly say zero.
+  // `formsData` (the filtered, personal-only forms list) is ground truth for "how many personal
+  // forms actually exist". `analytics.totalForms` (GET /api/dashboard/analytics, a separate
+  // aggregate) once counted workspace-owned forms for a brand-new invited user, so `hasForms` never
+  // comes from it, and the page can't show "1 form" in the stat cards while "Your forms" and
+  // /forms both correctly say zero.
   //
   // Second bug found and fixed, same root cause: falling back to `analytics?.totalForms` while
   // `formsData` was still loading meant a page reload flashed the stat cards on — `analyticsLoading`

@@ -14,7 +14,7 @@ function clientShortcut(): string {
   return /mac|iphone|ipad/i.test(platform) ? '⌘K' : 'Ctrl K';
 }
 
-// Sprint 14 (requirements 2.1, task 3.9): the top-bar search entry - a field-shaped button with the
+// The top-bar search entry - a field-shaped button with the
 // platform's shortcut on md+, an icon button below 768px. Both open the same palette.
 export function SearchTrigger() {
   // The server render and hydration agree on "Ctrl K"; the platform is read on the client only.

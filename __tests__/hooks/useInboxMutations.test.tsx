@@ -1,6 +1,4 @@
 /**
- * __tests__/hooks/useInboxMutations.test.tsx
- * sprint-12-inbox-collaboration, requirements.md §7.5 (5.1), design.md §7/§21, task 2.3.
  * Property: undo restores the exact previous state; failed ids never reported as succeeded
  * (the latter is also covered directly in responses.service.test.ts's `idsRemainingSelected`
  * property — this file exercises the hook's own optimistic-patch + rollback + undo wiring).
@@ -178,7 +176,7 @@ describe('useInboxMutations — bulk', () => {
   });
 });
 
-// design.md §21 property: "undo of a bulk action restores the exact previous state". Exercised
+// Property: "undo of a bulk action restores the exact previous state". Exercised
 // here at the pure-data level the hook's `undo()` builds its request from — the request always
 // carries exactly the `previous` entries returned by the original bulk call, for exactly those
 // ids, regardless of how many/which ids were involved.

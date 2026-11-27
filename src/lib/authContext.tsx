@@ -20,8 +20,8 @@ interface User {
   // getMeSettlingOnboarding() below. An explicit `=== false` check everywhere this is read treats
   // a missing/undefined field as "already onboarded," which is also the correct fallback for any
   // account that predates this field entirely. Deliberately on this thin AuthContext User (not
-  // settings' UserProfile) since it gates app-wide routing, not a page-local concern — see the
-  // reasoning design.md §2 already applied to avatarUrl.
+  // settings' UserProfile) since it gates app-wide routing, not a page-local concern — the same
+  // reasoning as for avatarUrl.
   onboardingCompleted?: boolean;
   /** The account's saved colour theme; applied to this device after sign-in (see the effect in AuthProvider). */
   theme?: ThemePreference;
@@ -182,7 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.replace(status === 403 ? '/login?reason=suspended' : '/login');
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- initAuth keeps one identity, so the mount effect below runs it once
   }, []);
 
   useEffect(() => {

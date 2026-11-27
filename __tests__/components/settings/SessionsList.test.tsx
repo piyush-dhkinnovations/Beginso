@@ -1,9 +1,6 @@
 /**
- * __tests__/components/settings/SessionsList.test.tsx
- * Feature: sprint-6-settings
  * Tests: SessionsList — renders rows, current session never shows Revoke, empty-beyond-current
  * message, revoke removes the row after confirmation, loading/error states
- * Requirements: 9.1-9.6
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

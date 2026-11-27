@@ -1,8 +1,3 @@
-/**
- * __tests__/app/dev/ui/frame/page.test.tsx
- * Feature: sprint-7-foundation
- */
-
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // See __tests__/app/dev/ui/page.test.tsx — notFound() must throw here too, matching real

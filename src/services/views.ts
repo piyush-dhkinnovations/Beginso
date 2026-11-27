@@ -4,8 +4,8 @@ import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import type { SavedView, SavedViewPayload } from '@/types/savedView';
 
 /**
- * BE 0.4 — not yet built (design.md §11.2). `views` root already added to the BFF's
- * `ALLOWED_API_ROOTS` (task 1.9) — the named 404 trap this file would otherwise hit.
+ * `views` root is in the BFF's
+ * `ALLOWED_API_ROOTS` — the named 404 trap this file would otherwise hit.
  */
 export const viewsService = {
   list: (scope: string, formId?: string): Promise<SavedView[]> =>

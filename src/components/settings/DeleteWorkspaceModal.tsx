@@ -34,7 +34,7 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
   const [sharedWorkspaces, setSharedWorkspaces] = useState<{ id: string; name: string; otherMembers: number }[]>([]);
 
   // Shares the cache ProfileTab/SecurityTab already populate — needed for signInWithEmailAndPassword
-  // below, which requires an email even though this modal is reached from the Workspace tab.
+  // below, which requires an email.
   const { data: profile } = useQuery({
     queryKey: settingsKeys.profile(),
     queryFn: settingsService.getProfile,
@@ -75,9 +75,9 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
     }
   }, [isOpen]);
 
-  // Correctness Property 3: never enabled on a partial/incorrect match — plain strict equality
+  // Never enabled on a partial/incorrect match — plain strict equality
   // already rejects same-length near-misses, case variations, and whitespace-padded variants,
-  // matching DeleteFormModal's existing type-to-confirm behavior (Requirement 14.4).
+  // matching DeleteFormModal's existing type-to-confirm behavior.
   const canAttemptDelete = password.length > 0 && typedName === workspaceName;
 
   // One action does both steps, same convention ChangePasswordModal already established: prove
@@ -121,7 +121,7 @@ export function DeleteWorkspaceModal({ isOpen, onClose, workspaceName }: DeleteW
     }
 
     // Workspace and its owning session are gone — hard client-side logout/redirect, no in-app
-    // state should assume the workspace still exists (Requirement 10.5).
+    // state should assume the workspace still exists.
     logout();
   }
 

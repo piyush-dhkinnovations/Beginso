@@ -44,7 +44,7 @@ export function CustomBadge() {
 
 const six = (v: string) => (v.length === 4 ? `#${v[1]}${v[1]}${v[2]}${v[2]}${v[3]}${v[3]}` : v);
 
-// ── Colours ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+// Colours
 
 /** One colour as a box: a big swatch that opens the picker, its name with a reset, and the hex underneath (empty = the default). */
 export function ColourRow({ label, value, fallback, onPick, onReset }: { label: string; value?: string; fallback: string; onPick: (c: string) => void; onReset: () => void }) {
@@ -93,7 +93,7 @@ export function ColourRow({ label, value, fallback, onPick, onReset }: { label: 
   );
 }
 
-// ── Readability ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// Readability
 
 interface Check {
   id: string;
@@ -251,7 +251,7 @@ export function FormColours({ branding, setTheme, onBrand }: { branding: FormBra
   );
 }
 
-// ── Fields look ─────────────────────────────────────────────────────────────────────────────────────────────────────
+// Fields look
 
 function LookTile({ label, chosen, onClick, disabled, children }: { label: string; chosen: boolean; onClick: () => void; disabled?: boolean; children: ReactNode }) {
   return (
@@ -406,7 +406,7 @@ export function PanelSide({ branding, layout, setTheme }: { branding: FormBrandi
   );
 }
 
-// ── Exact values ────────────────────────────────────────────────────────────────────────────────────────────────────
+// Exact values
 
 interface SliderProps {
   label: string;
@@ -494,7 +494,7 @@ export function FineTune({ branding, layout, setTheme }: { branding: FormBrandin
   );
 }
 
-// ── Buttons and details ─────────────────────────────────────────────────────────────────────────────────────────────
+// Buttons and details
 
 const BUTTON_SIZES: { value: ButtonSize; label: string; h: number; px: number; fs: number }[] = [
   { value: 'small', label: 'Small', h: 22, px: 9, fs: 10 },
@@ -638,7 +638,7 @@ export function ButtonsAndDetails({ branding, layout, setTheme }: { branding: Fo
   );
 }
 
-// ── The page behind the form, and the cover's height ────────────────────────────────────────────────────────────────
+// The page behind the form, and the cover's height
 
 /** A hex colour mixed toward the pale page grey, as the hex a default gradient end shows. */
 function paleHex(hex: string, toward = '#F7F8FB', share = 0.65): string {

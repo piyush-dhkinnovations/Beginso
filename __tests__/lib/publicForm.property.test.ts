@@ -1,7 +1,5 @@
 /**
- * Feature: sprint-3-public-form
  * Property-based tests (fast-check) for the pure logic/validation functions.
- * Requirements: 5.1, 5.3, 5.5, 4.31, 3.4, 6.4
  */
 
 import { describe, it, expect } from 'vitest';
@@ -11,7 +9,7 @@ import { buildPublicFormSchema } from '@/lib/schemas/publicFormSchema';
 import { validateFile } from '@/lib/validateFile';
 import type { FormField } from '@/types/form';
 
-// ─── Arbitraries ────────────────────────────────────────────────────────────────
+// Arbitraries
 
 const fieldIdArb = fc.uuid();
 
@@ -39,7 +37,7 @@ const formFieldArb = fc.record({
   helpText: fc.option(fc.string(), { nil: undefined }),
 });
 
-// ─── Property 1: Hidden Fields Are Never Submitted ───────────────────────────────
+// Property 1: Hidden Fields Are Never Submitted
 
 describe('Property 1: Hidden Fields Are Never Submitted', () => {
   it('hidden fields do not appear in buildAnswers() output', () => {
@@ -59,7 +57,7 @@ describe('Property 1: Hidden Fields Are Never Submitted', () => {
   });
 });
 
-// ─── Property 2: Hidden Fields Are Never Required ────────────────────────────────
+// Property 2: Hidden Fields Are Never Required
 
 describe('Property 2: Hidden Fields Are Never Required', () => {
   it('buildPublicFormSchema does not require hidden fields', () => {
@@ -77,7 +75,7 @@ describe('Property 2: Hidden Fields Are Never Required', () => {
   });
 });
 
-// ─── Property 3: Logic Rule Evaluation Is Deterministic ──────────────────────────
+// Property 3: Logic Rule Evaluation Is Deterministic
 
 describe('Property 3: Logic Rule Evaluation Is Deterministic', () => {
   it('evaluateLogicRules returns the same result on two consecutive calls', () => {
@@ -99,7 +97,7 @@ describe('Property 3: Logic Rule Evaluation Is Deterministic', () => {
   });
 });
 
-// ─── Property 4: File Size Rejection Is Consistent ───────────────────────────────
+// Property 4: File Size Rejection Is Consistent
 
 describe('Property 4: File Size Rejection Is Consistent', () => {
   it('validateFile rejects any file > 25 MB regardless of type', () => {
@@ -120,7 +118,7 @@ describe('Property 4: File Size Rejection Is Consistent', () => {
   });
 });
 
-// ─── Property 5: Page Validation Blocks Navigation ───────────────────────────────
+// Property 5: Page Validation Blocks Navigation
 
 describe('Property 5: Page Validation Blocks Navigation', () => {
   // Tests the schema-level contract (Zod safeParse with empty required fields) — the
@@ -142,7 +140,7 @@ describe('Property 5: Page Validation Blocks Navigation', () => {
   });
 });
 
-// ─── Property 6: Multi-Page Submission Includes All Pages ────────────────────────
+// Property 6: Multi-Page Submission Includes All Pages
 
 describe('Property 6: Multi-Page Submission Includes All Pages', () => {
   it('buildAnswers includes fields from all pages that have at least one field', () => {

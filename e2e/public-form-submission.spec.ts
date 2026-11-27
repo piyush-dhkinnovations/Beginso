@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Requirement 6 (submission). Uses the mock server's slug-encoded scenarios
+ * Submission. Uses the mock server's slug-encoded scenarios
  * (see e2e/mockServer.ts) — mock-submit-422 / -429 / -500 change only the
  * /submit response; the GET schema is identical to mock-valid in all cases.
  */

@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react";
 import { bx } from "@/lib/utils";
 
-// Sprint 12 (inbox-collaboration), task 2.1: an optional action slot for reversible mutations
+// An optional action slot for reversible mutations
 // (bulk Undo, saved-view delete Undo). `label`/`onClick` only — never a raw JSX slot, so every
 // toast stays a plain, accessible role="status" text region regardless of caller.
 export interface ToastAction {
@@ -21,9 +21,9 @@ export interface ToastMessage {
 }
 
 interface ToastContextType {
-  /** Existing 3-argument callers (24+ sites) are unchanged — `action` is a new, optional 4th
+  /** `action` is an optional 4th
    * argument. When an action is present and no explicit `duration` was passed, the toast stays
-   * up at least 8s (requirements.md §11: "does not disappear before a screen-reader user can
+   * up at least 8s (so it does not disappear before a screen-reader user can
    * act") rather than the normal 4s default. */
   toast: (
     message: string,
@@ -58,9 +58,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      {/* beginso-ui.css classes — see src/styles/beginso-ui.css §13 FEEDBACK ("Toast").
-          Migrated in place (sprint-7-foundation) rather than duplicated under
-          components/ui/ — see that folder's Toast.ts for the re-export. */}
+      {/* beginso-ui.css classes — see src/styles/beginso-ui.css §13 FEEDBACK ("Toast"). */}
       <div role="status" aria-live="polite" className="bg-toast-region pointer-events-none">
         {toasts.map((t) => (
           <ToastItem key={t.id} toast={t} onClose={() => removeToast(t.id)} />

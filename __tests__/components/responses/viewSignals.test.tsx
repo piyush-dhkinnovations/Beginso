@@ -21,7 +21,6 @@ import { CalendarItemRow } from '@/components/responses/ResponsesCalendar';
 import type { IResponse } from '@/types/response';
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.4 (4.1), design.md §6/§21 (task 3.5).
  * "Same signals in every view" — one fixture rendered through Table, Board and Calendar
  * (compact density, `CalendarItemRow`, the exact component the agenda list and day-overflow modal
  * both render) must carry every signal in every view. This test is meant to fail the moment a
@@ -56,7 +55,7 @@ function expectAllSignals(container: HTMLElement) {
   // Note / attachment counts
   expect(within(container).getByLabelText(/2 notes?/)).toBeInTheDocument();
   expect(within(container).getByLabelText(/1 attachments?/)).toBeInTheDocument();
-  // Unread — rendered textually somewhere, never colour-only (requirements.md §11).
+  // Unread — rendered textually somewhere, never colour-only.
   expect(within(container).getAllByText(/^Unread\.?$/).length).toBeGreaterThan(0);
 }
 

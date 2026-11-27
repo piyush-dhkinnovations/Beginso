@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Sprint 12 (inbox-collaboration), task 5.2. Same "client-side hint; server authoritative"
+// Same "client-side hint; server authoritative"
 // precedent as stageSchema/tagSchema (lib/schemas/{stage,tag}.ts) — case-insensitive uniqueness,
 // if the backend enforces it, isn't re-implemented here without the live criteria list to check
 // against.

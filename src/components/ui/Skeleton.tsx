@@ -15,7 +15,7 @@ const VARIANT_CLASS: Record<NonNullable<SkeletonProps["variant"]>, string> = {
 };
 
 // beginso-ui.css classes — see src/styles/beginso-ui.css §13 FEEDBACK ("Skeleton"). Generic — no
-// sprint-specific content (requirements.md 2.2/12); width/height are the only per-use knobs.
+// screen-specific content; width/height are the only per-use knobs.
 export function Skeleton({ variant = "text", width, height, className, style, ...props }: SkeletonProps) {
   return (
     <span

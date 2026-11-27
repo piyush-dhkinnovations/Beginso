@@ -1,8 +1,5 @@
 /**
- * __tests__/Footer.test.tsx
- * Feature: sprint-1-frontend-auth
  * Tests: Footer — copyright year is current year, three link columns present
- * Requirements: 0.25, 0.26
  */
 
 import { describe, it, expect, vi } from 'vitest';

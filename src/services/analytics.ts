@@ -23,7 +23,7 @@ interface RawOverviewEnvelope {
     completed: number;
     in_progress: number;
     new: number;
-    // Sprint 14 (BE 0.2, Backend contract to confirm): views-based, nullable. Read defensively -
+    // Views-based, nullable. Read defensively -
     // a missing field stays undefined, never 0.
     completionRate?: number | null;
     reviewedRate?: number | null;
@@ -35,12 +35,9 @@ interface RawOverviewEnvelope {
   };
 }
 
-// Sprint 12 (inbox-collaboration), requirements.md §7.3 #3 / design.md §2: the backend's overview
-// response hasn't itself changed shape this sprint (it still reports the fixed three counts, not
-// per-stage rows) — only the frontend's field name changes, from `statusCounts` to
-// `categoryCounts`, to stop implying these are the removed `status` union rather than the stable
-// `category` grouping every custom stage still falls back to.
-// Sprint 14 (OQ-3): a rate is a finite number or null - a missing/invalid value is "not enough
+// The three fixed counts are called `categoryCounts` here, not `statusCounts`: they are the stable
+// `category` grouping every custom stage falls back to, not the removed `status` union.
+// A rate is a finite number or null - a missing/invalid value is "not enough
 // data", never a fabricated 0.
 function toRate(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
@@ -149,14 +146,9 @@ function toFormsSummaryResult(raw: RawFormsSummaryEnvelope): AnalyticsFormsSumma
   };
 }
 
-// Bug fix, Sprint 12 close-out: none of these four calls ever sent a workspace header at all —
-// the backend's `getVerifiedWorkspaceId` then fell through its normal header→query→body→"caller's
-// default workspace" chain and silently resolved to whatever workspace the caller happens to
-// belong to, so the Personal analytics page showed that workspace's forms instead of nothing
-// (same root cause as the Inbox personal-shell leak fixed earlier this sprint). Explicit
-// 'personal' is unconditionally correct here — no /w/[slug]/analytics route exists yet, same
-// reasoning `ReportsView`'s own `formsService.getForms(..., { type: 'personal' })` already
-// established for this page family.
+// Every call names its context (`scope`, 'personal' by default). With no workspace header the
+// backend's `getVerifiedWorkspaceId` falls through header, query and body to the caller's default
+// workspace, so the Personal analytics page showed that workspace's forms instead of nothing.
 export const analyticsService = {
   getOverview: (params: GetAnalyticsParams, scope = 'personal'): Promise<AnalyticsOverview> =>
     axiosInstance
@@ -173,7 +165,7 @@ export const analyticsService = {
       .get<RawQuestionsEnvelope>('/api/analytics/questions', { params, headers: workspaceHeaders(scope) })
       .then((r) => toQuestionBreakdowns(r.data)),
 
-  // Sprint 13+: `scope` is 'personal' (default, the old behaviour) or a workspace slug for the Insights page.
+  // `scope` is 'personal' (default) or a workspace slug for the Insights page.
   getFormsSummary: (params: { from?: string; to?: string; page?: number; limit?: number }, scope = 'personal'): Promise<AnalyticsFormsSummaryResult> =>
     axiosInstance
       .get<RawFormsSummaryEnvelope>('/api/analytics/forms', { params, headers: workspaceHeaders(scope) })

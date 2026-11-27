@@ -39,7 +39,7 @@ export function resolveView(
 /** Below 768px only the List fits, whatever was chosen. */
 export const effectiveLayout = (layout: ResponseLayout, narrow: boolean): ResponseLayout => (narrow ? 'list' : layout);
 
-// ─── Remembered on this device, per form ─────────────────────────────────────
+// Remembered on this device, per form
 
 const storageKey = (formId: string) => `beginso:response-view:${formId}`;
 
@@ -62,7 +62,7 @@ export function rememberView(formId: string | undefined, view: ResponseViewSetti
   }
 }
 
-// ─── Answers ────────────────────────────────────────────────────────────────
+// Answers
 
 export const isEmptyItem = (item: AnswerItem): boolean => {
   if (item.files.length > 0) return false;

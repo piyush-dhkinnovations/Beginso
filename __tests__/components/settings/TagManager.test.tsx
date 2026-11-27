@@ -1,9 +1,7 @@
 /**
- * __tests__/components/settings/TagManager.test.tsx
- * sprint-12-inbox-collaboration, requirements.md §7.7, task 2.5.
- * "Unsaved edit survives a tab switch" (tasks.md 2.5's Done line): TagManager is a real RHF form,
+ * "Unsaved edit survives a tab switch": TagManager is a real RHF form,
  * so it must report dirty state up (`onDirtyChange`) the same way ProfileTab/WorkspaceTab do —
- * that's what lets SettingsPage's `visitedTabs`/CSS-`hidden` mechanism (already covered by
+ * that's what lets SettingsView's `visitedTabs`/CSS-`hidden` mechanism (already covered by
  * `unsavedTabState.property.test.tsx`'s generic property) actually preserve it for this tab.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';

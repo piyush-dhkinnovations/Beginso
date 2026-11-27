@@ -26,7 +26,7 @@ export interface ContextSwitcherProps {
   /** Second line under the current name, e.g. "Owner · 3 members" or "Only you". */
   currentMeta?: string;
   workspaces?: ContextSwitcherWorkspace[];
-  /** When omitted, renders Sprint 7's original inert trigger (no dropdown) — preserves the
+  /** When omitted, renders an inert trigger (no dropdown) — preserves the
    * existing "safe with no props" behavior for any caller not yet ready to wire real data. */
   onSelect?: (target: ContextSwitcherTarget) => void;
   /** Called when the user clicks "View all workspaces" at the bottom of the dropdown. */
@@ -59,11 +59,10 @@ function ContextAvatar({ logo, Icon, size }: { logo?: string | null; Icon: typeo
   );
 }
 
-// Sprint 7 built this as an inert shell — a static trigger with no dropdown wired to real data.
-// Sprint 8 Day 2 adds the real switching logic: reuses ui/Menu wholesale (not just its CSS
+// Reuses ui/Menu wholesale (not just its CSS
 // classes) for keyboard nav (arrow keys, Enter, Escape), outside-click-close, and
 // focus-restore-to-trigger, rather than reimplementing all three a second time
-// (requirements.md §7.2, §11) — Menu already does exactly this for row-action menus.
+// — Menu already does exactly this for row-action menus.
 export function ContextSwitcher({
   currentLabel = "Personal",
   currentMeta,

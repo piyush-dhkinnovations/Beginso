@@ -32,9 +32,9 @@ function canManageView(view: SavedView, currentUserId: string, role: Role | unde
 }
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.6 (6.1), design.md §15. "My views"/"Team
+ * "My views"/"Team
  * views" in separate groups (native `<optgroup>` — no dependency needed for a grouped list).
- * Rename/delete restricted to the view's owner or Admin+ (design.md §11.3); Undo on delete is the
+ * Rename/delete restricted to the view's owner or Admin+; Undo on delete is the
  * caller's job (`onDelete` — matches `useInboxMutations.bulk`'s own toast-with-Undo pattern, kept
  * out of this presentational component). A view referencing a deleted stage/tag/member shows the
  * inline "N filter(s) no longer exist" notice rather than erroring.

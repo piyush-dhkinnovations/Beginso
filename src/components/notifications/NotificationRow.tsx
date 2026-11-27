@@ -5,9 +5,9 @@ import { formatRelativeTime } from '@/lib/formatters';
 import { cn } from '@/lib/utils';
 import type { AppNotification } from '@/types/notification';
 
-// Sprint 12 (inbox-collaboration), requirements.md §7.12: an unknown `type` falls back to a generic
-// row - a lookup with a `Bell` fallback rather than a Record a new value could no longer fully key.
-// Sprint 14 (B9.1): adds `response_edited`. Shared by the bell dropdown and the Notifications page.
+// An unknown `type` falls back to a generic
+// row - a lookup with a `Bell` fallback rather than a Record a new value could not fully key.
+// Shared by the bell dropdown and the Notifications page.
 const TYPE_ICON: Partial<Record<string, typeof Bell>> = {
   welcome: PartyPopper,
   password_reset: KeyRound,

@@ -18,7 +18,7 @@ import { useMyNotificationPreference } from '@/hooks/useMyNotificationPreference
 import type { MemberListItem } from '@/types/team';
 import type { NotificationPreference } from '../../../shared/types';
 
-// Sprint 14 (requirements 3.5, OQ-2 decided: membership-level, no per-form override): one plain line
+// One plain line
 // per value says what is sent, and the default is stated outright. Every email carries no answers.
 const ROWS: { key: keyof NotificationPreferences; label: string; help?: string }[] = [
   {
@@ -36,7 +36,7 @@ const CHOICES: { value: NotificationPreference; label: string; help: string }[] 
   { value: 'none', label: 'None', help: 'No response emails.' },
 ];
 
-// Sprint 14 (OQ-2, task 3.17): the member's own Membership.notificationPreference. Membership-level,
+// The member's own Membership.notificationPreference. Membership-level,
 // no per-form override. Optimistic on the shared members cache; a failure rolls back and toasts.
 function ResponseEmailChoice({ scope }: { scope: string }) {
   const { toast } = useToast();
@@ -100,8 +100,8 @@ function ResponseEmailChoice({ scope }: { scope: string }) {
   );
 }
 
-// Preferences live on the workspace document (confirmed live 18 Aug 2026), so this reads/writes
-// through settingsKeys.workspace() — the same cache WorkspaceTab/BrandingTab already share, not a
+// Preferences live on the workspace document, so this reads/writes
+// through settingsKeys.workspace() — the same cache DataTab uses, not a
 // dedicated notifications query.
 export function NotificationsTab({ scope }: { scope?: string }) {
   // Inside a workspace this tab is the member's own preference; account settings keeps the toggles.
@@ -118,7 +118,7 @@ function AccountNotifications() {
     queryFn: () => settingsService.getWorkspace(),
   });
 
-  // Correctness Property 2: after any sequence of flips (including failed ones), the displayed
+  // After any sequence of flips (including failed ones), the displayed
   // state must always equal the last server-confirmed state, never a stranded optimistic value.
   // onMutate snapshots + optimistically updates; onError rolls back to that exact snapshot;
   // onSettled re-syncs from the server regardless of outcome.

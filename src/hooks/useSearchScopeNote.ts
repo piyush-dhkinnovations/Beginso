@@ -6,7 +6,7 @@ import { workspaceKeys } from '@/lib/queryKeys';
 
 export const RESPONSES_SCOPE_NOTE = "Searching reference and respondent. Answer text isn't searchable yet.";
 
-/** Sprint 14 (requirements 2.4): the scope is stated in the UI - "Searching Acme Corp" in a workspace,
+/** The scope is stated in the UI - "Searching Acme Corp" in a workspace,
  * the personal sentence otherwise. Prefers the label the server returned; falls back to the cached
  * workspace list so the note is right before the first response arrives. */
 export function useSearchScopeNote(scope: string, serverLabel?: string): string {

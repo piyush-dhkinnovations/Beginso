@@ -1,8 +1,5 @@
 /**
- * __tests__/components/analytics/AnalyticsStatCards.test.tsx
- * Feature: sprint-5-analytics-reports
- * Tests: AnalyticsStatCards — 5-card grid (the four counts plus Sprint 14's Completion rate), skeleton, error+retry, zero-muted value
- * Requirements: 2.1-2.4
+ * Tests: AnalyticsStatCards — 5-card grid (the four counts plus Completion rate), skeleton, error+retry, zero-muted value
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -26,7 +23,7 @@ describe('AnalyticsStatCards', () => {
     expect(screen.getByText('Completion rate')).toBeInTheDocument();
   });
 
-  // Sprint 14 (OQ-3): no counted views -> "—" with its explanation, never 0%.
+  // No counted views -> "—" with its explanation, never 0%.
   it('shows "—" with "Not enough views yet" when the completion rate is null, and a percentage when it is not', () => {
     const { rerender } = render(<AnalyticsStatCards overview={mockAnalyticsOverview({ completionRate: null, totalResponses: 128, views: 20 })} isLoading={false} />);
     // 128 responses but only 20 recorded views: the dash says WHY instead of claiming "not enough views".

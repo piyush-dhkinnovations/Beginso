@@ -15,7 +15,7 @@ import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { useSearchParams } from 'next/navigation';
 import { sanitizeNextParam } from '@/lib/authRoutes';
 
-// useSearchParams() (?next=, task 3.5) requires a Suspense boundary during prerender.
+// useSearchParams() (?next=) requires a Suspense boundary during prerender.
 export default function VerifyEmailPage() {
   return (
     <Suspense>
@@ -34,7 +34,7 @@ function VerifyEmailPageInner() {
   const otpRefs = useRef<Array<HTMLInputElement | null>>([]);
   const { login } = useAuth();
   const { toast } = useToast();
-  // Requirements §7.5.1 — carried here by SignupForm's ?next= forward when signup started from
+  // Carried here by SignupForm's ?next= forward when signup started from
   // the Invite Accept page.
   const nextParam = sanitizeNextParam(useSearchParams().get('next'));
 

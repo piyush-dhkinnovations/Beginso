@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { passwordSchema } from './signupSchema'; // reused, not redefined — see design.md §13
+import { passwordSchema } from './signupSchema'; // reused, not redefined
 
 export const profileNameSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.').max(50, 'Name must be 50 characters or fewer.'),

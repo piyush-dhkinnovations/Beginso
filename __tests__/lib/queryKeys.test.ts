@@ -1,7 +1,5 @@
 /**
- * __tests__/lib/queryKeys.test.ts
- * Feature: sprint-8-workspaces-context, requirements.md §7.10, §16 — the query-key
- * namespacing regression test named in design.md §21.
+ * The query-key namespacing regression test.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -43,7 +41,7 @@ describe('workspaceKeys', () => {
   });
 });
 
-// Sprint 9 (team-permissions), design.md §10/§21 — proves teamKeys is workspace-namespaced from
+// Proves teamKeys is workspace-namespaced from
 // creation, matching workspaceKeys.forms()'s own regression test above: switching workspaces
 // must never serve another workspace's cached member/invitation list.
 describe('teamKeys', () => {
@@ -79,7 +77,6 @@ describe('invitationKeys / formAccessKeys / sharedKeys', () => {
   });
 });
 
-// Sprint 10 (events-migration), design.md §10 / tasks.md 1.3.
 describe('activityKeys / auditKeys / formEventKeys', () => {
   it('activityKeys.list() differs across workspaces', () => {
     expect(activityKeys.list('a')).not.toEqual(activityKeys.list('b'));
@@ -104,8 +101,7 @@ describe('activityKeys / auditKeys / formEventKeys', () => {
   });
 });
 
-// Sprint 12 (inbox-collaboration), design.md §10, task 1.4 — resolves OQ-1's frontend half.
-// responseKeys/stageKeys gain a scope segment; two scopes must never share a key.
+// responseKeys/stageKeys carry a scope segment; two scopes must never share a key.
 describe('responseKeys / stageKeys — scope-namespaced (Sprint 12)', () => {
   it('responseKeys.all() differs across scopes', () => {
     expect(responseKeys.all('personal')).not.toEqual(responseKeys.all('acme'));

@@ -18,8 +18,8 @@ export interface FormActivityDrawerProps {
   onClose: () => void;
 }
 
-// requirements.md §7.5's "View all" (shape left to the implementer; design.md §6 picks ui/Drawer).
-// Fetches only while open. The events contract returns a bare array with no total, so paging is
+// The "View all" drawer.
+// Fetches only while open. The events response has no total, so paging is
 // Previous/Next, and Next is offered only when a full page came back.
 export function FormActivityDrawer({ formId, isOpen, onClose }: FormActivityDrawerProps) {
   const [page, setPage] = useState(1);

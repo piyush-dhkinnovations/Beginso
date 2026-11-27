@@ -1,10 +1,7 @@
 /**
- * __tests__/components/reports/ReportsView.test.tsx
- * Feature: sprint-5-analytics-reports
  * Tests: ReportsView — staged filters don't fetch, form pre-select from ?formId=, Generate
  * triggers the mutation with the staged payload, optimistic list insert, error toast,
  * both cards disabled while either is submitting
- * Requirements: 9, 10
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -125,7 +122,7 @@ describe('ReportsView', () => {
   });
 
   it('enriches the optimistic job with the submitted formId/dates when the POST response omits them (S5-04)', async () => {
-    // Real backend gap: the create response has been observed not to echo back every scope
+    // The create response is not relied on to echo back every scope
     // field — the optimistic row must still show the correct form immediately, from what was
     // actually submitted, not wait for the next poll to self-correct.
     mockCreateReport.mockResolvedValue({ _id: 'report-new', format: 'csv', status: 'queued', createdAt: '2026-08-14T00:00:00.000Z' });

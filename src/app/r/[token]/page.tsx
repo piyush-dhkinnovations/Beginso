@@ -15,7 +15,7 @@ import { respondentService } from '@/services/respondent';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { SubmissionView } from '@/components/respondent/SubmissionView';
 
-// Sprint 13 (A5.3 / A5.4). Four link states with their own screens: valid, expired, used, invalid. The page says
+// Four link states with their own screens: valid, expired, used, invalid. The page says
 // what the link allows and when it expires. An account is OFFERED, never forced, and only ever created from here.
 export default function RespondLinkPage() {
   const params = useParams<{ token: string }>();

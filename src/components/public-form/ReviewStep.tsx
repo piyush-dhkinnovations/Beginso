@@ -8,7 +8,7 @@ import type { FieldValue } from '@/types/publicForm';
 import { InlineFieldEdit } from './InlineFieldEdit';
 import { addressLines, currencyOf, formatCurrency, formatDateTime, formatTime12, isDrawnSignature } from '@/lib/fieldDisplay';
 
-// Sprint 13 (D1.2 / D1.2a), wireframe 36 "Review Before Submit". Every answer from every page on one
+// Wireframe 36 "Review Before Submit". Every answer from every page on one
 // flat screen: one card per page (card header = page title), each row the field label (small) over
 // the answer (strong) with an Edit button. Edit swaps just that row for the real input in place
 // (InlineFieldEdit). Pure presentation over the shell's form state — it holds no values and runs no
@@ -40,7 +40,7 @@ export interface ReviewStepProps {
   labels?: { back: string; submit: string };
   /** Preview mode: shows the "nothing was submitted" note instead of the buttons after Submit. */
   previewSubmitted?: boolean;
-  /** Extra content above the buttons — the Mode 2 email step / Mode 3 "responding as" line live here. */
+  /** Extra content above the buttons (the preview's test-submission controls). */
   extra?: ReactNode;
 }
 

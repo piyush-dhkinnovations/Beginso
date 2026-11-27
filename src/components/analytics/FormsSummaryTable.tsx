@@ -39,7 +39,7 @@ interface FormsSummaryTableProps {
   workspaceSlug?: string;
 }
 
-// "Form performance": one row per form — tinted icon (colour from its title), status, responses,
+// "Form performance": one row per form — its logo or icon, status, responses,
 // change vs the previous period, completion as a number, and a ⋮ menu. The title links
 // to that form's own analytics. Search filters the rows already loaded (the summary fetch covers
 // up to 100 forms per page).
@@ -174,7 +174,7 @@ export function FormsSummaryTable({
     ...(anyCompletion ? [{
       key: 'completion',
       header: 'Completion Rate',
-      // Sprint 14 (OQ-3): null = no counted views - "—" with a tooltip, never 0%.
+      // Null = no counted views - "—" with a tooltip, never 0%.
       render: (form: AnalyticsFormSummary) =>
         form.completionRate === null || form.completionRate === undefined ? (
           <Tooltip content={completionRateUnavailableReason(form.totalResponses, form.views)}>

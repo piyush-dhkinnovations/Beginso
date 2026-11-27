@@ -17,14 +17,12 @@ export interface CreateWorkspacePayload {
 // already applies server-side.
 //
 // create() corrected 10 Sep 2026: previously assumed POST /api/workspaces returns the bare
-// Workspace object ("confirmed... unchanged since Sprint 7" — that claim was never actually
+// Workspace object ("confirmed... unchanged" — that claim was never actually
 // verified against a live response, only inferred from the contract doc's prose, which doesn't
 // spell out the JSON shape at all). Live evidence: CreateWorkspaceModal's post-create
 // `router.push('/w/${workspace.slug}')` landed on `/w/undefined` — proof the real response is
 // enveloped like every other workspace endpoint, not bare. Unwrapped the same way as get(), same
 // 'workspace' key.
-// unwrapEnvelope() itself moved to src/lib/apiEnvelope.ts (Sprint 9, design.md §12) so the new
-// team/invitations/formAccess/shared services share one implementation instead of four copies.
 
 export const workspacesService = {
   list: (): Promise<WorkspaceListItem[]> =>
@@ -39,7 +37,6 @@ export const workspacesService = {
       .then((r) => unwrapEnvelope<Workspace>(r.data, 'workspace')),
 
   // DELETE /api/workspaces/:slug — deletes the workspace (not the account). Owner-only.
-  // Backend endpoint is needed — see docs/backend-contract/api-reference.md §"Per-workspace delete".
   delete: (slug: string): Promise<void> =>
     axiosInstance.delete(`/api/workspaces/${slug}`).then(() => undefined),
 };

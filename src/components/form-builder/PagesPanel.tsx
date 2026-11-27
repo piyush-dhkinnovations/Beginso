@@ -17,7 +17,7 @@ export interface PagesPanelProps {
 const TILE_CLASS =
   'w-11 h-14 rounded-lg border shrink-0 flex items-center justify-center relative transition-colors';
 
-// ─── Single page tile — click to switch, hover to delete ─────────────────────
+// Single page tile — click to switch, hover to delete
 // Each page's own title/description is edited from the canvas header (visible
 // once that page is active), not from this tile — the tile is pure navigation.
 
@@ -80,7 +80,7 @@ function PageTile({
   );
 }
 
-// ─── Trailing "add page" tile — same shape/size, appended right after the ────
+// Trailing "add page" tile — same shape/size, appended right after the
 // last page tile in the same vertical stack (not a separate footer button).
 
 function AddPageTile({ onAdd }: { onAdd: () => void }) {
@@ -97,7 +97,7 @@ function AddPageTile({ onAdd }: { onAdd: () => void }) {
   );
 }
 
-// ─── Main panel ─────────────────────────────────────────────────────────────
+// Main panel
 // Its own separate panel, sitting between the Field Types toolbox and the
 // canvas — always visible in the Build tab. One page is always active; its
 // fields are the only ones rendered on the canvas at a time.
@@ -133,8 +133,8 @@ export function PagesPanel({
   );
 }
 
-// ─── Compact page switcher (< 1024px) ───────────────────────────────────────
-// Sprint 13 (CF2.12, requirements.md 4.4). Below 1024px the Pages panel is gone, but editing the
+// Compact page switcher (< 1024px)
+// Below 1024px the Pages panel is gone, but editing the
 // fields WITHIN each page must still work, so pages stay selectable, and a "+" adds one. Renaming (on the
 // canvas header), deleting and rearranging pages stay desktop-only, and are said so rather than silently
 // missing.

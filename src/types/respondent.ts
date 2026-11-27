@@ -1,7 +1,6 @@
 import type { FormMark } from '@/types/form';
 /**
- * Sprint 13 (A5.1–A5.4, design.md §11.2/§13). Backend contract to confirm (BE 0.10, 0.12) — every
- * shape here is a proposal. Respondent payloads never carry stage names, tags, assignees, notes or
+ * Respondent payloads never carry stage names, tags, assignees, notes or
  * scores; the status is a fixed respondent-safe set derived from stage category.
  */
 export type RespondentStatus = 'Received' | 'In review' | 'Completed' | 'Edited';

@@ -10,16 +10,16 @@ import type { ResponseFilters } from '@/types/response';
 const PAGE_LIMIT = 50;
 
 export interface UseInboxFiltersOptions {
-  /** Workspace slug, or 'personal' for the personal shell (OQ-1). */
+  /** Workspace slug, or 'personal' for the personal shell. */
   scope: string;
   /** The form whose responses these are: its own stages and the view it opens in. Undefined on the all-forms views. */
   formId?: string;
 }
 
 /**
- * Sprint 12 (inbox-collaboration), design.md §7 "useInboxFilters" — owns URL ⇄ `ResponseFilters`,
- * normalizes the legacy `?status=` param (held until stages load, per requirements.md §7.1), and
- * exposes the page/view/search state `ResponsesHubView` used to hold inline.
+ * Owns URL ⇄ `ResponseFilters`,
+ * normalizes the legacy `?status=` param (held until stages load), and
+ * exposes the page/view/search state.
  */
 export function useInboxFilters({ scope, formId }: UseInboxFiltersOptions) {
   const router = useRouter();
@@ -67,7 +67,7 @@ export function useInboxFilters({ scope, formId }: UseInboxFiltersOptions) {
   }, [replace]);
 
   // Normalize an invalid/out-of-shape `?page=` value (NaN, 0, negative, non-integer) back onto
-  // the URL immediately — matches the pre-Sprint-12 hub's own behaviour, and keeps the URL
+  // the URL immediately, so it keeps
   // reflecting reality rather than silently overriding the request with page=1 while the address
   // bar still shows something else.
   useEffect(() => {
@@ -79,7 +79,7 @@ export function useInboxFilters({ scope, formId }: UseInboxFiltersOptions) {
   }, [page, searchParams]);
 
   // Once stages have loaded, resolve a still-pending legacy `?status=` param to a real `stage=`
-  // and drop `status=` from the URL — requirements.md §7.1's "mapped ... not dropped."
+  // and drop `status=` from the URL: mapped, not dropped.
   useEffect(() => {
     if (!legacyStatusPending || !stages) return;
     const mapped = stages.find((s) => s.category === legacyStatusPending);

@@ -1,10 +1,7 @@
 /**
- * __tests__/components/settings/DeleteWorkspaceModal.test.tsx
- * Feature: sprint-6-settings
  * Tests: DeleteWorkspaceModal — Delete disabled on partial/incorrect match or missing password,
  * enabled only once both are satisfied, wrong password shows a field error, success reauths then
  * deletes then logs out, delete failure keeps the modal open with an inline error
- * Requirements: 10.4-10.6
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

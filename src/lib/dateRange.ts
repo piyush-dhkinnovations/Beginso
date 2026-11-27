@@ -111,7 +111,7 @@ export const DEFAULT_RANGE_PRESET: DateRangePreset = 'all';
 
 /**
  * Literal marker for "All time" inside the `?from=&to=` URL params. It keeps an explicit "All time" choice distinct from a
- * param-less visit, so it can win over a remembered narrower range, and keeps old links working (Requirement 3.6) while
+ * param-less visit, so it can win over a remembered narrower range, and keeps old links working while
  * staying inside the two documented params.
  */
 export const ALL_TIME_SENTINEL = 'all';

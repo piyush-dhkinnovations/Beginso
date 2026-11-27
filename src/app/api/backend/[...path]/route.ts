@@ -17,8 +17,8 @@ const PUBLIC_AUTH_PATHS = new Set([
 // data routes that are deliberately public — e.g. the /discover-templates gallery calling
 // GET /api/templates/public for logged-out visitors. Every route through this proxy required a
 // session until this one; found the hard way when the public gallery's real request 401'd here
-// before ever reaching the backend, even though the backend route itself needs no auth
-// (.kiro/specs/public-template-gallery/). Add future public-but-non-auth routes here, not to
+// before ever reaching the backend, even though the backend route itself needs no auth.
+// Add future public-but-non-auth routes here, not to
 // PUBLIC_AUTH_PATHS, so the two sets keep meaning what their names say.
 const PUBLIC_DATA_PATHS = new Set([
   'api/templates/public',
@@ -30,10 +30,10 @@ const PUBLIC_INVITE_PREVIEW = /^api\/invitations\/(?:(?:preview|token)\/)?[A-Za-
 // form. Only GET, only under /api/upload/file/.
 const PUBLIC_UPLOAD_FILE = /^api\/upload\/file\/.+$/;
 const ALLOWED_API_ROOTS = new Set([
-  // Sprint 14 (task 2.1) - GET /api/search lives under its own root. Same allowlist trap as every
+  // GET /api/search lives under its own root. Same allowlist trap as every
   // root below: without this entry every search call 404s "Backend path is not allowed".
   'search',
-  // Sprint 15 - PUT/DELETE /api/me/response-view (a person's own response layout choice) has its own root.
+  // PUT/DELETE /api/me/response-view (a person's own response layout choice) has its own root.
   'me',
   'auth',
   'analytics',
@@ -43,7 +43,7 @@ const ALLOWED_API_ROOTS = new Set([
   'forms',
   // The ready-made Looks (GET /api/form-looks): public and read-only, with its own root. Without this entry the call 404s "Backend path is not allowed".
   'form-looks',
-  // Sprint 9 (team-permissions, task 2.2) — the public/token-based invitation routes
+  // The public/token-based invitation routes
   // (GET/POST /api/invitations/:token/...) live under their own root, not /workspaces, so
   // they need their own allowlist entry (CLAUDE.md's named trap: without this every call
   // 404s through the BFF regardless of whether the backend route exists).
@@ -51,11 +51,8 @@ const ALLOWED_API_ROOTS = new Set([
   'notifications',
   'reports',
   'responses',
-  // Sprint 9 (team-permissions, task 5.4) — GET /api/shared-with-me lives under its own root
-  // segment (not /workspaces or /forms), same allowlist trap named above for 'invitations':
-  // design.md §2 only flagged 'invitations' as the one addition needed this sprint, but missed
-  // this one — found by inspection while wiring sharedService, fixed here rather than left to
-  // 404 silently once the backend route ships.
+  // GET /api/shared-with-me lives under its own root
+  // segment (not /workspaces or /forms), same allowlist trap named above for 'invitations'.
   'shared-with-me',
   'templates',
   // Saved form styles ("Save my style") live under their own root: GET/POST /api/form-styles, PATCH/DELETE /api/form-styles/:id.
@@ -64,16 +61,16 @@ const ALLOWED_API_ROOTS = new Set([
   'unsplash',
   'upload',
   'users',
-  // Sprint 12 (inbox-collaboration, task 1.9) — GET/POST/PATCH/DELETE /api/views (saved views,
-  // B7.1) live under their own root, not /workspaces or /responses — same allowlist trap this
+  // GET/POST/PATCH/DELETE /api/views (saved views)
+  // live under their own root, not /workspaces or /responses — same allowlist trap this
   // file already documents twice above for 'invitations'/'shared-with-me': without this entry
-  // every saved-view call 404s through the BFF with "Backend path is not allowed" even once the
-  // real backend route exists (design.md §4/§22, requirements.md §13's own "allowlist trap").
+  // every saved-view call 404s through the BFF with "Backend path is not allowed" even though the
+  // backend route exists.
   'views',
-  // Sprint 13 (builder-publish-respondent, task 1.6) — new backend roots, same allowlist trap as
-  // 'views'/'invitations' above: 'trash' (CF5.5), 'my-submissions' (A5.1), 'respond' (the signed-link
+  // More backend roots with the same allowlist trap as
+  // 'views'/'invitations' above: 'trash', 'my-submissions', 'respond' (the signed-link
   // claim call, which needs the member session — view/edit/resend go direct, token-authenticated, and
-  // never touch this proxy), 'public' (Mode 3's authenticated submit-ticket, OQ-10).
+  // never touch this proxy), 'public' (Mode 3's authenticated submit-ticket).
   'trash',
   'my-submissions',
   'respond',

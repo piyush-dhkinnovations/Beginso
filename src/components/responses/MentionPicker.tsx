@@ -6,15 +6,15 @@ import { Avatar } from '@/components/ui/Avatar';
 import type { MemberListItem } from '@/types/team';
 
 export interface MentionPickerProps {
-  /** Workspace members — filtering to "who can access this form" has no dedicated endpoint yet
-   * (design.md §11.3's own list of gaps); the server is the real gate (422 on a mention without
-   * form access, design.md §11.2) so this list is a convenience, not the boundary. */
+  /** Workspace members. Not built yet in the backend: an endpoint for who can access this form.
+   * The server is the real gate (422 on a mention without
+   * form access), so this list is a convenience, not the boundary. */
   members: readonly MemberListItem[];
   query: string;
   selectedIds: readonly string[];
   onSelect: (member: MemberListItem) => void;
   onClose: () => void;
-  /** Returns focus to the composer's textarea on Escape (requirements.md §9.2). */
+  /** Returns focus to the composer's textarea on Escape. */
   returnFocusRef: React.RefObject<HTMLTextAreaElement | null>;
   /** Lets the owning `<textarea role="combobox">` point `aria-controls` at this listbox — falls
    * back to an internally generated id when the caller doesn't need to reference it. */
@@ -22,8 +22,8 @@ export interface MentionPickerProps {
 }
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §9.2, design.md §6. Full ARIA combobox/listbox
- * pattern (the one place this sprint requires it, unlike TagPicker's lighter listbox): arrow keys
+ * Full ARIA combobox/listbox
+ * pattern (unlike TagPicker's lighter listbox): arrow keys
  * move `aria-activedescendant`, Enter selects, Escape closes and returns focus to the textarea.
  */
 export function MentionPicker({ members, query, selectedIds, onSelect, onClose, returnFocusRef, id }: MentionPickerProps) {

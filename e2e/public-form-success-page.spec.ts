@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-/** Requirement 8 (Success screen) — both the normal (via submission) and direct-navigation paths. */
+/** Success screen: both the normal (via submission) and direct-navigation paths. */
 
 test.describe('Public form — success page', () => {
   test('a submission landing (with its title) renders the generic thank-you, not an error', async ({ page }) => {

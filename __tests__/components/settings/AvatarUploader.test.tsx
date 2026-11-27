@@ -1,9 +1,6 @@
 /**
- * __tests__/components/settings/AvatarUploader.test.tsx
- * Feature: sprint-6-settings
  * Tests: AvatarUploader — fallback initials, valid upload flow, invalid file rejected inline,
  * remove-photo flow, upload/save failure reverts
- * Requirements: 3.1-3.6
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

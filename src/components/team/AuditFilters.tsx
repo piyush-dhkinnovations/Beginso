@@ -19,7 +19,7 @@ export interface AuditFiltersProps {
   onRangeChange: (range: Range) => void;
 }
 
-// requirements.md §7.7 / design.md §6, §15.3. Presentational and controlled — the page owns the state.
+// Presentational and controlled — the page owns the state.
 // Named Actor / Date buttons on one --bg-subtle bar; each shows its active value and closes after a selection.
 export function AuditFilters({ actors, actorId, range, onActorChange, onRangeChange }: AuditFiltersProps) {
   return (

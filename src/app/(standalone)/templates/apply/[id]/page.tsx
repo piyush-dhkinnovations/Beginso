@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/Button';
 //
 // The form is ALWAYS created in the person's personal account (destinationWorkspaceId: null): there is no
 // "personal or workspace?" question. It is created as soon as the page opens, once, and the person lands in the
-// builder on the Branding tab (`?tab=branding` is BuilderTabs' existing VALID_TABS mechanism), so a
+// builder on the Branding tab (`?tab=branding` is one of the editor page's VALID_TABS), so a
 // template-started form gets customised before publishing. They can move it to a workspace later from the Forms page.
 //
 // A brand-new account is first sent through /onboarding (authContext), which now returns here afterwards

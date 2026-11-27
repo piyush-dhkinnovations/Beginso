@@ -37,8 +37,8 @@ function firstAnswer(response: IResponse): string {
   return value === null || value === undefined || value === '' ? '—' : String(value);
 }
 
-// requirements.md §7.2–7.5 / design.md §5. One flat route for personal and workspace forms alike
-// (design.md §4) — only the breadcrumb differs. No form-level sidebar this sprint (§3): the
+// One flat route for personal and workspace forms alike
+// — only the breadcrumb differs. No form-level sidebar: the
 // breadcrumb plus the header/card links are the only cross-navigation.
 export default function FormOverviewPage() {
   const { id: formId } = useParams<{ id: string }>();
@@ -53,7 +53,7 @@ export default function FormOverviewPage() {
   const form = overviewQuery.data?.form;
   const stats = overviewQuery.data?.stats;
 
-  // Same key FormAccessPanel reads, so opening the panel from this page is a cache hit (design.md §5).
+  // Same key FormAccessPanel reads, so opening the panel from this page is a cache hit.
   const grantsQuery = useQuery({
     queryKey: formAccessKeys.grants(formId),
     queryFn: () => formAccessService.listGrants(formId),
@@ -65,13 +65,10 @@ export default function FormOverviewPage() {
     queryFn: () => eventsService.listFormEvents(formId, 1, FORM_ACTIVITY_FETCH_COUNT),
   });
 
-  // Real bug found and fixed: `stats.responseCount` comes from GET /api/forms/:id's own
-  // `responseCount` field (getFormOverview's fallback chain), which the backend does not keep in
-  // sync with the actual Response collection — the "Recent responses" card right next to it
-  // queries /api/responses directly and shows the true count. Same reasoning responsesService.ts's
-  // own getStats() already documents for the identical field: don't trust a denormalized count,
-  // derive it from the real list endpoint's `total` instead. Overrides `stats.responseCount` with
-  // it wherever it's loaded so the two cards on this page can never disagree.
+  // `stats.responseCount` is overridden with the response list's `total` wherever that is loaded, so
+  // the KPI and the "Recent responses" card next to it (which queries /api/responses directly) can
+  // never disagree. Without the /overview reply, `stats.responseCount` falls back to the form's own
+  // `responseCount` field, which is not trusted over the real list.
   const workspaceId = form?.workspaceId ?? null;
   const workspacesQuery = useQuery({
     queryKey: workspaceKeys.list(),
@@ -89,7 +86,7 @@ export default function FormOverviewPage() {
   });
   const responseCount = responsesQuery.data?.total;
 
-  // Real view count (nullable — the backend may not track views); the Views KPI is omitted when null.
+  // Real view count (nullable: null until the form has a counted view); the Views KPI is omitted when null.
   const viewsQuery = useQuery({
     queryKey: analyticsKeys.overview(formId, {}),
     queryFn: () => analyticsService.getOverview({ formId }, scope),
@@ -125,7 +122,7 @@ export default function FormOverviewPage() {
   const effectiveStats = { ...stats, responseCount: responseCount ?? stats.responseCount };
 
   // Personal form: the caller owns it. Workspace form: their membership role, fail-closed while
-  // unknown — Reviewer (or an unresolved role) sees Preview only (requirements.md §7.2). A
+  // unknown — Reviewer (or an unresolved role) sees Preview only. A
   // convenience only; the server enforces every one of these (CLAUDE.md).
   const role = form.myRole ?? (workspaceId === null ? 'owner' : workspace?.role);
   const canEdit = role !== undefined && hasCapability(role, 'forms:edit');
@@ -136,8 +133,8 @@ export default function FormOverviewPage() {
       ? grantsQuery.isError ? '—' : '…'
       : workspaceId === null
         ? grantCount === 0 ? 'Just you' : `${grantCount} ${grantCount === 1 ? 'person' : 'people'}`
-        : // Backend contract to confirm whether the count distinguishes role-covered members from
-          // explicit grants (requirements.md §7.4) — until then, don't assert a false precise count.
+        : // The grants list holds explicit grants only (not members covered by their role),
+          // so no total is claimed.
           grantCount === 0 ? 'Workspace team' : `Workspace team + ${grantCount} other${grantCount === 1 ? '' : 's'}`;
 
   // Real bug found and fixed: this only checked `form.slug` truthy, so a never-published draft

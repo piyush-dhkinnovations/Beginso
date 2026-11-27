@@ -14,7 +14,7 @@ interface ChartPreviewCardProps {
   scope: string | undefined;
   fields: readonly FormField[] | undefined;
   state: WizardState;
-  /** Shows the chart-type select at the card's top right (the first steps); the last step shows the card as the dashboard will. */
+  /** Shows the chart-type select at the card's top right (the basics step); the last step shows the card as the dashboard will. */
   onChartType?: (t: BuilderChartType) => void;
   onSelect?: (entry: QueryEntry) => void;
   heading?: string;

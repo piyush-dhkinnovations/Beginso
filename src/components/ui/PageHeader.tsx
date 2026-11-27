@@ -18,7 +18,7 @@ export interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
 // Composition-only primitive — no dedicated beginso-ui.css section, built from Breadcrumb
 // (already a components/ui/ primitive) plus the design system's own generic layout classes
 // (.bg-stack/.bg-row/.bg-gap-*, beginso-ui.css §4 LAYOUT) and typography tokens (.bg-h2, .bg-overline),
-// not raw Tailwind spacing, per requirements.md 1.1/9. Matches wireframe page heading pattern:
+// not raw Tailwind spacing. Matches wireframe page heading pattern:
 // Breadcrumb -> Eyebrow -> Title -> Description with right-aligned actions.
 export function PageHeader({
   title,

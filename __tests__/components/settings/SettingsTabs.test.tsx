@@ -1,10 +1,5 @@
 /**
- * __tests__/components/settings/SettingsTabs.test.tsx
- * Feature: sprint-6-settings
- * Tests: SettingsTabs — 5 active tabs render, click fires onChange, unsaved-change dot
- * Requirements: 1.1, 12.2
- * Note: the 6th "Billing & Integrations" disabled slot (originally Requirement 1.6) was removed
- * from the UI by explicit product decision — see requirements.md/tasks.md Notes.
+ * Tests: SettingsTabs — the tabs render grouped, click fires onChange, unsaved-change dot
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -12,8 +7,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { SettingsTabs } from '@/components/settings/SettingsTabs';
 
 describe('SettingsTabs', () => {
-  // Sprint 12 (inbox-collaboration), task 2.5/5.1/5.2: gains a 7th "Tags" tab, an 8th "Stages"
-  // tab, and a 9th "Scoring" tab (OQ-7 resolved 3 Oct 2026), last.
   it('renders all 10 tabs, grouped', () => {
     render(<SettingsTabs activeTab="profile" onChange={vi.fn()} />);
     // Grouped vertical nav: General, Response handling, then Account.
@@ -47,7 +40,6 @@ describe('SettingsTabs', () => {
     expect(workspaceTab.querySelector('[aria-label="Unsaved changes"]')).not.toBeInTheDocument();
   });
 
-  // sprint-10 requirements.md §7.12/§7.13 — new tab, and the strip now rides ui/Tabs.
   it('calls onChange with "sessions" for the Sessions & Devices tab', () => {
     const onChange = vi.fn();
     render(<SettingsTabs activeTab="profile" onChange={onChange} />);

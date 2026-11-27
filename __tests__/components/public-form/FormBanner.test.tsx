@@ -1,5 +1,4 @@
 /**
- * Feature: sprint-3-public-form
  * Tests for FormBanner — cover image vs. fallback color, optional logo overlap.
  */
 

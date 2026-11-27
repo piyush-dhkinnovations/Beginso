@@ -103,7 +103,7 @@ test.describe('Activity and Audit Log avatars', () => {
     const piyush = page.getByRole('rowheader', { name: 'Piyush Prajapat' }).first().locator('img');
     await expect(piyush).toHaveAttribute('src', '/avatars/03.svg');
     await expect.poll(() => imageLoaded(piyush)).toBe(true);
-    // initials are two letters now, like the Activity feed, not one
+    // initials are two letters, like the Activity feed, not one
     await expect(page.getByRole('rowheader', { name: 'Meera Nair' }).first().locator('span.bg-avatar')).toContainText('MN');
     await expect(page.getByRole('rowheader', { name: 'Kala Chashma Entertainment' }).first().locator('img')).toHaveAttribute('src', '/avatars/05.svg');
     await page.screenshot({ path: testInfo.outputPath('audit-avatars.png') });

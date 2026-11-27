@@ -26,8 +26,8 @@ type SortKey = 'relevant' | 'name' | 'fields';
 // catalog has 20 categories — collapsed to one row, with the rest a click away.
 const VISIBLE_CATEGORY_COUNT = 6;
 
-// Sprint 13 (B6.1–B6.3). One page for both contexts, like FormsPage: `scope` is 'personal' (Beginso templates
-// only — A4.1) or a workspace slug (the workspace's OWN templates first, section hidden when empty, then
+// One page for both contexts, like FormsPage: `scope` is 'personal' (Beginso templates
+// only) or a workspace slug (the workspace's OWN templates first, section hidden when empty, then
 // Beginso's). Never "My templates" — they belong to the workspace, same rule as forms.
 export interface TemplatesPageProps {
   scope?: string;

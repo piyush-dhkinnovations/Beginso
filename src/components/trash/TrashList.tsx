@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card';
 import type { TrashItem } from '@/types/trash';
 import { RetentionBadge } from './RetentionBadge';
 
-// Sprint 13 (CF5.5), wireframe 41. A dumb list — the page owns every mutation. Row controls render the
+// Wireframe 41. A dumb list — the page owns every mutation. Row controls render the
 // SERVER's `canRestore` / `canPurge`; roles are never re-derived here.
 export interface TrashListProps {
   items: TrashItem[];

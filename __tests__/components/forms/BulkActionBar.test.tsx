@@ -1,8 +1,3 @@
-/**
- * __tests__/components/forms/BulkActionBar.test.tsx
- * sprint-10-events-migration, tasks.md 6.4.
- */
-
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -37,7 +32,7 @@ describe('BulkActionBar', () => {
     expect(screen.getByRole('button', { name: /Delete selected/ })).toBeDisabled();
   });
 
-  // Sprint 11 5.3: computed role, not JSX presence — role="status" gives an implicit
+  // Computed role, not JSX presence — role="status" gives an implicit
   // aria-live="polite", so a change in selection count is announced without extra markup.
   it('the bar is a status region, and the announced count updates on re-render', () => {
     const { rerender } = render(<BulkActionBar count={3} isDeleting={false} onDeleteSelected={vi.fn()} />);

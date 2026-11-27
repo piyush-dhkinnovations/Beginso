@@ -25,7 +25,7 @@ export function SignupForm() {
   const { login } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
-  // Requirements §7.5.1. Email signup still needs email verification first, so `next` is
+  // Email signup still needs email verification first, so `next` is
   // forwarded to /verify-email rather than used here directly (see onSubmit below).
   const nextParam = sanitizeNextParam(useSearchParams().get('next'));
 

@@ -1,8 +1,3 @@
-/**
- * __tests__/components/team/RolesMatrix.test.tsx
- * Feature: sprint-9-team-permissions, requirements.md §7.6, §11, design.md §21.
- */
-
 import { describe, it, expect } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { RolesMatrix } from '@/components/team/RolesMatrix';

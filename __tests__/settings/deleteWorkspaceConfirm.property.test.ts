@@ -1,7 +1,5 @@
 /**
- * __tests__/settings/deleteWorkspaceConfirm.property.test.ts
- * Feature: sprint-6-settings, Property 3: Delete button never enabled on a partial/incorrect match
- * Requirements: 10.4
+ * Property: Delete button never enabled on a partial/incorrect match
  *
  * Mirrors the name-matching half of DeleteWorkspaceModal's exact `canAttemptDelete` condition
  * (`password.length > 0 && typedName === workspaceName`) — the password-presence half is a

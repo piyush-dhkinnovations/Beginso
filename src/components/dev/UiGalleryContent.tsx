@@ -59,7 +59,7 @@ import { TemplateCard } from "@/components/templates/TemplateCard";
 import type { Form, Template } from "@/types/form";
 import { bx } from "@/lib/utils";
 
-// ── Layout helpers ────────────────────────────────────────────────────────────
+// Layout helpers
 interface SectionDef { id: string; title: string }
 const SECTIONS: SectionDef[] = [
   { id: "foundations", title: "Foundations" },
@@ -98,7 +98,7 @@ function Example({ label, children, className }: { label: string; children: Reac
 const GRID_3 = "grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3";
 const GRID_4 = "grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4";
 
-// ── Sample data ───────────────────────────────────────────────────────────────
+// Sample data
 const TABLE_ROWS = [
   { id: "1", name: "Contact form", responses: 128 },
   { id: "2", name: "Event RSVP", responses: 42 },
@@ -176,7 +176,7 @@ export function UiGalleryContent() {
       </nav>
 
       <main className="flex min-w-0 flex-1 flex-col gap-12 p-6 sm:p-8">
-        {/* ── Foundations ─────────────────────────────────────────────────── */}
+        {/* Foundations */}
         <Section id="foundations" title="Foundations" note="Type scale, colour tokens, radius and shadow. Everything below uses these — never raw hex.">
           <Example label="Typography" className="flex-col items-start">
             {TYPE_SCALE.map(([cls, text]) => (
@@ -200,7 +200,7 @@ export function UiGalleryContent() {
           </Example>
         </Section>
 
-        {/* ── Form controls ───────────────────────────────────────────────── */}
+        {/* Form controls */}
         <Section id="form-controls" title="Form controls">
           <Example label="Button — variants">
             <Button variant="primary">Primary</Button>
@@ -238,7 +238,7 @@ export function UiGalleryContent() {
           </Example>
         </Section>
 
-        {/* ── Feedback ────────────────────────────────────────────────────── */}
+        {/* Feedback */}
         <Section id="feedback" title="Feedback">
           <Example label="Alert" className="items-stretch">
             <div className="flex w-full flex-col gap-3">
@@ -276,7 +276,7 @@ export function UiGalleryContent() {
           </Example>
         </Section>
 
-        {/* ── Navigation ──────────────────────────────────────────────────── */}
+        {/* Navigation */}
         <Section id="navigation" title="Navigation, structure">
           <Example label="PageHeader — default / actionsAlign=center" className="items-stretch">
             <div className="flex w-full flex-col gap-6">
@@ -310,7 +310,7 @@ export function UiGalleryContent() {
           </Example>
         </Section>
 
-        {/* ── Cards ───────────────────────────────────────────────────────── */}
+        {/* Cards */}
         <Section id="cards" title="Cards" note="Every card shares the Tinted surface (.bg-card): soft gradient, hairline border, lifts on hover.">
           <Example label="Card — default / flat / sunken / hover" className="items-stretch">
             <div className={GRID_4}>
@@ -360,7 +360,7 @@ export function UiGalleryContent() {
           </Example>
         </Section>
 
-        {/* ── Stat cards with charts ──────────────────────────────────────── */}
+        {/* Stat cards with charts */}
         <Section id="stat-charts" title="Stat cards with charts" note="StatCard chart={{ kind: … }} — big bare icon + number on the left, the chart on the right.">
           <div className={GRID_3}>
             <StatCard label="Responses" value={114} icon={<MessageSquare />} chart={{ kind: "bars", values: [3, 5, 4, 8, 6, 11, 10, 15] }} />
@@ -380,7 +380,7 @@ export function UiGalleryContent() {
           </div>
         </Section>
 
-        {/* ── Chart cards ─────────────────────────────────────────────────── */}
+        {/* Chart cards */}
         <Section id="chart-cards" title="Chart cards" note="ChartCard around BarChart / LineChart / ComboChart / DonutWithLegend / ProgressBars. Measured width, real-pixel axes.">
           <div className="grid w-full grid-cols-1 gap-4 xl:grid-cols-2">
             <ChartCard title="Responses this week"><BarChart data={WEEK} ariaLabel="Responses this week" /></ChartCard>
@@ -396,7 +396,7 @@ export function UiGalleryContent() {
           </div>
         </Section>
 
-        {/* ── Data, overlays, empty states ────────────────────────────────── */}
+        {/* Data, overlays, empty states */}
         <Section id="data" title="Data, overlays, empty states">
           <Example label="Table" className="items-stretch">
             <div className="w-full">
@@ -443,7 +443,7 @@ export function UiGalleryContent() {
           </Example>
         </Section>
 
-        {/* ── Illustrations ───────────────────────────────────────────────── */}
+        {/* Illustrations */}
         <Section id="illustrations" title="Illustrations" note="unDraw, recoloured to tokens by scripts/build-illustrations.mjs. <Illustration name> / EmptyState illustration. Falls back to the icon when a slot has no artwork.">
           <div className="grid w-full grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-6">
             {ILLUSTRATION_NAMES.map((name) => (
@@ -455,7 +455,7 @@ export function UiGalleryContent() {
           </div>
         </Section>
 
-        {/* ── App shell ───────────────────────────────────────────────────── */}
+        {/* App shell */}
         <Section id="app-shell" title="App shell">
           {/* `transform` makes this box the containing block for AppShell's position:fixed sidebar, so the demo stays inside it instead of overlaying the whole page. */}
           <div style={{ height: 300, overflow: "hidden", transform: "translateZ(0)", border: "1px solid var(--border-default)", borderRadius: "var(--bg-radius-lg)" }}>

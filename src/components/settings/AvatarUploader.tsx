@@ -14,7 +14,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 
 const ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-const AVATAR_MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB, Requirement 3.2
+const AVATAR_MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
 const getInitials = (name: string | undefined): string => initialsOf(name) || 'U';
 
@@ -74,7 +74,7 @@ export function AvatarUploader({ name, avatarUrl }: AvatarUploaderProps) {
       <div className="relative h-16 w-16 shrink-0 rounded-full bg-(--action-primary) text-(--text-on-brand) flex items-center justify-center bg-h5 font-bold overflow-hidden">
         {avatarUrl && failedUrl !== avatarUrl ? (
           // referrerPolicy: Google's photo host rejects hot-linked requests that carry a Referer.
-          // eslint-disable-next-line @next/next/no-img-element
+          // eslint-disable-next-line @next/next/no-img-element -- avatar address from any host (no remotePatterns configured)
           <img src={localAvatarSrc(avatarUrl)} alt="" referrerPolicy="no-referrer" onError={() => setFailedUrl(avatarUrl)} className="h-full w-full object-cover" />
         ) : (
           getInitials(name)

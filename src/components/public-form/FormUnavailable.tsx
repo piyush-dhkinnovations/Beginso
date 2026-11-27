@@ -13,7 +13,7 @@ interface FormUnavailableProps {
 
 /**
  * Shown for closed or nonexistent forms. A form the owner closed (by hand, by closing date, or by response limit) says
- * which. A draft and a link that never existed stay indistinguishable (Requirement 7.4): both use the notFound variant,
+ * which. A draft and a link that never existed stay indistinguishable: both use the notFound variant,
  * so it never confirms that a draft exists.
  */
 export function FormUnavailable({ userNote, notFound, reason }: FormUnavailableProps) {

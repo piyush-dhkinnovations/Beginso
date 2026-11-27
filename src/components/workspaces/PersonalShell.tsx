@@ -4,12 +4,6 @@
 // exist: (user)/layout.tsx is a Server Component (reads the sidebar_collapsed cookie);
 // AppShell's sidebar/topBar props are render-prop functions, which cannot cross the Server ->
 // Client boundary, so this thin 'use client' wrapper owns those closures instead.
-//
-// Replaces DashboardShell (src/components/dashboard/DashboardShell.tsx) as what (user)/layout.tsx
-// renders. DashboardShell is left in place, unused, rather than deleted — same precedent Sprint 7
-// set leaving AppShell/Sidebar/TopBar unused until Sprint 8 adopted them, just in the opposite
-// direction now. NotificationBell/UserProfileDropdown are reused as-is; they were always
-// self-contained dropdown triggers with no positioning dependency on the old fixed TopNav.
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -29,7 +23,7 @@ import { formsService } from '@/services/forms';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
 
-// Sprint 14 (task 6.3): the palette and its results code load after first paint, off the shell's critical path.
+// The palette and its results code load after first paint, off the shell's critical path.
 const GlobalSearch = dynamic(() => import('@/components/search/GlobalSearch').then((m) => m.GlobalSearch), { ssr: false });
 
 export interface PersonalShellProps {
@@ -40,21 +34,20 @@ export interface PersonalShellProps {
 // A form's own detail routes (/forms/:id/edit, /overview, ...) all live under this (user)/
 // route group regardless of which workspace actually owns the form — there is no parallel
 // /w/[slug]/forms/:id/edit route (see FormRow: the builder link is always `/forms/${id}/edit`).
-// Real bug found and fixed: this shell always rendered PersonalSidebar/"Personal" here, so
-// editing a workspace-owned form showed the wrong context in the chrome even though the form
-// itself lives in that workspace. Detect a form-detail route, look up that form's real
+// Rendering PersonalSidebar/"Personal" for all of them would show the wrong context around a
+// form that lives in a workspace. So: detect a form-detail route, look up that form's real
 // workspace, and render the same WorkspaceSidebar/label the workspace's own pages use instead.
 const FORM_DETAIL_ROUTE_RE = /^\/forms\/([^/]+)(?:\/|$)/;
 
-// Real bug found and fixed (round 2): the first fix above still flashed the *wrong* sidebar for
+// That lookup alone would flash the *wrong* sidebar for
 // a couple of seconds on every navigation into a workspace form — `/w/[slug]/forms` and
 // `/forms/:id/edit` sit under two different layouts, so crossing between them unmounts
 // WorkspaceShell and mounts this shell fresh, `formWorkspace` starting at `undefined` again
-// every time. Two fixes, not one: (1) every link into a form's detail routes from a workspace
-// page now carries `?ws=<slug>` (see FormsManagerTabs consumer in forms/page.tsx, and
+// every time. Two things prevent that: (1) every link into a form's detail routes from a workspace
+// page carries `?ws=<slug>` (see formHref in components/forms/formsListUtils.ts, and
 // w/[slug]/page.tsx's own quick links) — a same-render synchronous hint that needs no fetch to
 // resolve, since the previous page already knew its own workspace; (2) failing that hint, while
-// still resolving via the `form`/`workspaces` fetches, this now renders a neutral loading
+// resolving via the `form`/`workspaces` fetches, this renders a neutral loading
 // sidebar instead of defaulting to PersonalSidebar — showing nothing definite beats showing the
 // wrong thing.
 function PersonalShellFrame({ initialCollapsed, children }: PersonalShellProps) {
@@ -91,16 +84,16 @@ function PersonalShellFrame({ initialCollapsed, children }: PersonalShellProps) 
       : undefined;
 
   // True only on a form-detail route where we haven't yet resolved *either* answer (not
-  // personal, not a known workspace) — the window this shell used to fill with the wrong
+  // personal, not a known workspace) — the window in which either sidebar could be the wrong
   // sidebar. Once `form` resolves (confirming a personal form, `workspaceId: null`) or a
   // workspace match lands, this clears immediately.
-  // Sprint 14: a workspace form's detail routes render under this shell, so search and notifications
+  // A workspace form's detail routes render under this shell, so search and notifications
   // follow the form's workspace, not 'personal'. While still resolving they stay personal.
   const contextScope = formWorkspace?.slug ?? 'personal';
 
   const contextUnresolved = !!formId && !wsHint && !form && !formWorkspace;
 
-  // A form's own pages (Overview, Edit, Settings) collapse the app sidebar to its icon rail for room; the menu button still expands it.
+  // A form's Overview and Edit pages collapse the app sidebar to its icon rail for room; the menu button still expands it.
   const isFormFocus = /^\/forms\/[^/]+\/(overview|scores|edit)\/?$/.test(pathname);
 
   // Feed "recent forms" in the sidebar: record once the form's real scope is known (never guess 'personal' while resolving).

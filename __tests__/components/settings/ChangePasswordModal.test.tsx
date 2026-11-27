@@ -1,9 +1,6 @@
 /**
- * __tests__/components/settings/ChangePasswordModal.test.tsx
- * Feature: sprint-6-settings
  * Tests: ChangePasswordModal — success flow, wrong-current-password field error, mismatch
  * blocks submit, other-failure toast with values intact
- * Requirements: 4.1-4.6
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

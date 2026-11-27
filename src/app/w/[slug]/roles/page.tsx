@@ -1,7 +1,7 @@
-// Roles & Permissions reference — requirements.md §7.6, design.md §5/§15.2.
+// Roles & Permissions reference.
 // Server component, deliberately: the capability matrix is static data (src/lib/roles.ts),
-// there is no useQuery anywhere on this page and there must never be one (design.md §5/§21's
-// own regression test asserts no loading state ever appears).
+// there is no useQuery anywhere on this page and there must never be one (a
+// regression test asserts no loading state ever appears).
 import { PageHeader } from '@/components/ui/PageHeader';
 import { RolesMatrix } from '@/components/team/RolesMatrix';
 

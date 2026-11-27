@@ -1,6 +1,5 @@
 /**
- * sprint-10-events-migration, tasks.md 3.3 — requirements.md §7.2–7.5, design.md §5, §17.
- * Backend contracts BE 0.5/0.6/0.7 are unconfirmed; every service is mocked.
+ * Every service is mocked.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';

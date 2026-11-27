@@ -1,8 +1,5 @@
 /**
- * __tests__/components/settings/WorkspaceTab.test.tsx
- * Feature: sprint-6-settings
  * Tests: WorkspaceTab — renders name, save success/error, no-op guard, loading/error states
- * Requirements: 5.1-5.3
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -25,14 +22,14 @@ vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
-// WorkspaceTab now renders DangerZoneSection -> DeleteWorkspaceModal, which imports
+// WorkspaceTab renders DangerZoneSection -> DeleteWorkspaceModal, which imports
 // @/lib/firebase's real getAuth() — throws in this test env without a valid API key, even though
-// these tests never open that modal. Same mock ChangePasswordModal.test.tsx/ProfileTab.test.tsx
-// already use for the identical reason.
+// these tests never open that modal. Same mock ChangePasswordModal.test.tsx
+// already uses for the identical reason.
 vi.mock('@/lib/firebase', () => ({ auth: {} }));
 // DeleteWorkspaceModal also calls useAuth(), which needs a real AuthProvider context this test
 // doesn't render — mocked the same way DeleteWorkspaceModal.test.tsx itself does. WorkspaceTab
-// itself now also calls useAuth() for the orphaned-account "Log out" action.
+// itself also calls useAuth() for the orphaned-account "Log out" action.
 const mockLogout = vi.fn();
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ logout: mockLogout }) }));
 

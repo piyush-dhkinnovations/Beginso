@@ -15,8 +15,8 @@ import type { BulkAction, BulkTarget, ResponseFilters } from '@/types/response';
 export interface BulkActionBarProps {
   selectedIds: string[];
   /** True once the caller chose "Select all N matching" — bulk actions then target the active
-   * filter, not the loaded page's ids (requirements.md §7.2: "sent as a filter, never as N
-   * ids"). */
+   * filter, not the loaded page's ids (sent as a filter, never as N
+   * ids). */
   selectAllMatching: boolean;
   /** Total responses the active filter matches (server `total`) — undefined while unknown. */
   totalMatching?: number;
@@ -25,7 +25,7 @@ export interface BulkActionBarProps {
   formId?: string;
   stages: readonly StageRef[];
   tags?: readonly Tag[];
-  /** Undefined in the personal shell — assignment has no meaning there (OQ-9). */
+  /** Undefined in the personal shell — assignment has no meaning there. */
   members?: readonly MemberListItem[];
   role: Role | undefined;
   isLoading: boolean;
@@ -36,14 +36,13 @@ export interface BulkActionBarProps {
 }
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.5 (5.1), design.md §15. Rebuild (task 2.4):
- * replaces yesterday's minimal stage-only stopgap. Role-gated actions are omitted, not disabled
+ * Role-gated actions are omitted, not disabled
  * (a hidden `stages:manage`-style capability check would be misleading here — the gate is
- * `responses:act`/`responses:delete`/`responses:export`, requirements.md §14's table). "Select
+ * `responses:act`/`responses:delete`/`responses:export`). "Select
  * all N matching" sends `{ filter }`, never N ids. Delete keeps its confirm modal (owned by the
- * caller via `onDeleteRequest`) but now offers Undo via the bulk endpoint's `previous` snapshot
- * (OQ-3 resolved in favour of reversible delete, BE 0.2 building soft delete against this
- * contract) — the Undo toast itself is `useInboxMutations.bulk`'s job, not this component's.
+ * caller via `onDeleteRequest`) and offers Undo via the bulk endpoint's `previous` snapshot
+ * (delete is reversible); the Undo toast itself is `useInboxMutations.bulk`'s job, not this
+ * component's.
  */
 export function BulkActionBar({
   selectedIds,
@@ -77,7 +76,7 @@ export function BulkActionBar({
   const canOfferSelectAllMatching =
     !selectAllMatching && totalMatching !== undefined && totalMatching > count;
 
-  // Secondary actions collapse into one ui/Menu (requirements.md §10: "actions in a ui/Menu" on
+  // Secondary actions collapse into one ui/Menu (needed on
   // mobile) — kept collapsed at every width rather than duplicating the control set per
   // breakpoint, the lazier option that still satisfies "reachable on mobile".
   const menuItems: MenuItem[] = [];

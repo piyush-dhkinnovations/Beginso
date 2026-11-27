@@ -2,8 +2,7 @@ import type { FormField } from '@/types/form';
 import type { ChartDefinition, ChartOptions, ChartSize, ChartType, DateGranularity, FieldBucket } from '@/types/charts';
 
 // Which chart types make sense for which field type. The drawer only ever offers the valid ones; the
-// server re-validates. Rating is not a builder field type yet - it is accepted defensively so a
-// future 'rating' field charts without a code change.
+// server re-validates.
 export type ChartFieldKind = 'choice' | 'scale' | 'date';
 
 const KIND_BY_TYPE: Record<string, ChartFieldKind> = {

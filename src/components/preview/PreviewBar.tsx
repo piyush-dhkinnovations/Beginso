@@ -4,9 +4,9 @@ import Link from 'next/link';
 import { ArrowLeft, Eye } from 'lucide-react';
 import { DeviceToggle, type PreviewDevice } from './DeviceToggle';
 
-// Sprint 13 (CF2.10), requirements.md 3.1 / design.md §15.4. Admin chrome — stays in the admin
+// Admin chrome — stays in the admin
 // theme; the form it frames renders in its own (PreviewFrame). Rendered only by the preview route,
-// never by /f/[slug] (3.2). The "nothing is submitted" note is visible from first paint.
+// never by /f/[slug]. The "nothing is submitted" note is visible from first paint.
 export interface PreviewBarProps {
   device: PreviewDevice;
   onDeviceChange: (device: PreviewDevice) => void;

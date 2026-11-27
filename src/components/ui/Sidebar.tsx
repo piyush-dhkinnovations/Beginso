@@ -34,12 +34,9 @@ export interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
   footer?: React.ReactNode;
 }
 
-// Generic components/ui/ primitive — distinct from src/components/dashboard/Sidebar.tsx
-// (V1, hand-built, stays untouched this sprint; see design.md §6/§23). Unused by any live
-// screen until Sprint 8 rebuilds DashboardShell around ContextSwitcher.
+// Generic components/ui/ primitive.
 // beginso-ui.css §12 NAVIGATION (.bg-sidenav / .bg-nav-item / .bg-sidenav-rail).
-// Uses next/link (not a raw <a>, fixed sprint-8 day 1) so real consumers navigate client-side —
-// the legacy src/components/dashboard/Sidebar.tsx already does the same.
+// Uses next/link (not a raw <a>) so real consumers navigate client-side.
 export function Sidebar({ groups, collapsed = false, header, footer, className, ...props }: SidebarProps) {
   return (
     <nav

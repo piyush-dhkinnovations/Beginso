@@ -5,7 +5,7 @@ import { safeHttpUrl } from '@/lib/fieldDisplay';
 /**
  * Builds a Zod schema for a subset of fields (visible fields on the current page,
  * or all visible fields at final submit time). Hidden fields are excluded entirely
- * so they can never trigger a validation error (Requirement 5.5).
+ * so they can never trigger a validation error.
  */
 export function buildPublicFormSchema(
   fields: FormField[],
@@ -157,7 +157,7 @@ export function buildPublicFormSchema(
       }
       case 'image_upload':
       case 'file_upload': {
-        // Value is the uploaded file's R2 key once the file finishes uploading.
+        // Value is the picked file's name (a placeholder); the file itself travels outside the form values.
         // Same undefined-preprocess issue as dropdown/multiple_choice/checkbox above.
         const s = z.string().min(1, 'This field is required');
         schema = field.required

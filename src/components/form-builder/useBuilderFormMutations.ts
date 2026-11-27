@@ -27,7 +27,7 @@ export function useBuilderFormMutations({
   const formTitle = useBuilderStore((state) => state.formTitle);
   const setStatus = useBuilderStore((state) => state.setStatus);
 
-  // ─── Close form flow ──────────────────────────────────────────────────────────
+  // Close form flow
 
   const closeMutation = useMutation({
     mutationFn: () => formsService.closeForm(formId!),
@@ -45,14 +45,14 @@ export function useBuilderFormMutations({
     },
   });
 
-  // ─── Delete form flow ─────────────────────────────────────────────────────────
+  // Delete form flow
 
   const deleteMutation = useMutation({
     mutationFn: () => formsService.deleteForm(formId!),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['forms'] });
       queryClient.invalidateQueries({ queryKey: ['trash'] });
-      // Delete means Trash since Sprint 13 (CF5.5): reversible for 30 days.
+      // Delete means Trash: reversible for 30 days.
       const id = formId!;
       const scope = formWorkspaceSlug ?? 'personal';
       toast(`"${formTitle}" moved to Trash`, 'success', undefined, {

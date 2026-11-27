@@ -84,7 +84,7 @@ describe('ResponsesHubView query and pagination states', () => {
   });
 
   it('ignores an invalid legacy status URL — never sent to the service, valid page kept', async () => {
-    // sprint-12-inbox-collaboration: legacy `?status=` is now resolved against real workspace
+    // Legacy `?status=` is now resolved against real workspace
     // stages (lib/inboxFilters.ts), not validated against the removed fixed union. An
     // unrecognised value simply maps to no stage filter, rather than being stripped and
     // resetting the page — see inboxFilters.test.ts for the mapping's own coverage.

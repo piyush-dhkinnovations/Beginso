@@ -3,7 +3,7 @@
 import { Alert } from '@/components/ui/Alert';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
-/** design.md section 17 "Network" row. Cached data stays on screen; queries pause until reconnect. */
+/** Cached data stays on screen; queries pause until reconnect. */
 export function OfflineBanner() {
   if (useOnlineStatus()) return null;
   return (

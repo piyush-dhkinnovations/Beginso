@@ -93,14 +93,10 @@ export const formsService = {
   // headers from a fixed whitelist and silently dropped `x-workspace-slug` before it ever reached
   // the real backend. Fixed there; this file needed no further change once that was forwarded.
   //
-  // Personal context is the less-confirmed half: nothing in the documented resolution order
-  // describes an explicit "ignore my default workspace" override for a GET. `workspaceId=personal`
-  // is sent as a best-effort query param, matching the `null`/`'personal'` convention this same
-  // backend already uses on `/forms/:id/move` and form creation — not directly confirmed for this
-  // endpoint. If a caller's default workspace still leaks into personal listings after this,
-  // that confirms the override needs backend support, not a different frontend guess.
+  // Personal context sends both the explicit 'personal' header and `workspaceId=personal`, the same
+  // `null`/`'personal'` convention the backend uses on `/forms/:id/move` and form creation.
   getForms: (
-    // `archived` (Sprint 13, CF5.6): 'false' (default) hides archived forms, 'only' shows just them.
+    // `archived`: 'false' (default) hides archived forms, 'only' shows just them.
     params?: { search?: string; status?: string; page?: number; limit?: number; archived?: 'true' | 'false' | 'only'; pinned?: boolean; sort?: FormsSortField; order?: 'asc' | 'desc' },
     context?: FormsContext
   ) =>
@@ -122,14 +118,9 @@ export const formsService = {
           },
         };
         // Defence kept: backend honours the explicit 'personal' header (requirePermission -> explicitPersonalContext), but this filter stays as a cheap safety net.
-        // Real bug found and fixed: the comment above already flagged this as unconfirmed — now
-        // confirmed live. A brand-new user whose "default workspace" (the backend's own
-        // resolution-order fallback) is the workspace they just joined via invite accept sees
-        // that workspace's forms leak into their *personal* space list — `workspaceId=personal`
-        // isn't honored server-side for this case. Filtered here as a client-side safety net
-        // (never trust the backend's own scoping without checking, this session's own
-        // established pattern) so Personal space can never show a workspace-owned form
-        // regardless of what the backend's query actually returned.
+        // It was added when a new user whose default workspace was the one they had just joined saw that
+        // workspace's forms in their *personal* list. Never trust the backend's scoping without checking:
+        // Personal space must not show a workspace-owned form, whatever the query returned.
         if (context?.type !== 'personal') return r.data;
         const forms = r.data.forms.filter((form) => form.workspaceId === null);
         const filteredOut = r.data.forms.length - forms.length;
@@ -154,7 +145,7 @@ export const formsService = {
     axiosInstance.get<Form>(`/api/forms/${id}`).then(r => r.data),
 
   // Real bug found and fixed (22 Sep 2026): this was written against "extend GET /api/forms/:id"
-  // (tasks.md 2.2's stated smaller diff) because no live example existed yet — confirmed live
+  // (the smaller-diff guess) because no live example existed yet — confirmed live
   // today that the backend instead built a genuinely separate `GET /api/forms/:id/overview`
   // route, `{ success, overview: { formId, title, description, status, workspaceId,
   // responseCount, responseCountThisWeek, completionRate, createdAt, updatedAt } }`. The base
@@ -191,7 +182,7 @@ export const formsService = {
       }, opts.keepalive ? { adapter: 'fetch', fetchOptions: { keepalive: true } } : undefined)
       .then((r) => r.data),
 
-  // Sprint 13 (CF5.5) — BREAKING on the backend: this now moves the form to Trash (200 with `purgeAt`) instead
+  // This moves the form to Trash (200 with `purgeAt`) instead
   // of destroying it. Callers still only care that it worked; the result is the countdown for the toast.
   deleteForm: (id: string) =>
     axiosInstance
@@ -201,14 +192,14 @@ export const formsService = {
   duplicateForm: (id: string) =>
     axiosInstance.post<{ _id: string; title: string }>(`/api/forms/${id}/duplicate`).then(r => r.data),
 
-  // Sprint 13 (CF6.5): optional body commits the pre-flight's access mode / closing date with the publish.
-  // The slug is REUSED on re-publish (CF5.3) — `slug` here is always the link that is live now.
+  // Optional body commits the pre-flight's access mode / closing date with the publish.
+  // The slug is REUSED on re-publish — `slug` here is always the link that is live now.
   publishForm: (id: string, body?: PublishBody): Promise<PublishResult> =>
     axiosInstance
       .post<PublishResult & { publishedSlug?: string }>(`/api/forms/${id}/publish`, body ?? {})
       .then((r) => ({ ...r.data, slug: r.data.publishedSlug ?? r.data.slug ?? '' })),
 
-  // Sprint 13 (CF2.5): the ONE readiness evaluation, shared with the server's own publish check.
+  // The ONE readiness evaluation, shared with the server's own publish check.
   getReadiness: (id: string): Promise<Readiness> =>
     axiosInstance.get(`/api/forms/${id}/readiness`).then((r) => {
       const body = (r.data ?? {}) as Partial<Readiness>;
@@ -240,7 +231,7 @@ export const formsService = {
   unarchiveForm: (id: string) =>
     axiosInstance.post<{ _id: string; archivedAt: null }>(`/api/forms/${id}/unarchive`).then((r) => r.data),
 
-  // Sprint 13 (CF2.6): a real submission through the real pipeline, flagged `isTest` — it counts nowhere.
+  // A real submission through the real pipeline, flagged `isTest` — it counts nowhere.
   sendTestSubmission: (id: string, answers: TestSubmissionAnswer[]) =>
     axiosInstance.post<{ _id: string; isTest: true }>(`/api/forms/${id}/test-submissions`, { answers }).then((r) => r.data),
 

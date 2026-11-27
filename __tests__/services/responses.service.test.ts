@@ -1,8 +1,4 @@
 /**
- * __tests__/services/responses.service.test.ts
- * sprint-12-inbox-collaboration, requirements.md §7.1 (1.3) — migrated off `status`/`updateStatus`
- * to `stageId`/`update()`, and `getStats` now calls the single `GET /api/responses/stats` endpoint
- * instead of computing counts client-side from 3 requests (task 1.3's own gate).
  * Tests: responsesService — getResponses, getResponseById, update, deleteResponse,
  * getFileDownloadUrl, getStats, workspace-scope header presence, answer-cleaning
  */
@@ -196,7 +192,7 @@ describe('responsesService', () => {
       Resume: { name: 'resume.pdf', size: 1024 },
       // Backend has also been observed sending that exact string pre-stringified.
       'Cover Letter': '[object Object]',
-      // Real full storage path observed during Sprint 4 — multiple ObjectId-shaped segments,
+      // Real full storage path — multiple ObjectId-shaped segments,
       // a "/responses/" marker, then the original filename (non-hex chars included).
       Attachment:
         '6a6b0c5b9ee5b1318d14352d/6a7328e4d7510e56943c80d4/responses/6a742cc7fc87c8a424135312/wallpaperflare.com_wallpaper__1_.jpg',
@@ -211,7 +207,6 @@ describe('responsesService', () => {
     expect(result.answers).toEqual({ 'Full Name': 'Priya' });
   });
 
-  // Sprint 12 (inbox-collaboration), task 2.2 — bulk/markRead.
   it('bulk posts one request for ids and returns succeeded/failed/previous', async () => {
     mockPost.mockResolvedValueOnce({
       data: { success: true, result: { succeeded: ['r1', 'r2'], failed: [{ id: 'r3', reason: 'no access' }], previous: [{ id: 'r1', stageId: 's1' }] } },
@@ -264,8 +259,8 @@ describe('responsesService', () => {
   });
 });
 
-// design.md §21: "fast-check: ... bulk partial failure accounting". `idsRemainingSelected` is the
-// pure reducer `useInboxMutations` (task 2.3) uses to decide which ids stay selected after a bulk
+// `idsRemainingSelected` is the
+// pure reducer `useInboxMutations` uses to decide which ids stay selected after a bulk
 // call — property: a succeeded id is never among the ids left selected.
 describe('bulk partial-failure accounting (property)', () => {
   it('never reports a succeeded id as still-selected/failed', () => {

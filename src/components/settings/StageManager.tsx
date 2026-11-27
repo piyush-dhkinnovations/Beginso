@@ -26,9 +26,9 @@ interface StageManagerProps {
 }
 
 /**
- * Sprint 12 (inbox-collaboration), tasks.md 5.1. No wireframe — derived from `TagManager`'s
- * list+edit pattern (same file, same day-3 precedent it cites for itself). `ui/Table` with
- * up/down reorder buttons (keyboard-operable; no drag-and-drop per the task's explicit call-out).
+ * No wireframe — derived from `TagManager`'s
+ * list+edit pattern. `ui/Table` with
+ * up/down reorder buttons (keyboard-operable; no drag-and-drop).
  * Colour is a `<select>` restricted to `STAGE_COLOR_TOKENS` only — never a raw colour input —
  * matching `TagManager`'s own colour picker. Delete requires a destination stage whenever the
  * stage being removed still holds responses; the workspace's default/first stage can never be

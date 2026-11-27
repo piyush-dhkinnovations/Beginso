@@ -14,7 +14,7 @@ export interface TagPickerProps {
   /** The tags on the response, as the response itself carries them. The chips come from here, so a tag created a moment ago shows up at
    * once even though the cached workspace library does not list it yet (QA D8-009). Falls back to looking the ids up in `available`. */
   selectedTags?: readonly { id: string; name: string }[];
-  /** Whether the caller may create a new tag inline (OQ-5 default: any `responses:act` role). */
+  /** Whether the caller may create a new tag inline (by default any `responses:act` role). */
   canCreate: boolean;
   disabled?: boolean;
   onAdd: (tagId: string) => void;
@@ -23,10 +23,10 @@ export interface TagPickerProps {
 }
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.7 (7.1), design.md §6. Tag picker for the
- * detail sidebar/bulk bar: search the workspace library, create inline when permitted (OQ-5).
- * A lighter custom listbox rather than a full ARIA combobox (`MentionPicker`, task 4.2, is where
- * that full pattern is required by requirements.md §9.2) — every control here is still a real,
+ * Tag picker for the
+ * detail sidebar/bulk bar: search the workspace library, create inline when permitted.
+ * A lighter custom listbox rather than a full ARIA combobox (`MentionPicker` is where
+ * that full pattern is required) — every control here is still a real,
  * keyboard-operable `<button>`, Escape closes and returns focus to the trigger.
  */
 export function TagPicker({ available, selectedIds, selectedTags, canCreate, disabled, onAdd, onRemove, onCreate }: TagPickerProps) {

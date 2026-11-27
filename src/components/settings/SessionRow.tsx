@@ -9,7 +9,7 @@ interface SessionRowProps {
   isRevoking: boolean;
 }
 
-// Correctness Property 5: the current session never renders a Revoke action — a user can't
+// The current session never renders a Revoke action — a user can't
 // revoke the session they're viewing this page from (they'd use Logout for that).
 export function SessionRow({ session, onRevoke, isRevoking }: SessionRowProps) {
   return (
@@ -28,7 +28,7 @@ export function SessionRow({ session, onRevoke, isRevoking }: SessionRowProps) {
           absent button let the current-device row shrink shorter than every other row. Hidden via
           `invisible` (not omitted) for the current session: visibility:hidden keeps the layout
           space but drops it from the accessibility tree and tab order, so it stays true that the
-          current session never exposes a working Revoke control (Correctness Property 5). */}
+          current session never exposes a working Revoke control. */}
       <Button
         variant="secondary"
         size="small"

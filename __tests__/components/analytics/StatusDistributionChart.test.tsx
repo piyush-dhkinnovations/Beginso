@@ -1,9 +1,6 @@
 /**
- * __tests__/components/analytics/StatusDistributionChart.test.tsx
- * Feature: sprint-5-analytics-reports
  * Tests: StatusDistributionChart — segment colors/counts, center total, empty state, legend,
  * sr-only table
- * Requirements: 5.1-5.5, 13.1, 13.3
  */
 
 import { describe, it, expect, vi } from 'vitest';

@@ -4,7 +4,7 @@ import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import { DEFAULT_VIEW } from '@/lib/responseView';
 import type { FormResponseViewDefault, PersonalResponseView, ResponseViewConfig, ResponseViewSettings } from '@/types/responseView';
 
-// Sprint 15 (response layouts). Hiding or pinning a question in a view is cosmetic: exports and downloads still include it.
+// Hiding or pinning a question in a view is cosmetic: exports and downloads still include it.
 // The envelope is unwrapped defensively, like every service here: the backend has been inconsistent about wrapping.
 export const responseViewService = {
   get: (formId: string, scope?: string): Promise<ResponseViewConfig> =>

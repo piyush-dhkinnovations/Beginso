@@ -19,7 +19,7 @@ import { useWorkspaceTimezone } from '@/hooks/useWorkspaceTimezone';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import type { AccessMode, FormSettings, FormStatus, ReadinessIssue } from '@/types/form';
 
-// Sprint 13 (CF6.5 / CF2.5 / CF5.3), requirements.md 5.1–5.5, wireframe 38 "Publish Form".
+// Wireframe 38 "Publish Form".
 // Two states in one dialog. PRE-FLIGHT fronts the four things that are wrong-by-default if nobody looks:
 // the public URL, who can respond, the closing date and notifications — with readiness from the SERVER
 // (one rule, shared with its own publish check). Blocking issues stop Publish; warnings never do.
@@ -108,7 +108,7 @@ export function PublishModal(props: PublishFlowProps) {
   );
 }
 
-// ─── Pre-flight ──────────────────────────────────────────────────────────────
+// Pre-flight
 
 function Preflight({ onClose, formId, settings, scope, canPublish, onStatusChange, onChangeSetting, onFixField }: PublishFlowProps) {
   const { toast } = useToast();
@@ -260,7 +260,7 @@ function Preflight({ onClose, formId, settings, scope, canPublish, onStatusChang
   );
 }
 
-// ─── Live ────────────────────────────────────────────────────────────────────
+// Live
 
 function LiveState({ onClose, formId, slug, canPublish, onStatusChange }: PublishFlowProps) {
   const { toast } = useToast();

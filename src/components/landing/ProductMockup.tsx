@@ -304,9 +304,9 @@ export default function ProductMockup() {
           </div>
           <div className="flex-1 flex justify-center">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-(--surface-card) border border-(--border-default) px-3 py-1 bg-caption text-(--text-muted)">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {/* eslint-disable-next-line @next/next/no-img-element -- local SVG icon */}
               <img src="/favicon-light.svg" alt="" height={12} width={12} style={{ height: 12, width: 12 }} aria-hidden="true" className="brand-icon-light" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {/* eslint-disable-next-line @next/next/no-img-element -- local SVG icon */}
               <img src="/favicon-dark.svg" alt="" height={12} width={12} style={{ height: 12, width: 12 }} aria-hidden="true" className="brand-icon-dark" />
               beginso.com/w/acme/inbox
             </span>
@@ -399,7 +399,7 @@ export default function ProductMockup() {
 
             <StatCards />
 
-            {/* Full composition (>=1280) and mid composition (1024-1279, table only) */}
+            {/* Full composition (>=1280) and mid composition (768-1279, table only) */}
             <div className="hidden md:grid grid-cols-1 xl:grid-cols-[62fr_38fr] gap-4">
               <InboxTable rows={TABLE_ROWS} />
 

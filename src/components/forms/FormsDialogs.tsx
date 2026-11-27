@@ -17,9 +17,9 @@ export function FormsDialogs({ s, context }: { s: FormsPageState; context: Forms
         onClose={() => s.setFormToMove(null)}
       />
 
-      {/* requirements.md §7.8 — works identically on a personal or workspace form; this same
-          FormsPage/FormRow is already shared between (user)/forms and /w/[slug]/forms (Sprint 8),
-          so no per-context branching is needed here (design.md §4). */}
+      {/* Works identically on a personal or workspace form; this same
+          FormsPage is already shared between (user)/forms and /w/[slug]/forms,
+          so no per-context branching is needed here. */}
       <FormAccessPanel
         isOpen={formToShare !== null}
         formId={formToShare?._id ?? ''}

@@ -1,6 +1,4 @@
 /**
- * __tests__/components/ui/Radio.test.tsx
- * Feature: sprint-7-foundation
  * Tests: Radio — mutually exclusive selection within a named group
  */
 

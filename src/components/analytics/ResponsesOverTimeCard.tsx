@@ -26,7 +26,7 @@ const DAILY_MAX_POINTS = { week: 26, month: 6 } as const;
 /**
  * What a bar is called. In full ("Week of 24 Aug 2020", "5 Oct 2026") for the tooltip and screen readers; on the axis only as much as is
  * needed to tell the bars apart: "24 Aug", or "Aug 2020" once the chart reaches across years (a bare "24 Aug" would not say which year).
- * "Wk" was dropped: it was cut off on the axis ("Wk 1 Fe...") and means nothing to most people.
+ * "Wk" is not used: it was cut off on the axis ("Wk 1 Fe...") and means nothing to most people.
  */
 const names = (bucketStart: string, bucket: TrendBucket, acrossYears: boolean) => {
   const d = parseBucket(bucketStart);
@@ -47,7 +47,7 @@ interface ResponsesOverTimeCardProps {
   onBucketChange: (bucket: TrendBucket) => void;
 }
 
-// Responses per day/week across all forms as a bar chart (peak highlighted), with a Daily/Weekly
+// Responses per day/week/month across all forms as a bar chart, with a Daily/Weekly/Monthly
 // switch. A visually-hidden table carries the exact figures for assistive tech.
 export function ResponsesOverTimeCard({ points, isLoading, bucket, onBucketChange }: ResponsesOverTimeCardProps) {
   const shown = bucket === 'month' && points ? groupByMonth(points) : points;

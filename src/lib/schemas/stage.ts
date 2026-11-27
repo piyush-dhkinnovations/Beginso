@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { STAGE_COLOR_TOKENS } from '@/types/stage';
 
-// Sprint 12 (inbox-collaboration), task 5.1. Same "client-side hint; server authoritative"
+// Same "client-side hint; server authoritative"
 // precedent as tagSchema (lib/schemas/tag.ts) — case-insensitive name uniqueness isn't
 // re-implemented here without the live stage list to check against.
 export const stageSchema = z.object({

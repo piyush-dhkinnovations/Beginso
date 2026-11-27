@@ -1,7 +1,7 @@
 'use client';
 
 // Dev demo of the customisable dashboard grid on sample data (non-production only, app/dev/ui/dashboard).
-// State is local: Save/Reset here only prove the interaction. Persistence is Phase 2 (backend).
+// State is local: Save/Reset here only prove the interaction; nothing is persisted.
 import { useState } from 'react';
 import { BarChart3, Calendar, FileText, MessageSquare, Plus, Users } from 'lucide-react';
 import { Button } from '@/components/ui/Button';

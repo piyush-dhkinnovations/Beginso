@@ -98,10 +98,10 @@ export interface NoteComposerProps {
 }
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §9.2, design.md §6/§7. `@` opens
+ * `@` opens
  * `MentionPicker`; a selection appends a chip and inserts the name into the body text (display
  * only — `mentionIds` is tracked separately and is what's actually sent, never parsed back out of
- * the text per design.md §11.2/§17's explicit rule).
+ * the text).
  */
 export function NoteComposer({
   members,
@@ -168,7 +168,7 @@ export function NoteComposer({
 
   function selectMention(member: MemberListItem) {
     // Replace the trailing "@query" the user was typing with nothing — the mention becomes a chip
-    // below the textarea, not inline text (design.md §11.2: mentionIds come from the picker, never
+    // below the textarea, not inline text (mentionIds come from the picker, never
     // parsed from the body).
     setBody((b) => b.replace(/@([^\s@]*)$/, ''));
     setMentionIds((ids) => (ids.includes(member.userId) ? ids : [...ids, member.userId]));

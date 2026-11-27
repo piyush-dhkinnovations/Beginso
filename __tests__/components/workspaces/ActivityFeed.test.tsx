@@ -1,6 +1,3 @@
-/**
- * sprint-10-events-migration, tasks.md 4.1 — requirements.md §7.6, design.md §17.
- */
 import { describe, it, expect } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { ActivityFeed } from '@/components/workspaces/ActivityFeed';

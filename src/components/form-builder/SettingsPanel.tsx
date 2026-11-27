@@ -56,7 +56,7 @@ function Row({ label, description, control, children }: { label: string; descrip
 }
 
 export function SettingsPanel({ settings, onUpdate }: SettingsPanelProps) {
-  // ── Success message (commits on blur) ───────────────────────────────────────
+  // Success message (commits on blur)
   const [message, setMessage] = useState(settings.successMessage ?? '');
   const [prevMessage, setPrevMessage] = useState(settings.successMessage ?? '');
   if ((settings.successMessage ?? '') !== prevMessage) {
@@ -64,7 +64,7 @@ export function SettingsPanel({ settings, onUpdate }: SettingsPanelProps) {
     setPrevMessage(settings.successMessage ?? '');
   }
 
-  // ── Response limit ───────────────────────────────────────────────────────────
+  // Response limit
   // Bug fixed 22 Jul 2026: the backend enforces this off a separate responseLimitEnabled
   // flag, not off whether responseLimit has a value — this panel used to only ever send
   // responseLimit, so the toggle displayed as "on" while the backend silently never
@@ -89,7 +89,7 @@ export function SettingsPanel({ settings, onUpdate }: SettingsPanelProps) {
     onUpdate({ responseLimit: n, responseLimitEnabled: true });
   };
 
-  // ── Close date ────────────────────────────────────────────────────────────────
+  // Close date
   const closeDateEnabled = settings.closeDate !== undefined;
   const isPastDate = closeDateEnabled && new Date(settings.closeDate!) < new Date();
 
@@ -106,9 +106,9 @@ export function SettingsPanel({ settings, onUpdate }: SettingsPanelProps) {
 
       <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
       <Group title="Responses">
-        {/* Sprint 13 (D1.1, requirements.md 7.1). Plain-language access mode. A form with no stored value is
+        {/* Plain-language access mode. A form with no stored value is
             Mode 1 (open) — that is what every pre-V2 form is. The new-form default is the backend's call
-            (OQ-9); this control only reads and writes `settings.accessMode`. */}
+            to make; this control only reads and writes `settings.accessMode`. */}
         <Row
           label="Who can respond"
           description="Choose who is allowed to submit this form."

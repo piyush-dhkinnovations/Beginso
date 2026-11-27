@@ -1,9 +1,3 @@
-/**
- * __tests__/app/w/[slug]/team/page.test.tsx
- * Feature: sprint-9-team-permissions, requirements.md §7.2/§7.3, design.md §15.1/§17.
- * Day 2 adds Pending Invites card + Invite Members modal on top of Day 1's Members card.
- */
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -227,7 +221,7 @@ describe('TeamPage (/w/[slug]/team)', () => {
     await waitFor(() => expect(mockRevoke).toHaveBeenCalledWith('acme', 'inv-1'));
   });
 
-  // Sprint 9 Day 4 — requirements.md §7.6: reachable from the Team page, by anyone (not gated
+  // Reachable from the Team page, by anyone (not gated
   // behind canManage, unlike Invite Members), since it's a read-only reference.
   it('clicking Roles & Permissions navigates to /w/[slug]/roles', async () => {
     mockListMembers.mockResolvedValue([ADMIN]);
@@ -244,7 +238,7 @@ describe('TeamPage (/w/[slug]/team)', () => {
     expect(screen.queryByRole('button', { name: 'Roles & Permissions' })).not.toBeInTheDocument();
   });
 
-  // Sprint 10, tasks.md 4.6 — the wireframe's "View Audit Log →" link, owner/admin only.
+  // The wireframe's "View Audit Log →" link, owner/admin only.
   it('an admin sees a View Audit Log link to /w/[slug]/audit', async () => {
     mockListMembers.mockResolvedValue([ADMIN]);
     renderPage();

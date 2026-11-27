@@ -162,7 +162,7 @@ export function useBuilderAutosave() {
   const markSaved = useBuilderStore((state) => state.markSaved);
   const stale = useBuilderStore((state) => state.stale);
 
-  // ─── Autosave ────────────────────────────────────────────────────────────────
+  // Autosave
 
   useEffect(() => {
     if (!dirty || !formId || formId === 'undefined' || stale) return;

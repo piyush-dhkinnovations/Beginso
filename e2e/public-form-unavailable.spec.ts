@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Requirement 7 (Form Unavailable). A draft, an archived form and a link that never existed are one indistinguishable 404, so a
+ * Form Unavailable. A draft, an archived form and a link that never existed are one indistinguishable 404, so a
  * link never confirms that a draft exists. A form its OWNER closed, whose closing date has passed, or that reached its response
- * limit says so (FIX-03): the respondent is told the real reason. These two groups are deliberately different screens.
+ * limit says so: the respondent is told the real reason. These two groups are deliberately different screens.
  */
 
 test.describe('Public form — unavailable screen', () => {

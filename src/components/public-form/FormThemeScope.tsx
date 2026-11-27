@@ -3,7 +3,7 @@
 import { createContext, useContext, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { parseEmbedOptions, type Scheme } from '@/lib/embed/embedParams';
 
-// Sprint 13 (CF2.11), requirements.md 3.4. The admin/OS dark theme must never reach the public
+// The admin/OS dark theme must never reach the public
 // form: it is styled by the form's own branding, which respondents cannot change. beginso-ui.css
 // implements dark as `[data-theme="dark"]` descendant selectors on <html>, with no light re-scope,
 // so a nested wrapper cannot undo it — this scope removes the attribute from <html> while mounted

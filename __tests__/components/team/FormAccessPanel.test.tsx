@@ -1,7 +1,5 @@
 /**
- * __tests__/components/team/FormAccessPanel.test.tsx
- * Feature: sprint-9-team-permissions, requirements.md §7.8, design.md §21.
- * Design.md §21 names two cases explicitly: a workspace-form and a personal-form invocation —
+ * A workspace-form and a personal-form invocation are the same case here:
  * the component takes only `formId`/`formTitle`, so both are exercised the same way here.
  */
 

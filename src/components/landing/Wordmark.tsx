@@ -11,7 +11,7 @@ export function Wordmark({ height = 24, force }: { height?: number; force?: "lig
 
   if (force) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
+      // eslint-disable-next-line @next/next/no-img-element -- local brand SVG
       <img
         src={force === "dark" ? WORDMARK_DARK : WORDMARK_LIGHT}
         alt="Beginso"
@@ -24,9 +24,9 @@ export function Wordmark({ height = 24, force }: { height?: number; force?: "lig
 
   return (
     <>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- local brand SVG */}
       <img src={WORDMARK_LIGHT} alt="Beginso" height={height} width={width} style={{ height, width, zoom: 'var(--ui-scale, 1)', flexShrink: 0 }} className="wordmark-light" />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
+      {/* eslint-disable-next-line @next/next/no-img-element -- local brand SVG */}
       <img src={WORDMARK_DARK} alt="Beginso" height={height} width={width} style={{ height, width, zoom: 'var(--ui-scale, 1)', flexShrink: 0 }} className="wordmark-dark" />
     </>
   );

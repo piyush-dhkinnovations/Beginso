@@ -130,7 +130,7 @@ function Wrap({ nav, children }: { nav: ReturnType<typeof useChartNav>; children
   /* eslint-enable react-hooks/refs */
 }
 
-// ── Pie / donut ──────────────────────────────────────────────────────────────
+// Pie / donut
 
 function arc(r0: number, r1: number, a0: number, a1: number): string {
   const pt = (r: number, a: number) => `${(100 + r * Math.cos(a)).toFixed(2)} ${(100 + r * Math.sin(a)).toFixed(2)}`;
@@ -194,7 +194,7 @@ export function PieChart({ data, ariaLabel, onSelect, donut, legend = true, cent
   );
 }
 
-// ── Bar (vertical, horizontal) ───────────────────────────────────────────────
+// Bar (vertical, horizontal)
 
 // room around the plot; the text is bigger at a larger Text size, so the axis labels get more room
 const padFor = (k: number) => ({ top: 18, right: 12, bottom: Math.round(30 * k), left: Math.round(38 * k) });
@@ -297,7 +297,7 @@ function CategoryLegend({ data }: { data: ChartSegment[] }) {
   );
 }
 
-// ── Line / area ──────────────────────────────────────────────────────────────
+// Line / area
 
 export function LineAreaChart({ data, ariaLabel, onSelect, area, height = 220 }: InteractiveChartProps & { area?: boolean; height?: number }) {
   const k = useTextScale();
@@ -346,7 +346,7 @@ export function LineAreaChart({ data, ariaLabel, onSelect, area, height = 220 }:
   );
 }
 
-// ── Average stat card ────────────────────────────────────────────────────────
+// Average stat card
 
 export function AverageStat({ mean, n, label, onSelect, ariaLabel }: { mean: string; n: number; label: string; onSelect?: () => void; ariaLabel: string }) {
   const body = (

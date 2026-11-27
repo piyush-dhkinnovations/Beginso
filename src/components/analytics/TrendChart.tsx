@@ -10,7 +10,7 @@ import type { AnalyticsTrendPoint, AnalyticsTrendResult } from '@/types/analytic
 
 const CHART_HEIGHT = 280;
 
-/** Pure data-transform the trend chart renders from — Correctness Property 2 (Friday) verifies
+/** Pure data-transform the trend chart renders from — a property test verifies
  * it preserves length/order and never emits a NaN or negative response count. */
 export function mapTrendSeries(points: AnalyticsTrendPoint[]): AnalyticsTrendPoint[] {
   return points.map((p) => ({
@@ -46,7 +46,7 @@ interface TrendChartProps {
   isError?: boolean;
   onRetry?: () => void;
   /** Whether the current Date_Range is "All time" — changes the empty-state copy between "no
-   * responses ever" and "none in this narrower window" (Requirement 4.4). */
+   * responses ever" and "none in this narrower window". */
   isAllTime?: boolean;
 }
 

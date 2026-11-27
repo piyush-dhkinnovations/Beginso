@@ -52,7 +52,6 @@ describe('ResponsesCalendar', () => {
   });
 
   it('lands a 23:30 UTC submission on the correct local day for an IST workspace', async () => {
-    // design.md's own acceptance case for task 3.3.
     mockGetResponses.mockResolvedValue({
       data: [fixtureResponse('r1', '2026-09-15T23:30:00.000Z')],
       total: 1,

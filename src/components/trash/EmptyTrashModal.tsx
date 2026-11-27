@@ -6,7 +6,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
-// Sprint 13 (CF5.5), wireframe 42 "Empty Trash (confirm)". Type-to-confirm is reserved for genuinely
+// Wireframe 42 "Empty Trash (confirm)". Type-to-confirm is reserved for genuinely
 // unrecoverable actions — everything reversible uses an undo toast instead. The literal is checked here for
 // convenience AND by the server, which refuses a delete without `confirm: "DELETE"`.
 export interface EmptyTrashModalProps {

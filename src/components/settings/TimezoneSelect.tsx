@@ -130,7 +130,7 @@ export function TimezoneSelect({ id, label, value, onChange, onBlur, error }: Ti
     };
     document.addEventListener('mousedown', away);
     return () => document.removeEventListener('mousedown', away);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- subscribes once per opening; `close` is a new function on every render
   }, [open]);
 
   function close(refocus: boolean) {

@@ -11,14 +11,14 @@ import type { SavedViewVisibility } from '@/types/savedView';
 export interface SaveViewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  /** Team visibility is offered only when permitted (OQ-8 default: Editor+). */
+  /** Team visibility is offered only when permitted (Editor+ by default). */
   canCreateTeamView: boolean;
   isSaving: boolean;
   onSave: (values: SavedViewFormValues) => void;
 }
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.6 (6.1). No wireframe (design.md §15):
+ * No wireframe:
  * `ui/Modal` — name, visibility `ui/Radio`, Save/Cancel. Captures the current filters/sort/view
  * mode is the caller's job (`ResponsesHubView` passes them into `viewsService.create` alongside
  * this form's `name`/`visibility`); this component only owns the two fields a person actually

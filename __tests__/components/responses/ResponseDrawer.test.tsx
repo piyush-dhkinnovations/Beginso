@@ -1,8 +1,4 @@
 /**
- * __tests__/components/responses/ResponseDrawer.test.tsx
- * Feature: responses-drawer-redesign; migrated by sprint-12-inbox-collaboration task 1.3/1.8 to
- * stages (`responsesService.update({ stageId })`, `responseKeys.*` scope segment) rather than the
- * removed status union.
  * Tests: null when closed, fetches+renders when open, Escape/backdrop close, dual-cache
  * optimistic stage patch, delete closes instead of navigating
  */
@@ -36,7 +32,7 @@ vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
-// Sprint 12 (inbox-collaboration), task 4.4: ResponseDrawer now renders NotesPanel and
+// ResponseDrawer renders NotesPanel and
 // WorkflowSidebar's ActivityTimeline unconditionally, both of which fetch on mount — mocked here
 // so this suite (which only exercises the drawer's own header/answers/delete/navigation behaviour)
 // doesn't make real network calls. useAuth is required unconditionally by NotesPanel's
@@ -144,7 +140,7 @@ describe('ResponseDrawer', () => {
   });
 
   it('locks page scroll while open and restores it on close', async () => {
-    // Feature: sprint-4-responses regression — the drawer's own content and the Responses
+    // Regression: the drawer's own content and the Responses
     // table underneath used to both scroll independently (two visible scrollbars) since
     // nothing prevented the page body from scrolling while the drawer was open.
     mockGetResponseById.mockResolvedValue(detail);
@@ -495,7 +491,7 @@ describe('ResponseDrawer', () => {
   it('optimistically patches both the detail and list caches on stage change, then invalidates', async () => {
     // Explicit workspace scope: a *real* Stage-id dropdown (this fixture's STAGES) only exists
     // for a workspace — personal-shell responses use PERSONAL_DEFAULT_STAGES and send {status},
-    // not {stageId} (OQ-9's "fixed default stages", Sprint 12 close-out). This test is about the
+    // not {stageId}. This test is about the
     // optimistic-cache-patch mechanism, not personal-vs-workspace stage semantics, so it exercises
     // the workspace path explicitly rather than relying on the drawer's personal-shell default.
     mockGetResponseById.mockResolvedValue(detail);
@@ -520,7 +516,7 @@ describe('ResponseDrawer', () => {
   });
 
   it('stage change still succeeds when a stats cache entry shares the same key prefix', async () => {
-    // Feature: sprint-4-responses, regression — ResponseDrawer's optimistic update patches
+    // Regression: ResponseDrawer's optimistic update patches
     // every cached query under ['responses', scope, formId] via setQueriesData, which also
     // fuzzy-matches the stats cache (['responses', scope, formId, 'stats'], shape
     // { total, unread, byStage, byCategory } — no `data` array). In real usage
@@ -556,10 +552,6 @@ describe('ResponseDrawer', () => {
     expect(mockToast).not.toHaveBeenCalledWith('Failed to update stage. Please try again.', 'error');
   });
 
-  // The dedicated "Escape closing the stage menu doesn't also close the drawer" case is retired:
-  // task 4.3 replaced the custom-listbox stage control (StatusDropdown, which owned its own
-  // Escape/stopPropagation) with WorkflowSidebar's native `ui/Select`, which has no open/close JS
-  // state to guard — Escape now behaves exactly like the "calls onClose on Escape" case above.
 
   it('shows uploaded files under their form field labels in Submitted response', async () => {
     mockGetFormById.mockRejectedValue(new Error('form unavailable'));
@@ -699,7 +691,7 @@ describe('ResponseDrawer header on small screens', () => {
   });
 });
 
-// Sprint 15: the drawer and the full-screen page share one "Submitted response" card with the layout switcher; the page
+// The drawer and the full-screen page share one "Submitted response" card with the layout switcher; the page
 // puts the overview beside it from 1024px up and moves the panels into tabs below.
 describe('ResponseDrawer layouts, full-screen page and keyboard', () => {
   beforeEach(() => {

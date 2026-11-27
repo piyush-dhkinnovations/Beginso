@@ -20,7 +20,7 @@ function dayNumber(date: Date, timeZone: string): number {
 }
 
 /** Groups newest-first notifications into Today / This week (last 7 calendar days) / Earlier, in the
- * workspace timezone (design.md §7). Empty groups are omitted; input order is preserved. */
+ * workspace timezone. Empty groups are omitted; input order is preserved. */
 export function groupNotifications(items: AppNotification[], timeZone: string, now: Date = new Date()): NotificationGroup[] {
   const today = dayNumber(now, timeZone);
   const buckets: Record<NotificationGroupLabel, AppNotification[]> = { Today: [], 'This week': [], Earlier: [] };

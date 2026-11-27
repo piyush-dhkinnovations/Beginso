@@ -1,6 +1,6 @@
 import { shortId } from '@/lib/formatters';
 
-// Display phrase for an event `action`. The backend owns the action list (design.md §13), so an
+// Display phrase for an event `action`. The backend owns the action list, so an
 // unknown action falls back to its own text ("form.archived" → "form archived") rather than
 // hiding the event.
 const ACTION_PHRASES: Record<string, string> = {
@@ -15,7 +15,7 @@ const ACTION_PHRASES: Record<string, string> = {
   'member.removed': 'removed a member from',
   'session.revoked': 'revoked a session on',
   'export.created': 'exported responses from',
-  // Sprint 14 (B5.3): the report queue's own events. The row count, when the event carries it, is
+  // The report queue's own events. The row count, when the event carries it, is
   // appended by `describeEventDetail` - never assumed present.
   'report.create': 'exported a',
   'report.download': 'downloaded a',
@@ -70,7 +70,7 @@ const ACTION_PHRASES: Record<string, string> = {
   'workspace.transfer_ownership': 'transferred ownership of',
 };
 
-// `metadata` is optional - Sprint 14 (B5.3): report events read a row count from it, and only when it
+// `metadata` is optional: report events read a row count from it, and only when it
 // is a real number ("exported 142 rows in a"). Anything else, or an unknown action, degrades to the
 // plain phrase / generic text; this never throws.
 export function describeEventAction(action: string, metadata?: Record<string, unknown> | null): string {

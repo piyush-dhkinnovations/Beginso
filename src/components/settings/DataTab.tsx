@@ -6,8 +6,8 @@ import { settingsKeys } from '@/lib/queryKeys';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { DangerZoneSection } from './DangerZoneSection';
 
-// Account-level data export and deletion — split out of WorkspaceTab so they stay with the
-// account when workspace settings move to /w/[slug]/settings. Shares WorkspaceTab's cache entry.
+// Account-level data export and deletion — kept out of WorkspaceTab so they stay with the
+// account; workspace settings live at /w/[slug]/settings. Shares NotificationsTab's cache entry.
 export function DataTab() {
   const { data: workspace, isLoading } = useQuery({
     queryKey: settingsKeys.workspace(),

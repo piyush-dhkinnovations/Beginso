@@ -1,8 +1,3 @@
-/**
- * __tests__/services/tags.service.test.ts
- * sprint-12-inbox-collaboration, requirements.md §7.7, design.md §11.2/§12, task 2.2.
- * Built against the documented (not yet live) contract — see tagsService's own comment.
- */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/axios', () => ({

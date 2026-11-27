@@ -1,7 +1,3 @@
-/**
- * __tests__/lib/savedViewStaleness.test.ts
- * sprint-12-inbox-collaboration, requirements.md §7.6, task 2.6.
- */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { staleFilterCount } from '@/lib/savedViewStaleness';

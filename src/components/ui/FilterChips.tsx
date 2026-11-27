@@ -28,7 +28,7 @@ export interface FilterChipsProps {
 
 const GAP: Record<string, number> = { tabs: 4, bubbles: 8 }; // the row's gap in px (gap-1, gap-2), needed to add up widths
 
-// Count filter chips (`All 77 · Unread 71 · New 16`) — replaces stat-card bands above lists.
+// Count filter chips (`All 77 · Unread 71 · New 16`).
 // Plain toggle buttons (aria-pressed), one active at a time; clicking a chip filters the list.
 export function FilterChips({ chips, activeId, onChange, ariaLabel, className, variant = "pills" }: FilterChipsProps) {
   const tabs = variant === "tabs";

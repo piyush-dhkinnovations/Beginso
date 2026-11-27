@@ -1,8 +1,7 @@
 /**
  * Shared TypeScript interfaces for Analytics.
- * Shapes match the backend contract in docs/backend-contract/api-reference.md §4, extended by
- * Sprint 12 (inbox-collaboration) requirements.md §7.3 #3 / design.md §2: the status split groups
- * by workspace-defined stage `category` (OQ-11's default) so a custom stage set still yields a
+ * Shapes match the backend contract in docs/backend-contract/api-reference.md §4. The status split groups
+ * by workspace-defined stage `category` so a custom stage set still yields a
  * coherent three-bucket donut, rather than by the removed fixed `status` union.
  */
 
@@ -20,12 +19,9 @@ export type DateRangePreset = '7d' | '30d' | '90d' | 'all' | 'custom';
 
 export interface AnalyticsOverview {
   totalResponses: number;
-  /** Grouped by stage `category`, not the removed `status` union — same three keys, new meaning
-   * (requirements.md §7.3). @deprecated alias name kept as `categoryCounts` for clarity; the old
-   * `statusCounts` name is gone entirely, not kept as a second deprecated field, since every known
-   * consumer is migrated in this same sprint (task 1.10). */
+  /** Grouped by stage `category`, not the removed `status` union — same three keys, new meaning. */
   categoryCounts: Record<StageCategory, number>;
-  /** Sprint 14 — present once BE 0.2 ships; null = no counted views. */
+  /** null = no counted views. */
   completionRate?: number | null;
   reviewedRate?: number | null;
   views?: number | null;
@@ -71,14 +67,14 @@ export interface AnalyticsFormSummary {
   title: string;
   status: 'draft' | 'published' | 'closed';
   totalResponses: number;
-  /** Sprint 14 (B5.4, OQ-3): submissions ÷ views, 0-100, or null when no views were counted. Never
+  /** Submissions ÷ views, 0-100, or null when no views were counted. Never
    * defaulted to 0 — the UI shows "—". */
   completionRate: number | null;
   /** Counted (non-preview) views; null = not tracked. */
   views?: number | null;
-  /** The old stage-based figure, renamed (OQ-3). Uncertain until BE 0.2 ships. */
+  /** The old stage-based figure, renamed. */
   reviewedRate?: number | null;
-  /** Source template category, null for forms not created from a template (BE 0.4). */
+  /** Source template category, null for forms not created from a template. */
   templateCategory?: string | null;
   /** The form's logo / icon, so this table shows the same mark as the Forms list. Absent on an older backend. */
   branding?: FormMark;

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Zod schema for FormAccessPanel (requirements.md §7.8, design.md §14).
+ * Zod schema for FormAccessPanel.
  * Grants one email a single role, scoped to one form. Owner is not an option — same reasoning
  * as inviteMembersSchema (ownership only transfers, never gets granted through these flows).
  */

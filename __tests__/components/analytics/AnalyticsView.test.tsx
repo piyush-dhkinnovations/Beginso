@@ -1,9 +1,6 @@
 /**
- * __tests__/components/analytics/AnalyticsView.test.tsx
- * Feature: sprint-5-analytics-reports
  * Tests: AnalyticsView — Auto-Dashboard branch (formId set) vs Workspace branch (formId unset),
  * access-denied/not-found states, independent per-query loading, isAllTime wiring
- * Requirements: 1, 7, 8
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -37,7 +34,7 @@ vi.mock('@/services/analytics', () => ({
   },
 }));
 
-// Sprint 14: the per-form page now also renders "Your charts" (BE 0.3, not necessarily live) - an
+// The per-form page also renders the saved "Charts" section - an
 // empty saved-chart list keeps these tests about the built-ins.
 vi.mock('@/services/charts', () => ({
   chartsService: { list: () => Promise.resolve([]) },
@@ -83,7 +80,7 @@ describe('AnalyticsView', () => {
   it('renders the Auto-Dashboard branch (stat cards, trend, status, questions) when formId is set', async () => {
     renderView('form-1');
 
-    // The form's name now lives in the shared form header, so inside a form the page only keeps its own heading.
+    // The form's name lives in the shared form header, so inside a form the page only keeps its own heading.
     expect(await screen.findByRole('heading', { name: 'Insights' })).toBeInTheDocument();
     expect(screen.getByText('Total Responses')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText('Response Trend')).toBeInTheDocument());

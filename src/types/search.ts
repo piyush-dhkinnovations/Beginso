@@ -1,4 +1,4 @@
-// Sprint 14, design.md §11.2/§13 (GET /api/search). Uncertain until BE 0.6 ships — read defensively.
+// GET /api/search. Read defensively.
 export type SearchGroupKey = 'forms' | 'responses' | 'members' | 'templates';
 
 export interface SearchResultBase {
@@ -18,7 +18,7 @@ export interface ResponseSearchResult extends SearchResultBase {
   type: 'responses';
   formId: string;
   formTitle?: string;
-  reference?: string; // "#142"
+  reference?: string; // the response reference
   submittedAt?: string;
 }
 

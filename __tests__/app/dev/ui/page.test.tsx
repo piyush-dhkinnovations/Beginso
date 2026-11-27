@@ -1,8 +1,3 @@
-/**
- * __tests__/app/dev/ui/page.test.tsx
- * Feature: sprint-7-foundation
- */
-
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Real next/navigation notFound() throws to halt rendering — mocked the same way so the
@@ -35,5 +30,5 @@ describe('/dev/ui gallery route — production gate', () => {
   // NODE_ENV back and forth within one Vitest module graph corrupts React's dev/production
   // jsx-runtime resolution for subsequent dynamic imports in the same file (a Vitest/Vite
   // quirk, not a product bug) — see __tests__/components/dev/UiGalleryContent.test.tsx for
-  // the actual render coverage, plus this task's own `next build` + dev-server verification.
+  // the actual render coverage.
 });

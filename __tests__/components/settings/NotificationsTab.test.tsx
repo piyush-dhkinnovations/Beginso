@@ -1,8 +1,5 @@
 /**
- * __tests__/components/settings/NotificationsTab.test.tsx
- * Feature: sprint-6-settings
  * Tests: NotificationsTab — 3 toggles render, immediate save, skeleton on load, failure rollback
- * Requirements: 7.1-7.4
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -116,7 +113,7 @@ describe('NotificationsTab', () => {
     expect(await screen.findByRole('alert')).toBeInTheDocument();
   });
 
-  // sprint-11-v2a-hardening 1.4 — token pass regression: no raw neutral/white/brand class left in source.
+  // Token pass regression: no raw neutral/white/brand class left in source.
   it('has no raw bg-white/neutral/gray/brand class in its source', () => {
     const source = readFileSync(join(__dirname, '../../../src/components/settings/NotificationsTab.tsx'), 'utf-8');
     expect(source).not.toMatch(/bg-white|text-neutral-|bg-neutral-|border-neutral-|text-gray-|bg-gray-|text-black|border-t-brand-/);

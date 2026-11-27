@@ -12,11 +12,9 @@ import type { AnalyticsOverview } from '@/types/analytics';
 
 const CHART_HEIGHT = 240;
 
-// Sprint 12 (inbox-collaboration), requirements.md §7.3 #3, design.md §2/§23 (OQ-11 default):
-// grouped by stage `category`, not the removed fixed `status` union — the three category buckets
+// Without stage counts the card groups by stage `category`. The three category buckets
 // (`CATEGORY_LABELS`) are structural (the backend's own fixed enum), not a workspace-defined stage
-// name, so a literal label here is not the banned "hardcoded status label" requirements.md §7.1
-// forbids; a workspace with five custom stages still yields a coherent three-bucket donut.
+// name, so a literal label here is not a hardcoded status label.
 const SEGMENT_ORDER: StageCategory[] = ['new', 'in_progress', 'completed'];
 
 interface StatusDistributionChartProps {
@@ -25,7 +23,7 @@ interface StatusDistributionChartProps {
   isError?: boolean;
   onRetry?: () => void;
   /** Whether the current Date_Range is "All time" — changes the empty-state copy, matching
-   * TrendChart (Requirement 4.4, reused per 5.4 — one shared empty state, one shared cause). */
+   * TrendChart (one shared empty state, one shared cause). */
   isAllTime?: boolean;
   /** Every stage this form can use, in the order of its pipeline. With these the card lists all of them, a stage nobody is in yet included (at 0). */
   stages?: readonly StageRef[];
@@ -76,10 +74,10 @@ export function StatusDistributionChart({ overview, isLoading, isError = false, 
   const categoryCounts = overview?.categoryCounts ?? { new: 0, in_progress: 0, completed: 0 };
   const percentOf = (count: number) => (total > 0 ? ((count / total) * 100).toFixed(1) : '0.0');
 
-  // One row per workspace stage when the backend sends stage counts (a workspace with In Review, On Hold, Released... used to see only
+  // One row per workspace stage when the backend sends stage counts (so a workspace with In Review, On Hold, Released... does not see only
   // the three category totals, as if it had three stages). Stages are grouped New -> In Progress -> Completed. Responses that are in no
   // stage (older data) get their own row so the rows always add up to the total. Without stage counts (a personal form, an older
-  // backend) the three categories are shown, as before.
+  // backend) the three categories are shown.
   // When the form's stages are known, every one of them is a row, in the order of the pipeline, and a stage nobody is in yet shows 0: the card
   // is the pipeline, not only the part of it that has responses. A stage that has responses but is no longer on the list (it was deleted) is
   // kept at the end so the rows still add up.

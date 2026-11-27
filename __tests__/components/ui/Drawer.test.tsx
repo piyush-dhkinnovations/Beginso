@@ -1,6 +1,4 @@
 /**
- * __tests__/components/ui/Drawer.test.tsx
- * Feature: sprint-7-foundation
  * Tests: Drawer — focus trap, Escape/backdrop close, scroll lock (shared useFocusTrap with Modal)
  */
 

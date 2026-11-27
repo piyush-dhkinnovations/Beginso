@@ -1,8 +1,5 @@
 /**
- * __tests__/components/responses/PaginationControls.test.tsx
- * Feature: sprint-4-responses
  * Tests: PaginationControls — null when single page, disabled edges, onPageChange values
- * Requirements: 2.3
  */
 
 import { describe, it, expect, vi } from 'vitest';

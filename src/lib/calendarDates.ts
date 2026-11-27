@@ -1,7 +1,7 @@
 /**
- * Sprint 12 (inbox-collaboration), design.md §7.4/§16 (task 3.3). Pure date-bucketing helpers for
+ * Pure date-bucketing helpers for
  * `ResponsesCalendar` — a response's calendar day is the *workspace-local* day, not the raw UTC
- * `submittedAt` date (design.md's own acceptance case: "a response at 23:30 UTC lands on the
+ * `submittedAt` date ("a response at 23:30 UTC lands on the
  * correct local day for an IST workspace"). No date-library dependency — `Intl.DateTimeFormat`
  * with an explicit `timeZone` already does the conversion natively.
  */

@@ -91,8 +91,8 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
   const hasUrlRange = urlFrom !== null || urlTo !== null;
   const { from, to, preset } = hasUrlRange || !stored ? resolveEffectiveDateRange(urlFrom, urlTo) : storedToRange(stored);
   const isAllTime = preset === 'all';
-  // Sprint 14 (requirements 1.3): "Compare to previous period" - drives every delta line. Defaults on
-  // (that is what the page already showed); off skips the previous-period queries entirely. Remembered with the range.
+  // "Compare to previous period" - drives every delta line. Defaults on;
+  // off skips the previous-period queries entirely. Remembered with the range.
   const compare = stored?.compare ?? true;
 
   const rangeHref = (next: { from?: string; to?: string }) => {
@@ -192,9 +192,9 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
   });
 
   // "vs previous period" for the workspace summary cards and the table's Change column — no
-  // dedicated backend field for this, so it's computed by querying the same already-live
+  // dedicated backend field for this, so it's computed by querying the same
   // /api/analytics/forms endpoint a second time for the immediately preceding, equal-length
-  // window. "All time" has no meaningful predecessor (Requirement-less UX call, not a spec item).
+  // window. "All time" has no meaningful predecessor.
   const previousRange = resolvePreviousDateRange(from, to);
   const hasPreviousRange = compare && !!previousRange.from && !!previousRange.to;
 
@@ -211,7 +211,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
     enabled: !formId && hasPreviousRange,
   });
 
-  // design.md §17: "no forms yet" and "no responses in this range" are different states - the second
+  // "no forms yet" and "no responses in this range" are different states - the second
   // keeps the page and offers to widen the range.
   function widenRange() {
     applyRange({});
@@ -229,7 +229,7 @@ export function AnalyticsView({ formId, scope = 'personal', title = 'Insights' }
   // Workspace view extras: per-form previous-period baselines for every card's change, the daily
   // series behind the charts (see useAnalyticsTrend), and the figures the stat cards show.
   const previousForms = previousFormsSummaryQuery.data?.forms ?? [];
-  // Sprint 14 (OQ-3): views-weighted across forms that have a counted views-based rate. Forms
+  // Views-weighted across forms that have a counted views-based rate. Forms
   // with a null rate or no views are left out; if none qualify the result is null ("—"), never 0%.
   const meanCompletion = (list: typeof currentForms) => {
     const counted = list.filter((f) => typeof f.completionRate === 'number' && (f.views ?? 0) > 0);

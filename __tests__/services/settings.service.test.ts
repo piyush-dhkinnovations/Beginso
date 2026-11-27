@@ -1,10 +1,7 @@
 /**
- * __tests__/services/settings.service.test.ts
- * Feature: sprint-6-settings
  * Tests: settingsService — every method's endpoint, params, body, and envelope-unwrapping
  * (the backend's own documented response format is inconsistent — some controllers nest under
  * `data`, some under a named key, some spread flat — see settings.ts's unwrapEnvelope comment)
- * Requirements: 13.1
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

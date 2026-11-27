@@ -8,7 +8,7 @@ import type { PublicFormSchema } from '../src/types/publicForm.ts';
  * it — this process stands in for the real backend instead, pointed to via
  * NEXT_PUBLIC_API_URL (set in playwright.config.ts's webServer env).
  *
- * Stateless by design (test scenario is encoded in the slug itself) so it's safe
+ * Public form scenarios are stateless (each is encoded in the slug itself), so they are safe
  * under Playwright's parallel test execution — no shared mutable state to race on.
  *
  * Slug conventions:
@@ -36,7 +36,7 @@ const builderForm = (id: string, s: { label: string; version: number }) => ({
 });
 
 // /f/look-<layout>-<variant>: one page with text fields and both kinds of choice, in the named layout, with a look chosen by the variant
-// (none, colours, filled, underline, pill, beside, tiles, exact, all). Used to prove the branding.theme options are drawn, and that a form
+// (a key of LOOK_THEMES below). Used to prove the branding.theme options are drawn, and that a form
 // without a theme is drawn as it always was.
 const LOOK_THEMES: Record<string, NonNullable<PublicFormSchema['branding']['theme']> | undefined> = {
   none: undefined,
@@ -158,7 +158,7 @@ const server = http.createServer(async (req, res) => {
 
   // The Next.js edge guard (src/proxy.ts) asks the backend whether a session cookie is valid before it serves an app page.
   // Builder specs set a fake session cookie; this stateless answer lets them through.
-  // The public template gallery and detail page: two templates, one with a coloured page behind its form (the preview must fill its whole frame with it).
+  // The public template gallery and detail page: three templates, one with a coloured page behind its form (the preview must fill its whole frame with it).
   if (url.pathname === '/api/templates/public') {
     const field = (i: number, label: string, required = false) => ({ fieldId: `t${i}`, pageId: 'p1', type: 'short_text', label, required, deleted: false, order: i, placeholder: 'Type here' });
     const make = (id: string, slug: string, name: string, branding: Record<string, unknown>) => ({

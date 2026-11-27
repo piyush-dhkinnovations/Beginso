@@ -1,11 +1,8 @@
 'use client';
 
-// Wireframe Screen 06: Workspace Home (requirements.md §7.6, design.md §15.2 & §17).
-// Note: Role-differentiated content (e.g. Owner/Admin vs Reviewer views per B2.1-B2.3)
-// is explicitly Sprint 9 scope — see tasks.md Phase 4 task 4.2.
-//
-// Sprint 8 scope: loading skeleton, empty state, error card, and the populated two-column
-// dashboard split (stat cards + quick actions + pinned forms / recent activity).
+// Wireframe Screen 06: Workspace Home.
+// The loading skeleton, empty state, error card, and the populated two-column
+// dashboard split (stat cards + quick actions + recent forms / recent activity).
 // Real data wiring (actual form list per workspace) is done via the existing workspaceKeys.forms
 // query key factory, scoped to this workspace context.
 
@@ -82,7 +79,7 @@ export default function WorkspaceHomePage() {
     enabled: !isLoading && !error && !isEmpty && role !== undefined,
   });
 
-  // ── Loading state ──────────────────────────────────────────────────────────
+  // Loading state
   // One skeleton from the first paint to the real page (the route's loading.tsx shows this same one): the forms list, and
   // - when there are forms - the widget layout, are both waited for before anything is swapped in.
   if (isLoading || (!error && !isEmpty && dashboard.loading)) {
@@ -94,7 +91,7 @@ export default function WorkspaceHomePage() {
     );
   }
 
-  // ── Error state ────────────────────────────────────────────────────────────
+  // Error state
   if (error) {
     return (
       <div className="flex flex-col gap-4 w-full">
@@ -133,7 +130,7 @@ export default function WorkspaceHomePage() {
       />
 
       {isEmpty ? (
-        // ── Empty state (B2.4 — just-created workspace) ──────────────────────
+        // Empty state (just-created workspace)
         <EmptyState illustration="onboarding"
           icon={<FilePlus className="bg-icon text-(--text-muted)" size={32} aria-hidden="true" />}
           title="Welcome to your workspace!"
@@ -150,7 +147,7 @@ export default function WorkspaceHomePage() {
           }
         />
       ) : (
-        // ── Populated state (Screen 06) ────────────────────────────────────
+        // Populated state (Screen 06)
         <div className="flex flex-col gap-5">
           {dashboard.body}
 
@@ -166,7 +163,7 @@ export default function WorkspaceHomePage() {
             ]}
           />
 
-          {/* Two-column: Recent forms (left) + Recent Activity (right). Not "Pinned": pinning a workspace form does not persist yet, so this is the most recent five. */}
+          {/* Two-column: Recent forms (left) + Recent Activity (right). */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <Card className="flex flex-col gap-4">
               <div className="flex items-center gap-2 pb-2 border-b border-(--border-default)">
@@ -190,11 +187,7 @@ export default function WorkspaceHomePage() {
                       <Link href={`/forms/${f._id}/edit?ws=${slug}`} className="hover:text-(--text-primary) flex items-center gap-1">
                         <Edit3 size={12} /> Edit
                       </Link>
-                      {/* Real bug found and fixed: this linked to /w/[slug]/share, a route that
-                          doesn't exist (and dropped the form's own id, unlike every sibling link
-                          here) — a dead link, always 404. Sprint 9 already built the real
-                          destination for "share this form" (FormAccessPanel); reused instead of
-                          building a new route. */}
+                      {/* Opens FormAccessPanel for this form: there is no /w/[slug]/share route. */}
                       <button
                         type="button"
                         onClick={() => setFormToShare(f)}

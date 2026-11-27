@@ -2,8 +2,8 @@ import type { Template, FormPage, FormBranding, LayoutPreset, FormSettings } fro
 import type { PublicFormSchema } from '@/types/publicForm';
 
 // What a template looks like in its preview: a layout and a branding, by category, so a Contact form, an Event RSVP, a Survey and a
-// Job application do not all show the same blue banner. A template that carries its own `branding` (template catalog expansion,
-// Nov 2026) uses that for real — the preview then matches exactly what "Use this template" creates. These LOOKS exist only as the
+// Job application do not all show the same blue banner. A template that carries its own `branding`
+// uses that for real — the preview then matches exactly what "Use this template" creates. These LOOKS exist only as the
 // fallback for a template that predates that field, so it still gets a distinct demo look instead of the builder's bare defaults.
 interface TemplateLook {
   layout: LayoutPreset;
@@ -43,7 +43,7 @@ const ALIASES: Record<string, string> = {
   event: 'events',
   hiring: 'hr',
   contact: 'sales',
-  // Backend casing/spelling has varied across sprints — map every spelling seen in the wild to the real look.
+  // Backend casing/spelling has varied — map every spelling seen in the wild to the real look.
   ecommerce: 'e-commerce',
   'e commerce': 'e-commerce',
   booking: 'reservation/booking',
@@ -70,8 +70,7 @@ export function effectiveBranding(template: Template): FormBranding {
   return template.branding ?? templateLook(template).branding;
 }
 
-// Template has no `pages`/`branding` of its own (see .kiro/specs/public-template-gallery
-// design.md "Detail Page") — this derives a synthetic PublicFormSchema for read-only preview
+// Derives a synthetic PublicFormSchema from a template, for read-only preview
 // rendering via PublicFormShell's previewMode. Pages are grouped from whichever distinct
 // `pageId` values already exist on the template's fields (preserving a multi-page template's
 // structure), not flattened to a single page, since nothing here can assume templates are

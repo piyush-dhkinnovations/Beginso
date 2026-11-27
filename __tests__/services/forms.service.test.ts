@@ -1,5 +1,4 @@
 /**
- * __tests__/services/forms.service.test.ts
  * Regression test for a real cross-context data-leak bug: getForms() never told the backend
  * which context (personal vs. which workspace) it was asking for, so every context silently
  * showed the same list (whatever GET /api/forms's workspace-resolution fallback picked).
@@ -80,8 +79,8 @@ describe('formsService.getForms', () => {
   });
 });
 
-// sprint-10-events-migration, tasks.md 2.2. Real bug found and fixed (22 Sep 2026): this was
-// originally written against "extend GET /api/forms/:id with stats" (BE 0.6's smaller-diff
+// Real bug found and fixed (22 Sep 2026): this was
+// originally written against "extend GET /api/forms/:id with stats" (the smaller-diff
 // guess, no live example existed yet). Confirmed live that the backend instead built a genuinely
 // separate `GET /api/forms/:id/overview` route returning a slim `{ overview: {...} }` object with
 // no `slug`/`fields`/`pages` — so this now calls both: the base route for the full form (which

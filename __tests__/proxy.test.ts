@@ -1,8 +1,5 @@
 /**
- * __tests__/proxy.test.ts
- * Feature: sprint-1-frontend-auth
  * Tests: Proxy (formerly "middleware") route protection decisions
- * Requirements: 11.1, 11.2, 11.3, 11.4, 11.6
  */
 
 import { beforeEach, describe, it, expect, vi } from 'vitest';
@@ -26,7 +23,7 @@ describe('Next.js Edge Proxy (auth guard)', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 200 })));
   });
 
-  // ─── Protected routes (no token) ───────────────────────────────────────────
+  // Protected routes (no token)
 
   describe('Protected route + no cookie → redirect /login', () => {
     const protectedPaths = [
@@ -58,7 +55,7 @@ describe('Next.js Edge Proxy (auth guard)', () => {
     );
   });
 
-  // ─── Protected routes (with token) → allow through ─────────────────────────
+  // Protected routes (with token) → allow through
 
   describe('Protected route + cookie present → NextResponse.next()', () => {
     const protectedPaths = ['/dashboard', '/forms', '/templates', '/responses', '/analytics', '/reports', '/settings', '/w/acme', '/shared'];
@@ -75,7 +72,7 @@ describe('Next.js Edge Proxy (auth guard)', () => {
     );
   });
 
-  // ─── Auth pages (login / signup) with token → redirect /dashboard ──────────
+  // Auth pages (login / signup) with token → redirect /dashboard
 
   describe('Auth page + cookie present → redirect /dashboard', () => {
     it('/login with a valid session cookie redirects to /dashboard', async () => {
@@ -105,7 +102,7 @@ describe('Next.js Edge Proxy (auth guard)', () => {
     });
   });
 
-  // ─── Auth pages without token → allow through ─────────────────────────────
+  // Auth pages without token → allow through
 
   describe('Auth page + no cookie → NextResponse.next()', () => {
     it('/login without a session cookie passes through', async () => {
@@ -150,7 +147,7 @@ describe('Next.js Edge Proxy (auth guard)', () => {
     expect(res.headers.get('set-cookie')).toBeNull();
   });
 
-  // ─── Legacy /inbox/<id>?scope=<slug> → /w/<slug>/inbox/<id> redirect ─────────
+  // Legacy /inbox/<id>?scope=<slug> → /w/<slug>/inbox/<id> redirect
   // Old links (notifications, emails, activity) used ?scope= on the personal route;
   // workspace responses now live at /w/[slug]/inbox/[id] so the WorkspaceShell renders.
 

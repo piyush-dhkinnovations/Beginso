@@ -1,9 +1,6 @@
 /**
- * __tests__/components/analytics/DateRangeFilter.test.tsx
- * Feature: sprint-5-analytics-reports
  * Tests: DateRangeFilter — preset selection updates URL params, custom-range swap-on-invert,
  * aria-pressed state, controlled mode
- * Requirements: 3.1-3.6, 13.2
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

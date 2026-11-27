@@ -101,7 +101,7 @@ export function V2Gallery() {
         </div>
       </header>
 
-      {/* ── Home: one hero, two supporting cards ─────────────────────────── */}
+      {/* Home: one hero, two supporting cards */}
       <Section title="Workspace home" note="The hero says what needs doing. Charts only appear where they answer a question.">
         <div className={s.lead}>
           <div className={cx(s.card, s.hero)}>
@@ -165,7 +165,7 @@ export function V2Gallery() {
         </div>
       </Section>
 
-      {/* ── Lists grouped by what matters ────────────────────────────────── */}
+      {/* Lists grouped by what matters */}
       <Section title="Lists" note="Grouped by what needs you, not alphabetically. The coloured edge is the form's own brand colour.">
         <div className={s.split}>
           <div className={cx(s.card, s.outlined, s.flush)}>
@@ -199,7 +199,7 @@ export function V2Gallery() {
         </div>
       </Section>
 
-      {/* ── Small cards: three different weights, not one tile repeated ──── */}
+      {/* Small cards: three different weights, not one tile repeated */}
       <Section title="Small cards" note="A quick action, a person and a template are different things, so they don't share one shape.">
         <div className={s.grid3}>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -241,7 +241,7 @@ export function V2Gallery() {
         </div>
       </Section>
 
-      {/* ── Messages ─────────────────────────────────────────────────────── */}
+      {/* Messages */}
       <Section title="Messages and empty states" note="Say what happened and what to do next. Errors don't apologise.">
         <div className={s.grid2}>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>

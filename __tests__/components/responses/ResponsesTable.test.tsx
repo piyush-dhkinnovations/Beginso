@@ -1,8 +1,6 @@
 /**
- * __tests__/components/responses/ResponsesTable.test.tsx
- * sprint-12-inbox-collaboration, requirements.md §7.2 (2.1) — rebuilt on `ui/Table` (task 1.7);
- * fixtures now carry `stage`/`assignee`/`tags`, and the "no matches" prop is `hasActiveFilters`/
- * `onClearFilters`, not the old `hasActiveSearch`/`onClearSearch`.
+ * Fixtures carry `stage`/`assignee`/`tags`, and the "no matches" props are `hasActiveFilters`/
+ * `onClearFilters`.
  */
 
 import { describe, it, expect, vi } from 'vitest';

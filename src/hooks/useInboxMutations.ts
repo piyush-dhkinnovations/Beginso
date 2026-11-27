@@ -52,21 +52,20 @@ function describeBulkAction(action: BulkAction, count: number): string {
 }
 
 // Every bulk action except `restore` itself can be undone by posting its `previous` snapshot
-// back as one `restore` request (design.md §8). OQ-3 is resolved in favour of reversible delete
-// now that BE 0.2 is building soft delete against this exact contract (task 2.4's own brief) —
-// so `delete` is reversible here too, not a special case.
+// back as one `restore` request. The backend soft-deletes, so `delete` is reversible too, not a
+// special case.
 function isReversible(action: BulkAction): boolean {
   return action.type !== 'restore';
 }
 
 /**
- * Sprint 12 (inbox-collaboration), design.md §7 "useInboxMutations" (task 2.3): "every write
+ * Every write
  * (stage, assign, tag, read, bulk, delete) with optimistic update, rollback and cache
- * invalidation." Retires `runSequentially` for bulk — `bulk()` is always one request
+ * invalidation. `bulk()` is always one request
  * (`POST /api/responses/bulk`), whether the target is an explicit id list or a filter ("Select
- * all N matching", requirements.md §7.2). Every mutation patches both the list cache(s) and the
+ * all N matching"). Every mutation patches both the list cache(s) and the
  * matching detail cache entry so a change made in one view is visible in the others without a
- * refetch (design.md §8).
+ * refetch.
  */
 export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
   const queryClient = useQueryClient();
@@ -88,7 +87,7 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
     });
   }
 
-  // ---- single-response writes (stage / assignee / tags) ----
+  // single-response writes (stage / assignee / tags)
   const updateMutation = useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: UpdateResponsePayload }) =>
       responsesService.update(id, payload, scope),
@@ -121,7 +120,7 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
     onSettled: () => queryClient.invalidateQueries({ queryKey: listKey }),
   });
 
-  // ---- per-user read state (task 2.3 — new) ----
+  // per-user read state
   const markReadMutation = useMutation({
     mutationFn: ({ id, read }: { id: string; read: boolean }) => responsesService.markRead(id, read, scope),
     onMutate: async ({ id, read }) => {
@@ -141,7 +140,7 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
     onSettled: () => queryClient.invalidateQueries({ queryKey: listKey }),
   });
 
-  // ---- bulk (task 2.3 — one request; retires runSequentially) ----
+  // bulk (one request)
   function optimisticBulkPatch(action: BulkAction): ((r: IResponse) => Partial<IResponse>) | undefined {
     switch (action.type) {
       case 'stage':
@@ -199,7 +198,7 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
     onSettled: () => queryClient.invalidateQueries({ queryKey: listKey }),
   });
 
-  /** One request per bulk action, for an id list or a filter (requirements.md §7.2/§7.5). */
+  /** One request per bulk action, for an id list or a filter. */
   function bulk(target: BulkTarget, action: BulkAction, options?: BulkOptions) {
     bulkMutation.mutate(
       { target, action },
@@ -227,7 +226,7 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
     );
   }
 
-  /** Undo: one `restore` request carrying the `previous` snapshot (design.md §8) — never one
+  /** Undo: one `restore` request carrying the `previous` snapshot — never one
    * request per id. */
   function undo(previous: BulkPrevious[]) {
     bulkMutation.mutate(
@@ -236,7 +235,7 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
     );
   }
 
-  // ---- single delete (existing confirm-modal flow, unchanged endpoint) ----
+  // single delete (the confirm-modal flow)
   const singleDeleteMutation = useMutation({
     mutationFn: (id: string) => responsesService.deleteResponse(id, scope),
     onSuccess: () => {
@@ -247,7 +246,7 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
   });
 
   return {
-    // Personal shell (OQ-9 fixed defaults): `stageId` here is one of PERSONAL_DEFAULT_STAGES'
+    // Personal shell (fixed default stages): `stageId` here is one of PERSONAL_DEFAULT_STAGES'
     // synthetic ids ('new'/'in_progress'/'completed'), not a real Stage document — sent as
     // `status` instead, which is exactly what those ids already are.
     // Resolves to whether the save worked (a failure already toasts and rolls back): the Board's drag and drop waits on it.
@@ -276,6 +275,6 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
   };
 }
 
-// Exported for the bulk selection UI (BulkActionBar, task 2.4) to compute which ids should stay
+// Exported for the bulk selection UI (BulkActionBar) to compute which ids should stay
 // selected after a partial-failure bulk response, without duplicating the rule.
 export { idsRemainingSelected };

@@ -69,7 +69,7 @@ const securityHeaders = [
     : []),
 ];
 
-// The /dev/ui gallery (sprint-7-foundation, requirements.md 3.1) previews primitives inside
+// The /dev/ui gallery previews primitives inside
 // an <iframe> so beginso-ui.css's real @media breakpoints respond to the selected 375/768/1280
 // width — a wrapper div's width alone doesn't trigger them. The blanket `frame-ancestors 'none'`
 // above (a real clickjacking defense) blocks that same-origin iframe too: CSP headers from
@@ -128,10 +128,10 @@ const nextConfig: NextConfig = {
         source,
         headers: [{ key: "Cache-Control", value: "public, max-age=86400, stale-while-revalidate=604800" }],
       })),
-      // Sprint 13 (A5.4): a signed-link URL must never leak through a referrer.
+      // A signed-link URL must never leak through a referrer.
       { source: "/r/:path*", headers: [...securityHeaders.filter((h) => h.key !== "Referrer-Policy"), { key: "Referrer-Policy", value: "no-referrer" }] },
       { source: "/dev/ui/frame", headers: framePreviewHeaders },
-      // Sprint 13: the form preview and the layout gallery embed this same-origin route in an
+      // The form preview and the layout gallery embed this same-origin route in an
       // <iframe> (components/preview/PreviewFrame). Same narrow carve-out, same reasoning.
       { source: "/forms/:id/preview", headers: framePreviewHeaders },
       // The guest builder previews the logged-out draft in the same way (src/app/try/preview).

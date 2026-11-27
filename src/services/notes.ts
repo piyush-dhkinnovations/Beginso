@@ -5,14 +5,12 @@ import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import type { Note, NotePayload } from '@/types/note';
 
 /**
- * Sprint 12 (inbox-collaboration), design.md §11.2, task 4.1. BE 0.3 is live —
  * `GET/POST /api/responses/:id/notes` · `PATCH/DELETE /api/responses/:id/notes/:noteId`. Unwrapped
- * defensively (`responses.ts`/`shared.ts`'s own established pattern) since the envelope key isn't
- * independently confirmed against a live payload from this checkout.
+ * defensively (`responses.ts`/`shared.ts`'s own established pattern).
  */
 
 // A mention of a member without access to this form is rejected 422 with a message that must not
-// reveal whether that member exists (design.md §11.2's own explicit constraint) — mirrors
+// reveal whether that member exists — mirrors
 // `BulkBatchLimitError` in `services/responses.ts` so `NotesPanel`/`NoteComposer` can show this
 // specific case without a blanket "failed to save" toast.
 export class MentionAccessError extends Error {

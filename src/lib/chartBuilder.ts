@@ -23,7 +23,7 @@ import type {
 
 // The rules of the chart builder, kept apart from the screens so they can be tested on their own.
 
-// ── what can be charted ──────────────────────────────────────────────────────
+// what can be charted
 
 const KIND_BY_TYPE: Record<string, GroupKind> = {
   dropdown: 'choice',
@@ -92,7 +92,7 @@ export const optionCountOf = (fields: readonly FormField[] | undefined, ref: Fie
   return Array.isArray(options) ? options.length : null;
 };
 
-// ── aggregation ──────────────────────────────────────────────────────────────
+// aggregation
 
 export const MEASURE_LABEL: Record<MeasureType, string> = {
   count: 'Count of responses',
@@ -105,7 +105,7 @@ export const MEASURE_LABEL: Record<MeasureType, string> = {
 /** Percentages are offered for Count and Sum only (an average of percentages says nothing). */
 export const percentAvailable = (m: MeasureType): boolean => m === 'count' || m === 'sum';
 
-// ── chart type ───────────────────────────────────────────────────────────────
+// chart type
 
 export const CHART_TYPE_NAME: Record<Exclude<BuilderChartType, 'auto'>, string> = {
   bar: 'Column chart',
@@ -162,7 +162,7 @@ export function resolveChartType(chosen: BuilderChartType, kind: GroupKind | und
   return autoChartType(kind, measure, optionCount);
 }
 
-// ── sorting ──────────────────────────────────────────────────────────────────
+// sorting
 
 export const SORT_LABEL: Record<Exclude<SortKey, 'natural'>, string> = {
   value_desc: 'Value (high to low)',
@@ -175,7 +175,7 @@ export const SORT_LABEL: Record<Exclude<SortKey, 'natural'>, string> = {
 export const naturalSortLabel = (kind: GroupKind | undefined): string =>
   isTimeKind(kind) ? 'Oldest first' : kind === 'number' ? 'Low to high ranges' : kind === 'rating' ? 'Low to high' : kind === 'hour' ? 'Earliest hour first' : 'Question order';
 
-// ── defaults and titles ──────────────────────────────────────────────────────
+// defaults and titles
 
 export const BUCKET_LABEL: Record<Bucket, string> = { day: 'Day', week: 'Week', month: 'Month', year: 'Year' };
 
@@ -249,7 +249,7 @@ export function generateTitle(fields: readonly FormField[] | undefined, q: AnyCh
   return `${head} by ${groupText}${filters ? ` (${filters})` : ''}`.slice(0, 80);
 }
 
-// ── filters ──────────────────────────────────────────────────────────────────
+// filters
 
 export const CHOICE_OP_LABEL = { is: 'is', is_not: 'is not' } as const;
 export const NUMBER_OP_LABEL = { eq: '=', neq: '≠', gt: '>', gte: '≥', lt: '<', lte: '≤' } as const;
@@ -281,7 +281,7 @@ export function describeFilters(fields: readonly FormField[] | undefined, g: Fil
     .join(joiner);
 }
 
-// ── editing the filter tree (pure: each returns a new tree) ──────────────────
+// editing the filter tree (pure: each returns a new tree)
 
 const EMPTY: FilterGroup = { op: 'and', items: [] };
 
@@ -322,7 +322,7 @@ export const toggleOp = (g: FilterGroup, groupIndex?: number): FilterGroup => {
   return { ...g, items: g.items.map((i, idx) => (idx === groupIndex && !isCondition(i) ? { ...i, op: flip(i.op) } : i)) };
 };
 
-// ── the Responses link ───────────────────────────────────────────────────────
+// the Responses link
 
 /** The `chart` parameter of the Responses list: this chart's filters, optionally narrowed by the parts of a drill-down already clicked (`path`) and the group that was clicked (`focus`). */
 export function serialiseChartFilter(q: AnyChartQuery, focus?: { key: string; lo?: number; hi?: number }, path?: PathStep[]): string {
@@ -331,7 +331,7 @@ export function serialiseChartFilter(q: AnyChartQuery, focus?: { key: string; lo
   return JSON.stringify({ definition, ...(path?.length ? { path } : {}), ...(focus ? { focus } : {}) });
 }
 
-// ── drawing ──────────────────────────────────────────────────────────────────
+// drawing
 
 export const formatFigure = (n: number): string => (Number.isInteger(n) ? n.toLocaleString() : n.toLocaleString(undefined, { maximumFractionDigits: 2 }));
 const formatPercent = (p: number): string => `${p.toFixed(p % 1 ? 1 : 0)}`;
@@ -352,7 +352,7 @@ export function entrySegments(result: QueryResult, mode: ChartDisplay['values'],
   });
 }
 
-// ── what a filter row can be ─────────────────────────────────────────────────
+// what a filter row can be
 
 /** The fields a filter can use: choice, number and rating questions, then the response details, then the submitted year. */
 export function filterableRefs(fields: readonly FormField[] | undefined, includePeople: boolean): { ref: FieldRef; label: string; group: 'Questions' | 'Response details' | 'Time' }[] {

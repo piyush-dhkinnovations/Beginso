@@ -1,7 +1,3 @@
-/**
- * Sprint 12 (inbox-collaboration), requirements.md §7.6, design.md §11.1/§11.2. Backend contract
- * to confirm — field names are a proposal.
- */
 import type { ResponseFilters } from './response';
 import type { InboxViewMode } from '@/lib/inboxFilters';
 

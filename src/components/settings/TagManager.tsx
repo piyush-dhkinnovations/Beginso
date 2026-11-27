@@ -26,11 +26,11 @@ interface TagManagerProps {
 }
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.7, design.md §15 (task 2.5): "No wireframe
+ * "No wireframe
  * — derived from RolesMatrix's list+edit pattern." Owner/Admin only (the caller gates the tab
- * itself; a canManageTags(role) check is still applied here as the same convenience-not-gate
- * every other settings surface carries). Inline create per OQ-5's default (any `responses:act`
- * role may create) — but that create control lives in `TagPicker` (the in-context picker), not
+ * itself with `canManageTags`, a convenience, not the permission boundary).
+ * Any `responses:act`
+ * role may create a tag inline — but that create control lives in `TagPicker` (the in-context picker), not
  * here: this screen is the library manager (rename/recolour/merge/delete), Owner/Admin only.
  */
 export function TagManager({ scope, onDirtyChange }: TagManagerProps) {
@@ -52,9 +52,9 @@ export function TagManager({ scope, onDirtyChange }: TagManagerProps) {
     defaultValues: { name: '', colour: 'neutral' },
   });
 
-  // Requirements.md §12.1 (CLAUDE.md's mandatory settings-tab pattern): an unsaved edit must
+  // CLAUDE.md's mandatory settings-tab pattern: an unsaved edit must
   // survive a tab switch — this tab reports dirty state up the same way every other Settings tab
-  // does (ProfileTab/WorkspaceTab precedent), so SettingsPage's `visitedTabs`/confirm-before-leave
+  // does (ProfileTab/WorkspaceTab precedent), so SettingsView's `visitedTabs`/confirm-before-leave
   // flow covers it without this component needing its own persistence.
   useEffect(() => {
     onDirtyChange?.(createForm.formState.isDirty);
@@ -126,7 +126,7 @@ export function TagManager({ scope, onDirtyChange }: TagManagerProps) {
   }
 
   return (
-    // 640px form column (CLAUDE.md/design.md §15 — the narrow-column exception for settings forms).
+    // 640px form column (CLAUDE.md — the narrow-column exception for settings forms).
     <div className="flex flex-col gap-6">
       <form
         className="flex flex-wrap items-start gap-3 max-w-160"

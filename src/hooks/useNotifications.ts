@@ -6,7 +6,7 @@ import { notificationKeys } from '@/lib/queryKeys';
 import type { NotificationFilter } from '@/types/notification';
 
 /**
- * Sprint 14 (B9.1, task 3.13) - cursor-paged notification list for one context + filter tab.
+ * Cursor-paged notification list for one context + filter tab.
  * `limit` 30 per page for the page, ~10 for the bell dropdown (the quick view).
  */
 export function useNotifications(scope: string, filter: NotificationFilter, options: { limit?: number; enabled?: boolean } = {}) {

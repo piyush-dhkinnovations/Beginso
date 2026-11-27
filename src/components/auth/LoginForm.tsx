@@ -33,7 +33,7 @@ export function LoginForm({ redirectTo, submitLabel = 'Log In' }: LoginFormProps
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { login } = useAuth();
   const router = useRouter();
-  // Requirements §7.5.1: the Invite Accept page's sign-in link carries ?next=/invite/:token so
+  // The Invite Accept page's sign-in link carries ?next=/invite/:token so
   // login() lands the user back there instead of the default destination.
   const searchNext = sanitizeNextParam(useSearchParams().get('next'));
   const nextParam = redirectTo ? sanitizeNextParam(redirectTo) : searchNext;
@@ -67,7 +67,6 @@ export function LoginForm({ redirectTo, submitLabel = 'Log In' }: LoginFormProps
     setServerError(null);
     setIsEmailLoading(true);
 
-    // Start 30-second UI timeout
     timeoutRef.current = setTimeout(() => {
       setIsEmailLoading(false);
       setServerError('Connection timeout. Please try again.');
@@ -143,7 +142,7 @@ export function LoginForm({ redirectTo, submitLabel = 'Log In' }: LoginFormProps
   );
 
   return (
-    // eslint-disable-next-line react-hooks/refs
+    // eslint-disable-next-line react-hooks/refs -- onSubmit touches timeoutRef only on submit, not during render
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4 w-full">
       <Input
         id="email"

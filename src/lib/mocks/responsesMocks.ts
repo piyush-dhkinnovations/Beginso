@@ -1,5 +1,5 @@
 /**
- * Mock fixtures for Response Management — used only by tests now (see tasks.md 5.7).
+ * Mock fixtures for Response Management — used only by tests.
  * Shapes match the confirmed-live backend contract (docs/backend-contract/api-reference.md §3,
  * frozen 2026-08-05): `answers` is a flat label→value object, `ipHash` is top-level, and there
  * is no `userAgent` anywhere in these payloads.
@@ -28,7 +28,7 @@ function pickAnswers(keys: string[]): ResponseAnswers {
   return Object.fromEntries(keys.map((k) => [k, ALL_FIELD_ANSWERS[k]]));
 }
 
-// Sprint 12 (inbox-collaboration) — `stage`/`assignee`/`tags` are now required on `IResponse`;
+// `stage`/`assignee`/`tags` are required on `IResponse`;
 // `status` is kept only as the deprecated derived field, still handy for these mocks' own
 // `status: 'new' | 'in_progress' | 'completed'` overrides below (mapped onto a matching stage).
 export const MOCK_STAGES: Record<'new' | 'in_progress' | 'completed', NonNullable<IResponse['stage']>> = {

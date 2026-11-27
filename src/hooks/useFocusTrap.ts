@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 
 // Shared by Modal and Drawer (src/components/ui/) — extracted from Modal's original
-// implementation rather than each rolling its own (design.md §18, sprint-7-foundation).
+// implementation rather than each rolling its own.
 // Traps Tab/Shift+Tab within containerRef, closes on Escape, locks body/main scroll while
 // open, and restores focus to whatever triggered it on close.
 export function useFocusTrap(
