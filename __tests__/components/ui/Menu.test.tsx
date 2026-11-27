@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Menu, menuChoices } from '@/components/ui/Menu';
 
@@ -117,3 +117,73 @@ describe('Menu: the one format', () => {
   });
 });
 
+
+describe('Menu and scrolling', () => {
+  it('stays open while its own list scrolls, and closes when the page scrolls', async () => {
+    const user = userEvent.setup();
+    render(<Menu triggerLabel="Types" items={items} />);
+    await user.click(screen.getByRole('button', { name: 'Types' }));
+    fireEvent.scroll(screen.getByRole('menu'));
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    fireEvent.scroll(window);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+});
+
+describe('Menu with a search box', () => {
+  const pick = vi.fn();
+  const choices = [
+    { id: 'text', label: 'Text', heading: true, onSelect: () => {} },
+    { id: 'short', label: 'Short Text', selected: true, onSelect: () => pick('short') },
+    { id: 'mail', label: 'Email', selected: false, onSelect: () => pick('mail') },
+    { id: 'time', label: 'Date & time', heading: true, onSelect: () => {} },
+    { id: 'day', label: 'Date', selected: false, onSelect: () => pick('day') },
+    { id: 'clock', label: 'Time', selected: false, onSelect: () => pick('clock') },
+  ];
+  const open = async () => {
+    const user = userEvent.setup();
+    render(<Menu triggerLabel="Types" search="Search types" items={choices} />);
+    await user.click(screen.getByRole('button', { name: 'Types' }));
+    return user;
+  };
+
+  it('opens on the search box and narrows the items, keeping only headings with a match', async () => {
+    const user = await open();
+    expect(screen.getByRole('searchbox', { name: 'Search types' })).toHaveFocus();
+    expect(screen.getAllByRole('menuitemradio')).toHaveLength(4);
+    await user.keyboard('mail');
+    expect(screen.getAllByRole('menuitemradio').map((i) => i.textContent)).toEqual(['Email']);
+    expect(screen.getByText('Text')).toBeInTheDocument();
+    expect(screen.queryByText('Date & time')).not.toBeInTheDocument();
+  });
+
+  it('a group name finds the whole group', async () => {
+    const user = await open();
+    await user.keyboard('date &');
+    expect(screen.getAllByRole('menuitemradio').map((i) => i.textContent)).toEqual(['Date', 'Time']);
+  });
+
+  it('Enter picks the first match, and nothing while the box is empty', async () => {
+    const user = await open();
+    await user.keyboard('{Enter}');
+    expect(pick).not.toHaveBeenCalled();
+    await user.keyboard('tim{Enter}');
+    expect(pick).toHaveBeenLastCalledWith('day');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('arrows move from the box into the list, and typing goes back to the box', async () => {
+    const user = await open();
+    await user.keyboard('{ArrowDown}');
+    expect(screen.getByRole('menuitemradio', { name: 'Short Text' })).toHaveFocus();
+    await user.keyboard('e');
+    expect(screen.getByRole('searchbox')).toHaveFocus();
+  });
+
+  it('says when nothing matches', async () => {
+    const user = await open();
+    await user.keyboard('zzz');
+    expect(screen.getByRole('status')).toHaveTextContent('Nothing matches “zzz”.');
+    expect(screen.queryByRole('menuitemradio')).not.toBeInTheDocument();
+  });
+});

@@ -41,8 +41,10 @@ for (const size of SIZES) {
         expect(overlaps(boxes[keys[i]], boxes[keys[j]]), `${keys[i]} overlaps ${keys[j]}`).toBe(false);
       }
     }
-    // The form name must be readable, not shrunk to a few letters.
-    expect(boxes.title.width).toBeGreaterThanOrEqual(100);
+    // The form name must be readable, not shrunk to a few letters: either all of it shows (in the top bar the field is as wide
+    // as the name) or there is at least 100px of it.
+    const clipped = await parts.title.evaluate((el) => el.scrollWidth > el.clientWidth + 1);
+    if (clipped) expect(boxes.title.width).toBeGreaterThanOrEqual(100);
     await context.close();
   });
 }

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 import { useBuilderStore } from '@/store/builderStore';
-import { useBuilderDnd } from '@/components/form-builder/useBuilderDnd';
+import { collisionDetection, useBuilderDnd } from '@/components/form-builder/useBuilderDnd';
 import { CANVAS_ID } from '@/components/form-builder/Canvas';
 
 type Rect = { top: number; height: number };
@@ -156,5 +156,28 @@ describe('sensors and collision detection', () => {
     const { result } = renderHook(() => useBuilderDnd());
     expect(result.current.sensors).toHaveLength(3);
     expect(typeof result.current.collisionDetection).toBe('function');
+  });
+});
+
+describe('collisionDetection over the bare canvas', () => {
+  const rect = (top: number, height: number) => ({ top, bottom: top + height, left: 0, right: 100, width: 100, height });
+  const rects = new Map([[CANVAS_ID, rect(0, 1000)], ['a', rect(100, 100)], ['b', rect(220, 100)]]);
+  const hit = (from: string, y: number) =>
+    collisionDetection({
+      active: { id: 'x', data: { current: { from } } },
+      collisionRect: rect(y, 50),
+      droppableRects: rects,
+      droppableContainers: [...rects.keys()].map((id) => ({ id })),
+      pointerCoordinates: { x: 50, y },
+    } as never)[0]?.id;
+
+  it('a card between two cards or past the last one goes to the nearest', () => {
+    expect(hit('canvas', 215)).toBe('b');
+    expect(hit('canvas', 900)).toBe('b');
+    expect(hit('canvas', 40)).toBe('a');
+  });
+
+  it('a new field from the toolbox over blank space is still just on the canvas', () => {
+    expect(hit('toolbox', 900)).toBe(CANVAS_ID);
   });
 });

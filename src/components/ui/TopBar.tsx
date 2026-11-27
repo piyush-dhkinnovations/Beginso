@@ -5,11 +5,13 @@ import { bx } from "@/lib/utils";
 export interface TopBarProps extends React.HTMLAttributes<HTMLElement> {
   brand?: React.ReactNode;
   actions?: React.ReactNode;
+  /** Fills the space between the brand and the actions (the builder's form header). */
+  center?: React.ReactNode;
   onMenuClick?: () => void;
 }
 
 // beginso-ui.css §12 NAVIGATION (.bg-topbar / .bg-brand).
-export function TopBar({ brand, actions, onMenuClick, className, ...props }: TopBarProps) {
+export function TopBar({ brand, actions, center, onMenuClick, className, ...props }: TopBarProps) {
   return (
     <header className={bx("bg-topbar", className)} {...props}>
       {onMenuClick && (
@@ -23,7 +25,7 @@ export function TopBar({ brand, actions, onMenuClick, className, ...props }: Top
         </button>
       )}
       {brand && <div className="bg-brand">{brand}</div>}
-      <div className="flex-1" />
+      <div className="flex min-w-0 flex-1 items-center">{center}</div>
       {actions}
     </header>
   );

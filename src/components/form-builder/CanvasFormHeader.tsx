@@ -5,7 +5,8 @@ import { useState } from 'react';
 export interface CanvasFormHeaderProps {
   pageTitle: string;
   pageDescription: string;
-  fieldCount: number;
+  /** The page's position, from 1. */
+  pageNumber: number;
   onPageTitleChange: (title: string) => void;
   onPageDescriptionChange: (description: string) => void;
 }
@@ -25,7 +26,7 @@ export interface CanvasFormHeaderProps {
 export function CanvasFormHeader({
   pageTitle,
   pageDescription,
-  fieldCount,
+  pageNumber,
   onPageTitleChange,
   onPageDescriptionChange,
 }: CanvasFormHeaderProps) {
@@ -66,7 +67,7 @@ export function CanvasFormHeader({
       <div className="flex items-center gap-2 mb-3">
         <span className="w-2 h-2 rounded-full bg-(--success) shrink-0" />
         <span className="bg-caption font-bold text-(--text-muted) uppercase tracking-wider">
-          {fieldCount} {fieldCount === 1 ? 'field' : 'fields'}
+          Page {pageNumber} section
         </span>
       </div>
       <input

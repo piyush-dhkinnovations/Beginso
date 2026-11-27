@@ -47,11 +47,12 @@ describe('BuildTabPanel', () => {
     seed();
   });
 
-  it('starts with the empty-canvas prompt, the toolbox and the page tile', () => {
+  it('starts with the empty-canvas prompt, the toolbox and the page buttons', () => {
     renderPanel();
     expect(screen.getByText('Start building your form')).toBeInTheDocument();
     expect(screen.getByRole('searchbox', { name: 'Search fields' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Pages' })).toBeInTheDocument();
+    expect(screen.getByRole('group', { name: 'Pages' })).toBeInTheDocument();
+    expect(screen.getByText('Page 1 section')).toBeInTheDocument();
     expect(screen.getByLabelText('Page title (shown to respondents)')).toHaveValue('First page');
   });
 

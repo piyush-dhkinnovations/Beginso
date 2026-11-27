@@ -53,19 +53,20 @@ describe('evaluateLogicRules', () => {
     expect(hidden.has('target')).toBe(true);
   });
 
-  it('last matching rule wins when multiple rules target the same field', () => {
-    const fields: FormField[] = [
-      field({
-        fieldId: 'source', pageId: 'p1', type: 'dropdown', options: ['a'],
-        logicRules: [
-          { condition: { fieldId: 'source', operator: 'equals', value: 'a' }, action: 'hide', targetFieldId: 'target' },
-          { condition: { fieldId: 'source', operator: 'equals', value: 'a' }, action: 'show', targetFieldId: 'target' },
-        ],
-      }),
-      field({ fieldId: 'target', pageId: 'p1', type: 'short_text' }),
-    ];
-    const hidden = evaluateLogicRules(fields, { source: 'a' });
-    expect(hidden.has('target')).toBe(false);
+  it('a matching hide rule wins over a matching show rule, whatever their order, as the server decides', () => {
+    const rule = (action: 'show' | 'hide') => ({ condition: { fieldId: 'src', operator: 'equals', value: 'x' }, action, targetFieldId: 't' });
+    for (const rules of [[rule('show'), rule('hide')], [rule('hide'), rule('show')]]) {
+      const fields = [{ fieldId: 'src', logicRules: rules }, { fieldId: 't' }] as unknown as Parameters<typeof evaluateLogicRules>[0];
+      expect(evaluateLogicRules(fields, { src: 'x' }).has('t')).toBe(true);
+    }
+  });
+
+  it('any one of several show rules is enough', () => {
+    const rule = (value: string) => ({ condition: { fieldId: 'src', operator: 'equals', value }, action: 'show', targetFieldId: 't' });
+    const fields = [{ fieldId: 'src', logicRules: [rule('a'), rule('b')] }, { fieldId: 't' }] as unknown as Parameters<typeof evaluateLogicRules>[0];
+    expect(evaluateLogicRules(fields, { src: 'a' }).has('t')).toBe(false);
+    expect(evaluateLogicRules(fields, { src: 'b' }).has('t')).toBe(false);
+    expect(evaluateLogicRules(fields, { src: 'c' }).has('t')).toBe(true);
   });
 
   it('returns an empty set when no rules are defined', () => {

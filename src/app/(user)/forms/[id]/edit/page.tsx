@@ -1,11 +1,11 @@
 'use client';
 
 import { usePendingEdits } from '@/lib/pendingEdits';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Alert } from '@/components/ui/Alert';
-import { useBuilderStore } from '@/store/builderStore';
+import { unsavedEdits, useBuilderStore } from '@/store/builderStore';
 import { BuilderHeader } from '@/components/form-builder/BuilderHeader';
 import { FormLogoButton } from '@/components/forms/FormLogoButton';
 import { BuilderTabs, type BuilderTab, type BuilderTarget } from '@/components/form-builder/BuilderTabs';
@@ -24,9 +24,11 @@ import { useBuilderPublishFlow } from '@/components/form-builder/useBuilderPubli
 import { useBuilderLeaveGuard } from '@/components/form-builder/useBuilderLeaveGuard';
 import { useBuilderDnd } from '@/components/form-builder/useBuilderDnd';
 import { canSeeShare, canPublishForm } from '@/lib/roles';
+import { cn } from '@/lib/utils';
 import type { FieldType } from '@/types/form';
 
 const VALID_TABS: BuilderTab[] = ['build', 'branding', 'settings'];
+const subscribeNever = () => () => {};
 
 export default function BuilderPageShell() {
   const router = useRouter();
@@ -55,6 +57,9 @@ export default function BuilderPageShell() {
     if (tab === 'share') requestAnimationFrame(() => scrollToShare('smooth'));
   };
 
+  // From 1024px the app shell gives the builder the whole area, so everything but the Build tab pads itself.
+  const tabPadding = 'min-w-0 flex-1 lg:px-6 lg:pt-6 lg:pb-16 xl:px-8';
+
   // Phone widths have no field rail: fields are added from a bottom sheet.
   const [showAddSheet, setShowAddSheet] = useState(false);
 
@@ -82,6 +87,10 @@ export default function BuilderPageShell() {
   const canUndo = undoStack.length > 0;
   const canRedo = redoStack.length > 0;
 
+  // False on the server and while the browser takes over its HTML. The form can arrive before that is done, and drawing
+  // the builder where the server drew the skeleton made React throw the page away and start again.
+  const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
+
   const { isLoading, formWorkspaceSlug, formsListHref, overviewHref, formRole } = useBuilderForm(id);
 
   // Landing on ?tab=share (or switching to it from another tab): the section exists once the builder has loaded.
@@ -91,7 +100,7 @@ export default function BuilderPageShell() {
 
   const { saveState, setSaveState, savedAt, saveDetail, handleRetrySave } = useBuilderAutosave();
   const stale = useBuilderStore((state) => state.stale);
-  const unsavedCount = useBuilderStore((state) => Math.max(1, state.undoStack.length - state.savedUndoDepth));
+  const unsavedCount = useBuilderStore(unsavedEdits);
   useBuilderUndoShortcuts();
 
   const { showPublishModal, setShowPublishModal, handleStatusChange, handlePublishClick, handlePublishChanges, handleDiscardDraft, handleChangeSetting, handleFixField, handlePreview, handlePreviewInNewTab } =
@@ -109,16 +118,20 @@ export default function BuilderPageShell() {
 
   return (
     <>
-      {isLoading ? (
-        <BuilderLoadingSkeleton />
+      {isLoading || !hydrated ? (
+        <div className="lg:px-6 lg:pt-8 xl:px-8">
+          <BuilderLoadingSkeleton />
+        </div>
       ) : (
-        <div className="flex flex-col gap-4 animate-fade-in">
+        <div className="flex flex-col gap-4 animate-fade-in lg:gap-0">
           {justClaimed && status === 'draft' && (
-            <Alert variant="success" title="Your form is saved. Publish it to get a link">
-              <div className="mt-2">
-                <Button size="small" onClick={handlePublishClick}>Publish</Button>
-              </div>
-            </Alert>
+            <div className="lg:px-6 lg:py-4 xl:px-8">
+              <Alert variant="success" title="Your form is saved. Publish it to get a link">
+                <div className="mt-2">
+                  <Button size="small" onClick={handlePublishClick}>Publish</Button>
+                </div>
+              </Alert>
+            </div>
           )}
           <BuilderHeader
             formTitle={formTitle}
@@ -145,7 +158,7 @@ export default function BuilderPageShell() {
           />
 
           {/* Unframed: tabs, then the field rail and canvas flow on the page itself, which scrolls as a whole. */}
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 lg:gap-0">
               <BuilderTabs
                 activeTab={activeTab}
                 onChange={setActiveTab}
@@ -157,14 +170,15 @@ export default function BuilderPageShell() {
                 fieldCount={liveFieldCount}
               />
 
-              <div className="flex items-start gap-6">
+              <div className={`flex items-start gap-6 ${activeTab === 'build' ? 'lg:gap-0' : ''}`}>
                 {activeTab === 'build' ? (
                   <BuildTabPanel
                     dnd={dnd}
                     onAddField={() => setShowAddSheet(true)}
                   />
                 ) : activeTab === 'branding' ? (
-                  <div className="min-w-0 flex-1">
+                  // Branding fills the screen below the two bars, so it needs no deep bottom margin.
+                  <div className={cn(tabPadding, 'lg:pt-4 lg:pb-6')}>
                     <BrandingTabContent
                       formId={formId ?? undefined}
                       formTitle={formTitle}
@@ -183,7 +197,7 @@ export default function BuilderPageShell() {
                   // Settings: the tab's own content, first and at the top. Share & Embed lives below it — a form's
                   // settings are what someone comes to this tab for; distribution is secondary once a form is live.
                   // Reviewers cannot share, so they get only Settings. It scrolls with the page like any other.
-                  <div className="flex min-w-0 flex-1 flex-col gap-12">
+                  <div className={`flex flex-col gap-12 ${tabPadding}`}>
                     <div ref={settingsTopRef} className="scroll-mt-24">
                       <SettingsPanel settings={settings} onUpdate={setSettings} />
                     </div>

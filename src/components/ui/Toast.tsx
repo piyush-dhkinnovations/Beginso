@@ -76,6 +76,9 @@ export function useToast() {
   return context;
 }
 
+/** For a notice that is nice to have: nothing is shown where no provider is mounted. */
+export const useOptionalToast = () => useContext(ToastContext);
+
 // .bg-toast-{success,error} only exist for those two types (src/styles/beginso-ui.css §13) —
 // warning/info aren't covered by the stylesheet, so their icon color is set inline, matching
 // exactly what those two modifier classes do for the icon (nothing else differs between types).

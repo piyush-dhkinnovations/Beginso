@@ -18,6 +18,8 @@ export interface AppShellProps {
   children: React.ReactNode;
   className?: string;
   contentClassName?: string;
+  /** From 1024px the page gets the whole area, with no padding or width cap: for an editor with its own panels (the form builder). */
+  flush?: boolean;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
 }
@@ -41,6 +43,7 @@ export function AppShell({
   children,
   className,
   contentClassName,
+  flush = false,
   mobileOpen: controlledMobileOpen,
   onMobileClose,
 }: AppShellProps) {
@@ -152,8 +155,9 @@ export function AppShell({
             // Audit log, any `.bg-table-wrap`) then grows the *entire page* past the viewport instead
             // of scrolling inside its own `overflow-x: auto` wrapper. Fixed once here (every page
             // routes through this single `<main>`), not per page.
-            "flex-1 min-w-0 flex flex-col gap-4 w-full max-w-[2400px] min-[160rem]:max-w-[3600px] mx-auto",
-            "px-4 pt-6 pb-16 md:px-6 md:pt-8 xl:px-8 focus:outline-none",
+            "flex-1 min-w-0 flex flex-col gap-4 w-full mx-auto",
+            "px-4 pt-6 pb-16 md:px-6 md:pt-8 focus:outline-none",
+            flush ? "lg:gap-0 lg:p-0" : "max-w-[2400px] min-[160rem]:max-w-[3600px] xl:px-8",
             contentClassName
           )}
         >

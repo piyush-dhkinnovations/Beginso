@@ -1,3 +1,4 @@
+import type { FormField } from '@/types/form';
 import type { FieldValue } from '@/types/publicForm';
 
 /**
@@ -11,6 +12,18 @@ import type { FieldValue } from '@/types/publicForm';
 export interface FormDraft {
   pageIndex: number;
   values: Record<string, FieldValue>;
+}
+
+/** The saved answers the form can still take: a question may have changed type since they were typed. */
+export function usableDraftValues(values: FormDraft['values'], fields: readonly FormField[]): FormDraft['values'] {
+  const types = new Map(fields.map((f) => [f.fieldId, f.type]));
+  return Object.fromEntries(
+    Object.entries(values).filter(([id, value]) => {
+      const type = types.get(id);
+      if (type === 'file_upload' || type === 'image_upload' || type === 'signature') return false;
+      return !Array.isArray(value) || type === 'checkbox';
+    })
+  );
 }
 
 function draftKey(slug: string): string {

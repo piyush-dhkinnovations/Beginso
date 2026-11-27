@@ -19,11 +19,13 @@ export interface SaveIndicatorProps {
   onReload?: () => void;
   savedAt: Date | null;
   onRetry: () => void;
+  /** One small line without the time, for the tabs strip. A long message is cut short there; Reload and Retry stay in reach. */
+  compact?: boolean;
 }
 
 type Label = 'conflict' | 'error' | 'saving' | 'unsaved' | 'saved';
 
-export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedCount = 0, onReload, savedAt, onRetry }: SaveIndicatorProps) {
+export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedCount = 0, onReload, savedAt, onRetry, compact = false }: SaveIndicatorProps) {
   // A conflict outranks everything: "All changes saved" would be a lie while this tab's edits cannot be saved.
   const label: Label = conflict ? 'conflict' : saving ? 'saving' : error ? 'error' : dirty ? 'unsaved' : 'saved';
 
@@ -43,16 +45,19 @@ export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedC
     saved: 'All changes saved',
   };
 
+  const actionClass = `shrink-0 px-2 font-semibold text-(--text-primary) underline underline-offset-2 ${compact ? 'min-h-6 bg-caption' : 'min-h-11 bg-body-sm'}`;
+  const longClass = compact ? 'flex min-w-0 items-center gap-x-2 whitespace-nowrap' : 'inline-flex flex-wrap items-center gap-x-2';
+
   return (
-    <div className="bg-body-sm select-none flex items-center gap-2">
-      <span aria-hidden="true">
+    <div className={`select-none flex items-center gap-2 ${compact ? 'min-w-0 bg-caption' : 'bg-body-sm'}`}>
+      <span aria-hidden="true" className={compact ? 'min-w-0' : undefined}>
         {label === 'saving' ? (
           <span className="inline-flex items-center gap-1.5 text-(--text-muted) font-medium animate-pulse">
             <LoaderCircle size={14} className="animate-spin" /> {text.saving}
           </span>
         ) : label === 'conflict' ? (
-          <span className="inline-flex flex-wrap items-center gap-x-2 text-(--error-text) font-medium">
-            <CloudAlert size={14} /> {text.conflict}
+          <span className={`${longClass} text-(--error-text) font-medium`}>
+            <CloudAlert size={14} className="shrink-0" /> <span className={compact ? 'truncate' : undefined} title={text.conflict}>{text.conflict}</span>
             {unsavedCount > 0 && <span className="font-normal">{unsavedCount} unsaved change{unsavedCount === 1 ? '' : 's'}</span>}
           </span>
         ) : label === 'error' ? (
@@ -66,7 +71,7 @@ export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedC
         ) : (
           <span className="inline-flex items-center gap-1.5 text-(--success-text) font-medium">
             <CloudCheck size={14} /> {text.saved}
-            {savedAt && (
+            {savedAt && !compact && (
               <span className="ml-1 font-normal text-(--text-muted)">
                 · {savedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
@@ -75,20 +80,12 @@ export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedC
         )}
       </span>
       {label === 'conflict' && onReload && (
-        <button
-          type="button"
-          onClick={onReload}
-          className="min-h-11 px-2 bg-body-sm font-semibold text-(--text-primary) underline underline-offset-2"
-        >
+        <button type="button" onClick={onReload} className={actionClass}>
           Reload
         </button>
       )}
       {label === 'error' && (
-        <button
-          type="button"
-          onClick={onRetry}
-          className="min-h-11 px-2 bg-body-sm font-semibold text-(--text-primary) underline underline-offset-2"
-        >
+        <button type="button" onClick={onRetry} className={actionClass}>
           Retry
         </button>
       )}

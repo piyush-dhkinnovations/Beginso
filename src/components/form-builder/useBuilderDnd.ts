@@ -32,8 +32,19 @@ function isDroppingBelow(active: Active, over: Over | null): boolean {
 
 // pointerWithin needs pointer coordinates, which a keyboard drag does not have: without this fallback
 // a keyboard reorder never finds a drop target and silently does nothing.
-const collisionDetection: CollisionDetection = (args) =>
-  args.pointerCoordinates ? pointerWithin(args) : closestCenter(args);
+export const collisionDetection: CollisionDetection = (args) => {
+  const point = args.pointerCoordinates;
+  if (!point) return closestCenter(args);
+  const hits = pointerWithin(args);
+  // A card being reordered with the pointer between two cards, or past the last one, is over the bare canvas: the nearest
+  // card is where it goes. Without this the others snapped back at every gap and a drop below the list did nothing.
+  if (args.active.data.current?.from !== 'canvas' || hits.length !== 1 || hits[0].id !== CANVAS_ID) return hits;
+  return closestCenter({
+    ...args,
+    collisionRect: { top: point.y, bottom: point.y, left: point.x, right: point.x, width: 0, height: 0 },
+    droppableContainers: args.droppableContainers.filter((c) => c.id !== CANVAS_ID),
+  });
+};
 
 // A finger on a field's drag handle (touch-action: none) can only mean "drag", so it starts on movement. Anywhere else
 // (the rail's icons) a swipe has to scroll, so a drag needs a short hold.
