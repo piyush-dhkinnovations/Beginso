@@ -54,8 +54,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           {rightSlot && (
             // "is-action" restores pointer-events on the trailing slot — the base
             // .bg-input-trail rule sets pointer-events: none, since most trailing
-            // content is a decorative icon, not the interactive controls (e.g. a
-            // password-visibility toggle) every current call site actually passes.
+            // content is a decorative icon, not an interactive control (e.g. a
+            // password-visibility toggle).
             <span className="bg-input-trail is-action">{rightSlot}</span>
           )}
         </div>

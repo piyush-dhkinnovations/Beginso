@@ -1,6 +1,5 @@
 /**
- * __tests__/components/settings/SessionsTab.test.tsx
- * sprint-10-events-migration, tasks.md 5.1 — requirements.md §7.12. A relocation: SessionsList's
+ * SessionsList's
  * own behaviour is covered by SessionsList.test.tsx and is deliberately not re-tested here.
  */
 

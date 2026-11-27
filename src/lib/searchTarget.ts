@@ -1,6 +1,6 @@
 import type { SearchResult } from '@/types/search';
 
-// Sprint 14 (B10, requirements 2.2): where each result opens. `id` and `formId` come from server data,
+// Where each result opens. `id` and `formId` come from server data,
 // never from a URL param, and are encoded anyway. `scope` is 'personal' or a workspace slug.
 export function resolveSearchTarget(result: SearchResult, scope: string): string {
   const ws = scope !== 'personal' ? `?ws=${encodeURIComponent(scope)}` : '';
@@ -20,7 +20,7 @@ export function resolveSearchTarget(result: SearchResult, scope: string): string
 }
 
 /** Splits `text` around case-insensitive occurrences of `query`, for highlighting. Never builds HTML -
- * the caller renders each part as a React text node (design.md §19). */
+ * the caller renders each part as a React text node. */
 export function splitByMatch(text: string, query: string): { text: string; match: boolean }[] {
   const q = query.trim();
   if (!q) return [{ text, match: false }];

@@ -1,6 +1,4 @@
 /**
- * __tests__/components/ui/Switch.test.tsx
- * Feature: sprint-7-foundation
  * Tests: Switch — native checkbox semantics, checked/onChange(boolean) API preserved
  */
 

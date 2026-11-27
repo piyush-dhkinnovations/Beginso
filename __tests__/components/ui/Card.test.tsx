@@ -1,6 +1,4 @@
 /**
- * __tests__/components/ui/Card.test.tsx
- * Feature: sprint-7-foundation
  * Tests: Card — renders children, base/padded classes, className passthrough
  */
 

@@ -1,9 +1,3 @@
-/**
- * __tests__/services/team.service.test.ts
- * Feature: sprint-9-team-permissions, requirements.md §7.2, design.md §12.
- * Built against the documented (not yet live) contract — see teamService's own comment.
- */
-
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/lib/axios', () => ({

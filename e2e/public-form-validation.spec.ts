@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Requirement 4 (shared field rules + per-type validation), Requirement 3.4
- * (page validation blocks navigation). Backend mocked via e2e/mockServer.ts.
+ * Shared field rules and per-type validation, and page
+ * validation that blocks navigation. Backend mocked via e2e/mockServer.ts.
  */
 
 test.describe('Public form — field validation', () => {

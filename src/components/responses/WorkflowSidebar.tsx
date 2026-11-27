@@ -37,11 +37,11 @@ export interface WorkflowSidebarProps {
   notes?: ReactNode;
   /** When set (solo personal form), shows a small "share this form" nudge that calls it. */
   onShare?: () => void;
-  /** OQ-5 default: any `responses:act` role may create a tag inline from this picker — distinct
-   * from `tags:manage` (Owner/Admin), which gates the full Settings tag manager (task 2.5). */
+  /** By default any `responses:act` role may create a tag inline from this picker — distinct
+   * from `tags:manage` (Owner/Admin), which gates the full Settings tag manager. */
   canCreateTag: boolean;
   /** `responses:act` — gates the scorecard the same way `canCreateTag` gates the tag picker's
-   * inline create (task 5.3). */
+   * inline create. */
   canScore?: boolean;
   onStageChange: (stageId: string) => void;
   onAssigneeChange: (assigneeId: string | null) => void;
@@ -49,7 +49,7 @@ export interface WorkflowSidebarProps {
   onTagRemove: (tagId: string) => void;
   onTagCreate: (name: string) => void;
   isUpdating?: boolean;
-  /** Wired to the duplicate callout's "view original" link (task 5.5). Undefined = no
+  /** Wired to the duplicate callout's "view original" link. Undefined = no
    * cross-response navigation available from this caller. */
   /** Lists every response from the same email address (the caller closes the drawer and fills in the search). */
   onSeeSimilar?: (email: string) => void;
@@ -64,8 +64,8 @@ const META_ROW = 'flex items-center justify-between gap-3 py-2 border-b border-(
 const META_LABEL = 'flex items-center gap-1.5 shrink-0 bg-body-sm text-(--text-muted)';
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §9.1, design.md §6/§7/§15. Replaces
- * `MetadataSidebar` — a component width (260px on desktop, per the wireframe), not a page width.
+ * Its width (260px on desktop, per the wireframe) is a component
+ * width, not a page width.
  * Every control writes through the caller's `useInboxMutations` handles (passed down as the
  * `on*Change`/`on*Add`/etc. props) so the Board/Table update without a manual refetch.
  */
@@ -143,7 +143,7 @@ export function WorkflowSidebar({
           <Select
             id="workflow-stage-select"
             aria-labelledby="workflow-stage-label"
-            // Personal-shell responses never have a real `stage` (OQ-9 — no Stage document can
+            // Personal-shell responses never have a real `stage` (no Stage document can
             // exist without a workspace) — `status` is the raw field there, and its value lines
             // up 1:1 with PERSONAL_DEFAULT_STAGES' synthetic ids, so it's the correct fallback
             // rather than always reading as "Unknown stage."

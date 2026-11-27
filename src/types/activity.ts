@@ -1,8 +1,6 @@
 /**
- * Sprint 12 (inbox-collaboration), design.md §11.2 (confirmed live, BE 0.3).
- * `GET /api/responses/:id/activity` — newest first (changed Sprint 12 close-out: a reviewer
- * opening the sidebar wants the most recent activity without scrolling, overriding the original
- * "oldest first" call).
+ * `GET /api/responses/:id/activity` — newest first: a reviewer
+ * opening the sidebar wants the most recent activity without scrolling.
  */
 
 export type ActivityType =
@@ -26,7 +24,7 @@ export interface ActivityEntry {
   actorRemoved?: boolean;
   at: string; // ISO 8601
   detail?: string;
-  /** stage_changed only. Not sent by the backend yet (it stores both ids but returns neither). */
+  /** stage_changed only. Not built yet in the backend (it stores both ids but returns neither). */
   fromStageId?: string;
   toStageId?: string;
 }

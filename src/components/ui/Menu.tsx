@@ -41,9 +41,8 @@ export interface MenuProps {
   items: MenuItem[];
   align?: "start" | "end";
   className?: string;
-  /** Overrides the trigger button's classes — defaults to the icon-button look every existing
-   * row-action menu uses. Added for ContextSwitcher (sprint-8), which needs a labelled
-   * secondary-button trigger instead; every other caller is unaffected by the default. */
+  /** Overrides the trigger button's classes — defaults to the icon-button look every
+   * row-action menu uses. */
   triggerClassName?: string;
   containerClassName?: string;
   /** Optional node rendered below all items, separated by a divider — used by ContextSwitcher for the "View all" link. */
@@ -57,8 +56,7 @@ export interface MenuProps {
 // Do not draw ticks, "Size: …" prefixes or a custom three-dot button at a call site.
 //
 // beginso-ui.css classes — see src/styles/beginso-ui.css §14 OVERLAYS ("Dropdown menu").
-// Outside-click + keyboard nav follows the existing pattern in
-// src/components/responses/StatusDropdown.tsx rather than introducing a positioning library —
+// Outside-click + keyboard nav are written here rather than introducing a positioning library —
 // no such dependency exists in the project and none is justified for a simple below-trigger menu.
 // Position type for the portaled dropdown — computed from the trigger's real screen position
 // (see openMenu) rather than CSS absolute-positioned against a local `relative` ancestor.

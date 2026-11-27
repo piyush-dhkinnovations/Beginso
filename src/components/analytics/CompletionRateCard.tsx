@@ -10,14 +10,14 @@ export interface CompletionRateCardProps {
   delta?: { label: string; direction: 'up' | 'down' | 'flat'; note?: string };
   /** Scope noun for the helper line: "this form" (default) or "a form". */
   subject?: string;
-  /** Why there is no rate, shown as the "—" tooltip. Defaults to "Not enough views yet". */
+  /** Why there is no rate, shown under the "—". Defaults to "Not enough views yet". */
   unavailableReason?: string;
   /** Too few data points to trust a ring or delta: show the figure only. */
   sparse?: boolean;
 }
 
-// Sprint 14 (requirements 1.2, OQ-3): views-based completion rate. The helper line is the spec's
-// "X% of people who open this finish it"; a null rate is "—" with a "Not enough views yet" tooltip.
+// Views-based completion rate. The helper line is
+// "X% of people who open this form finish it (all time)"; a null rate is "—" with the reason under it.
 export function CompletionRateCard({ rate, isLoading = false, delta, subject = 'this form', sparse = false, unavailableReason = 'Not enough views yet' }: CompletionRateCardProps) {
   const hasRate = typeof rate === 'number' && Number.isFinite(rate);
   const percent = hasRate ? Math.max(0, Math.min(100, Math.round(rate))) : null;

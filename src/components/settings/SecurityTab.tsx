@@ -9,11 +9,11 @@ import { StatusBadge } from '@/components/ui/StatusBadge';
 import { Button } from '@/components/ui/Button';
 import { ChangePasswordModal } from './ChangePasswordModal';
 
-// Password and email-verification only — "Active sessions" moved to its own Sessions & Devices tab
-// (sprint-10 requirements.md §7.12, SessionsTab.tsx).
+// Password and email-verification only — "Active sessions" has its own Sessions & Devices tab
+// (SessionsTab.tsx).
 // Verification/dates share ProfileTab's own settingsKeys.profile() query — no duplicate fetch.
 // "Change Password" is shown unconditionally rather than hidden for Google-only accounts, the
-// same revised decision Requirement 4.1/ChangePasswordModal already applies (no live Firebase
+// same decision ChangePasswordModal applies (no live Firebase
 // session on protected pages to read providerData from — see that component's comment).
 export function SecurityTab() {
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);

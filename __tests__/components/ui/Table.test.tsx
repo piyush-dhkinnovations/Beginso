@@ -1,6 +1,4 @@
 /**
- * __tests__/components/ui/Table.test.tsx
- * Feature: sprint-7-foundation
  * Tests: Table — renders rows, loading-skeleton state, empty state
  */
 

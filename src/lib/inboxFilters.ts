@@ -1,7 +1,6 @@
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.1 (1.3) / §7.2 (2.2), design.md §7/§8/§21.
  * Pure URL ⇄ `ResponseFilters` helpers — no React, no `next/navigation`, so they're trivial to
- * property-test (design.md §21: "legacy-status mapping total").
+ * property-test.
  */
 import type { ResponseFilters } from '@/types/response';
 import type { StageCategory, StageRef } from '@/types/stage';
@@ -24,8 +23,8 @@ export function normalizeStageCategory(raw: string | null): StageCategory | unde
 }
 
 /**
- * Requirements.md §7.1 (1.3): "A legacy `?status=in_progress` link ... is mapped to the workspace's
- * stage of that category, not dropped." Picks the lowest-`order` stage of the matching category —
+ * A legacy `?status=in_progress` link is mapped to the workspace's
+ * stage of that category, not dropped. Picks the lowest-`order` stage of the matching category —
  * total over every input (a category with no matching stage yet, or no stages loaded, returns
  * undefined rather than throwing), which is what makes the fast-check property in
  * `inboxFilters.test.ts` provable.
@@ -38,13 +37,13 @@ export function mapLegacyStatusToStageId(category: StageCategory, stages: readon
 export interface ParsedInboxFilters {
   filters: ResponseFilters;
   /** True when a legacy `?status=` param is present but could not be resolved yet because the
-   * stage list hasn't loaded — the caller must hold the param, not drop it (requirements.md §7.1). */
+   * stage list hasn't loaded — the caller must hold the param, not drop it. */
   legacyStatusPending: StageCategory | undefined;
 }
 
 /**
  * `stages` is `undefined` while the stage list is still loading (as opposed to `[]`, a workspace
- * with zero stages, which cannot actually happen per B1.1's "always returns ≥ 1 stage" — but this
+ * with zero stages, which cannot actually happen: there is always at least one stage — but this
  * function treats both the same: no resolution possible yet without throwing).
  */
 export function parseInboxFiltersFromParams(
@@ -68,7 +67,7 @@ export function parseInboxFiltersFromParams(
 
   // Unknown stage id (a saved link/view referencing a deleted stage): dropped from the filter
   // object once stages have loaded, but the caller still shows "1 filter no longer exists"
-  // (requirements.md §7.6) — this function only reports the resolvable value.
+  // — this function only reports the resolvable value.
   if (stageId && stages && !stages.some((s) => s.id === stageId)) {
     stageId = undefined;
   }
@@ -96,8 +95,8 @@ export function parseInboxFiltersFromParams(
 }
 
 /** Applies a filter patch onto an existing URLSearchParams, deleting keys whose value is
- * undefined/empty and always dropping the legacy `status` key once a `stage` is set (2.2's
- * "filter state lives in the URL"). Returns a new URLSearchParams; does not mutate the input. */
+ * undefined/empty and always dropping the legacy `status` key once a `stage` is set (filter state
+ * lives in the URL). Returns a new URLSearchParams; does not mutate the input. */
 export function applyInboxFilterPatch(
   current: URLSearchParams,
   patch: Partial<ResponseFilters & { page: number; view: InboxViewMode; search: string }>,

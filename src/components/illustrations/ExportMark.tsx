@@ -1,6 +1,5 @@
 
 // Small abstract mark for the Exports page, built from system shapes only: a field outline, a rule and bars.
-// Replaces the stock "empty-reports" illustration, which appeared twice on the same screen. Decorative.
 export function ExportMark({ className = "bg-icon" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className}>

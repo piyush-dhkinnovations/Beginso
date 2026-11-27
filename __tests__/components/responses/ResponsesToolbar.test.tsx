@@ -1,7 +1,6 @@
 /**
- * __tests__/components/responses/ResponsesToolbar.test.tsx
- * sprint-12-inbox-collaboration, requirements.md §7.2 (2.2) — stage/assignee filters now come
- * from workspace data (`stages`/`members` props), not the removed status union (task 1.7).
+ * Stage/assignee filters come
+ * from workspace data (`stages`/`members` props).
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

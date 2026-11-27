@@ -1,5 +1,5 @@
 /**
- * Sprint 13 (CF5.5, design.md §11.2/§13). Backend contract to confirm (BE 0.9) — GET /api/trash.
+ * GET /api/trash.
  * `daysLeft`, `purgeAt`, `canRestore` and `canPurge` are server-computed; the UI renders them and
  * never re-derives roles or the 30-day clock.
  */

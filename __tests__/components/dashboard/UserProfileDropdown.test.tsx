@@ -1,6 +1,4 @@
 /**
- * __tests__/components/dashboard/UserProfileDropdown.test.tsx
- * Audit remediation: zero test coverage despite tasks.md marking it done.
  * Tests: opens on click, shows user initials/name, closes on outside-click
  * and Escape, calls logout.
  */

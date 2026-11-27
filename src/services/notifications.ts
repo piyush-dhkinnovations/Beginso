@@ -2,9 +2,9 @@ import axiosInstance from '@/lib/axios';
 import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import type { AppNotification, NotificationFilter, NotificationPage } from '@/types/notification';
 
-// GET /api/notifications confirmed live 17 Aug 2026 (newest first); Sprint 14 (B9.1-B9.3, design.md
-// §11.2) extends it with `unread`, `type`, `limit`, `cursor` and context scoping via
-// `x-workspace-slug`, and adds GET /unread-count and POST /read-all. The envelope has been
+// GET /api/notifications confirmed live 17 Aug 2026 (newest first). It takes
+// `unread`, `type`, `limit`, `cursor` and context scoping via
+// `x-workspace-slug`; GET /unread-count and POST /read-all sit beside it. The envelope has been
 // inconsistent historically, so everything is read defensively - a missing key never crashes the bell.
 const PAGE_LIMIT = 30;
 

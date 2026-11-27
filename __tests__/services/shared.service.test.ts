@@ -1,6 +1,4 @@
 /**
- * __tests__/services/shared.service.test.ts
- * Feature: sprint-9-team-permissions, requirements.md §7.9, design.md §12.
  * Built against `backend_updates_for_frontend.md` §13's exact JSON example (live, confirmed by
  * direct probe — see sharedService's own comment). Corrected after a real runtime crash
  * (`shares.map is not a function`) showed the envelope key is `forms`, not `shares`.

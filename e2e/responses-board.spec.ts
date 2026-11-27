@@ -3,7 +3,7 @@ import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 /**
  * The Responses board: stage columns that scroll on their own inside a board as tall as the screen, so the sideways scrollbar is
  * always in view, and a column that has more than a page loads the next one by itself when its end comes into view.
- * Personal scope, so the stages are the fixed defaults (New, In Progress, Completed). Names are invented.
+ * The personal-scope cases use the fixed default stages (New, In Progress, Completed). Names are invented.
  */
 const FORM_ID = 'e2e-board-form';
 const STAGES = [

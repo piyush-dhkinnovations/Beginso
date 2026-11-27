@@ -1,6 +1,4 @@
 /**
- * __tests__/components/ui/Badge.test.tsx
- * Feature: sprint-7-foundation
  * Tests: generic Badge primitive — variant/pill/size classes, optional dot
  */
 

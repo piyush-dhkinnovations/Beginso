@@ -18,7 +18,7 @@ interface WorkspaceSummaryCardsProps {
   totalForms: number;
   averageResponsesPerForm: number;
   /** Views-weighted completion across forms with counted views, 0-100; null (shown "—", never 0%)
-   * when no form has a counted view (Sprint 14, OQ-3). */
+   * when no form has a counted view. */
   completionRate: number | null;
   /** Change vs the previous equal-length period; null = no baseline worth comparing against. */
   changes: WorkspaceSummaryChanges;

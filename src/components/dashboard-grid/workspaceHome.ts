@@ -10,7 +10,7 @@ interface FormRow { _id: string; title: string; status: string; responseCount?: 
 const pct = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0);
 const icon = (I: typeof FileText) => createElement(I, { 'aria-hidden': true });
 
-// Everything here is derived from the forms list the Workspace Home already fetches — no new calls.
+// Apart from the map locations (passed in), everything here is derived from the forms list the Workspace Home already fetches.
 // A missing key renders as "unavailable", never as an invented number.
 export function workspaceMetrics(forms: FormRow[], total: number, locations?: ResponseLocation[]): MetricMap {
   const m: MetricMap = {};

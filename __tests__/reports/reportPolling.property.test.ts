@@ -1,7 +1,5 @@
 /**
- * __tests__/reports/reportPolling.property.test.ts
- * Feature: sprint-5-analytics-reports, Property 4: Polling gate is exact
- * Validates: Requirement 11.2, 11.3
+ * Property: Polling gate is exact
  */
 
 import { describe, it } from 'vitest';

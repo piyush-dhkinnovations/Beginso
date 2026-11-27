@@ -23,11 +23,10 @@ interface CriteriaManagerProps {
 }
 
 /**
- * Sprint 12 (inbox-collaboration), tasks.md 5.2 — OQ-7 resolved 3 Oct 2026 (requirements.md
- * §B6.1). Closely mirrors `StageManager`'s structure (task 5.2's own instruction): `ui/Table`
+ * Closely mirrors `StageManager`'s structure: `ui/Table`
  * with keyboard-operable up/down reorder, Owner/Admin gated, `visitedTabs`-compatible dirty
  * reporting, 640px form column. No colour/category here — a criterion is just an ordered label.
- * The workspace's first/default criterion (seeded server-side per B6.1) can never be deleted,
+ * The workspace's first/default criterion (seeded server-side) can never be deleted,
  * same "disabled, not merely validated" rule StageManager applies to its own default stage.
  */
 export function CriteriaManager({ scope, onDirtyChange }: CriteriaManagerProps) {

@@ -1,7 +1,6 @@
 /**
- * __tests__/components/responses/ResponseRow.test.tsx
- * sprint-12-inbox-collaboration, requirements.md §7.2 (2.1) — `ResponseRow.tsx` no longer exports
- * one `<tr>` component (task 1.7's own note: `ui/Table`'s render-function column API doesn't fit
+ * `ResponseRow.tsx` no longer exports
+ * one `<tr>` component (`ui/Table`'s render-function column API doesn't fit
  * that shape); it exports the cell-building helpers `ResponsesTable` composes into columns.
  */
 

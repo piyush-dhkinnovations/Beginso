@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { STAGE_COLOR_TOKENS } from '@/types/stage';
 
-// Sprint 12 (inbox-collaboration), design.md §14: "name 1-30, trimmed, case-insensitively
-// unique." Case-insensitive uniqueness is server-authoritative (design.md §14's own "client-side
+// "name 1-30, trimmed, case-insensitively
+// unique." Case-insensitive uniqueness is server-authoritative (the same "client-side
 // hint; server authoritative" precedent on stageSchema) — not re-implemented here without the
 // live tag list to check against.
 export const tagSchema = z.object({

@@ -33,7 +33,7 @@ export default function BuilderPageShell() {
   const { id } = useParams() as { id: string };
   const searchParams = useSearchParams();
 
-  // The URL is the single source of truth for the active tab (?tab=settings), so the form sidebar's
+  // The URL is the single source of truth for the active tab (?tab=settings), so the form header's
   // Settings link, deep links, reload and the tab bar all agree. State copied from the URL once at mount
   // ignored in-page navigation (the sidebar link changed the URL but not the tab).
   const tabFromUrl = searchParams.get('tab');
@@ -206,7 +206,7 @@ export default function BuilderPageShell() {
 
       <AddFieldSheet isOpen={showAddSheet} onClose={() => setShowAddSheet(false)} onAdd={handleAddFromSheet} />
 
-      {/* ── Lifecycle Modals ── */}
+      {/* Lifecycle Modals */}
       <PublishModal
         isOpen={showPublishModal}
         onClose={() => setShowPublishModal(false)}

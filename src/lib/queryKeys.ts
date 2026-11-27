@@ -1,35 +1,16 @@
 import type { GetResponsesParams } from '@/types/response';
 import type { FormsContext } from '@/types/workspace';
 
-// sprint-11-v2a-hardening, requirements.md §7.3 (2.6) — query-key audit, classified per
-// design.md §10. Every factory below falls into one of three buckets:
+// Every key factory keeps one context's cached rows apart from another's, in one of two ways:
 //
-// (a) Workspace-namespaced: workspaceKeys.forms() (context is a key segment), teamKeys,
-//     activityKeys, auditKeys — all namespaced from creation; regression tests proving
-//     key('a') !== key('b') live in __tests__/lib/queryKeys.test.ts.
-// (b) Namespaced by something else that is itself globally unique or per-caller, so a workspace
-//     segment would be redundant: formKeys/formEventKeys/formAccessKeys (by formId — a Mongo
-//     ObjectId, globally unique across every workspace and personal space, so no two forms in
-//     different contexts can ever collide on this key); invitationKeys (by token); sharedKeys,
-//     notificationKeys, settingsKeys.profile()/sessions() (per-user by nature — scoped to the
-//     caller's own session, not any workspace).
-// (c) Workspace-scoped data read with NO workspace in the key at all: responseKeys, dashboardKeys,
-//     analyticsKeys, reportKeys, settingsKeys.workspace(). Every one of these renders only under
-//     the personal (user) shell — no /w/[slug]/responses|analytics|reports|dashboard route
-//     exists — so a *cache* bleed across a context switch cannot happen (nothing here can ever be
-//     mounted twice with two different contexts competing for the same key). But of every service
-//     call in this codebase, only formsService.getForms() sends x-workspace-slug
-//     (src/services/forms.ts) — these calls send no workspace indicator at all, so the backend
-//     resolves one by its own fallback order (API_CONTRACT.md "Workspace Resolution"), the same
-//     fallback that caused the 16 Sep forms leak. **Backend contract to confirm:** do these
-//     personal-shell pages actually receive personal-scoped data, or the caller's default
-//     workspace's data? Unproven from this checkout — a confirmed leak here is a wrong-data risk,
-//     release-blocking per design.md §10, not a stale-cache bug this key structure can fix.
-//     Fixing it (if confirmed) is Sprint 12+ scope, since Responses/Analytics/Reports/Dashboard are
-//     rewritten there — this audit's job is to record the result, not silently assume it's fine.
+// (a) The context is a key segment: `scope` (a workspace slug or 'personal') or the workspace itself, as in
+//     responseKeys, reportKeys, workspaceKeys.forms(), teamKeys, activityKeys and auditKeys.
+//     __tests__/lib/queryKeys.test.ts proves key('a') !== key('b').
+// (b) The key is already unique or per-caller, so a workspace segment would be redundant: by formId (a Mongo
+//     ObjectId, unique across every workspace and personal space), invitationKeys by token, and the signed-in
+//     person's own profile and sessions.
 
-// Sprint 12 (inbox-collaboration), design.md §10 — resolves OQ-1's frontend half. `scope` (a
-// workspace slug, or the literal 'personal') is now a key segment, matching workspaceKeys.forms()'s
+// `scope` (a workspace slug, or the literal 'personal') is a key segment, matching workspaceKeys.forms()'s
 // own precedent: switching workspaces (or personal ⇄ workspace) must never serve another scope's
 // cached responses. formId is optional throughout — omitted formId means the "All Responses" view
 // spanning every form in the scope, keyed under the literal 'all' segment.
@@ -41,7 +22,6 @@ export const responseKeys = {
   stats: (scope: string, formId?: string) => ['responses', scope, formId ?? 'all', 'stats'] as const,
 };
 
-// Sprint 12, design.md §10 — workspace-namespaced from creation, teamKeys' own precedent.
 export const responseSetupKeys = {
   form: (formId: string) => ['response-setup', formId] as const,
 };
@@ -50,17 +30,14 @@ export const stageKeys = {
   list: (scope: string) => ['stages', scope] as const,
 };
 
-// Sprint 12 (inbox-collaboration), design.md §10, task 2.2/2.5.
 export const tagKeys = {
   list: (scope: string) => ['tags', scope] as const,
 };
 
-// Sprint 12 (inbox-collaboration), design.md §10, task 2.2/2.6.
 export const viewKeys = {
   list: (scope: string, formId?: string) => ['views', scope, formId ?? 'all'] as const,
 };
 
-// Sprint 12 (inbox-collaboration), design.md §10, task 5.2/5.3 — OQ-7 resolved 3 Oct 2026.
 // Criteria are workspace-namespaced (stageKeys' own precedent); a response's score is namespaced
 // by its id (a globally unique Mongo ObjectId).
 export const scoreKeys = {
@@ -68,19 +45,19 @@ export const scoreKeys = {
   detail: (responseId: string) => ['scores', 'detail', responseId] as const,
 };
 
-// Sprint 12 (inbox-collaboration), design.md §10, task 4.1 — namespaced by response id (a Mongo
+// Namespaced by response id (a Mongo
 // ObjectId, globally unique) plus scope, matching responseKeys.detail()'s own segment order.
 export const noteKeys = {
   list: (scope: string, responseId: string) => ['responses', scope, 'detail', responseId, 'notes'] as const,
 };
 
-// Named distinctly from `activityKeys` below (the workspace activity feed, Sprint 10) — this is a
+// Named distinctly from `activityKeys` below (the workspace activity feed) — this is a
 // single response's own timeline, a different query entirely.
 export const responseActivityKeys = {
   list: (scope: string, responseId: string) => ['responses', scope, 'detail', responseId, 'activity'] as const,
 };
 
-// Sprint 15: how a form's submitted response is laid out for the caller. Deliberately NOT under 'responses', so changing the
+// How a form's submitted response is laid out for the caller. Deliberately NOT under 'responses', so changing the
 // layout never refetches the response lists.
 export const responseViewKeys = {
   form: (formId: string) => ['response-view', formId] as const,
@@ -139,11 +116,11 @@ export const settingsKeys = {
   sessions: () => [...settingsKeys.all, 'sessions'] as const,
 };
 
-// Not to be confused with settingsKeys' *email preference* notifications (Requirement 7 of
-// Sprint 6) — this is the in-app notification bell/dropdown feed, a separate feature.
+// Not to be confused with settingsKeys' *email preference* notifications
+// — this is the in-app notification bell/dropdown feed, a separate feature.
 export const notificationKeys = {
   all: ['notifications'] as const,
-  // Sprint 14 (design.md §10): context-namespaced — `scope` is a workspace slug or 'personal' — so
+  // Context-namespaced — `scope` is a workspace slug or 'personal' — so
   // switching context can never serve another context's rows or badge count.
   list: (scope: string, filter: 'all' | 'unread' | 'mentions') => [...notificationKeys.all, 'list', scope, filter] as const,
   lists: (scope: string) => [...notificationKeys.all, 'list', scope] as const,
@@ -151,27 +128,27 @@ export const notificationKeys = {
   unreadOfType: (scope: string, type: string) => [...notificationKeys.all, 'unread', scope, type] as const,
 };
 
-// Sprint 14 (B10) — context- and query-namespaced; removed wholesale on context/role change.
+// Context- and query-namespaced; removed wholesale on context/role change.
 export const searchKeys = {
   all: ['search'] as const,
   results: (scope: string, q: string) => [...searchKeys.all, scope, q] as const,
 };
 
 // Not to be confused with settingsKeys.workspace() — that's the V1 singular /workspaces/current
-// settings resource (branding, logo). This is the V2 multi-workspace list/detail (sprint-8).
+// settings resource (branding, logo). This is the V2 multi-workspace list/detail.
 export const workspaceKeys = {
   all: ['workspaces'] as const,
   list: () => [...workspaceKeys.all, 'list'] as const,
   detail: (id: string) => [...workspaceKeys.all, 'detail', id] as const,
   // The context discriminator is a key segment, not a filter param, so switching context can
-  // never serve another context's cached rows even transiently (requirements.md §7.10).
+  // never serve another context's cached rows even transiently.
   forms: (context: FormsContext, params?: { search?: string; status?: string; page?: number; limit?: number; archived?: string; pinned?: boolean; sort?: string; order?: string }) =>
     context.type === 'personal'
       ? (['forms', 'personal', 'list', params] as const)
       : (['forms', 'workspace', context.workspaceId, 'list', params] as const),
 };
 
-// Sprint 9 (team-permissions) — workspace-namespaced from the start, matching workspaceKeys.forms()'s
+// Workspace-namespaced from the start, matching workspaceKeys.forms()'s
 // own precedent: switching workspaces must never serve another workspace's cached member list.
 export const teamKeys = {
   all: (workspaceId: string) => ['team', workspaceId] as const,
@@ -187,7 +164,7 @@ export const formAccessKeys = {
   grants: (formId: string) => ['form-access', formId, 'grants'] as const,
 };
 
-// Sprint 10 (events-migration), design.md §10. activityKeys/auditKeys are workspace-namespaced from
+// activityKeys/auditKeys are workspace-namespaced from
 // creation (teamKeys' precedent): switching workspaces must never serve another workspace's rows.
 // `limit` is part of formEventKeys.list — Form Overview's 5-row preview and the "View all" drawer's
 // fuller page would otherwise share a cache entry for page 1 and show each other's row counts.
@@ -216,7 +193,7 @@ export const sharedKeys = {
   list: () => [...sharedKeys.all, 'list'] as const,
 };
 
-// Sprint 13 (builder-publish-respondent), design.md §10. Readiness is by formId (globally unique,
+// Readiness is by formId (globally unique,
 // bucket (b) above). Trash and templates are workspace-scoped, so `scope` (a workspace slug or the
 // literal 'personal') is a key segment. respondentKeys.link takes a hash, never the raw token.
 export const readinessKeys = {

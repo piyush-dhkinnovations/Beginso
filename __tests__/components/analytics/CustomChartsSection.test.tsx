@@ -166,7 +166,6 @@ describe('CustomChartsSection', () => {
     expect(screen.queryByRole('dialog', { name: 'chart drawer' })).not.toBeInTheDocument();
   });
 
-  // (Adding a chart is the chart builder's job now: see builder/ChartWizard.test.tsx. This section only opens it.)
 
   it('edits a chart through the drawer', async () => {
     const user = userEvent.setup();

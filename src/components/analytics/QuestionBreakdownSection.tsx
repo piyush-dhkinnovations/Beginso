@@ -66,7 +66,7 @@ export function QuestionBreakdownSection({ form, breakdown, isLoading, isError =
     return choiceFields.filter((f) => (f.label?.trim() || 'Untitled question') === base).length > 1 ? `${base} (question ${i + 1})` : base;
   };
 
-  // No empty section header when there's nothing to show it for (Requirement 6.5).
+  // No empty section header when there's nothing to show it for.
   if (choiceFields.length === 0 && summaryFields.length === 0) return null;
 
   // Questions the user already charted below are not repeated here; unanswered ones collapse into one list.

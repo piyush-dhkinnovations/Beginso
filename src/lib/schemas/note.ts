@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Sprint 12 (inbox-collaboration), design.md §11.2/§17: "body 1-5000 after trim; mentionIds only
+// "body 1-5000 after trim; mentionIds only
 // from the picker" — mentionIds isn't validated here beyond being a string array since it never
 // comes from user-typed text, only MentionPicker's own selections.
 export const noteSchema = z.object({

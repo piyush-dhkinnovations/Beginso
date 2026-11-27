@@ -1,5 +1,4 @@
 /**
- * Feature: sprint-3-public-form
  * Tests for FormProgress — step/percentage label, aria attributes, single-page suppression.
  */
 

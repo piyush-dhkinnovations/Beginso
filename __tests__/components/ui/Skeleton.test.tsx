@@ -1,8 +1,3 @@
-/**
- * __tests__/components/ui/Skeleton.test.tsx
- * Feature: sprint-7-foundation
- */
-
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/react';
 import { Skeleton } from '@/components/ui/Skeleton';

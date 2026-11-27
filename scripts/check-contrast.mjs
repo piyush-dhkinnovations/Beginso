@@ -5,7 +5,7 @@
 //
 // Rules (WCAG 2.2 AA): 4.5:1 for text, 3:1 for the things a person has to see to use a control (its border, the focus ring, a switch that is off, a
 // primary button against the page). Separators between cards (--border-default, --border-subtle) and disabled text are decorative or exempt: they
-// are listed with their ratio and never fail. "Paper" and "Mist" (new) may not fail anything. Classic and the three dark styles existed before
+// are listed with their ratio and never fail. "Paper" and "Mist" may not fail anything. Classic and the three dark styles existed before
 // this check; failures that were already there are recorded in contrast-baseline.json and are reported as "known", while any NEW failure fails.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -15,7 +15,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const css = fs.readFileSync(path.join(root, 'src/styles/beginso-ui.css'), 'utf8').replace(/\r\n/g, '\n');
 const baselinePath = path.join(root, 'scripts/contrast-baseline.json');
 
-// ---- tokens per style --------------------------------------------------------------------------------------------------------------
+// tokens per style
 function block(selector) {
   const i = css.indexOf(`\n${selector} {`);
   if (i < 0) throw new Error(`no block for ${selector}`);
@@ -56,7 +56,7 @@ const lum = ([r, g, b]) => {
 };
 const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
 
-// ---- the pairs ---------------------------------------------------------------------------------------------------------------------
+// the pairs
 const SURFACES = ['--bg-page', '--bg-subtle', '--bg-sunken', '--surface-card', '--surface-hover', '--surface-active', '--accent-soft'];
 const PAIRS = [];
 const add = (kind, min, fg, bgs) => bgs.forEach((bg) => PAIRS.push({ kind, min, fg, bg }));
@@ -99,7 +99,7 @@ if (process.argv.includes('--baseline')) {
   process.exit(0);
 }
 
-// ---- the table ---------------------------------------------------------------------------------------------------------------------
+// the table
 const lines = ['| style | check | foreground | background | ratio | needs | result |', '|---|---|---|---|---|---|---|'];
 for (const r of rows) lines.push(`| ${r.style} | ${r.kind} | ${r.fg} | ${r.bg} | ${r.ratio === null ? 'n/a' : r.ratio.toFixed(2)} | ${r.min || '-'} | ${status(r)} |`);
 if (process.argv.includes('--table')) console.log(lines.join('\n'));

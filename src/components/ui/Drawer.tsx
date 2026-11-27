@@ -10,7 +10,7 @@ export interface DrawerProps {
   onClose: () => void;
   title: string;
   description?: string;
-  /** 'bottom' renders a bottom sheet (Sprint 13, CF2.12) — same focus trap and scroll lock. */
+  /** 'bottom' renders a bottom sheet — same focus trap and scroll lock. */
   placement?: "right" | "bottom";
   /** Desktop width in px (default 480 via CSS). Always capped to the viewport, so phones get a full-screen sheet. */
   width?: number;

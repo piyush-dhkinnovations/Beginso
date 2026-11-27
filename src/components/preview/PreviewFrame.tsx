@@ -6,7 +6,7 @@ import { DEVICE_WIDTH } from './DeviceToggle';
 // Renders the respondent view in a same-origin <iframe> (`/forms/[id]/preview?embed=1`). An iframe,
 // not a width-constrained div, so the form's real @media breakpoints respond to the chosen device
 // width (same reasoning as /dev/ui/frame), and so the form's own light theme stays isolated from
-// whatever theme the admin chrome around it is in (CF2.11).
+// whatever theme the admin chrome around it is in.
 export interface PreviewFrameProps {
   formId: string;
   device: PreviewDevice;

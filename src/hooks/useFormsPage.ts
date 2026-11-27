@@ -43,13 +43,13 @@ export function useFormsPage(context: FormsContext) {
   const [bulkDeleteConfirming, setBulkDeleteConfirming] = useState(false);
   const debouncedSearch = useDebounce(search, 300);
 
-  // sprint-11-v2a-hardening 2.5 — real bug found by the context-switch isolation test: this page
-  // is shared between /forms and /w/[slug]/forms (Sprint 8), and switching workspace A -> B hits
+  // Real bug found by the context-switch isolation test: this page
+  // is shared between /forms and /w/[slug]/forms, and switching workspace A -> B hits
   // the same route pattern, so Next.js can reuse this exact component instance instead of
   // remounting it. Every per-form modal/selection state above is local useState, so without this
   // reset, an open FormAccessPanel/MoveFormModal/DeleteFormModal kept pointing at the form from
   // the space just left, showing workspace A's form data inside workspace B's page. Query-cache
-  // isolation (workspaceKeys.forms() namespaced by context, 2.6) never protected against this —
+  // isolation (workspaceKeys.forms() namespaced by context) never protected against this —
   // that's a data-fetch key, not local component state.
   //
   // Reset during render (BrandingTab.tsx's own "re-sync when the source changes externally"
@@ -67,14 +67,13 @@ export function useFormsPage(context: FormsContext) {
     setPage(1);
   }
 
-  // sprint-11-v2a-hardening 2.3 — real gap found by the cross-role matrix: this page never
+  // Real gap found by the cross-role matrix: this page never
   // checked canDeleteForm(role) at all, so bulk delete and the row Delete action were showing
-  // (and firing) for every role, not owner-only as requirements.md §7.2 (task 1.2) specified.
+  // (and firing) for every role, not owner-only.
   // Same lookup pattern team/page.tsx already established (workspacesService.list() already
-  // returns the caller's per-workspace role, confirmed live since Sprint 8 — no need to wait on
-  // BE 0.1, which only gates the sidebar's nav visibility). Personal context has no workspace
+  // returns the caller's per-workspace role). Personal context has no workspace
   // role to look up — a personal form's only possible owner is the caller, so delete is always
-  // allowed there (design.md §13's "{owner} × {personal}" cell).
+  // allowed there.
   const { data: callerWorkspaces } = useQuery({
     queryKey: workspaceKeys.list(),
     queryFn: workspacesService.list,
@@ -96,8 +95,7 @@ export function useFormsPage(context: FormsContext) {
 
   // Selection is page/filter-scoped, not global — switching tabs, filtering, searching, or
   // paging changes which rows are even on screen, so a selection made before that change would
-  // otherwise silently point at forms the user can no longer see (sprint-10-events-migration,
-  // task 6.4's own "per-row" framing implies this, not a global cross-page selection).
+  // otherwise silently point at forms the user can no longer see.
   const handleTabChange = (tab: FormsManagerTab) => {
     setActiveTab(tab);
     setPage(1);
@@ -153,7 +151,7 @@ export function useFormsPage(context: FormsContext) {
   const someOnPageSelected = rows.some((form) => selectedIds.has(form._id)) && !allOnPageSelected;
 
   // One owner for the row: in a personal space it is always the caller; in a workspace the backend
-  // may include `owner` on the row (contract to confirm — form.ts), so read it defensively.
+  // may include `owner` on the row, so read it defensively.
   const ownerName = (form: Form) => (context.type === 'personal' ? user?.name : form.owner?.name);
   const toggleSort = (key: string) =>
     setSort((cur) => (cur.key === key ? { key, dir: cur.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: key === 'title' || key === 'status' ? 'asc' : 'desc' }));

@@ -1,14 +1,11 @@
 /**
- * __tests__/auth.service.test.ts
- * Feature: sprint-1-frontend-auth
  * Tests: Auth Service — signup, login, getMe, logout functions
- * Requirements: 6.1, 6.4, 6.5, 8.1, 13.1, 13.5
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 
-// ─── Mock Firebase auth ─────────────────────────────────────────────────────
+// Mock Firebase auth
 vi.mock('@/lib/firebase', () => ({
   auth: { currentUser: null },
 }));
@@ -26,7 +23,7 @@ vi.mock('firebase/auth', () => ({
   updateProfile: vi.fn(),
 }));
 
-// ─── Mock Axios instance ────────────────────────────────────────────────────
+// Mock Axios instance
 vi.mock('@/lib/axios', () => {
   const mockPost = vi.fn();
   const mockGet = vi.fn();
@@ -68,7 +65,7 @@ describe('Auth Service', () => {
     vi.mocked(signOut).mockResolvedValue();
   });
 
-  // ─── signup() ─────────────────────────────────────────────────────────────
+  // signup()
 
   describe('signup()', () => {
     it('creates a Firebase user and asks the Beginso backend to send an OTP', async () => {
@@ -101,7 +98,7 @@ describe('Auth Service', () => {
     });
   });
 
-  // ─── login() ──────────────────────────────────────────────────────────────
+  // login()
 
   describe('login()', () => {
     it('signs in with Firebase then posts the ID token with a 10s timeout', async () => {
@@ -148,7 +145,7 @@ describe('Auth Service', () => {
     });
   });
 
-  // ─── loginWithGoogle() ─────────────────────────────────────────────────────
+  // loginWithGoogle()
 
   describe('loginWithGoogle()', () => {
     it('signs in with a Google popup then posts the ID token to /api/auth/session', async () => {
@@ -238,7 +235,7 @@ describe('Auth Service', () => {
     });
   });
 
-  // ─── getMe() ──────────────────────────────────────────────────────────────
+  // getMe()
 
   describe('getMe()', () => {
     it('fetches the current user from /api/auth/me', async () => {
@@ -252,7 +249,7 @@ describe('Auth Service', () => {
     });
   });
 
-  // ─── logout() ─────────────────────────────────────────────────────────────
+  // logout()
 
   describe('logout()', () => {
     it('posts to /api/auth/logout', async () => {

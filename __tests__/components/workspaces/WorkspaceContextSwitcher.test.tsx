@@ -1,8 +1,3 @@
-/**
- * __tests__/components/workspaces/WorkspaceContextSwitcher.test.tsx
- * Feature: sprint-8-workspaces-context, requirements.md §7.2
- */
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

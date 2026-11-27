@@ -34,15 +34,13 @@ export interface FormAccessPanelProps {
   onClose: () => void;
 }
 
-// requirements.md §7.8, design.md §6/§15.5. Mirrors MoveFormModal's fetch-on-open pattern (query
+// Mirrors MoveFormModal's fetch-on-open pattern (query
 // gated on `enabled: isOpen`) — works identically whether formId belongs to a workspace form or
-// a personal one, since the endpoint itself is scoped only by form (design.md §11.2's own note).
+// a personal one, since the endpoint itself is scoped only by form.
 //
 // Unlike InviteMembersModal/MoveFormModal, a successful grant does NOT close the panel — this is
 // a list-manager (share with several people over one visit, watch the list grow), not a
-// single-submission form, so only the inputs reset. Requirements.md §7.8/design.md §6 describe no
-// confirmation modal for revoke (unlike remove-member/revoke-invite, which requirements.md §11
-// names explicitly) — an icon-button revoke fires immediately, matching that literal scope.
+// single-submission form, so only the inputs reset.
 export function FormAccessPanel({ formId, formTitle, isOpen, onClose }: FormAccessPanelProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();

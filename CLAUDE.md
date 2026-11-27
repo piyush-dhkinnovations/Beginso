@@ -104,7 +104,7 @@ Test files live under `__tests__/`, mirroring `src/`'s structure; the glob is `*
 
 **Every screen is built in both themes from the first commit.** Dark mode is a token swap — the default palette is Slate, with `midnight` and `dimmed` available via `data-dark`. Retro-fitting dark at the end means re-testing everything twice.
 
-**The theme is resolved before first paint, never in an effect.** Today a small blocking inline script in `src/app/layout.tsx` sets `data-theme` from the OS preference (there is no server-side read yet: `User.theme` has not shipped on `GET /api/auth/me`). Moving it into an effect gives every dark-mode user a white flash on each page load.
+**The theme is resolved before first paint, never in an effect.** A small blocking inline script in `src/app/layout.tsx` sets `data-theme` from the choice saved on the device, else the `beginso_theme` cookie (a copy of the account's saved theme), else the OS preference. The account's theme is synced after sign-in. There is no server-side read, so the public and auth pages stay static. Moving it into an effect gives every dark-mode user a white flash on each page load.
 
 **Permission checks belong on the server.** Hiding UI is not authorization. A frontend gate is a convenience; the corresponding backend requirement must be recorded in the spec.
 

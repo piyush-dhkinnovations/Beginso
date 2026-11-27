@@ -1,5 +1,4 @@
 /**
- * Feature: sprint-3-public-form
  * Tests for FormUnavailable — lock icon, heading, sub-message, optional userNote.
  */
 

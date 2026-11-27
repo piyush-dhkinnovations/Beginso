@@ -40,9 +40,8 @@ export interface TableProps<T> {
   onSortChange?: (key: string) => void;
 }
 
-// beginso-ui.css classes — see src/styles/beginso-ui.css §11 TABLE. `emptyState`/loading rows
-// accept plain ReactNode rather than importing EmptyState/Skeleton directly (neither exists yet
-// this sprint) — a consumer supplies its own, or the real primitives once they land.
+// beginso-ui.css classes — see src/styles/beginso-ui.css §11 TABLE. `emptyState`
+// accepts plain ReactNode rather than importing EmptyState directly: a consumer supplies its own.
 //
 // `bg-table-stack` + `data-label` (beginso-ui.css §11): below 640px this collapses each row into
 // a stacked card instead of horizontally scrolling — the design system's own docs call a

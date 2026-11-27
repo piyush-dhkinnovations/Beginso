@@ -3,8 +3,7 @@ import { unwrapEnvelope } from '@/lib/apiEnvelope';
 import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import type { ChartDefinition, ChartOptions, ChartSize, ChartType, ChartVisibility, DateGranularity, FieldBucket, SavedChart } from '@/types/charts';
 
-// Backend contract to confirm (the BE agent is implementing it in parallel; nothing is published in
-// shared/types yet). Everything is unwrapped defensively, and the legacy Sprint 14 names (`chartType`,
+// Everything is unwrapped defensively, and the older names (`chartType`,
 // `order`) are accepted so a half-migrated backend still renders.
 //   GET    /api/forms/:formId/charts                      -> SavedChart[]  (own private + workspace-shared)
 //   POST   /api/forms/:formId/charts   ChartDefinition    -> SavedChart

@@ -1,7 +1,5 @@
 /**
- * Mock GET /api/public/:slug fixture used to unblock SSR/component development
- * ahead of the backend endpoint (targeted Wed 22 Jul). Swap for the real fetch
- * once it lands — no code shape change expected.
+ * Mock GET /api/public/:slug fixture for the E2E suite.
  *
  * Lives under e2e/ (not src/) since its only consumer is e2e/mockServer.ts — it's
  * a test fixture, not app code. Relative imports (not the `@/` alias) since

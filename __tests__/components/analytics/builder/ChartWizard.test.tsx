@@ -358,7 +358,7 @@ describe('leaving, and the keyboard', () => {
   });
 });
 
-// ── the drill-down path ──────────────────────────────────────────────────────────────────────────────
+// the drill-down path
 const LEVEL_ONE: QueryResult = { ...RESULT, depth: 0, levelCount: 2, nextLevel: { field: { kind: 'question', fieldId: 'age' }, label: 'Age' } };
 
 const toDrillBasics = async (u = user()) => {

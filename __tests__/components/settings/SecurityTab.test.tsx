@@ -1,9 +1,6 @@
 /**
- * __tests__/components/settings/SecurityTab.test.tsx
- * Feature: sprint-6-settings
  * Tests: SecurityTab — verification badge variant mapping, account dates, error state (sessions
- * moved to SessionsTab in sprint-10)
- * Requirements: 8.1-8.3, 9.6
+ * belong to SessionsTab)
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -84,8 +81,8 @@ describe('SecurityTab', () => {
     expect(screen.getByText(/Last login/)).toBeInTheDocument();
   });
 
-  // sprint-10 requirements.md §7.12 — sessions moved to their own tab, so SecurityTab neither
-  // fetches nor renders them any more (its old partial-failure tests for that no longer apply).
+  // Sessions have their own tab, so SecurityTab neither
+  // fetches nor renders them.
   it('no longer renders or fetches the sessions list', async () => {
     mockGetProfile.mockResolvedValue(mockProfile());
     renderTab();

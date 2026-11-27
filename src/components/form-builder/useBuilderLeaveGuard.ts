@@ -22,7 +22,7 @@ export function useBuilderLeaveGuard({ overviewHref, formsListHref }: { overview
   // kind of sync.
   useEffect(() => {
     if (pendingLeaveUrl) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- opens the modal from the store value that Sidebar sets
       setPendingNavUrl(pendingLeaveUrl);
       setShowLeaveModal(true);
       setPendingLeaveUrlInStore(null);

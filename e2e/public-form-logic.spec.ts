@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Requirement 5 (conditional logic). The mock schema's rule: hide "Tell us more"
+ * Conditional logic. The mock schema's rule: hide "Tell us more"
  * (page 2, long_text) when Country (page 1, dropdown) equals "Canada".
  */
 

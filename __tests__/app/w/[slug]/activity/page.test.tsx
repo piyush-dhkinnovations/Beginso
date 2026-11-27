@@ -1,6 +1,5 @@
 /**
- * sprint-10-events-migration, tasks.md 4.2 — requirements.md §7.6, design.md §17.
- * BE 0.3 is unconfirmed; the events service is mocked.
+ * The events service is mocked.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -51,7 +50,7 @@ describe('WorkspaceActivityPage', () => {
     expect(screen.queryByRole('button', { name: 'Next' })).not.toBeInTheDocument();
   });
 
-  // sprint-10-events-migration, task 7.1 — this page's own loading state (a 6-row skeleton,
+  // This page's own loading state (a 6-row skeleton,
   // per the component's own markup) had no test asserting it actually renders before data
   // arrives, unlike the empty/error states below.
   it('shows a loading state before the query resolves, not the empty state', () => {

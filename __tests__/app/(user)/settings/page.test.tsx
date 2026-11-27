@@ -1,6 +1,5 @@
 /**
- * __tests__/app/(user)/settings/page.test.tsx
- * sprint-10-events-migration, tasks.md 5.4 — requirements.md §7.12. Every tab body is stubbed: this
+ * Every tab body is stubbed: this
  * covers only the page's own wiring (valid tab ids, and the mounted-once/hidden-not-unmounted rule
  * CLAUDE.md documents), not what any tab renders.
  */

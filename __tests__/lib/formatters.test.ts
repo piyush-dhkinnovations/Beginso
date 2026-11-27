@@ -1,8 +1,5 @@
 /**
- * __tests__/lib/formatters.test.ts
- * Feature: sprint-4-responses
  * Tests: formatFileSize, formatResponseDate, parseUserAgent, shortId, buildAnswerPreview
- * Requirements: 10.1, 10.2
  */
 
 import { describe, it, expect } from 'vitest';

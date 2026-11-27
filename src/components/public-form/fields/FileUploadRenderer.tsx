@@ -17,7 +17,7 @@ function formatFileSize(bytes: number): string {
 /**
  * The actual file transfer happens at final submit (PublicFormShell hands the
  * File to submitForm's multipart body per the backend's documented contract —
- * see tasks.md task 4.10 for why there's no separate pre-upload endpoint).
+ * there is no separate pre-upload endpoint).
  * This renderer only validates client-side and simulates the "Uploading" visual
  * state briefly before settling on "Uploaded" — no real network call happens here.
  */

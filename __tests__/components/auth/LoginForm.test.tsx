@@ -1,8 +1,5 @@
 /**
- * __tests__/LoginForm.test.tsx
- * Feature: sprint-1-frontend-auth
- * Tests: LoginForm — 30s timeout, 401 error preserves email, password toggle, Property 8
- * Requirements: 7.4, 7.6, 7.7, 7.8
+ * Tests: LoginForm — 30s timeout, 401 error preserves email, password toggle
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -11,7 +8,7 @@ import userEvent from '@testing-library/user-event';
 import * as fc from 'fast-check';
 import { LoginForm } from '@/components/auth/LoginForm';
 
-// ─── Mocks ──────────────────────────────────────────────────────────────────
+// Mocks
 
 const { mockSearchParams, mockLogin } = vi.hoisted(() => ({
   mockSearchParams: { current: new URLSearchParams() },
@@ -56,7 +53,7 @@ vi.mock('@/services/auth', () => ({
   },
 }));
 
-// ─── Tests ──────────────────────────────────────────────────────────────────
+// Tests
 
 describe('LoginForm embedded in another page', () => {
   beforeEach(() => {
@@ -138,12 +135,10 @@ describe('LoginForm component', () => {
     const pwInput = document.getElementById('password') as HTMLInputElement;
     expect(pwInput.type).toBe('password');
 
-    // Click toggle → show
     const showBtn = screen.getByRole('button', { name: /show password/i });
     await user.click(showBtn);
     expect(pwInput.type).toBe('text');
 
-    // Click toggle → hide again
     const hideBtn = screen.getByRole('button', { name: /hide password/i });
     await user.click(hideBtn);
     expect(pwInput.type).toBe('password');
@@ -167,7 +162,6 @@ describe('LoginForm component', () => {
       expect(screen.getByRole('alert')).toBeInTheDocument();
     });
 
-    // Email is preserved
     const emailInput = screen.getByLabelText(/email address/i) as HTMLInputElement;
     expect(emailInput.value).toBe('user@example.com');
   });
@@ -210,7 +204,6 @@ describe('LoginForm component', () => {
       await Promise.resolve();
     });
 
-    // Advance past 30 seconds
     act(() => {
       vi.advanceTimersByTime(31000);
     });
@@ -221,7 +214,7 @@ describe('LoginForm component', () => {
     vi.useRealTimers();
   });
 
-  // ─── Sprint 9 task 3.5 / requirements §7.5.1: ?next= forwarded to login() ─
+  // ?next= forwarded to login()
 
   it('passes a valid internal ?next= through to login() on success', async () => {
     mockSearchParams.current = new URLSearchParams('next=/invite/abc123');
@@ -253,7 +246,7 @@ describe('LoginForm component', () => {
     await waitFor(() => expect(mockLogin).toHaveBeenCalledWith(undefined));
   });
 
-  // ─── Property 8: Password Visibility Toggle Round-Trip ───────────────────
+  // Password Visibility Toggle Round-Trip
 
   it('Property 8: password toggle is a round-trip — value preserved throughout', () => {
     fc.assert(
@@ -264,7 +257,6 @@ describe('LoginForm component', () => {
         fireEvent.change(pwInput, { target: { value: password } });
         const before = pwInput.value;
 
-        // Toggle to text
         const showBtn = screen.queryByRole('button', { name: /show password/i });
         if (showBtn) {
           fireEvent.click(showBtn);
@@ -272,7 +264,6 @@ describe('LoginForm component', () => {
         expect(pwInput.value).toBe(before);
         expect(pwInput.type).toBe('text');
 
-        // Toggle back to password
         const hideBtn = screen.queryByRole('button', { name: /hide password/i });
         if (hideBtn) {
           fireEvent.click(hideBtn);

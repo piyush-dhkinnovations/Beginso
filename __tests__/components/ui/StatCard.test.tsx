@@ -1,8 +1,3 @@
-/**
- * __tests__/components/ui/StatCard.test.tsx
- * Feature: sprint-7-foundation
- */
-
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { StatCard } from '@/components/ui/StatCard';

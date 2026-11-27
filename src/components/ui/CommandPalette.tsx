@@ -44,7 +44,7 @@ export interface CommandPaletteProps {
 // beginso-ui.css §Command palette (.bg-palette). Dialog + combobox + listbox: focus stays on the
 // input, the highlight is `aria-activedescendant`, Arrow keys move across the flattened result list
 // (group headings are skipped), Enter selects, Escape closes and restores focus to the opener
-// (useFocusTrap). It owns NO data or search logic - callers supply `groups` (Sprint 14, OQ-8).
+// (useFocusTrap). It owns NO data or search logic - callers supply `groups`.
 // Below 640px it is a full-screen sheet with a back chevron.
 export function CommandPalette({
   isOpen,
@@ -82,7 +82,7 @@ export function CommandPalette({
   useEffect(() => {
     if (!current || !listRef.current) return;
     listRef.current.querySelector<HTMLElement>(`[id="${optionId(current.id)}"]`)?.scrollIntoView?.({ block: "nearest" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run only when the highlighted row changes
   }, [current?.id]);
 
   if (!isOpen || typeof document === "undefined") return null;

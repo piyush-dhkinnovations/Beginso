@@ -1,8 +1,3 @@
-/**
- * __tests__/app/w/[slug]/page.test.tsx
- * Feature: sprint-8-workspaces-context, requirements.md §7.6, §12
- */
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -137,7 +132,7 @@ describe('WorkspaceHomePage (/w/[slug]/page)', () => {
 
   // Real bug found and fixed: this row action used to link to /w/[slug]/share, a route that
   // doesn't exist and dropped the form's own id — always a dead 404. Now opens FormAccessPanel
-  // (Sprint 9) for the specific form instead.
+  // for the specific form instead.
   it('clicking Share opens FormAccessPanel for that specific form, not a dead link', async () => {
     mockGetForms.mockResolvedValue({
       forms: [{

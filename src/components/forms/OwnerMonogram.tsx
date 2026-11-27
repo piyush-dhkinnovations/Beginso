@@ -35,7 +35,7 @@ export function OwnerMonogram({ name, avatarUrl, brandColor, title }: { name?: s
       style={{ backgroundColor: bg, color: hasBrand ? inkFor(bg) : '#fff' }}
     >
       {src && !failed ? (
-        // eslint-disable-next-line @next/next/no-img-element
+        // eslint-disable-next-line @next/next/no-img-element -- avatar address from any host (no remotePatterns configured)
         <img src={src} alt="" referrerPolicy="no-referrer" onError={() => setFailed(true)} className="h-full w-full rounded-full object-cover" />
       ) : (
         initialsOf(name) || <User size={14} aria-hidden="true" />

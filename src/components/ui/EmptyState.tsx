@@ -17,7 +17,7 @@ export interface EmptyStateProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 // beginso-ui.css classes — see src/styles/beginso-ui.css §13 FEEDBACK ("Empty state"). Generic —
-// no sprint-specific content baked in (requirements.md 2.2/12); supports the wireframe pattern of
+// no screen-specific content baked in; supports the wireframe pattern of
 // two CTAs (primary + secondary) or a single actions slot.
 export function EmptyState({
   icon,

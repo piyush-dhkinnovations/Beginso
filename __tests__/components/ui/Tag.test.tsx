@@ -1,6 +1,4 @@
 /**
- * __tests__/components/ui/Tag.test.tsx
- * Feature: sprint-7-foundation
  * Tests: Tag — renders text, optional remove button
  */
 

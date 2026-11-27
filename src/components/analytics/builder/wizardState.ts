@@ -54,7 +54,7 @@ export const TITLE_MAX = 80;
 export type StepId = 'kind' | 'basics' | 'configure' | 'save';
 export const STEP_IDS: StepId[] = ['kind', 'basics', 'configure', 'save'];
 export const STEP_LABELS: Record<StepId, string> = { kind: 'Chart type', basics: 'Basic information', configure: 'Configure chart', save: 'Preview & save' };
-/** One line under each step in the list on the left: what it is for. */
+/** One line under each step in the step row: what it is for. */
 export const STEP_HINTS: Record<StepId, string> = { kind: 'Simple or drill-down', basics: 'Name it, pick a field', configure: 'Measure, sort, filter', save: 'Look, size, sharing' };
 
 /** The same two, for the kind of chart being built: a drill-down names it and sets the measure first, then adds its levels. */

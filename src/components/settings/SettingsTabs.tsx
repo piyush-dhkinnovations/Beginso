@@ -9,7 +9,7 @@ export type SettingsTab = 'profile' | 'appearance' | 'workspace' | 'branding' | 
 interface SettingsTabsProps {
   activeTab: SettingsTab;
   onChange: (tab: SettingsTab) => void;
-  /** Tabs with unsaved edits — renders a small dot next to the label (Requirement 12.2). */
+  /** Tabs with unsaved edits — renders a small dot next to the label. */
   dirtyTabs?: Set<SettingsTab>;
   /** Which tabs to show, in canonical order. Omitted = all (the Account/Workspace pages each pass their own subset). */
   visible?: SettingsTab[];
@@ -19,24 +19,24 @@ interface SettingsTabsProps {
 
 const TABS: { id: SettingsTab; label: string }[] = [
   { id: 'profile', label: 'Profile' },
-  // Account → Appearance: colour theme (saved on the account) and dark style (per device).
+  // Account → Appearance: colour theme (saved on the account), colour styles and text size (per device).
   { id: 'appearance', label: 'Appearance' },
   { id: 'workspace', label: 'Workspace' },
   { id: 'branding', label: 'Branding' },
   { id: 'notifications', label: 'Notifications' },
   { id: 'security', label: 'Security' },
-  // sprint-10 requirements.md §7.12 — split out of Security, wireframe screen 18's exact label.
+  // Wireframe screen 18's exact label.
   { id: 'sessions', label: 'Sessions & Devices' },
-  // Sprint 12 (inbox-collaboration), requirements.md §7.7 (task 2.5). No wireframe — derived
-  // from RolesMatrix's list+edit pattern (design.md §15).
+  // No wireframe — derived
+  // from RolesMatrix's list+edit pattern.
   { id: 'tags', label: 'Tags' },
-  // Sprint 12 (inbox-collaboration), task 5.1. Same "no wireframe, derived from RolesMatrix's
+  // Same "no wireframe, derived from RolesMatrix's
   // list+edit pattern" precedent as the Tags tab above.
   { id: 'stages', label: 'Stages' },
-  // Sprint 12 (inbox-collaboration), OQ-7 resolved 3 Oct 2026 (task 5.2). Same "no wireframe,
+  // Same "no wireframe,
   // derived from StageManager's own list+edit pattern" precedent as the Stages tab above.
   { id: 'scoring', label: 'Scoring' },
-  // Account-level export/delete — split out of the old Workspace tab.
+  // Account-level export/delete.
   { id: 'data', label: 'Data & account' },
 ];
 
@@ -61,7 +61,7 @@ const GROUPS: { title: string; ids: SettingsTab[] }[] = [
   { title: 'Account', ids: ['security', 'sessions', 'data'] },
 ];
 
-// Vertical section nav (spec Phase 6): grouped, one column on desktop, a scrolling row below `lg`.
+// Vertical section nav: grouped, one column on desktop, a scrolling row below `lg`.
 // Still the WAI-ARIA tabs pattern (role=tablist/tab, roving tabindex, arrow keys) so the existing
 // "tabs stay mounted once visited" panels in SettingsView keep their semantics.
 export function SettingsTabs({ activeTab, onChange, dirtyTabs, visible, labels }: SettingsTabsProps) {

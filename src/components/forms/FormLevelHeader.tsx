@@ -30,7 +30,7 @@ const HEADER_ROUTE_RE = /^\/forms\/[^/]+\/overview\/?$/;
 
 /**
  * The header for the form's read pages: icon, name, status, created/updated dates, Preview / Share /
- * Edit form / ⋮, and the tab bar (Overview · Edit · Settings). Edit and Share are shown
+ * Edit form / ⋮. Edit and Share are shown
  * only to roles that can edit (presentation only; the server enforces).
  */
 export function FormLevelHeader() {

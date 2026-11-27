@@ -17,9 +17,9 @@ import { reportKeys } from '@/lib/queryKeys';
 import type { CreateReportPayload, PaginatedReportsResult, ReportFormat, ReportJob } from '@/types/report';
 
 interface ReportsViewProps {
-  /** 'personal' (default) or a workspace slug - Sprint 14: Exports lives inside Insights in both contexts. */
+  /** 'personal' (default) or a workspace slug. */
   scope?: string;
-  /** Rendered inside the Insights Exports tab: the page already has a PageHeader, so this skips its own. */
+  /** For a host page that already has a PageHeader: this then skips its own. */
   embedded?: boolean;
 }
 
@@ -39,27 +39,23 @@ export function ReportsView({ scope = 'personal', embedded = false }: ReportsVie
     router.replace(`${pathname}?${params.toString()}`);
   }
 
-  // Staged, local, non-URL filters (Requirement 9.3) — a report is a one-shot export, not a live
+  // Staged, local, non-URL filters — a report is a one-shot export, not a live
   // view, so none of these fire a request until "Generate" is clicked. `?formId=` only seeds the
-  // initial selection on mount (Requirement 9.4), it doesn't keep the form select URL-bound.
+  // initial selection on mount, it doesn't keep the form select URL-bound.
   const [formId, setFormId] = useState<string | undefined>(searchParams.get('formId') ?? undefined);
   const [dateRange, setDateRange] = useState<{ from?: string; to?: string }>({});
   const [status, setStatus] = useState<CreateReportPayload['status']>(undefined);
 
   const { data: formsData } = useQuery({
     queryKey: ['forms', 'list-for-reports', scope],
-    // Real bug found and fixed: unscoped, so this dropdown could silently include a caller's
-    // workspace forms depending on their default-workspace resolution (src/services/forms.ts's
-    // own comment has the full root-cause). This component only renders under (user)/reports
-    // today (no /w/[slug]/reports route exists yet), so 'personal' is unconditionally correct —
-    // revisit if/when Reports gets a workspace-scoped route.
-    // Sprint 14: scoped to the active context - a workspace export only offers that workspace's forms.
+    // Unscoped, this dropdown could silently include a caller's workspace forms, depending on their
+    // default-workspace resolution (see src/services/forms.ts).
+    // Scoped to the active context - a workspace export only offers that workspace's forms.
     queryFn: () => formsService.getAllForms(scope === 'personal' ? { type: 'personal' } : { type: 'workspace', workspaceId: scope }),
   });
   const forms = useMemo(() => formsData?.forms ?? [], [formsData]);
-  // The backend's job objects only carry `formId` (a raw ObjectId), never a denormalized
-  // `formTitle` — resolved here from the same forms list already loaded for the dropdown above,
-  // rather than trusting a field the backend doesn't actually send (see docs/status/fix-log.md).
+  // For a job with no `formTitle`: the name is resolved here from the same forms list already
+  // loaded for the dropdown above (see docs/status/fix-log.md).
   const formTitleById = useMemo(() => new Map(forms.map((f) => [f._id, f.title])), [forms]);
   // The same list gives each form's logo/icon, so an export row wears the same mark as the Forms list instead of a generic document.
   const formMarkById = useMemo(() => new Map(forms.map((f) => [f._id, f.branding])), [forms]);
@@ -96,7 +92,7 @@ export function ReportsView({ scope = 'personal', embedded = false }: ReportsVie
     });
   }
 
-  // One shared mutation backs both cards (design.md §10) — disable both while either is in
+  // One shared mutation backs both cards — disable both while either is in
   // flight rather than tracking per-format state, so a rapid click on the other card can't fire
   // a second concurrent POST the shared mutation object can't cleanly represent.
   const isSubmitting = createReportMutation.isPending;
@@ -132,12 +128,7 @@ export function ReportsView({ scope = 'personal', embedded = false }: ReportsVie
         />
       </div>
 
-      {/* Sprint 12 (inbox-collaboration), requirements.md §7.3 #4: the status scope picker is
-          removed, not replaced with a stage picker — this view only renders under the personal
-          shell today (this file's own comment above), where stages are OQ-9's fixed defaults,
-          not a fetchable workspace list. A stage-scoped export picker lands once Reports gets a
-          workspace-scoped route (design.md §4's "revisit if/when Reports gets a workspace-scoped
-          route"), rather than shipping a picker with no real stage data behind it. */}
+      {/* Date presets on the left; the status and form pickers on the right. */}
       <div className="flex flex-wrap items-center gap-3">
         <DateRangeFilter part="presets" value={dateRange} onChange={setDateRange} />
         {embedded && <DateRangeFilter part="range" value={dateRange} onChange={setDateRange} />}

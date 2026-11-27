@@ -1,8 +1,5 @@
 /**
- * __tests__/services/reports.service.test.ts
- * Feature: sprint-5-analytics-reports
  * Tests: reportsService — createReport, getReports, getReportById, getReportFileBlobUrl
- * Requirements: 14.2
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -51,7 +48,7 @@ describe('reportsService', () => {
 
     const result = await reportsService.createReport(payload);
 
-    // Sprint 14: every report call names its context explicitly (Exports lives inside Insights).
+    // Every report call names its context explicitly (Exports lives inside Insights).
     expect(mockPost).toHaveBeenCalledWith('/api/reports', payload, { headers: { 'x-workspace-slug': 'personal' } });
     expect(result).toEqual({
       _id: '6a7d80670888f6136902d8d9',

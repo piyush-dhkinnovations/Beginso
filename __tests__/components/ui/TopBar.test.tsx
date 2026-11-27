@@ -1,8 +1,3 @@
-/**
- * __tests__/components/ui/TopBar.test.tsx
- * Feature: sprint-7-foundation
- */
-
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

@@ -13,7 +13,7 @@ export interface FormOverviewStatsProps {
   views?: number | null;
 }
 
-// requirements.md §7.2–7.4 / design.md §6. Presentational — no fetching.
+// Presentational — no fetching.
 export function FormOverviewStats({ stats, accessLabel, onOpenAccess, views }: FormOverviewStatsProps) {
   const { responseCount, responseCountThisWeek, completionRate } = stats;
   const icon = (Icon: typeof Users) => <Icon aria-hidden="true" />;
@@ -32,7 +32,7 @@ export function FormOverviewStats({ stats, accessLabel, onOpenAccess, views }: F
         }}
       />
 
-      {/* Not fabricated as 0% (requirements.md §7.3): view-tracking may not exist yet. */}
+      {/* Not fabricated as 0%: with no tracked views there is no rate. */}
       {completionRate === null ? (
         <Tooltip content="Not tracked yet" className="block h-full">
           <div tabIndex={0} aria-label="Completion rate not tracked yet" className="h-full">
@@ -50,7 +50,7 @@ export function FormOverviewStats({ stats, accessLabel, onOpenAccess, views }: F
         <KpiCard variant={13} data={{ label: 'Views', value: views, icon: icon(Eye), tone: 'primary' }} />
       )}
 
-      {/* A real button, not a clickable div (design.md §18) — it opens FormAccessPanel. */}
+      {/* A real button, not a clickable div — it opens FormAccessPanel. */}
       <button
         type="button"
         aria-label={`View who has access: ${accessLabel}`}

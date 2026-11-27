@@ -44,7 +44,7 @@ describe('Zustand builderStore Property Tests', () => {
     useBuilderStore.getState().initForm(mockForm());
   });
 
-  // ─── Property 2: Undo/Redo Round-Trip ──────────────────────────────────────
+  // Property 2: Undo/Redo Round-Trip
   it('Property 2: Undo/redo round-trip preserves state updates', () => {
     fc.assert(
       fc.property(fc.array(fc.constantFrom(...FIELD_TYPES), { minLength: 1, maxLength: 20 }), (types) => {
@@ -79,7 +79,7 @@ describe('Zustand builderStore Property Tests', () => {
     );
   });
 
-  // ─── Property 3: 10-level Undo Depth ───────────────────────────────────────
+  // Property 3: 10-level Undo Depth
   it('Property 3: 10-level undo depth returns to original state', () => {
     fc.assert(
       fc.property(fc.array(fc.constantFrom(...FIELD_TYPES), { minLength: 10, maxLength: 10 }), (types) => {
@@ -105,7 +105,7 @@ describe('Zustand builderStore Property Tests', () => {
     );
   });
 
-  // ─── Property 4: Dirty Lifecycle Flag ──────────────────────────────────────
+  // Property 4: Dirty Lifecycle Flag
   it('Property 4: Dirty lifecycle changes appropriately on actions', () => {
     fc.assert(
       fc.property(fc.constantFrom(...FIELD_TYPES), (type) => {
@@ -140,7 +140,7 @@ describe('Zustand builderStore Property Tests', () => {
     );
   });
 
-  // ─── Property 5: Drag-from-toolbox Creates Valid Fields ──────────────────────
+  // Property 5: Drag-from-toolbox Creates Valid Fields
   it('Property 5: Drag-from-toolbox adds field with default schema validation', () => {
     fc.assert(
       fc.property(fc.constantFrom(...FIELD_TYPES), (type) => {
@@ -208,7 +208,7 @@ describe('Zustand builderStore Property Tests', () => {
     expect(useBuilderStore.getState().fields[0].type).toBe('checkbox');
   });
 
-  // ─── duplicateField: clones in-place, deep-copies arrays, drops logicRules ───
+  // duplicateField: clones in-place, deep-copies arrays, drops logicRules
   it('duplicateField inserts a deep-cloned copy right after the original and drops its logicRules', () => {
     const store = useBuilderStore.getState();
     store.initForm(mockForm('test-form', 'My Form'));
@@ -349,7 +349,7 @@ describe('Zustand builderStore Property Tests', () => {
     expect(dropdownAfter.logicRules![0].condition.value).toBe('A');
   });
 
-  // ─── updateLogicRule: in-place replace vs. relocate across a source-field change ─
+  // updateLogicRule: in-place replace vs. relocate across a source-field change
   it('updateLogicRule replaces in place when the source field is unchanged, and relocates the rule when it is', () => {
     const store = useBuilderStore.getState();
     store.initForm(mockForm('test-form', 'My Form'));
@@ -404,7 +404,7 @@ describe('Zustand builderStore Property Tests', () => {
     expect(unchangedB.logicRules![0].targetFieldId).toBe(c.fieldId);
   });
 
-  // ─── deletePage: no field may keep pointing at the page that was removed (the server refuses the save) ───
+  // deletePage: no field may keep pointing at the page that was removed (the server refuses the save)
   it('deletePage moves the soft-deleted fields of the removed page too, so every field still points at a page that exists', () => {
     const store = useBuilderStore.getState();
     store.initForm(mockForm('test-form', 'My Form'));
@@ -426,7 +426,7 @@ describe('Zustand builderStore Property Tests', () => {
     expect(fields.some((f) => f.deleted)).toBe(true); // the soft-deleted one is still there, now on a page that exists
   });
 
-  // ─── deletePage: order must stay contiguous, or a later addPage collides ───
+  // deletePage: order must stay contiguous, or a later addPage collides
   it('deletePage renumbers remaining pages so a later addPage cannot collide on order', () => {
     const store = useBuilderStore.getState();
     store.initForm(mockForm('test-form', 'My Form'));

@@ -3,7 +3,7 @@
  * These types are shared between the builder store, API service, and components.
  */
 
-// ─── Field Types ─────────────────────────────────────────────────────────────
+// Field Types
 
 export type FieldType =
   | 'short_text'
@@ -26,7 +26,7 @@ export type FieldType =
   | 'signature'
   | 'image_upload';
 
-// ─── Field Definitions ───────────────────────────────────────────────────────
+// Field Definitions
 
 export interface BaseField {
   /** Public form only: the owner is out of storage, so this upload field is switched off (and never required). */
@@ -43,7 +43,7 @@ export interface BaseField {
   logicRules?: LogicRule[]; // rules where THIS field is the source
 }
 
-// ─── Field constraint interfaces (Sprint 2 Part 2) ───────────────────────────
+// Field constraint interfaces
 
 export interface NumberConstraints {
   min?: number;
@@ -77,7 +77,7 @@ export interface FileUploadField extends BaseField {
   allowedMimeTypes?: string[]; // falls back to the platform default list when unset/empty
 }
 
-// ─── V2 field types ──────────────────────────────────────────────────────────
+// V2 field types
 // Display & preview preferences live on the field itself, so a response is rendered the same way
 // everywhere it is shown (response drawer, full-page view) and for every response, old or new.
 
@@ -126,7 +126,7 @@ export interface ImageUploadField extends BaseField {
 
 export type FormField = TextField | ChoiceField | FileUploadField | SimpleField | YesNoField | CurrencyField | UrlField | ImageUploadField;
 
-// ─── Pages (multi-page / multi-step forms) ───────────────────────────────────
+// Pages (multi-page / multi-step forms)
 // Every form has at least one page, even simple single-page forms — a page is
 // not an opt-in feature, it's the always-present unit fields belong to.
 
@@ -139,21 +139,21 @@ export interface FormPage {
   description?: string; // shown to respondents at the top of THIS page; independent per page
 }
 
-// ─── Form Definition ─────────────────────────────────────────────────────────
+// Form Definition
 
 export type FormStatus = 'draft' | 'published' | 'closed';
 
 export interface LogicRule {
   condition: {
     fieldId: string;
-    operator: 'equals';  // Sprint 2 MVP: only 'equals' supported
+    operator: 'equals';  // Only 'equals' is supported
     value: string;
   };
   action: 'show' | 'hide';
   targetFieldId: string; // must never equal condition.fieldId
 }
 
-// Sprint 13 (CF2.3). A curated set of theme choices, not a free-form editor. Absent = the default.
+// A curated set of theme choices, not a free-form editor. Absent = the default.
 export type ButtonStyle = 'solid' | 'outline';
 export type ButtonRadius = '4px' | '8px' | '16px';
 export type CoverPosition = 'center' | 'top' | 'bottom';
@@ -277,8 +277,8 @@ export interface FormBranding {
   backgroundStyle?: PageBackground; // default 'wash' — how the PAGE behind the form card is filled (not the card)
   iconName?: string;             // the form's icon when it has no uploaded logo (lib/formIcons)
   iconNone?: boolean;            // "No icon" chosen on purpose; the default for a new form
-  coverFit?: CoverFit;
-  logoSize?: LogoSize;           // default 'md' — how big the logo is drawn on the form's header           // 'banner' crops the cover to a strip; 'original' shows the whole image at its own ratio
+  coverFit?: CoverFit;           // 'banner' crops the cover to a strip; 'original' shows the whole image at its own ratio
+  logoSize?: LogoSize;           // default 'md' — how big the logo is drawn on the form's header
   formWidth?: FormWidth;         // default 'standard' — how wide the form card is
   backgroundImageUrl?: string;   // the owner's own picture, used when backgroundStyle is 'image'
   backgroundColor?: string;      // hex the page background is built from; absent = the primary colour
@@ -287,7 +287,7 @@ export interface FormBranding {
   bannerLinks?: BannerLink[];    // up to 5 links on the form's header (http or https only)
 }
 
-// Sprint 13 (builder-publish-respondent), design.md §13. Six presets replace the three V1 layout
+// The layout presets replace the three V1 layout
 // modes; legacy values stay readable and are mapped by lib/layoutPresets.ts normaliseLayout().
 export type LayoutPreset = 'classic' | 'card_stack' | 'guided' | 'steps' | 'split_feature' | 'compact' | 'chat' | 'sidebar' | 'open' | 'focus';
 export type LegacyLayout = 'single_column' | 'two_column' | 'compact';
@@ -300,7 +300,7 @@ export interface FormSettings {
   responseLimitEnabled?: boolean; // backend's actual enforcement flag — must be sent alongside responseLimit, it is NOT derived from responseLimit's presence
   closeDate?: string;        // ISO 8601 date string
   layout?: LayoutPreset | LegacyLayout; // undefined treated as 'classic' — always read via normaliseLayout()
-  accessMode?: AccessMode;   // Backend contract to confirm (BE 0.6) — undefined treated as 'open'
+  accessMode?: AccessMode;   // undefined treated as 'open'
 }
 
 export interface Form {
@@ -327,16 +327,15 @@ export interface Form {
   publishedAt?: string;      // ISO 8601
   /** The caller's own role on this form (per-form grant, workspace role, or owner). Set by GET /api/forms/:id. */
   myRole?: import('./workspace').Role;
-  archivedAt?: string | null; // Backend contract to confirm (BE 0.8) — set = archived, never expires
-  deletedAt?: string | null;  // Backend contract to confirm (BE 0.8) — set = in Trash
+  archivedAt?: string | null; // set = archived, never expires
+  deletedAt?: string | null;  // set = in Trash
   /** Per-user private bookmark: true when the CALLER pinned this form. GET /api/forms normalises it to a boolean. */
   pinned?: boolean;
   pinnedAt?: string | null;
-  // Sprint 14 (BE 0.4) - source template link; null/absent for forms not created from a template.
+  // Source template link; null/absent for forms not created from a template.
   templateId?: string | null;
   templateCategory?: string | null;
-  // sprint-10-events-migration requirements.md §7.9 — Backend contract to confirm whether
-  // GET /api/forms already returns owner identity for a workspace-form row; read defensively
+  // Owner identity of a workspace-form row, as GET /api/forms returns it; read defensively
   // (optional, may be absent). A personal form's owner is always the caller, so this is only
   // ever consulted for a workspace-context row.
   owner?: {
@@ -345,10 +344,8 @@ export interface Form {
   };
 }
 
-// ─── Form Overview (sprint-10, design.md §13) ─────────────────────────────────
-// Backend contract to confirm (BE 0.6). Both figures are nullable here, one more than design.md
-// §13's sketch (which only nulls `completionRate`): until the backend extends GET /api/forms/:id,
-// "this week" is simply absent, and the UI must tell "not tracked" apart from a real zero.
+// Form Overview
+// Both figures are nullable: the UI must tell "not tracked" apart from a real zero.
 
 export interface FormOverviewStats {
   responseCount: number;
@@ -356,8 +353,8 @@ export interface FormOverviewStats {
   completionRate: number | null;
 }
 
-// ─── Publish readiness (Sprint 13, CF2.5) ─────────────────────────────────────
-// Backend contract to confirm (BE 0.4) — GET /api/forms/:formId/readiness.
+// Publish readiness
+// GET /api/forms/:formId/readiness.
 export interface ReadinessIssue {
   code: string;
   fieldId?: string;
@@ -370,7 +367,7 @@ export interface Readiness {
   warnings: ReadinessIssue[];
 }
 
-// Sprint 13 (CF6.5) — POST /api/forms/:id/publish. The pre-flight commits its choices atomically.
+// POST /api/forms/:id/publish. The pre-flight commits its choices atomically.
 export interface PublishBody {
   accessMode?: AccessMode;
   closeDate?: string | null;
@@ -383,14 +380,14 @@ export interface PublishResult {
   publishedAt?: string;
 }
 
-// Sprint 13 (CF2.6) — one answer in a test submission. Same shape the public form sends.
+// One answer in a test submission. Same shape the public form sends.
 export interface TestSubmissionAnswer {
   fieldId: string;
   fieldLabel?: string;
   value?: unknown;
 }
 
-// ─── API Payload Types ────────────────────────────────────────────────────────
+// API Payload Types
 
 import type { FormDestination } from './workspace';
 
@@ -417,9 +414,9 @@ export interface UpdateFormPayload {
   saveId?: string;
 }
 
-// ─── API Response Types ───────────────────────────────────────────────────────
+// API Response Types
 
-// ─── Templates Gallery ────────────────────────────────────────────────────────
+// Templates Gallery
 
 /** The mark a form wears in lists: its uploaded logo, else its chosen icon (both optional). The same shape as `Form.branding`'s two fields. */
 export interface FormMark {
@@ -445,18 +442,18 @@ export interface Template {
   showInGallery?: boolean; // false = internal/demo template, hidden from the public gallery
   /** Old slugs this template replaces (it was renamed): an old link to one of them opens this template. */
   replaces?: string[];
-  source?: 'workspace' | 'beginso'; // Backend contract to confirm (BE 0.13) — absent = beginso
-  // Template catalog expansion (Nov 2026): a curated built-in template, or one published from a real
+  source?: 'workspace' | 'beginso'; // absent = beginso
+  // A curated built-in template, or one published from a real
   // form, can carry its own real branding — copied onto the new form the moment "Use this template"
   // runs (see POST /api/templates/:id/use), not just a client-computed look for the gallery preview.
   // Absent on an older template, which still falls back to templatePreview.ts's computed `templateLook()`.
   branding?: FormBranding;
 }
 
-// ─── File Upload ──────────────────────────────────────────────────────────────
+// File Upload
 // Files are stored on the backend server's local filesystem (not a cloud storage
 // service); `url` is a backend-served route, not a pre-signed cloud storage URL.
-// Matches the backend's actual response shape (confirmed against its Sprint 2
+// Matches the backend's actual response shape (confirmed against its
 // checklist reply — there is no top-level `key`, only `url` + `metadata`).
 
 export interface UploadResponse {

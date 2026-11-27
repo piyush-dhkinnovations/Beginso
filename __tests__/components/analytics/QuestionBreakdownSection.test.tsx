@@ -1,9 +1,6 @@
 /**
- * __tests__/components/analytics/QuestionBreakdownSection.test.tsx
- * Feature: sprint-5-analytics-reports
  * Tests: QuestionBreakdownSection — renders one card per choice field, skips non-choice fields,
  * hides section when there are none; QuestionBreakdownChart — percentages, per-card empty state
- * Requirements: 6.1-6.6, 13.1
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

@@ -19,9 +19,9 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { cn } from '@/lib/utils';
 import type { MySubmission, RespondentStatus } from '@/types/respondent';
 
-// Sprint 13 (A5.1), wireframe 31. The signed-in respondent's own submissions. Status is the respondent-safe
-// label the server derives — never a workspace stage. Lives in the personal shell (OQ-6: a dedicated two-item
-// respondent shell was not built; the personal nav already shows "My Submissions" once there is one).
+// Wireframe 31. The signed-in respondent's own submissions. Status is the respondent-safe
+// label the server derives — never a workspace stage. Lives in the personal shell (a dedicated two-item
+// respondent shell was not built; the personal nav always shows "My Submissions").
 //
 // The same card as the Forms page (FormCard): the form's mark on the left, its name as the link, who it is from, then the status
 // chip and when it was sent. A row of counts above doubles as the status filter.

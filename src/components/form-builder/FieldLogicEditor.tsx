@@ -28,12 +28,11 @@ function isChoiceField(field: FormField): field is Extract<FormField, { options:
 const selectClass =
   'rounded-md border-2 border-(--border-default) px-2.5 min-h-11 bg-body-sm bg-(--surface-card) outline-none focus:border-(--border-strong)';
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// Main Component
 // Rendered inline inside the selected FieldCard, below FieldInlineEditor.
 // Target-centric: shows/edits rules whose targetFieldId is THIS field (i.e.
 // "when is this field shown/hidden"), not rules where this field is the source.
-// To create "if X then show/hide Y", you do it from Y's card, not X's — see the
-// canvas-redesign plan for the reasoning.
+// To create "if X then show/hide Y", you do it from Y's card, not X's.
 
 export function FieldLogicEditor({ field, allFields, onAddRule, onUpdateRule, onDeleteRule }: FieldLogicEditorProps) {
   const incomingRules: IncomingRule[] = allFields.flatMap((f) =>

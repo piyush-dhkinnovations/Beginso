@@ -3,7 +3,7 @@ import type { FormsContext } from '@/types/workspace';
 import type { TableSort } from '@/components/ui/Table';
 import type { FormsManagerTab } from '@/components/forms/FormsManagerTabs';
 
-// ─── Status badge variant helper ─────────────────────────────────────────────
+// Status badge variant helper
 
 export const STATUS_VARIANT: Record<FormStatus, 'draft' | 'published' | 'closed'> = {
   draft: 'draft',
@@ -58,14 +58,14 @@ export const formatUpdated = (iso: string) => {
   return `${d.getDate()} ${month} ${d.getFullYear()}, ${time}`;
 };
 
-// Tabs backed by the forms list query (requirements.md §7.10). Pinned adds `pinned=true` (per-user).
+// Tabs backed by the forms list query. Pinned adds `pinned=true` (per-user).
 export const TAB_STATUS: Partial<Record<FormsManagerTab, FormStatus | 'all'>> = {
   recent: 'all',
   pinned: 'all',
   draft: 'draft',
   published: 'published',
   closed: 'closed',
-  // Sprint 13 (CF5.6): Archived is a real list now (`?archived=only`); every status shows there.
+  // Archived is a list of its own (`?archived=only`); every status shows there.
   archived: 'all',
 };
 

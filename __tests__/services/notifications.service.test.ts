@@ -1,5 +1,4 @@
 /**
- * __tests__/services/notifications.service.test.ts
  * Tests: notificationsService — endpoint/params for the now-live GET /api/notifications and
  * POST /api/notifications/:id/read, and a defensive fallback if the envelope shape is wrong.
  */

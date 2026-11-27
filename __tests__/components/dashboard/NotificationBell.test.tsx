@@ -1,5 +1,4 @@
 /**
- * __tests__/components/dashboard/NotificationBell.test.tsx
  * Tests: unread-dot visibility, opens on click, closes on outside-click/Escape, marking an item
  * read updates the list, empty state.
  */
@@ -10,7 +9,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NotificationBell } from '@/components/dashboard/NotificationBell';
 import type { AppNotification } from '@/types/notification';
 
-// Sprint 12 (inbox-collaboration), task 4.5: clicking a mention/assignment notification now
+// Clicking a mention/assignment notification
 // routes via next/navigation's useRouter — mocked the same way every other router-dependent
 // component test in this repo does, since NotificationBell renders outside an app-router context.
 const mockPush = vi.fn();
@@ -18,7 +17,7 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mockPush }),
 }));
 
-// Sprint 14: the badge reads the polled unread-count query and the list is fetched only when the
+// The badge reads the polled unread-count query and the list is fetched only when the
 // dropdown opens (cursor page: { items, nextCursor }), so the service mock covers list + unreadCount.
 vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ isAuthenticated: true }) }));
 
@@ -60,15 +59,12 @@ describe('NotificationBell', () => {
     expect(screen.queryByText('Notifications')).not.toBeInTheDocument();
   });
 
-  // Bug fix: the component's unread dot was already correctly moved onto the real design-system
-  // token (`bg-(--action-primary)`, part of this sprint's colour-token cleanup) — this assertion
-  // still looked for the old literal `.bg-brand-600` class, which no longer exists anywhere.
   // `[class*="action-primary"]` matches the token's actual class string (Tailwind v4's `bg-(--x)`
   // syntax keeps the literal `--x` substring in the rendered class attribute).
   it('shows an unread dot when there is at least one unread notification', async () => {
     const { container } = renderBell();
     await waitFor(() => expect(container.querySelector('[class*="action-primary"]')).toBeInTheDocument());
-    // The badge carries the count in the button's accessible name (requirements 11), and nothing is
+    // The badge carries the count in the button's accessible name, and nothing is
     // fetched for the list until the dropdown opens.
     expect(screen.getByRole('button', { name: 'View notifications, 1 unread' })).toBeInTheDocument();
     expect(mockGetNotifications).not.toHaveBeenCalled();

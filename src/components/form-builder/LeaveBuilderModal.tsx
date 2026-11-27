@@ -4,8 +4,8 @@ import { useEffect, useRef } from 'react';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 
-// Sprint 13 (CF2.9), requirements.md 1.2 / wireframe 39. Autosave is the save mechanism, so the
-// old "Save and leave" button is gone (OQ-1 default): this guard exists only for the window where
+// Wireframe 39. Autosave is the save mechanism, so there is no
+// "Save and leave" button: this guard exists only for the window where
 // autosave has not finished. Keep editing is the primary action and takes focus — the safe option.
 export interface LeaveBuilderModalProps {
   isOpen: boolean;

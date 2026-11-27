@@ -13,7 +13,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* useSearchParams() (?next=, task 3.5) requires a Suspense boundary during prerender. */}
+      {/* useSearchParams() (?next=) requires a Suspense boundary during prerender. */}
       <Suspense>
         <LoginForm />
       </Suspense>

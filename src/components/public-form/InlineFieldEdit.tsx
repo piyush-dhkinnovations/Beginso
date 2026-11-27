@@ -3,7 +3,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Button } from '@/components/ui/Button';
 
-// Sprint 13 (D1.2a), wireframe 37 "Inline Field Edit". One answer on the review screen becomes its
+// Wireframe 37 "Inline Field Edit". One answer on the review screen becomes its
 // real input in place — highlighted card, the field's own label above its input, Cancel / Save
 // answer. The respondent never leaves the review screen. The field itself is rendered by the shell
 // (so validation is the form's existing per-page resolver, not a second system); this only frames it.

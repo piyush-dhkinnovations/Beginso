@@ -1,8 +1,3 @@
-/**
- * __tests__/components/team/SharedFormCard.test.tsx
- * Feature: sprint-9-team-permissions, requirements.md §7.9, design.md §15.6.
- */
-
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { SharedFormCard } from '@/components/team/SharedFormCard';
@@ -29,14 +24,13 @@ describe('SharedFormCard', () => {
     render(<SharedFormCard item={WORKSPACE_SHARE} />);
     expect(screen.getByText('Customer Survey')).toBeInTheDocument();
     // Workspace name and the "· Shared by X" suffix are sibling text nodes in the same <p>, so
-    // an exact getByText('Acme Inc') no longer matches a single node's full text — substring
+    // an exact getByText('Acme Inc') matches no single node's full text — substring
     // match against the paragraph's combined content instead.
     expect(screen.getByText(/Acme Inc/)).toBeInTheDocument();
   });
 
-  // Real bug found and fixed (22 Sep 2026): the raw backend `sharedBy` used to be a userId with
-  // no name anywhere in the payload, so this card rendered nothing for the sharer at all — now
-  // live-confirmed enriched (services/shared.ts's own resolveSharedByName()).
+  // The raw backend `sharedBy` was once a userId with no name anywhere in the payload (22 Sep 2026);
+  // the sharer's name comes from services/shared.ts's resolveSharedByName().
   it('renders the sharer\'s name when the backend provided one', () => {
     render(<SharedFormCard item={WORKSPACE_SHARE} />);
     expect(screen.getByText(/Shared by Priya Shah/)).toBeInTheDocument();

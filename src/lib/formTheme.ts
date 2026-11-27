@@ -4,7 +4,7 @@ import { safeHttpUrl } from '@/lib/fieldDisplay';
 import { uploadSrc } from '@/lib/uploadSrc';
 import { isBuiltInPictureUrl } from '@/lib/formPictures';
 
-// Sprint 13 (CF2.3). The ONE place a branding choice becomes CSS, shared by the editor's live preview and the real
+// The ONE place a branding choice becomes CSS, shared by the editor's live preview and the real
 // public form so they cannot drift. Everything is optional; an absent value is the default.
 type Theme = Pick<FormBranding, 'primaryColor' | 'buttonStyle' | 'buttonRadius' | 'coverPosition' | 'spacing' | 'showProgress' | 'theme'>;
 
@@ -32,7 +32,7 @@ export function brandGapClass(b: Theme): string {
 /** The multi-page progress indicator is on unless explicitly switched off. */
 export const brandShowsProgress = (b: Theme): boolean => b.showProgress !== false;
 
-// ── Respondent-form look: font, type scale, card surface, colour panel ─────────────────────────────────────────────
+// Respondent-form look: font, type scale, card surface, colour panel
 type Look = Pick<FormBranding, 'primaryColor' | 'fontFamily' | 'typeScale' | 'cardStyle' | 'panelTreatment' | 'coverImageUrl'>;
 
 export type FontGroup = 'modern' | 'serif' | 'friendly' | 'display';
@@ -203,7 +203,7 @@ export function brandWashLayers(b: Pick<FormBranding, 'backgroundImageUrl' | 'th
 /** The cover banner's own height in pixels, when the owner chose one. */
 export const brandCoverHeight = (b: Pick<FormBranding, 'theme'>): number | undefined => cleanTheme(b.theme)?.cover?.height;
 
-// ── Colours, fields look and exact sizes (branding.theme) ─────────────────────────────────────────────────────────────────────────────────
+// Colours, fields look and exact sizes (branding.theme)
 // ONE code path for the public form, the builder's live preview and the studio's own tiles. Every key is optional; a form with no theme gets
 // no inline style and no data attribute from here, and the CSS for them (beginso-ui.css) only matches when the attribute is there, so it is
 // drawn exactly as it was before the theme existed.
@@ -530,7 +530,7 @@ export const brandProgressStyle = (b: Pick<FormBranding, 'theme'>): ProgressStyl
 /** The short line under the form, if the owner wrote one. */
 export const brandFooterNote = (b: Pick<FormBranding, 'theme'>): string | undefined => cleanTheme(b.theme)?.footer?.note;
 
-// ── Photographer credit for Unsplash photos ──────────────────────────────────────────────────────────────────────────────────────────────────────────
+// Photographer credit for Unsplash photos
 // Unsplash asks that a photo used from its library is credited with a link to the photographer and to Unsplash. The credit rides in the theme, one for the
 // cover and one for the page background, and is shown on the form only while its photo is in use.
 

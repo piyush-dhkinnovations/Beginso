@@ -1,7 +1,5 @@
 /**
- * __tests__/responses/responses.preview.property.test.ts
- * Feature: sprint-4-responses, Property 3: Answer preview is always safe
- * Requirements: 2.2, 11.3
+ * Property: Answer preview is always safe
  */
 
 import { describe, it } from 'vitest';

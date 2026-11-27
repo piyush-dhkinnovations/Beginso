@@ -16,13 +16,13 @@ import type { AppNotification } from '@/types/notification';
 const BELL_LIMIT = 10;
 
 export interface NotificationBellProps {
-  /** 'personal' (default) or the active workspace slug - the badge and list are per context (B9.3). */
+  /** 'personal' (default) or the active workspace slug - the badge and list are per context. */
   scope?: string;
 }
 
-// Mirrors UserProfileDropdown's exact self-contained open/close + outside-click/Escape pattern,
-// right next to it in TopNav. Sprint 14 (B9.1/B9.2): the badge reads the shared unread-count query
-// (polled every 45 s on a visible tab); the list is fetched only while the dropdown is open.
+// Mirrors UserProfileDropdown's exact self-contained open/close + outside-click/Escape pattern.
+// The badge reads the shared unread-count query
+// (polled every 60 s on a visible tab); the list is fetched only while the dropdown is open.
 export function NotificationBell({ scope = 'personal' }: NotificationBellProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -53,7 +53,7 @@ export function NotificationBell({ scope = 'personal' }: NotificationBellProps) 
     };
   }, [isOpen]);
 
-  // Routing is the shared helper the Notifications page also uses (task 1.4).
+  // Routing is the shared helper the Notifications page also uses.
   function handleItemClick(notification: AppNotification) {
     if (!notification.read) markRead.mutate(notification.id);
     setIsOpen(false);

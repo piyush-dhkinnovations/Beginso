@@ -1,7 +1,5 @@
 /**
- * __tests__/responses/formatters.property.test.ts
- * Feature: sprint-4-responses, Property 4: formatFileSize always returns a positive string
- * Requirements: 6.2, 10.1, 11.4
+ * Property: formatFileSize always returns a positive string
  */
 
 import { describe, it } from 'vitest';

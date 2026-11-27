@@ -9,7 +9,7 @@ export const templatesService = {
   // a genuinely malformed response surfaces as a query error (handled by the Templates page)
   // instead of crashing with "x.map is not a function".
   //
-  // Sprint 13 (B6.1): `scope` is a workspace slug or 'personal'. A workspace gets built-ins PLUS its own
+  // `scope` is a workspace slug or 'personal'. A workspace gets built-ins PLUS its own
   // templates (each tagged `source`); personal context gets built-ins only.
   getTemplates: (scope: string = 'personal'): Promise<Template[]> =>
     axiosInstance.get('/api/templates', { headers: workspaceHeaders(scope) }).then((r) => {
@@ -21,7 +21,7 @@ export const templatesService = {
       return templates as Template[];
     }),
 
-  // Sprint 13 (B6.4): publish a form to the workspace's templates (Editor and above). A snapshot — fields,
+  // Publish a form to the workspace's templates (Editor and above). A snapshot — fields,
   // logic, pages, settings and theme; never responses, notes, assignees, tags or the share link.
   publishAsTemplate: (
     scope: string,
@@ -59,7 +59,7 @@ export const templatesService = {
   // `destinationWorkspaceId` (string | null) confirmed live and working 27 Sep 2026 — direct
   // testing (docs/backend-contract/api-reference.md) showed both `null` (personal) and a real
   // workspace id land the created form's `workspaceId` exactly as requested. Replaces the earlier
-  // create-then-`formsService.moveForm()` workaround (.kiro/specs/public-template-gallery Half B),
+  // create-then-`formsService.moveForm()` workaround,
   // which is no longer needed now that the backend accepts this directly.
   useTemplate: (
     templateId: string,

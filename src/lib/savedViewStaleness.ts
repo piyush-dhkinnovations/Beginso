@@ -4,11 +4,11 @@ import type { Tag } from '@/types/tag';
 import type { MemberListItem } from '@/types/team';
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.6: "A saved view referencing a deleted
+ * A saved view referencing a deleted
  * stage/tag/member renders the remaining filters and shows an inline notice ... it never errors."
  * Pure so it's trivial to test directly (`__tests__/lib/savedViewStaleness.test.ts`) without
- * mounting `SavedViewSelect`. `'unassigned'`/`'me'` are always valid (server-resolved literals,
- * design.md §11.2), never counted as stale.
+ * mounting `SavedViewSelect`. `'unassigned'`/`'me'` are always valid (server-resolved literals),
+ * never counted as stale.
  */
 export function staleFilterCount(
   filters: ResponseFilters,

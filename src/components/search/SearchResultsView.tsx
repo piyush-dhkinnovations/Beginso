@@ -20,7 +20,7 @@ interface SearchResultsViewProps {
   scope: string;
 }
 
-// Sprint 14 (B10, requirements 2.2/2.4, task 3.11) - wireframe 09. The palette's "See all results"
+// Wireframe 09. The palette's "See all results"
 // destination. `?q=` is trimmed and length-capped; "no query" and "no results" are different states.
 export function SearchResultsView({ scope }: SearchResultsViewProps) {
   const router = useRouter();

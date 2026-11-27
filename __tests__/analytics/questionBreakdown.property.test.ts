@@ -1,5 +1,4 @@
 /**
- * __tests__/analytics/questionBreakdown.property.test.ts
  * Property: an option's percentage is its count over the people who answered, never forced to sum to 100.
  */
 

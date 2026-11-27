@@ -2,7 +2,7 @@ import axiosInstance from '@/lib/axios';
 import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import type { TrashItem, TrashItemType, TrashListResponse } from '@/types/trash';
 
-// Sprint 13 (CF5.5), design.md §12. `scope` is a workspace slug, or 'personal'. The backend computes
+// `scope` is a workspace slug, or 'personal'. The backend computes
 // `daysLeft`, `purgeAt`, `canRestore` and `canPurge` — the UI renders them and never re-derives roles or the
 // 30-day clock. Permanent deletion requires the literal confirmation, which the server checks as well.
 export const trashService = {

@@ -104,7 +104,7 @@ export default function ClaimPage() {
     // A claim already under way (refresh, retry) continues without asking again.
     if (d.claim.step !== 'draft_ready') void run(d);
     else setPhase('confirm');
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- runs once on mount, guarded by the started ref
 
   const hasImages = (draft?.imageKeys.length ?? 0) > 0;
   const items = [

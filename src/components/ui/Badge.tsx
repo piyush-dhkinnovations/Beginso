@@ -9,7 +9,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 // Generic beginso-ui.css badge primitive — see src/styles/beginso-ui.css §8 BADGES, PILLS, TAGS.
-// Distinct from StatusBadge (src/components/ui/StatusBadge.tsx), which is V1's form/response
+// Distinct from StatusBadge (src/components/ui/StatusBadge.tsx), which is the form/response
 // status chip and uses an unrelated variant set.
 const variantClass: Record<NonNullable<BadgeProps["variant"]>, string> = {
   neutral: "",

@@ -58,8 +58,7 @@ export const metadata: Metadata = {
   },
 };
 
-// Placeholder/local theme source until BE 0.5 (User.theme on GET /api/auth/me) ships
-// (requirements.md 1.3, 8.3). Deliberately *not* a server cookies() read: this layout wraps
+// Deliberately *not* a server cookies() read: this layout wraps
 // every route including the public marketing pages and the whole auth flow (/, /blog, /login,
 // /signup, ...), all of which prerender statically today — calling cookies() here would force
 // every one of them into per-request dynamic rendering just to place one attribute. Instead
@@ -72,7 +71,7 @@ export const metadata: Metadata = {
 // saved `theme` after sign-in (authContext). With no saved choice it follows the OS setting, live. When the device has
 // nothing saved (a new browser, cleared site data) it falls back to the `beginso_theme` cookie, a copy of the account's theme that the sign-in
 // reply sets and Settings keeps up to date, so the first paint already has the right colours instead of flipping once the session check answers.
-// Sprint 13 (CF2.11): public pages (/f/*, /r/*), the template preview document and the preview iframe document (?embed=1) never take
+// Public pages (/f/*, /r/*), the template preview document and the preview iframe document (?embed=1) never take
 // the OS/admin theme — they are styled by the form's own theme (see FormThemeScope).
 // The light style ('beginso.lightVariant': classic | paper | mist) is `data-light` while the page is light (Classic is no attribute), and the
 // text size ('beginso.textSize': default | large | xlarge) is `data-text` (Default is no attribute) in the signed-in app only. Both are set
@@ -98,12 +97,12 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         {/* Deliberately a raw <script>, not next/script's beforeInteractive strategy — verified
-            (Saturday QA, sprint-7-foundation) that beforeInteractive defers actual execution
+            that beforeInteractive defers actual execution
             until Next's runtime bundle processes its script queue, well after
             domcontentloaded: `data-theme` was still unset at that point in a real production
             build, meaning the page paints light first and flips afterward — exactly the flash
-            this script exists to prevent, and requirements.md 1.3's actual acceptance
-            criterion. A plain synchronous script (no async/defer) blocks HTML parsing and runs
+            this script exists to prevent.
+            A plain synchronous script (no async/defer) blocks HTML parsing and runs
             immediately at this position, before anything below it paints, which is what a true
             zero-flash guarantee requires. (An earlier version briefly used next/script here to
             silence a dev-only "script tag" console warning — traced separately to an unrelated

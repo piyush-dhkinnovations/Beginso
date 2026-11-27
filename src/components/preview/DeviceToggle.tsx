@@ -2,7 +2,7 @@
 
 import { Tabs } from '@/components/ui/Tabs';
 
-// Sprint 13 (CF2.10 / CF2.7): shared by the preview bar and the layout gallery's preview. A `Tabs`
+// Shared by the preview bar and the layout gallery's preview. A `Tabs`
 // so it is arrow-key operable for free.
 export type PreviewDevice = 'desktop' | 'tablet' | 'mobile';
 

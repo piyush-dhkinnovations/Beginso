@@ -1,9 +1,6 @@
 /**
- * __tests__/components/reports/ReportJobsList.test.tsx
- * Feature: sprint-5-analytics-reports
  * Tests: ReportJobsList — renders rows, empty state, error state, polling toggles based on job
  * statuses, status-transition toast, Retry re-submits, pagination
- * Requirements: 11.1-11.7, 13.6
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';

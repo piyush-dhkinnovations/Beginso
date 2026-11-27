@@ -1,9 +1,6 @@
 'use client';
 
-// Team & Members — requirements.md §7.2/§7.3/§7.4, design.md §15.1. Day 2 (Tuesday, per
-// SPRINT-PLAN.md) added the Pending Invites card and the "Invite Members" header action on top of
-// Monday's Members card. Day 4 (Thursday) wires the "Roles & Permissions" header action now that
-// /w/[slug]/roles (task 4.2) exists.
+// Team & Members.
 import { useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -35,10 +32,8 @@ export default function TeamPage() {
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [isLeaveOpen, setIsLeaveOpen] = useState(false);
 
-  // The list endpoint already returns the caller's role per workspace (confirmed live since
-  // Sprint 8 — WorkspaceListItem.role) — this page's own canManage gating doesn't need to wait
-  // on BE 0.1 (that gap only blocks the *sidebar's* nav visibility, which is resolved
-  // server-side in w/[slug]/layout.tsx before this page ever mounts).
+  // The list endpoint already returns the caller's role per workspace
+  // (WorkspaceListItem.role), so this page's own canManage gating reads it from there.
   const { data: workspaces } = useQuery({
     queryKey: workspaceKeys.list(),
     queryFn: workspacesService.list,
@@ -48,8 +43,8 @@ export default function TeamPage() {
   // Only the owner may change or remove admins and hand the workspace on (the server enforces it).
   const callerIsOwner = currentWorkspace?.role === 'owner';
 
-  // Members and pending invites are two independent queries (design.md §15/requirements §15
-  // performance note) — the page shows whichever loads first rather than blocking on both.
+  // Members and pending invites are two independent queries
+  // — the page shows whichever loads first rather than blocking on both.
   const {
     data: members,
     isLoading: membersLoading,
@@ -84,7 +79,7 @@ export default function TeamPage() {
     mutationFn: (member: MemberListItem) => teamService.removeMember(slug, member.membershipId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: teamKeys.members(slug) });
-      // Sprint 12, task 5.6: a removed member may still hold response assignments/notes — the
+      // A removed member may still hold response assignments/notes — the
       // Inbox must reflect "no longer has access" without a manual refresh. `invalidateQueries`
       // partial-matches by array prefix, so the bare `['responses', slug]` prefix catches every
       // formId variant (responseKeys.all/.list/.detail/.stats all start with it), not just the
@@ -146,7 +141,7 @@ export default function TeamPage() {
         }
         actions={
           <>
-            {/* Reachable by any member (requirements.md §7.6) — the matrix is a read-only
+            {/* Reachable by any member — the matrix is a read-only
                 reference, not a manage action, so it isn't gated behind canManage. */}
             <Button variant="ghost" onClick={() => router.push(`/w/${slug}/roles`)}>
               Roles & Permissions
@@ -187,7 +182,7 @@ export default function TeamPage() {
         )}
       </Card>
 
-      {/* Pending invites is a secondary, visually separate table (requirements.md §7.3, wireframe
+      {/* Pending invites is a secondary, visually separate table (wireframe
           notes) — never merged into the Members card above it. Hidden entirely for a non-manager
           rather than shown empty, since there's nothing on it they're allowed to act on. */}
       {canManage && (
@@ -211,7 +206,7 @@ export default function TeamPage() {
         </Card>
       )}
 
-      {/* Bottom-of-page link from the wireframe (sprint-10 requirements.md §7.7). Only offered to
+      {/* Bottom-of-page link from the wireframe. Only offered to
           roles that can open the Audit Log — a Reviewer/Editor would just land on its denied state. */}
       {canViewAudit(currentWorkspace?.role) && (
         <Link href={`/w/${slug}/audit`} className="bg-body-sm self-start">

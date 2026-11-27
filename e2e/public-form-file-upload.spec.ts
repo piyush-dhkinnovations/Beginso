@@ -4,8 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 
 /**
- * Requirement 4.29–4.36 (file upload UI states). The actual upload transfer is
- * deferred to the final submit (see tasks.md task 4.10) — this renderer only
+ * File upload UI states. The actual upload transfer is
+ * deferred to the final submit: this renderer only
  * validates client-side and simulates the Uploading state before settling Uploaded.
  */
 

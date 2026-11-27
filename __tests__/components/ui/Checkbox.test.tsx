@@ -1,6 +1,4 @@
 /**
- * __tests__/components/ui/Checkbox.test.tsx
- * Feature: sprint-7-foundation
  * Tests: Checkbox — toggles, renders label/description wrapper, works without a label
  */
 

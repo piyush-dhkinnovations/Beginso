@@ -1,8 +1,5 @@
 /**
- * __tests__/Button.test.tsx
- * Feature: sprint-1-frontend-auth (behavior) / sprint-7-foundation (beginso-ui.css migration)
  * Tests: Button component — disabled/loading prevent onClick, applies design-system classes
- * Requirements: 3.1, 3.8, 15.5 (sprint-1) · 2.1 (sprint-7)
  */
 
 import { describe, it, expect, vi } from 'vitest';

@@ -18,8 +18,8 @@ export interface ModalProps {
 }
 
 // beginso-ui.css classes — see src/styles/beginso-ui.css §14 OVERLAYS. Rendered via a portal
-// (react-dom's createPortal) so it's never clipped by an ancestor's overflow: hidden — the
-// previous implementation rendered inline. Focus trap shared with Drawer via useFocusTrap.
+// (react-dom's createPortal) so it's never clipped by an ancestor's overflow: hidden.
+// Focus trap shared with Drawer via useFocusTrap.
 export function Modal({ isOpen, onClose, title, description, children, size = "default", overDrawer }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   useFocusTrap(isOpen, onClose, modalRef);

@@ -30,7 +30,7 @@ interface FieldCardProps {
   insertIndicator?: 'above' | 'below' | null;
 }
 
-// ─── Dashed drop-zone card ────────────────────────────────────────────────────
+// Dashed drop-zone card
 // Matches the reference: rounded card with a dashed blue border, animated in.
 function DropZoneCard() {
   return (

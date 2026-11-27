@@ -1,5 +1,4 @@
 /**
- * Feature: sprint-3-public-form (post-launch addition — draft persistence)
  * Tests for formDraft — save/load/clear round-trip, and graceful degradation
  * when storage is unavailable or holds garbage.
  */

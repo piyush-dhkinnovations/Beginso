@@ -53,9 +53,9 @@ export interface FormActivityCardProps {
   onViewAll: () => void;
 }
 
-// requirements.md §7.5 / design.md §6, §17. Presentational. `events` is expected to hold up to
-// PREVIEW_COUNT + 1 rows: the extra one is how this card knows "View all" is warranted without a
-// total from the backend (the events contract returns a bare array).
+// Presentational. `events` holds up to FORM_ACTIVITY_FETCH_COUNT rows; more than PREVIEW_COUNT
+// after filtering is how this card knows "View all" is warranted (the events response carries no
+// total).
 export function FormActivityCard({ events, isLoading, isError, onRetry, onViewAll }: FormActivityCardProps) {
   const [filter, setFilter] = useState<FilterKey>('all');
   const filtered = (events ?? []).filter((e) => FILTERS[filter].test(e.action));
@@ -88,7 +88,7 @@ export function FormActivityCard({ events, isLoading, isError, onRetry, onViewAl
           </Button>
         </Alert>
       ) : preview.length === 0 ? (
-        // A true zero-items state (a new form has no history) — not an error (requirements §7.5).
+        // A true zero-items state (a new form has no history) — not an error.
         <EmptyState
           icon={<History className="bg-icon" aria-hidden="true" />}
           title={filter === 'all' ? 'Nothing has happened here yet.' : 'No matching activity.'}

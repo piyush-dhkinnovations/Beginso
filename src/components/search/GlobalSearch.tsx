@@ -23,9 +23,9 @@ interface GlobalSearchProps {
   scope: string;
 }
 
-// Sprint 14 (B10, requirements 2.1-2.5, tasks 3.7-3.9). Opens on Ctrl/Cmd+K from anywhere in the app
+// Opens on Ctrl/Cmd+K from anywhere in the app
 // and on SearchTrigger's click, shows grouped results (5 per group) and a "See all results" row that
-// opens the full page. All filtering is the server's job (F14) - this component only renders.
+// opens the full page. All filtering is the server's job - this component only renders.
 export function GlobalSearch({ scope }: GlobalSearchProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -39,7 +39,7 @@ export function GlobalSearch({ scope }: GlobalSearchProps) {
   }, []);
 
   // Ctrl/Cmd+K toggles the palette. Only a contenteditable (rich-text) target is exempt, so the
-  // shortcut still works with focus in an ordinary input (requirements 2.1).
+  // shortcut still works with focus in an ordinary input.
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key?.toLowerCase() !== 'k' || !(e.metaKey || e.ctrlKey) || e.altKey || e.shiftKey) return;
@@ -56,7 +56,7 @@ export function GlobalSearch({ scope }: GlobalSearchProps) {
     };
   }, []);
 
-  // A role / grant change must never leave results computed under the old permissions on screen (design.md §10).
+  // A role / grant change must never leave results computed under the old permissions on screen.
   useEffect(() => {
     queryClient.removeQueries({ queryKey: searchKeys.all });
   }, [role, queryClient]);

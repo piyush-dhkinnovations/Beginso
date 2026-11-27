@@ -1,6 +1,4 @@
 /**
- * __tests__/components/ui/Menu.test.tsx
- * Feature: sprint-7-foundation
  * Tests: Menu — open/close, item selection, outside click, Escape
  */
 

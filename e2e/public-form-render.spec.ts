@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Requirements 1–2, 9: SSR schema load, branding/layout, mobile responsiveness.
+ * SSR schema load, branding/layout, mobile responsiveness.
  * Backend is mocked (e2e/mockServer.ts) — see that file for slug conventions.
  */
 

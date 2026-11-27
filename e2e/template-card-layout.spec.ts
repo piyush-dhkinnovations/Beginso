@@ -1,8 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * The template card on /discover-templates, in a real browser (replaces template-chip-layering.spec.ts, which tested a chip drawn over the
- * picture on the old /templates page).
+ * The template card on /discover-templates, in a real browser:
  *  - the category chip is under the picture, never overlapped by it, fully inside the card, and shows the short name (no "&")
  *  - on hover the Preview and Use template buttons are painted above the picture and the whole-card link
  * The cards come from the mock backend's gallery (e2e/mockServer.ts).

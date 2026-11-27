@@ -1,11 +1,9 @@
 /**
  * Shared TypeScript interfaces for Response Management.
- * Sprint 12 (inbox-collaboration), requirements.md §7.1/§13, design.md §11.2/§13:
- * `ResponseStatus`/`STATUS_LABELS` are REMOVED — a response now carries a workspace-defined
+ * A response carries a workspace-defined
  * `stage` (see `types/stage.ts`). `status` survives only as an optional, deprecated field the
- * backend derives from `stage.category` during the deprecation window (design.md §11.1,
- * OQ-2) — new code must not read it. Backend contract to confirm throughout (design.md §11.2);
- * uncertain fields are flagged per design.md §13.
+ * backend derives from `stage.category` during the deprecation window
+ * — new code must not read it.
  */
 
 import type { Stage, StageCategory, StageRef } from './stage';
@@ -38,8 +36,8 @@ export interface ResponseAssignee {
   id: string;
   name: string;
   avatarUrl: string | null;
-  /** Uncertain (design.md §13) — set when the assignee's membership has been removed (F16/B3.3);
-   * the name is kept, never blanked (requirements.md §7.8). */
+  /** Not built yet in the backend (removing a member unassigns their responses instead). When set,
+   * the name is kept, never blanked. */
   removed?: boolean;
 }
 
@@ -52,8 +50,8 @@ export interface ResponseTag {
 export interface IResponse {
   _id: string;
   formId: string;
-  /** Immutable per-form human reference, e.g. "#142" (B8.1). Backend contract to confirm — until
-   * BE 0.3 ships and back-fills existing responses this may be absent; render `shortId(_id)` as a
+  /** Immutable human reference given at submission. It may be absent on old data:
+   * render `shortId(_id)` as a
    * fallback (kept in `lib/formatters.ts`), never a blank. */
   reference?: string;
   answers: ResponseAnswers;
@@ -64,27 +62,27 @@ export interface IResponse {
    * new consumer of `.stage` must not assume it is present (real crash found in manual QA when
    * `BoardCard` read `.stage.id` directly). */
   stage: StageRef | null;
-  /** @deprecated Derived from `stage.category` by the backend during the migration window
-   * (design.md §11.1, OQ-2). Do not read in new code — use `stage.category` instead. Kept only so
+  /** @deprecated Derived from `stage.category` by the backend during the migration window.
+   * Do not read in new code — use `stage.category` instead. Kept only so
    * an unmigrated caller (a saved report scope, a cached bundle) degrades instead of breaking. */
   status?: StageCategory;
   assignee: ResponseAssignee | null;
-  /** Undefined on data from before tags existed (design.md §13) — treat as empty, never assume present. */
+  /** Undefined on data from before tags existed — treat as empty, never assume present. */
   tags?: ResponseTag[];
-  /** Uncertain (design.md §13) — defaults assumed 0 until BE 0.3/0.2 ship. */
+  /** Absent = 0. `attachmentCount` is not built yet in the backend. */
   noteCount?: number;
   attachmentCount?: number;
-  /** Per-caller read state (B8.2). Uncertain until BE 0.2 ships — treat an absent value as read
-   * (matches the migration's own "existing = read" default, OQ-4) rather than falsely unread. */
+  /** Per-caller read state. Treat an absent value as read
+   * (matches the migration's own "existing = read" default) rather than falsely unread. */
   unread?: boolean;
   duplicateOfId?: string | null;
-  /** Sprint 13 (F15) — Backend contract to confirm (BE 0.2). Absent = not a test submission. */
+  /** Absent = not a test submission. */
   isTest?: boolean;
-  /** Sprint 13 (A5.2) — set when the respondent edited after review. Backend contract to confirm (BE 0.12). */
+  /** Set when the respondent edited after review. */
   editedAfterReviewAt?: string | null;
   /** The last time the respondent changed their own answers (any edit). Absent/null = never edited. */
   lastEditedByRespondentAt?: string | null;
-  /** Uncertain (design.md §13) — cuttable (B6, requirements.md §7.10). */
+  /** Not built yet in the backend: it sends `scoreAverage` and `scoreCount` instead. */
   score?: { average: number; count: number } | null;
   /** What the list endpoint sends for the "Average score" column (null/absent = not scored). */
   scoreAverage?: number | null;
@@ -100,7 +98,7 @@ export interface ResponseDetail extends IResponse {
   responseFiles: IResponseFile[];  // mapped from the wire's snake_case `response_files`
 }
 
-/** URL/query filter shape shared by the list call and saved views (design.md §11.2/§13). */
+/** URL/query filter shape shared by the list call and saved views. */
 export interface ResponseFilters {
   stageId?: string;
   tagIds?: string[];
@@ -108,7 +106,7 @@ export interface ResponseFilters {
   assigneeId?: string;
   unread?: boolean;
   duplicate?: boolean;
-  /** Sprint 13 (F15): include test submissions. Off by default — tests never count anywhere. */
+  /** Include test submissions. Off by default — tests never count anywhere. */
   includeTest?: boolean;
   from?: string;
   to?: string;
@@ -147,7 +145,7 @@ export interface PaginatedResponsesResult {
   totalPages: number;
 }
 
-/** GET /api/responses/stats (design.md §11.2 — extends the already-live endpoint). */
+/** GET /api/responses/stats. */
 export interface ResponseStats {
   total: number;
   unread: number;
@@ -156,9 +154,9 @@ export interface ResponseStats {
 }
 
 /**
- * POST /api/responses/bulk (design.md §11.2, task 2.2). Backend contract to confirm — field
- * names are a proposal. `target` is `{ids}` for an explicit selection or `{filter}` for "Select
- * all N matching" (requirements.md §7.2 (2.2): sent as a filter, never as N ids).
+ * POST /api/responses/bulk.
+ * `target` is `{ids}` for an explicit selection or `{filter}` for "Select
+ * all N matching" (sent as a filter, never as N ids).
  */
 export type BulkTarget = { ids: string[] } | { filter: ResponseFilters; formId?: string };
 
@@ -173,7 +171,7 @@ export type BulkAction =
   | { type: 'restore' };
 
 /** Snapshot of one response's prior values, returned by a bulk mutation so `restore` can undo it
- * with a single follow-up request (design.md §8 "Bulk"). Only `restore` sends `previous` back. */
+ * with a single follow-up request. Only `restore` sends `previous` back. */
 export interface BulkPrevious {
   id: string;
   stageId?: string;

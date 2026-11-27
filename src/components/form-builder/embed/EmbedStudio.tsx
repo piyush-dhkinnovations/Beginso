@@ -20,7 +20,7 @@ interface Props {
   onCopy: (text: string, message: string) => void;
 }
 
-// Share & Embed, CF6.2a. One state object drives the code block, the live preview and the Advanced list through
+// One state object drives the code block, the live preview and the Advanced list through
 // the same pure functions (lib/embed/buildEmbedSnippet), so every control changes the output the moment it moves
 // and there is no Generate button.
 export function EmbedStudio({ ctx, fields, pages, onCopy }: Props) {

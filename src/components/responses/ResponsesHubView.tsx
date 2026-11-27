@@ -47,15 +47,14 @@ const subscribeNever = () => () => {};
 interface ResponsesHubViewProps {
   /** Undefined for the all-forms view reached from the sidebar's "Inbox" link. */
   formId?: string;
-  /** Workspace slug, or 'personal' for the two existing personal-shell routes (OQ-1). Sprint 12's
-   * workspace Inbox route (task 1.9) passes its slug; both existing (user)/responses routes keep
-   * the default, unchanged behaviour. */
+  /** Workspace slug, or 'personal' for the two personal-shell routes. The
+   * workspace Inbox route passes its slug; the (user)/responses routes keep
+   * the default. */
   scope?: string;
 }
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.2 (2.3), design.md §5/§7 (task 1.8): shrunk
- * to composition — URL/filter state lives in `useInboxFilters`, every write in
+ * Composition only: URL/filter state lives in `useInboxFilters`, every write in
  * `useInboxMutations`; data, selection, saved views, exports and drawer routing each have their own hook.
  */
 export function ResponsesHubView({ formId, scope = 'personal' }: ResponsesHubViewProps) {

@@ -43,7 +43,7 @@ export function useFormsMutations({ context, data, page, setPage, setSelectedIds
       queryClient.invalidateQueries({ queryKey: ['forms'] });
       queryClient.invalidateQueries({ queryKey: ['trash'] });
       if (data?.forms.length === 1 && page > 1) setPage((current) => current - 1);
-      // Delete means Trash since Sprint 13 (CF5.5): reversible, so name the form and offer Undo.
+      // Delete means Trash: reversible, so name the form and offer Undo.
       const title = data?.forms.find((f) => f._id === id)?.title ?? 'Form';
       const scope = context.type === 'workspace' ? context.workspaceId : 'personal';
       toast(`"${title}" moved to Trash`, 'success', undefined, {
@@ -66,7 +66,7 @@ export function useFormsMutations({ context, data, page, setPage, setSelectedIds
     onSettled: () => setDeletingId(null),
   });
 
-  // Archive / Unarchive (Sprint 13, CF5.6). Archive keeps the form and its responses indefinitely and takes it
+  // Archive / Unarchive. Archive keeps the form and its responses indefinitely and takes it
   // out of the active list; the same call serves the row action and the bulk bar (sequential, like delete).
   const archiveMutation = useMutation({
     mutationFn: async ({ ids, archive }: { ids: string[]; archive: boolean }) => {
@@ -89,8 +89,8 @@ export function useFormsMutations({ context, data, page, setPage, setSelectedIds
   });
 
   const bulkDeleteMutation = useMutation({
-    // Sequential per-id calls, not Promise.all — task 6.4's own stated reasoning: acceptable at
-    // this sprint's expected list sizes, no batching infrastructure to build speculatively.
+    // Sequential per-id calls, not Promise.all: acceptable at
+    // the expected list sizes, no batching infrastructure to build speculatively.
     mutationFn: async (ids: string[]) => {
       for (const id of ids) {
         await formsService.deleteForm(id);

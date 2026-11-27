@@ -1,6 +1,4 @@
 /**
- * __tests__/components/landing/Navbar.test.tsx
- * Audit remediation: Navbar had zero test coverage despite shipping since Sprint 1.
  * Tests: nav links present (Pricing intentionally absent — no #pricing section exists),
  * scroll-state class swap, mobile menu toggle.
  */

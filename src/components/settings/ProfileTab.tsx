@@ -43,7 +43,7 @@ export function ProfileTab({ onDirtyChange }: ProfileTabProps) {
     if (profile) reset({ name: profile.name });
   }, [profile, reset]);
 
-  // `onDirtyChange` is an inline arrow function at the call site (SettingsPage), so it gets a new
+  // `onDirtyChange` may be an inline arrow function at the call site, so it can get a new
   // identity every render — depending on it directly would re-fire this effect (and the parent's
   // setState) every render, an infinite loop. Same "latest ref" pattern Modal.tsx already uses for
   // the same reason: the effect below depends only on `isDirty`, not the callback's identity.

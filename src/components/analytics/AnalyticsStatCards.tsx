@@ -10,7 +10,7 @@ import { computeChangePercent, formatChangeLabel } from '@/lib/analyticsChange';
 import { MIN_TREND_POINTS, NOT_ENOUGH_DATA } from '@/lib/chartSegments';
 import type { AnalyticsOverview } from '@/types/analytics';
 
-// These three labels are the fixed category enum (Sprint 12 requirements §7.3), not a
+// These three labels are the fixed category enum, not a
 // workspace-defined stage name.
 
 interface AnalyticsStatCardsProps {
@@ -18,9 +18,9 @@ interface AnalyticsStatCardsProps {
   isLoading: boolean;
   isError?: boolean;
   onRetry?: () => void;
-  /** Responses per bucket from the trend query, oldest first — drives the Total Responses bars. */
+  /** Responses per bucket from the trend query, oldest first — drives the Total Responses trend line. */
   trend?: number[];
-  /** Sprint 14 (requirements 1.3): the previous equal-length period's overview. Absent = comparison off or
+  /** The previous equal-length period's overview. Absent = comparison off or
    * no prior data - the delta lines are hidden, never "0%". */
   previousOverview?: AnalyticsOverview;
   /** e.g. "vs previous 30 days". */
@@ -72,7 +72,7 @@ export function AnalyticsStatCards({ overview, isLoading, isError = false, onRet
 
   const cardsView = sparse ? cards.map((c) => ({ ...c, chart: undefined, delta: undefined })) : cards;
 
-  // Completion rate is views-based (OQ-3) - its delta is a change in points, only when both periods have one.
+  // Completion rate is views-based - its delta is a change in points, only when both periods have one.
   // The API rate is lifetime; in a selected range with no responses it would read 100%/stale, so show "—".
   const rate = total > 0 ? overview?.completionRate : null;
   const previousRate = previousOverview?.completionRate;

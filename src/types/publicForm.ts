@@ -1,12 +1,12 @@
 /**
- * Types for the respondent-facing public form (Sprint 3).
+ * Types for the respondent-facing public form.
  * Augments — does not replace — the user-side types in src/types/form.ts.
  */
 
 import type { Control, FieldError, UseFormRegister, UseFormSetValue, UseFormTrigger } from 'react-hook-form';
 import type { FormField, FormFont, FormPage, FormSettings, FormTheme } from '@/types/form';
 
-// ─── API Response: GET /api/public/:slug ──────────────────────────────────────
+// API Response: GET /api/public/:slug
 
 export interface PublicFormBranding {
   primaryColor?: string;
@@ -44,12 +44,12 @@ export interface PublicFormSchema {
   settings: Pick<FormSettings, 'honeypotEnabled' | 'successMessage' | 'responseLimit' | 'closeDate' | 'layout' | 'accessMode'>;
 }
 
-// ─── Field Value Types ──────────────────────────────────────────────────────────
+// Field Value Types
 
 /** A single field's value in the RHF form state. */
 export type FieldValue = string | string[] | number | undefined;
 
-// ─── Submission Payload ─────────────────────────────────────────────────────────
+// Submission Payload
 
 /**
  * Matches the backend's documented Answer schema (docs/product/03-technical-design.md §3.6) —
@@ -62,7 +62,7 @@ export interface Answer {
   fieldType: FormField['type'];
   fieldLabel: string;
   value?: FieldValue;
-  fileKey?: string; // file_upload fields only — backend fills this in after R2/storage upload
+  fileKey?: string; // file_upload fields only — the backend fills this in after it stores the upload
 }
 
 /** The `data` part of the multipart/form-data submission. */
@@ -70,7 +70,7 @@ export interface SubmissionData {
   answers: Answer[];
 }
 
-// ─── Upload State ───────────────────────────────────────────────────────────────
+// Upload State
 
 export type UploadStatus = 'idle' | 'uploading' | 'uploaded' | 'failed';
 
@@ -80,12 +80,12 @@ export interface UploadState {
   fileSize?: number;
   progress?: number; // 0–100
   error?: string;
-  key?: string; // R2 key returned by backend on success — included in submission
+  key?: string; // nothing sets this today: the file travels with the final submit
 }
 
-// ─── Service Error ───────────────────────────────────────────────────────────────
+// Service Error
 
-// ─── Field Renderer Contract ─────────────────────────────────────────────────────
+// Field Renderer Contract
 
 export interface FieldRendererProps {
   field: FormField;

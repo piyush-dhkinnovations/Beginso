@@ -1,5 +1,4 @@
 /**
- * __tests__/app/api/backend/route.test.ts
  * Regression test for a real bug: this proxy silently dropped every request header not on its
  * fixed forward-list, including x-workspace-slug/x-workspace-id — the one documented mechanism
  * (API_CONTRACT.md's "Workspace Resolution" order, step 1) `formsService.getForms()` relies on
@@ -66,7 +65,7 @@ describe('BFF proxy — header forwarding', () => {
     expect((init.headers as Headers).has('x-proxy-secret')).toBe(false);
   });
 
-  // sprint-11-v2a-hardening 4.3 — the whitelist must be closed, not just "includes the workspace
+  // The whitelist must be closed, not just "includes the workspace
   // headers": an arbitrary header the caller sends must never reach the real backend un-vetted.
   it('does not forward an arbitrary header the caller sent (whitelist is closed)', async () => {
     const req = makeRequest('api/forms', { 'x-evil-header': 'smuggled', 'x-forwarded-host': 'evil.example' });
@@ -79,9 +78,9 @@ describe('BFF proxy — header forwarding', () => {
   });
 });
 
-// sprint-11-v2a-hardening 1.5 — events/audit routes live under the already-allowlisted
+// Events/audit routes live under the already-allowlisted
 // 'workspaces' and 'forms' roots (GET /api/workspaces/:id/events|audit, GET /api/forms/:id/events),
-// so no new ALLOWED_API_ROOTS entry is needed. Asserted here rather than guessed, per task 1.5.
+// so no new ALLOWED_API_ROOTS entry is needed. Asserted here rather than guessed.
 describe('BFF proxy — allowlist', () => {
   beforeEach(() => {
     vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://backend.example');
@@ -109,7 +108,7 @@ describe('BFF proxy — allowlist', () => {
     expect(fetch).toHaveBeenCalled();
   });
 
-  // sprint-12-inbox-collaboration, task 1.9 — saved views (B7.1) live under their own root; the
+  // Saved views live under their own root; the
   // allowlist trap this same describe block already documents for events/audit above.
   it('allows GET /api/views (Sprint 12 saved views)', async () => {
     const req = makeRequest('api/views');

@@ -1,8 +1,5 @@
 /**
- * __tests__/HowItWorksSection.test.tsx
- * Feature: sprint-1-frontend-auth
  * Tests: HowItWorksSection — exactly 3 steps (build/share/track), section id present
- * Requirements: 0.18, 0.19, 0.20
  */
 
 import { describe, it, expect, vi } from 'vitest';

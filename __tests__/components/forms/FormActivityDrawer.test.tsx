@@ -1,9 +1,3 @@
-/**
- * __tests__/components/forms/FormActivityDrawer.test.tsx
- * sprint-10-events-migration, tasks.md 3.2 / 8.1 — this component had no dedicated test file;
- * only exercised indirectly (open + dialog-appears) through overview/page.test.tsx. Its own
- * loading/error/pagination logic was previously unverified.
- */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

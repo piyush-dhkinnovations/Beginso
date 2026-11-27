@@ -93,7 +93,7 @@ function sortKeys(value: unknown): unknown {
   return value;
 }
 
-// ── The ready-made gallery ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// The ready-made gallery
 // The Looks live in ONE file the backend owns (Beginso-Backend/src/data/formLooks.json), served by GET /api/form-looks. `src/data/formLooks.json` is a
 // copy of it (npm run sync:looks) that the app uses when the API cannot be reached; useFormLooks prefers the live list. Each one is a whole look (layout,
 // colours, typeface, card, fields, background); their colours are checked for readability in the backend's tests and again here

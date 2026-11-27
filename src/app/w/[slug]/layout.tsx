@@ -12,9 +12,9 @@ interface Props {
 }
 
 // Server Component — resolves the slug and checks membership before anything paints, so a
-// non-member never sees a flash of the shell around an access-denied message
-// (requirements.md §7.1, design.md §17). The membership check here is a UX convenience only;
-// the real authorization boundary is the backend endpoint itself (requirements.md §14) — this
+// non-member never sees a flash of the shell around an access-denied message.
+// The membership check here is a UX convenience only;
+// the real authorization boundary is the backend endpoint itself — this
 // layout does not, and cannot, substitute for that.
 //
 // notFound() fires only on a confirmed 404 from the backend — a genuinely nonexistent
@@ -41,7 +41,6 @@ export default async function WorkspaceLayout({ children, params }: Props) {
 
   const { workspace, role } = result;
 
-  // role is undefined until BE 0.1 ships (sprint-9-team-permissions, requirements.md §8.7) —
   // WorkspaceSidebar/WorkspaceShell treat an unknown role as "hide the role-gated nav item,"
   // never "show it," since the real permission boundary is server-side regardless.
   return (

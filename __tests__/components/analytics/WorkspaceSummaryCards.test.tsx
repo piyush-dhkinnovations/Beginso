@@ -1,5 +1,4 @@
 /**
- * __tests__/components/analytics/WorkspaceSummaryCards.test.tsx
  * Tests: WorkspaceSummaryCards — 4-card grid (Total Responses / Active Forms / Avg. Responses per
  * Form / Completion Rate), change vs the previous period, skeleton, zero/dash-muted values
  */
@@ -41,7 +40,6 @@ describe('WorkspaceSummaryCards', () => {
     expect(screen.getByText('/ 6')).toBeInTheDocument();
     expect(screen.getByText('Avg. Responses / Form')).toBeInTheDocument();
     expect(screen.getByText('63.5')).toBeInTheDocument();
-    // Sprint 14: the views-based Completion rate card (CompletionRateCard) replaced the old stage-based one.
     expect(screen.getByText('Completion rate')).toBeInTheDocument();
     // The value and the ring's own label both read 78%.
     expect(screen.getAllByText('78%').length).toBeGreaterThanOrEqual(1);

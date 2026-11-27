@@ -1,10 +1,6 @@
 /**
- * __tests__/qa/roleMatrix.test.tsx
- * sprint-11-v2a-hardening, requirements.md §7.2 (2.1, 2.2)
- *
  * Renders the real shells with mocked services per the ROLE_MATRIX cell and diffs against it by
- * role/name — not by class. Denied cells (none in this nav/shells pass) would additionally assert
- * no privileged service call fires; that assertion applies from task 2.3 onward.
+ * role/name — not by class.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

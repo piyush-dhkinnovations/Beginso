@@ -4,8 +4,7 @@ import { PersonalShell } from '@/components/workspaces/PersonalShell';
 // Server Component layout — no 'use client' needed here.
 // All interactive sidebar/topnav logic is in PersonalShell (client component), which composes
 // the V2 AppShell/PersonalSidebar/ContextSwitcher primitives — same pattern as
-// src/app/w/[slug]/layout.tsx's WorkspaceShell. Replaces the legacy DashboardShell, which had
-// left Personal space on the old V1 chrome with no way to reach a workspace from the UI at all.
+// src/app/w/[slug]/layout.tsx's WorkspaceShell.
 export default async function DashboardLayout({
   children,
 }: {

@@ -1,8 +1,3 @@
-/**
- * __tests__/components/team/MemberTable.test.tsx
- * Feature: sprint-9-team-permissions, requirements.md §7.2, §11, design.md §21.
- */
-
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

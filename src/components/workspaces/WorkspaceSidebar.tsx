@@ -22,24 +22,22 @@ export interface WorkspaceSidebarProps {
   slug: string;
   currentLabel: string;
   collapsed?: boolean;
-  // Sprint 9 (team-permissions, requirements.md §7.2/§8.7) — the caller's role in this
-  // workspace, used to gate "Team" (owner/admin only). Undefined until BE 0.1 ships
-  // (GET /api/workspaces/:id doesn't return it yet). canManageMembers() fails closed on
-  // undefined (Team stays hidden until the backend lands).
+  // The caller's role in this
+  // workspace, used to gate "Team" (owner/admin only). canManageMembers() fails closed
+  // on undefined (Team stays hidden while the role is unknown).
   role?: Role;
   /** True on a form's own pages (/forms/:id/*), which live outside /w/[slug]: lights "Forms". */
   formContext?: boolean;
 }
 
-// Workspace-context nav set (requirements.md §7.3). Same item vocabulary/icons as the legacy
-// src/components/dashboard/Sidebar.tsx (V1, untouched this sprint — design.md §2), scoped under
+// Workspace-context nav set, scoped under
 // /w/[slug] instead of the flat (user)/ tree. Reads the active route via usePathname() itself,
 // same reasoning as PersonalSidebar.
 //
-// Corrected against the actual wireframe (Beginso-Design-System/.../wireframes/index.html,
+// Per the wireframe (Beginso-Design-System/.../wireframes/index.html,
 // appSidebar()/contextSwitcher()) — the context switcher belongs at the top of the sidebar itself
-// ("the sidebar context block is now the real control"), not in the top bar where it was first
-// built. Rendered via ui/Sidebar's `header` slot rather than a separate wrapper element, so it
+// ("the sidebar context block is now the real control"), not in the top bar.
+// Rendered via ui/Sidebar's `header` slot rather than a separate wrapper element, so it
 // sits inside the same .bg-sidenav box as the nav items (matching the wireframe's single
 // continuous sidebar column) instead of a second bordered block stacked above it.
 export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role, formContext = false }: WorkspaceSidebarProps) {
@@ -55,8 +53,8 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role, 
   };
   const base = `/w/${slug}`;
 
-  // Sprint 12 (inbox-collaboration), task 1.9 — the unread count badge from the stats call
-  // (design.md §4: "wireframe shows a count badge; if that call fails, no badge, no error").
+  // The unread count badge from the stats call
+  // ("wireframe shows a count badge; if that call fails, no badge, no error").
   // Failing the query is deliberately not surfaced here; the badge is a convenience, not a
   // load-bearing signal, and the Inbox page itself shows its own error state if stats fail there.
   const { data: stats } = useQuery({
@@ -65,13 +63,8 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role, 
     retry: false,
   });
 
-  // Real bug found and fixed: this linked to /templates, /responses, /analytics, /reports, and
-  // /settings under /w/[slug] — none of which exist (only forms/, team/, roles/ did; confirmed
-  // by listing src/app/w/[slug]/). Every one of those was a dead link, 404-ing on click and
-  // spamming the console with Next.js's own Link-prefetch failures the moment this sidebar
-  // rendered. Hidden until each page actually ships — re-add the item as each one lands, rather
-  // than linking ahead of the page that would make it real. `inbox/` now exists (task 1.9,
-  // same-PR rule: the nav item lands with the page, never before).
+  // A nav item lands with its page, never before: a link to a route that does not exist under
+  // /w/[slug] 404s on click and spams the console with Next.js's own Link-prefetch failures.
   // A form's own data pages (/forms/:id/inbox|insights) belong to Responses; its other pages light Forms.
   const isFormDataRoute = /^\/forms\/[^/]+\/(inbox|insights)\/?$/.test(pathname);
   const isActive = (href: string) =>

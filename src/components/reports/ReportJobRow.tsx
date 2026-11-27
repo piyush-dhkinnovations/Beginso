@@ -48,8 +48,8 @@ function formatGeneratedOn(iso: string): string {
   return `${d.getDate()} ${month} ${d.getFullYear()}, ${time}`;
 }
 
-// The backend never sends a denormalized `formTitle` — only the raw `formId` — so the display
-// name is resolved from whatever forms list the caller already has loaded. A `formId` that
+// The job's `formTitle` wins; otherwise the name is resolved from whatever forms list the
+// caller already has loaded. A `formId` that
 // doesn't resolve (e.g. a since-deleted form) falls back to the raw id rather than the
 // misleading "All Forms", which would wrongly imply the report wasn't scoped to a form at all.
 function formLabel(job: ReportJob, formTitleById: Map<string, string>): string {
@@ -60,9 +60,9 @@ function formLabel(job: ReportJob, formTitleById: Map<string, string>): string {
 // from/to happens to match "Last 30 days" etc. reads as a friendly label instead of raw dates.
 function scopeSubtitle(job: ReportJob): string {
   const parts: string[] = [];
-  // `job.stage` (a name snapshot) wins; `responseStatus` is only read for a job created before
-  // this sprint (OQ-2's deprecated-status alias) — mapped through the same fixed category labels
-  // StatusDistributionChart.tsx uses, since it's still the removed union's literal value.
+  // Not built yet in the backend: `job.stage` (a name snapshot), which wins when present. Otherwise
+  // `responseStatus` is mapped through the same fixed category labels
+  // StatusDistributionChart.tsx uses.
   if (job.stage) parts.push(job.stage.name);
   else if (job.responseStatus) parts.push(CATEGORY_LABELS[job.responseStatus]);
   if (job.selectedCount) {
@@ -92,12 +92,11 @@ export function ReportJobRow({ job, onRetry, isRetrying = false, formTitleById =
   const { toast } = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
-  // Defensive fallback: the real backend's `format` value has not been confirmed to always match
-  // the assumed 'csv' | 'pdf' literal — an unrecognized value should fall back to a generic icon
+  // Defensive fallback: an unrecognized `format` value falls back to a generic icon
   // rather than crash the whole jobs list.
   const FormatIcon = FORMAT_ICON[job.format] ?? FileText;
 
-  // Never cached across clicks (Correctness Property 5) — every click re-fetches a fresh blob URL.
+  // Never cached across clicks — every click re-fetches a fresh blob URL.
   async function handleDownload() {
     setIsDownloading(true);
     setDownloadProgress(0);

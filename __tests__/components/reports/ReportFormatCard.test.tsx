@@ -1,9 +1,6 @@
 /**
- * __tests__/components/reports/ReportFormatCard.test.tsx
- * Feature: sprint-5-analytics-reports
  * Tests: ReportFormatCard — renders title/description, Generate fires onGenerate,
  * isLoading/disabled states
- * Requirements: 10.1, 10.2, 10.5
  */
 
 import { describe, it, expect, vi } from 'vitest';

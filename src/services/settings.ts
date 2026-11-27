@@ -44,7 +44,7 @@ export const settingsService = {
   getWorkspace: (scope?: string): Promise<WorkspaceSettings> =>
     axiosInstance.get('/api/workspaces/current', ...scopeConfig(scope)).then((r) => unwrapEnvelope<WorkspaceSettings>(r.data, 'workspace')),
 
-  // Also carries notificationPreferences (Requirement 7) — confirmed live 18 Aug 2026 as a field
+  // Also carries notificationPreferences — confirmed live 18 Aug 2026 as a field
   // on the workspace document, not a separate endpoint. NotificationsTab calls this with
   // { notificationPreferences } the same way BrandingTab calls it with { branding }.
   updateWorkspace: (payload: UpdateWorkspacePayload, scope?: string): Promise<WorkspaceSettings> =>
@@ -66,7 +66,7 @@ export const settingsService = {
     axiosInstance.post('/api/workspaces/current/export').then((r) => unwrapEnvelope<WorkspaceExportJob>(r.data, 'exportJob')),
 
   // Confirmed live 17 Aug 2026 per a direct backend report (commit a7a5185) — resolves the
-  // status-check gap flagged since 18 Aug (requirements.md §15 item 12). Real shape:
+  // status-check gap flagged since 18 Aug. Real shape:
   // `{ success, exportJob: { id, status: "completed" | "processing" } }`. Goes through the
   // generic `/api/backend/[...path]` BFF proxy like every other non-file Settings call — no
   // dedicated route needed, unlike getExportFileBlobUrl below (a real file stream).

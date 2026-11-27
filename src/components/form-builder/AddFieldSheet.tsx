@@ -4,7 +4,7 @@ import { Drawer } from '@/components/ui/Drawer';
 import type { FieldType } from '@/types/form';
 import { FIELD_GROUPS, FIELD_TYPE_CONFIG } from './Toolbox';
 
-// Sprint 13 (CF2.12), requirements.md 4.2. The toolbox below 1024px: a bottom sheet that APPENDS the
+// The toolbox below 640px (phones): a bottom sheet that APPENDS the
 // chosen field to the end of the active page — no dragging to a position. The caller (edit page) owns
 // what happens after the add (scroll the new card into view and expand it).
 export interface AddFieldSheetProps {

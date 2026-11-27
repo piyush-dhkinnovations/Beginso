@@ -10,12 +10,10 @@ const OUT = 'src/components/illustrations/illustrations.generated.ts';
 const PRIMARY = '#4274d9'; // --primary-500 — the accent colour chosen on undraw.co
 
 // Each slot is read from illustrations-src/<slot>.svg (an unDraw download, accent #4274D9).
-// To use a different unDraw piece for a state, replace that file. Spare downloads live in
-// illustrations-src/_unused/.
+// To use a different unDraw piece for a state, replace that file.
 const SLOTS = [
   'not-found', 'no-access', 'error', 'success', 'empty-inbox',
   'empty-reports', 'no-results', 'team', 'onboarding', 'empty-forms',
-  // second batch — icon fallback until the file exists
   'link-expired', 'invite', 'email-sent', 'form-closed', 'pipeline', 'calendar', 'build-form', 'notifications',
 ];
 

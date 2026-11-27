@@ -1,6 +1,5 @@
 import { test, expect } from '@playwright/test';
 
-/** Draft persistence — a post-launch addition, not part of the original Requirements 0–11 (see tasks.md task 5.9). */
 
 test.describe('Public form — draft persistence', () => {
   test.afterEach(async ({ page }) => {

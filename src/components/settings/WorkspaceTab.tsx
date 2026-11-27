@@ -47,17 +47,14 @@ export function WorkspaceTab({ onDirtyChange, scope, onDeleted }: WorkspaceTabPr
     queryFn: () => settingsService.getWorkspace(scope),
   });
 
-  // Confirmed live 18 Aug 2026 (backend commit a7a5185) — DELETE /api/workspaces/current now
-  // deletes the calling User record and Firebase Auth user too, so this branch should no longer
-  // be reachable for any deletion going forward. Kept as defense-in-depth for accounts orphaned
-  // before that fix shipped: a 404 here means "this account has no workspace," not a transient
+  // DELETE /api/workspaces/current
+  // deletes the calling User record and Firebase Auth user too, so no deletion should reach this
+  // branch. Kept as defense-in-depth for accounts orphaned before 18 Aug 2026,
+  // when that was fixed: a 404 here means "this account has no workspace," not a transient
   // failure a "Try again" retry could ever fix, so it's signed out with a real explanation instead
   // of stuck on a retry loop that can only ever fail the same way again.
   const isOrphanedAccount = isAxiosError(error) && error.response?.status === 404;
 
-  // TODO: gate the name field read-only per Requirement 5.3 once a real workspace-role contract
-  // exists (see design.md §23 Risk 6) — Beginso's current data model is single-admin-per-workspace,
-  // so every signed-in user is the sole owner today; there's nothing real to gate against yet.
   const {
     register,
     control,
@@ -73,7 +70,7 @@ export function WorkspaceTab({ onDirtyChange, scope, onDeleted }: WorkspaceTabPr
     if (workspace) {
       reset({ name: workspace.name, description: workspace.description ?? '', timezone: workspace.timezone ?? 'UTC' });
       const serverLogo = workspace.logoUrl ?? null;
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- copies the loaded workspace's logo into local state, which the form then edits
       setSavedLogo(serverLogo);
       setLogo(serverLogo);
     }

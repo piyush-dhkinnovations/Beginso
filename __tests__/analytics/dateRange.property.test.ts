@@ -1,7 +1,5 @@
 /**
- * __tests__/analytics/dateRange.property.test.ts
- * Feature: sprint-5-analytics-reports, Property 1: Date range normalization never inverts
- * Validates: Requirement 3.4
+ * Property: date range normalization never inverts
  */
 
 import { describe, it } from 'vitest';

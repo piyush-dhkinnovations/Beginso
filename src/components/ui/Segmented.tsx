@@ -13,7 +13,7 @@ export interface SegmentedProps {
   className?: string;
 }
 
-// View switcher (Table · Board · Calendar · Chart). beginso-ui.css "Segmented control".
+// View switcher (Table · Board · Calendar). beginso-ui.css "Segmented control".
 export function Segmented({ options, value, onChange, ariaLabel, className }: SegmentedProps) {
   return (
     <div role="group" aria-label={ariaLabel} className={bx("bg-segmented", className)}>

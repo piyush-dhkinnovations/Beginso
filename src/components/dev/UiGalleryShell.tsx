@@ -8,7 +8,7 @@ type DarkVariant = "slate" | "midnight" | "dimmed";
 const WIDTHS = [375, 768, 1280, "Full"] as const;
 type Width = (typeof WIDTHS)[number];
 
-// The gallery's controls + preview frame (requirements.md 3.1): a visible theme toggle
+// The gallery's controls + preview frame: a visible theme toggle
 // (light/dark × Slate/Midnight/Dimmed, not a URL param) and a width selector (375/768/1280/Full,
 // not manual browser resize). The preview itself renders inside an <iframe> (frame/page.tsx)
 // so beginso-ui.css's real @media breakpoints respond to the selected width — see that

@@ -1,14 +1,8 @@
 /**
- * __tests__/services/analytics.service.test.ts
- * Feature: sprint-5-analytics-reports
  * Tests: analyticsService — getOverview, getTrends, getQuestions, getFormsSummary
- * Requirements: 14.1
  *
- * Bug fix, Sprint 12 close-out: none of these four calls ever sent a workspace header — the
- * exact gap `workspaceHeaders.ts`'s own comment already named ("Sprint 11's audit flagged that
- * responses/analytics/reports/dashboard send none at all") but that was never actually applied
- * here. Every call now sends the explicit 'personal' signal (no /w/[slug]/analytics route exists
- * yet, so personal is unconditionally correct), asserted below.
+ * Bug fix: none of these four calls ever sent a workspace header. Every call now sends the
+ * explicit 'personal' signal by default, asserted below.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -62,7 +56,7 @@ describe('analyticsService', () => {
       params: { formId: 'form-1', from: '2026-08-01', to: '2026-08-10' },
       headers: { 'x-workspace-slug': 'personal' },
     });
-    // Sprint 14 (OQ-3): `completionRate` is now the views-based figure, nullable - the old live value
+    // `completionRate` is now the views-based figure, nullable - the old live value
     // (here 0) is passed through as a number, and a missing `views` is null, never fabricated.
     expect(result).toEqual({
       totalResponses: 3,
@@ -200,7 +194,7 @@ describe('analyticsService', () => {
     });
   });
 
-  // Sprint 14 (OQ-3): a null/missing rate stays null - "not enough views" - and is never defaulted to 0.
+  // A null/missing rate stays null - "not enough views" - and is never defaulted to 0.
   it('getFormsSummary keeps a null completionRate null and reads views / reviewedRate / templateCategory', async () => {
     mockGet.mockResolvedValueOnce({
       data: {

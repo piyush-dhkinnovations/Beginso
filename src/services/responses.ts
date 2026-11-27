@@ -38,7 +38,7 @@ interface FileUrlEnvelope {
   success: boolean;
   url: string;
 }
-// GET /api/responses/stats (design.md §11.2 — Extends). Keeps the legacy new/in_progress/
+// GET /api/responses/stats. Keeps the legacy new/in_progress/
 // completed numeric keys as aliases during the deprecation window; this app reads `byStage`/
 // `byCategory` only.
 interface StatsEnvelope extends ResponseStats {
@@ -47,13 +47,13 @@ interface StatsEnvelope extends ResponseStats {
 
 // The backend sends each answer twice — once keyed by the field's raw internal id, once by its
 // human label, both pointing at the identical value. The internal id shows up as either a
-// MongoDB ObjectId (24 hex chars) or a UUID (observed during Sprint 4 — some fields use one, some
+// MongoDB ObjectId (24 hex chars) or a UUID (some fields use one, some
 // the other) — strip both key shapes so labels never render as raw ids in the UI.
 const OBJECT_ID_KEY_RE = /^[0-9a-f]{24}$/i;
 const UUID_KEY_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // file_upload answers leak their internal storage reference as the "value" instead of the
-// actual submitted text. Observed during Sprint 4 in two distinct shapes:
+// actual submitted text. Observed in two distinct shapes:
 //   - a bare object, which React/String() render as the literal text "[object Object]" — but
 //     the backend has also been observed sending that exact string directly (already
 //     stringified server-side), so both the real object AND the literal string need catching;
@@ -83,8 +83,8 @@ function toResponseDetail(raw: RawResponseDetail): ResponseDetail {
   return { ...rest, answers: cleanAnswers(answers), responseFiles: response_files };
 }
 
-/** PATCH /api/responses/:id body (design.md §11.2 — Extends). `status` is only sent for a
- * personal-shell response's stage change (OQ-9's "fixed default stages" — there is no real Stage
+/** PATCH /api/responses/:id body. `status` is only sent for a
+ * personal-shell response's stage change (fixed default stages — there is no real Stage
  * document to reference by id there, only the status category); every workspace-scoped caller
  * still sends `stageId`, never `status`. */
 export interface UpdateResponsePayload {
@@ -94,11 +94,10 @@ export interface UpdateResponsePayload {
   tagIds?: string[];
 }
 
-// POST /api/responses/bulk (design.md §11.2, task 2.2): "413 batch over cap (cap stated in
-// response)". Surfaced as a typed error rather than a generic axios failure so
-// `useInboxMutations`/`BulkActionBar` can show a specific message instead of the default
-// "failed to update" toast. `cap` is read defensively — the exact response shape for the cap is
-// itself "Backend contract to confirm".
+// POST /api/responses/bulk answers 413 for a batch over the cap. Surfaced as a typed error rather
+// than a generic axios failure so `useInboxMutations`/`BulkActionBar` can show a specific message
+// instead of the default "failed to update" toast. `cap` is read defensively. Not built yet in the
+// backend: a `cap` field (the limit is only named in the message).
 export class BulkBatchLimitError extends Error {
   cap?: number;
   constructor(cap?: number) {
@@ -158,13 +157,13 @@ export const responsesService = {
       // The mutation response carries the raw answers map (label AND field-id keys) - same clean-up as reads.
       .then((r) => (r.data.response?.answers ? { ...r.data.response, answers: cleanAnswers(r.data.response.answers) } : r.data.response)),
 
-  // Sprint 13 (A5.2): "Mark as reviewed" — clears the Edited-after-review flag.
+  // "Mark as reviewed" — clears the Edited-after-review flag.
   clearEditedAfterReview: (id: string, scope?: string) =>
     axiosInstance
       .patch<{ cleared?: boolean }>(`/api/responses/${id}/edited-after-review`, { cleared: true }, { headers: workspaceHeaders(scope) })
       .then((r) => ({ cleared: !!r.data?.cleared })),
 
-  // Note: since Sprint 13 the backend moves the response to Trash (still 204) instead of destroying it.
+  // The backend moves the response to Trash (still 204) instead of destroying it.
   deleteResponse: (id: string, scope?: string) =>
     axiosInstance.delete(`/api/responses/${id}`, { headers: workspaceHeaders(scope) }).then(() => undefined),
 
@@ -175,7 +174,7 @@ export const responsesService = {
 
   // The URL above still requires the same Bearer auth as the rest of this API — it is NOT a
   // public/pre-signed link despite living on local disk. A direct authenticated fetch to it
-  // from the browser fails with a bare CORS network error (observed during Sprint 4 — no HTTP
+  // from the browser fails with a bare CORS network error (no HTTP
   // response reaches axios at all, unlike a plain window.open() there, which gets a real
   // "Unauthorized access to private files" JSON body — proof the host is reachable, just not
   // via a cross-origin XHR/fetch with a custom header). Routed through this app's own
@@ -211,10 +210,9 @@ export const responsesService = {
         };
       }),
 
-  // Sprint 12 (inbox-collaboration), task 2.2: one request per bulk action (B2.1) — never one per
+  // One request per bulk action — never one per
   // id. `previous` comes back only for a reversible action; defensively defaulted to `[]` like
-  // every other array field in this file (cleanAnswers' own precedent) since nothing here has
-  // been exercised against a live response yet.
+  // every other array field in this file (cleanAnswers' own precedent).
   bulk: (request: BulkRequest, scope?: string): Promise<BulkResult> =>
     axiosInstance
       .post('/api/responses/bulk', request, { headers: workspaceHeaders(scope) })
@@ -235,15 +233,12 @@ export const responsesService = {
         throw err;
       }),
 
-  // POST /api/responses/:id/read · /unread (design.md §11.2): "idempotent; GET never mutates."
+  // POST /api/responses/:id/read · /unread: "idempotent; GET never mutates."
   markRead: (id: string, read: boolean, scope?: string): Promise<void> =>
     axiosInstance
       .post(`/api/responses/${id}/${read ? 'read' : 'unread'}`, {}, { headers: workspaceHeaders(scope) })
       .then(() => undefined),
 
-  // Sprint 12 (inbox-collaboration), task 1.3: replaces the old 3-request client-side computation
-  // with the confirmed-live single GET /api/responses/stats call (closes the known low-severity
-  // issue in PROJECT_STATUS.md), extended for stages (design.md §2/§11.2).
   getStats: (formId?: string, scope?: string): Promise<ResponseStats> =>
     axiosInstance
       .get<StatsEnvelope>('/api/responses/stats', { params: { formId }, headers: workspaceHeaders(scope) })

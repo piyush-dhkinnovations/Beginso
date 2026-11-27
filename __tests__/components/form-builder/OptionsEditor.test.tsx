@@ -1,9 +1,6 @@
 /**
- * __tests__/components/form-builder/OptionsEditor.test.tsx
- * Feature: sprint-2-part-2-form-builder-completion
  * Tests: OptionsEditor — add/delete/edit call onUpdate with the right values,
  *   last-option delete is disabled, new option input auto-focuses
- * Requirements: 2.1-2.7
  */
 
 import { describe, it, expect, vi } from 'vitest';

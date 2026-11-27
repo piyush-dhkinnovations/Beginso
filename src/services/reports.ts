@@ -23,9 +23,8 @@ interface RawReportJob {
   status: ReportJob['status'];
   formId?: string;
   formTitle?: string;
-  // Sprint 12 (inbox-collaboration), design.md §11.2 — Backend contract to confirm: the stage
-  // name snapshot replacing `responseStatus`. Uncertain/not yet live (BE 0.4), so both are read
-  // defensively; `responseStatus` stays for a job created before this sprint (OQ-2's alias).
+  // Not built yet in the backend: the stage name snapshot replacing `responseStatus`. Both are read
+  // defensively; `responseStatus` stays for a job created before it.
   stage?: ReportJob['stage'];
   responseStatus?: ReportJob['responseStatus'];
   from?: string;
@@ -73,15 +72,15 @@ interface RawPaginatedReports {
 }
 
 export const reportsService = {
-  // Sprint 14 (requirements 1.1): `scope` is 'personal' (default) or a workspace slug - Exports lives
+  // `scope` is 'personal' (default) or a workspace slug - Exports lives
   // inside Insights in both contexts, so every call names its context explicitly.
   createReport: (payload: CreateReportPayload, scope = 'personal'): Promise<ReportJob> =>
     axiosInstance
       .post<RawCreateReportEnvelope>('/api/reports', payload, { headers: workspaceHeaders(scope) })
       .then((r) => toReportJob(r.data.report)),
 
-  // The list array is `data` when the account has jobs but `reports` on the empty-account branch
-  // (live, 7 Oct 2026) - accept both rather than trusting either.
+  // The backend sends the list as both `data` and `reports` (older versions sent one or the other)
+  // - accept both rather than trusting either.
   getReports: (params: GetReportsParams, scope = 'personal'): Promise<PaginatedReportsResult> =>
     axiosInstance.get<RawPaginatedReports>('/api/reports', { params, headers: workspaceHeaders(scope) }).then((r) => {
       const raw = r.data;

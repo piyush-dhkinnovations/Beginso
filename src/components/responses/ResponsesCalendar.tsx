@@ -25,7 +25,7 @@ export interface ResponsesCalendarProps {
   scope: string;
   formId?: string;
   filters: ResponseFilters;
-  /** IANA timezone (design.md's own acceptance case: a 23:30 UTC submission must land on the
+  /** IANA timezone (a 23:30 UTC submission must land on the
    * correct local day for an IST workspace) — see `useWorkspaceTimezone`. */
   timezone: string;
   onViewResponse: (id: string) => void;
@@ -36,7 +36,7 @@ export interface ResponsesCalendarProps {
 
 /** One response's identity + full signal set — reused by both the mobile agenda list and the
  * day dialog so they can't independently drift on what a calendar item shows
- * (requirements.md §7.4: "every view carries the same signals"). */
+ * (every view carries the same signals). */
 export function CalendarItemRow({ response, onSelect }: { response: IResponse; onSelect: (id: string) => void }) {
   const identity = detectRespondentIdentity(response.answers, useFormFields(response.formId), response.respondentEmail, useRespondentFrom());
   const name = identity.label ?? identity.email ?? 'Anonymous';
@@ -53,7 +53,7 @@ export function CalendarItemRow({ response, onSelect }: { response: IResponse; o
 }
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §7.4 (4.1), design.md §6/§16 (task 3.3). A month calendar at ≥768px, an agenda
+ * A month calendar at ≥768px, an agenda
  * list below it (a 7-column grid is unreadable at 375px). Fetches the weeks on screen at once (`fetchAllResponses` bounded by
  * `gridFetchRange`), so the dimmed days of the neighbouring months are complete too.
  *
@@ -173,7 +173,7 @@ export function ResponsesCalendar({ scope, formId, filters, timezone, onViewResp
   return (
     <div className="flex flex-col gap-3" aria-busy={isLoading || undefined}>
       {toolbar}
-      {/* Desktop/tablet: the month calendar (design.md §16) */}
+      {/* Desktop/tablet: the month calendar */}
       <CalendarGrid
         monthLabel={monthLabel}
         gridKeys={gridKeys}
@@ -191,7 +191,7 @@ export function ResponsesCalendar({ scope, formId, filters, timezone, onViewResp
         onFocusRequestHandled={clearFocusRequest}
       />
 
-      {/* Mobile agenda — a 7-column grid is unreadable at 375px (design.md §16's own note) */}
+      {/* Mobile agenda — a 7-column grid is unreadable at 375px */}
       <ul className="flex flex-col gap-2 md:hidden" aria-label={`${monthLabel} agenda`}>
         {daysWithItems.map((key) => (
           <li key={key} className="rounded-lg border border-(--border-default) p-2">

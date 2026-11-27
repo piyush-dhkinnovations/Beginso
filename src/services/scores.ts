@@ -9,10 +9,7 @@ import type {
 } from '@/types/score';
 
 /**
- * BE 0.5 — new infrastructure, not yet built (design.md §11.2, tasks.md 5.2/5.3). Built against
- * the documented contract; the backend developer owns final field naming ("Backend contract to
- * confirm"). Envelope unwrapped defensively (design.md §12's own instruction), same pattern as
- * `stagesService`/`tagsService`.
+ * Envelope unwrapped defensively, same pattern as `stagesService`/`tagsService`.
  */
 export const scoresService = {
   listCriteria: (scope: string): Promise<ScoreCriterion[]> =>
@@ -48,7 +45,7 @@ export const scoresService = {
       .get(`/api/responses/${responseId}/score`)
       .then((r) => unwrapEnvelope<ResponseScore>(r.data, 'score')),
 
-  // Upserts the caller's own row for `payload.criterionId` — never another reviewer's row (B6.1).
+  // Upserts the caller's own row for `payload.criterionId` — never another reviewer's row.
   putScore: (responseId: string, payload: ScorePayload): Promise<ResponseScore> =>
     axiosInstance
       .put(`/api/responses/${responseId}/score`, payload)

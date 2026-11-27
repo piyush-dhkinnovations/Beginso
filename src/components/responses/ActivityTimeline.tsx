@@ -67,7 +67,7 @@ export interface ActivityTimelineProps {
 }
 
 /**
- * Sprint 12 (inbox-collaboration), design.md §6/§7/§11.2: renders the response's own activity
+ * Renders the response's own activity
  * read, newest first. Falls back to a generic row + `Workflow` icon for any type this list
  * doesn't recognise, never throws — same non-exhaustive-union precedent as `NotificationBell`.
  * Collapses to the latest 10 with a "Show all" toggle once there's more than that.

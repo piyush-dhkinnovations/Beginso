@@ -12,7 +12,7 @@ import { SubmissionView } from '@/components/respondent/SubmissionView';
 import { formatResponseDate } from '@/lib/formatters';
 import { SUBMISSION_NOT_FOUND } from '@/lib/responseCopy';
 
-// Sprint 13 (A5.1 / A5.2): one of MY submissions, with in-place correction. Someone else's id is a 404 from the
+// One of MY submissions, with in-place correction. Someone else's id is a 404 from the
 // server, shown here as "not found" — never as a permission hint.
 export default function MySubmissionPage() {
   const { id } = useParams<{ id: string }>();

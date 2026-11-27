@@ -50,7 +50,7 @@ export function rangeToStored(range: { from?: string; to?: string }, compare?: b
   return preset === 'custom' ? { preset, from: range.from, to: range.to, compare } : { preset, compare };
 }
 
-// ─── Browser storage (never throws: a private window or blocked storage just means "not remembered") ───
+// Browser storage (never throws: a private window or blocked storage just means "not remembered")
 
 export function readStoredRangeRaw(key: string): string | null {
   try {

@@ -4,7 +4,7 @@ import { Calendar, CalendarClock, Clock, Image as ImageIcon, Link2, MapPin, PenL
 import type { FormField } from '@/types/form';
 import { currencyOf, currencySymbol, imageSettings, yesNoWords } from '@/lib/fieldDisplay';
 
-// ─── Live, non-interactive preview of a field's public-form appearance ────────
+// Live, non-interactive preview of a field's public-form appearance
 // Rendered inside FieldCard for every field, selected or not — shows what a
 // respondent would actually see, mirroring the field's current configuration
 // (placeholder text, options, etc). Purely decorative — no inputs, no state.

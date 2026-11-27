@@ -1,7 +1,5 @@
 /**
- * __tests__/settings/notificationRollback.property.test.ts
- * Feature: sprint-6-settings, Property 2: Notification toggle rollback is exact
- * Requirements: 7.2, 7.3
+ * Property: Notification toggle rollback is exact
  *
  * Mirrors NotificationsTab's exact onMutate (snapshot + optimistic write) / onError (restore the
  * snapshot) sequence directly against a QueryClient cache, matching this repo's established PBT

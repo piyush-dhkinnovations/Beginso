@@ -1,6 +1,4 @@
 /**
- * __tests__/components/ui/Tabs.test.tsx
- * Feature: sprint-7-foundation
  * Tests: Tabs — role/aria-selected wiring, click switches, arrow-key navigation
  */
 

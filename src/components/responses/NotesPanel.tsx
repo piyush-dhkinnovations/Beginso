@@ -19,13 +19,13 @@ export interface NotesPanelProps {
   scope: string;
   workspaceName: string;
   currentUserId: string;
-  /** Admin+ may delete any note (design.md §11.3); everyone may edit/delete their own. */
+  /** Admin+ may delete any note; everyone may edit/delete their own. */
   canDeleteAny: boolean;
 }
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §9.2, design.md §6/§7 "NotesPanel — owns the
- * notes query, composer state, edit/delete/undo." Oldest-first (the wireframe's own order — a
+ * Owns the
+ * notes query, composer state, edit/delete/undo. Oldest-first (the wireframe's own order — a
  * conversation reads top to bottom, newest at the bottom next to the composer).
  */
 /** How often an open notes panel checks for new notes. */
@@ -109,8 +109,8 @@ export function NotesPanel({ responseId, scope, workspaceName, currentUserId, ca
   });
 
   function handleDelete(note: Note) {
-    // Undo re-creates the note via the Toast action slot (Day 2's built-in action) — same pattern
-    // as SaveViewModal's delete-Undo (ResponsesHubView.deleteView), since there is no dedicated
+    // Undo re-creates the note via the Toast action slot — the same pattern
+    // as SaveViewModal's delete-Undo (useSavedViews.deleteView), since there is no dedicated
     // restore endpoint for a single note.
     deleteMutation.mutate(note.id, {
       onSuccess: () => {

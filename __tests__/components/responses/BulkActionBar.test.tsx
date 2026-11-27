@@ -1,7 +1,5 @@
 /**
- * __tests__/components/responses/BulkActionBar.test.tsx
- * sprint-12-inbox-collaboration, requirements.md §7.5 (5.1), design.md §15, task 2.4 rebuild:
- * role-gated actions (omitted, not disabled), "Select all N matching" sends a filter, a 200-id
+ * Role-gated actions (omitted, not disabled), "Select all N matching" sends a filter, a 200-id
  * bulk change is one call (one `onBulk`/one eventual request), Delete goes through
  * `onDeleteRequest` (the confirm modal is the caller's job) rather than deleting directly.
  */

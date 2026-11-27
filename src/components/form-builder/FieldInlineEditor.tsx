@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/Switch';
 import { CURRENCY_OPTIONS, MAX_IMAGES_PER_FIELD, currencyOf, imageSettings, urlSettings } from '@/lib/fieldDisplay';
 import { OptionsEditor } from './OptionsEditor';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// Helpers
 
 const TEXT_TYPES = new Set([
   'short_text',
@@ -29,7 +29,7 @@ const BASIC_TYPES = new Set(['rating', 'time', 'datetime', 'address', 'signature
 // Platform-enforced allowlist — not configurable per-field, so it's a constant, not state.
 const ALLOWED_FILE_TYPE_LABELS = ['PDF', 'Word', 'Excel', 'Images', 'Video (MP4)', 'ZIP', 'Plain text'];
 
-// ─── Small sub-component: a labelled section ───────────────────────────────────
+// Small sub-component: a labelled section
 
 export function PanelSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -42,7 +42,7 @@ export function PanelSection({ label, children }: { label: string; children: Rea
   );
 }
 
-// ─── On-blur text field helper ────────────────────────────────────────────────
+// On-blur text field helper
 
 function BlurField({
   id,
@@ -130,7 +130,7 @@ function BlurField({
   );
 }
 
-// ─── Shared property sections (label / help text / required — reused across field-type branches) ──
+// Shared property sections (label / help text / required — reused across field-type branches)
 
 function LabelField({
   uid,
@@ -212,7 +212,7 @@ function RequiredToggle({
   );
 }
 
-// ─── Number field: min/max range (cross-field validation on blur) ─────────────
+// Number field: min/max range (cross-field validation on blur)
 
 function NumberRangeSection({
   fieldId,
@@ -272,7 +272,7 @@ function NumberRangeSection({
   );
 }
 
-// ─── Date field: minDate/maxDate (commits on change — discrete picks) ─────────
+// Date field: minDate/maxDate (commits on change — discrete picks)
 
 function DateRangeSection({
   fieldId,
@@ -333,7 +333,7 @@ function DateRangeSection({
   );
 }
 
-// ─── Display & Preview (Image Upload / Website URL) ───────────────────────────
+// Display & Preview (Image Upload / Website URL)
 // These preferences are saved on the field, and the response viewer reads them from there — so every
 // response to this form (old and new) is laid out the same way.
 
@@ -556,7 +556,7 @@ function UrlDisplaySection({
   );
 }
 
-// ─── Props ────────────────────────────────────────────────────────────────────
+// Props
 
 export interface FieldInlineEditorProps {
   field: FormField;
@@ -564,9 +564,9 @@ export interface FieldInlineEditorProps {
   onUpdateOptions: (fieldId: string, options: string[]) => void;
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-// Rendered inline inside the selected FieldCard on the canvas — replaces the old
-// right-side PropertiesPanel. Only ever mounted when its field is selected, so
+// Main Component
+// Rendered inline inside the selected FieldCard on the canvas.
+// Only ever mounted when its field is selected, so
 // there is no "no field selected" empty state to handle here.
 
 export function FieldInlineEditor({ field, onUpdate, onUpdateOptions }: FieldInlineEditorProps) {

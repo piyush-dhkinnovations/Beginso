@@ -15,7 +15,7 @@ export interface AssigneePickerProps {
 }
 
 /**
- * Sprint 12 (inbox-collaboration), design.md §6/§15: "Assignee (Unassigned listed first)."
+ * "Assignee (Unassigned listed first)."
  * Same trigger/listbox keyboard pattern as `StatusDropdown`/`TagPicker` — no new positioning
  * primitive introduced for a single-select list this size.
  */

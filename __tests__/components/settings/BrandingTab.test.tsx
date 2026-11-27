@@ -1,9 +1,6 @@
 /**
- * __tests__/components/settings/BrandingTab.test.tsx
- * Feature: sprint-6-settings
  * Tests: BrandingTab — loads workspace branding, forwards updates to the save mutation with a
  * toast, "new forms only" helper text present, loading/error states
- * Requirements: 6.1-6.5
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -26,7 +23,7 @@ vi.mock('@/components/ui/Toast', () => ({
   useToast: () => ({ toast: mockToast }),
 }));
 
-// BrandingPanel has its own dedicated coverage in the Builder's test suite — mocked here so
+// WorkspaceBrandingEditor is mocked here so
 // BrandingTab's test stays focused on its own data-loading/save wiring, not the color
 // picker/upload-zone UI.
 vi.mock('@/components/settings/WorkspaceBrandingEditor', () => ({
@@ -115,7 +112,7 @@ describe('BrandingTab', () => {
     await waitFor(() => expect(mockToast).toHaveBeenCalledWith('Failed to save branding. Please try again.', 'error'));
   });
 
-  // sprint-11-v2a-hardening 1.4 — token pass regression: no raw neutral/white class left in source.
+  // Token pass regression: no raw neutral/white class left in source.
   it('has no raw bg-white/neutral/gray class in its source', () => {
     const source = readFileSync(join(__dirname, '../../../src/components/settings/BrandingTab.tsx'), 'utf-8');
     expect(source).not.toMatch(/bg-white|text-neutral-|bg-neutral-|border-neutral-|text-gray-|bg-gray-|text-black/);

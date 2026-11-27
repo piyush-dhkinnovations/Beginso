@@ -12,9 +12,9 @@ export interface AuditTableProps {
 
 const SKELETON_ROWS = 5;
 
-// requirements.md §7.7 / design.md §6, §16.3. Hand-rolled <table> in ui/Table's scroll-container
+// Hand-rolled <table> in ui/Table's scroll-container
 // classes, not the generic `ui/Table` — that always applies .bg-table-stack (row-to-card below
-// 640px), and a security record must keep its column alignment (RolesMatrix's Sprint 9 precedent).
+// 640px), and a security record must keep its column alignment (as RolesMatrix does).
 // Action and target read as one sentence ("downloaded a csv report"), so they share a column; the
 // actor cell is the row header so the row is announced by who did it. The origin hash is not
 // human-readable, so it is not shown at all.

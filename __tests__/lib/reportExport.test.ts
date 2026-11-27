@@ -1,8 +1,6 @@
 /**
- * __tests__/lib/reportExport.test.ts
- * sprint-12-inbox-collaboration, requirements.md §7.9/B2.3, task 2.7.
- * "The export request in the test equals the list request's filter" (tasks.md 2.7's own Done
- * line) — this proves the equivalence directly, without mounting ResponsesHubView/ReportsView.
+ * The export request in the test equals the list request's filter: this
+ * proves the equivalence directly, without mounting ResponsesHubView/ReportsView.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';

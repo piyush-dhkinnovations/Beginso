@@ -1,8 +1,6 @@
 /**
- * __tests__/app/invite/[token]/page.test.tsx
- * Feature: sprint-9-team-permissions, requirements.md §7.5/§7.5.1, design.md §5/§15.4/§21.
  * One test per each of the six states, driven by a distinct (invitationPreview, authState)
- * pair — not a single happy-path-only test (requirements §16/§21's own bar).
+ * pair — not a single happy-path-only test.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

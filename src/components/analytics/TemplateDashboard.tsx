@@ -10,8 +10,8 @@ interface TemplateDashboardProps {
   cards: Partial<Record<DashboardCardId, ReactNode>>;
 }
 
-// Sprint 14 (requirements 1.4, task 3.1): orders the built-in cards by the form's source template.
-// A form with no template (every pre-existing form, OQ-4) gets the generic order and no
+// Orders the built-in cards by the form's source template.
+// A form with no template (every pre-existing form) gets the generic order and no
 // "template" wording at all.
 export function TemplateDashboard({ templateCategory, cards }: TemplateDashboardProps) {
   const preset = getDashboardPreset(templateCategory);

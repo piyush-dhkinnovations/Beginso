@@ -20,9 +20,9 @@ export interface PendingInvitesTableProps {
   onInvite?: () => void;
 }
 
-// Presentational — same split as MemberTable (design.md §6/§7): no fetching, no mutation calls.
-// Resend/Revoke are hidden entirely (not just disabled) for a caller without manage permission
-// (requirements.md §7.3) — Revoke opens a focus-trapped confirmation modal, not window.confirm().
+// Presentational — same split as MemberTable: no fetching, no mutation calls.
+// Resend/Revoke are hidden entirely (not just disabled) for a caller without manage permission.
+// Revoke opens a focus-trapped confirmation modal, not window.confirm().
 export function PendingInvitesTable({ invitations, canManage, isLoading, onResend, onRevoke, onInvite }: PendingInvitesTableProps) {
   const [pendingRevoke, setPendingRevoke] = useState<PendingInvitation | null>(null);
 
