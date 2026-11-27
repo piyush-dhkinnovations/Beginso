@@ -19,15 +19,15 @@ export interface CreateWorkspaceModalProps {
   isOpen: boolean;
   onClose: () => void;
   /** When provided, called with the newly created workspace instead of the default
-   * `router.push('/w/{slug}')` navigation — for a caller (e.g. the template-apply destination
-   * picker, .kiro/specs/public-template-gallery) that wants to continue its own flow with the new
+   * `router.push('/w/{slug}')` navigation — for a caller
+   * that wants to continue its own flow with the new
    * workspace rather than navigate away from the page it's on. */
   onCreated?: (workspace: Workspace) => void;
 }
 
-// Name-only create flow (requirements.md §7.5) — slug generated server-side, timezone defaulted,
-// matching BE 1.1's confirmed contract (design.md §13). Mirrors CreateFormModal's exact
-// react-hook-form + zod + ui/Modal shape rather than inventing a new pattern.
+// Name-only create flow — slug generated server-side, timezone defaulted,
+// matching the backend's contract. A plain
+// react-hook-form + zod + ui/Modal form.
 export function CreateWorkspaceModal({ isOpen, onClose, onCreated }: CreateWorkspaceModalProps) {
   const router = useRouter();
   const queryClient = useQueryClient();

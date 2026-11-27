@@ -79,8 +79,8 @@ export interface ActivityFeedProps {
   emptyActions?: React.ReactNode;
 }
 
-// requirements.md §7.6 / design.md §6. Grouped by day, avatar + category icon per row, repeats collapsed,
-// form targets link to the form. `targetLabel` is a snapshot taken at event time (design.md §11.2), so a
+// Grouped by day, avatar + category icon per row, repeats collapsed,
+// form targets link to the form. `targetLabel` is a snapshot taken at event time, so a
 // renamed or deleted form still reads correctly here.
 export function ActivityFeed({ events, avatarOf, emptyTitle, emptyDescription, emptyActions }: ActivityFeedProps) {
   if (events.length === 0) {

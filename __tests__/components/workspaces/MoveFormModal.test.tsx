@@ -1,8 +1,3 @@
-/**
- * __tests__/components/workspaces/MoveFormModal.test.tsx
- * Feature: sprint-8-workspaces-context, requirements.md §7.9, B1.3
- */
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -83,9 +78,7 @@ describe('MoveFormModal', () => {
     renderModal({ currentContext: { type: 'workspace', workspaceId: 'w1' } });
 
     await screen.findByText('Move My Test Form');
-    // Current workspace should NOT be listed as an option
     expect(screen.queryByRole('option', { name: /Current WS/ })).not.toBeInTheDocument();
-    // Other workspace should be listed
     expect(screen.getByRole('option', { name: /Target WS/ })).toBeInTheDocument();
   });
 
@@ -118,7 +111,6 @@ describe('MoveFormModal', () => {
     await user.click(screen.getByRole('button', { name: /Move form/ }));
 
     await waitFor(() => expect(mockMoveForm).toHaveBeenCalledOnce());
-    // Modal should still be open
     expect(screen.getByText('Move My Test Form')).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
   });

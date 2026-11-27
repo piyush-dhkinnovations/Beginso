@@ -20,7 +20,7 @@ export interface MoveFormModalProps {
   currentContext?: FormsContext;
 }
 
-// Wireframe Screen 35: Move Form (requirements.md §7.9, B1.3, design.md §15.8).
+// Wireframe Screen 35: Move Form.
 // Allows moving a form between personal space and workspaces.
 // Invalidates both source and destination query caches on success.
 export function MoveFormModal({
@@ -39,7 +39,6 @@ export function MoveFormModal({
     enabled: isOpen,
   });
 
-  // Filter out current context from destination options
   const availableWorkspaces = workspaces.filter((ws) =>
     currentContext.type === 'workspace' ? ws.id !== currentContext.workspaceId : true
   );
@@ -53,7 +52,6 @@ export function MoveFormModal({
   const moveMutation = useMutation({
     mutationFn: (destination: FormDestination) => formsService.moveForm(formId, destination),
     onSuccess: (_, destination) => {
-      // Invalidate both source and destination forms queries
       queryClient.invalidateQueries({ queryKey: workspaceKeys.forms(currentContext) });
       queryClient.invalidateQueries({ queryKey: workspaceKeys.forms(destination) });
       queryClient.invalidateQueries({ queryKey: ['forms'] });

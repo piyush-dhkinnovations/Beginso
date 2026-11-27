@@ -1,5 +1,4 @@
 /**
- * sprint-10-events-migration, tasks.md 4.3 — design.md §21, requirements.md §7.7, §11.
  * Same assertion style RolesMatrix.test.tsx established.
  */
 import { describe, it, expect } from 'vitest';

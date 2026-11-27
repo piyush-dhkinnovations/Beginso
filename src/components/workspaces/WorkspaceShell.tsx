@@ -10,10 +10,10 @@
 // a Client Component, but *functions* are not serialisable and will throw:
 //   "Functions cannot be passed directly to Client Components unless you explicitly
 //    expose it by marking it with 'use server'."
-// The render-prop pattern (topBar/sidebar as arrow functions) crosses that boundary in the
-// original layout — this wrapper moves the closures client-side, where they are legal.
+// The render-prop pattern (topBar/sidebar as arrow functions) would cross that boundary in the
+// layout — this wrapper keeps the closures client-side, where they are legal.
 //
-// The layout now passes only serialisable props (slug, workspaceName, initialCollapsed)
+// The layout passes only serialisable props (slug, workspaceName, initialCollapsed, role)
 // and WorkspaceShell owns the function values internally.
 
 import Link from 'next/link';
@@ -26,7 +26,7 @@ import { UserProfileDropdown } from '@/components/dashboard/UserProfileDropdown'
 import { Wordmark } from '@/components/landing/Wordmark';
 import type { Role } from '@/types/workspace';
 
-// Sprint 14 (task 6.3): the palette and its results code load after first paint, off the shell's critical path.
+// The palette and its results code load after first paint, off the shell's critical path.
 const GlobalSearch = dynamic(() => import('@/components/search/GlobalSearch').then((m) => m.GlobalSearch), { ssr: false });
 
 export interface WorkspaceShellProps {
@@ -34,7 +34,7 @@ export interface WorkspaceShellProps {
   workspaceName: string;
   initialCollapsed: boolean;
   children: React.ReactNode;
-  // Sprint 9 (team-permissions) — undefined until BE 0.1 ships; WorkspaceSidebar fails closed
+  // Undefined when the role is unknown; WorkspaceSidebar fails closed
   // (hides role-gated items) when this is undefined, per workspaceServer.ts's own comment.
   role?: Role;
 }

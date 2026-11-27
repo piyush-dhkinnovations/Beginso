@@ -15,7 +15,7 @@ export interface WorkspaceContextSwitcherProps {
 
 // Container: owns fetching the workspace list and navigating on selection. Delegates the actual
 // dropdown rendering/keyboard-nav/focus-restore to ui/ContextSwitcher — this file has no
-// interaction logic of its own (design.md §7's split of responsibilities).
+// interaction logic of its own.
 export function WorkspaceContextSwitcher({ currentLabel = 'Personal', collapsed = false }: WorkspaceContextSwitcherProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -24,7 +24,7 @@ export function WorkspaceContextSwitcher({ currentLabel = 'Personal', collapsed 
     queryFn: workspacesService.list,
   });
 
-  // The second line replaces the old unlabelled count badge: say who you are here and who else is.
+  // The second line says who you are here and who else is.
   const current = currentLabel === 'Personal' ? undefined : workspaces.find((w) => w.name === currentLabel);
   const currentMeta =
     currentLabel === 'Personal'
@@ -39,7 +39,7 @@ export function WorkspaceContextSwitcher({ currentLabel = 'Personal', collapsed 
         : undefined;
 
   const handleSelect = (target: ContextSwitcherTarget) => {
-    // Sprint 14 (task 3.14): search results are per context - drop them all on a switch so the palette
+    // Search results are per context - drop them all on a switch so the palette
     // can never flash the previous context's rows. (Notification keys are context-namespaced, so the
     // badge simply reads the new scope's key.)
     queryClient.removeQueries({ queryKey: searchKeys.all });

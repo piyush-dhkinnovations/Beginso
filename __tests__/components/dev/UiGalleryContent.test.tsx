@@ -1,8 +1,3 @@
-/**
- * __tests__/components/dev/UiGalleryContent.test.tsx
- * Feature: sprint-7-foundation
- */
-
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ToastProvider } from '@/components/ui/Toast';

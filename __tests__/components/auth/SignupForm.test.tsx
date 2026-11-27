@@ -1,15 +1,12 @@
 /**
- * __tests__/SignupForm.test.tsx
- * Feature: sprint-1-frontend-auth
  * Tests: SignupForm — 4 fields rendered, loading disables button, success toast, error region
- * Requirements: 5.1, 5.6, 5.7, 5.8
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { SignupForm } from '@/components/auth/SignupForm';
 
-// ─── Mocks ──────────────────────────────────────────────────────────────────
+// Mocks
 
 const { mockSearchParams, mockPush } = vi.hoisted(() => ({
   mockSearchParams: { current: new URLSearchParams() },
@@ -58,7 +55,7 @@ vi.mock('@/services/auth', () => ({
   },
 }));
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// Helpers
 
 // Uses fireEvent (sets the final value directly) rather than userEvent.type
 // (simulates every keystroke) — these tests only care about the submitted
@@ -78,14 +75,13 @@ async function fillAndSubmitForm(opts?: {
 
   fireEvent.change(screen.getByLabelText(/full name/i), { target: { value: name } });
   fireEvent.change(screen.getByLabelText(/email address/i), { target: { value: email } });
-  // Password field (first password input)
   const pwInputs = document.querySelectorAll('input[type="password"]');
   fireEvent.change(pwInputs[0] as HTMLElement, { target: { value: password } });
   fireEvent.change(pwInputs[1] as HTMLElement, { target: { value: confirmPassword } });
   fireEvent.click(screen.getByRole('button', { name: /sign up$/i }));
 }
 
-// ─── Tests ──────────────────────────────────────────────────────────────────
+// Tests
 
 describe('SignupForm component', () => {
   beforeEach(() => {
@@ -159,7 +155,6 @@ describe('SignupForm component', () => {
       expect(screen.getByRole('alert')).toBeInTheDocument();
     });
 
-    // Email input should still have its value
     const emailInput = screen.getByLabelText(/email address/i) as HTMLInputElement;
     expect(emailInput.value).toBe('jane@example.com');
   });
@@ -175,7 +170,6 @@ describe('SignupForm component', () => {
     await waitFor(() => {
       expect(screen.getByText(/passwords do not match/i)).toBeInTheDocument();
     });
-    // Auth service should NOT be called
     expect(mockAuthSignup).not.toHaveBeenCalled();
   });
 
@@ -193,7 +187,7 @@ describe('SignupForm component', () => {
     expect(mockAuthSignup).not.toHaveBeenCalled();
   });
 
-  // ─── Sprint 9 task 3.5 / requirements §7.5.1: ?next= forwarded to /verify-email ─
+  // ?next= forwarded to /verify-email
 
   it('forwards a valid internal ?next= to /verify-email on successful signup', async () => {
     mockSearchParams.current = new URLSearchParams('next=/invite/abc123');

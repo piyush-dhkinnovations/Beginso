@@ -1,8 +1,5 @@
 /**
- * __tests__/FeaturesSection.test.tsx
- * Feature: sprint-1-frontend-auth
  * Tests: FeaturesSection — exactly 4 bento cards rendered, section id present
- * Requirements: 0.14, 0.15, 0.16 — Property 11
  */
 
 import { describe, it, expect, vi } from 'vitest';

@@ -11,8 +11,8 @@ import type { ScoreCriterion, ResponseScore } from '@/types/score';
 const STARS = [1, 2, 3, 4, 5];
 
 /**
- * 5 stars, half-star precision — the underlying value is still the full 1-10 scale (B6.1's
- * resolved decision, unchanged), each star just represents 2 points. Left half of a star sets the
+ * 5 stars, half-star precision — the underlying value is still the full 1-10 scale,
+ * each star just represents 2 points. Left half of a star sets the
  * odd value, right half sets the even value, same as any half-star rating widget.
  */
 function StarRating({
@@ -70,16 +70,15 @@ function StarRating({
 export interface ScoreCardProps {
   responseId: string;
   criteria: readonly ScoreCriterion[];
-  /** Owner/Admin-only manage link disabled; scoring itself is `responses:act` (B6.1). */
+  /** Disables the stars; scoring needs `responses:act`. */
   disabled?: boolean;
 }
 
 /**
- * Sprint 12 (inbox-collaboration), tasks.md 5.2/5.3 — OQ-7 resolved 3 Oct 2026. The caller's own
- * editable per-criterion rows (1-10 `ui/Radio` scale, design.md §15's own pick over a stepper for
- * a small fixed range) plus a read-only aggregate line ("7.4 (3 reviewers)", requirements.md
- * §B6.1). Submitting a criterion optimistically patches only that criterion's row and recomputes
- * the average from the caller's own updated rows — the real reviewer-pooled average still arrives
+ * The caller's own editable per-criterion rows (a 1-10 value picked on stars)
+ * plus a read-only aggregate line ("7.4 (3 reviewers)").
+ * Submitting a criterion optimistically patches only that criterion's row; with no average yet,
+ * it is taken from the caller's own updated rows — the real reviewer-pooled average still arrives
  * from `onSettled`'s refetch, matching `useInboxMutations`'s own onMutate/onError/onSettled shape.
  */
 export function ScoreCard({ responseId, criteria, disabled }: ScoreCardProps) {
@@ -106,7 +105,7 @@ export function ScoreCard({ responseId, criteria, disabled }: ScoreCardProps) {
         const nextEntries = hadOwnEntry
           ? ownEntries.map((e) => (e.criterionId === criterionId ? { ...e, value } : e))
           : [...ownEntries, { criterionId, value }];
-        // Optimistic-only nudge to the displayed average using the caller's own rows — the real
+        // Optimistic-only: with no average yet, the caller's own rows stand in — the real
         // all-reviewers average is authoritative only once onSettled's refetch lands.
         const ownAverage = nextEntries.reduce((sum, e) => sum + e.value, 0) / nextEntries.length;
         return {
@@ -142,7 +141,7 @@ export function ScoreCard({ responseId, criteria, disabled }: ScoreCardProps) {
   const ownValue = (criterionId: string) => score?.entries?.find((e) => e.criterionId === criterionId)?.value;
 
   return (
-    // Bordered box matching Stage/Assignee/Tags above it — was floating with no container before.
+    // Bordered box matching Stage/Assignee/Tags above it.
     <div className="flex flex-col gap-4 rounded-md border border-(--border-default) bg-(--bg-subtle) p-2.5">
       {criteria.map((criterion) => {
         const own = ownValue(criterion.id);

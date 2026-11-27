@@ -22,7 +22,7 @@ import type { TrashItem, TrashItemType } from '@/types/trash';
 import { TrashList } from './TrashList';
 import { EmptyTrashModal } from './EmptyTrashModal';
 
-// Sprint 13 (CF5.5), wireframes 41 + 42. One view for both contexts; `scope` is a workspace slug or
+// Wireframes 41 + 42. One view for both contexts; `scope` is a workspace slug or
 // 'personal'. All permission decisions come from the server (`canRestore` / `canPurge`, and a 403 for a role
 // that may not see Trash at all) — the nav item being hidden is only a convenience.
 type TypeTab = 'all' | TrashItemType;

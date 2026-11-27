@@ -26,7 +26,7 @@ const TABS = [
   { id: 'mentions', label: 'Mentions' },
 ];
 
-// design.md §14: `tab` is validated against the allowed set; anything else falls back to All.
+// `tab` is validated against the allowed set; anything else falls back to All.
 function parseTab(raw: string | null): NotificationFilter {
   return raw === 'unread' || raw === 'mentions' ? raw : 'all';
 }
@@ -42,9 +42,9 @@ interface NotificationsViewProps {
   scope: string;
 }
 
-// Sprint 14 (B9.1-B9.3, requirements 3.1/3.3/3.4, task 3.13). Wireframe 19: header with Mark all as
+// Wireframe 19: header with Mark all as
 // read, tabs, Today / This week / Earlier cards. All / Unread / Mentions per the feature list (the
-// wireframe's Responses / Team / System filters are deliberately not built - design.md §15).
+// wireframe's Responses / Team / System filters are deliberately not built).
 export function NotificationsView({ scope }: NotificationsViewProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -78,7 +78,7 @@ export function NotificationsView({ scope }: NotificationsViewProps) {
   function handleMarkAll() {
     markAllRead.mutate(undefined, {
       onSuccess: () => setAnnouncement('All notifications marked as read.'),
-      // The optimistic change was already rolled back by the hook; tell the user (design.md §17 "Mutation").
+      // The optimistic change was already rolled back by the hook; tell the user.
       onError: () => toast('Could not mark notifications as read. Please try again.', 'error'),
     });
   }

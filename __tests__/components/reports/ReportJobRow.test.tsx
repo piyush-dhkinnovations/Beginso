@@ -1,9 +1,6 @@
 /**
- * __tests__/components/reports/ReportJobRow.test.tsx
- * Feature: sprint-5-analytics-reports
  * Tests: ReportJobRow — status Badge mapping, Download/Retry/disabled-expired variants,
  * scope label, relative timestamp
- * Requirements: 11.1, 11.4-11.6, 12.1-12.5
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -47,7 +44,7 @@ describe('ReportJobRow', () => {
 
     expect(screen.getByText('Event Registration')).toBeInTheDocument();
     expect(screen.getByText(/Completed · Jul 1, 2026 – Jul 31, 2026/)).toBeInTheDocument();
-    // The cell now shows the absolute date; the relative time is its tooltip.
+    // The cell shows the absolute date; the relative time is its tooltip.
     expect(screen.getByTitle('5 minutes ago')).toBeInTheDocument();
 
     vi.useRealTimers();

@@ -5,16 +5,15 @@ import type { Role } from '@/types/workspace';
 
 const MATRIX_ROLES: Role[] = ['owner', 'admin', 'member', 'viewer'];
 
-// Pure presentational (design.md §6/§7) — renders CAPABILITIES (src/lib/roles.ts), the single
+// Pure presentational — renders CAPABILITIES (src/lib/roles.ts), the single
 // source also read by the sidebar's/table's capability gates, so the reference page and the
-// actual gating can never silently drift apart (requirements.md §7.1/§7.6). No fetch, no state.
+// actual gating can never silently drift apart. No fetch, no state.
 //
 // Hand-rolled <table> in `ui/Table`'s own .bg-table-wrap/.bg-table scroll-container classes
-// rather than the generic `ui/Table` component (design.md §15.2): Table.tsx always applies
+// rather than the generic `ui/Table` component: Table.tsx always applies
 // .bg-table-stack, which collapses to one-card-per-row below 640px — the deliberate exception
 // this screen carries from the wireframe is that the matrix must NEVER stack (a capability/role
-// pairing would be silently dropped), it only scrolls horizontally. Design.md §15.2 names this
-// exact "plain semantic <table> wrapped in ui/Table's scroll container" as the accepted shape.
+// pairing would be silently dropped), it only scrolls horizontally.
 export function RolesMatrix() {
   return (
     <div className="bg-table-wrap relative">

@@ -1,11 +1,7 @@
 /**
- * __tests__/components/workspaces/PersonalSidebar.test.tsx
- * Feature: sprint-8-workspaces-context, requirements.md §7.3 (corrected Day 3 against A1.1/A1.3)
- * Extended: PersonalSidebar now also carries the context switcher header (closing the gap where
- * Personal space had no discoverable path into a workspace) and the four still-live top-level
- * pages (Inbox/Insights/Settings; Reports became Analytics' Exports tab in Sprint 14) — see the component's own comment.
- * Sprint 9 Day 5 (requirements.md §7.9): "Shared with me" is now a permanent item, closing the
- * gap this file's own comment previously named this sprint as fixing.
+ * PersonalSidebar also carries the context switcher header (without it Personal space has no
+ * discoverable path into a workspace), the other top-level pages and a permanent "Shared with me"
+ * item. There is no "Reports" item: that page is called Exports.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -55,8 +51,8 @@ describe('PersonalSidebar', () => {
       responsesThisMonth: 0,
       recentActivity: [],
     });
-    // The sidebar now prefers this (already-filtered, already-fixed) count over the separate
-    // analytics aggregate for hasForms — see the component's own comment on why.
+    // The sidebar reads this (already-filtered) count for hasForms — see the
+    // component's own comment on why.
     mockGetForms.mockReset();
     mockGetForms.mockResolvedValue({ forms: [], total: 0, page: 1, limit: 1 });
   });
@@ -139,7 +135,7 @@ describe('PersonalSidebar', () => {
     renderSidebar();
     expect(await screen.findByText('Responses')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Insights' })).toHaveAttribute('href', '/insights');
-    // Sprint 14: Reports is the Exports tab inside Analytics, not a sidebar item, even with forms.
+    // There is no "Reports" item (the page is called Exports), even with forms.
     expect(screen.queryByText('Reports')).not.toBeInTheDocument();
   });
 

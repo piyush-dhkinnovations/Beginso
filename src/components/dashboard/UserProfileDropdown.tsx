@@ -29,7 +29,7 @@ export function UserProfileDropdown({ variant = 'avatar', collapsed = false }: U
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Shares the cache Settings' ProfileTab/AvatarUploader populate and invalidate — AuthContext's
-  // User type deliberately doesn't carry avatarUrl (design.md §2), so this reads it separately.
+  // User type deliberately doesn't carry avatarUrl, so this reads it separately.
   const { data: profile } = useQuery({
     queryKey: settingsKeys.profile(),
     queryFn: settingsService.getProfile,

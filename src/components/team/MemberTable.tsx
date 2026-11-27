@@ -30,9 +30,9 @@ export interface MemberTableProps {
 
 const ASSIGNABLE_ROLES: Exclude<Role, 'owner'>[] = ['admin', 'member', 'viewer'];
 
-// Presentational — no fetching, no mutation calls (design.md §7). Owns row layout, per-row
+// Presentational — no fetching, no mutation calls. Owns row layout, per-row
 // canManage gating, and the remove-confirmation modal's open/close state; the actual API calls
-// are the parent page's job (design.md §8's data flow).
+// are the parent page's job.
 export function MemberTable({
   members,
   currentUserId,
@@ -66,7 +66,7 @@ export function MemberTable({
       header: 'Role',
       render: (m) => {
         // The Owner row renders role as a plain Badge, never editable — ownership only
-        // transfers, never gets re-roled through this control (requirements.md §7.2).
+        // transfers, never gets re-roled through this control.
         if (m.isOwner) return <Badge variant="neutral">{ROLE_LABELS[m.role]}</Badge>;
         if (!canManage || lockedForCaller(m)) return <Badge variant="outline">{ROLE_LABELS[m.role]}</Badge>;
         return (
@@ -99,8 +99,8 @@ export function MemberTable({
       header: '',
       align: 'right',
       render: (m) => {
-        // Never shown on the Owner row, and never on the caller's own row (design.md §15.1's
-        // region notes) — a manager doesn't remove themselves through this control.
+        // Never shown on the Owner row, and never on the caller's own row —
+        // a manager doesn't remove themselves through this control.
         if (!canManage || m.isOwner || m.userId === currentUserId || lockedForCaller(m)) return null;
         return (
           <div className="flex items-center justify-end gap-1">
@@ -133,8 +133,8 @@ export function MemberTable({
   return (
     <>
       {/* No emptyState prop: a workspace always has >=1 member (its Owner), so the zero-rows
-          branch is unreachable in practice (requirements.md §12) — a fetch failure is the
-          parent page's job to render instead of this table entirely (design.md §7/§17). */}
+          branch is unreachable in practice — a fetch failure is the
+          parent page's job to render instead of this table entirely. */}
       <Table
         columns={columns}
         rows={members}

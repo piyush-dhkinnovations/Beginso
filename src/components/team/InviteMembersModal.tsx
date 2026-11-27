@@ -22,9 +22,9 @@ export interface InviteMembersModalProps {
   onClose: () => void;
 }
 
-// Mirrors CreateWorkspaceModal's exact shape (design.md §6): react-hook-form + zod resolver,
+// Mirrors CreateWorkspaceModal's exact shape: react-hook-form + zod resolver,
 // focus-on-open, disable-while-pending, toast+keep-open on error. Role options exclude 'owner'
-// entirely — ownership only transfers, never gets invited into (requirements.md §7.4).
+// entirely — ownership only transfers, never gets invited into.
 export function InviteMembersModal({ workspaceId, existingEmails = [], isOpen, onClose }: InviteMembersModalProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();

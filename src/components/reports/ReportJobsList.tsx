@@ -26,11 +26,11 @@ interface ReportJobsListProps {
   page: number;
   onPageChange: (page: number) => void;
   /** formId -> form title, resolved from the forms list ReportsView already loads for its
-   * dropdown — job objects only carry a raw `formId`, never a denormalized title. */
+   * dropdown — used when a job carries no `formTitle`. */
   formTitleById?: Map<string, string>;
   /** formId -> the form's logo/icon (same forms list). */
   formMarkById?: Map<string, FormMark | undefined>;
-  /** 'personal' (default) or a workspace slug - Sprint 14, Exports lives inside Insights. */
+  /** 'personal' (default) or a workspace slug. */
   scope?: string;
 }
 
@@ -114,7 +114,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
     return deduped;
   }, [jobsQuery.data]);
 
-  // Announce only a completed/failed transition while the page is open (Requirement 13.6) — not
+  // Announce only a completed/failed transition while the page is open — not
   // every 5s poll tick, which would spam a screen reader with identical "still processing" noise.
   useEffect(() => {
     const previous = previousStatusesRef.current;
@@ -177,7 +177,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
     );
   }
 
-  // Sprint 14 (design.md §17 "Permission denied"): a 403 is a lock state with no Retry - retrying cannot help.
+  // A 403 is a lock state with no Retry - retrying cannot help.
   if (jobsQuery.isError && isAxiosError(jobsQuery.error) && jobsQuery.error.response?.status === 403) {
     return (
       <Card padded={false} className="gap-2 overflow-hidden pb-5">

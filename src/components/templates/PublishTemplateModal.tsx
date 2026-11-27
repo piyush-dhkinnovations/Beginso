@@ -10,7 +10,7 @@ import { templatesService } from '@/services/templates';
 import { templateKeys } from '@/lib/queryKeys';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 
-// Sprint 13 (B6.4). "Publish to templates": a SNAPSHOT of a form for the whole workspace to start from —
+// "Publish to templates": a SNAPSHOT of a form for the whole workspace to start from —
 // fields, logic, pages, settings and theme. It never copies responses, notes, assignees, tags, the share link
 // or analytics, and it is not linked to the source form afterwards. Editor and above (the server enforces it).
 export interface PublishTemplateModalProps {

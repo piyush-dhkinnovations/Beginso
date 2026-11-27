@@ -10,7 +10,7 @@ export function AuthorAvatar({ name, size = 24 }: { name: string; size?: number 
         className="inline-flex items-center justify-center rounded-full bg-(--accent-soft) shrink-0"
         style={{ height: size + 8, width: size + 8 }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- local brand mark */}
         <img src={BRAND_MARK} alt={name} height={size} width={size} style={{ height: size, width: size }} />
       </span>
     );

@@ -16,12 +16,9 @@ export const formatSharedDate = (iso: string) =>
 // Grid-view card for a form shared with the caller: tinted icon tile (colour from the form's
 // title), title, "workspace · Shared by X", role badge and the date it was shared. The whole card is
 // one link (one tab stop) — it opens the form at the nearest existing view for a grant-only viewer
-// (its responses; no dedicated respondent/reviewer destination exists yet, requirements.md §7.9).
+// (its responses; no dedicated respondent/reviewer destination exists yet).
 //
-// requirements.md §7.9 asks for "sharer" on the card. Real bug found and fixed (22 Sep 2026): this
-// used to render nothing for the sharer, because the live `sharedBy` was a raw userId with no name
-// anywhere in the payload — now live-confirmed enriched (services/shared.ts's own mapping), so the
-// sharer's name renders when the backend actually sent one, and degrades to nothing (never a raw
+// The sharer's name renders when the backend sent one, and degrades to nothing (never a raw
 // id) when it didn't.
 export function SharedFormCard({ item }: SharedFormCardProps) {
   return (

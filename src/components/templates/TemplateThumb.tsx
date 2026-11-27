@@ -49,7 +49,7 @@ const LAYOUTS: Record<LayoutPreset, ComponentType<LayoutFrameProps>> = {
 // Feature or Sidebar template's md: side panel renders the way a desktop respondent actually sees it. The card's own
 // aspect ratio is fixed to this same W:H, so the measured width-only scale fills it exactly, no cropping, no gap.
 // 800 x 500 (a 16:10 card): narrower than a desktop, but still wide enough for a Split Feature or Sidebar template's side panel (it appears from 768 px).
-// The form is drawn about a third larger than it was at 1040, and only the TOP of it is shown (the title, the first questions), cropped by the card.
+// Only the TOP of the form is shown (the title, the first questions), cropped by the card.
 const STAGE_WIDTH = 800;
 const STAGE_HEIGHT = 500;
 export const THUMB_ASPECT = `${STAGE_WIDTH}/${STAGE_HEIGHT}`;

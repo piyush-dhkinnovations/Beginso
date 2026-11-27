@@ -12,7 +12,7 @@ import { Card } from '@/components/ui/Card';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import type { RespondLinkField, RespondentStatus } from '@/types/respondent';
 
-// Sprint 13 (A5.2 / A5.1). A respondent's OWN answers, read-only, with an Edit mode that reuses the same
+// A respondent's OWN answers, read-only, with an Edit mode that reuses the same
 // plain controls for every field type. The caller supplies `onSave` (token path or signed-in path) and is
 // responsible for the server round-trip; the server re-validates by the form's own rules, so this only keeps
 // obviously-empty required answers from being sent. File answers are shown by name and not editable here.

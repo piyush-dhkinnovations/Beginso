@@ -25,10 +25,8 @@ import { dashboardService } from '@/services/dashboard';
 
 describe('DashboardPage analytics integration', () => {
   it('uses the dashboard analytics query and renders its monthly total and activity', () => {
-    // The page now issues two distinct useQuery calls (analytics + the filtered personal-forms
-    // count it uses to override analytics.totalForms — see the page's own "Real bug found and
-    // fixed" comment). A single blanket mockReturnValue previously worked because only the
-    // first query's data was ever read; branch on queryKey now that both matter.
+    // The page's analytics and its filtered personal-forms count (which overrides
+    // analytics.totalForms) are separate useQuery calls, so the mock branches on queryKey.
     mockUseQuery.mockImplementation((options: { queryKey: unknown[] }) => {
       if (options.queryKey[0] === 'dashboard') {
         return {
@@ -89,7 +87,7 @@ describe('DashboardPage analytics integration', () => {
 
     render(<DashboardPage />);
 
-    // Stat cards are gated on hasForms, which must now follow the corrected count (0), not the
+    // Stat cards are gated on hasForms, which must follow the corrected count (0), not the
     // leaked analytics count (1) — so they don't render at all, and the empty state shows instead.
     expect(screen.queryByText('Total forms')).not.toBeInTheDocument();
     expect(screen.getAllByText('Create your first form').length).toBeGreaterThan(0);
