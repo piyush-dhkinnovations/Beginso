@@ -1096,3 +1096,119 @@ Proof: **0 mismatches**. Type-check and lint clean, 4901 unit tests in 504 files
 - `PersonalShell`: the collapsed-sidebar route pattern still lists `scores`, which now redirects to the inbox.
 - `WorkspaceSidebar.test`: the "pages that do not exist" test only checks the old names "Analytics" and "Reports", so it can hardly fail.
 
+
+---
+
+## Group 9: `src/app`, `src/proxy.ts` and the remaining tests
+
+### Counts
+
+| | Before | After |
+|---|---|---|
+| Comments | 418 | 408 |
+| Comment lines | 1071 | 964 |
+
+70 files changed: 10 comments removed entirely, 125 edited.
+
+### Proof and gate
+
+Proof: **0 mismatches**. Type-check and lint clean, 4901 unit tests in 504 files, build route table identical, e2e 284 passed and 19 skipped: all the same as the baseline.
+
+### Ten samples to spot-check
+
+**1. `__tests__/app/(user)/forms/[id]/overview/page.test.tsx:2`**
+```diff
+- * sprint-10-events-migration, tasks.md 3.3 — requirements.md §7.2–7.5, design.md §5, §17.
+- * Backend contracts BE 0.5/0.6/0.7 are unconfirmed; every service is mocked.
++ * Every service is mocked.
+```
+
+**2. `__tests__/app/invite/[token]/page.test.tsx:3`**
+```diff
+- * pair — not a single happy-path-only test (requirements §16/§21's own bar).
++ * pair — not a single happy-path-only test.
+```
+
+**3. `__tests__/app/w/[slug]/roles/page.test.tsx:25`**
+```diff
+-  // design.md §5/§21 — the matrix is static data; this page must never show a loading state.
++  // The matrix is static data; this page must never show a loading state.
+```
+
+**4. `__tests__/reports/reportPolling.property.test.ts:2`**
+```diff
+- * __tests__/reports/reportPolling.property.test.ts
+- * Feature: sprint-5-analytics-reports, Property 4: Polling gate is exact
+- * Validates: Requirement 11.2, 11.3
++ * Property: Polling gate is exact
+```
+
+**5. `src/app/(auth)/signup/page.tsx:16`**
+```diff
+-      {/* useSearchParams() (?next=, task 3.5) requires a Suspense boundary during prerender. */}
++      {/* useSearchParams() (?next=) requires a Suspense boundary during prerender. */}
+```
+
+**6. `src/app/(user)/forms/[id]/preview/page.tsx:25`**
+```diff
+-// Preview mode is a property of THIS route, not persisted state (requirements.md 3.2), so leaving
++// Preview mode is a property of THIS route, not persisted state, so leaving
+```
+
+**7. `src/app/(user)/shared/page.tsx:38`**
+```diff
+-// Shared with me (requirements.md §7.9, design.md §5/§15.6/§17) — Personal-space page, one
++// Shared with me — Personal-space page, one
+```
+
+**8. `src/app/discover-templates/[slug]/page.tsx:88`**
+```diff
+-        {/* Wider than the old max-w-4xl: a two-column split needs the room a single text column didn't. */}
++        {/* A two-column split needs more room than a single text column. */}
+```
+
+**9. `src/app/r/[token]/page.tsx:18`**
+```diff
+-// Sprint 13 (A5.3 / A5.4). Four link states with their own screens: valid, expired, used, invalid. The page says
++// Four link states with their own screens: valid, expired, used, invalid. The page says
+```
+
+**10. `src/app/w/[slug]/notifications/page.tsx:7`**
+```diff
+-// Sprint 14 (B9.1/B9.3): this workspace's notifications only. Membership is gated by w/[slug]/layout.tsx.
++// This workspace's notifications only. Membership is gated by w/[slug]/layout.tsx.
+```
+
+### Notes
+
+- Corrected `src/app/layout.tsx`: the theme comment no longer says the account theme has not shipped (report section 5, row 3). The matching paragraph in `CLAUDE.md` is still outdated (see the last bullet).
+- Corrected because the code or backend had moved on:
+  - `app/(user)/dashboard/page.tsx`: the dashboard analytics count leak is now described in the past tense (the call sends the personal scope and the backend honours it); the "at most 5 previewed rows" wording is gone.
+  - `app/(user)/forms/[id]/overview/page.tsx`: the response count note (the overview endpoint counts live), the view count note, and the access count note (the grants list holds explicit grants only).
+  - `app/(user)/forms/[id]/edit/page.tsx` ("form sidebar" is now the form header), `forms/[id]/share/page.tsx` ("fourth tab"), `forms/[id]/preview/page.tsx` ("Two modes", there are three).
+  - `app/(user)/my-submissions/page.tsx`: "My Submissions" is always in the personal nav.
+  - `app/(standalone)/templates/apply/[id]/page.tsx`: `VALID_TABS` belongs to the editor page.
+  - `app/discover-templates/[slug]/page.tsx`: it said the proxy drops `?next=`; the proxy now keeps it.
+  - `app/f/[slug]/page.tsx`: the backend already rejects a closed form's page and submissions.
+  - `app/api/responses/[responseId]/file/[fileId]/route.ts`: how the backend builds the file URL.
+  - `app/invite/[token]/page.tsx`: dropped a pointer to a known issue that is no longer listed, and the "~10 other call sites" count.
+  - `app/onboarding/layout.tsx`: it described the old sign-in layout, `DashboardShell`, and an "always light" background that follows the theme.
+  - `app/w/[slug]/layout.tsx` (role "undefined until it ships"), `w/[slug]/team/page.tsx` (same), `w/[slug]/page.tsx` ("pinned forms", "pinning does not persist"), `w/[slug]/inbox/page.tsx` ("two" personal routes).
+  - Tests: `qa/roleMatrix.expected.ts` and `roleMatrix.test.tsx` (Templates is now in the workspace sidebar; "Inbox" is now "Responses"; no denied-cell assertion exists), `w/[slug]/layout.test.tsx`, `templates/page.test.tsx`, `responses.optimistic.property.test.ts` (the pattern is in `useInboxMutations`), `ReportJobRow.property.test.tsx`.
+  - The overview, activity and audit page tests said backend contracts were unconfirmed; those routes exist.
+- Nothing in this group is marked "Not built yet in the backend".
+- Disable comments: reason added at `app/(standalone)/forms/claim/page.tsx:107`. `app/blog/page.tsx:26` is confirmed: the reason is the comment above it. None left without a reason in this group.
+- Left unchanged, not sure:
+  - `app/(user)/forms/[id]/preview/page.tsx`: says a "layout gallery" uses `?layout=`. No place in `src` was found that builds that address (an e2e test uses it).
+  - `app/api/responses/[responseId]/file/[fileId]/route.ts`: the CORS explanation for the proxy cannot be checked from the code (only the "Sprint 4" wording was removed).
+  - `app/api/workspaces/export/file/route.ts`: points to `SPRINT6_HANDOFF.md`, which was not found in `Beginso-Report`.
+  - `app/layout.tsx`: the note about once using `next/script` is kept, because it explains why not to switch back.
+- For `CLAUDE.md` (not edited here):
+  - "The theme is resolved before first paint" paragraph: `User.theme` has shipped. The script reads the saved choice on the device, falls back to the `beginso_theme` cookie, then the OS setting; the account theme is synced after sign-in.
+  - "Settings tabs stay mounted" paragraph: `visitedTabs` now lives in `src/components/settings/SettingsView.tsx`, not in `settings/page.tsx`.
+
+### Findings (code not changed)
+
+- Possible bug: `src/app/onboarding/layout.tsx` forces the light-surface (dark ink) wordmark while its background follows the theme, so in dark mode the logo is likely hard to see. Not checked in a browser.
+- Possible bug: `src/app/w/[slug]/page.tsx` "Recent forms" labels every form that is not published as "Draft", including closed ones.
+
