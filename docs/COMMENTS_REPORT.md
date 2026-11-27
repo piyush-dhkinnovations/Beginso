@@ -989,3 +989,110 @@ Proof: **0 mismatches**. Type-check and lint clean, 4901 unit tests in 504 files
 - `ProfileTab.test.tsx`: the Firebase mock looks unneeded, since `ProfileTab` does not import Firebase.
 - `PublicFormShell.tsx`: `accessExtra` and `hasAccessExtra` only wrap `testControls` (leftover indirection).
 
+
+---
+
+## Group 8: all other components and their tests
+
+### Counts
+
+| | Before | After |
+|---|---|---|
+| Comments | 559 | 534 |
+| Comment lines | 1170 | 1020 |
+
+78 files changed: 25 comments removed entirely, 152 edited.
+
+### Proof and gate
+
+Proof: **0 mismatches**. Type-check and lint clean, 4901 unit tests in 504 files, build route table identical, e2e 284 passed and 19 skipped: all the same as the baseline.
+
+### Ten samples to spot-check
+
+**1. `__tests__/components/auth/LoginForm.test.tsx:266`**
+```diff
+-        // Toggle back to password
+```
+
+**2. `__tests__/components/landing/Footer.test.tsx:2`**
+```diff
+- * Requirements: 0.25, 0.26
+```
+
+**3. `__tests__/components/team/AuditTable.test.tsx:1`**
+```diff
+- * sprint-10-events-migration, tasks.md 4.3 — design.md §21, requirements.md §7.7, §11.
+```
+
+**4. `__tests__/components/workspaces/MoveFormModal.test.tsx:113`**
+```diff
+-    // Modal should still be open
+```
+
+**5. `src/components/dashboard-grid/workspaceHome.ts:13`**
+```diff
+-// Everything here is derived from the forms list the Workspace Home already fetches — no new calls.
++// Apart from the map locations (passed in), everything here is derived from the forms list the Workspace Home already fetches.
+```
+
+**6. `src/components/landing/ProductMockup.tsx:402`**
+```diff
+-            {/* Full composition (>=1280) and mid composition (1024-1279, table only) */}
++            {/* Full composition (>=1280) and mid composition (768-1279, table only) */}
+```
+
+**7. `src/components/reports/ReportJobRow.tsx:99`**
+```diff
+-  // Never cached across clicks (Correctness Property 5) — every click re-fetches a fresh blob URL.
++  // Never cached across clicks — every click re-fetches a fresh blob URL.
+```
+
+**8. `src/components/search/SearchTrigger.tsx:17`**
+```diff
+-// Sprint 14 (requirements 2.1, task 3.9): the top-bar search entry - a field-shaped button with the
++// The top-bar search entry - a field-shaped button with the
+```
+
+**9. `src/components/team/SharedFormCard.tsx:21`**
+```diff
+-// requirements.md §7.9 asks for "sharer" on the card. Real bug found and fixed (22 Sep 2026): this
+-// used to render nothing for the sharer, because the live `sharedBy` was a raw userId with no name
+-// anywhere in the payload — now live-confirmed enriched (services/shared.ts's own mapping), so the
+-// sharer's name renders when the backend actually sent one, and degrades to nothing (never a raw
++// The sharer's name renders when the backend sent one, and degrades to nothing (never a raw
+```
+
+**10. `src/components/workspaces/CreateWorkspaceModal.tsx:28`**
+```diff
+-// Name-only create flow (requirements.md §7.5) — slug generated server-side, timezone defaulted,
+-// matching BE 1.1's confirmed contract (design.md §13). Mirrors CreateFormModal's exact
+-// react-hook-form + zod + ui/Modal shape rather than inventing a new pattern.
++// Name-only create flow — slug generated server-side, timezone defaulted,
++// matching the backend's contract. A plain
++// react-hook-form + zod + ui/Modal form.
+```
+
+### Notes
+
+- Corrected, exports (`ReportsView`, `ReportJobsList`, `ReportJobRow`, `ReportsView.test`): there is no "Insights Exports tab", workspace exports have their own route, the status picker exists, the backend does send `formTitle`, and `format` is a fixed `csv`/`pdf` list.
+- Corrected, scoring (`ScoreCard`): the input is stars (not a radio scale), there is no manage link, and the optimistic average only applies when there is no average yet.
+- Corrected, sidebars and shells (`PersonalSidebar`, `WorkspaceSidebar`, `PersonalShell`, `WorkspaceShell` and the two sidebar tests): "My Submissions" is in the menu, the old `DashboardShell` and `dashboard/Sidebar` files are gone, the workspace pages once listed as missing exist, the backend sends the caller's role, there is no Reports tab or form Settings page, and `?ws=` links come from `formHref`.
+- Corrected, others: the bell polls every 60 s, not 45 (`NotificationBell`); the dashboard demo no longer points to a future persistence phase (`DashboardDemo`); map locations come from a separate call (`workspaceHome.ts`); the middle mockup layout starts at 768 px (`ProductMockup`); revoking access does ask first (`FormAccessPanel`); `CreateFormModal` no longer exists (`CreateWorkspaceModal`); `DashboardPage.test` and `TemplateThumb` history wording.
+- Removed a few comments that only repeated the next line (`LoginForm` and its test, `SignupForm.test`, `MoveFormModal` and its test).
+- Marked "Not built yet in the backend": the stage name snapshot on a report job (`ReportJobRow`), same as the earlier services and types groups.
+- Disable comments, reasons added: `LoginForm` `react-hooks/refs`, `AuthorAvatar`, `ProductMockup` (two), `Wordmark` (three).
+- Disable comments, confirmed as "reason above": `FormAccessPanel` and `InviteMembersModal`.
+- Disable comments left: `LoginForm` `react-hooks/set-state-in-effect` and `BlogCard` `no-img-element` (the code does not make the reason certain). In `UserProfileDropdown` the comment above is not the reason: it explains `referrerPolicy` only.
+- Left unchanged, unsure: `ReportJobsList` and `ReportJobRow` still point to `docs/status/fix-log.md`, as does `ReportsView`; that file is not in this checkout (`docs/` is ignored by git).
+- Left unchanged, unsure: `ReportJobsList` says the backend "has been observed" to drop scope fields on finished jobs. The current backend sends them under `filters`; the old observation cannot be checked.
+- Left unchanged: `AddWidgetDrawer` "Looks that are no longer offered" (it explains why they are only hidden); regression notes in tests that say what "used to" happen; `WorkspaceSidebar.test` test name "BE 0.1 not yet shipped" is code.
+- `ExportMark.tsx` starts with an empty line, which the apply script drops.
+
+### Findings (code not changed)
+
+- `components/workspaces/CreateWorkspaceModal.tsx` is not imported anywhere in `src` (its `onCreated` prop included).
+- `ReportsView`: no caller passes `embedded`.
+- `TemplateFormSheet`: no caller passes `compact`.
+- `PersonalShell`: the collapsed-sidebar route pattern still lists `scores`, which now redirects to the inbox.
+- `WorkspaceSidebar.test`: the "pages that do not exist" test only checks the old names "Analytics" and "Reports", so it can hardly fail.
+
