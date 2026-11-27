@@ -1,9 +1,7 @@
 /**
- * __tests__/services/formAccess.service.test.ts
- * Feature: sprint-9-team-permissions, requirements.md §7.8, design.md §12.
- * Built against `API_CONTRACT.md`'s "Sprint 9 — Team & Permissions Contracts" §BE 0.6 (live,
- * confirmed by direct probe — see formAccessService's own comment), not design.md §12's
- * pre-backend placeholder sketch (`/access`, `grantId`), which was wrong and corrected Day 5.
+ * Built against `API_CONTRACT.md` (live,
+ * confirmed by direct probe — see formAccessService's own comment), not the
+ * pre-backend placeholder sketch (`/access`, `grantId`), which was wrong.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -53,8 +51,7 @@ describe('formAccessService', () => {
 
   // Regression test for the same class of bug that crashed sharedService in production
   // (`shares.map is not a function`) — a truthy-but-non-array envelope must return [], not the
-  // raw envelope object, since this endpoint's exact key was never confirmed against a live
-  // authenticated response (unlike shared-with-me, which had a documented JSON example).
+  // raw envelope object.
   it('returns an empty array, not the raw envelope, when the expected key is missing', async () => {
     mockGet.mockResolvedValueOnce({ data: { success: true, someOtherKey: [GRANT] } });
 

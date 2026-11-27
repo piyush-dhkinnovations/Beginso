@@ -2,7 +2,7 @@ import axiosInstance from '@/lib/axios';
 import { unwrapEnvelope } from '@/lib/apiEnvelope';
 import type { SharedFormItem } from '@/types/team';
 
-// Corrected against a real runtime crash (`shares.map is not a function`) reported after Day 5's
+// Corrected against a real runtime crash (`shares.map is not a function`) reported after a
 // first "confirmed live" pass only checked route existence, not the actual payload shape. The
 // precise contract, JSON example included, lives in `Beginso-Report/backend_updates_for_frontend.md`
 // §13 — the array is wrapped under `forms`, not `shares` (`{ success, forms: [...], total }`).

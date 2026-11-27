@@ -4,10 +4,7 @@ import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import type { Stage, StageColorToken, StageCategory } from '@/types/stage';
 
 /**
- * BE 0.1 — new infrastructure, not yet built (design.md §11.2). Built against the documented
- * contract; the backend developer owns final field naming ("Backend contract to confirm").
- * Envelope unwrapped defensively (design.md §12's own instruction) since nothing here has been
- * exercised against a live response yet.
+ * Envelope unwrapped defensively.
  */
 export interface StagePayload {
   name: string;
@@ -33,7 +30,7 @@ export const stagesService = {
       .then((r) => unwrapEnvelope<Stage>(r.data, 'stage')),
 
   // `reassignTo` is required by the contract whenever the stage being deleted still holds
-  // responses (design.md §11.2) — the UI must have already resolved that before calling this.
+  // responses — the UI must have already resolved that before calling this.
   remove: (scope: string, stageId: string, reassignTo?: string): Promise<void> =>
     axiosInstance
       .delete(`/api/workspaces/${scope}/stages/${stageId}`, {

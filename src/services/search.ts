@@ -3,8 +3,8 @@ import { unwrapEnvelope } from '@/lib/apiEnvelope';
 import { workspaceHeaders } from '@/lib/workspaceHeaders';
 import { SEARCH_GROUP_ORDER, type SearchGroup, type SearchGroupKey, type SearchResponse, type SearchResult } from '@/types/search';
 
-// Sprint 14 (B10, design.md §11.2). Does NO client-side filtering - the server is the authority on
-// what the caller may see (F14). Everything is read defensively: a missing group renders as empty.
+// Does NO client-side filtering - the server is the authority on
+// what the caller may see. Everything is read defensively: a missing group renders as empty.
 function toGroup(key: SearchGroupKey, raw: unknown): SearchGroup {
   const g = (raw ?? {}) as { total?: unknown; items?: unknown };
   const items = Array.isArray(g.items)

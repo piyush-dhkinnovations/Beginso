@@ -4,18 +4,14 @@ import type { MemberListItem } from '@/types/team';
 import type { Role } from '@/types/workspace';
 import type { NotificationPreference } from '../../shared/types';
 
-// Endpoints are not yet live (BE 0.1/BE 0.2, requirements.md §13 — Phase 0 of this sprint) —
-// built against design.md §11.2/§12's documented contract, same "build the frontend against a
-// documented-but-unconfirmed shape" precedent Sprint 7/8 both used. Envelope unwrapped
-// defensively (workspaces.ts's own established reasoning) since nothing here has been exercised
-// against a real response yet.
+// Envelope unwrapped defensively (workspaces.ts's own established reasoning).
 export const teamService = {
   listMembers: (workspaceId: string): Promise<MemberListItem[]> =>
     axiosInstance
       .get(`/api/workspaces/${workspaceId}/members`)
       .then((r) => unwrapEnvelope<MemberListItem[]>(r.data, 'members')),
 
-  // Sprint 14 (OQ-2): the caller's OWN response-email preference. PATCH /api/workspaces/:id/preferences
+  // The caller's OWN response-email preference. PATCH /api/workspaces/:id/preferences
   // (:id is an id or slug); returns { preferences: { notificationPreference, timezoneOverride } }.
   updateMyNotificationPreference: (workspaceId: string, notificationPreference: NotificationPreference): Promise<NotificationPreference> =>
     axiosInstance

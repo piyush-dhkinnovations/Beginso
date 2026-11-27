@@ -1,5 +1,5 @@
 /**
- * Sprint 13 (A5.1–A5.4), design.md §12. Two doors, kept apart on purpose:
+ * Two doors, kept apart on purpose:
  *
  *  • TOKEN calls (`getLink`, `editViaLink`, `resend`) use plain `fetch` straight to the API, exactly like
  *    `publicForm.ts`: the signed link IS the credential, so no cookie is ever attached and the BFF is not in

@@ -1,7 +1,5 @@
 /**
- * __tests__/services/invitations.service.test.ts
- * Feature: sprint-9-team-permissions, requirements.md §7.3/§7.4, design.md §12.
- * send()/resend()/revoke() built against the confirmed-live contract, not design.md's original
+ * send()/resend()/revoke() built against the confirmed-live contract, not the original
  * pre-backend sketch — see invitations.ts's own comment for the two deviations.
  */
 

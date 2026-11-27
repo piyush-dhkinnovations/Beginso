@@ -4,16 +4,16 @@ import type { PendingInvitation, InvitationPreview } from '@/types/team';
 import type { Role } from '@/types/workspace';
 
 // Built against the confirmed-live contract (Beginso-Report/backend_updates_for_frontend.md §9,
-// production-verified 11 Sep 2026), not design.md §12's original pre-backend sketch — two real
+// production-verified 11 Sep 2026), not the original pre-backend sketch — two real
 // deviations found and adapted, not silently kept:
 // 1. send() takes one email per POST, not a batch — the live endpoint's body is
 //    `{ email, role }` (singular), so a multi-email invite fires one request per address.
 //    Uses Promise.all deliberately, not allSettled: if any address fails the whole submission
-//    fails and the modal stays open (mirrors CreateWorkspaceModal's single error-path pattern,
-//    design.md §6) — safe to just hit Send again, since the backend's own duplicate-pending
-//    handling (BE 0.3) updates rather than re-creates any invite that already went through.
+//    fails and the modal stays open (mirrors CreateWorkspaceModal's single error-path pattern)
+//    — safe to just hit Send again, since the backend's own duplicate-pending
+//    handling updates rather than re-creates any invite that already went through.
 // 2. resend()/revoke() use the workspace-scoped routes with the invitation's `id`, not the flat
-//    token-based ones design.md sketched — the list endpoint never exposes a `token` per
+//    token-based ones from the sketch — the list endpoint never exposes a `token` per
 //    invitation (reasonably: an admin browsing pending invites shouldn't be able to read out
 //    anyone's accept link), only an `id`. The flat token routes exist too (dual-routing, per the
 //    same doc) but only the invitee's own Accept page has a token to use them with.
@@ -54,8 +54,7 @@ export const invitationsService = {
       .post(`/api/workspaces/${workspaceId}/invitations/${invitationId}/revoke`)
       .then(() => undefined),
 
-  // Public, token-based — Wednesday's Invite Accept page (task 5.1) is the consumer. Built now
-  // since task 2.2 bundles all seven methods as one unit; not wired into any UI today.
+  // Public, token-based: used by the Invite Accept page.
   preview: (token: string): Promise<InvitationPreview> =>
     axiosInstance
       .get(`/api/invitations/${token}`)

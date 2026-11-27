@@ -1,7 +1,5 @@
 /**
- * Feature: sprint-3-public-form
  * Tests: publicFormService — getFormSchema, submitForm
- * Requirements: 1.1, 1.3, 1.4, 6.5
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';

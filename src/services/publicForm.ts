@@ -1,6 +1,6 @@
 /**
  * GET /api/public/:slug and POST /api/public/:slug/submit.
- * fetch() only — no Axios, no auth headers, no cookies.
+ * Public calls use fetch() with no auth headers and no cookies; only getSubmitTicket() goes through Axios and the BFF.
  */
 
 import axiosInstance from '@/lib/axios';

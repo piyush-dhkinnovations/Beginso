@@ -1,7 +1,5 @@
 /**
- * __tests__/services/events.service.test.ts
- * sprint-10-events-migration, tasks.md 2.1. Backend contract to confirm (BE 0.3–0.5) — runs against
- * a mocked axiosInstance; nothing here is verified against a live backend.
+ * Runs against a mocked axiosInstance; nothing here is verified against a live backend.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
