@@ -1,6 +1,5 @@
 /**
- * sprint-10-events-migration, tasks.md 4.4 — requirements.md §7.7, design.md §17, §21.
- * BE 0.4 is unconfirmed; every service is mocked.
+ * Every service is mocked.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -65,7 +64,7 @@ describe('AuditLogPage (/w/[slug]/audit)', () => {
     expect(mockAudit).toHaveBeenCalledWith('acme', expect.objectContaining({ range: 'all', page: 1, limit: 20 }));
   });
 
-  // sprint-10-events-migration, task 7.1 — this page's two distinct loading states
+  // This page's two distinct loading states
   // (workspacesQuery for role resolution, then auditQuery for the table itself) had no test
   // proving either actually surfaces the skeleton rather than a blank/empty-looking table.
   it('shows the AuditTable skeleton while the audit query is loading, not an empty table', () => {
@@ -168,7 +167,7 @@ describe('AuditLogPage (/w/[slug]/audit)', () => {
     expect(screen.getByRole('button', { name: 'Previous' })).toBeDisabled();
   });
 
-  // Sprint 11 5.3: computed accessibility for the denied/error states, not just that the right
+  // Computed accessibility for the denied/error states, not just that the right
   // words appear on screen.
   it('the error state is announced via role="alert", not just visible text', async () => {
     mockAudit.mockRejectedValue({ response: { status: 500 } });

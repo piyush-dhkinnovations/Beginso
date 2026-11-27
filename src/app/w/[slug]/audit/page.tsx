@@ -20,11 +20,11 @@ const PAGE_SIZE = 20;
 
 type Range = NonNullable<AuditFilterValues['range']>;
 
-// Audit Log — requirements.md §7.7, design.md §5/§15.3. Owner/Admin only. That gate is a
+// Audit Log. Owner/Admin only. That gate is a
 // convenience here (CLAUDE.md): GET /api/workspaces/:id/audit must enforce it, and a 403 from it
 // lands on the same permission state as a role that is known not to qualify.
 // Server-side filtering and paging throughout — Previous/Next because the contract returns a bare
-// array with no total (design.md §11.2), so Next appears only after a full page.
+// array with no total, so Next appears only after a full page.
 export default function AuditLogPage() {
   const { slug } = useParams<{ slug: string }>();
   const avatarOf = useEventAvatars(slug);
@@ -135,7 +135,7 @@ export default function AuditLogPage() {
         ) : auditQuery.isLoading ? (
           <AuditTable events={[]} isLoading />
         ) : events.length === 0 && page === 1 ? (
-          // Two different empty screens, not one reused (wireframe-guide.md; design.md §17): nothing
+          // Two different empty screens, not one reused (wireframe-guide.md): nothing
           // has ever been recorded vs. a filter that matched nothing.
           filtersActive ? (
             <EmptyState illustration="no-results"

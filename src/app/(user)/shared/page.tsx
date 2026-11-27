@@ -35,7 +35,7 @@ type SortKey = 'latest' | 'oldest' | 'name';
 
 const workspaceOf = (item: SharedFormItem) => item.workspaceName ?? PERSONAL;
 
-// Shared with me (requirements.md §7.9, design.md §5/§15.6/§17) — Personal-space page, one
+// Shared with me — Personal-space page, one
 // useQuery(sharedKeys.list()). The endpoint returns the caller's whole list, so search, the
 // workspace / owner / permission filters, sorting and pagination all run client-side and are exact.
 // Two views, remembered per browser (same list/grid choice as the Forms page): a table and a card

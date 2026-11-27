@@ -16,7 +16,7 @@ import { WorkspaceLogo } from '@/components/workspaces/WorkspaceLogo';
 import { CardGridSkeleton } from '@/components/ui/PageSkeletons';
 import type { WorkspaceListItem } from '@/types/workspace';
 
-// Wireframe Screen 32: All Workspaces (requirements.md §7.5, C1.8) — lists every workspace
+// Wireframe Screen 32: All Workspaces — lists every workspace
 // the caller belongs to, with role, and is where "Create workspace" (PersonalSidebar's bottom action)
 // lands. Displays eyebrow, title, description, filter bar (search + sort), and card grid with "Open" affordance.
 export default function WorkspacesPage() {

@@ -1,8 +1,3 @@
-/**
- * __tests__/app/w/[slug]/layout.test.tsx
- * Feature: sprint-8-workspaces-context, requirements.md §7.1, §12
- */
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -68,7 +63,7 @@ describe('/w/[slug]/layout — route-level membership boundary', () => {
     expect(screen.getByText('child content')).toBeInTheDocument();
   });
 
-  // Sprint 9 (team-permissions), requirements.md §7.7/§8.7 — role threaded from
+  // Role threaded from
   // resolveWorkspaceBySlug() down to WorkspaceSidebar's role-gated "Team" item.
   it('threads the caller\'s role through to the sidebar\'s role-gated Team item', async () => {
     resolveWorkspaceBySlug.mockResolvedValue({
@@ -90,7 +85,7 @@ describe('/w/[slug]/layout — route-level membership boundary', () => {
     resolveWorkspaceBySlug.mockResolvedValue({
       ok: true,
       workspace: { id: 'w1', name: 'Acme', slug: 'acme', timezone: 'UTC', createdAt: '', updatedAt: '' },
-      // role omitted, matching today's live response shape
+      // role omitted from the reply
     });
     const { default: WorkspaceLayout } = await import('@/app/w/[slug]/layout');
     const jsx = await WorkspaceLayout({

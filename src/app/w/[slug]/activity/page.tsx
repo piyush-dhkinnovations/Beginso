@@ -13,10 +13,10 @@ import { ActivityFeed, ACTIVITY_CATEGORY_LABEL, categoryOf, type ActivityCategor
 
 const PAGE_SIZE = 20;
 
-// Workspace Activity — requirements.md §7.6, design.md §5/§15.2. Every member can see it (no role
+// Workspace Activity. Every member can see it (no role
 // gate, unlike the Audit Log); 403 for a non-member is already handled by /w/[slug]/layout.tsx.
-// Previous/Next rather than ui/Pagination: the events contract returns a bare array with no total
-// (design.md §11.2), so there is no page count to give it — Next is offered only after a full page.
+// Previous/Next rather than ui/Pagination: the events contract returns a bare array with no total,
+// so there is no page count to give it — Next is offered only after a full page.
 export default function WorkspaceActivityPage() {
   const { slug } = useParams<{ slug: string }>();
   const [page, setPage] = useState(1);

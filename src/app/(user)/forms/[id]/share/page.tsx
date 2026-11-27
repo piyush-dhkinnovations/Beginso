@@ -5,7 +5,7 @@ interface Props {
   searchParams: Promise<{ ws?: string | string[] }>;
 }
 
-// Share & Embed is the editor's fourth tab now. Old links and bookmarks land there, keeping the
+// Share & Embed is a section of the editor's Settings tab. Old links and bookmarks land there, keeping the
 // workspace hint (?ws=) so the workspace sidebar and scope survive the redirect.
 export default async function ShareRedirectPage({ params, searchParams }: Props) {
   const { id } = await params;

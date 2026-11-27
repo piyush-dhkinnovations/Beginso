@@ -4,7 +4,7 @@ interface Props {
   params: Promise<{ slug: string }>;
 }
 
-// Wireframe Screen 07: Workspace Forms Manager (requirements.md §7.8, §1.8, §1.10).
+// Wireframe Screen 07: Workspace Forms Manager.
 // Reuses FormsPage with context={type: 'workspace', workspaceId: slug}, ensuring forms
 // are properly scoped to the workspace context.
 export default async function WorkspaceFormsPage({ params }: Props) {

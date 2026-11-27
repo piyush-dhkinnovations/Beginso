@@ -18,7 +18,7 @@ import { ButtonLink } from '@/components/ui/ButtonLink';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 
-// Requirements §7.5 / design.md §5, §15.4: six states derived purely from (invitation preview,
+// Six states derived purely from (invitation preview,
 // auth state), plus `declined` as a local transition after the Decline click (no extra request
 // needed to show it, matching the wireframe's own declined-panel-swap pattern).
 type ViewState =
@@ -30,10 +30,9 @@ type ViewState =
   | 'revoked'
   | 'declined';
 
-// A live backend crash was found to leak its raw JS exception text (e.g. "Cannot read
+// A backend crash once leaked its raw JS exception text (e.g. "Cannot read
 // properties of undefined (reading 'slug')") straight into the error envelope's `message` field
-// — this repo's own PROJECT_STATUS.md already tracks the general case ("500 responses can leak
-// internal error.message detail", Known Issues, backend-owned). Rather than showing a stack-trace
+// Rather than showing a stack-trace
 // -shaped string to an end user on this specific page, fall back to a generic message when the
 // text doesn't read like something meant for a person.
 const RAW_RUNTIME_ERROR_PATTERN = /cannot read propert|is not a function|is not defined|undefined is not|null is not|typeerror|referenceerror/i;
@@ -113,10 +112,8 @@ export default function InviteAcceptPage() {
         // caller is already authenticated with a valid session cookie before this call, so
         // there's no stale-cache-vs-new-cookie race to worry about.
         if (!result?.slug) {
-          // A confirmed-live backend response shape gap (found via manual testing, not
-          // hypothesized): the accept endpoint can return success without a usable `slug` —
-          // known backend issue "500 responses can leak internal error.message detail" is the
-          // sibling symptom of the same underlying handler bug. Fail visibly but gracefully
+          // A response shape gap found by manual testing: the accept endpoint can return success
+          // without a usable `slug`. Fail visibly but gracefully
           // instead of crashing on `undefined.slug`.
           //
           // Real bug found and fixed: this branch never invalidated the preview query, so
@@ -138,8 +135,8 @@ export default function InviteAcceptPage() {
 
   const handleSwitchAccount = async () => {
     // Deliberately not useAuth().logout() — that always hard-navigates to /login with no
-    // return path (its ~10 other call sites all want that). This is the one caller that needs
-    // to land back on this same invite link signed out (requirements §7.5's "wrong account"
+    // return path (its other call sites all want that). This is the one caller that needs
+    // to land back on this same invite link signed out (the "wrong account"
     // state), so it repeats logout()'s own sign-out steps with a different destination rather
     // than changing a widely-used shared function's behavior for one caller.
     await Promise.allSettled([authService.logout(), signOut(auth)]);

@@ -1,9 +1,6 @@
 /**
- * __tests__/qa/contextSwitch.test.tsx
- * sprint-11-v2a-hardening, requirements.md §7.3 (2.5)
- *
  * The one query-key isolation property (workspaceKeys.forms() namespaced by context, no
- * cross-context cache bleed) is already proven by __tests__/lib/queryKeys.test.ts (2.6). What
+ * cross-context cache bleed) is already proven by __tests__/lib/queryKeys.test.ts. What
  * that alone can't prove: a component instance that survives a context switch without unmounting
  * (workspace A -> workspace B is the same route pattern, /w/[slug]/forms, so Next.js can reuse the
  * same FormsPage instance rather than remount it) might still carry local UI state — an open

@@ -1,8 +1,3 @@
-/**
- * __tests__/app/w/[slug]/forms/page.test.tsx
- * Feature: sprint-8-workspaces-context, requirements.md §7.8, §1.8, §1.10
- */
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -92,9 +87,9 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
     mockDuplicateForm.mockReset();
     mockDuplicateForm.mockResolvedValue({ _id: 'new-id', title: 'Copy' });
     mockListWorkspaces.mockReset();
-    // Owner by default — every existing delete/bulk test in this file predates the role gate
-    // (sprint-11-v2a-hardening 2.3) and exercises the caller's own delete permission, not the
-    // gate itself; the gate has its own dedicated describe block below.
+    // Owner by default — the other delete/bulk tests in this file exercise the caller's own delete
+    // permission, not the role gate itself;
+    // the gate has its own dedicated describe block below.
     mockListWorkspaces.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role: 'owner' }]);
   });
 
@@ -224,7 +219,6 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
     );
   });
 
-  // sprint-10-events-migration, task 6.4.
   describe('bulk selection and delete (task 6.4)', () => {
     it('shows no bulk action bar until a row is selected, then shows the count', async () => {
       // The checkbox column is hidden until a row is double-clicked.
@@ -265,7 +259,7 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
       await userEvent.click(screen.getByRole('checkbox', { name: 'Select Form Two' }));
       await userEvent.click(screen.getByRole('button', { name: 'Delete selected' }));
 
-      expect(await screen.findByText('Move 2 forms to Trash?')).toBeInTheDocument(); // Sprint 13: delete means Trash
+      expect(await screen.findByText('Move 2 forms to Trash?')).toBeInTheDocument(); // Delete means Trash
       // No typed-title input in bulk mode — the confirm button is enabled immediately.
       const confirmButton = screen.getByRole('button', { name: 'Move 2 forms to Trash' });
       expect(confirmButton).toBeEnabled();
@@ -305,8 +299,8 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
     });
   });
 
-  // sprint-10-events-migration, task 6.5 — proves the ui/Table migration (6.2) plus adding the
-  // select column (6.4) didn't disturb any existing row action's wiring.
+  // Proves the ui/Table layout and the
+  // select column didn't disturb any existing row action's wiring.
   describe('row-action wiring unchanged after the ui/Table migration and select column (task 6.5)', () => {
     it('Open Inbox and Open Insights still navigate to the same per-form URLs', async () => {
       mockGetForms.mockResolvedValue({ forms: [threeForms()[0]], total: 1, page: 1, limit: 10 });
@@ -346,9 +340,9 @@ describe('WorkspaceFormsPage — FormsPage rendered with workspace context', () 
     });
   });
 
-  // sprint-11-v2a-hardening 2.3 — real gap found by the cross-role matrix: canDeleteForm(role) was
+  // Real gap found by the cross-role matrix: canDeleteForm(role) was
   // never actually checked anywhere in this page. Delete (row menu item, select column, bulk bar)
-  // must be owner-only per requirements.md §7.2 (task 1.2's own acceptance criteria).
+  // must be owner-only.
   describe('delete is gated by canDeleteForm(role) — owner only', () => {
     it.each(['admin', 'member', 'viewer'] as const)('role=%s: no select column, no row Delete action', async (role) => {
       mockListWorkspaces.mockResolvedValue([{ id: 'w1', name: 'Acme', slug: 'acme', role }]);

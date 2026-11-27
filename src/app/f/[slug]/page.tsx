@@ -79,14 +79,14 @@ export default async function PublicFormPage({ params, searchParams }: Props) {
   // title says why and the page is noindex (generateMetadata above). Draft, archived and unknown links stay a REAL 404.
   if (unavailable) return <FormUnavailable reason={unavailable} />;
 
-  // Client-side courtesy only — the backend must independently reject submissions
-  // (and ideally this GET too) past closeDate; this just avoids showing a stale form.
+  // Client-side courtesy only — the backend itself rejects this GET and submissions
+  // past closeDate; this just avoids showing a stale form.
   if (schema && isPastCloseDate(schema.settings.closeDate)) {
     // `schema` loaded fine: its own settings.successMessage is the admin's custom message and takes priority.
     return <FormUnavailable reason="closeDate" userNote={schema.settings.successMessage} />;
   }
 
-  // Draft, archived or a link that never existed: one indistinguishable screen, and a REAL 404 (it was a 200 page).
+  // Draft, archived or a link that never existed: one indistinguishable screen, and a REAL 404.
   if (!schema) {
     if (userNote) return <FormUnavailable userNote={userNote} />;
     notFound();

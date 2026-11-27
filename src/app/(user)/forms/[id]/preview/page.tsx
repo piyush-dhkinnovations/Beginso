@@ -16,13 +16,13 @@ import { PreviewFrame } from '@/components/preview/PreviewFrame';
 import type { PreviewDevice } from '@/components/preview/DeviceToggle';
 import type { PublicFormSchema } from '@/types/publicForm';
 
-// Two modes of one route (design.md §4):
+// Modes of one route:
 //  • default — admin chrome: PreviewBar + a same-origin iframe of this route in `?embed=1` mode.
 //  • `?bare=1` — the Branding studio's "Full screen": the form alone, filling the tab, with no bar and no frame around it, so it reads as the
 //    published form does (it is still a preview: nothing is submitted for real).
 //  • `?embed=1` — just the respondent view, in the form's own light theme (FormThemeScope). Also
 //    used by the layout gallery, with `?layout=` to preview a preset before it is chosen.
-// Preview mode is a property of THIS route, not persisted state (requirements.md 3.2), so leaving
+// Preview mode is a property of THIS route, not persisted state, so leaving
 // by any route clears it and /f/[slug] can never show the bar.
 export default function FormPreviewPage() {
   const { id } = useParams() as { id: string };

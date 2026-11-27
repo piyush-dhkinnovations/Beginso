@@ -36,11 +36,8 @@ export default function TemplateDetailPage() {
     if (renamed) router.replace(`/discover-templates/${renamed}`);
   }, [renamed, router]);
   const [device, setDevice] = useState<PreviewDevice>('desktop');
-  // src/proxy.ts redirects an unauthenticated visit to a protected route to a bare `/login` with
-  // no `?next=` preserved (unlike the invite-link flow, which isn't proxy-protected and decides
-  // its own redirect client-side) — so linking straight to /templates/apply/{id} and trusting
-  // proxy.ts to send an anonymous visitor onward with the template intent intact does not work.
-  // Checking auth here and choosing the link explicitly is the fix.
+  // A logged-out visitor is sent to sign-up with the template as `next`. A direct link to /templates/apply/{id}
+  // would leave it to src/proxy.ts, which sends an anonymous visit to a protected route to /login instead.
   const { isAuthenticated } = useAuth();
   const useTemplateHref = isAuthenticated
     ? `/templates/apply/${template?._id}`
@@ -88,7 +85,7 @@ export default function TemplateDetailPage() {
       <Navbar />
 
       <article className="pt-28 pb-24 md:pt-32 md:pb-16">
-        {/* Wider than the old max-w-4xl: a two-column split needs the room a single text column didn't. */}
+        {/* A two-column split needs more room than a single text column. */}
         <div className="max-w-384 mx-auto px-4 sm:px-6 lg:px-8">
           <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 bg-caption text-(--text-muted) mb-6">
             <Link href="/discover-templates" className="hover:text-(--text-primary)">Templates</Link>

@@ -1,7 +1,5 @@
 /**
- * __tests__/responses/responses.pagination.property.test.ts
- * Feature: sprint-4-responses, Property 2: Pagination bounds are never exceeded
- * Requirements: 2.3, 11.2
+ * Property: Pagination bounds are never exceeded
  */
 
 import { describe, it } from 'vitest';

@@ -12,7 +12,7 @@ describe('security headers', () => {
     expect(getHeaders).toBeTypeOf('function');
 
     const rules = await getHeaders!();
-    // The blanket rule excludes /dev/ui/frame (sprint-7-foundation's /dev/ui gallery preview —
+    // The blanket rule excludes /dev/ui/frame (the /dev/ui gallery preview —
     // see next.config.ts's own comment) rather than matching literally everything, so this
     // finds it by its header content, not the exact source string.
     const headers = rules.find((rule) =>
