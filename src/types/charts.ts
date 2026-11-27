@@ -1,5 +1,5 @@
-// Custom charts (Sprint 14 rebuild). A chart is a QUESTION about the responses; its segments drill
-// down to the responses behind them. Backend contract to confirm (BE agent implementing in parallel):
+// Custom charts. A chart is a QUESTION about the responses; its segments drill
+// down to the responses behind them. Charts are
 // persisted per form per user - field, type, size, title, options, position, visibility.
 export type ChartType = 'pie' | 'donut' | 'bar' | 'horizontal_bar' | 'line' | 'area' | 'bar_time' | 'average';
 export type ChartSize = 'small' | 'medium' | 'large';

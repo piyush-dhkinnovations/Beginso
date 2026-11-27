@@ -621,7 +621,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
       };
     }),
 
-  // ─── Pages ────────────────────────────────────────────────────────────────
+  // Pages
 
   setActivePageId: (pageId) =>
     set({

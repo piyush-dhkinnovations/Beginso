@@ -1,4 +1,4 @@
-import type { FormBranding } from '@/types/form'; // reused, not redefined — see design.md §12
+import type { FormBranding } from '@/types/form'; // reused, not redefined
 import type { ThemePreference } from '@/lib/theme';
 
 export interface UserProfile {
@@ -6,8 +6,6 @@ export interface UserProfile {
   name: string;
   email: string;
   avatarUrl: string | null;
-  // `role`/`status`/`lastLoginAt` field list conflicts with another backend doc's example — still
-  // an open question, see sprint-6-settings-checklist.md item 1.
   role: string;
   status: string;
   emailVerified: boolean;
@@ -39,7 +37,7 @@ export interface WorkspaceSettings {
   logoUrl: string | null;
   branding: FormBranding; // { primaryColor?, logoUrl?, coverImageUrl? } — same shape a form's own branding uses
   // Confirmed live 18 Aug 2026 — notification preferences are NOT a separate resource/endpoint,
-  // they're a field directly on the workspace document. NotificationsTab (Wednesday) reads/writes
+  // they're a field directly on the workspace document. NotificationsTab reads/writes
   // this via settingsService.getWorkspace()/updateWorkspace(), the same query WorkspaceTab and
   // BrandingTab already share — not a dedicated settingsKeys.notifications() query.
   notificationPreferences: NotificationPreferences;
@@ -84,7 +82,7 @@ export interface SessionSummary {
   revokedAt?: string | null;
 }
 
-// Job-id-then-poll pattern, same convention as Sprint 5's Reports (`ReportStatus`).
+// Job-id-then-poll pattern, same convention as Reports (`ReportStatus`).
 // `POST /api/workspaces/current/export` returns `202 { exportJob: { id, status, expiresAt } }`;
 // `GET /api/workspaces/current/export/status?jobId=` polls this shape until `completed`/`failed`;
 // `GET /api/workspaces/current/export/file?jobId=` then streams the file.

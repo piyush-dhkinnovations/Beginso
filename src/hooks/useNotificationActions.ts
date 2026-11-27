@@ -12,9 +12,9 @@ function patchPages(old: Pages | undefined, patch: (n: NotificationPage['items']
 }
 
 /**
- * Sprint 14 (task 3.13): mark-one-read and mark-all-read for one context. Both patch the cached
- * lists and the unread count optimistically, roll back on failure, and re-sync on settle (design.md
- * §10). The failure toast is the caller's (`mutate(…, { onError })`) so the bell, which renders in
+ * Mark-one-read and mark-all-read for one context. Both patch the cached
+ * lists and the unread count optimistically, roll back on failure, and re-sync on settle.
+ * The failure toast is the caller's (`mutate(…, { onError })`) so the bell, which renders in
  * every shell, does not need a ToastProvider just to mount.
  */
 export function useNotificationActions(scope: string) {

@@ -8,7 +8,7 @@ import { notificationKeys } from '@/lib/queryKeys';
 export const POLL_MS = 60_000;
 
 /**
- * Sprint 14 (B9.2, requirements 3.2, task 3.12). One shared cache entry per context, polled every
+ * One shared cache entry per context, polled every
  * 60 s while the tab is visible - never in a hidden tab (`refetchIntervalInBackground: false`) and
  * never when signed out (`enabled`). Refetches immediately on window focus. The bell and the page
  * read this same key, so there is one request per interval.

@@ -4,9 +4,9 @@ import { workspaceKeys } from '@/lib/queryKeys';
 import type { Role } from '@/types/workspace';
 
 /**
- * Sprint 12 (inbox-collaboration), requirements.md §14: role-gated bulk actions ("a hidden
- * action is omitted, not disabled") need the caller's role in the Inbox's own scope. No
- * slug-scoped "get my role" endpoint exists yet — reuses the already-live `GET /api/workspaces`
+ * role-gated bulk actions ("a hidden
+ * action is omitted, not disabled") need the caller's role in the Inbox's own scope. This reuses the
+ * `GET /api/workspaces`
  * list (same data `ContextSwitcher` reads) and finds the entry matching this scope, same pattern
  * `forms/[id]/overview/page.tsx` uses for a workspace id it already has in hand.
  *

@@ -11,7 +11,7 @@ export const SEARCH_MAX_CHARS = 100;
 const DEBOUNCE_MS = 250;
 
 /**
- * Sprint 14 (B10, task 3.7) - the only caller of `searchService`. Debounced 250 ms, runs only at >= 2
+ * The only caller of `searchService`. Debounced 250 ms, runs only at >= 2
  * characters, and aborts a stale request when the key changes (TanStack passes the AbortSignal
  * through). The key is namespaced by context so switching workspace never serves another's results;
  * `searchKeys.all` is cleared on context switch and on a role change (GlobalSearch / the switcher).

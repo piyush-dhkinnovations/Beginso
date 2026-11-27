@@ -1,5 +1,4 @@
 /**
- * Sprint 12 (inbox-collaboration), design.md §11.2 (Notes — confirmed live, BE 0.3).
  * `GET/POST /api/responses/:id/notes` · `PATCH/DELETE /api/responses/:id/notes/:noteId`.
  */
 

@@ -4,7 +4,7 @@ import { teamKeys } from '@/lib/queryKeys';
 import { useAuth } from '@/hooks/useAuth';
 
 /**
- * Sprint 14 (OQ-2): the signed-in member's own Membership.notificationPreference for a workspace.
+ * The signed-in member's own Membership.notificationPreference for a workspace.
  * Read from the members list (the only live read of it), matched on the caller's user id; the
  * Notifications tab and the publish pre-flight share this cache entry. Personal scope has no
  * membership, so the query is disabled there.
