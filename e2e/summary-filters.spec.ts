@@ -1,8 +1,8 @@
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 
 /**
- * A form's Summary page: it opens on All time, remembers a narrower range the person chose (even after a visit to the Responses tab),
- * and Filters and Add chart share the form header's one row. Backend: a fake that lives in this file and records every overview
+ * A form's Insights page: it opens on All time, remembers a narrower range the person chose (even after a visit to the Responses tab),
+ * and Filters and Add chart share one row of the form header. Backend: a fake that lives in this file and records every overview
  * request, so the tests can see which date window the page actually asked for.
  */
 const FORM_ID = 'e2e-summary-form';

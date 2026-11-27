@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Real-browser checks for two keyboard accessibility fixes (QA A13-011, A3-006). The builder is the one page that always shows the
+ * Real-browser checks for two keyboard accessibility fixes (QA A13-011, A3-006). The builder is a page that always shows the
  * collapsed icon rail, so it is where the rail tooltip is exercised. Backend calls are answered inside the test.
  */
 const FORM_ID = 'e2e-form-a11y';

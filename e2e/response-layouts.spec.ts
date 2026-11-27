@@ -1,7 +1,7 @@
 import { test, expect, type BrowserContext, type Page } from '@playwright/test';
 
 /**
- * Sprint 15: the "Submitted response" card in three layouts (Grid, List, Table), in the drawer and on the full-screen page.
+ * The "Submitted response" card in three layouts (Grid, List, Table), in the drawer and on the full-screen page.
  * Real browser; the backend is a fake that lives in this file and remembers the layout it is sent, so a reload and a second tab
  * really read the saved choice back. The response is a 39-question film submission (invented names and links) with three
  * unanswered questions, a long synopsis and two Drive links.
@@ -190,7 +190,7 @@ test.describe('Submitted response layouts', () => {
   test('switching a layout is fast on the 39-question response', async ({ page, context }) => {
     await installBackend(context);
     await openDrawer(page);
-    // The e2e app is a dev server (unminified React, no production optimisations), so the first switches are measured as a
+    // The e2e app may be a dev server (unminified React, no production optimisations), so the first switches are measured as a
     // warm-up and the budget is checked on the median of the rest: a production build is faster still.
     const durations = await page.evaluate(async () => {
       const region = document.querySelector('section[aria-label="Submitted response"]')!;
@@ -208,7 +208,7 @@ test.describe('Submitted response layouts', () => {
     const warm = durations.slice(3).sort((a, b) => a - b);
     const median = warm[Math.floor(warm.length / 2)];
     test.info().annotations.push({ type: 'switch-ms', description: durations.map((d) => d.toFixed(0)).join(', ') });
-    // 100 ms is the product target (a production build); a shared CI runner on the dev server gets 2x headroom so the test catches a
+    // 100 ms is the product target (a production build); a shared CI runner or a dev server gets 2x headroom so the test catches a
     // real regression (hundreds of ms) rather than runner noise.
     expect(median, 'median switch time in ms').toBeLessThan(200);
   });
@@ -315,7 +315,6 @@ test.describe('Submitted response layouts', () => {
 const NO_SCROLL = () => document.documentElement.scrollWidth <= window.innerWidth + 1 && document.body.scrollWidth <= window.innerWidth + 1;
 
 async function axeViolations(page: Page, include: string) {
-  // axe-core is not a direct dependency (it ships inside eslint-plugin-jsx-a11y); it is injected from there.
   await page.addScriptTag({ path: require.resolve('axe-core/axe.min.js') });
   return page.evaluate(async (selector) => {
     const axe = (window as unknown as { axe: { run: (ctx: unknown, opts: unknown) => Promise<{ violations: { id: string; impact: string; nodes: { target: string[] }[] }[] }> } }).axe;

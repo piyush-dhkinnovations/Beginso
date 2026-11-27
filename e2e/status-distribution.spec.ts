@@ -67,7 +67,6 @@ test('lists every stage (an empty one at 0) in a donut card that fills its place
   const box = (await card.boundingBox())!;
   const last = (await card.getByText('Released', { exact: true }).first().boundingBox())!;
   expect(box.y + box.height - (last.y + last.height), 'space under the last row').toBeLessThan(box.height * 0.3);
-  // and the card is no taller than the chart row it sits in
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
   await page.screenshot({ path: testInfo.outputPath('status-distribution.png') });
 });

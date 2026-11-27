@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Requirement 3 (multi-page navigation) — including the regression test for the
+ * Multi-page navigation, including the regression test for the
  * "Next silently submits" button-key bug found and fixed on Fri 24 Jul (missing
  * `key` props caused React to reuse the clicked DOM node for the next render's
  * Submit button, mid-event).

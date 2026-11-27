@@ -1,10 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * E2E tests for the public form pipeline (Sprint 3). Runs against `next dev` on a
- * dedicated port, with the backend mocked via route interception (see e2e/mockBackend.ts)
+ * E2E tests for the app. Runs against `next dev` by default on a
+ * dedicated port, with the backend mocked by e2e/mockServer.ts and by route interception in the specs,
  * so tests are deterministic and don't depend on the real backend's availability,
- * rate limits, or current bugs — those are tracked separately in docs/backend-contract/known-issues/.
+ * rate limits, or current bugs.
  */
 // Ports can be moved with E2E_PORT (the app) and E2E_MOCK_PORT (the mock backend) when 3100/3101 are taken.
 // A server that is already listening is NOT reused unless E2E_REUSE_SERVER=1: reusing whatever answers on the
@@ -25,7 +25,7 @@ export default defineConfig({
   workers: 4,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  // The suite runs on `next dev`, which compiles a route the first time it is visited. On a CI runner with four workers hitting the
+  // On `next dev` a route is compiled the first time it is visited. On a slow machine with four workers hitting the
   // builder page at once that compile alone can take most of a minute, and the specs themselves wait up to 60s for the page: with
   // Playwright's default 30s per test the first builder test timed out before its own wait could finish. A genuine hang still fails.
   timeout: 90_000,

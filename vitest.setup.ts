@@ -3,7 +3,7 @@ import '@testing-library/jest-dom';
 
 import { vi } from 'vitest';
 
-// --- IntersectionObserver mock (required for FeaturesSection / HowItWorksSection) ---
+// IntersectionObserver mock (required for FeaturesSection / HowItWorksSection)
 class MockIntersectionObserver {
   readonly root = null;
   readonly rootMargin = '';
@@ -15,7 +15,7 @@ class MockIntersectionObserver {
 }
 vi.stubGlobal('IntersectionObserver', MockIntersectionObserver);
 
-// --- ResizeObserver mock (required for EChartContainer) ---
+// ResizeObserver mock
 class MockResizeObserver {
   observe = vi.fn();
   unobserve = vi.fn();
@@ -23,7 +23,7 @@ class MockResizeObserver {
 }
 vi.stubGlobal('ResizeObserver', MockResizeObserver);
 
-// --- localStorage mock ---
+// localStorage mock
 const localStorageMock = (() => {
   let store: Record<string, string> = {};
   return {
@@ -35,7 +35,7 @@ const localStorageMock = (() => {
 })();
 vi.stubGlobal('localStorage', localStorageMock);
 
-// --- document.cookie mock ---
+// document.cookie mock
 let cookieStore = '';
 Object.defineProperty(document, 'cookie', {
   get: () => cookieStore,
@@ -43,7 +43,7 @@ Object.defineProperty(document, 'cookie', {
   configurable: true,
 });
 
-// --- window.matchMedia mock ---
+// window.matchMedia mock
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({
@@ -58,13 +58,12 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// --- window.scrollY mock ---
+// window.scrollY mock
 Object.defineProperty(window, 'scrollY', {
   writable: true,
   value: 0,
 });
 
-// Reset localStorage store before each test
 beforeEach(() => {
   localStorageMock.clear();
   localStorageMock.getItem.mockClear();
@@ -73,7 +72,7 @@ beforeEach(() => {
   cookieStore = '';
 });
 
-// --- Link clicks: jsdom cannot navigate and prints "Not implemented: navigation to another Document" for every
+// Link clicks: jsdom cannot navigate and prints "Not implemented: navigation to another Document" for every
 // click on a real <a href>. Tests assert on the href, never on an actual page load, so the default action is cancelled
 // after React's own handlers have run (this listener sits on document, above React's root).
 if (typeof document !== 'undefined') {

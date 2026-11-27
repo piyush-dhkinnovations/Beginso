@@ -114,7 +114,6 @@ test.describe('Responses calendar', () => {
     await installBackend(context);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await openCalendar(page);
-    // axe-core is not a direct dependency (it ships inside eslint-plugin-jsx-a11y); it is injected from there.
     await page.addScriptTag({ path: require.resolve('axe-core/axe.min.js') });
     const violations = await page.evaluate(async () => {
       const axe = (window as unknown as { axe: { run: (c: unknown, o: unknown) => Promise<{ violations: { id: string; nodes: { target: string[]; failureSummary?: string }[] }[] }> } }).axe;
@@ -236,7 +235,7 @@ test.describe('Responses calendar', () => {
     expect(Math.abs(today.y + today.height / 2 - (search.y + search.height / 2))).toBeLessThan(40);
     expect(today.x).toBeGreaterThan(show.x + show.width);
     expect(month.x).toBeGreaterThan(today.x);
-    void calendar; // the Table / Board / Calendar buttons are in the header's second row now
+    void calendar; // the Table / Board / Calendar buttons are in the header's second row
     await page.screenshot({ path: testInfo.outputPath('calendar-bar.png'), clip: { x: 0, y: 0, width: 1440, height: 320 } });
   });
 });
