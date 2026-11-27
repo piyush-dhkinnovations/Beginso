@@ -125,7 +125,6 @@ describe('LiveFormPreview: the stage and its zoom', () => {
       window.dispatchEvent(new MessageEvent('message', { data: { type: 'beginso-preview-drawn' }, origin: window.location.origin }));
     });
   const frame = () => screen.getByTitle('Live form preview');
-  const stageBox = () => frame().closest('.relative') as HTMLElement;
 
   it('holds a placeholder of its own until the form says it is drawn, so nothing else is seen first', () => {
     render(<LiveFormPreview fill formId="abc" branding={{}} />);
@@ -146,38 +145,45 @@ describe('LiveFormPreview: the stage and its zoom', () => {
     vi.useRealTimers();
   });
 
-  it('is 100% to start: the form is drawn at full size and fills the stage', () => {
-    const stage = stageOf();
+  const screenOf = () => frame().parentElement as HTMLElement;
+
+  it('draws the form page on the stage and the form in a see-through frame over it', () => {
+    render(<LiveFormPreview fill formId="abc" branding={{ backgroundStyle: 'solid', backgroundColor: '#ff0000' }} />);
+    expect(frame()).toHaveAttribute('src', '/forms/abc/preview?embed=1&bg=0');
+    expect(frame().closest('[data-form-page]')).toHaveStyle({ backgroundColor: '#ff0000' });
+  });
+
+  it('is 100% to start, and a desktop is the whole stage with no device frame', () => {
     render(<LiveFormPreview fill formId="abc" branding={{}} />);
-    stage(1000, 600);
-    expect(frame()).toHaveStyle({ transform: 'scale(1)', width: '1000px', height: '600px' });
+    expect(frame()).toHaveStyle({ transform: 'scale(1)', width: '100%', height: '100%' });
+    expect(screenOf()).toHaveStyle({ width: '100%' });
+    expect(screenOf().style.borderWidth).toBe('0px');
   });
 
-  it('zooming out draws it smaller on a stage that is the same size: the frame is bigger by as much, so the page still fills the stage', () => {
-    const stage = stageOf();
+  it('zooming draws the form smaller or bigger on the same screen', () => {
     const { rerender } = render(<LiveFormPreview fill zoom={0.5} formId="abc" branding={{}} />);
-    stage(1000, 600);
-    expect(frame()).toHaveStyle({ transform: 'scale(0.5)', width: '2000px', height: '1200px' });
-    rerender(<LiveFormPreview fill zoom={1.5} formId="abc" branding={{}} />);
-    expect(frame()).toHaveStyle({ transform: 'scale(1.5)', width: `${1000 / 1.5}px` });
+    expect(frame()).toHaveStyle({ transform: 'scale(0.5)', width: '200%', height: '200%' });
+    rerender(<LiveFormPreview fill zoom={1.25} formId="abc" branding={{}} />);
+    expect(frame()).toHaveStyle({ transform: 'scale(1.25)', width: '80%' });
   });
 
-  it('on a laptop screen the form is the stage itself: one box, not a narrower frame in a grey one', () => {
-    const stage = stageOf();
-    render(<LiveFormPreview fill zoom={0.75} formId="abc" branding={{}} />);
-    stage(1000, 600);
-    expect(frame().parentElement).toBe(stageBox());
-    expect(stageBox().className).not.toContain('overflow-auto');
-  });
-
-  it('a tablet or a phone keeps its real width, in a box of its own in the middle, and the stage scrolls sideways when it is zoomed past it', () => {
+  it('a tablet and a phone are framed devices, as on the full-screen preview, and the frame inside stays the same one', () => {
     const stage = stageOf();
     const { rerender } = render(<LiveFormPreview fill device="mobile" formId="abc" branding={{}} />);
-    stage(1000, 600);
-    expect(frame()).toHaveStyle({ width: '375px' });
-    expect(frame().parentElement).not.toBe(stageBox());
-    rerender(<LiveFormPreview fill device="tablet" zoom={1.5} formId="abc" branding={{}} />);
-    expect(frame()).toHaveStyle({ width: '768px', transform: 'scale(1.5)' });
-    expect(stageBox().className).toContain('overflow-auto');
+    stage(1200, 700);
+    const first = frame();
+    expect(screenOf()).toHaveStyle({ width: '375px' });
+    expect(parseInt(screenOf().style.borderWidth, 10)).toBeGreaterThan(0);
+    rerender(<LiveFormPreview fill device="tablet" formId="abc" branding={{}} />);
+    expect(screenOf()).toHaveStyle({ width: '768px' });
+    expect(frame()).toBe(first);
+  });
+
+  it('a device wider than the stage is shrunk to fit, still laid out at its real width', () => {
+    const stage = stageOf();
+    render(<LiveFormPreview fill device="tablet" formId="abc" branding={{}} />);
+    stage(432, 700); // 384px for the tablet: half its width
+    expect(screenOf()).toHaveStyle({ width: '384px' });
+    expect(frame()).toHaveStyle({ transform: 'scale(0.5)', width: '200%' });
   });
 });

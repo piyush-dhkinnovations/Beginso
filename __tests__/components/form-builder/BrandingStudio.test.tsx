@@ -1,9 +1,9 @@
 /**
- * The Branding studio: every look setting in five short sections, beside a live preview, each a click or two from the person. Choosing a layout
+ * The Branding studio: every look setting in a section named after the part of the form it changes, beside a live preview, each a click or two from the person. Choosing a layout
  * applies it at once; the controls report what they changed and the preview is given the unsaved branding, layout and screen.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrandingStudio } from '@/components/form-builder/BrandingStudio';
 import { LAYOUT_LOOKS } from '@/lib/layoutPresets';
@@ -32,16 +32,26 @@ const tab = (name: string) => screen.getByRole('tab', { name });
 describe('BrandingStudio: one screen', () => {
   it('shows the sections as tabs and the live preview beside them, with nothing to get through first', () => {
     draw();
-    expect(within(screen.getByRole('tablist', { name: 'Branding sections' })).getAllByRole('tab').map((t) => t.textContent)).toEqual(['Layout', 'Colour', 'Text', 'Style', 'Details', 'Header']);
+    expect(within(screen.getByRole('tablist', { name: 'Branding sections' })).getAllByRole('tab').map((t) => t.textContent)).toEqual(['Layout', 'Arrange', 'Colours', 'Fonts', 'Background', 'Header', 'Fields', 'Buttons', 'Thank you']);
     expect(tab('Layout')).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByTestId('live-preview')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Layout' })).toBeInTheDocument();
   });
 
+  it('names the open section and says what is in it; arrows move down the rail', async () => {
+    draw();
+    expect(screen.getByRole('heading', { name: 'Layout' })).toBeInTheDocument();
+    expect(screen.getByRole('tablist', { name: 'Branding sections' })).toHaveAttribute('aria-orientation', 'vertical');
+    tab('Layout').focus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(tab('Arrange')).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('Form width, spacing, fields per row and the progress bar.')).toBeInTheDocument();
+  });
+
   it('gives the preview the unsaved branding, the layout and the screen chosen, and fills the stage', async () => {
     draw({ branding: { primaryColor: '#123456' }, layout: 'steps' });
     expect(previewProps).toHaveBeenLastCalledWith(expect.objectContaining({ formId: 'f1', branding: { primaryColor: '#123456' }, layout: 'steps', device: 'desktop', fill: true }));
-    await userEvent.click(screen.getByRole('button', { name: 'Mobile' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Mobile' }));
     expect(previewProps).toHaveBeenLastCalledWith(expect.objectContaining({ device: 'mobile' }));
   });
 
@@ -75,7 +85,7 @@ describe('BrandingStudio: one screen', () => {
       await userEvent.click(screen.getByRole('button', { name: 'Back to 100%' }));
       expect(preview().zoom).toBe(1);
       await userEvent.click(screen.getByRole('button', { name: 'Zoom out' }));
-      await userEvent.click(screen.getByRole('button', { name: 'Tablet' }));
+      await userEvent.click(screen.getByRole('radio', { name: 'Tablet' }));
       expect(preview().zoom).toBe(1);
     });
 
@@ -151,8 +161,8 @@ describe('Layout', () => {
 
   it('the Card choice shows a small picture of each of the four looks', async () => {
     const { onBrandingUpdate } = draw();
-    await userEvent.click(tab('Style'));
-    const group = screen.getByRole('group', { name: 'Card' });
+    await userEvent.click(tab('Background'));
+    const group = screen.getByRole('group', { name: 'Card style' });
     expect(within(group).getAllByRole('button')).toHaveLength(4);
     await userEvent.click(within(group).getByRole('button', { name: 'Elevated' }));
     expect(onBrandingUpdate).toHaveBeenLastCalledWith({ cardStyle: 'elevated' });
@@ -181,10 +191,10 @@ describe('Layout', () => {
   });
 });
 
-describe('Colour', () => {
+describe('Colours, background and banner', () => {
   it('a swatch sets the brand colour, a valid hex too, and a bad hex says so and keeps the colour', async () => {
     const { onBrandingUpdate } = draw();
-    await userEvent.click(tab('Colour'));
+    await userEvent.click(tab('Colours'));
     await userEvent.click(screen.getByRole('button', { name: 'Use #16A34A as the brand colour' }));
     expect(onBrandingUpdate).toHaveBeenLastCalledWith({ primaryColor: '#16A34A' });
     const hex = screen.getByLabelText('Brand colour, hex');
@@ -199,16 +209,16 @@ describe('Colour', () => {
     expect(hex).toHaveValue('#1D4ED8');
   });
 
-  it('the colour panel is one click', async () => {
+  it('the banner style is one click, beside the header it paints', async () => {
     const { onBrandingUpdate } = draw();
-    await userEvent.click(tab('Colour'));
-    await userEvent.click(within(screen.getByRole('group', { name: 'Colour panel' })).getByRole('button', { name: 'Gradient' }));
+    await userEvent.click(tab('Header'));
+    await userEvent.click(within(screen.getByRole('group', { name: 'Banner style' })).getByRole('button', { name: 'Gradient' }));
     expect(onBrandingUpdate).toHaveBeenLastCalledWith({ panelTreatment: 'gradient' });
   });
 
   it('the page background is a row of picture tiles, each drawn with its own style; one click chooses it', async () => {
     const { onBrandingUpdate } = draw();
-    await userEvent.click(tab('Colour'));
+    await userEvent.click(tab('Background'));
     const group = screen.getByRole('group', { name: 'Page background' });
     expect(within(group).getAllByRole('button')).toHaveLength(8);
     expect(within(group).getByRole('button', { name: 'Soft glow (default)' })).toHaveAttribute('aria-pressed', 'true');
@@ -219,29 +229,29 @@ describe('Colour', () => {
 
   it('"Your own image" shows its upload box once it is the chosen background', async () => {
     draw({ branding: { backgroundStyle: 'image' } });
-    await userEvent.click(tab('Colour'));
+    await userEvent.click(tab('Background'));
     expect(screen.getByRole('button', { name: 'Your own image' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByText('Click or drag to upload')).toBeInTheDocument();
   });
 
   it('offers the page colour while the background has one, and a way back to the brand colour', async () => {
     const { onBrandingUpdate } = draw({ branding: { primaryColor: '#1D4ED8', backgroundColor: '#DC2626' } });
-    await userEvent.click(tab('Colour'));
+    await userEvent.click(tab('Background'));
     await userEvent.click(screen.getByRole('button', { name: 'Match the brand colour' }));
     expect(onBrandingUpdate).toHaveBeenLastCalledWith({ backgroundColor: undefined });
   });
 
   it('has no page colour for a plain background', async () => {
     draw({ branding: { backgroundStyle: 'plain' } });
-    await userEvent.click(tab('Colour'));
+    await userEvent.click(tab('Background'));
     expect(screen.queryByText('Page colour')).not.toBeInTheDocument();
   });
 });
 
-describe('Text, Style and Header', () => {
+describe('Fonts, arrange, buttons and header', () => {
   it('a font is chosen from a list drawn in the fonts themselves, one click', async () => {
     const { onBrandingUpdate } = draw();
-    await userEvent.click(tab('Text'));
+    await userEvent.click(tab('Fonts'));
     const lora = screen.getByRole('button', { name: /Lora/ });
     expect(lora.getAttribute('style')).toContain('lora');
     await userEvent.click(lora);
@@ -249,11 +259,12 @@ describe('Text, Style and Header', () => {
     expect(screen.getByRole('button', { name: /DM Sans/ })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('headline size, button style and corners are each one click', async () => {
+  it('title size, button style and corners are each one click', async () => {
     const { onBrandingUpdate } = draw();
-    await userEvent.click(tab('Text'));
+    await userEvent.click(tab('Fonts'));
     await userEvent.click(screen.getByRole('button', { name: 'Large' }));
     expect(onBrandingUpdate).toHaveBeenLastCalledWith({ typeScale: 'large' });
+    await userEvent.click(tab('Buttons'));
     await userEvent.click(screen.getByRole('button', { name: 'Outline' }));
     expect(onBrandingUpdate).toHaveBeenLastCalledWith({ buttonStyle: 'outline' });
     await userEvent.click(screen.getByRole('button', { name: 'Pill' }));
@@ -262,16 +273,17 @@ describe('Text, Style and Header', () => {
 
   it('card, width, spacing and field layout are one click, and the progress bar a switch', async () => {
     const { onBrandingUpdate } = draw();
-    await userEvent.click(tab('Style'));
+    await userEvent.click(tab('Background'));
     await userEvent.click(screen.getByRole('button', { name: 'Bordered' }));
     expect(onBrandingUpdate).toHaveBeenLastCalledWith({ cardStyle: 'bordered' });
+    await userEvent.click(tab('Arrange'));
     await userEvent.click(screen.getByRole('button', { name: 'Wide' }));
     expect(onBrandingUpdate).toHaveBeenLastCalledWith({ formWidth: 'wide' });
     await userEvent.click(screen.getByRole('button', { name: 'Spacious' }));
     expect(onBrandingUpdate).toHaveBeenLastCalledWith({ spacing: 'spacious' });
     await userEvent.click(screen.getByRole('button', { name: 'One per row' }));
     expect(onBrandingUpdate).toHaveBeenLastCalledWith({ fieldGrouping: 'single' });
-    await userEvent.click(screen.getByRole('switch', { name: 'Show the progress bar' }));
+    await userEvent.click(screen.getByRole('switch', { name: /Show the progress bar/ }));
     expect(onBrandingUpdate).toHaveBeenLastCalledWith({ showProgress: false });
   });
 
@@ -300,5 +312,49 @@ describe('Text, Style and Header', () => {
     draw({ branding: { bannerLinks: [{ url: 'javascript:alert(1)' }] } });
     await userEvent.click(tab('Header'));
     expect(screen.getByText('Start with http:// or https://')).toBeInTheDocument();
+  });
+});
+
+describe('only what the chosen layout draws is offered', () => {
+  const sections = async (name: string) => userEvent.click(tab(name));
+
+  it('Focus has no logo, cover, banner or card, and each section says so', async () => {
+    draw({ layout: 'focus', formTitle: 'Survey', onTitleChange: vi.fn() });
+    await sections('Header');
+    expect(screen.getByLabelText('Form title')).toBeInTheDocument();
+    for (const name of ['Logo', 'Cover image', 'Description']) expect(screen.queryByText(name)).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Banner style' })).not.toBeInTheDocument();
+    expect(screen.getByText('The Focus layout does not use a description or links, a logo, a cover image or a banner colour style, so they are not shown.')).toBeInTheDocument();
+    await sections('Background');
+    expect(screen.queryByRole('group', { name: 'Card style' })).not.toBeInTheDocument();
+    await sections('Colours');
+    expect(screen.queryByLabelText('Card')).not.toBeInTheDocument();
+  });
+
+  it('Split Feature has its picture side and panel, but no card style or banner shape', async () => {
+    draw({ layout: 'split_feature' });
+    await sections('Header');
+    expect(screen.getByRole('group', { name: 'Side panel style' })).toBeInTheDocument();
+    expect(screen.getByText('Cover image', { selector: 'span.bg-label' })).toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Shape' })).not.toBeInTheDocument();
+    await sections('Background');
+    expect(screen.queryByRole('group', { name: 'Card style' })).not.toBeInTheDocument();
+  });
+
+  it.each(['compact', 'guided'] as const)('%s has no side-by-side choice', async (layout) => {
+    draw({ layout });
+    await sections('Arrange');
+    expect(screen.queryByRole('group', { name: 'Short fields' })).not.toBeInTheDocument();
+  });
+
+  it('nothing in any section is switched off for any layout', async () => {
+    for (const layout of Object.keys(LAYOUT_LOOKS) as (keyof typeof LAYOUT_LOOKS)[]) {
+      draw({ layout });
+      for (const name of ['Arrange', 'Fields']) {
+        await sections(name);
+        expect(within(screen.getByRole('tabpanel')).queryAllByRole('button').filter((b) => (b as HTMLButtonElement).disabled && b.hasAttribute('aria-pressed')), `${layout} ${name}`).toEqual([]);
+      }
+      cleanup();
+    }
   });
 });

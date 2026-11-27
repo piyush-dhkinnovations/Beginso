@@ -52,8 +52,7 @@ export function ThankYouControls({
   };
 
   return (
-    <div className="flex flex-col gap-5 border-t border-(--border-subtle) pt-5">
-      <GroupTitle hint="What people see after they send the form. The message is set in Settings.">Thank-you screen</GroupTitle>
+    <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-3">
         <label htmlFor={`${uid}-preview`} className="bg-body-sm font-medium text-(--text-secondary)">
           Show it in the preview

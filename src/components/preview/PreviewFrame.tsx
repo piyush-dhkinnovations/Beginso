@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { bx } from '@/lib/utils';
 import type { PreviewDevice } from './DeviceToggle';
@@ -31,6 +31,22 @@ const SCREENS: Record<PreviewDevice, CSSProperties> = {
   tablet: framed('tablet', 14, 36, 1024),
   mobile: framed('mobile', 10, 48, 812),
 };
+
+/**
+ * The chosen device's screen, centred on the stage it is put in: the whole stage for a desktop, a framed tablet or phone
+ * otherwise. The same element for all three, so a switch moves and keeps what is inside. `fit` (under 1) shrinks a framed
+ * device that is wider than its stage.
+ */
+export function DeviceScreen({ device, fit = 1, children }: { device: PreviewDevice; fit?: number; children: ReactNode }) {
+  const style = device !== 'desktop' && fit < 1 ? { ...SCREENS[device], width: DEVICE_WIDTH[device] * fit, maxWidth: undefined } : SCREENS[device];
+  return (
+    <div className="flex h-full items-center justify-center">
+      <div data-device={device} className="relative box-content shrink-0 overflow-hidden border-solid border-slate-800 transition-all duration-700 ease-in-out" style={style}>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 // Renders the respondent view in a same-origin <iframe> (`/forms/[id]/preview?embed=1`). An iframe,
 // not a width-constrained div, so the form's real @media breakpoints respond to the chosen device
@@ -64,25 +80,23 @@ export function PreviewFrame({ formId, device, layout, title }: PreviewFrameProp
   }, []);
 
   return (
-    <div className="flex h-full items-center justify-center">
-      <div data-device={device} className="relative box-content shrink-0 overflow-hidden border-solid border-slate-800 transition-all duration-700 ease-in-out" style={SCREENS[device]}>
-        <iframe
-          ref={frameRef}
-          title={title}
-          src={`/forms/${formId}/preview?${params.toString()}`}
-          className={bx('block size-full border-0 bg-transparent transition-opacity duration-300', drawn ? 'opacity-100' : 'opacity-0')}
-        />
-        {!drawn && (
-          <div role="status" aria-label="Loading the preview" className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="mx-auto flex max-w-160 flex-col gap-4 px-4 py-12">
-              <Skeleton variant="title" width="60%" height={32} />
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} variant="block" width="100%" height={56} />
-              ))}
-            </div>
+    <DeviceScreen device={device}>
+      <iframe
+        ref={frameRef}
+        title={title}
+        src={`/forms/${formId}/preview?${params.toString()}`}
+        className={bx('block size-full border-0 bg-transparent transition-opacity duration-300', drawn ? 'opacity-100' : 'opacity-0')}
+      />
+      {!drawn && (
+        <div role="status" aria-label="Loading the preview" className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="mx-auto flex max-w-160 flex-col gap-4 px-4 py-12">
+            <Skeleton variant="title" width="60%" height={32} />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} variant="block" width="100%" height={56} />
+            ))}
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </DeviceScreen>
   );
 }

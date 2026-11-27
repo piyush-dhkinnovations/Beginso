@@ -19,9 +19,18 @@ const DEVICES = [
   { id: 'mobile', label: 'Mobile', title: 'Mobile', icon: <Smartphone size={16} aria-hidden="true" /> },
 ];
 
+/** The floating control over a preview: this one's and the Branding studio's. */
+export const FLOATING_BAR = 'absolute right-3 top-3 z-10 flex items-center gap-1 rounded-full border border-(--border-default) bg-(--surface-card) p-1 text-(--text-primary) shadow-(--shadow-md)';
+
+/** Desktop, Tablet, Mobile as icons. */
+export function DeviceSwitch({ device, onChange }: { device: PreviewDevice; onChange: (device: PreviewDevice) => void }) {
+  // Round all the way through, like the bar around it ("!": the segmented control brings its own, squarer corners).
+  return <SegmentedRadio ariaLabel="Preview device" value={device} options={DEVICES} onChange={(id) => onChange(id as PreviewDevice)} iconOnlyBelow="all" className="rounded-full! [&>button]:rounded-full!" />;
+}
+
 export function PreviewBar({ device, onDeviceChange, backHref }: PreviewBarProps) {
   return (
-    <div className="absolute right-3 top-3 z-10 flex items-center gap-1 rounded-full border border-(--border-default) bg-(--surface-card) p-1 text-(--text-primary) shadow-(--shadow-md)">
+    <div className={FLOATING_BAR}>
       <Link
         href={backHref}
         aria-label="Back to editor"
@@ -32,7 +41,7 @@ export function PreviewBar({ device, onDeviceChange, backHref }: PreviewBarProps
       </Link>
       {/* A phone's own screen is the narrow view already. */}
       <div className="hidden md:flex">
-        <SegmentedRadio ariaLabel="Preview device" value={device} options={DEVICES} onChange={(id) => onDeviceChange(id as PreviewDevice)} iconOnlyBelow="all" />
+        <DeviceSwitch device={device} onChange={onDeviceChange} />
       </div>
       <span title="Respondents see this exactly as shown. Nothing is submitted." className="flex items-center gap-1.5 px-2 bg-body-sm font-semibold">
         <Eye size={14} aria-hidden="true" />
