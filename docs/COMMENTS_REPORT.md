@@ -778,3 +778,106 @@ Proof: **0 mismatches**. Type-check and lint clean, 4901 unit tests in 504 files
 - History removed: the note on a missing accessibility pass in `BuilderTabs` and the "replaces the old PropertiesPanel" note.
 - Disable comment: reason added in `useBuilderLeaveGuard.ts`.
 
+
+---
+
+## Group 6: `components/ui`, `components/analytics` and their tests
+
+### Counts
+
+| | Before | After |
+|---|---|---|
+| Comments | 576 | 558 |
+| Comment lines | 1070 | 929 |
+
+79 files changed: 18 comments removed entirely, 92 edited.
+
+### Proof and gate
+
+Proof: **0 mismatches**. Type-check and lint clean, 4901 unit tests in 504 files, build route table identical, e2e 284 passed and 19 skipped: all the same as the baseline.
+
+### Ten samples to spot-check
+
+**1. `__tests__/analytics/dateRange.property.test.ts:2`**
+```diff
+- * __tests__/analytics/dateRange.property.test.ts
+- * Feature: sprint-5-analytics-reports, Property 1: Date range normalization never inverts
+- * Validates: Requirement 3.4
++ * Property: date range normalization never inverts
+```
+
+**2. `__tests__/components/analytics/FormsSummaryTable.test.tsx:3`**
+```diff
+- * Requirements: 7.1-7.7
+```
+
+**3. `__tests__/components/ui/Avatar.test.tsx:1`**
+```diff
+- * __tests__/components/ui/Avatar.test.tsx
+- * Feature: sprint-7-foundation
+```
+
+**4. `__tests__/components/ui/EmptyState.test.tsx:0`**
+```diff
+-/**
+- * __tests__/components/ui/EmptyState.test.tsx
+- * Feature: sprint-7-foundation
+- */
+-
+```
+
+**5. `__tests__/components/ui/Sidebar.test.tsx:11`**
+```diff
+-    // A badge without a label keeps its old, bare form.
++    // A badge without a label keeps the bare form.
+```
+
+**6. `__tests__/components/ui/Tabs.test.tsx:1`**
+```diff
+- * __tests__/components/ui/Tabs.test.tsx
+- * Feature: sprint-7-foundation
+```
+
+**7. `src/components/analytics/DateRangeFilter.tsx:32`**
+```diff
+-  /** Controlled mode (Reports' staged, non-URL filters, Thursday) — omit to let the filter own
+-   * `?from=&to=` in the URL directly (Auto-Dashboard / Workspace Analytics), the same
+-   * `updateParams` pattern the Responses Hub uses. */
++  /** Controlled mode (Reports' staged, non-URL filters) — omit to let the filter own
++   * `?from=&to=` in the URL directly. */
+```
+
+**8. `src/components/analytics/builder/ChartPreviewCard.tsx:17`**
+```diff
+-  /** Shows the chart-type select at the card's top right (the first steps); the last step shows the card as the dashboard will. */
++  /** Shows the chart-type select at the card's top right (the basics step); the last step shows the card as the dashboard will. */
+```
+
+**9. `src/components/ui/Drawer.tsx:13`**
+```diff
+-  /** 'bottom' renders a bottom sheet (Sprint 13, CF2.12) — same focus trap and scroll lock. */
++  /** 'bottom' renders a bottom sheet — same focus trap and scroll lock. */
+```
+
+**10. `src/components/ui/Pagination.tsx:13`**
+```diff
+-// a data-shape change (requirements.md 2.3).
++// a data-shape change.
+```
+
+### Notes
+
+- Corrected outdated comments in `ui`: `AppShell.tsx` (top bar is 52px, sidebar 220px, no "Responses chart view"), `Avatar.tsx` (the forms list does return an owner), `Input.tsx` (not every right slot is a button), `Menu.tsx` (`StatusDropdown.tsx` does not exist; the trigger override has many callers), `Sidebar.tsx` (`dashboard/Sidebar.tsx` does not exist; this sidebar is in use), `Table.tsx` (loading rows are drawn by the table itself), `Toast.tsx` (no `Toast.ts` re-export exists), `Segmented.tsx` (no "Chart" view), `ContextSwitcher.tsx`, `Modal.tsx` (history removed).
+- Corrected in `analytics`: `AnalyticsStatCards.tsx` (a trend line, not bars), `CompletionRateCard.tsx` (the reason is shown under the dash, not in a tooltip), `DateRangeFilter.tsx` (no `updateParams` elsewhere; the analytics pages pass a value), `FormsSummaryTable.tsx` (logo or icon per form), `ResponsesOverTimeCard.tsx` (has Monthly, highlights no peak), `StatusDistributionChart.tsx` (lists stages when it has them, not always three categories), `ChartPreviewCard.tsx`, `wizardState.ts` (the steps are a row, not a left list).
+- Tests: removed path, sprint and requirement header lines, one retired test's note and two history notes.
+- Nothing is marked "Not built yet in the backend". The saved charts and the response segment filter exist in the backend's `develop`.
+- Disable comments: reasons added in `ui/Avatar.tsx` and `ui/CommandPalette.tsx`. `ui/charts/Interactive.tsx:121` confirmed: the comment above is its reason.
+- Left unchanged: the `ponytail:` note in `AnalyticsView.tsx`; "add a new chart" on `ChartDrawer`'s `editing` prop (true of the component, though no screen uses it, see below).
+
+### Findings (code not changed)
+
+- `analytics/ChartDrawer.tsx` is only opened to edit (`CustomChartsSection.tsx`), so its "Add chart" mode looks unused.
+- `analytics/FormsByStatusCard.tsx`: the donut branch needs more than three segments and there are only three statuses.
+- `analytics/TrendChart.tsx`: `formatBucketLabel` takes a `_bucket` argument it never reads.
+- `AnalyticsView`, `AnalyticsViewRange`, `QuestionBreakdownSection` and `QuestionSummaryCard` tests mock `@/components/charts/EChartContainer`, which no longer exists.
+
