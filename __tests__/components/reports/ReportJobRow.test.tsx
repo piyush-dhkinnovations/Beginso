@@ -19,11 +19,25 @@ vi.mock('@/components/ui/Toast', () => ({
 
 import { ReportJobRow } from '@/components/reports/ReportJobRow';
 
+vi.mock('@/hooks/useResponseSetup', () => ({
+  useFormStages: () => ({ stages: [{ id: 's1', name: 'In Review', colour: 'warning', category: 'in_progress' }], isLoading: false }),
+}));
+
 describe('ReportJobRow', () => {
   beforeEach(() => {
     mockGetReportFileBlobUrl.mockReset().mockResolvedValue('blob:mock-url');
     mockToast.mockReset();
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+  });
+
+  it('names the stage of an export limited to one stage, and says when that stage is gone', () => {
+    const row = (stageId: string) => (
+      <table><tbody><ReportJobRow job={mockReportJob({ filters: { stageId } })} onRetry={vi.fn()} scope="acme" /></tbody></table>
+    );
+    const { rerender } = render(row('s1'));
+    expect(screen.getByText(/^In Review · /)).toBeInTheDocument();
+    rerender(row('deleted'));
+    expect(screen.getByText(/^Removed stage · /)).toBeInTheDocument();
   });
 
   it('renders the form title, response-status filter, date range, and a relative timestamp', () => {

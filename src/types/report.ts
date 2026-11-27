@@ -21,13 +21,11 @@ export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
 };
 
 /**
- * POST /api/reports: "Accept the ResponseFilters object
- * (or ids[]) in place of the single status." `stageId`/`search`/`from`/`to` kept as individual
- * top-level fields for ReportsView's existing personal-shell callers;
- * `filters`/`ids` are the Inbox-driven shape ("the export IS the list: same rows, same
- * permission scoping").
+ * POST /api/reports. The backend reads every filter at the top level and ignores keys it does not know; the search text
+ * is `search`. `ids` (an explicit selection) takes the place of the filters.
  */
-export interface CreateReportPayload {
+export interface CreateReportPayload
+  extends Pick<ResponseFilters, 'tagIds' | 'assigneeId' | 'unread' | 'duplicate' | 'field' | 'value' | 'granularity'> {
   format: ReportFormat;
   formId?: string;
   stageId?: string;
@@ -36,10 +34,7 @@ export interface CreateReportPayload {
   search?: string;
   from?: string;
   to?: string;
-  /** The Inbox's active filter object — mutually exclusive with `ids`. */
-  filters?: ResponseFilters;
-  /** An explicit selection (bulk "Export" over a checked subset) — mutually exclusive with
-   * `filters`. */
+  /** An explicit selection (bulk "Export" over a checked subset). */
   ids?: string[];
 }
 
@@ -56,6 +51,8 @@ export interface ReportJob {
   responseStatus?: 'new' | 'in_progress' | 'completed';
   from?: string;            // ISO 8601
   to?: string;              // ISO 8601
+  /** What the export was asked for, as the backend stored it: names a stage export's row, and is sent again on a retry. */
+  filters?: Omit<CreateReportPayload, 'format'>;
   /** How many responses were chosen by hand for this export (an export of a selection has no date range). */
   selectedCount?: number;
   createdAt: string;       // ISO 8601

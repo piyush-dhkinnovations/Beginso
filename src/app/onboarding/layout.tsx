@@ -9,8 +9,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
     <div className="flex flex-col items-center justify-center min-h-screen bg-(--bg-subtle) py-12 px-4 sm:px-6 lg:px-8 overflow-y-auto">
       <div className="w-full max-w-xl flex flex-col gap-6">
         <div className="flex justify-center">
-          {/* The light-surface wordmark is forced in every theme, although bg-(--bg-subtle) follows the theme. */}
-          <Wordmark force="light" height={32} />
+          <Wordmark height={32} />
         </div>
         {children}
       </div>

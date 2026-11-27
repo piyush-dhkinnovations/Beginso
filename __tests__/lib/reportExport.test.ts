@@ -1,11 +1,11 @@
 /**
- * The export request in the test equals the list request's filter: this
- * proves the equivalence directly, without mounting ResponsesHubView/ReportsView.
+ * The export request carries the list's filters in the shape POST /api/reports reads: this
+ * proves it directly, without mounting ResponsesHubView/ReportsView.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { exportPayloadFromFilters, exportPayloadFromTarget } from '@/lib/reportExport';
-import type { GetResponsesParams, ResponseFilters } from '@/types/response';
+import type { ResponseFilters } from '@/types/response';
 
 const filtersArb = fc.record(
   {
@@ -22,33 +22,28 @@ const filtersArb = fc.record(
 );
 
 describe('exportPayloadFromFilters — equals the list request', () => {
-  it('property: the export payload carries exactly the filters the list query used', () => {
+  it('property: every filter the list used is a top-level field the backend reads (search text as `search`)', () => {
     fc.assert(
       fc.property(filtersArb, fc.option(fc.string(), { nil: undefined }), (filters, formId) => {
-        // The same filters object the list view passes into getResponses(), spread into
-        // GetResponsesParams (formId/page/limit/sort are list-only concerns, not filter fields).
-        const listParams: GetResponsesParams = { formId, ...filters, page: 1, limit: 50 };
-        const { page: _page, limit: _limit, formId: _formId, ...listFilters } = listParams;
-        void _page; void _limit; void _formId;
-
-        const exportPayload = exportPayloadFromFilters('csv', formId, filters as ResponseFilters);
-
-        return (
-          exportPayload.formId === formId &&
-          JSON.stringify(exportPayload.filters) === JSON.stringify(listFilters)
-        );
+        const payload = exportPayloadFromFilters('csv', formId, filters as ResponseFilters);
+        const { q, ...rest } = filters;
+        expect(payload).toEqual({ format: 'csv', formId, ...rest, search: q });
+        expect(payload).not.toHaveProperty('filters');
       }),
       { numRuns: 100 }
     );
   });
 
-  it('example: search + stage + unread filter round-trips unchanged', () => {
+  // The backend drops keys it does not know, so a nested `filters` object exported every response of the form.
+  it('example: search + stage + unread reach the backend', () => {
     const filters: ResponseFilters = { stageId: 's1', unread: true, q: 'alice' };
-    expect(exportPayloadFromFilters('pdf', 'form-1', filters)).toEqual({
-      format: 'pdf',
-      formId: 'form-1',
-      filters,
-    });
+    expect(exportPayloadFromFilters('pdf', 'form-1', filters)).toEqual({ format: 'pdf', formId: 'form-1', stageId: 's1', unread: true, search: 'alice' });
+  });
+
+  it('a personal stage is a fixed category, which the backend filters as `status`', () => {
+    const payload = exportPayloadFromFilters('csv', 'form-1', { stageId: 'in_progress' });
+    expect(payload).toEqual({ format: 'csv', formId: 'form-1', status: 'in_progress' });
+    expect(payload.stageId).toBeUndefined();
   });
 });
 
@@ -59,9 +54,8 @@ describe('exportPayloadFromTarget', () => {
   });
 
   it('a filter target ("Select all N matching") exports the filter, not ids', () => {
-    const filter: ResponseFilters = { stageId: 's2' };
-    const result = exportPayloadFromTarget('csv', { filter, formId: 'form-1' });
-    expect(result).toEqual({ format: 'csv', formId: 'form-1', filters: filter });
+    const result = exportPayloadFromTarget('csv', { filter: { stageId: 's2' }, formId: 'form-1' });
+    expect(result).toEqual({ format: 'csv', formId: 'form-1', stageId: 's2' });
     expect(result).not.toHaveProperty('ids');
   });
 });
