@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FieldInlineEditor } from '@/components/form-builder/FieldInlineEditor';
 import { makeField } from './builderTestUtils';
@@ -11,6 +11,9 @@ function setup(field: FormField) {
   const utils = render(<FieldInlineEditor field={field} onUpdate={onUpdate} onUpdateOptions={onUpdateOptions} />);
   return { onUpdate, onUpdateOptions, ...utils };
 }
+
+/** One option of one display setting ("Size" → "Large"). */
+const choice = (group: string, name: string) => within(screen.getByRole('radiogroup', { name: group })).getByRole('radio', { name });
 
 describe('FieldInlineEditor: common controls', () => {
   it('editing the label commits on blur, trimmed', async () => {
@@ -204,32 +207,33 @@ describe('FieldInlineEditor: text-like fields', () => {
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { minDate: undefined });
   });
 
-  it('url fields choose preview style and display', async () => {
+  it('url fields choose the style and the frame, and the closed section says what is set', async () => {
     const f = makeField('url');
     const { onUpdate } = setup(f);
-    expect(screen.getByRole('radio', { name: /Rich preview/ })).toBeChecked();
-    await userEvent.click(screen.getByRole('radio', { name: /Compact link/ }));
+    expect(screen.getByText('Preview card · With the answer · Original shape · Medium size · Border')).toBeInTheDocument();
+    expect(choice('Style', 'Preview card')).toBeChecked();
+    await userEvent.click(choice('Style', 'Short link'));
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlPreviewStyle: 'compact' });
-    await userEvent.click(screen.getByRole('radio', { name: 'No frame' }));
+    await userEvent.click(choice('Frame', 'No border'));
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlDisplay: 'inline' });
-    expect(screen.getByText('Links: rich preview, inline with the answer, original ratio, medium, card frame.')).toBeInTheDocument();
   });
 
-  it('url fields choose preview position, aspect ratio and size like images do', async () => {
+  it('url fields choose position, shape and size like images do', async () => {
     const f = makeField('url');
     const { onUpdate } = setup(f);
-    await userEvent.click(screen.getByRole('radio', { name: 'Top of response (recommended)' }));
+    await userEvent.click(choice('Position', 'At the top'));
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlPreviewPosition: 'top' });
-    await userEvent.click(screen.getByRole('radio', { name: '16:9 landscape' }));
+    await userEvent.click(choice('Shape', 'Wide'));
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlAspectRatio: '16:9' });
-    await userEvent.click(screen.getByRole('radio', { name: 'Large preview' }));
+    await userEvent.click(choice('Size', 'Large'));
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { urlPreviewSize: 'large' });
   });
 
-  it('ratio and size only apply to a rich preview, so other styles do not show them', () => {
+  it('shape and size only apply to a preview card, so other styles do not show them', () => {
     setup({ ...makeField('url'), urlPreviewStyle: 'compact' } as FormField);
-    expect(screen.queryByRole('radio', { name: '16:9 landscape' })).not.toBeInTheDocument();
-    expect(screen.getByRole('radio', { name: 'Top of response (recommended)' })).toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup', { name: 'Shape' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('radiogroup', { name: 'Size' })).not.toBeInTheDocument();
+    expect(screen.getByRole('radiogroup', { name: 'Position' })).toBeInTheDocument();
   });
 });
 
@@ -245,24 +249,32 @@ describe('FieldInlineEditor: choice fields', () => {
 });
 
 describe('FieldInlineEditor: image upload', () => {
-  it('shows defaults: top, original ratio, large, single image, 10 MB', () => {
+  it('shows defaults: top, original shape, large, single image, 10 MB', () => {
     setup(makeField('image_upload'));
-    expect(screen.getByRole('radio', { name: /Top of response/ })).toBeChecked();
-    expect(screen.getByRole('radio', { name: 'Original ratio' })).toBeChecked();
-    expect(screen.getByRole('radio', { name: 'Large preview' })).toBeChecked();
+    expect(screen.getByText('At the top · Original shape · Large size')).toBeInTheDocument();
+    expect(choice('Position', 'At the top')).toBeChecked();
+    expect(choice('Shape', 'Original')).toBeChecked();
+    expect(choice('Size', 'Large')).toBeChecked();
     expect(screen.getByText('JPG, PNG or WebP · up to 10 MB each.')).toBeInTheDocument();
     expect(screen.getByRole('spinbutton', { name: 'Maximum images' })).toHaveValue(1);
-    expect(screen.getByText(/up to 1 image\./)).toBeInTheDocument();
   });
 
-  it('each radio group writes its own key', async () => {
+  it('the display choices start closed, behind one line that opens them', async () => {
+    const { container } = setup(makeField('image_upload')) as unknown as { container?: HTMLElement };
+    const details = (container ?? document.body).querySelector('details')!;
+    expect(details).not.toHaveAttribute('open');
+    await userEvent.click(screen.getByText('How images look in responses'));
+    expect(details).toHaveAttribute('open');
+  });
+
+  it('each choice writes its own key', async () => {
     const f = makeField('image_upload');
     const { onUpdate } = setup(f);
-    await userEvent.click(screen.getByRole('radio', { name: 'Inline with the answer' }));
+    await userEvent.click(choice('Position', 'With the answer'));
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { previewPosition: 'inline' });
-    await userEvent.click(screen.getByRole('radio', { name: '1:1 square' }));
+    await userEvent.click(choice('Shape', 'Square'));
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { aspectRatio: '1:1' });
-    await userEvent.click(screen.getByRole('radio', { name: 'Small thumbnail' }));
+    await userEvent.click(choice('Size', 'Small'));
     expect(onUpdate).toHaveBeenLastCalledWith(f.fieldId, { previewSize: 'small' });
   });
 

@@ -1,7 +1,7 @@
 import { repairPageRefs } from '@/lib/builderPages';
 import { publicFormSlug } from '@/lib/publicFormUrl';
 import { wouldCreateCycle } from '@/lib/logicGraph';
-import { convertField, convertibleTypes } from '@/lib/fieldConversion';
+import { convertField, rememberSettings, ruleCanMatch, typeDefaults, type FieldMemory } from '@/lib/fieldConversion';
 import { create } from 'zustand';
 import type {
   Form,
@@ -45,8 +45,10 @@ export interface BuilderState {
   stale: boolean;
   /** Once published, an edit is staged on a draft instead of the live form; true while that draft exists (the orange "Publish changes" button). */
   hasUnpublishedChanges: boolean;
-  // undoStack depth at the last successful save: how many edits are unsaved is the difference.
-  savedUndoDepth: number;
+  // The top of the undoStack at the last successful save: the snapshots after it are the unsaved edits (see unsavedEdits).
+  savedSnapshot: BuilderSnapshot | undefined;
+  /** Per question, the settings of the types it has been (never saved): switching back restores them. */
+  typeMemory: Record<string, FieldMemory>;
 
   initForm: (form: Form) => void;
   setContentVersion: (contentVersion: number) => void;
@@ -61,7 +63,7 @@ export interface BuilderState {
   setActiveFieldId: (fieldId: string | null) => void;
   /** Move a field to the end of another page. */
   moveFieldToPage: (fieldId: string, pageId: string) => void;
-  /** Switch a field to another type of the same kind (Dropdown -> Multiple choice), keeping its label, options and id. */
+  /** Switch a field to any other type, keeping its id, label and what the two types share. Rules that can no longer match are removed. */
   changeFieldType: (fieldId: string, type: FieldType) => void;
   undo: () => void;
   redo: () => void;
@@ -81,7 +83,10 @@ export interface BuilderState {
   setPendingLeaveUrl: (url: string | null) => void;
 }
 
-// Helper to push a full-state snapshot to the undoStack (capped at 50) and clear the redoStack
+/** How many steps Undo goes back. */
+export const UNDO_LIMIT = 10;
+
+// Helper to push a full-state snapshot to the undoStack (capped at UNDO_LIMIT) and clear the redoStack
 function pushSnapshot(fields: FormField[], formTitle: string, pages: FormPage[], undoStack: BuilderSnapshot[]) {
   // ponytail: O(N) full deep clone ceiling. Safe for MVP, but memory/perf trap for huge forms.
   // Upgrade path: replace with minimal JSON patches or immer.
@@ -90,7 +95,7 @@ function pushSnapshot(fields: FormField[], formTitle: string, pages: FormPage[],
     formTitle,
     pages: structuredClone(pages),
   };
-  const newUndoStack = [...undoStack, snapshot].slice(-50);
+  const newUndoStack = [...undoStack, snapshot].slice(-UNDO_LIMIT);
   return {
     undoStack: newUndoStack,
     redoStack: [] as BuilderSnapshot[],
@@ -133,6 +138,10 @@ function otherFields(fields: FormField[], pageId: string): FormField[] {
   return fields.filter((f) => f.deleted || f.pageId !== pageId);
 }
 
+/** How many edits a reload would lose: those since the last save, at least one. Past the undo limit it reads the limit. */
+export const unsavedEdits = ({ undoStack, savedSnapshot }: BuilderState): number =>
+  Math.max(1, undoStack.length - 1 - (savedSnapshot ? undoStack.indexOf(savedSnapshot) : -1));
+
 export const useBuilderStore = create<BuilderState>((set) => ({
   formId: null,
   formTitle: '',
@@ -151,7 +160,8 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   contentVersion: null,
   stale: false,
   hasUnpublishedChanges: false,
-  savedUndoDepth: 0,
+  savedSnapshot: undefined,
+  typeMemory: {},
 
   setPendingLeaveUrl: (url) => set({ pendingLeaveUrl: url }),
 
@@ -198,7 +208,8 @@ export const useBuilderStore = create<BuilderState>((set) => ({
         contentVersion: form.contentVersion ?? 0,
         stale: false,
         hasUnpublishedChanges: form.hasUnpublishedChanges ?? false,
-        savedUndoDepth: 0,
+        savedSnapshot: undefined,
+        typeMemory: {},
       };
     }),
 
@@ -226,22 +237,8 @@ export const useBuilderStore = create<BuilderState>((set) => ({
         helpText: '',
         deleted: false,
         order: currentPageFields.length,
+        ...typeDefaults(type),
       } as FormField;
-
-      // Choice field default options config
-      if (type === 'dropdown' || type === 'multiple_choice' || type === 'checkbox') {
-        (defaultField as Extract<FormField, { options: string[] }>).options = ['Option 1'];
-      }
-
-      // Display & preview settings are stored explicitly on creation, so a later change to the
-      // defaults can never silently re-render responses to a form that was built before it.
-      if (type === 'image_upload') {
-        Object.assign(defaultField, { allowMultiple: false, previewPosition: 'top', aspectRatio: 'original', previewSize: 'large' });
-      } else if (type === 'url') {
-        Object.assign(defaultField, { urlPreviewStyle: 'rich', urlDisplay: 'card', urlPreviewPosition: 'top', urlAspectRatio: 'original', urlPreviewSize: 'medium' });
-      } else if (type === 'currency') {
-        Object.assign(defaultField, { currency: 'INR' });
-      }
 
       const newPageFields = [...currentPageFields];
       if (typeof insertIndex === 'number' && insertIndex >= 0 && insertIndex <= newPageFields.length) {
@@ -429,10 +426,13 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   changeFieldType: (fieldId, type) =>
     set((state) => {
       const field = state.fields.find((f) => f.fieldId === fieldId && !f.deleted);
-      if (!field || !convertibleTypes(field.type).includes(type)) return {};
+      if (!field || field.type === type) return {};
       const snapshot = pushSnapshot(state.fields, state.formTitle, state.pages, state.undoStack);
-      const fields = state.fields.map((f) => (f.fieldId === fieldId ? convertField(f, type, defaultLabelFor) : f));
-      return { ...snapshot, fields, dirty: true };
+      const memory = state.typeMemory[fieldId];
+      const converted = convertField(field, type, defaultLabelFor, memory);
+      if (converted.logicRules) converted.logicRules = converted.logicRules.filter((r) => ruleCanMatch(converted, r));
+      const fields = state.fields.map((f) => (f.fieldId === fieldId ? converted : f));
+      return { ...snapshot, fields, dirty: true, typeMemory: { ...state.typeMemory, [fieldId]: rememberSettings(field, memory) } };
     }),
 
   undo: () =>
@@ -482,7 +482,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   markSaved: () =>
     set((state) => ({
       dirty: false,
-      savedUndoDepth: state.undoStack.length,
+      savedSnapshot: state.undoStack.at(-1),
     })),
 
   setContentVersion: (contentVersion) => set({ contentVersion }),

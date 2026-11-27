@@ -3,6 +3,7 @@
 import { Undo2, Redo2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
+import { BUILDER_SAVE_SLOT_ID } from '@/lib/formHeaderSlot';
 
 // Settings and Share are one tab, named Settings: the form's settings first, Share & Embed below them.
 export type BuilderTab = 'build' | 'branding' | 'settings';
@@ -29,20 +30,27 @@ export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onR
     { id: 'settings', label: 'Settings' },
   ];
   return (
-    <nav className="flex shrink-0 items-center justify-between border-b border-(--border-default)" aria-label="Form Builder Tabs">
+    // From 1024px it is the strip under the top bar; on the Build tab it stays there while the canvas scrolls.
+    <nav
+      className={cn(
+        'flex shrink-0 items-center justify-between border-b border-(--border-default) lg:h-12 lg:items-stretch lg:bg-(--surface-card) lg:pl-3',
+        activeTab === 'build' && 'lg:sticky lg:top-13 lg:z-10'
+      )}
+      aria-label="Form Builder Tabs"
+    >
       {/* Real role="tablist"/role="tab"/aria-selected semantics. */}
-      <div className="flex min-w-0 items-center overflow-x-auto" role="tablist" aria-label="Form Builder sections">
+      <div className="flex min-w-0 items-center overflow-x-auto lg:items-stretch" role="tablist" aria-label="Form Builder sections">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
           return (
-            <div key={tab.id} className="flex items-center">
+            <div key={tab.id} className="flex items-center lg:items-stretch">
               <button
                 type="button"
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => onChange(tab.id)}
                 className={cn(
-                  'px-3 md:px-6 py-3 bg-body font-semibold whitespace-nowrap transition-all border-b-2 focus:outline-none min-h-11 min-w-15',
+                  'px-3 md:px-6 py-3 lg:py-0 bg-body font-semibold whitespace-nowrap transition-all border-b-2 focus:outline-none min-h-11 min-w-15',
                   isActive
                     ? 'border-(--action-primary-hover) text-(--accent-soft-text)'
                     : 'border-transparent text-(--text-muted) hover:text-(--text-primary) hover:border-(--border-default)'
@@ -56,7 +64,10 @@ export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onR
         })}
       </div>
 
-      <div className="flex items-center gap-1 pr-3 shrink-0">
+      {/* From 1024px the builder header shows its save state here, between the tabs and undo/redo. */}
+      <div id={BUILDER_SAVE_SLOT_ID} className="hidden min-w-0 flex-1 items-center justify-center px-3 lg:flex" />
+
+      <div className="flex items-center gap-1 self-center pr-3 shrink-0">
         <Button
           onClick={onUndo}
           disabled={!canUndo}

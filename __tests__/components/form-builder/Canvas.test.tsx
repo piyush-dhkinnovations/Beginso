@@ -33,7 +33,7 @@ describe('Canvas', () => {
   it('shows the empty state when the active page has no fields', () => {
     setup([]);
     expect(screen.getByText('Start building your form')).toBeInTheDocument();
-    expect(screen.getByText('0 fields')).toBeInTheDocument();
+    expect(screen.getByText('Page 1 section')).toBeInTheDocument();
   });
 
   it('while a toolbox item is over the canvas the empty state invites a drop', () => {
@@ -49,7 +49,7 @@ describe('Canvas', () => {
     expect(screen.getByText('Mine')).toBeInTheDocument();
     expect(screen.queryByText('Removed')).not.toBeInTheDocument();
     expect(screen.queryByText('Elsewhere')).not.toBeInTheDocument();
-    expect(screen.getByText('1 field')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /^Select / })).toHaveLength(1);
   });
 
   it('selecting a card reports its id', async () => {

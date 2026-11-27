@@ -28,7 +28,7 @@ export function FieldPreview({ field }: { field: FormField }) {
     case 'email':
     case 'phone':
       return (
-        <div className={`${inputPreviewClass} max-w-80`}>
+        <div className={inputPreviewClass}>
           {field.placeholder ||
             (field.type === 'email' ? 'name@example.com' : field.type === 'phone' ? '+1 555 000 0000' : 'Short answer text')}
         </div>
@@ -43,14 +43,14 @@ export function FieldPreview({ field }: { field: FormField }) {
 
     case 'number':
       return (
-        <div className={`${inputPreviewClass} max-w-45`}>
+        <div className={inputPreviewClass}>
           {field.placeholder || '0'}
         </div>
       );
 
     case 'date':
       return (
-        <div className={`${inputPreviewClass} max-w-45`}>
+        <div className={inputPreviewClass}>
           <Calendar size={14} className="text-(--text-disabled) shrink-0" />
           dd-mm-yyyy
         </div>
@@ -58,7 +58,7 @@ export function FieldPreview({ field }: { field: FormField }) {
 
     case 'dropdown':
       return (
-        <div className={`${inputPreviewClass} max-w-80 justify-between`}>
+        <div className={`${inputPreviewClass} justify-between`}>
           <span className="truncate">Select an option ▾</span>
         </div>
       );
@@ -103,7 +103,7 @@ export function FieldPreview({ field }: { field: FormField }) {
 
     case 'url':
       return (
-        <div className={`${inputPreviewClass} max-w-80`}>
+        <div className={inputPreviewClass}>
           <Link2 size={14} className="text-(--text-disabled) shrink-0" />
           {field.placeholder || 'https://example.com'}
         </div>
@@ -131,7 +131,7 @@ export function FieldPreview({ field }: { field: FormField }) {
 
     case 'time':
       return (
-        <div className={`${inputPreviewClass} max-w-45`}>
+        <div className={inputPreviewClass}>
           <Clock size={14} className="text-(--text-disabled) shrink-0" />
           hh:mm
         </div>
@@ -139,7 +139,7 @@ export function FieldPreview({ field }: { field: FormField }) {
 
     case 'datetime':
       return (
-        <div className={`${inputPreviewClass} max-w-60`}>
+        <div className={inputPreviewClass}>
           <CalendarClock size={14} className="text-(--text-disabled) shrink-0" />
           dd-mm-yyyy, hh:mm
         </div>
@@ -147,7 +147,7 @@ export function FieldPreview({ field }: { field: FormField }) {
 
     case 'currency':
       return (
-        <div className={`${inputPreviewClass} max-w-60`}>
+        <div className={inputPreviewClass}>
           <span className="font-semibold text-(--text-secondary)">{currencySymbol(currencyOf(field))}</span>
           {field.placeholder || '0.00'}
         </div>
@@ -155,7 +155,7 @@ export function FieldPreview({ field }: { field: FormField }) {
 
     case 'address':
       return (
-        <div className="grid max-w-120 grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <div className={`${inputPreviewClass} col-span-2`}>
             <MapPin size={14} className="text-(--text-disabled) shrink-0" />
             Street
@@ -168,7 +168,7 @@ export function FieldPreview({ field }: { field: FormField }) {
 
     case 'signature':
       return (
-        <div className="flex h-20 max-w-80 items-end rounded-md border border-dashed border-(--border-strong) bg-(--bg-subtle) px-3 pb-2 bg-body-sm text-(--text-muted)">
+        <div className="flex h-20 items-end rounded-md border border-dashed border-(--border-strong) bg-(--bg-subtle) px-3 pb-2 bg-body-sm text-(--text-muted)">
           <PenLine size={14} className="mr-2 shrink-0" />
           Sign here
         </div>

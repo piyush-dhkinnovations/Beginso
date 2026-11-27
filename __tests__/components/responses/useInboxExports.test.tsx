@@ -28,14 +28,14 @@ describe('useInboxExports', () => {
     createReport.mockResolvedValue({});
     const { result } = renderHook(() => useInboxExports({ formId: 'f1', filters }));
     result.current.runExport({ filter: { unread: true }, formId: 'f9' });
-    expect(createReport).toHaveBeenCalledWith({ format: 'csv', formId: 'f9', filters: { unread: true } }, 'personal');
+    expect(createReport).toHaveBeenCalledWith({ format: 'csv', formId: 'f9', unread: true }, 'personal');
   });
 
   it('exports the current filter with the hook formId', async () => {
     createReport.mockResolvedValue({});
     const { result } = renderHook(() => useInboxExports({ formId: 'f1', filters }));
     result.current.exportCurrentFilter();
-    expect(createReport).toHaveBeenCalledWith({ format: 'csv', formId: 'f1', filters }, 'personal');
+    expect(createReport).toHaveBeenCalledWith({ format: 'csv', formId: 'f1', ...filters }, 'personal');
     await waitFor(() => expect(toast).toHaveBeenCalledWith(expect.stringMatching(/export started/i), 'success'));
   });
 
@@ -43,7 +43,7 @@ describe('useInboxExports', () => {
     createReport.mockResolvedValue({});
     const { result } = renderHook(() => useInboxExports({ filters }));
     result.current.exportCurrentFilter();
-    expect(createReport).toHaveBeenCalledWith({ format: 'csv', formId: undefined, filters }, 'personal');
+    expect(createReport).toHaveBeenCalledWith({ format: 'csv', formId: undefined, ...filters }, 'personal');
   });
 
   // QA D5-002: exporting from a workspace form's responses went out under the personal scope: "Form not found".
@@ -53,7 +53,7 @@ describe('useInboxExports', () => {
     result.current.runExport({ ids: ['r1'] });
     result.current.exportCurrentFilter();
     expect(createReport).toHaveBeenNthCalledWith(1, { format: 'csv', ids: ['r1'] }, 'acme');
-    expect(createReport).toHaveBeenNthCalledWith(2, { format: 'csv', formId: 'f1', filters }, 'acme');
+    expect(createReport).toHaveBeenNthCalledWith(2, { format: 'csv', formId: 'f1', ...filters }, 'acme');
   });
 
   it('toasts an error and no success when the request fails', async () => {

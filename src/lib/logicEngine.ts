@@ -11,10 +11,10 @@ import type { Answer, FieldValue } from '@/types/publicForm';
  *
  * Rules are embedded on the *source* field (field.logicRules[]).
  * Each rule: IF source-field equals value THEN show|hide targetFieldId.
- * A field targeted by at least one 'show' rule defaults to HIDDEN (whitelist:
- * only visible when a show rule matches). A field targeted only by 'hide'
- * rules defaults to visible (blacklist: hidden only when a hide rule matches).
- * When multiple rules target the same field, the LAST matching rule wins.
+ * A field targeted by at least one 'show' rule defaults to HIDDEN (whitelist: visible when ANY of them matches).
+ * A field targeted only by 'hide' rules defaults to visible. A matching 'hide' rule wins over a matching 'show'
+ * rule whatever their order: the server decides the same way (backend getHiddenFieldIds), and a form that showed a
+ * question the server counts as hidden lost the answer typed into it.
  *
  * @returns Set of fieldIds that are currently HIDDEN.
  */
@@ -22,8 +22,9 @@ export function evaluateLogicRules(
   fields: FormField[],
   answers: Record<string, unknown>
 ): Set<string> {
-  const resolved = new Map<string, 'show' | 'hide'>();
   const whitelisted = new Set<string>();
+  const shown = new Set<string>();
+  const hidden = new Set<string>();
 
   for (const field of fields) {
     const rules = field.logicRules ?? [];
@@ -36,17 +37,13 @@ export function evaluateLogicRules(
         String(sourceValue ?? '') === String(rule.condition.value);
 
       if (conditionMet) {
-        resolved.set(rule.targetFieldId, rule.action);
+        (rule.action === 'hide' ? hidden : shown).add(rule.targetFieldId);
       }
     }
   }
 
-  const hiddenIds = new Set<string>(whitelisted);
-  for (const [targetId, action] of resolved) {
-    if (action === 'hide') hiddenIds.add(targetId);
-    else hiddenIds.delete(targetId);
-  }
-  return hiddenIds;
+  for (const targetId of whitelisted) if (!shown.has(targetId)) hidden.add(targetId);
+  return hidden;
 }
 
 /** Fields visible for a given page: not deleted, on this page, not hidden — sorted by order. */

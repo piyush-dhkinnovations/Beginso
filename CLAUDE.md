@@ -88,7 +88,7 @@ Test files live under `__tests__/`, mirroring `src/`'s structure; the glob is `*
 
 **Service-layer responses are defensively unwrapped, not trusted as documented.** The backend's response envelopes have historically been inconsistent — `{ data: ... }`, `{ namedKey: ... }`, or bare — so most files under `src/services/` adapt the raw response through a small `unwrapEnvelope()`-style helper (see `settings.ts`, `responses.ts`, `analytics.ts`, `reports.ts`) rather than assuming the contract doc's shape is what is live. Follow this pattern for any new service rather than trusting a shape that has not been exercised against the real backend.
 
-**The Form Builder's only source of truth is the Zustand `builderStore`** (`src/store/builderStore.ts`) — snapshot-based undo/redo with a 50-entry cap, autosave debounce, and every field and page mutation goes through it. Never mutate builder state outside this store.
+**The Form Builder's only source of truth is the Zustand `builderStore`** (`src/store/builderStore.ts`) — snapshot-based undo/redo with a 10-entry cap, autosave debounce, and every field and page mutation goes through it. Never mutate builder state outside this store.
 
 **Settings tabs stay mounted once visited, not conditionally unmounted.** `src/app/(user)/settings/page.tsx` keeps every visited tab in the DOM via a `visitedTabs` set and CSS `hidden`, not JSX omission — the naive `{activeTab === 'x' && <XTab/>}` pattern was found to silently drop unsaved edits on tab switch. Reuse this pattern for any new tabbed surface holding local form state.
 

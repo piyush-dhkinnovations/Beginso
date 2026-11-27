@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
-import { useBuilderStore } from '@/store/builderStore';
+import { UNDO_LIMIT, unsavedEdits, useBuilderStore } from '@/store/builderStore';
 import type { FieldType, Form } from '@/types/form';
 
 const FIELD_TYPES: FieldType[] = [
@@ -47,7 +47,7 @@ describe('Zustand builderStore Property Tests', () => {
   // Property 2: Undo/Redo Round-Trip
   it('Property 2: Undo/redo round-trip preserves state updates', () => {
     fc.assert(
-      fc.property(fc.array(fc.constantFrom(...FIELD_TYPES), { minLength: 1, maxLength: 20 }), (types) => {
+      fc.property(fc.array(fc.constantFrom(...FIELD_TYPES), { minLength: 1, maxLength: UNDO_LIMIT }), (types) => {
         const store = useBuilderStore.getState();
         
         // Reset state for properties run
@@ -196,16 +196,45 @@ describe('Zustand builderStore Property Tests', () => {
     expect(useBuilderStore.getState().fields.find((f) => f.fieldId === a)).toMatchObject({ pageId: p1, order: 0 });
   });
 
-  it('changeFieldType switches within a kind, keeps the id and options, and refuses other kinds', () => {
+  it('changeFieldType switches to any type, keeps the id, and restores options on the way back', () => {
     const store = useBuilderStore.getState();
     store.initForm(mockForm('test-form', 'My Form'));
     store.addField('dropdown');
     const id = useBuilderStore.getState().fields[0].fieldId;
     store.updateFieldOptions(id, ['A', 'B']);
+    store.changeFieldType(id, 'signature');
+    expect(useBuilderStore.getState().fields[0]).toMatchObject({ fieldId: id, type: 'signature' });
+    expect(useBuilderStore.getState().fields[0]).not.toHaveProperty('options');
     store.changeFieldType(id, 'checkbox');
     expect(useBuilderStore.getState().fields[0]).toMatchObject({ fieldId: id, type: 'checkbox', options: ['A', 'B'] });
-    store.changeFieldType(id, 'signature');
-    expect(useBuilderStore.getState().fields[0].type).toBe('checkbox');
+    store.undo();
+    expect(useBuilderStore.getState().fields[0].type).toBe('signature');
+  });
+
+  it('changeFieldType to the same type is not an edit', () => {
+    const store = useBuilderStore.getState();
+    store.initForm(mockForm('test-form', 'My Form'));
+    store.addField('email');
+    const { fields, undoStack } = useBuilderStore.getState();
+    store.changeFieldType(fields[0].fieldId, 'email');
+    expect(useBuilderStore.getState().undoStack).toHaveLength(undoStack.length);
+  });
+
+  it('changeFieldType removes only the rules that can no longer match, and undo brings them back', () => {
+    const store = useBuilderStore.getState();
+    store.initForm(mockForm('test-form', 'My Form'));
+    store.addField('short_text');
+    store.addField('short_text');
+    store.addField('short_text');
+    const [source, one, two] = useBuilderStore.getState().fields.map((f) => f.fieldId);
+    const rule = (value: string, targetFieldId: string) => ({ condition: { fieldId: source, operator: 'equals' as const, value }, action: 'show' as const, targetFieldId });
+    store.addLogicRule(source, rule('7', one));
+    store.addLogicRule(source, rule('seven', two));
+    store.changeFieldType(source, 'number');
+    const rules = () => useBuilderStore.getState().fields.find((f) => f.fieldId === source)!.logicRules;
+    expect(rules()).toEqual([rule('7', one)]);
+    store.undo();
+    expect(rules()).toHaveLength(2);
   });
 
   // duplicateField: clones in-place, deep-copies arrays, drops logicRules
@@ -447,5 +476,23 @@ describe('Zustand builderStore Property Tests', () => {
     const orders = pages.map((p) => p.order);
     expect(new Set(orders).size).toBe(orders.length);
     expect(orders).toEqual([0, 1, 2]);
+  });
+
+  it('keeps only the last 10 undo steps, and still counts the edits since a save', () => {
+    const store = useBuilderStore.getState();
+    store.initForm(mockForm('test-form', 'My Form'));
+    for (let i = 1; i <= 12; i++) store.setFormTitle(`Title ${i}`);
+    expect(useBuilderStore.getState().undoStack).toHaveLength(UNDO_LIMIT);
+    expect(UNDO_LIMIT).toBe(10);
+    for (let i = 0; i < 20; i++) store.undo();
+    expect(useBuilderStore.getState().formTitle).toBe('Title 2');
+
+    store.initForm(mockForm('test-form', 'My Form'));
+    for (let i = 1; i <= 12; i++) store.setFormTitle(`Title ${i}`);
+    store.markSaved();
+    store.setFormTitle('a');
+    store.setFormTitle('b');
+    store.setFormTitle('c');
+    expect(unsavedEdits(useBuilderStore.getState())).toBe(3);
   });
 });

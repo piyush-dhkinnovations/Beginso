@@ -4,9 +4,10 @@ import React, { useEffect, useRef, useState } from 'react';
 import { setPendingEdit } from '@/lib/pendingEdits';
 import type { FormField, ImageAspectRatio, ImagePreviewPosition, ImagePreviewSize, UrlDisplay, UrlPreviewStyle } from '@/types/form';
 import { Input } from '@/components/ui/Input';
-import { Radio } from '@/components/ui/Radio';
+import { SegmentedRadio } from '@/components/ui/SegmentedRadio';
 import { Select } from '@/components/ui/Select';
 import { Switch } from '@/components/ui/Switch';
+import { ChevronDown } from 'lucide-react';
 import { CURRENCY_OPTIONS, MAX_IMAGES_PER_FIELD, currencyOf, imageSettings, urlSettings } from '@/lib/fieldDisplay';
 import { OptionsEditor } from './OptionsEditor';
 
@@ -337,54 +338,73 @@ function DateRangeSection({
 // These preferences are saved on the field, and the response viewer reads them from there — so every
 // response to this form (old and new) is laid out the same way.
 
-function RadioSection<T extends string>({
-  uid,
-  name,
+// One setting on one line: its name, then the choices side by side.
+function ChoiceRow<T extends string>({
   label,
   value,
   options,
   onChange,
 }: {
-  uid: string;
-  name: string;
   label: string;
   value: T;
-  options: { value: T; label: string; description?: string }[];
+  options: { value: T; label: string; title?: string }[];
   onChange: (value: T) => void;
 }) {
   return (
-    <PanelSection label={label}>
-      <div role="radiogroup" aria-label={label} className="flex flex-col gap-1">
-        {options.map((o) => (
-          <Radio
-            key={o.value}
-            id={`${uid}-${name}-${o.value}`}
-            name={`${uid}-${name}`}
-            label={o.label}
-            description={o.description}
-            checked={value === o.value}
-            onChange={() => onChange(o.value)}
-          />
-        ))}
-      </div>
-    </PanelSection>
-  );
-}
-
-function ConfigSummary({ text }: { text: string }) {
-  return (
-    <div className="rounded-md bg-(--bg-subtle) px-3 py-2">
-      <span className="bg-overline text-(--text-muted)">Configuration summary</span>
-      <p className="mt-0.5 bg-body-sm text-(--text-secondary)">{text}</p>
+    <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-4">
+      <span aria-hidden="true" className="bg-body-sm text-(--text-secondary) sm:w-24 sm:shrink-0">{label}</span>
+      <SegmentedRadio
+        ariaLabel={label}
+        value={value}
+        onChange={(id) => onChange(id as T)}
+        options={options.map((o) => ({ id: o.value, label: o.label, title: o.title }))}
+        className="max-w-full flex-wrap self-start"
+      />
     </div>
   );
 }
 
-const POSITION_LABEL: Record<ImagePreviewPosition, string> = { top: 'Top of response', inline: 'Inline with the answer' };
-const RATIO_LABEL: Record<ImageAspectRatio, string> = { original: 'original ratio', '16:9': '16:9 landscape', '1:1': '1:1 square' };
-const SIZE_LABEL: Record<ImagePreviewSize, string> = { small: 'small thumbnail', medium: 'medium', large: 'large preview' };
-const STYLE_LABEL: Record<UrlPreviewStyle, string> = { rich: 'rich preview', compact: 'compact link', text: 'URL text only' };
-const DISPLAY_LABEL: Record<UrlDisplay, string> = { card: 'card frame', inline: 'no frame' };
+/** Closed until asked for: most owners keep the defaults, and the line under the title says what is set. */
+function DisplayOptions({ title, summary, children }: { title: string; summary: string; children: React.ReactNode }) {
+  return (
+    <details className="group/display rounded-lg border border-(--border-default)">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 rounded-lg px-3 py-2 hover:bg-(--surface-hover) [&::-webkit-details-marker]:hidden">
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="bg-body-sm font-semibold text-(--text-primary)">{title}</span>
+          <span className="truncate bg-caption text-(--text-muted)">{summary}</span>
+        </span>
+        <ChevronDown size={16} aria-hidden="true" className="shrink-0 text-(--text-muted) transition-transform group-open/display:rotate-180" />
+      </summary>
+      <div className="flex flex-col gap-3 border-t border-(--border-default) p-3">{children}</div>
+    </details>
+  );
+}
+
+const POSITIONS: { value: ImagePreviewPosition; label: string; title: string }[] = [
+  { value: 'top', label: 'At the top', title: 'Above the other answers' },
+  { value: 'inline', label: 'With the answer', title: 'In its place among the answers' },
+];
+const RATIOS: { value: ImageAspectRatio; label: string; title: string }[] = [
+  { value: 'original', label: 'Original', title: 'The picture as uploaded' },
+  { value: '16:9', label: 'Wide', title: '16:9 landscape' },
+  { value: '1:1', label: 'Square', title: '1:1 square' },
+];
+const SIZES: { value: ImagePreviewSize; label: string }[] = [
+  { value: 'small', label: 'Small' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'large', label: 'Large' },
+];
+const STYLES: { value: UrlPreviewStyle; label: string; title: string }[] = [
+  { value: 'rich', label: 'Preview card', title: 'Title, domain and thumbnail when available' },
+  { value: 'compact', label: 'Short link', title: 'A small badge and the domain' },
+  { value: 'text', label: 'Plain text', title: 'The address as typed' },
+];
+const FRAMES: { value: UrlDisplay; label: string }[] = [
+  { value: 'card', label: 'Border' },
+  { value: 'inline', label: 'No border' },
+];
+
+const nameOf = <T extends string>(options: { value: T; label: string }[], value: T) => options.find((o) => o.value === value)?.label ?? value;
 
 function ImageDisplaySection({
   field,
@@ -393,55 +413,35 @@ function ImageDisplaySection({
   field: Extract<FormField, { type: 'image_upload' }>;
   onUpdate: (fieldId: string, updates: Partial<FormField>) => void;
 }) {
+  const s = imageSettings(field);
+  const set = (updates: Partial<Extract<FormField, { type: 'image_upload' }>>) => onUpdate(field.fieldId, updates as Partial<FormField>);
+
+  return (
+    <DisplayOptions
+      title="How images look in responses"
+      summary={[nameOf(POSITIONS, s.previewPosition), `${nameOf(RATIOS, s.aspectRatio)} shape`, `${nameOf(SIZES, s.previewSize)} size`].join(' · ')}
+    >
+      <ChoiceRow label="Position" value={s.previewPosition} options={POSITIONS} onChange={(previewPosition) => set({ previewPosition })} />
+      <ChoiceRow label="Shape" value={s.aspectRatio} options={RATIOS} onChange={(aspectRatio) => set({ aspectRatio })} />
+      <ChoiceRow label="Size" value={s.previewSize} options={SIZES} onChange={(previewSize) => set({ previewSize })} />
+    </DisplayOptions>
+  );
+}
+
+function ImageLimitSection({
+  field,
+  onUpdate,
+}: {
+  field: Extract<FormField, { type: 'image_upload' }>;
+  onUpdate: (fieldId: string, updates: Partial<FormField>) => void;
+}) {
   const uid = field.fieldId;
   const s = imageSettings(field);
-  const set = (updates: Partial<Extract<FormField, { type: 'image_upload' }>>) => onUpdate(uid, updates as Partial<FormField>);
   const [maxImagesInput, setMaxImagesInput] = useState(String(s.maxImages));
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-(--border-default) p-4">
-      <div>
-        <h4 className="bg-body font-semibold text-(--text-primary)">Display &amp; Preview</h4>
-        <p className="bg-caption text-(--text-muted)">How uploaded images appear in each response.</p>
-      </div>
-
-      <RadioSection<ImagePreviewPosition>
-        uid={uid}
-        name="position"
-        label="Preview position"
-        value={s.previewPosition}
-        options={[
-          { value: 'top', label: 'Top of response (recommended)' },
-          { value: 'inline', label: 'Inline with the answer' },
-        ]}
-        onChange={(previewPosition) => set({ previewPosition })}
-      />
-      <RadioSection<ImageAspectRatio>
-        uid={uid}
-        name="ratio"
-        label="Image aspect ratio"
-        value={s.aspectRatio}
-        options={[
-          { value: 'original', label: 'Original ratio' },
-          { value: '16:9', label: '16:9 landscape' },
-          { value: '1:1', label: '1:1 square' },
-        ]}
-        onChange={(aspectRatio) => set({ aspectRatio })}
-      />
-      <RadioSection<ImagePreviewSize>
-        uid={uid}
-        name="size"
-        label="Preview size"
-        value={s.previewSize}
-        options={[
-          { value: 'small', label: 'Small thumbnail' },
-          { value: 'medium', label: 'Medium' },
-          { value: 'large', label: 'Large preview' },
-        ]}
-        onChange={(previewSize) => set({ previewSize })}
-      />
-
-      <PanelSection label="Uploads">
+    <div className="flex flex-col gap-1.5">
+      <div className="max-w-48">
         <Input
           id={`${uid}-max-images`}
           label="Maximum images"
@@ -457,15 +457,11 @@ function ImageDisplaySection({
               ? Math.min(MAX_IMAGES_PER_FIELD, Math.max(1, Math.floor(entered)))
               : s.maxImages;
             setMaxImagesInput(String(maxImages));
-            set({ allowMultiple: maxImages > 1, maxImages: maxImages > 1 ? maxImages : undefined });
+            onUpdate(uid, { allowMultiple: maxImages > 1, maxImages: maxImages > 1 ? maxImages : undefined } as Partial<FormField>);
           }}
         />
-        <p className="bg-caption text-(--text-muted)">JPG, PNG or WebP · up to {s.maxSizeMb} MB each.</p>
-      </PanelSection>
-
-      <ConfigSummary
-        text={`Images: ${POSITION_LABEL[s.previewPosition]}, ${RATIO_LABEL[s.aspectRatio]}, ${SIZE_LABEL[s.previewSize]}, up to ${s.maxImages} image${s.maxImages === 1 ? '' : 's'}.`}
-      />
+      </div>
+      <p className="bg-caption text-(--text-muted)">JPG, PNG or WebP · up to {s.maxSizeMb} MB each.</p>
     </div>
   );
 }
@@ -477,82 +473,26 @@ function UrlDisplaySection({
   field: Extract<FormField, { type: 'url' }>;
   onUpdate: (fieldId: string, updates: Partial<FormField>) => void;
 }) {
-  const uid = field.fieldId;
   const s = urlSettings(field);
-  const set = (updates: Partial<Extract<FormField, { type: 'url' }>>) => onUpdate(uid, updates as Partial<FormField>);
+  const set = (updates: Partial<Extract<FormField, { type: 'url' }>>) => onUpdate(field.fieldId, updates as Partial<FormField>);
+  const rich = s.style === 'rich';
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-(--border-default) p-4">
-      <div>
-        <h4 className="bg-body font-semibold text-(--text-primary)">Display &amp; Preview</h4>
-        <p className="bg-caption text-(--text-muted)">How a submitted link appears in each response. Websites are never embedded.</p>
-      </div>
-
-      <RadioSection<UrlPreviewStyle>
-        uid={uid}
-        name="style"
-        label="Preview style"
-        value={s.style}
-        options={[
-          { value: 'rich', label: 'Rich preview', description: 'Title, domain and thumbnail when available' },
-          { value: 'compact', label: 'Compact link', description: 'Favicon-style badge and domain' },
-          { value: 'text', label: 'URL text only' },
-        ]}
-        onChange={(urlPreviewStyle) => set({ urlPreviewStyle })}
-      />
-      {s.style === 'rich' && (
+    <DisplayOptions
+      title="How links look in responses"
+      summary={[nameOf(STYLES, s.style), nameOf(POSITIONS, s.previewPosition), ...(rich ? [`${nameOf(RATIOS, s.aspectRatio)} shape`, `${nameOf(SIZES, s.previewSize)} size`] : []), nameOf(FRAMES, s.display)].join(' · ')}
+    >
+      <ChoiceRow label="Style" value={s.style} options={STYLES} onChange={(urlPreviewStyle) => set({ urlPreviewStyle })} />
+      <ChoiceRow label="Position" value={s.previewPosition} options={POSITIONS} onChange={(urlPreviewPosition) => set({ urlPreviewPosition })} />
+      {rich && (
         <>
-          <RadioSection<ImageAspectRatio>
-            uid={uid}
-            name="ratio"
-            label="Image aspect ratio"
-            value={s.aspectRatio}
-            options={[
-              { value: 'original', label: 'Original ratio' },
-              { value: '16:9', label: '16:9 landscape' },
-              { value: '1:1', label: '1:1 square' },
-            ]}
-            onChange={(urlAspectRatio) => set({ urlAspectRatio })}
-          />
-          <RadioSection<ImagePreviewSize>
-            uid={uid}
-            name="size"
-            label="Preview size"
-            value={s.previewSize}
-            options={[
-              { value: 'small', label: 'Small thumbnail' },
-              { value: 'medium', label: 'Medium' },
-              { value: 'large', label: 'Large preview' },
-            ]}
-            onChange={(urlPreviewSize) => set({ urlPreviewSize })}
-          />
+          <ChoiceRow label="Shape" value={s.aspectRatio} options={RATIOS} onChange={(urlAspectRatio) => set({ urlAspectRatio })} />
+          <ChoiceRow label="Size" value={s.previewSize} options={SIZES} onChange={(urlPreviewSize) => set({ urlPreviewSize })} />
         </>
       )}
-      <RadioSection<ImagePreviewPosition>
-        uid={uid}
-        name="position"
-        label="Preview position"
-        value={s.previewPosition}
-        options={[
-          { value: 'top', label: 'Top of response (recommended)' },
-          { value: 'inline', label: 'Inline with the answer' },
-        ]}
-        onChange={(urlPreviewPosition) => set({ urlPreviewPosition })}
-      />
-      <RadioSection<UrlDisplay>
-        uid={uid}
-        name="display"
-        label="Preview frame"
-        value={s.display}
-        options={[
-          { value: 'card', label: 'Card frame' },
-          { value: 'inline', label: 'No frame' },
-        ]}
-        onChange={(urlDisplay) => set({ urlDisplay })}
-      />
-
-      <ConfigSummary text={`Links: ${STYLE_LABEL[s.style]}, ${POSITION_LABEL[s.previewPosition].toLowerCase()}${s.style === 'rich' ? `, ${RATIO_LABEL[s.aspectRatio]}, ${SIZE_LABEL[s.previewSize]}` : ''}, ${DISPLAY_LABEL[s.display]}.`} />
-    </div>
+      <ChoiceRow label="Frame" value={s.display} options={FRAMES} onChange={(urlDisplay) => set({ urlDisplay })} />
+      <p className="bg-caption text-(--text-muted)">Websites are never embedded.</p>
+    </DisplayOptions>
   );
 }
 
@@ -562,6 +502,8 @@ export interface FieldInlineEditorProps {
   field: FormField;
   onUpdate: (fieldId: string, updates: Partial<FormField>) => void;
   onUpdateOptions: (fieldId: string, options: string[]) => void;
+  /** One tab of an open field card. Unset shows every setting, with the Required switch. */
+  section?: 'content' | 'validation';
 }
 
 // Main Component
@@ -569,40 +511,54 @@ export interface FieldInlineEditorProps {
 // Only ever mounted when its field is selected, so
 // there is no "no field selected" empty state to handle here.
 
-export function FieldInlineEditor({ field, onUpdate, onUpdateOptions }: FieldInlineEditorProps) {
+export function FieldInlineEditor({ field, onUpdate, onUpdateOptions, section }: FieldInlineEditorProps) {
   // Field identity is stable and unique across the form, so it doubles as the id prefix.
   const uid = field.fieldId;
   const isTextField = TEXT_TYPES.has(field.type);
   const isChoiceField = field.type === 'dropdown' || field.type === 'multiple_choice' || field.type === 'checkbox';
+  const content = section !== 'validation';
+  const validation = section !== 'content';
+  const common = content && (
+    <>
+      <LabelField uid={uid} fieldId={field.fieldId} label={field.label} onUpdate={onUpdate} />
+      <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
+    </>
+  );
+  // In a field card the Required switch sits beside the tabs instead.
+  const required = section === undefined && <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />;
 
   return (
     <div className="flex flex-col gap-4">
       {isTextField && (
         <>
-          <div className="grid grid-cols-1 min-[881px]:grid-cols-2 gap-4">
-            <LabelField uid={uid} fieldId={field.fieldId} label={field.label} onUpdate={onUpdate} />
+          {content && (
+            <>
+              <div className="grid grid-cols-1 min-[881px]:grid-cols-2 gap-4">
+                <LabelField uid={uid} fieldId={field.fieldId} label={field.label} onUpdate={onUpdate} />
 
-            <PanelSection label="Placeholder text">
-              <BlurField
-                id={`${uid}-placeholder`}
-                label=""
-                defaultValue={field.placeholder ?? ''}
-                placeholder="Hint shown inside the field"
-                allowEmpty={true}
-                onCommit={(v) => onUpdate(field.fieldId, { placeholder: v })}
-              />
-            </PanelSection>
-          </div>
+                <PanelSection label="Placeholder text">
+                  <BlurField
+                    id={`${uid}-placeholder`}
+                    label=""
+                    defaultValue={field.placeholder ?? ''}
+                    placeholder="Hint shown inside the field"
+                    allowEmpty={true}
+                    onCommit={(v) => onUpdate(field.fieldId, { placeholder: v })}
+                  />
+                </PanelSection>
+              </div>
 
-          <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
+              <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
+            </>
+          )}
 
-          <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
+          {required}
 
-          {(field.type === 'number' || field.type === 'currency') && (
+          {validation && (field.type === 'number' || field.type === 'currency') && (
             <NumberRangeSection fieldId={field.fieldId} min={field.min} max={field.max} onUpdate={onUpdate} />
           )}
 
-          {field.type === 'currency' && (
+          {content && field.type === 'currency' && (
             <PanelSection label="Currency">
               <Select
                 id={`${uid}-currency`}
@@ -617,9 +573,9 @@ export function FieldInlineEditor({ field, onUpdate, onUpdateOptions }: FieldInl
             </PanelSection>
           )}
 
-          {field.type === 'url' && <UrlDisplaySection field={field} onUpdate={onUpdate} />}
+          {content && field.type === 'url' && <UrlDisplaySection field={field} onUpdate={onUpdate} />}
 
-          {(field.type === 'short_text' || field.type === 'long_text') && (
+          {validation && (field.type === 'short_text' || field.type === 'long_text') && (
             <PanelSection label="Max length">
               <BlurField
                 id={`${uid}-maxlength`}
@@ -637,7 +593,7 @@ export function FieldInlineEditor({ field, onUpdate, onUpdateOptions }: FieldInl
             </PanelSection>
           )}
 
-          {field.type === 'date' && (
+          {validation && field.type === 'date' && (
             <DateRangeSection fieldId={field.fieldId} minDate={field.minDate} maxDate={field.maxDate} onUpdate={onUpdate} />
           )}
         </>
@@ -645,99 +601,89 @@ export function FieldInlineEditor({ field, onUpdate, onUpdateOptions }: FieldInl
 
       {isChoiceField && (
         <>
-          <LabelField uid={uid} fieldId={field.fieldId} label={field.label} onUpdate={onUpdate} />
-
-          <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
-
-          <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
-
-          <PanelSection label="Options">
-            <OptionsEditor fieldId={field.fieldId} options={field.options} onUpdate={onUpdateOptions} />
-          </PanelSection>
+          {common}
+          {required}
+          {content && (
+            <PanelSection label="Options">
+              <OptionsEditor fieldId={field.fieldId} options={field.options} onUpdate={onUpdateOptions} />
+            </PanelSection>
+          )}
         </>
       )}
 
       {BASIC_TYPES.has(field.type) && (
         <>
-          <LabelField uid={uid} fieldId={field.fieldId} label={field.label} onUpdate={onUpdate} />
-
-          <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
-
-          <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
+          {common}
+          {required}
         </>
       )}
 
       {field.type === 'yes_no' && (
         <>
-          <LabelField uid={uid} fieldId={field.fieldId} label={field.label} onUpdate={onUpdate} />
-
-          <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
-
-          <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
-
-          <PanelSection label="Button words">
-            <BlurField
-              id={`${uid}-yes`}
-              label=""
-              defaultValue={field.yesLabel ?? ''}
-              placeholder="Yes"
-              allowEmpty={true}
-              maxLength={30}
-              onCommit={(v) => onUpdate(field.fieldId, { yesLabel: v || undefined })}
-            />
-            <BlurField
-              id={`${uid}-no`}
-              label=""
-              defaultValue={field.noLabel ?? ''}
-              placeholder="No"
-              allowEmpty={true}
-              maxLength={30}
-              onCommit={(v) => onUpdate(field.fieldId, { noLabel: v || undefined })}
-            />
-            <p className="bg-caption text-(--text-muted)">Only the words change. Answers and exports still read Yes or No.</p>
-          </PanelSection>
+          {common}
+          {required}
+          {content && (
+            <PanelSection label="Button words">
+              <BlurField
+                id={`${uid}-yes`}
+                label=""
+                defaultValue={field.yesLabel ?? ''}
+                placeholder="Yes"
+                allowEmpty={true}
+                maxLength={30}
+                onCommit={(v) => onUpdate(field.fieldId, { yesLabel: v || undefined })}
+              />
+              <BlurField
+                id={`${uid}-no`}
+                label=""
+                defaultValue={field.noLabel ?? ''}
+                placeholder="No"
+                allowEmpty={true}
+                maxLength={30}
+                onCommit={(v) => onUpdate(field.fieldId, { noLabel: v || undefined })}
+              />
+              <p className="bg-caption text-(--text-muted)">Only the words change. Answers and exports still read Yes or No.</p>
+            </PanelSection>
+          )}
         </>
       )}
 
       {field.type === 'image_upload' && (
         <>
-          <LabelField uid={uid} fieldId={field.fieldId} label={field.label} onUpdate={onUpdate} />
-
-          <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
-
-          <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
-
-          <ImageDisplaySection field={field} onUpdate={onUpdate} />
+          {common}
+          {required}
+          {validation && <ImageLimitSection field={field} onUpdate={onUpdate} />}
+          {content && <ImageDisplaySection field={field} onUpdate={onUpdate} />}
         </>
       )}
 
       {field.type === 'file_upload' && (
         <>
-          <LabelField uid={uid} fieldId={field.fieldId} label={field.label} onUpdate={onUpdate} />
+          {common}
+          {required}
+          {validation && (
+            <>
+              <PanelSection label="Allowed file types">
+                <div className="flex flex-wrap gap-1.5">
+                  {ALLOWED_FILE_TYPE_LABELS.map((label) => (
+                    <span
+                      key={label}
+                      className="bg-caption font-medium text-(--text-secondary) bg-(--bg-sunken) rounded px-2 py-1"
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
+                <p className="bg-caption text-(--text-muted) mt-1">
+                  Platform-enforced — cannot be changed.
+                </p>
+              </PanelSection>
 
-          <HelpTextField uid={uid} fieldId={field.fieldId} helpText={field.helpText ?? ''} onUpdate={onUpdate} />
-
-          <RequiredToggle uid={uid} fieldId={field.fieldId} required={field.required} onUpdate={onUpdate} />
-
-          <PanelSection label="Allowed file types">
-            <div className="flex flex-wrap gap-1.5">
-              {ALLOWED_FILE_TYPE_LABELS.map((label) => (
-                <span
-                  key={label}
-                  className="bg-caption font-medium text-(--text-secondary) bg-(--bg-sunken) rounded px-2 py-1"
-                >
-                  {label}
-                </span>
-              ))}
-            </div>
-            <p className="bg-caption text-(--text-muted) mt-1">
-              Platform-enforced — cannot be changed.
-            </p>
-          </PanelSection>
-
-          <PanelSection label="Max file size">
-            <p className="bg-body-sm text-(--text-secondary)">25 MB maximum file size</p>
-          </PanelSection>
+              <PanelSection label="Max file size">
+                <p className="bg-body-sm text-(--text-secondary)">25 MB maximum file size</p>
+              </PanelSection>
+            </>
+          )}
         </>
       )}
     </div>

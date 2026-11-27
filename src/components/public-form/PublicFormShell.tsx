@@ -11,7 +11,7 @@ import { buildPublicFormSchema } from '@/lib/schemas/publicFormSchema';
 import { publicFormService, type SubmitFieldError } from '@/services/publicForm';
 import { MID_FILL_COPY, reasonFromCode } from '@/lib/formUnavailable';
 import { focusFirstInvalidSoon } from '@/lib/focusField';
-import { saveDraft, loadDraft, clearDraft } from '@/lib/formDraft';
+import { saveDraft, loadDraft, clearDraft, usableDraftValues } from '@/lib/formDraft';
 import { Button } from '@/components/ui/Button';
 import { normaliseLayout } from '@/lib/layoutPresets';
 import { brandButtonStyle, brandLabels, brandProgressStyle, brandShowsProgress, effectiveTheme } from '@/lib/formTheme';
@@ -184,7 +184,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
   useEffect(() => {
     const draft = loadDraft(slug);
     if (!draft) return;
-    methods.reset(draft.values);
+    methods.reset(usableDraftValues(draft.values, schema.fields));
     setCurrentPageIndex((i) => {
       const restored = draft.pageIndex;
       return restored >= 0 && restored < sortedPages.length ? restored : i;

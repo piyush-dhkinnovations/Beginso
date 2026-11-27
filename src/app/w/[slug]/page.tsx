@@ -26,6 +26,7 @@ import { ActivityFeed } from '@/components/workspaces/ActivityFeed';
 import { PageHeader, Button, EmptyState, Card, Badge, Skeleton, QuickActionsBanner } from '@/components/ui';
 import { HomeBodySkeleton } from '@/components/ui/PageSkeletons';
 import { FormAccessPanel } from '@/components/team/FormAccessPanel';
+import { STATUS_LABEL } from '@/components/forms/formsListUtils';
 import type { Form } from '@/types/form';
 
 // Workspace Home page — client component so loading/error/empty/populated states are all
@@ -175,7 +176,7 @@ export default function WorkspaceHomePage() {
                   <div key={f._id} className="flex flex-col gap-1.5 pb-3 border-b border-(--border-default) last:border-0">
                     <div className="flex items-center justify-between gap-2">
                       <span className="bg-body-sm font-semibold text-(--text-primary)">{f.title}</span>
-                      <Badge>{f.status === 'published' ? `Active · ${f.responseCount} responses` : 'Draft'}</Badge>
+                      <Badge>{f.status === 'published' ? `Active · ${f.responseCount} responses` : STATUS_LABEL[f.status]}</Badge>
                     </div>
                     <div className="flex items-center gap-3 bg-caption text-(--text-muted)">
                       <Link href={`/forms/${f._id}/inbox?ws=${slug}`} className="hover:text-(--text-primary) flex items-center gap-1">

@@ -1,9 +1,10 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { Plus, X } from 'lucide-react';
 import type { FormPage } from '@/types/form';
 
-export interface PagesPanelProps {
+export interface PageSwitcherProps {
   pages: FormPage[];
   activePageId: string | null;
   fieldCounts: Record<string, number>;
@@ -12,167 +13,80 @@ export interface PagesPanelProps {
   onDeletePage: (pageId: string) => void;
 }
 
-// Small, page-proportioned tile (roughly A4-ish portrait) — matches every tile
-// in the rail, whether it's a page number or the trailing "add" tile.
-const TILE_CLASS =
-  'w-11 h-14 rounded-lg border shrink-0 flex items-center justify-center relative transition-colors';
+const fieldsText = (n: number) => `${n} ${n === 1 ? 'field' : 'fields'}`;
 
-// Single page tile — click to switch, hover to delete
-// Each page's own title/description is edited from the canvas header (visible
-// once that page is active), not from this tile — the tile is pure navigation.
+// The row of page buttons above the canvas. One page is always active; its questions are the only ones shown. A button
+// reads the page's name, or "Page N" while it has none. From 1024px the active one carries an X that deletes the page
+// (Undo brings it back); below that, renaming and deleting stay desktop-only, said so rather than silently missing.
+export function PageSwitcher({ pages, activePageId, fieldCounts, onSelectPage, onAddPage, onDeletePage }: PageSwitcherProps) {
+  const rowRef = useRef<HTMLDivElement>(null);
 
-function PageTile({
-  page,
-  number,
-  isActive,
-  fieldCount,
-  canDelete,
-  onSelect,
-  onDelete,
-}: {
-  page: FormPage;
-  number: number;
-  isActive: boolean;
-  fieldCount: number;
-  canDelete: boolean;
-  onSelect: () => void;
-  onDelete: () => void;
-}) {
+  // A new page, or one picked by undo, may sit outside the visible part of the row. Only the row scrolls, never the page.
+  useEffect(() => {
+    const row = rowRef.current;
+    const active = row?.querySelector<HTMLElement>('[data-active="true"]');
+    if (!row || !active) return;
+    const end = active.offsetLeft + active.offsetWidth;
+    if (active.offsetLeft < row.scrollLeft) row.scrollLeft = active.offsetLeft;
+    else if (end > row.scrollLeft + row.clientWidth) row.scrollLeft = end - row.clientWidth;
+  }, [activePageId, pages.length]);
+
   return (
-    <div
-      onClick={onSelect}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
-      title={`${page.title || 'Untitled form'} — ${fieldCount} ${fieldCount === 1 ? 'field' : 'fields'}`}
-      className={`group ${TILE_CLASS} cursor-pointer ${
-        isActive
-          ? 'border-(--action-primary-hover) bg-(--accent-soft)'
-          : 'border-(--border-default) bg-(--surface-card) hover:border-(--border-strong) hover:bg-(--surface-hover)'
-      }`}
-    >
-      <span className={`bg-body font-bold ${isActive ? 'text-(--accent-soft-text)' : 'text-(--text-muted)'}`}>
-        {number}
-      </span>
-
-      {isActive && <span className="absolute left-1.5 right-1.5 bottom-1 h-0.5 rounded-full bg-(--action-primary-hover)" />}
-
-      {canDelete && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 bg-(--surface-card) border border-(--border-default) text-(--text-muted) hover:text-(--error-text) hover:border-(--error-border) size-5 rounded-full flex items-center justify-center transition-all shadow-(--shadow-sm)"
-          aria-label={`Delete page ${number}`}
-          title="Delete page"
-        >
-          <X size={10} />
-        </button>
-      )}
-    </div>
-  );
-}
-
-// Trailing "add page" tile — same shape/size, appended right after the
-// last page tile in the same vertical stack (not a separate footer button).
-
-function AddPageTile({ onAdd }: { onAdd: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onAdd}
-      title="Add page"
-      aria-label="Add page"
-      className={`${TILE_CLASS} border-dashed border-(--border-strong) text-(--text-disabled) hover:border-(--border-focus) hover:text-(--text-link) hover:bg-(--accent-soft)/40`}
-    >
-      <Plus size={16} />
-    </button>
-  );
-}
-
-// Main panel
-// Its own separate panel, sitting between the Field Types toolbox and the
-// canvas — always visible in the Build tab. One page is always active; its
-// fields are the only ones rendered on the canvas at a time.
-
-export function PagesPanel({
-  pages,
-  activePageId,
-  fieldCounts,
-  onSelectPage,
-  onAddPage,
-  onDeletePage,
-}: PagesPanelProps) {
-  return (
-    <aside className="sticky top-16 hidden w-20 shrink-0 flex-col gap-3 self-start rounded-xl border border-(--border-default) bg-(--surface-card) px-2 py-4 lg:flex">
-      <h3 className="border-b border-(--border-subtle) pb-3 bg-body font-bold text-(--text-primary) tracking-tight text-center">Pages</h3>
-
-      <div className="flex flex-col items-center gap-3">
-        {pages.map((page, index) => (
-          <PageTile
-            key={page.id}
-            page={page}
-            number={index + 1}
-            isActive={page.id === activePageId}
-            fieldCount={fieldCounts[page.id] ?? 0}
-            canDelete={pages.length > 1}
-            onSelect={() => onSelectPage(page.id)}
-            onDelete={() => onDeletePage(page.id)}
-          />
-        ))}
-        <AddPageTile onAdd={onAddPage} />
-      </div>
-    </aside>
-  );
-}
-
-// Compact page switcher (< 1024px)
-// Below 1024px the Pages panel is gone, but editing the
-// fields WITHIN each page must still work, so pages stay selectable, and a "+" adds one. Renaming (on the
-// canvas header), deleting and rearranging pages stay desktop-only, and are said so rather than silently
-// missing.
-export function PageSwitcher({
-  pages,
-  activePageId,
-  onSelectPage,
-  onAddPage,
-}: Pick<PagesPanelProps, 'pages' | 'activePageId' | 'onSelectPage' | 'onAddPage'>) {
-  return (
-    <div className="lg:hidden flex flex-col gap-1 border-b bg-(--surface-card) px-3 py-2 shrink-0">
-      <div role="group" aria-label="Pages" className="flex items-center gap-2 overflow-x-auto">
-          {pages.map((page, index) => (
-            <button
-              key={page.id}
-              type="button"
-              onClick={() => onSelectPage(page.id)}
-              aria-pressed={page.id === activePageId}
-              className={`min-h-11 min-w-11 shrink-0 rounded-md border px-3 bg-body-sm font-semibold ${
-                page.id === activePageId
-                  ? 'border-(--action-primary-hover) bg-(--accent-soft) text-(--accent-soft-text)'
-                  : 'border-(--border-default) text-(--text-secondary)'
-              }`}
-            >
-              Page {index + 1}
-            </button>
-          ))}
+    <div className="mx-auto flex w-full max-w-190 shrink-0 flex-col gap-1 py-2 max-lg:border-b max-lg:border-(--border-default) max-lg:bg-(--surface-card) max-lg:px-3">
+      <div className="flex items-center gap-3">
+        <div ref={rowRef} role="group" aria-label="Pages" className="relative flex min-w-0 flex-1 items-center gap-2 overflow-x-auto scrollbar-none">
+          {pages.map((page, index) => {
+            const active = page.id === activePageId;
+            const title = page.title?.trim();
+            return (
+              <div
+                key={page.id}
+                data-active={active}
+                className={`flex shrink-0 items-center rounded-md border bg-body-sm font-semibold ${
+                  active
+                    ? 'border-(--action-primary-hover) bg-(--accent-soft) text-(--accent-soft-text)'
+                    : 'border-(--border-default) bg-(--surface-card) text-(--text-secondary) hover:border-(--border-strong)'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => onSelectPage(page.id)}
+                  aria-pressed={active}
+                  title={`${title || 'Untitled form'} — ${fieldsText(fieldCounts[page.id] ?? 0)}`}
+                  className="flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-md px-3 focus-visible:outline-2 focus-visible:outline-(--border-focus) lg:min-h-9"
+                >
+                  <span className="max-w-40 truncate">{title || `Page ${index + 1}`}</span>
+                </button>
+                {active && pages.length > 1 && (
+                  <span className="hidden pr-1 lg:inline-flex">
+                    <button
+                      type="button"
+                      onClick={() => onDeletePage(page.id)}
+                      aria-label={`Delete page ${index + 1}`}
+                      title="Delete page"
+                      className="flex size-7 items-center justify-center rounded text-(--accent-soft-text) hover:bg-(--error-surface) hover:text-(--error-text) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
+                    >
+                      <X size={14} aria-hidden="true" />
+                    </button>
+                  </span>
+                )}
+              </div>
+            );
+          })}
           <button
             type="button"
             onClick={onAddPage}
             aria-label="Add page"
             title="Add page"
-            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-md border border-dashed border-(--border-strong) text-(--text-secondary) hover:bg-(--surface-hover) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
+            className="flex min-h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-md border border-dashed border-(--border-strong) bg-body-sm font-semibold text-(--text-secondary) hover:bg-(--surface-hover) focus-visible:outline-2 focus-visible:outline-(--border-focus) lg:min-h-9 lg:px-3"
           >
-            <Plus size={18} aria-hidden="true" />
+            <Plus size={16} aria-hidden="true" />
+            <span className="hidden whitespace-nowrap lg:inline">Add page</span>
           </button>
+        </div>
+        <span className="hidden shrink-0 bg-body-sm text-(--text-muted) lg:inline">{fieldsText(fieldCounts[activePageId ?? ''] ?? 0)}</span>
       </div>
-      <p className="bg-caption text-(--text-muted)">Pages can only be renamed, deleted or reordered on a larger screen. You can still edit your questions here.</p>
+      <p className="bg-caption text-(--text-muted) lg:hidden">Pages can only be renamed, deleted or reordered on a larger screen. You can still edit your questions here.</p>
     </div>
   );
 }

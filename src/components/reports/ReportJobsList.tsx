@@ -64,6 +64,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
             ...job,
             formId: job.formId ?? prior.formId,
             responseStatus: job.responseStatus ?? prior.responseStatus,
+            filters: job.filters ?? prior.filters,
             from: job.from ?? prior.from,
             to: job.to ?? prior.to,
           };
@@ -131,6 +132,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
   function handleRetry(job: ReportJob) {
     setRetryingJobId(job._id);
     retryMutation.mutate({
+      ...job.filters,
       format: job.format,
       formId: job.formId,
       status: job.responseStatus,
@@ -237,7 +239,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
               // job._id ?? index is a safety net, not the primary key source — reportsService now
               // adapts the real backend `id` field (see docs/status/fix-log.md S5-03), so _id is
               // populated in the normal case; this only protects against an unexpected future gap.
-              <ReportJobRow key={job._id ?? index} job={job} onRetry={handleRetry} isRetrying={retryingJobId === job._id} formTitleById={formTitleById} formMarkById={formMarkById} />
+              <ReportJobRow key={job._id ?? index} job={job} onRetry={handleRetry} isRetrying={retryingJobId === job._id} formTitleById={formTitleById} formMarkById={formMarkById} scope={scope} />
             ))}
           </tbody>
         </table>
@@ -245,7 +247,7 @@ export function ReportJobsList({ page, onPageChange, formTitleById = new Map(), 
 
       <div className="xl:hidden mx-5 flex flex-col gap-3">
         {visibleJobs.map((job, index) => (
-          <ReportJobRow key={job._id ?? index} job={job} onRetry={handleRetry} isRetrying={retryingJobId === job._id} formTitleById={formTitleById} formMarkById={formMarkById} variant="card" />
+          <ReportJobRow key={job._id ?? index} job={job} onRetry={handleRetry} isRetrying={retryingJobId === job._id} formTitleById={formTitleById} formMarkById={formMarkById} scope={scope} variant="card" />
         ))}
       </div>
 

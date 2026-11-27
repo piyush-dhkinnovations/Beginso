@@ -66,6 +66,15 @@ describe('reportsService', () => {
     });
   });
 
+  // The backend stores a filter that was not given as null, and refuses null in a new request (a retry).
+  it('keeps the filters a job was asked for, without the ones that were not given', async () => {
+    const filters = { formId: 'f1', stageId: 's1', search: null, unread: null, tagIds: ['t1'] };
+    const job = { id: 'r1', format: 'csv', status: 'failed', createdAt: '2026-11-27T00:00:00.000Z', filters };
+    mockGet.mockResolvedValueOnce({ data: { reports: [job], total: 1, page: 1, limit: 20, totalPages: 1 } });
+    const result = await reportsService.getReports({ page: 1, limit: 20 });
+    expect(result.data[0].filters).toStrictEqual({ formId: 'f1', stageId: 's1', tagIds: ['t1'] });
+  });
+
   it('getReports calls GET /api/reports with params and maps each job\'s id to _id', async () => {
     // Real live shape (22 Sep 2026 capture): the job array is keyed `reports`, not `data` —
     // the previous mock here asserted the wrong key, which is what let the actual bug (reading

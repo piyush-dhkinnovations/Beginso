@@ -24,6 +24,12 @@ export interface AnswerItem {
 // The stored name is the last path segment of the file's URL (the backend sanitises it to [A-Za-z0-9._-]).
 const storedName = (file: IResponseFile): string => file.url.split('?')[0].split('/').pop() ?? '';
 
+// How a file answer is stored: `{ fileName, fileSize, mimeType }`.
+const isFileRecord = (v: unknown): boolean => typeof v === 'object' && v !== null && 'fileName' in v;
+
+/** An upload question's stored text that names no upload: it was answered while the question was another type. */
+const isEarlierText = (v: unknown): boolean => (typeof v === 'string' && v !== '' && !v.includes('/upload')) || (Array.isArray(v) && v.length > 0);
+
 export function buildAnswerItems(
   answers: ResponseAnswers,
   files: IResponseFile[],
@@ -44,32 +50,40 @@ export function buildAnswerItems(
       .filter((f) => !f.deleted)
       .sort((a, b) => (pageOrder.get(a.pageId) ?? 0) - (pageOrder.get(b.pageId) ?? 0) || a.order - b.order);
 
-    // Image answers name their files, so they are matched exactly.
+    // Image answers name their files, so they are matched exactly. A question that was an image upload when it was
+    // answered, and is something else now, keeps its images the same way.
+    const named = new Map<string, IResponseFile[]>();
     for (const field of ordered) {
-      if (field.type !== 'image_upload') continue;
-      const names = Array.isArray(answers[keyOf(field)]) ? (answers[keyOf(field)] as string[]) : [];
-      const matched = names
+      const raw = answers[keyOf(field)];
+      const matched = (Array.isArray(raw) ? raw : [])
         .map((name) => files.find((f) => !claimed.has(f.id) && storedName(f) === name))
         .filter((f): f is IResponseFile => !!f);
       matched.forEach((f) => claimed.add(f.id));
-      items.push({ key: field.fieldId, label: field.label, field, value: null, files: matched });
+      named.set(field.fieldId, matched);
     }
 
     // A file_upload answer does not name its file, so the remaining files are handed out in field order.
     const remaining = files.filter((f) => !claimed.has(f.id));
     let fileIndex = 0;
     const known = new Set<string>();
-    const byField = new Map(items.map((i) => [i.key, i]));
     const result: Omit<AnswerItem, 'number'>[] = [];
     for (const field of ordered) {
       known.add(keyOf(field));
-      if (field.type === 'image_upload') {
-        result.push(byField.get(field.fieldId)!);
-      } else if (field.type === 'file_upload') {
+      const raw = answers[keyOf(field)];
+      const matched = named.get(field.fieldId) ?? [];
+      const base = { key: field.fieldId, label: field.label };
+      const isUpload = field.type === 'file_upload' || field.type === 'image_upload';
+      if (field.type === 'image_upload' && matched.length > 0) {
+        result.push({ ...base, field, value: null, files: matched });
+      } else if (matched.length > 0) {
+        result.push({ ...base, value: null, files: matched });
+      } else if (isUpload && isEarlierText(raw)) {
+        result.push({ ...base, value: raw, files: [] });
+      } else if (field.type === 'file_upload' || isFileRecord(raw)) {
         const file = remaining[fileIndex++];
-        result.push({ key: field.fieldId, label: field.label, field, value: null, files: file ? [file] : [] });
+        result.push({ ...base, field: field.type === 'file_upload' ? field : undefined, value: null, files: file ? [file] : [] });
       } else {
-        result.push({ key: field.fieldId, label: field.label, field, value: answers[keyOf(field)] ?? null, files: [] });
+        result.push({ ...base, field, value: field.type === 'image_upload' ? null : raw ?? null, files: [] });
       }
     }
     // Answers whose field no longer exists are kept (never silently dropped).

@@ -4,7 +4,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { saveDraft, loadDraft, clearDraft } from '@/lib/formDraft';
+import { saveDraft, loadDraft, clearDraft, usableDraftValues } from '@/lib/formDraft';
+import type { FormField } from '@/types/form';
 
 describe('formDraft', () => {
   beforeEach(() => {
@@ -49,5 +50,17 @@ describe('formDraft', () => {
     });
     expect(() => saveDraft('quota-slug', { pageIndex: 0, values: {} })).not.toThrow();
     spy.mockRestore();
+  });
+});
+
+describe('usableDraftValues', () => {
+  it('drops answers a question can no longer hold after changing type', () => {
+    const fields = [
+      { fieldId: 'text', type: 'short_text' },
+      { fieldId: 'file', type: 'file_upload' },
+      { fieldId: 'boxes', type: 'checkbox' },
+      { fieldId: 'was-boxes', type: 'dropdown' },
+    ] as unknown as FormField[];
+    expect(usableDraftValues({ text: 'a', file: 'old text', boxes: ['x'], 'was-boxes': ['x'] }, fields)).toEqual({ text: 'a', boxes: ['x'] });
   });
 });

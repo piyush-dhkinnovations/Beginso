@@ -1,44 +1,57 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { PagesPanel, PageSwitcher } from '@/components/form-builder/PagesPanel';
+import { PageSwitcher, type PageSwitcherProps } from '@/components/form-builder/PagesPanel';
 
 const pages = [
   { id: 'p1', order: 0, title: 'Intro' },
   { id: 'p2', order: 1 },
 ];
 
-function setup(over: Partial<React.ComponentProps<typeof PagesPanel>> = {}) {
+function setup(over: Partial<PageSwitcherProps> = {}) {
   const props = { pages, activePageId: 'p1', fieldCounts: { p1: 2 }, onSelectPage: vi.fn(), onAddPage: vi.fn(), onDeletePage: vi.fn(), ...over };
-  render(<PagesPanel {...props} />);
+  render(<PageSwitcher {...props} />);
   return props;
 }
 
-describe('PagesPanel', () => {
-  it('shows one numbered tile per page with a title tooltip of page name and field count', () => {
+const group = () => screen.getByRole('group', { name: 'Pages' });
+
+describe('PageSwitcher', () => {
+  it('shows one button per page, with a tooltip of name and field count', () => {
     setup();
-    expect(screen.getByTitle('Intro — 2 fields')).toBeInTheDocument();
-    expect(screen.getByTitle('Untitled form — 0 fields')).toBeInTheDocument();
+    expect(within(group()).getByRole('button', { name: 'Intro' })).toHaveAttribute('title', 'Intro — 2 fields');
+    expect(within(group()).getByRole('button', { name: 'Page 2' })).toHaveAttribute('title', 'Untitled form — 0 fields');
   });
 
-  it('uses the singular "field" for exactly one', () => {
+  it('a named page reads its name alone; an unnamed one reads its number', () => {
+    setup();
+    expect(within(group()).getByRole('button', { name: 'Intro' })).toBeInTheDocument();
+    expect(screen.queryByText(/Page 1/)).not.toBeInTheDocument();
+    expect(within(group()).getByRole('button', { name: 'Page 2' })).toBeInTheDocument();
+  });
+
+  it('uses the singular "field" for exactly one, in the tooltip and beside the row', () => {
     setup({ fieldCounts: { p1: 1 } });
     expect(screen.getByTitle('Intro — 1 field')).toBeInTheDocument();
+    expect(screen.getByText('1 field')).toBeInTheDocument();
   });
 
-  it('clicking or pressing Enter/Space on a tile selects it', async () => {
+  it('presses the active page and selects another on click or keyboard', async () => {
     const p = setup();
-    const tile = screen.getByTitle('Untitled form — 0 fields');
-    await userEvent.click(tile);
-    expect(p.onSelectPage).toHaveBeenLastCalledWith('p2');
-    tile.focus();
+    expect(within(group()).getByRole('button', { name: 'Intro' })).toHaveAttribute('aria-pressed', 'true');
+    const second = within(group()).getByRole('button', { name: 'Page 2' });
+    expect(second).toHaveAttribute('aria-pressed', 'false');
+    await userEvent.click(second);
+    second.focus();
     await userEvent.keyboard('{Enter}');
     await userEvent.keyboard(' ');
     expect(p.onSelectPage).toHaveBeenCalledTimes(3);
+    expect(p.onSelectPage).toHaveBeenLastCalledWith('p2');
   });
 
-  it('delete button deletes that page without selecting it', async () => {
-    const p = setup();
+  it('only the active page carries the X that deletes it', async () => {
+    const p = setup({ activePageId: 'p2' });
+    expect(screen.queryByRole('button', { name: 'Delete page 1' })).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Delete page 2' }));
     expect(p.onDeletePage).toHaveBeenCalledWith('p2');
     expect(p.onSelectPage).not.toHaveBeenCalled();
@@ -49,33 +62,14 @@ describe('PagesPanel', () => {
     expect(screen.queryByRole('button', { name: /Delete page/ })).not.toBeInTheDocument();
   });
 
-  it('Add page appends', async () => {
-    const p = setup();
-    await userEvent.click(screen.getByRole('button', { name: 'Add page' }));
+  it('Add page appends, even when the form has only one page', async () => {
+    const p = setup({ pages: [pages[0]] });
+    await userEvent.click(within(group()).getByRole('button', { name: 'Add page' }));
     expect(p.onAddPage).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('PageSwitcher', () => {
-  it('lists Page 1..n with the active one pressed and selects on click', async () => {
-    const onSelectPage = vi.fn();
-    render(<PageSwitcher pages={pages} activePageId="p2" onSelectPage={onSelectPage} onAddPage={vi.fn()} />);
-    const group = screen.getByRole('group', { name: 'Pages' });
-    expect(within(group).getByRole('button', { name: 'Page 2' })).toHaveAttribute('aria-pressed', 'true');
-    expect(within(group).getByRole('button', { name: 'Page 1' })).toHaveAttribute('aria-pressed', 'false');
-    await userEvent.click(within(group).getByRole('button', { name: 'Page 1' }));
-    expect(onSelectPage).toHaveBeenCalledWith('p1');
-  });
-
-  it('a plus button adds a page, even when the form has only one', async () => {
-    const onAddPage = vi.fn();
-    render(<PageSwitcher pages={[pages[0]]} activePageId="p1" onSelectPage={vi.fn()} onAddPage={onAddPage} />);
-    await userEvent.click(within(screen.getByRole('group', { name: 'Pages' })).getByRole('button', { name: 'Add page' }));
-    expect(onAddPage).toHaveBeenCalledTimes(1);
   });
 
   it('still says renaming, deleting and reordering pages need a larger screen', () => {
-    render(<PageSwitcher pages={[pages[0]]} activePageId="p1" onSelectPage={vi.fn()} onAddPage={vi.fn()} />);
+    setup();
     expect(screen.getByText('Pages can only be renamed, deleted or reordered on a larger screen. You can still edit your questions here.')).toBeInTheDocument();
   });
 });

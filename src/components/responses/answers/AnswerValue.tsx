@@ -100,7 +100,8 @@ function renderValue(item: AnswerItem, scope: string, variant: AnswerVariant, qu
   if (isEmpty(value)) return <Empty />;
   const compact = variant === 'compact';
 
-  switch (field?.type) {
+  // A drawn signature stays a picture even if the question has since become another type.
+  switch (isDrawnSignature(value) ? 'signature' : field?.type) {
     case 'rating': {
       const n = Number(value);
       return Number.isFinite(n) ? <Stars value={Math.max(0, Math.min(5, Math.round(n)))} /> : String(value);
