@@ -39,14 +39,18 @@ describe('FieldCard', () => {
     expect(screen.getByText('name@example.com')).toBeInTheDocument();
   });
 
-  it('shows option counts (singular and plural) and the Required marker', () => {
-    const { unmount } = setup(makeField('dropdown', { options: ['A'], required: true } as never));
-    expect(screen.getByText(/1 option(?!s)/)).toBeInTheDocument();
-    expect(screen.getByText(/Required/)).toBeInTheDocument();
+  it('a closed card marks a required question, and one shown by a condition', () => {
+    const { unmount } = setup(makeField('short_text', { required: true }));
+    expect(screen.getByText('Required')).toBeInTheDocument();
+    expect(screen.queryByText('Conditional')).not.toBeInTheDocument();
     unmount();
-    setup(makeField('dropdown', { options: ['A', 'B', 'C'] } as never));
-    expect(screen.getByText(/3 options/)).toBeInTheDocument();
-    expect(screen.queryByText(/Required/)).not.toBeInTheDocument();
+
+    const target = makeField('short_text');
+    const source = makeField('short_text');
+    source.logicRules = [{ condition: { fieldId: source.fieldId, operator: 'equals', value: 'a' }, action: 'show', targetFieldId: target.fieldId }];
+    setup(target, { allFields: [source, target] });
+    expect(screen.getByText('Conditional')).toBeInTheDocument();
+    expect(screen.queryByText('Required')).not.toBeInTheDocument();
   });
 
   it('clicking the card selects it and reflects aria-pressed', async () => {
@@ -69,15 +73,45 @@ describe('FieldCard', () => {
 
   it('an inactive card shows no inline editor', () => {
     setup(makeField('short_text'));
-    expect(screen.queryByText('Conditional Logic')).not.toBeInTheDocument();
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
     expect(screen.queryByPlaceholderText('Field label')).not.toBeInTheDocument();
   });
 
-  it('an active card expands the field editor and the logic editor', () => {
+  it('an active card opens on the Content tab, with the change-type icon and the Required switch', () => {
     setup(makeField('short_text', { label: 'Q' }), { isActive: true });
+    expect(screen.getByRole('tab', { name: 'Content' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByPlaceholderText('Field label')).toHaveValue('Q');
-    expect(screen.getByText('Conditional Logic')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Change the type of Q' })).toHaveTextContent('');
+    expect(screen.getByRole('switch', { name: 'Required' })).not.toBeChecked();
     expect(screen.getByRole('button', { name: 'Select Q field' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('the Required switch updates the question', async () => {
+    const f = makeField('short_text');
+    const { onUpdate } = setup(f, { isActive: true });
+    await userEvent.click(screen.getByRole('switch', { name: 'Required' }));
+    expect(onUpdate).toHaveBeenCalledWith(f.fieldId, { required: true });
+  });
+
+  it('Validation and Show or hide are tabs of their own', async () => {
+    setup(makeField('short_text'), { isActive: true });
+    expect(screen.queryByRole('button', { name: /Add condition/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('tab', { name: 'Validation' }));
+    expect(screen.getByRole('tabpanel')).toHaveTextContent('Max length');
+    await userEvent.click(screen.getByRole('tab', { name: 'Show or hide' }));
+    expect(screen.getByRole('button', { name: /Add condition/ })).toBeInTheDocument();
+  });
+
+  it('a type with nothing to limit has no Validation tab', () => {
+    setup(makeField('signature'), { isActive: true });
+    expect(screen.queryByRole('tab', { name: 'Validation' })).not.toBeInTheDocument();
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
+  });
+
+  it('Delete pressed on a button inside the card does not delete the question', () => {
+    const { onDelete } = setup(makeField('short_text', { label: 'Q' }), { isActive: true });
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Change the type of Q' }), { key: 'Delete' });
+    expect(onDelete).not.toHaveBeenCalled();
   });
 
   it('Delete / Backspace on the active card deletes it', () => {

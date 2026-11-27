@@ -103,7 +103,7 @@ function DraggableToolboxItem({ config, onAdd }: DraggableItemProps) {
       {...attributes}
       onClick={() => onAdd?.(type)}
       title={label}
-      className={`group flex items-center justify-center gap-2.5 px-0 py-2.5 rounded-lg bg-(--surface-card) border border-(--border-default) cursor-grab active:cursor-grabbing hover:bg-(--surface-hover) hover:border-(--border-strong) transition-colors select-none min-h-11 lg:min-h-10 lg:justify-start lg:px-2.5 lg:py-2 ${
+      className={`group flex items-center justify-center gap-2.5 px-0 py-2.5 rounded-lg bg-(--surface-card) border border-(--border-default) cursor-grab active:cursor-grabbing hover:bg-(--surface-hover) hover:border-(--border-strong) transition-colors select-none min-h-11 lg:min-h-9 lg:justify-start lg:px-2.5 lg:py-1.5 ${
         isDragging ? 'opacity-50 border-(--border-focus) ring-1 ring-(--border-focus)/20' : ''
       }`}
     >
@@ -124,14 +124,15 @@ export function Toolbox({ onAdd }: ToolboxProps) {
   return (
     // The rail is full width from 1024px and icon-only from 640px. On phones (below 640px) the toolbox is the AddFieldSheet
     // bottom sheet, opened from the build bar under the canvas.
-    // Flat rail (no card): sticks under the top bar while the canvas scrolls with the page, and scrolls inside the screen height.
-    <aside className="sticky top-16 hidden w-16 shrink-0 flex-col gap-4 self-start rounded-xl border border-(--border-default) bg-(--surface-card) p-2 max-h-[calc(100vh-5rem)] overflow-y-auto sm:flex lg:w-72 lg:p-4 scrollbar-none [&::-webkit-scrollbar]:hidden">
-      <div className="hidden border-b border-(--border-subtle) pb-3 lg:block">
+    // It stays put while the canvas scrolls with the page, and scrolls inside itself. From 1024px it is a flush panel under
+    // the top bar and the tabs strip (52px + 48px); below that, a floating rail.
+    <aside className="sticky top-16 hidden w-16 shrink-0 flex-col gap-4 self-start rounded-xl border border-(--border-default) bg-(--surface-card) p-2 max-h-[calc(100vh-5rem)] overflow-y-auto sm:flex lg:top-25 lg:h-[calc(100dvh-6.25rem)] lg:max-h-none lg:w-60 lg:gap-3 lg:rounded-none lg:border-y-0 lg:border-l-0 lg:p-3 scrollbar-none [&::-webkit-scrollbar]:hidden">
+      <div className="hidden lg:block">
         <h3 className="bg-body font-bold text-(--text-primary) tracking-tight">Add fields</h3>
-        <p className="bg-body-sm mt-1 text-(--text-muted)">Click or drag a field onto the form.</p>
+        <p className="bg-caption mt-0.5 text-(--text-muted)">Click or drag onto the form.</p>
       </div>
 
-      <div className="relative hidden lg:block">
+      <div className="relative hidden shrink-0 lg:block">
         <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-(--text-muted)" />
         <input
           type="search"
@@ -139,19 +140,19 @@ export function Toolbox({ onAdd }: ToolboxProps) {
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search fields…"
           aria-label="Search fields"
-          className="min-h-11 w-full rounded-md border border-(--border-default) bg-(--surface-card) pl-9 pr-3 bg-body-sm outline-none focus:border-(--border-strong)"
+          className="min-h-9 w-full rounded-md border border-(--border-default) bg-(--surface-card) pl-9 pr-3 bg-body-sm outline-none focus:border-(--border-strong)"
         />
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 lg:gap-3">
         {FIELD_GROUPS.map((group) => {
           const items = fields.filter((c) => c.group === group.id);
           if (items.length === 0) return null;
           return (
-            <section key={group.id} aria-label={group.label} className="flex flex-col gap-2">
+            <section key={group.id} aria-label={group.label} className="flex flex-col gap-2 lg:gap-1.5">
               {/* Every group is always shown: nothing is hidden behind a heading. The icon-only tablet rail has no headings. */}
-              <h4 className="hidden bg-body-sm font-semibold text-(--text-primary) lg:block">{group.label}</h4>
-              <div className="flex flex-col gap-2">
+              <h4 className="hidden bg-caption font-semibold text-(--text-primary) lg:block">{group.label}</h4>
+              <div className="flex flex-col gap-2 lg:gap-1">
                 {items.map((config) => (
                   <DraggableToolboxItem key={config.type} config={config} onAdd={onAdd} />
                 ))}

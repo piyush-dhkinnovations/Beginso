@@ -1,11 +1,11 @@
 'use client';
 
-import { useDroppable } from '@dnd-kit/core';
+import { useDndMonitor, useDroppable } from '@dnd-kit/core';
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Layout } from 'lucide-react';
 import type { FormField, LogicRule } from '@/types/form';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -20,7 +20,7 @@ function DroppableCanvas({
   children,
   isEmpty,
   isOver,
-  fieldCount,
+  pageNumber,
   pageTitle,
   pageDescription,
   onPageTitleChange,
@@ -30,7 +30,7 @@ function DroppableCanvas({
   children: React.ReactNode;
   isEmpty: boolean;
   isOver: boolean;
-  fieldCount: number;
+  pageNumber: number;
   pageTitle: string;
   pageDescription: string;
   onPageTitleChange: (title: string) => void;
@@ -48,15 +48,13 @@ function DroppableCanvas({
         showOver ? 'bg-(--accent-soft)/50' : ''
       }`}
     >
-      {/* Widened from the design system's 440px baseline — with live field previews now
-          rendered inline, 440px felt cramped. 560px gives more breathing room without
-          spanning the full canvas width. */}
-      <div className="max-w-4xl mx-auto min-h-125 flex flex-col justify-start">
+      {/* The form column stops at 760px: wider lines are harder to read, and the respondent's form is narrower still. */}
+      <div className="max-w-190 mx-auto min-h-125 flex flex-col justify-start">
         {/* Title + description header — always visible, regardless of field count */}
         <CanvasFormHeader
           pageTitle={pageTitle}
           pageDescription={pageDescription}
-          fieldCount={fieldCount}
+          pageNumber={pageNumber}
           onPageTitleChange={onPageTitleChange}
           onPageDescriptionChange={onPageDescriptionChange}
         />
@@ -85,6 +83,8 @@ function DroppableCanvas({
 interface CanvasProps {
   fields: FormField[];
   activePageId: string | null;
+  /** The active page's position, from 1. */
+  pageNumber?: number;
   pageTitle: string;
   pageDescription: string;
   onPageTitleChange: (title: string) => void;
@@ -111,6 +111,7 @@ interface CanvasProps {
 export function Canvas({
   fields,
   activePageId,
+  pageNumber = 1,
   pageTitle,
   pageDescription,
   onPageTitleChange,
@@ -136,6 +137,22 @@ export function Canvas({
   const visibleFields = fields.filter((f) => !f.deleted && f.pageId === activePageId);
   const visibleFieldIds = visibleFields.map((f) => f.fieldId);
 
+  // A card picked up shrinks to a slim outline. The list keeps its height until just after the drop: a page that got
+  // shorter mid-drag moved the scroll, so everything jumped under the pointer.
+  const listRef = useRef<HTMLDivElement>(null);
+  const release = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const holdHeight = () => {
+    clearTimeout(release.current);
+    const list = listRef.current;
+    if (list) list.style.minHeight = `${list.offsetHeight}px`;
+  };
+  const releaseHeight = () => {
+    release.current = setTimeout(() => {
+      if (listRef.current) listRef.current.style.minHeight = '';
+    }, 400);
+  };
+  useDndMonitor({ onDragStart: holdHeight, onDragEnd: releaseHeight, onDragCancel: releaseHeight });
+
   function moveBy(index: number, delta: -1 | 1) {
     const target = visibleFields[index + delta];
     const moved = visibleFields[index];
@@ -152,7 +169,7 @@ export function Canvas({
       <DroppableCanvas
         isEmpty={visibleFields.length === 0}
         isOver={isToolboxOver}
-        fieldCount={visibleFields.length}
+        pageNumber={pageNumber}
         pageTitle={pageTitle}
         pageDescription={pageDescription}
         onPageTitleChange={onPageTitleChange}
@@ -163,7 +180,7 @@ export function Canvas({
           items={visibleFieldIds}
           strategy={verticalListSortingStrategy}
         >
-          <div className="space-y-3">
+          <div ref={listRef} className="space-y-3">
             {visibleFields.map((field, index) => (
               <FieldCard
                 key={field.fieldId}

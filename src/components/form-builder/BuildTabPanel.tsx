@@ -5,12 +5,12 @@ import { DndContext, DragOverlay } from '@dnd-kit/core';
 import { GripVertical } from 'lucide-react';
 import { useBuilderStore } from '@/store/builderStore';
 import { Canvas } from './Canvas';
-import { PagesPanel, PageSwitcher } from './PagesPanel';
+import { PageSwitcher } from './PagesPanel';
 import { Toolbox } from './Toolbox';
 import { MobileBuildBar } from './MobileBuildBar';
 import type { BuilderDnd } from './useBuilderDnd';
 
-// The Build tab: toolbox, pages panel, canvas and the drag overlay inside one DndContext.
+// The Build tab: toolbox, page buttons, canvas and the drag overlay inside one DndContext.
 export function BuildTabPanel({
   dnd,
   onAddField,
@@ -41,7 +41,7 @@ export function BuildTabPanel({
 
   const { activeDragConfig, activeDragField, activeDragFieldConfig } = dnd;
 
-  // Non-deleted field count per page, for the Pages panel's badges
+  // Non-deleted field count per page, for the page buttons
   const pageFieldCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     fields.forEach((f) => {
@@ -52,7 +52,8 @@ export function BuildTabPanel({
 
   // The currently active page's own title/description — every page holds an
   // independent value (see builderStore's setPageTitle/setPageDescription).
-  const activePage = pages.find((p) => p.id === activePageId) ?? null;
+  const activeIndex = pages.findIndex((p) => p.id === activePageId);
+  const activePage = pages[activeIndex] ?? null;
 
   return (
     <DndContext
@@ -63,7 +64,9 @@ export function BuildTabPanel({
       onDragEnd={dnd.handleDragEnd}
     >
       <Toolbox onAdd={addField} />
-      <PagesPanel
+      {/* Stretched to the rail's height, so the blank space under the last field is still the canvas and takes a drop. */}
+      <div className="flex min-w-0 flex-1 flex-col self-stretch lg:px-6 lg:pt-3 lg:pb-16">
+      <PageSwitcher
         pages={pages}
         activePageId={activePageId}
         fieldCounts={pageFieldCounts}
@@ -71,12 +74,10 @@ export function BuildTabPanel({
         onAddPage={addPage}
         onDeletePage={deletePage}
       />
-      {/* Stretched to the rail's height, so the blank space under the last field is still the canvas and takes a drop. */}
-      <div className="flex min-w-0 flex-1 flex-col self-stretch">
-      <PageSwitcher pages={pages} activePageId={activePageId} onSelectPage={setActivePageId} onAddPage={addPage} />
       <Canvas
         fields={fields}
         activePageId={activePageId}
+        pageNumber={activeIndex + 1 || 1}
         pageTitle={activePage?.title ?? ''}
         pageDescription={activePage?.description ?? ''}
         onPageTitleChange={(title) => activePageId && setPageTitle(activePageId, title)}

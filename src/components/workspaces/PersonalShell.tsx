@@ -22,6 +22,7 @@ import { Wordmark } from '@/components/landing/Wordmark';
 import { formsService } from '@/services/forms';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
+import { BUILDER_HEADER_SLOT_ID } from '@/lib/formHeaderSlot';
 
 // The palette and its results code load after first paint, off the shell's critical path.
 const GlobalSearch = dynamic(() => import('@/components/search/GlobalSearch').then((m) => m.GlobalSearch), { ssr: false });
@@ -96,6 +97,10 @@ function PersonalShellFrame({ initialCollapsed, children }: PersonalShellProps) 
   // A form's Overview and Edit pages collapse the app sidebar to its icon rail for room; the menu button still expands it.
   const isFormFocus = /^\/forms\/[^/]+\/(overview|scores|edit)\/?$/.test(pathname);
 
+  // The builder puts its form header in the top bar and lays its panels out edge to edge.
+  // From 1024px that header takes the search button's place (Ctrl K / Cmd K still opens search).
+  const isBuilder = /^\/forms\/[^/]+\/edit\/?$/.test(pathname);
+
   // Feed "recent forms" in the sidebar: record once the form's real scope is known (never guess 'personal' while resolving).
   const recentScope = formWorkspace?.slug ?? (form && !form.workspaceId ? 'personal' : undefined);
   const recentTitle = form?._id === formId ? form?.title : undefined;
@@ -107,6 +112,7 @@ function PersonalShellFrame({ initialCollapsed, children }: PersonalShellProps) 
     <AppShell
       initialCollapsed={initialCollapsed}
       forceCollapsed={isFormFocus}
+      flush={isBuilder}
       topBar={(toggleCollapsed, toggleMobile) => (
         <TopBar
           brand={
@@ -121,9 +127,12 @@ function PersonalShellFrame({ initialCollapsed, children }: PersonalShellProps) 
               toggleCollapsed();
             }
           }}
+          center={isBuilder ? <div id={BUILDER_HEADER_SLOT_ID} className="flex min-w-0 flex-1 items-center" /> : undefined}
           actions={
             <div className="flex items-center gap-2">
-              <SearchTrigger />
+              <span className={isBuilder ? 'contents lg:hidden' : 'contents'}>
+                <SearchTrigger />
+              </span>
               <NotificationBell scope={contextScope} />
               <UserProfileDropdown />
               <GlobalSearch key={contextScope} scope={contextScope} />
