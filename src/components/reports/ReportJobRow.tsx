@@ -10,6 +10,7 @@ import { useToast } from '@/components/ui/Toast';
 import { formatRelativeTime } from '@/lib/formatters';
 import { detectDateRangePreset } from '@/lib/dateRange';
 import { reportsService } from '@/services/reports';
+import { useFormStages } from '@/hooks/useResponseSetup';
 import { FORMAT_ICON } from './ReportFormatCard';
 import { REPORT_STATUS_LABELS, type ReportJob, type ReportStatus } from '@/types/report';
 import { CATEGORY_LABELS } from '@/types/stage';
@@ -58,12 +59,12 @@ function formLabel(job: ReportJob, formTitleById: Map<string, string>): string {
 
 // Reuses the same preset detection the Analytics date-range filter already does, so a job whose
 // from/to happens to match "Last 30 days" etc. reads as a friendly label instead of raw dates.
-function scopeSubtitle(job: ReportJob): string {
+function scopeSubtitle(job: ReportJob, stageName?: string): string {
   const parts: string[] = [];
-  // Not built yet in the backend: `job.stage` (a name snapshot), which wins when present. Otherwise
-  // `responseStatus` is mapped through the same fixed category labels
-  // StatusDistributionChart.tsx uses.
-  if (job.stage) parts.push(job.stage.name);
+  // `job.stage` (a name snapshot, not built yet in the backend) wins, then the name looked up for a stage export.
+  // Otherwise `responseStatus` is mapped through the same fixed category labels StatusDistributionChart.tsx uses.
+  const stage = job.stage?.name ?? stageName;
+  if (stage) parts.push(stage);
   else if (job.responseStatus) parts.push(CATEGORY_LABELS[job.responseStatus]);
   if (job.selectedCount) {
     parts.push(`${job.selectedCount} selected response${job.selectedCount === 1 ? '' : 's'}`);
@@ -76,6 +77,13 @@ function scopeSubtitle(job: ReportJob): string {
   return parts.join(' · ');
 }
 
+// A stage export stores the stage's id only, so its name is looked up among the stages of the job's form or workspace.
+function StageScopeSubtitle({ job, scope }: { job: ReportJob; scope: string }) {
+  const { stages, isLoading } = useFormStages(scope, job.formId);
+  const name = stages?.find((s) => s.id === job.filters?.stageId)?.name;
+  return <>{scopeSubtitle(job, name ?? (isLoading || !stages ? undefined : 'Removed stage'))}</>;
+}
+
 interface ReportJobRowProps {
   job: ReportJob;
   onRetry: (job: ReportJob) => void;
@@ -86,9 +94,11 @@ interface ReportJobRowProps {
   /** `row` renders a `<tr>` for the desktop table; `card` renders a standalone stacked card for
    * narrow viewports. Both share the same download/retry logic below. */
   variant?: 'row' | 'card';
+  /** 'personal' (default) or a workspace slug: where a stage export's stage name is looked up. */
+  scope?: string;
 }
 
-export function ReportJobRow({ job, onRetry, isRetrying = false, formTitleById = new Map(), formMarkById = new Map(), variant = 'row' }: ReportJobRowProps) {
+export function ReportJobRow({ job, onRetry, isRetrying = false, formTitleById = new Map(), formMarkById = new Map(), variant = 'row', scope = 'personal' }: ReportJobRowProps) {
   const { toast } = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadProgress, setDownloadProgress] = useState<number | null>(null);
@@ -158,7 +168,7 @@ export function ReportJobRow({ job, onRetry, isRetrying = false, formTitleById =
   }
 
   const title = formLabel(job, formTitleById);
-  const subtitle = scopeSubtitle(job);
+  const subtitle = job.filters?.stageId && !job.stage ? <StageScopeSubtitle job={job} scope={scope} /> : scopeSubtitle(job);
   const created = formatRelativeTime(job.createdAt);
   const generatedOn = formatGeneratedOn(job.createdAt);
   const formatText = FORMAT_SHORT_LABEL[job.format] ?? job.format;

@@ -1,5 +1,18 @@
 import type { BulkTarget, ResponseFilters } from '@/types/response';
 import type { CreateReportPayload, ReportFormat } from '@/types/report';
+import { PERSONAL_DEFAULT_STAGES } from '@/types/stage';
+
+// The backend reads these at the top level of the request and silently drops keys it does not know, and it calls the
+// search text `search`. `chart` and `includeTest` have no export equivalent in the backend yet.
+function reportFields(filters: ResponseFilters): Omit<CreateReportPayload, 'format' | 'formId' | 'ids'> {
+  const { stageId, tagIds, assigneeId, unread, duplicate, from, to, q, field, value, granularity } = filters;
+  // Personal stages are the fixed categories, not stored stages: the backend filters them as `status`.
+  const personal = PERSONAL_DEFAULT_STAGES.find((s) => s.id === stageId);
+  return {
+    ...(personal ? { status: personal.category } : { stageId }),
+    tagIds, assigneeId, unread, duplicate, from, to, search: q, field, value, granularity,
+  };
+}
 
 /**
  * Toolbar/bulk Export builds the report request from the current InboxFilters (or the selected
@@ -11,7 +24,7 @@ export function exportPayloadFromFilters(
   formId: string | undefined,
   filters: ResponseFilters
 ): CreateReportPayload {
-  return { format, formId, filters };
+  return { format, formId, ...reportFields(filters) };
 }
 
 /** Same shape, built from a `BulkTarget` (an explicit selection or "Select all N matching") —
@@ -19,5 +32,5 @@ export function exportPayloadFromFilters(
 export function exportPayloadFromTarget(format: ReportFormat, target: BulkTarget): CreateReportPayload {
   return 'ids' in target
     ? { format, ids: target.ids }
-    : { format, formId: target.formId, filters: target.filter };
+    : { format, formId: target.formId, ...reportFields(target.filter) };
 }

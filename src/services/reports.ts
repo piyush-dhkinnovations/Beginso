@@ -30,11 +30,16 @@ interface RawReportJob {
   from?: string;
   to?: string;
   // Live shape (captured 16 Oct 2026): the scope a report was created with lives under `filters`, not at the top level.
-  filters?: { status?: ReportJob['responseStatus']; from?: string; to?: string; ids?: string[] } | null;
+  filters?: ReportJob['filters'] | null;
   createdAt: string;
   completedAt?: string;
   expiresAt?: string;
   errorMessage?: string;
+}
+
+// The backend stores a filter that was not given as null, and would refuse that null in a new request (a retry).
+function givenFilters(filters: RawReportJob['filters']): ReportJob['filters'] {
+  return filters ? Object.fromEntries(Object.entries(filters).filter(([, v]) => v !== null && v !== undefined)) : undefined;
 }
 
 function toReportJob(raw: RawReportJob): ReportJob {
@@ -48,6 +53,7 @@ function toReportJob(raw: RawReportJob): ReportJob {
     responseStatus: raw.responseStatus ?? raw.filters?.status,
     from: raw.from ?? raw.filters?.from,
     to: raw.to ?? raw.filters?.to,
+    filters: givenFilters(raw.filters),
     selectedCount: raw.filters?.ids?.length || undefined,
     createdAt: raw.createdAt,
     completedAt: raw.completedAt,
