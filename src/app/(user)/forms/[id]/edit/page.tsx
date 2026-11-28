@@ -125,9 +125,7 @@ export default function BuilderPageShell() {
   return (
     <>
       {isLoading || !hydrated ? (
-        <div className="lg:px-6 lg:pt-8 xl:px-8">
-          <BuilderLoadingSkeleton />
-        </div>
+        <BuilderLoadingSkeleton />
       ) : (
         <div className="flex flex-col gap-4 animate-fade-in lg:gap-0">
           {justClaimed && status === 'draft' && (
