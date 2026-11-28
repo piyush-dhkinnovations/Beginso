@@ -30,6 +30,12 @@ describe('PageSwitcher', () => {
     expect(within(group()).getByRole('button', { name: 'Page 2' })).toBeInTheDocument();
   });
 
+  it('a named step is numbered by its place; an unnamed one already says its number', () => {
+    setup();
+    expect(within(group()).getByRole('button', { name: 'Intro' })).toHaveTextContent('1.Intro');
+    expect(within(group()).getByRole('button', { name: 'Page 2' })).toHaveTextContent(/^Page 2$/);
+  });
+
   it('uses the singular "field" for exactly one, in the tooltip and beside the row', () => {
     setup({ fieldCounts: { p1: 1 } });
     expect(screen.getByTitle('Intro — 1 field')).toBeInTheDocument();
