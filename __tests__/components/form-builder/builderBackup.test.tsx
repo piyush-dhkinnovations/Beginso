@@ -167,6 +167,22 @@ describe('what the builder says about them', () => {
     expect(onDiscard).toHaveBeenCalled();
   });
 
+  it.each([
+    ['everything saved', { dirty: false }, 'Auto save on · All changes saved'],
+    ['something just changed', {}, 'Auto save on · saving in a moment'],
+    ['saving', { saving: true }, 'Auto saving…'],
+    ['a failed save', { error: true, detail: 'offline' }, 'Auto save failed: offline'],
+  ])('with Auto save on, says so when %s, and where to change it', (_name, state, words) => {
+    indicator({ autoSave: true, ...state });
+    expect(screen.getAllByText(words)[0]).toBeInTheDocument();
+  });
+
+  it('says nothing about auto save when it is off', () => {
+    indicator({ dirty: false });
+    expect(screen.getAllByText('All changes saved')[0]).toBeInTheDocument();
+    expect(screen.queryByText(/Auto sav/)).not.toBeInTheDocument();
+  });
+
   it('says plain "Unsaved changes" when nothing was restored, and nothing about it once saved', () => {
     const { unmount } = indicator({ onDiscardRestored: () => {} });
     expect(screen.getAllByText('Unsaved changes')[0]).toBeInTheDocument();

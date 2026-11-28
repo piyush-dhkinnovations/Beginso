@@ -24,13 +24,15 @@ export interface SaveIndicatorProps {
   restoredAt?: number | null;
   /** Drops those restored changes and shows the saved form again. */
   onDiscardRestored?: () => void;
+  /** Auto save is on: every state says so, and unsaved changes are on their way with nothing for the person to do. */
+  autoSave?: boolean;
   /** One small line without the time, for the tabs strip. A long message is cut short there; Reload and Retry stay in reach. */
   compact?: boolean;
 }
 
 type Label = 'conflict' | 'error' | 'saving' | 'unsaved' | 'saved';
 
-export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedCount = 0, onReload, savedAt, onRetry, restoredAt = null, onDiscardRestored, compact = false }: SaveIndicatorProps) {
+export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedCount = 0, onReload, savedAt, onRetry, restoredAt = null, onDiscardRestored, autoSave = false, compact = false }: SaveIndicatorProps) {
   // A conflict outranks everything: "All changes saved" would be a lie while this tab's edits cannot be saved.
   const label: Label = conflict ? 'conflict' : saving ? 'saving' : error ? 'error' : dirty ? 'unsaved' : 'saved';
 
@@ -45,11 +47,12 @@ export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedC
 
   const text: Record<Label, string> = {
     conflict: 'This form changed in another tab or by someone else. Reload to continue.',
-    error: detail ? `Save failed: ${detail}` : 'Save failed',
-    saving: 'Saving…',
-    unsaved: restored ? 'Your unsaved changes are back' : 'Unsaved changes',
-    saved: 'All changes saved',
+    error: `${autoSave ? 'Auto save failed' : 'Save failed'}${detail ? `: ${detail}` : ''}`,
+    saving: autoSave ? 'Auto saving…' : 'Saving…',
+    unsaved: restored ? 'Your unsaved changes are back' : autoSave ? 'Auto save on · saving in a moment' : 'Unsaved changes',
+    saved: autoSave ? 'Auto save on · All changes saved' : 'All changes saved',
   };
+  const autoSaveHint = autoSave ? 'Change this in Account settings → Form builder.' : undefined;
 
   const actionClass = `shrink-0 px-2 font-semibold text-(--text-primary) underline underline-offset-2 ${compact ? 'min-h-6 bg-caption' : 'min-h-11 bg-body-sm'}`;
   const longClass = compact ? 'flex min-w-0 items-center gap-x-2 whitespace-nowrap' : 'inline-flex flex-wrap items-center gap-x-2';
@@ -74,13 +77,13 @@ export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedC
         ) : label === 'unsaved' ? (
           <span
             className="inline-flex items-center gap-1.5 text-(--warning-text) font-medium"
-            title={restored ? `Kept in this browser ${formatRelativeTime(new Date(restoredAt as number).toISOString())}, not saved yet.` : undefined}
+            title={restored ? `Kept in this browser ${formatRelativeTime(new Date(restoredAt as number).toISOString())}, not saved yet.` : autoSaveHint}
           >
             <CloudOff size={14} className="shrink-0" /> {text.unsaved}
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 text-(--success-text) font-medium">
-            <CloudCheck size={14} /> {text.saved}
+          <span className="inline-flex items-center gap-1.5 text-(--success-text) font-medium" title={autoSaveHint}>
+            <CloudCheck size={14} className="shrink-0" /> {text.saved}
             {savedAt && !compact && (
               <span className="ml-1 font-normal text-(--text-muted)">
                 · {savedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

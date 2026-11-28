@@ -271,6 +271,18 @@ describe('Fonts, arrange, buttons and header', () => {
     expect(onBrandingUpdate).toHaveBeenLastCalledWith({ buttonRadius: '16px' });
   });
 
+  it.each([
+    ['Square', undefined, { v: 1, fields: { radius: 0 } }],
+    ['Pill', undefined, { v: 1, fields: { radius: 20 } }],
+    ['Square', 20, { v: 1, fields: { radius: 0 } }],
+    ['Rounded', 20, null],
+  ] as const)('field corners: %s is saved with one click (from %s)', async (choice, from, theme) => {
+    const { onBrandingUpdate } = draw({ branding: { primaryColor: '#1D4ED8', ...(from === undefined ? {} : { theme: { v: 1, fields: { radius: from } } }) } });
+    await userEvent.click(tab('Fields'));
+    await userEvent.click(within(screen.getByRole('group', { name: 'Field corners' })).getByRole('button', { name: new RegExp(choice) }));
+    expect(onBrandingUpdate).toHaveBeenLastCalledWith({ theme });
+  });
+
   it('card, width, spacing and field layout are one click, and the progress bar a switch', async () => {
     const { onBrandingUpdate } = draw();
     await userEvent.click(tab('Background'));

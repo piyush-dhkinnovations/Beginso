@@ -25,11 +25,13 @@ interface BuilderTabsProps {
   onSave?: () => void;
   unsaved?: boolean;
   saving?: boolean;
+  /** Auto save is on: the Save button is there for whoever wants it, without asking to be pressed. */
+  autoSave?: boolean;
   /** Saving is not possible (the form was changed elsewhere and must be reloaded). */
   saveBlocked?: boolean;
 }
 
-export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onRedo, fieldCount = 0, onSave, unsaved = false, saving = false, saveBlocked = false }: BuilderTabsProps) {
+export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onRedo, fieldCount = 0, onSave, unsaved = false, saving = false, saveBlocked = false, autoSave = false }: BuilderTabsProps) {
   const tabs: { id: BuilderTab; label: string }[] = [
     { id: 'build', label: 'Build' },
     { id: 'branding', label: 'Branding' },
@@ -77,7 +79,7 @@ export function BuilderTabs({ activeTab, onChange, canUndo, canRedo, onUndo, onR
           <>
             <Button
               onClick={onSave}
-              variant={unsaved ? 'primary' : 'ghost'}
+              variant={!unsaved ? 'ghost' : autoSave ? 'secondary' : 'primary'}
               size="small"
               disabled={!unsaved || saveBlocked}
               isLoading={saving}

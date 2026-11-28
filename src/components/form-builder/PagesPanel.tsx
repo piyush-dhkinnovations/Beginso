@@ -85,7 +85,7 @@ export function PageSwitcher({ pages, activePageId, fieldCounts, onSelectPage, o
                         onClick={() => onDeletePage(page.id)}
                         aria-label={`Delete page ${index + 1}`}
                         title="Delete page"
-                        className="flex size-7 items-center justify-center rounded text-(--accent-soft-text) hover:bg-(--error-surface) hover:text-(--error-text) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
+                        className="flex size-7 items-center justify-center rounded text-(--accent-soft-text) hover:text-(--error-text) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
                       >
                         <X size={14} aria-hidden="true" />
                       </button>

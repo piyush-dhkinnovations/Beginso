@@ -88,7 +88,7 @@ test.describe('builder: typed text survives leaving the page', () => {
     const input = await openBuilder(page);
     await input.fill('Typing, not committed');
     // Inside the 600 ms debounce window.
-    await expect(page.getByText('Unsaved changes').first()).toBeVisible({ timeout: 400 });
+    await expect(page.getByText('Auto save on · saving in a moment').first()).toBeVisible({ timeout: 400 });
     await expect(page.getByText('All changes saved')).toHaveCount(0);
   });
 
@@ -125,7 +125,7 @@ test.describe('builder: typed text survives leaving the page', () => {
       await d.dismiss(); // "Stay"
     });
     await page.waitForTimeout(6000); // auto save tries and fails
-    await expect(page.getByText(/Save failed|Unsaved changes/).first()).toBeVisible();
+    await expect(page.getByText(/Auto save failed|Auto save on · saving in a moment/).first()).toBeVisible();
     await expect(page.getByText('All changes saved')).toHaveCount(0);
     // Reload from inside the page: Playwright's own reload() waits for a navigation that "Stay" cancels, and would just hang.
     void page.evaluate(() => window.location.reload());
