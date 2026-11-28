@@ -238,6 +238,41 @@ describe('SplitFeatureLayout panel', () => {
   });
 });
 
+describe('SplitFeatureLayout picture and words', () => {
+  const picture = { primaryColor: '#112233', coverImageUrl: 'https://x.test/c.jpg' };
+  const draw = (branding: LayoutFrameProps['branding']) =>
+    render(
+      <SplitFeatureLayout {...base('split_feature', { branding })}>
+        <p>BODY</p>
+      </SplitFeatureLayout>
+    ).container;
+
+  it('keeps the picture one screen tall and in view, with nothing around it that would stop sticky working', () => {
+    const container = draw(picture);
+    const box = (container.querySelector('img') as HTMLElement).parentElement as HTMLElement;
+    expect(box).toHaveClass('md:sticky', 'md:top-0', 'md:max-h-[min(100dvh,90rem)]');
+    expect(container.querySelector('.form-card')).toHaveClass('overflow-clip');
+    expect(container.querySelector('.form-card')).not.toHaveClass('overflow-hidden');
+  });
+
+  it.each([
+    [undefined, 'center'],
+    ['top', 'top'],
+    ['bottom', 'bottom'],
+  ] as const)('shows the part of the picture the owner chose (%s)', (coverPosition, expected) => {
+    expect(draw({ ...picture, coverPosition }).querySelector('img')).toHaveStyle({ objectPosition: expected });
+  });
+
+  it('puts the words at the bottom unless the owner chose the top, with the shade behind them', () => {
+    const below = draw(picture);
+    expect((below.querySelector('img') as HTMLElement).parentElement).toHaveClass('justify-between');
+    expect(below.querySelector('.bg-linear-to-t')).toBeInTheDocument();
+    const above = draw({ ...picture, theme: { v: 1, layout: { panelText: 'top' } } });
+    expect((above.querySelector('img') as HTMLElement).parentElement).toHaveClass('justify-start');
+    expect(above.querySelector('.bg-linear-to-b')).toBeInTheDocument();
+  });
+});
+
 describe('layout helpers', () => {
   it.each<[LayoutPreset, 'narrow' | 'standard' | 'wide' | undefined, string]>([
     ['classic', undefined, 'max-w-2xl'],

@@ -247,6 +247,7 @@ export function cleanTheme(raw: unknown): FormTheme | undefined {
       }
     }
     if (group === 'layout' && t.layout?.panelSide !== undefined && ['start', 'end'].includes(t.layout.panelSide as string)) g.panelSide = t.layout.panelSide;
+    if (group === 'layout' && t.layout?.panelText !== undefined && ['top', 'bottom'].includes(t.layout.panelText as string)) g.panelText = t.layout.panelText;
     if (group === 'fields') {
       for (const [k, allowed] of Object.entries(THEME_ENUMS)) {
         const v = t.fields?.[k];
@@ -430,6 +431,7 @@ export function effectiveTheme(layout: LayoutPreset, raw?: FormTheme | null): Fo
   if (themeOptionBlocked('panelSide', layout)) {
     delete layoutGroup.panelSide;
     delete layoutGroup.panelSplit;
+    delete layoutGroup.panelText;
   }
   const out: FormTheme = { ...theme, fields, layout: layoutGroup };
   if (themeOptionBlocked('progressStyle', layout)) delete out.progress;
