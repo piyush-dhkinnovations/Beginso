@@ -83,6 +83,12 @@ const RENDERER_MAP: Record<Exclude<FormField['type'], 'file_upload' | 'image_upl
   signature: SignatureRenderer,
 };
 
+// The page, and the form column where a layout scrolls the form inside its card (Split Feature).
+function scrollFormToTop() {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.querySelector('.split-form')?.scrollTo?.({ top: 0, behavior: 'smooth' });
+}
+
 export function PublicFormShell({ schema, slug, previewMode: previewProp, onTestSubmit, search = '' }: PublicFormShellProps) {
   const router = useRouter();
   const embedOpts = useMemo(() => parseEmbedOptions(search), [search]);
@@ -256,7 +262,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
     }
     setCurrentPageIndex((i) => i + 1);
     setQuestionIndex(0);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollFormToTop();
   }
 
   function handleBack() {
@@ -271,7 +277,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
       setQuestionIndex(Math.max(0, prevCount - 1));
     }
     setCurrentPageIndex((i) => i - 1);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    scrollFormToTop();
   }
 
   // Last step of a review-enabled form: validate EVERYTHING (the resolver covers every page), then show
@@ -280,7 +286,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
     setSubmitError(null);
     await methods.handleSubmit(() => {
       setShowReview(true);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollFormToTop();
     }, onInvalid)();
   }
 
@@ -422,7 +428,7 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
       setCurrentPageIndex(earliestPageIndex);
       setQuestionIndex(0);
       setSubmitError('Please complete all required fields before submitting.');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollFormToTop();
     }
   }
 
@@ -546,6 +552,8 @@ export function PublicFormShell({ schema, slug, previewMode: previewProp, onTest
     branding: { ...(embedOpts.background ? schema.branding : { ...schema.branding, backgroundStyle: 'none' as const }), theme: effectiveTheme(layout, schema.branding.theme) },
     title: embedOpts.hideTitle ? '' : schema.title,
     previewMode,
+    // An embed on someone's page is resized to its content, so there is no screen height to hold the card to; our own preview frames have one.
+    fitScreen: previewProp || !embedOpts.embed,
     hideCover: !embedOpts.cover,
     hideProgress: !embedOpts.progress,
     stepNames: sortedPages.map((p) => p.title ?? ''),

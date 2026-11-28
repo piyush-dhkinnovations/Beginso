@@ -238,6 +238,67 @@ describe('SplitFeatureLayout panel', () => {
   });
 });
 
+describe('SplitFeatureLayout picture and words', () => {
+  const picture = { primaryColor: '#112233', coverImageUrl: 'https://x.test/c.jpg' };
+  const draw = (branding: LayoutFrameProps['branding']) =>
+    render(
+      <SplitFeatureLayout {...base('split_feature', { branding })}>
+        <p>BODY</p>
+      </SplitFeatureLayout>
+    ).container;
+
+  it('keeps the picture one screen tall and in view, with nothing around it that would stop sticky working', () => {
+    const container = draw(picture);
+    const box = (container.querySelector('img') as HTMLElement).parentElement as HTMLElement;
+    expect(box).toHaveClass('md:sticky', 'md:top-0', 'md:max-h-[min(100dvh,90rem)]');
+    expect(container.querySelector('.form-card')).toHaveClass('overflow-clip');
+    expect(container.querySelector('.form-card')).not.toHaveClass('overflow-hidden');
+  });
+
+  it('puts the words at the bottom unless the owner chose the top, with the shade behind them', () => {
+    const below = draw(picture);
+    expect((below.querySelector('img') as HTMLElement).parentElement).toHaveClass('justify-between');
+    expect(below.querySelector('.bg-linear-to-t')).toBeInTheDocument();
+    const above = draw({ ...picture, theme: { v: 1, layout: { panelText: 'top' } } });
+    expect((above.querySelector('img') as HTMLElement).parentElement).toHaveClass('justify-start');
+    expect(above.querySelector('.bg-linear-to-b')).toBeInTheDocument();
+  });
+});
+
+describe('SplitFeatureLayout held to the screen', () => {
+  const draw = (over: Partial<LayoutFrameProps>) =>
+    render(
+      <SplitFeatureLayout {...base('split_feature', over)}>
+        <p>BODY</p>
+      </SplitFeatureLayout>
+    );
+
+  it('keeps the whole card inside the screen, with the form scrolling in it', () => {
+    const { container } = draw({ fitScreen: true });
+    expect(container.querySelector('.form-card')).toHaveClass('md:max-h-[calc(100dvh-5rem)]', 'md:grid-rows-[minmax(0,1fr)]');
+    // centred only while it fits, so a long form is never cut off at the top
+    expect(container.querySelector('.split-form')).toHaveClass('md:overflow-y-auto', 'md:min-h-0', 'md:justify-center-safe');
+  });
+
+  it('lets the card grow with the form where there is no screen to hold it to (an embed)', () => {
+    const { container } = draw({});
+    expect(container.querySelector('.form-card')?.className).not.toContain('md:max-h-');
+    expect(container.querySelector('.split-form')).not.toHaveClass('md:overflow-y-auto');
+  });
+
+  it('starts each page of the form at its top', () => {
+    const { container, rerender } = draw({ fitScreen: true, currentPage: 0 });
+    const column = container.querySelector('.split-form') as HTMLElement;
+    column.scrollTop = 400;
+    rerender(
+      <SplitFeatureLayout {...base('split_feature', { fitScreen: true, currentPage: 1 })}>
+        <p>BODY</p>
+      </SplitFeatureLayout>
+    );
+    expect(column.scrollTop).toBe(0);
+  });
+});
+
 describe('layout helpers', () => {
   it.each<[LayoutPreset, 'narrow' | 'standard' | 'wide' | undefined, string]>([
     ['classic', undefined, 'max-w-2xl'],

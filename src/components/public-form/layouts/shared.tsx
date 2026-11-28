@@ -22,6 +22,8 @@ export interface LayoutFrameProps {
   hideCover?: boolean;
   /** Embed ?progress=0: no step list / question counter. */
   hideProgress?: boolean;
+  /** The form has a screen (or a fixed frame) of its own, so a layout may hold its card to that height. Not for an embed that grows with its content. */
+  fitScreen?: boolean;
   children: ReactNode;
 }
 

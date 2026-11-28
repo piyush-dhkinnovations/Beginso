@@ -268,6 +268,14 @@ describe('the Split Feature picture side', () => {
     expect(effectiveTheme('split_feature', { v: 1, layout: { panelSide: 'end' } })?.layout).toEqual({ panelSide: 'end' });
   });
 
+  it('keeps where the words sit on the panel (top or bottom), only for Split Feature, and sends it on a save', () => {
+    expect(cleanTheme({ v: 1, layout: { panelText: 'top' } })).toEqual({ v: 1, layout: { panelText: 'top' } });
+    for (const bad of ['middle', '', 1, null, 'TOP']) expect(cleanTheme({ v: 1, layout: { panelText: bad } })).toBeUndefined();
+    expect(effectiveTheme('classic', { v: 1, layout: { panelText: 'top', maxWidth: 800 } })?.layout).toEqual({ maxWidth: 800 });
+    expect(effectiveTheme('split_feature', { v: 1, layout: { panelText: 'top' } })?.layout).toEqual({ panelText: 'top' });
+    expect(sanitizeTheme({ v: 1, layout: { panelText: 'top' } })).toEqual({ v: 1, layout: { panelText: 'top' } });
+  });
+
   it('keeps a picture width of 20 to 80 whole percent, and switches the CSS on with it', () => {
     expect(cleanTheme({ v: 1, layout: { panelSplit: 35 } })).toEqual({ v: 1, layout: { panelSplit: 35 } });
     for (const bad of [19, 81, 40.5, '40', null]) expect(cleanTheme({ v: 1, layout: { panelSplit: bad } })).toBeUndefined();
