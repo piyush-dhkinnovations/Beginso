@@ -86,12 +86,12 @@ test.describe('builder: saving by hand (the default)', () => {
       await d.accept();
     });
     await page.reload();
-    await expect(page.getByText('Your unsaved changes are back')).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText('Your unsaved changes are back').first()).toBeVisible({ timeout: 30000 });
     await expect(page.getByText('Not saved yet').first()).toBeVisible();
     expect(prompted).toBe(true);
     expect(backend.saves).toEqual([]);
 
-    await page.getByRole('button', { name: 'Save now' }).click();
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
     await expect(page.getByText('Your unsaved changes are back')).toHaveCount(0);
     expect(backend.saves).toEqual(['Not saved yet']);
   });

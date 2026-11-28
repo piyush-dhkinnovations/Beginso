@@ -150,6 +150,8 @@ export default function BuilderPageShell() {
             onReload={reloadBuilder}
             savedAt={savedAt}
             onRetrySave={() => void saveNow()}
+            restoredAt={dirty ? backup.restoredAt : null}
+            onDiscardRestored={() => backup.discard(form)}
             status={status}
             hasUnpublishedChanges={changesToPublish}
             onPublishChanges={handlePublishChanges}
@@ -181,13 +183,7 @@ export default function BuilderPageShell() {
                 saveBlocked={stale}
               />
 
-              <UnsavedChangesNotice
-                restoredAt={dirty ? backup.restoredAt : null}
-                conflict={backup.conflict}
-                onSave={() => void saveNow()}
-                onDiscard={() => backup.discard(form)}
-                onRestore={backup.restoreMine}
-              />
+              <UnsavedChangesNotice conflict={backup.conflict} onDiscard={() => backup.discard(form)} onRestore={backup.restoreMine} />
 
               <div className={`flex items-start gap-6 ${activeTab === 'build' ? 'lg:gap-0' : ''}`}>
                 {activeTab === 'build' ? (

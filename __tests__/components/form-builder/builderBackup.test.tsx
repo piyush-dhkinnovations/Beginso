@@ -12,6 +12,7 @@ import { formsService } from '@/services/forms';
 import { useBuilderStore } from '@/store/builderStore';
 import { useBuilderBackup, BACKUP_DELAY_MS } from '@/components/form-builder/useBuilderBackup';
 import { saveBuilderNow } from '@/components/form-builder/useBuilderAutosave';
+import { SaveIndicator } from '@/components/form-builder/SaveIndicator';
 import { UnsavedChangesNotice } from '@/components/form-builder/UnsavedChangesNotice';
 import { readBackup, useUnsavedPreview, writeBackup, type BuilderBackup } from '@/lib/builderBackup';
 import { resetPendingEdits } from '@/lib/pendingEdits';
@@ -154,19 +155,31 @@ describe('the preview', () => {
 });
 
 describe('what the builder says about them', () => {
-  it('offers Save now and Discard after a restore', () => {
-    const [onSave, onDiscard] = [vi.fn(), vi.fn()];
-    render(<UnsavedChangesNotice restoredAt={Date.now()} conflict={null} onSave={onSave} onDiscard={onDiscard} onRestore={() => {}} />);
-    expect(screen.getByText('Your unsaved changes are back.')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Save now' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Discard them' }));
-    expect(onSave).toHaveBeenCalled();
+  const indicator = (over: Partial<React.ComponentProps<typeof SaveIndicator>>) =>
+    render(<SaveIndicator dirty saving={false} error={false} savedAt={null} onRetry={() => {}} {...over} />);
+
+  it('says in the save state that they are back, with Discard beside it and no second Save button', () => {
+    const onDiscard = vi.fn();
+    indicator({ restoredAt: Date.now(), onDiscardRestored: onDiscard });
+    expect(screen.getAllByText('Your unsaved changes are back')[0]).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Save/ })).not.toBeInTheDocument(); // the bar's own Save button is the one
+    fireEvent.click(screen.getByRole('button', { name: 'Discard' }));
     expect(onDiscard).toHaveBeenCalled();
+  });
+
+  it('says plain "Unsaved changes" when nothing was restored, and nothing about it once saved', () => {
+    const { unmount } = indicator({ onDiscardRestored: () => {} });
+    expect(screen.getAllByText('Unsaved changes')[0]).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Discard' })).not.toBeInTheDocument();
+    unmount();
+    indicator({ dirty: false, restoredAt: Date.now(), onDiscardRestored: () => {} });
+    expect(screen.queryByText('Your unsaved changes are back')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Discard' })).not.toBeInTheDocument();
   });
 
   it('asks which version to keep when the form changed since', () => {
     const [onDiscard, onRestore] = [vi.fn(), vi.fn()];
-    render(<UnsavedChangesNotice restoredAt={null} conflict={kept()} onSave={() => {}} onDiscard={onDiscard} onRestore={onRestore} />);
+    render(<UnsavedChangesNotice conflict={kept()} onDiscard={onDiscard} onRestore={onRestore} />);
     fireEvent.click(screen.getByRole('button', { name: 'Use my changes' }));
     fireEvent.click(screen.getByRole('button', { name: 'Keep the saved version' }));
     expect(onRestore).toHaveBeenCalled();

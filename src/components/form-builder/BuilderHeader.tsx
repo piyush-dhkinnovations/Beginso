@@ -27,6 +27,9 @@ export interface BuilderHeaderProps {
   savedAt: Date | null;
   onRetrySave: () => void;
   /** The caller may publish (Owner/Admin). Without it there is no Publish button — a convenience; the server enforces. */
+  /** See SaveIndicator: unsaved changes brought back from this browser, and how to drop them. */
+  restoredAt?: number | null;
+  onDiscardRestored?: () => void;
   canPublish: boolean;
   status: FormStatus;
   /** True once an edit is staged on the draft (the form is published and someone changed it since): shows the orange "Publish changes" button
@@ -62,6 +65,8 @@ export function BuilderHeader({
   onReload,
   savedAt,
   onRetrySave,
+  restoredAt,
+  onDiscardRestored,
   canPublish,
   status,
   hasUnpublishedChanges,
@@ -120,7 +125,7 @@ export function BuilderHeader({
   const badge = <StatusBadge variant={status}>{STATUS_LABEL[status]}</StatusBadge>;
   // One SaveIndicator instance (one live region).
   const saveState = (
-    <SaveIndicator compact={inTopBar} dirty={dirty} saving={isSaving} error={saveFailed} detail={saveDetail} conflict={saveConflict} unsavedCount={unsavedCount} onReload={onReload} savedAt={savedAt} onRetry={onRetrySave} />
+    <SaveIndicator compact={inTopBar} dirty={dirty} saving={isSaving} error={saveFailed} detail={saveDetail} conflict={saveConflict} unsavedCount={unsavedCount} onReload={onReload} savedAt={savedAt} onRetry={onRetrySave} restoredAt={restoredAt} onDiscardRestored={onDiscardRestored} />
   );
   const actions = (
     <>
