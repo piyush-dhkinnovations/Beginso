@@ -262,8 +262,9 @@ test.describe('builder: with Auto save on', () => {
     const backend = await installBackend(context);
     await openBuilder(page);
     await rename(page, 'Saved on its own');
-    await expect(page.getByText('Auto save: saving in a moment').first()).toBeVisible();
+    await expect(page.getByText('Auto save on · saving in a moment').first()).toBeVisible();
     await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('Auto save on · All changes saved').first()).toBeVisible();
     expect(backend.saves).toEqual(['Saved on its own']);
   });
 
