@@ -37,12 +37,13 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
   });
 
   // Auto-polls while the job is queued/processing, until it is terminal: the same pattern
-  // shouldPollReportJob sets for Reports.
+  // shouldPollReportJob sets for Reports. A failed check stops the polling and is shown, with a retry.
   const statusQuery = useQuery({
     queryKey: ['workspace-export-status', jobId],
     queryFn: () => settingsService.getExportStatus(jobId as string),
     enabled: jobId !== null,
-    refetchInterval: (query) => (query.state.data && shouldPollExportJob(query.state.data.status) ? 5000 : false),
+    refetchInterval: (query) =>
+      query.state.status !== 'error' && query.state.data && shouldPollExportJob(query.state.data.status) ? 5000 : false,
   });
 
   const status = statusQuery.data?.status;
@@ -107,6 +108,14 @@ export function DangerZoneSection({ workspaceName }: DangerZoneSectionProps) {
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <p className="bg-caption text-(--error-text)">Something went wrong preparing your export.</p>
               <Button variant="secondary" size="small" onClick={() => setJobId(null)}>
+                Try again
+              </Button>
+            </div>
+          ) : statusQuery.isError ? (
+            // The export itself may be fine, so this asks about the same job again rather than starting a new one.
+            <div role="alert" className="mt-2 flex flex-wrap items-center gap-3">
+              <p className="bg-caption text-(--error-text)">Couldn&apos;t check on your export.</p>
+              <Button variant="secondary" size="small" isLoading={statusQuery.isFetching} onClick={() => void statusQuery.refetch()}>
                 Try again
               </Button>
             </div>
