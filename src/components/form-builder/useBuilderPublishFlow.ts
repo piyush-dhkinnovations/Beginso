@@ -3,7 +3,9 @@ import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useBuilderStore } from '@/store/builderStore';
 import { useToast } from '@/components/ui/Toast';
-import { reloadBuilder, saveFormSnapshot, syncBuilderVersion } from './useBuilderAutosave';
+import { expectPreview, IncompleteChoiceError, reloadBuilder, saveBuilderNow, syncBuilderVersion } from './useBuilderAutosave';
+import { readAutoSave } from '@/lib/builderPrefs';
+import { flushPendingEdits, hasPendingEdits } from '@/lib/pendingEdits';
 import { formsService } from '@/services/forms';
 import { isAxiosError } from 'axios';
 import type { BuilderTarget } from './BuilderTabs';
@@ -26,16 +28,27 @@ export function useBuilderPublishFlow({
   const [showPublishModal, setShowPublishModal] = useState(false);
 
   const formId = useBuilderStore((state) => state.formId);
-  const formTitle = useBuilderStore((state) => state.formTitle);
-  const fields = useBuilderStore((state) => state.fields);
-  const pages = useBuilderStore((state) => state.pages);
-  const dirty = useBuilderStore((state) => state.dirty);
-  const branding = useBuilderStore((state) => state.branding);
-  const settings = useBuilderStore((state) => state.settings);
   const setActiveFieldId = useBuilderStore((state) => state.setActiveFieldId);
   const setActivePageId = useBuilderStore((state) => state.setActivePageId);
   const setStatus = useBuilderStore((state) => state.setStatus);
-  const markSaved = useBuilderStore((state) => state.markSaved);
+
+  /** Saves anything unsaved before an action that needs the server to have it. False (and a message) when it could not. */
+  const saveFirst = useCallback(
+    async (failure: string): Promise<boolean> => {
+      if (!useBuilderStore.getState().dirty && !hasPendingEdits()) return true;
+      try {
+        setSaveState('saving');
+        await saveBuilderNow();
+        setSaveState('saved');
+        return true;
+      } catch (err) {
+        setSaveState('error');
+        toast(err instanceof IncompleteChoiceError ? `${err.message}, then try again.` : failure, 'error');
+        return false;
+      }
+    },
+    [setSaveState, toast]
+  );
 
   // The publish pre-flight / live state own their mutations (PublishModal.tsx). The page only keeps the
   // builder store and the ['form', id] cache in step with every status or link change they report — publish,
@@ -53,45 +66,23 @@ export function useBuilderPublishFlow({
     [setStatus, queryClient, formId]
   );
 
-  // Opens the publish dialog. Readiness is the SERVER's (the old client-side duplicates are gone), so the only
-  // work here is flushing a pending autosave first — the published snapshot must be current.
+  // Opens the publish dialog. Readiness is the SERVER's, so the only work here is saving first: what gets published must be
+  // what is on the screen.
   const handlePublishClick = useCallback(async () => {
-    if (dirty && formId && formId !== 'undefined') {
-      try {
-        setSaveState('saving');
-        await saveFormSnapshot(formId, { fields, formTitle, pages, branding, settings });
-        markSaved();
-        setSaveState('saved');
-      } catch {
-        setSaveState('error');
-        toast('Could not save before publishing. Please try again.', 'error');
-        return;
-      }
-    }
+    if (!formId || formId === 'undefined') return setShowPublishModal(true);
+    if (await saveFirst('Could not save before publishing. Please try again.')) setShowPublishModal(true);
+  }, [formId, saveFirst]);
 
-    setShowPublishModal(true);
-  }, [dirty, formId, fields, formTitle, pages, branding, settings, markSaved, toast, setSaveState]);
-
-  // The orange "Publish changes" button: copies the staged draft onto the live, public form. A flush first, same
-  // reasoning as handlePublishClick — the published copy must be the one just typed, not an older autosave.
+  // The orange "Publish changes" button: saves first, then copies the staged draft onto the live, public form.
   const handlePublishChanges = useCallback(async () => {
     if (!formId || formId === 'undefined') return;
-    if (dirty) {
-      try {
-        setSaveState('saving');
-        await saveFormSnapshot(formId, { fields, formTitle, pages, branding, settings });
-        markSaved();
-        setSaveState('saved');
-      } catch {
-        setSaveState('error');
-        toast('Could not save your changes, so they were not published. Please try again.', 'error');
-        return;
-      }
-    }
+    if (!(await saveFirst('Could not save your changes, so they were not published. Please try again.'))) return;
     try {
       const updated = await formsService.publishDraftChanges(formId);
-      useBuilderStore.getState().setHasUnpublishedChanges(false);
-      if (typeof updated.contentVersion === 'number') useBuilderStore.getState().setContentVersion(updated.contentVersion);
+      const store = useBuilderStore.getState();
+      store.setHasUnpublishedChanges(false);
+      store.setDraftSavedAt(null);
+      if (typeof updated.contentVersion === 'number') store.setContentVersion(updated.contentVersion);
       queryClient.setQueryData<Form>(['form', formId], (old) => (old ? { ...old, ...updated } : old));
       queryClient.invalidateQueries({ queryKey: ['forms'] });
       toast('Your changes are now live.', 'success');
@@ -102,7 +93,7 @@ export function useBuilderPublishFlow({
         toast('Could not publish your changes. Please try again.', 'error');
       }
     }
-  }, [formId, dirty, fields, formTitle, pages, branding, settings, markSaved, toast, setSaveState, queryClient]);
+  }, [formId, saveFirst, toast, queryClient]);
 
   // Throws the staged draft away; the live form is untouched. A full reload is the simplest way to put the
   // editor back on the live content (same pattern the stale-save conflict's own "Reload" already uses).
@@ -138,50 +129,32 @@ export function useBuilderPublishFlow({
     [setActivePageId, setActiveFieldId]
   );
 
-  // Preview opens in the SAME tab so "Back to editor" has somewhere to return
-  // to. The save is flushed first and a failed save blocks navigation — leaving would otherwise lose
-  // the unsaved edits (the old new-tab version could shrug a failure off; this one cannot). The
-  // cached ['form', id] is dropped so both Preview and the returning editor refetch the autosaved
-  // copy instead of the stale GET the init effect warns about.
+  // The preview draws unsaved changes straight from this browser (lib/builderBackup.ts), so opening it does not save.
+  // With Auto save on it saves first, as the rest of the builder does. The cached ['form', id] is dropped so the preview
+  // and the returning editor fetch the saved copy.
   const handlePreview = useCallback(async () => {
-    if (dirty && formId && formId !== 'undefined') {
-      try {
-        setSaveState('saving');
-        await saveFormSnapshot(formId, { fields, formTitle, pages, branding, settings });
-        markSaved();
-        setSaveState('saved');
-      } catch {
-        setSaveState('error');
-        toast('Could not save your changes, so Preview was not opened. Please try again.', 'error');
-        return;
-      }
-    }
+    if (readAutoSave() && !(await saveFirst('Could not save your changes, so Preview was not opened. Please try again.'))) return;
+    flushPendingEdits();
+    expectPreview();
     queryClient.removeQueries({ queryKey: ['form', id] });
     router.push(`/forms/${id}/preview`);
-  }, [dirty, formId, fields, formTitle, pages, branding, settings, markSaved, id, queryClient, router, toast, setSaveState]);
+  }, [saveFirst, id, queryClient, router]);
 
   // The same, in a NEW tab, for "Full screen" in the Branding studio: the editor stays where it is. The tab is opened at once, while the click
-  // still counts (a browser blocks one opened after a wait), and sent to the preview when the save is done; a failed save closes it again.
+  // still counts (a browser blocks one opened after a wait). With Auto save on it is sent to the preview when the save is done.
   const handlePreviewInNewTab = useCallback(async () => {
+    // ?bare=1: the form alone, filling the tab (the preview bar is for the editor's own Preview)
+    const url = `/forms/${id}/preview?bare=1`;
+    flushPendingEdits();
     const tab = window.open('about:blank', '_blank');
-    if (dirty && formId && formId !== 'undefined') {
-      try {
-        setSaveState('saving');
-        await saveFormSnapshot(formId, { fields, formTitle, pages, branding, settings });
-        markSaved();
-        setSaveState('saved');
-      } catch {
-        setSaveState('error');
-        tab?.close();
-        toast('Could not save your changes, so the preview was not opened. Please try again.', 'error');
-        return;
-      }
+    if (readAutoSave() && !(await saveFirst('Could not save your changes, so the preview was not opened. Please try again.'))) {
+      tab?.close();
+      return;
     }
     queryClient.removeQueries({ queryKey: ['form', id] });
-    // ?bare=1: the form alone, filling the tab (the preview bar is for the editor's own Preview)
-    if (tab) tab.location.href = `/forms/${id}/preview?bare=1`;
+    if (tab) tab.location.href = url;
     else toast('Your browser blocked the new tab. Allow pop-ups for this site, or use Preview.', 'error');
-  }, [dirty, formId, fields, formTitle, pages, branding, settings, markSaved, id, queryClient, toast, setSaveState]);
+  }, [saveFirst, id, queryClient, toast]);
 
   return { showPublishModal, setShowPublishModal, handleStatusChange, handlePublishClick, handlePublishChanges, handleDiscardDraft, handleChangeSetting, handleFixField, handlePreview, handlePreviewInNewTab };
 }

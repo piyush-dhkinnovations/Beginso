@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { SettingsTabs, type SettingsTab } from '@/components/settings/SettingsTabs';
 import { ProfileTab } from '@/components/settings/ProfileTab';
 import { AppearanceTab } from '@/components/settings/AppearanceTab';
+import { BuilderSettingsTab } from '@/components/settings/BuilderSettingsTab';
 import { WorkspaceTab } from '@/components/settings/WorkspaceTab';
 import { BrandingTab } from '@/components/settings/BrandingTab';
 import { NotificationsTab } from '@/components/settings/NotificationsTab';
@@ -21,6 +22,7 @@ import { CriteriaManager } from '@/components/scoring/CriteriaManager';
 const TAB_LABEL: Record<SettingsTab, string> = {
   profile: 'Profile',
   appearance: 'Appearance',
+  builder: 'Form builder',
   workspace: 'Workspace',
   branding: 'Branding',
   notifications: 'Notifications',
@@ -122,6 +124,11 @@ export function SettingsView({ title, description, tabs, scope, labels, note }: 
         {visitedTabs.has('appearance') && (
           <div className={activeTab === 'appearance' ? '' : 'hidden'}>
             <AppearanceTab />
+          </div>
+        )}
+        {visitedTabs.has('builder') && (
+          <div className={activeTab === 'builder' ? '' : 'hidden'}>
+            <BuilderSettingsTab />
           </div>
         )}
         {visitedTabs.has('workspace') && (

@@ -20,7 +20,11 @@ describe('affectsStorage', () => {
     expect(affectsStorage('delete', '/api/trash/form/123')).toBe(true);
     expect(affectsStorage('DELETE', '/api/trash')).toBe(true);
     expect(affectsStorage('post', '/api/forms')).toBe(true);
-    expect(affectsStorage('patch', '/api/forms/123')).toBe(true);
+    expect(affectsStorage('patch', '/api/forms/123/move')).toBe(true);
+    // saving a form's content, as the builder does, costs no extra request
+    expect(affectsStorage('patch', '/api/forms/123')).toBe(false);
+    expect(affectsStorage('put', '/api/forms/123')).toBe(false);
+    expect(affectsStorage('delete', '/api/forms/123')).toBe(true);
     expect(affectsStorage('post', '/api/upload')).toBe(true);
     expect(affectsStorage('delete', '/api/responses/1')).toBe(true);
     expect(affectsStorage('post', '/api/workspaces')).toBe(true);
