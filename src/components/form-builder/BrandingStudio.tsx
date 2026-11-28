@@ -578,7 +578,12 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
           branding={branding}
           layout={layout}
           setTheme={setTheme}
-          onCorners={(radius) => pickPreset({}, patchTheme(theme, 'fields', { radius }), theme?.fields?.radius !== undefined && ![0, 8, 20].includes(theme.fields.radius), 'The field corners')}
+          // The corner presets live in the theme itself, so the choice is always written; Undo is offered only when it replaces an exact value.
+          onCorners={(radius) => {
+            const exact = theme?.fields?.radius !== undefined && ![0, 8, 20].includes(theme.fields.radius);
+            if (exact) pickPreset({}, patchTheme(theme, 'fields', { radius }), true, 'The field corners');
+            else setTheme('fields', { radius });
+          }}
         />
         <ExactSizes sizes={fieldSizes} />
         <NotInLayout layout={layout} missing={[!!themeOptionBlocked('labelPosition', layout) && 'labels beside the field']} />
