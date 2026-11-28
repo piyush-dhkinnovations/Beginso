@@ -14,6 +14,8 @@ export interface SidebarNavItem {
   /** Called before navigation; call event.preventDefault() to intercept it (e.g. an unsaved-
    * changes guard). Optional — omitting it leaves plain next/link navigation untouched. */
   onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+  /** false: do not load this page ahead of a click (for rarely used destinations). Omitted keeps next/link's default. */
+  prefetch?: false;
   /** Indented links shown under this item (hidden in the icon rail), e.g. recently opened forms under "Forms". */
   subItems?: Array<{ label: string; href: string; active?: boolean; onClick?: SidebarNavItem["onClick"] }>;
 }
@@ -59,6 +61,7 @@ export function Sidebar({ groups, collapsed = false, header, footer, className, 
             const link = (
               <Link
                 href={item.href}
+                prefetch={item.prefetch}
                 className="bg-nav-item"
                 // The rail hides the label text, so the link needs its own name; RailTip shows it on hover and on keyboard focus.
                 {...(collapsed ? { "aria-label": item.label } : {})}

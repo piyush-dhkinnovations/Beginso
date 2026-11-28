@@ -10,7 +10,7 @@ import { useToast } from '@/components/ui/Toast';
 import { NoteItem } from './NoteItem';
 import { NoteComposer } from './NoteComposer';
 import { notesService, MentionAccessError } from '@/services/notes';
-import { noteKeys } from '@/lib/queryKeys';
+import { allResponseActivity, noteKeys } from '@/lib/queryKeys';
 import { useMembers } from '@/hooks/useMembers';
 import type { Note } from '@/types/note';
 
@@ -23,14 +23,14 @@ export interface NotesPanelProps {
   canDeleteAny: boolean;
 }
 
+/** How often an open notes panel checks for a teammate's new notes. One's own changes refetch at once. */
+const NOTES_POLL_MS = 20_000;
+
 /**
  * Owns the
  * notes query, composer state, edit/delete/undo. Oldest-first (the wireframe's own order — a
  * conversation reads top to bottom, newest at the bottom next to the composer).
  */
-/** How often an open notes panel checks for new notes. */
-const NOTES_POLL_MS = 5_000;
-
 export function NotesPanel({ responseId, scope, workspaceName, currentUserId, canDeleteAny }: NotesPanelProps) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -38,9 +38,9 @@ export function NotesPanel({ responseId, scope, workspaceName, currentUserId, ca
   const listKey = noteKeys.list(scope, responseId);
 
   // Live: a note a teammate posts shows up without a reload. There is no push channel, so this
-  // polls every few seconds while the tab is visible (TanStack pauses it in a background tab) and
-  // refetches the moment the tab regains focus. The app-wide default turns focus-refetch off, which
-  // is why notes used to need a page reload.
+  // polls while the tab is visible (TanStack pauses it in a background tab) and refetches stale
+  // notes when the tab regains focus. The app-wide default turns focus-refetch off, which is why
+  // notes used to need a page reload.
   const { data: notes, isLoading, isError, refetch } = useQuery({
     queryKey: listKey,
     queryFn: () => notesService.list(responseId, scope),
@@ -83,6 +83,8 @@ export function NotesPanel({ responseId, scope, workspaceName, currentUserId, ca
 
   function invalidate() {
     queryClient.invalidateQueries({ queryKey: listKey });
+    // A new note is also a line in the activity timeline.
+    queryClient.invalidateQueries(allResponseActivity);
   }
 
   const createMutation = useMutation({
