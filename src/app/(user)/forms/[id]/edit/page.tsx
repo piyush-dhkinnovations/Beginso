@@ -150,6 +150,7 @@ export default function BuilderPageShell() {
             onRetrySave={() => void saveNow()}
             restoredAt={dirty ? backup.restoredAt : null}
             onDiscardRestored={() => backup.discard(form)}
+            autoSave={autoSave}
             status={status}
             hasUnpublishedChanges={changesToPublish}
             onPublishChanges={handlePublishChanges}
@@ -179,6 +180,7 @@ export default function BuilderPageShell() {
                 unsaved={dirty}
                 saving={saveState === 'saving'}
                 saveBlocked={stale}
+                autoSave={autoSave}
               />
 
               <UnsavedChangesNotice conflict={backup.conflict} onDiscard={() => backup.discard(form)} onRestore={backup.restoreMine} />

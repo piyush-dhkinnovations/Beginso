@@ -175,3 +175,110 @@ test.describe('builder: saving by hand (the default)', () => {
     await expect(save).toBeInViewport();
   });
 });
+
+/** The page the person was on before they opened the builder, so Back has somewhere to go. */
+async function openBuilderFromSettings(page: Page) {
+  await page.goto('/settings');
+  await openBuilder(page);
+}
+const question = (page: Page, label: string) => page.getByRole('button', { name: `Select ${label} field` });
+const dialog = (page: Page) => page.getByRole('dialog', { name: 'You have unsaved changes' });
+
+test.describe("builder: the browser's Back button", () => {
+  test('asks like the back arrow does; Keep editing stays on the same tab, Discard goes back', async ({ page, context }) => {
+    const backend = await installBackend(context);
+    await openBuilderFromSettings(page);
+    await rename(page, 'Typed but not saved');
+    await page.getByRole('tab', { name: 'Branding' }).click();
+    await expect(page).toHaveURL(/tab=branding/);
+
+    await page.goBack();
+    await expect(dialog(page)).toBeVisible();
+    await dialog(page).getByRole('button', { name: 'Keep editing' }).click();
+    await expect(page).toHaveURL(/\/edit\?tab=branding/);
+    await expect(page.getByRole('tab', { name: 'Branding' })).toHaveAttribute('aria-selected', 'true');
+    await expect(page.getByRole('button', { name: 'Save', exact: true })).toBeEnabled();
+
+    await page.goBack();
+    await dialog(page).getByRole('button', { name: 'Discard changes' }).click();
+    await expect(page).toHaveURL(/\/settings/, { timeout: 30000 });
+    expect(backend.saves).toEqual([]);
+  });
+
+  test('"Save and leave" saves and goes back', async ({ page, context }) => {
+    const backend = await installBackend(context);
+    await openBuilderFromSettings(page);
+    await rename(page, 'Saved by going back');
+    await page.goBack();
+    await dialog(page).getByRole('button', { name: 'Save and leave' }).click();
+    await expect(page).toHaveURL(/\/settings/, { timeout: 30000 });
+    expect(backend.saves).toEqual(['Saved by going back']);
+  });
+
+  test('once saved, one press leaves without a question', async ({ page, context }) => {
+    await installBackend(context);
+    await openBuilderFromSettings(page);
+    await rename(page, 'Saved first');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible();
+    await page.goBack();
+    await expect(page).toHaveURL(/\/settings/, { timeout: 30000 });
+    await expect(dialog(page)).toHaveCount(0);
+  });
+
+  test('opened straight from an address, with no page before it, it still asks and then goes to the overview', async ({ page, context }) => {
+    await installBackend(context);
+    await openBuilder(page);
+    await rename(page, 'No page before');
+    await page.goBack();
+    await dialog(page).getByRole('button', { name: 'Discard changes' }).click();
+    await expect(page).not.toHaveURL(/\/edit/, { timeout: 30000 });
+  });
+
+  test('going to the preview and back keeps the changes, and the next Back still asks and leaves in one go', async ({ page, context }) => {
+    await installBackend(context);
+    await openBuilderFromSettings(page);
+    await rename(page, 'Through the preview');
+    await page.getByRole('button', { name: 'Preview', exact: true }).click();
+    await expect(page).toHaveURL(/\/preview/, { timeout: 30000 });
+    await page.goBack();
+    await expect(question(page, 'Through the preview')).toBeVisible({ timeout: 30000 });
+    await rename(page, 'Through the preview, again').catch(async () => {
+      await question(page, 'Through the preview').click({ position: { x: 90, y: 20 } });
+      await rename(page, 'Through the preview, again');
+    });
+    await page.goBack();
+    await dialog(page).getByRole('button', { name: 'Discard changes' }).click();
+    await expect(page).toHaveURL(/\/settings/, { timeout: 30000 });
+  });
+});
+
+test.describe('builder: with Auto save on', () => {
+  test.beforeEach(async ({ context }) => {
+    await context.addInitScript(() => localStorage.setItem('beginso.builderAutoSave', 'on'));
+  });
+
+  test('it saves by itself a few seconds after the last change, and says so', async ({ page, context }) => {
+    const backend = await installBackend(context);
+    await openBuilder(page);
+    await rename(page, 'Saved on its own');
+    await expect(page.getByText('Auto save: saving in a moment').first()).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Saved', exact: true })).toBeVisible({ timeout: 15000 });
+    expect(backend.saves).toEqual(['Saved on its own']);
+  });
+
+  for (const [way, leave] of [
+    ["the browser's Back button", (page: Page) => page.goBack()],
+    ['a menu link', (page: Page) => page.locator('aside a[href="/dashboard"]').first().click()],
+  ] as const) {
+    test(`leaving by ${way} straight after a change saves it and goes, with no question`, async ({ page, context }) => {
+      const backend = await installBackend(context);
+      await openBuilderFromSettings(page);
+      await rename(page, 'Saved on the way out');
+      await leave(page);
+      await expect(page).not.toHaveURL(/\/edit/, { timeout: 30000 });
+      await expect(dialog(page)).toHaveCount(0);
+      expect(backend.saves).toEqual(['Saved on the way out']);
+    });
+  }
+});

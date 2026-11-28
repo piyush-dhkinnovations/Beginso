@@ -24,13 +24,15 @@ export interface SaveIndicatorProps {
   restoredAt?: number | null;
   /** Drops those restored changes and shows the saved form again. */
   onDiscardRestored?: () => void;
+  /** Auto save is on: unsaved changes are on their way, and the person has nothing to do. */
+  autoSave?: boolean;
   /** One small line without the time, for the tabs strip. A long message is cut short there; Reload and Retry stay in reach. */
   compact?: boolean;
 }
 
 type Label = 'conflict' | 'error' | 'saving' | 'unsaved' | 'saved';
 
-export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedCount = 0, onReload, savedAt, onRetry, restoredAt = null, onDiscardRestored, compact = false }: SaveIndicatorProps) {
+export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedCount = 0, onReload, savedAt, onRetry, restoredAt = null, onDiscardRestored, autoSave = false, compact = false }: SaveIndicatorProps) {
   // A conflict outranks everything: "All changes saved" would be a lie while this tab's edits cannot be saved.
   const label: Label = conflict ? 'conflict' : saving ? 'saving' : error ? 'error' : dirty ? 'unsaved' : 'saved';
 
@@ -47,7 +49,7 @@ export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedC
     conflict: 'This form changed in another tab or by someone else. Reload to continue.',
     error: detail ? `Save failed: ${detail}` : 'Save failed',
     saving: 'Saving…',
-    unsaved: restored ? 'Your unsaved changes are back' : 'Unsaved changes',
+    unsaved: restored ? 'Your unsaved changes are back' : autoSave ? 'Auto save: saving in a moment' : 'Unsaved changes',
     saved: 'All changes saved',
   };
 
