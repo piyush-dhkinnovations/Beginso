@@ -5,6 +5,7 @@ import "./globals.css";
 import { AuthProvider } from "@/lib/authContext";
 import { ToastProvider } from "@/components/ui/Toast";
 import { QueryProvider } from "@/components/providers/QueryProvider";
+import { ClickCaretGuard } from '@/components/providers/ClickCaretGuard';
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { BRAND_MARK } from '@/lib/brand';
@@ -109,6 +110,7 @@ export default function RootLayout({
             hydration mismatch, not this script — but that trade sacrificed correctness for a
             cosmetic dev warning, so it's reverted.) */}
         <ThemeInitScript code={THEME_INIT_SCRIPT} />
+        <ClickCaretGuard />
         <QueryProvider>
           <AuthProvider>
             <ToastProvider>{children}</ToastProvider>

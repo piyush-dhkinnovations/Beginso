@@ -515,3 +515,8 @@
 }
 .aa-confetti { animation: aaConfetti var(--dur) cubic-bezier(0.2, 0.6, 0.4, 1) var(--delay) both; }
 @media (prefers-reduced-motion: reduce) { .aa-confetti { display: none; } }
+
+/* No blinking text cursor on words after a click (the browser's caret browsing, F7, puts one there). Typing boxes keep theirs, and
+   it comes back as soon as it is moved by keyboard: components/providers/ClickCaretGuard.tsx sets the mark. */
+html[data-clicked] { caret-color: transparent; }
+html[data-clicked] :is(input, textarea, [contenteditable]) { caret-color: auto; }
