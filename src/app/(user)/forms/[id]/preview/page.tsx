@@ -8,7 +8,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUnsavedPreview } from '@/lib/builderBackup';
 import type { FormBranding } from '@/types/form';
 import { lookBranding, normaliseLayout } from '@/lib/layoutPresets';
-import { brandWashLayers, brandWashStyle, effectiveTheme } from '@/lib/formTheme';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { PublicFormShell } from '@/components/public-form/PublicFormShell';
@@ -16,6 +15,7 @@ import { FormThemeScope } from '@/components/public-form/FormThemeScope';
 import { SuccessScreen } from '@/components/public-form/SuccessScreen';
 import { PreviewBar } from '@/components/preview/PreviewBar';
 import { PreviewFrame } from '@/components/preview/PreviewFrame';
+import { FormPageWash } from '@/components/preview/FormPageWash';
 import type { PreviewDevice } from '@/components/preview/DeviceToggle';
 import type { PublicFormSchema } from '@/types/publicForm';
 
@@ -99,22 +99,13 @@ export default function FormPreviewPage() {
   };
 
   if (!formOnly) {
-    // The page behind the form, as the form's own page draws it (layouts/shared.tsx Backdrop), over the whole screen.
-    const branding = schema && { ...schema.branding, theme: effectiveTheme(normaliseLayout(schema.settings.layout), schema.branding.theme) };
-    const layers = branding && brandWashLayers(branding);
     return (
-      // Light like the form itself, whatever theme the app is in. Fixed over everything, so the screen never scrolls.
+      // Fixed over everything, so the screen never scrolls.
       <FormThemeScope>
-        <div className="fixed inset-0 z-50 isolate overflow-hidden bg-(--bg-subtle)" style={branding && { ...brandWashStyle(branding), ...(layers ? { backgroundImage: 'none' } : {}) }}>
-          {layers && (
-            <div aria-hidden="true" className="absolute inset-0 -z-10 overflow-hidden">
-              <div className="absolute inset-0" style={layers.image} />
-              {layers.veil && <div className="absolute inset-0" style={layers.veil} />}
-            </div>
-          )}
+        <FormPageWash branding={schema?.branding} layout={schema?.settings.layout} className="fixed inset-0 z-50">
           <PreviewFrame formId={id} device={device} title="Form preview" />
           <PreviewBar device={device} onDeviceChange={setDevice} backHref={`/forms/${id}/edit`} unsaved={unsaved} />
-        </div>
+        </FormPageWash>
       </FormThemeScope>
     );
   }

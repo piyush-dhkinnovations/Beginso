@@ -20,7 +20,7 @@ test('the Branding tab gives the room to the controls and the preview, and a cho
   const builderTabs = (await page.getByRole('tablist', { name: 'Form Builder sections' }).boundingBox())!;
   const sectionTabs = (await sections.boundingBox())!;
   expect(sectionTabs.y - (builderTabs.y + builderTabs.height), 'space between the builder tabs and the controls').toBeLessThan(40);
-  await expect(page.getByRole('group', { name: 'Preview device' })).toBeVisible();
+  await expect(page.getByRole('radiogroup', { name: 'Preview device' })).toBeVisible();
 
   // the preview takes the rest of the screen
   const stage = (await page.getByTitle('Live form preview').boundingBox())!;
@@ -52,7 +52,7 @@ test('the Branding tab gives the room to the controls and the preview, and a cho
   await expect(classic.getByText('Suggested')).toBeVisible();
 
   // every section is a click away
-  for (const name of ['Colour', 'Text', 'Style', 'Header']) {
+  for (const name of ['Arrange', 'Colours', 'Fonts', 'Background', 'Header', 'Fields', 'Buttons', 'Thank you']) {
     await sections.getByRole('tab', { name }).click();
     await expect(page.getByRole('tabpanel')).toBeVisible();
   }

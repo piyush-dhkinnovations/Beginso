@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormBranding, LayoutPreset } from '@/types/form';
 import { DEVICE_WIDTH, type PreviewDevice } from '@/components/preview/DeviceToggle';
+import { DeviceScreen } from '@/components/preview/PreviewFrame';
+import { FormPageWash } from '@/components/preview/FormPageWash';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { bx } from '@/lib/utils';
 
@@ -67,48 +69,55 @@ export function LiveFormPreview({ formId, branding, title, layout, device = 'des
 
   const desktop = device === 'desktop';
   const baseWidth = desktop ? DESKTOP_WIDTH : DEVICE_WIDTH[device];
-  // Without `fill` the form is drawn at the width of its screen and scaled down to fit the column; with it, the zoom says how big it is.
-  const scale = fill ? zoom : size.width > 0 ? Math.min(1, size.width / baseWidth) : 1;
-  // On a laptop screen the form's own page IS the stage: the frame is as wide as the stage is at this zoom, so the page's background fills it
-  // edge to edge and there is no second box (grey strips) around a narrower frame. A tablet or a phone keeps its real width, in the middle.
-  const fillsStage = fill && desktop && size.width > 0;
-  const frameWidth = fillsStage ? size.width / scale : baseWidth;
   const height = 900; // visible height of a fixed stage; the form scrolls inside it like a real page
-  const stageHeight = fill ? size.height : height * scale;
-  const frameHeight = fill ? size.height / scale : height;
+  // Without `fill` the form is drawn at the width of its screen and scaled down to fit the column. With it the screens are the
+  // full-screen preview's: a desktop is the whole stage, a tablet or phone is drawn as a device (shrunk if the stage is narrower),
+  // and the zoom says how big the form is drawn on that screen.
+  const fit = !desktop && size.width > 0 ? Math.min(1, (size.width - 48) / baseWidth) : 1;
+  const scale = fill ? zoom * fit : size.width > 0 ? Math.min(1, size.width / baseWidth) : 1;
+  const stageHeight = height * scale;
 
   const frame = (
     <iframe
       ref={frameRef}
       title="Live form preview"
-      src={`/forms/${formId}/preview?embed=1`}
+      // in the studio the frame is see-through (bg=0): the stage draws the form's page, so only the form changes size
+      src={`/forms/${formId}/preview?embed=1${fill ? '&bg=0' : ''}`}
       onLoad={send}
-      className={bx('block origin-top-left border-0 bg-white transition-opacity duration-200', drawn ? 'opacity-100' : 'opacity-0')}
-      style={{ width: frameWidth, height: frameHeight, transform: `scale(${scale})` }}
+      className={bx('block origin-top-left border-0 transition-opacity duration-200', fill ? 'bg-transparent' : 'bg-white', drawn ? 'opacity-100' : 'opacity-0')}
+      style={fill ? { width: `${100 / scale}%`, height: `${100 / scale}%`, transform: `scale(${scale})` } : { width: baseWidth, height, transform: `scale(${scale})` }}
     />
   );
 
+  const placeholder = !drawn && (
+    <div role="status" aria-label="Loading the preview" className="absolute inset-0 flex flex-col items-center gap-4 bg-(--bg-subtle) px-6 py-10">
+      <Skeleton variant="title" width="45%" height={32} />
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Skeleton key={i} variant="block" width="55%" height={52} />
+      ))}
+    </div>
+  );
+  const box = 'relative w-full overflow-hidden rounded-xl border border-(--border-default) shadow-(--shadow-md)';
+
+  if (fill) {
+    return (
+      <div ref={boxRef} className={bx(box, 'h-full')}>
+        <FormPageWash branding={branding} layout={layout} className="relative size-full">
+          <DeviceScreen device={device} fit={fit}>
+            {frame}
+          </DeviceScreen>
+        </FormPageWash>
+        {placeholder}
+      </div>
+    );
+  }
+
   return (
-    <div
-      ref={boxRef}
-      className={bx('relative w-full rounded-xl border border-(--border-default) bg-(--bg-subtle) shadow-(--shadow-md)', fill && !desktop ? 'overflow-auto scrollbar-none [&::-webkit-scrollbar]:hidden' : 'overflow-hidden', fill && 'h-full')}
-      style={fill ? undefined : { height: stageHeight }}
-    >
-      {fillsStage ? (
-        frame
-      ) : (
-        <div className="mx-auto overflow-hidden" style={{ width: frameWidth * scale, height: stageHeight }}>
-          {frame}
-        </div>
-      )}
-      {!drawn && (
-        <div role="status" aria-label="Loading the preview" className="absolute inset-0 flex flex-col items-center gap-4 bg-(--bg-subtle) px-6 py-10">
-          <Skeleton variant="title" width="45%" height={32} />
-          {Array.from({ length: 4 }).map((_, i) => (
-            <Skeleton key={i} variant="block" width="55%" height={52} />
-          ))}
-        </div>
-      )}
+    <div ref={boxRef} className={bx(box, 'bg-(--bg-subtle)')} style={{ height: stageHeight }}>
+      <div className="mx-auto overflow-hidden" style={{ width: baseWidth * scale, height: stageHeight }}>
+        {frame}
+      </div>
+      {placeholder}
     </div>
   );
 }

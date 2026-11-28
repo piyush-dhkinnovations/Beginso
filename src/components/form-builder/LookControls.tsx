@@ -10,7 +10,7 @@ import { bx } from '@/lib/utils';
 import type { ButtonHover, ButtonSize, ButtonWidth, ChoiceStyle, FieldStyle, FormBranding, FormTheme, LabelPosition, LayoutPreset, ProgressStyle } from '@/types/form';
 
 // The groups of controls the branding studio has for the form's colours, how its fields look, and exact sizes. Each choice is drawn (a tile that
-// looks like what it does), "Default" is one click away, and an option the chosen layout cannot show is switched off with the reason, never ignored.
+// looks like what it does), "Default" is one click away, and an option the chosen layout cannot show is not drawn at all (the studio says which).
 
 export type ThemeGroup = 'colors' | 'fields' | 'card' | 'layout' | 'fonts' | 'buttons' | 'labels' | 'progress' | 'footer' | 'success' | 'crop' | 'background' | 'cover';
 export type SetTheme = <G extends ThemeGroup>(group: G, patch: Partial<NonNullable<FormTheme[G]>>) => void;
@@ -230,14 +230,14 @@ function Readability({ branding, setTheme, onBrand }: { branding: FormBranding; 
 }
 
 /** Text, headings, card, fields, field border and button text as six boxes, then the readability of the pairs. */
-export function FormColours({ branding, setTheme, onBrand }: { branding: FormBranding; setTheme: SetTheme; onBrand: (colour: string) => void }) {
+export function FormColours({ branding, setTheme, onBrand, hideCard = false }: { branding: FormBranding; setTheme: SetTheme; onBrand: (colour: string) => void; hideCard?: boolean }) {
   const colours = branding.theme?.colors ?? {};
   const any = COLOURS.some((c) => colours[c.key]);
   return (
     <div className="flex flex-col gap-3">
       <GroupTitle hint="Tap a box to choose a colour. A box left as Default follows the look you picked.">Form colours</GroupTitle>
       <div className="grid grid-cols-2 gap-2">
-        {COLOURS.map((c) => (
+        {COLOURS.filter((c) => !(hideCard && c.key === 'card')).map((c) => (
           <ColourRow key={c.key} label={c.label} value={colours[c.key]} fallback={DEFAULT[c.key]} onPick={(v) => setTheme('colors', { [c.key]: v })} onReset={() => setTheme('colors', { [c.key]: undefined })} />
         ))}
       </div>
@@ -253,16 +253,15 @@ export function FormColours({ branding, setTheme, onBrand }: { branding: FormBra
 
 // Fields look
 
-function LookTile({ label, chosen, onClick, disabled, children }: { label: string; chosen: boolean; onClick: () => void; disabled?: boolean; children: ReactNode }) {
+function LookTile({ label, chosen, onClick, children }: { label: string; chosen: boolean; onClick: () => void; children: ReactNode }) {
   return (
     <button
       type="button"
       aria-pressed={chosen}
-      disabled={disabled}
       onClick={onClick}
       className={bx(
-        'flex flex-col gap-2 rounded-lg border-2 p-2 bg-body-sm font-medium focus-visible:outline-2 focus-visible:outline-(--border-focus) disabled:cursor-not-allowed disabled:opacity-45',
-        chosen ? 'border-(--action-primary) bg-(--accent-soft) text-(--text-primary)' : 'border-(--border-default) text-(--text-secondary) enabled:hover:bg-(--surface-hover)',
+        'flex flex-col gap-2 rounded-lg border-2 p-2 bg-body-sm font-medium focus-visible:outline-2 focus-visible:outline-(--border-focus)',
+        chosen ? 'border-(--action-primary) bg-(--accent-soft) text-(--text-primary)' : 'border-(--border-default) text-(--text-secondary) hover:bg-(--surface-hover)',
       )}
     >
       <span aria-hidden="true" data-theme="light" className="flex h-14 items-center justify-center rounded-md bg-(--bg-subtle) px-3">
@@ -324,7 +323,6 @@ export function FieldsLook({ branding, layout, setTheme, onCorners }: { branding
   const customCorners = radius !== undefined && !FIELD_CORNERS.some((c) => c.value === radius);
   return (
     <div className="flex flex-col gap-5">
-      <GroupTitle hint="How the boxes people type in look.">Field look</GroupTitle>
       <TileGroup label="Field style" columns={3}>
         {FIELD_STYLES.map((o) => (
           <LookTile key={o.value} label={o.label} chosen={style === o.value} onClick={() => setTheme('fields', { style: o.value === 'outlined' ? undefined : o.value })}>
@@ -332,29 +330,33 @@ export function FieldsLook({ branding, layout, setTheme, onCorners }: { branding
           </LookTile>
         ))}
       </TileGroup>
-      <TileGroup label="Field corners" columns={3} custom={customCorners} hint={cornersBlocked}>
-        {FIELD_CORNERS.map((o) => (
-          <LookTile key={o.value} label={o.label} chosen={!cornersBlocked && !customCorners && (radius ?? 8) === o.value} disabled={!!cornersBlocked} onClick={() => onCorners(o.value === 8 ? undefined : o.value)}>
-            <SampleField branding={branding} radius={o.value} fieldStyle="outlined" />
-          </LookTile>
-        ))}
-      </TileGroup>
-      <TileGroup label="Label position" columns={2} hint={labelBlocked ?? (label === 'start' ? 'On a phone the label stays above the field.' : undefined)}>
-        <LookTile label="Above the field" chosen={label === 'above' || !!labelBlocked} disabled={!!labelBlocked} onClick={() => setTheme('fields', { label: undefined })}>
-          <span className="flex w-full flex-col gap-1">
-            <Line w="35%" strong />
-            <span className="block h-4 w-full rounded-sm border border-(--border-strong) bg-(--surface-card)" />
-          </span>
-        </LookTile>
-        <LookTile label="Beside the field" chosen={label === 'start' && !labelBlocked} disabled={!!labelBlocked} onClick={() => setTheme('fields', { label: 'start' })}>
-          <span className="flex w-full items-center gap-2">
-            <span className="w-1/3">
-              <Line w="100%" strong />
+      {!cornersBlocked && (
+        <TileGroup label="Field corners" columns={3} custom={customCorners}>
+          {FIELD_CORNERS.map((o) => (
+            <LookTile key={o.value} label={o.label} chosen={!customCorners && (radius ?? 8) === o.value} onClick={() => onCorners(o.value === 8 ? undefined : o.value)}>
+              <SampleField branding={branding} radius={o.value} fieldStyle="outlined" />
+            </LookTile>
+          ))}
+        </TileGroup>
+      )}
+      {!labelBlocked && (
+        <TileGroup label="Label position" columns={2} hint={label === 'start' ? 'On a phone the label stays above the field.' : undefined}>
+          <LookTile label="Above the field" chosen={label === 'above'} onClick={() => setTheme('fields', { label: undefined })}>
+            <span className="flex w-full flex-col gap-1">
+              <Line w="35%" strong />
+              <span className="block h-4 w-full rounded-sm border border-(--border-strong) bg-(--surface-card)" />
             </span>
-            <span className="block h-4 flex-1 rounded-sm border border-(--border-strong) bg-(--surface-card)" />
-          </span>
-        </LookTile>
-      </TileGroup>
+          </LookTile>
+          <LookTile label="Beside the field" chosen={label === 'start'} onClick={() => setTheme('fields', { label: 'start' })}>
+            <span className="flex w-full items-center gap-2">
+              <span className="w-1/3">
+                <Line w="100%" strong />
+              </span>
+              <span className="block h-4 flex-1 rounded-sm border border-(--border-strong) bg-(--surface-card)" />
+            </span>
+          </LookTile>
+        </TileGroup>
+      )}
       <TileGroup label="Choices (radio and checkbox)" columns={2}>
         <LookTile label="Plain" chosen={choice === 'plain'} onClick={() => setTheme('fields', { choice: undefined })}>
           <span className="flex w-full flex-col gap-1.5">
@@ -381,10 +383,10 @@ export function FieldsLook({ branding, layout, setTheme, onCorners }: { branding
   );
 }
 
-/** Which side of the form the picture panel is on. Only the Split Feature layout has one; on the others the choice is off, with the reason. */
+/** Which side of the form the picture panel is on. Only the Split Feature layout has one. */
 export function PanelSide({ branding, layout, setTheme }: { branding: FormBranding; layout: LayoutPreset; setTheme: SetTheme }) {
   const side = branding.theme?.layout?.panelSide ?? 'start';
-  const blocked = themeOptionBlocked('panelSide', layout);
+  if (themeOptionBlocked('panelSide', layout)) return null;
   const drawing = (end: boolean) => (
     <span className={bx('flex h-9 w-full items-stretch gap-1', end && 'flex-row-reverse')}>
       <span className="w-2/5 rounded-sm bg-(--action-primary)" />
@@ -395,11 +397,11 @@ export function PanelSide({ branding, layout, setTheme }: { branding: FormBrandi
     </span>
   );
   return (
-    <TileGroup label="Picture side" columns={2} hint={blocked ?? 'On a phone the picture is a header above the form.'}>
-      <LookTile label="On the left" chosen={!blocked && side === 'start'} disabled={!!blocked} onClick={() => setTheme('layout', { panelSide: undefined })}>
+    <TileGroup label="Picture side" columns={2} hint="On a phone the picture is a header above the form.">
+      <LookTile label="On the left" chosen={side === 'start'} onClick={() => setTheme('layout', { panelSide: undefined })}>
         {drawing(false)}
       </LookTile>
-      <LookTile label="On the right" chosen={!blocked && side === 'end'} disabled={!!blocked} onClick={() => setTheme('layout', { panelSide: 'end' })}>
+      <LookTile label="On the right" chosen={side === 'end'} onClick={() => setTheme('layout', { panelSide: 'end' })}>
         {drawing(true)}
       </LookTile>
     </TileGroup>
@@ -452,39 +454,33 @@ export const CARD_RADIUS_PRESET = { flat: 0, soft: 16, bordered: 12, elevated: 2
 export const GAP_PRESET = { compact: 12, comfortable: 16, spacious: 28 } as const;
 export const WIDTH_PRESET = { narrow: 576, standard: 672, wide: 896 } as const;
 
-/** Sliders for the values the presets set, folded away until asked for. */
-export function FineTune({ branding, layout, setTheme }: { branding: FormBranding; layout: LayoutPreset; setTheme: SetTheme }) {
+export interface ExactSize extends Omit<SliderProps, 'onReset' | 'onChange'> {
+  onChange: (n: number | undefined) => void;
+}
+
+/** Sliders for the exact values behind a section's presets, folded away until asked for. */
+export function ExactSizes({ sizes, note }: { sizes: ExactSize[]; note?: string }) {
   const [open, setOpen] = useState(false);
   const panel = useId();
-  const t = branding.theme;
-  const touched = [t?.card?.radius, t?.card?.shadow, t?.layout?.maxWidth, t?.layout?.fieldGap, t?.layout?.panelSplit, t?.fields?.radius].some((v) => v !== undefined);
-  const cornersBlocked = themeOptionBlocked('fieldRadius', layout, t);
+  const touched = sizes.some((x) => x.value !== undefined);
+  if (sizes.length === 0) return null;
   return (
     <div className="flex flex-col gap-3 border-t border-(--border-subtle) pt-4">
       <button type="button" aria-expanded={open} aria-controls={panel} onClick={() => setOpen((o) => !o)} className="flex items-center justify-between gap-2 rounded-md text-left focus-visible:outline-2 focus-visible:outline-(--border-focus)">
         <span className="flex flex-col gap-0.5">
-          <span className="bg-h5 text-(--text-primary)">Fine-tune{touched ? ' (in use)' : ''}</span>
-          <span className="bg-caption text-(--text-muted)">Exact sizes, when a preset is close but not right.</span>
+          <span className="bg-h5 text-(--text-primary)">Exact sizes{touched ? ' (in use)' : ''}</span>
+          <span className="bg-caption text-(--text-muted)">When a choice above is close but not right.</span>
         </span>
         <ChevronDown size={16} aria-hidden="true" className={bx('shrink-0 text-(--text-muted) transition-transform', open && 'rotate-180')} />
       </button>
       {open && (
         <div id={panel} className="flex flex-col gap-4">
-          <Slider label="Card corners" value={t?.card?.radius} preset={CARD_RADIUS_PRESET[branding.cardStyle ?? 'soft']} min={0} max={40} onChange={(radius) => setTheme('card', { radius })} onReset={() => setTheme('card', { radius: undefined })} />
-          <Slider label="Card shadow" value={t?.card?.shadow} preset={40} min={0} max={100} unit="" onChange={(shadow) => setTheme('card', { shadow })} onReset={() => setTheme('card', { shadow: undefined })} />
-          <Slider label="Biggest form width" value={t?.layout?.maxWidth} preset={WIDTH_PRESET[branding.formWidth ?? 'standard']} min={360} max={1400} step={10} onChange={(maxWidth) => setTheme('layout', { maxWidth })} onReset={() => setTheme('layout', { maxWidth: undefined })} />
-          <Slider label="Space between fields" value={t?.layout?.fieldGap} preset={GAP_PRESET[branding.spacing ?? 'comfortable']} min={4} max={64} onChange={(fieldGap) => setTheme('layout', { fieldGap })} onReset={() => setTheme('layout', { fieldGap: undefined })} />
-          {!themeOptionBlocked('panelSide', layout) && (
-            <Slider label="Picture width" value={t?.layout?.panelSplit} preset={40} min={20} max={80} step={5} unit="%" onChange={(panelSplit) => setTheme('layout', { panelSplit })} onReset={() => setTheme('layout', { panelSplit: undefined })} />
-          )}
-          {cornersBlocked ? (
-            <p className="bg-caption text-(--text-muted)">Field corners: {cornersBlocked}</p>
-          ) : (
-            <Slider label="Field corners" value={t?.fields?.radius} preset={10} min={0} max={32} onChange={(radius) => setTheme('fields', { radius })} onReset={() => setTheme('fields', { radius: undefined })} />
-          )}
-          <p className="bg-caption text-(--text-muted)">The form width is a biggest width: on a small screen the form still fits the screen.</p>
+          {sizes.map(({ onChange, ...size }) => (
+            <Slider key={size.label} {...size} onChange={onChange} onReset={() => onChange(undefined)} />
+          ))}
+          {note && <p className="bg-caption text-(--text-muted)">{note}</p>}
           {touched && (
-            <button type="button" onClick={() => { setTheme('card', { radius: undefined, shadow: undefined }); setTheme('layout', { maxWidth: undefined, fieldGap: undefined, panelSplit: undefined }); setTheme('fields', { radius: undefined }); }} className="self-start rounded-md bg-body-sm text-(--text-muted) underline underline-offset-2 hover:text-(--text-secondary)">
+            <button type="button" onClick={() => sizes.forEach((x) => x.value !== undefined && x.onChange(undefined))} className="self-start rounded-md bg-body-sm text-(--text-muted) underline underline-offset-2 hover:text-(--text-secondary)">
               Back to the presets
             </button>
           )}
@@ -494,7 +490,7 @@ export function FineTune({ branding, layout, setTheme }: { branding: FormBrandin
   );
 }
 
-// Buttons and details
+// Buttons, progress and footer
 
 const BUTTON_SIZES: { value: ButtonSize; label: string; h: number; px: number; fs: number }[] = [
   { value: 'small', label: 'Small', h: 22, px: 9, fs: 10 },
@@ -565,17 +561,14 @@ export function WordsInput({ id, label, value, placeholder, max, onChange }: { i
   );
 }
 
-export function ButtonsAndDetails({ branding, layout, setTheme }: { branding: FormBranding; layout: LayoutPreset; setTheme: SetTheme }) {
+export function ButtonsLook({ branding, setTheme }: { branding: FormBranding; setTheme: SetTheme }) {
   const theme = branding.theme;
   const size: ButtonSize = theme?.buttons?.size ?? 'default';
   const width: ButtonWidth = theme?.buttons?.width ?? 'fill';
   const hover: ButtonHover = theme?.buttons?.hover ?? 'none';
-  const progress: ProgressStyle = theme?.progress?.style ?? 'bar';
-  const progressBlocked = themeOptionBlocked('progressStyle', layout);
   const uid = useId();
   return (
     <div className="flex flex-col gap-5">
-      <GroupTitle hint="How the Next, Back and Submit buttons look and read.">Buttons</GroupTitle>
       <TileGroup label="Button size" columns={3}>
         {BUTTON_SIZES.map((o) => (
           <LookTile key={o.value} label={o.label} chosen={size === o.value} onClick={() => setTheme('buttons', { size: o.value === 'default' ? undefined : o.value })}>
@@ -614,27 +607,38 @@ export function ButtonsAndDetails({ branding, layout, setTheme }: { branding: Fo
       <WordsInput id={`${uid}-next`} label="Next button" placeholder="Next" max={LABEL_MAX} value={theme?.labels?.next} onChange={(next) => setTheme('labels', { next })} />
       <WordsInput id={`${uid}-back`} label="Back button" placeholder="Back" max={LABEL_MAX} value={theme?.labels?.back} onChange={(back) => setTheme('labels', { back })} />
 
-      <GroupTitle hint="For forms with more than one page.">Progress</GroupTitle>
-      <TileGroup label="Progress style" columns={3} hint={progressBlocked}>
-        {PROGRESS_STYLES.map((o) => (
-          <LookTile key={o.value} label={o.label} chosen={!progressBlocked && progress === o.value} disabled={!!progressBlocked} onClick={() => setTheme('progress', { style: o.value === 'bar' ? undefined : o.value })}>
-            <ProgressSample style={o.value} />
-          </LookTile>
-        ))}
-      </TileGroup>
-
-      <GroupTitle hint="A short line under the form.">Footer note</GroupTitle>
-      <Textarea
-        id={`${uid}-footer`}
-        label="Note"
-        rows={2}
-        showCount
-        maxLength={FOOTER_MAX}
-        value={theme?.footer?.note ?? ''}
-        placeholder="e.g. Questions? Write to hello@example.com"
-        onChange={(e) => setTheme('footer', { note: e.target.value.replace(/[<>]/g, '') || undefined })}
-      />
     </div>
+  );
+}
+
+/** How progress through a form of several pages is drawn. Nothing for a layout that shows its own. */
+export function ProgressLook({ branding, layout, setTheme }: { branding: FormBranding; layout: LayoutPreset; setTheme: SetTheme }) {
+  const progress: ProgressStyle = branding.theme?.progress?.style ?? 'bar';
+  if (themeOptionBlocked('progressStyle', layout)) return null;
+  return (
+    <TileGroup label="Progress style" columns={3}>
+      {PROGRESS_STYLES.map((o) => (
+        <LookTile key={o.value} label={o.label} chosen={progress === o.value} onClick={() => setTheme('progress', { style: o.value === 'bar' ? undefined : o.value })}>
+          <ProgressSample style={o.value} />
+        </LookTile>
+      ))}
+    </TileGroup>
+  );
+}
+
+export function FooterNoteField({ branding, setTheme }: { branding: FormBranding; setTheme: SetTheme }) {
+  const uid = useId();
+  return (
+    <Textarea
+      id={`${uid}-footer`}
+      label="Footer note"
+      rows={2}
+      showCount
+      maxLength={FOOTER_MAX}
+      value={branding.theme?.footer?.note ?? ''}
+      placeholder="e.g. Questions? Write to hello@example.com"
+      onChange={(e) => setTheme('footer', { note: e.target.value.replace(/[<>]/g, '') || undefined })}
+    />
   );
 }
 

@@ -27,7 +27,6 @@ import { useBuilderBackup } from '@/components/form-builder/useBuilderBackup';
 import { UnsavedChangesNotice } from '@/components/form-builder/UnsavedChangesNotice';
 import { useAuth } from '@/hooks/useAuth';
 import { canSeeShare, canPublishForm } from '@/lib/roles';
-import { cn } from '@/lib/utils';
 import type { FieldType } from '@/types/form';
 
 const VALID_TABS: BuilderTab[] = ['build', 'branding', 'settings'];
@@ -60,7 +59,7 @@ export default function BuilderPageShell() {
     if (tab === 'share') requestAnimationFrame(() => scrollToShare('smooth'));
   };
 
-  // From 1024px the app shell gives the builder the whole area, so everything but the Build tab pads itself.
+  // From 1024px the app shell gives the builder the whole area, so the Settings tab pads itself.
   const tabPadding = 'min-w-0 flex-1 lg:px-6 lg:pt-6 lg:pb-16 xl:px-8';
 
   // Phone widths have no field rail: fields are added from a bottom sheet.
@@ -197,8 +196,8 @@ export default function BuilderPageShell() {
                     onAddField={() => setShowAddSheet(true)}
                   />
                 ) : activeTab === 'branding' ? (
-                  // Branding fills the screen below the two bars, so it needs no deep bottom margin.
-                  <div className={cn(tabPadding, 'lg:pt-4 lg:pb-6')}>
+                  // Branding fills the screen below the two bars edge to edge: its own panel and preview space themselves.
+                  <div className="min-w-0 flex-1">
                     <BrandingTabContent
                       formId={formId ?? undefined}
                       formTitle={formTitle}
