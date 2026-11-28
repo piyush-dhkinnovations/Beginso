@@ -95,7 +95,8 @@ export function WorkflowSidebar({
     // The Activity card is hidden for a solo personal form — don't fetch what nobody will see.
     enabled: collaboration,
     // Live like the notes: a teammate's stage change or assignment shows up without a reload.
-    refetchInterval: 10_000,
+    // One's own changes invalidate it (allResponseActivity), so they show at once.
+    refetchInterval: 30_000,
     refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
   });

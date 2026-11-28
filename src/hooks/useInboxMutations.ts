@@ -3,7 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/ui/Toast';
 import { responsesService, type UpdateResponsePayload } from '@/services/responses';
-import { responseKeys } from '@/lib/queryKeys';
+import { allResponseActivity, responseKeys } from '@/lib/queryKeys';
 import { describeBulkFailures, idsRemainingSelected } from '@/lib/bulkActions';
 import type {
   IResponse,
@@ -72,6 +72,12 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
   const { toast } = useToast();
   const listKey = responseKeys.all(scope, formId);
 
+  /** After a change to responses: the lists, and the timeline of an open response, which the list key does not cover. */
+  function refreshAfterChange() {
+    void queryClient.invalidateQueries(allResponseActivity);
+    return queryClient.invalidateQueries({ queryKey: listKey });
+  }
+
   function patchListCaches(ids: readonly string[], patch: (r: IResponse) => Partial<IResponse>) {
     queryClient.setQueriesData<PaginatedResponsesResult>({ queryKey: listKey }, (old) =>
       old && Array.isArray(old.data)
@@ -117,7 +123,7 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
         old ? { ...old, ...updated } : old
       );
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: listKey }),
+    onSettled: refreshAfterChange,
   });
 
   // per-user read state
@@ -195,7 +201,7 @@ export function useInboxMutations({ scope, formId }: UseInboxMutationsOptions) {
       const explained = (res?.status === 413 || res?.status === 422) && res.data?.message;
       toast(explained || 'Failed to update responses. Please try again.', 'error');
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: listKey }),
+    onSettled: refreshAfterChange,
   });
 
   /** One request per bulk action, for an id list or a filter. */

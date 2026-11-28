@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, waitFor, act } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-query';
 import { affectsStorage, notifyStorageMayHaveChanged, onStorageMayHaveChanged, throttleTrailing } from '@/lib/storageRefresh';
 import axiosInstance from '@/lib/axios';
 import { QueryProvider } from '@/components/providers/QueryProvider';
@@ -108,7 +108,28 @@ describe('the sidebar storage bar after a delete', () => {
     expect(getProfile).toHaveBeenCalledTimes(2);
   });
 
-  it('polls on its own so changes made elsewhere show up', async () => {
+  it('refreshes at once after a file upload too', async () => {
+    const getProfile = vi
+      .spyOn(settingsService, 'getProfile')
+      .mockResolvedValueOnce(profile(100 * MB, 0))
+      .mockResolvedValue(profile(105 * MB, 0));
+    render(
+      <QueryProvider>
+        <StorageUsage />
+      </QueryProvider>
+    );
+    await screen.findByText('100 MB of 500 MB');
+
+    const adapter = async (config: any) => ({ data: {}, status: 201, statusText: 'Created', headers: {}, config });
+    await act(async () => {
+      await axiosInstance.post('/api/upload', new FormData(), { adapter });
+    });
+
+    await waitFor(() => expect(screen.getByText('105 MB of 500 MB')).toBeInTheDocument(), { timeout: 4000 });
+    expect(getProfile).toHaveBeenCalledTimes(2);
+  });
+
+  it('asks on its own every 5 minutes, so changes made elsewhere show up, and not while the tab is hidden', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const getProfile = vi.spyOn(settingsService, 'getProfile').mockResolvedValue(profile(100 * MB, 0));
     const client = new QueryClient();
@@ -118,9 +139,16 @@ describe('the sidebar storage bar after a delete', () => {
       </QueryClientProvider>
     );
     await screen.findByText('100 MB of 500 MB');
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(31_000);
-    });
-    expect(getProfile.mock.calls.length).toBeGreaterThanOrEqual(2);
+    const wait = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
+
+    await wait(4 * 60_000 + 50_000);
+    expect(getProfile).toHaveBeenCalledTimes(1);
+    await wait(20_000);
+    expect(getProfile).toHaveBeenCalledTimes(2);
+
+    act(() => focusManager.setFocused(false));
+    await wait(20 * 60_000);
+    expect(getProfile).toHaveBeenCalledTimes(2);
+    focusManager.setFocused(undefined);
   });
 });

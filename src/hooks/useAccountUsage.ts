@@ -10,7 +10,7 @@ export function useAccountUsage() {
     // Refreshed by lib/storageRefresh.ts after any write that can change storage. The poll and the focus refetch
     // cover changes made elsewhere (a public submission with a file, another tab, another device).
     staleTime: 15_000,
-    refetchInterval: 30_000,
+    refetchInterval: 5 * 60_000,
     refetchOnWindowFocus: true,
   });
   return data;

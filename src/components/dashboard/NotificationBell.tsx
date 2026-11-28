@@ -127,6 +127,7 @@ export function NotificationBell({ scope = 'personal' }: NotificationBellProps) 
           <div className="border-t border-(--border-default) px-4 py-2.5 text-center">
             <Link
               href={viewAllHref}
+              prefetch={false}
               onClick={() => setIsOpen(false)}
               className="bg-body-sm font-semibold text-(--action-primary) hover:underline"
             >

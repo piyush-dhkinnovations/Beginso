@@ -5,7 +5,7 @@ import { Star } from 'lucide-react';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useToast } from '@/components/ui/Toast';
 import { scoresService } from '@/services/scores';
-import { scoreKeys } from '@/lib/queryKeys';
+import { allResponseActivity, scoreKeys } from '@/lib/queryKeys';
 import type { ScoreCriterion, ResponseScore } from '@/types/score';
 
 const STARS = [1, 2, 3, 4, 5];
@@ -122,7 +122,10 @@ export function ScoreCard({ responseId, criteria, disabled }: ScoreCardProps) {
       if (context) queryClient.setQueryData(detailKey, context.previous);
       toast('Failed to save score. Please try again.', 'error');
     },
-    onSettled: () => queryClient.invalidateQueries({ queryKey: detailKey }),
+    onSettled: () => {
+      void queryClient.invalidateQueries(allResponseActivity);
+      return queryClient.invalidateQueries({ queryKey: detailKey });
+    },
   });
 
   if (isLoading) {
