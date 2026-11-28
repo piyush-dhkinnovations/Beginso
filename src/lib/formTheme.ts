@@ -309,7 +309,11 @@ export function cleanRedirectUrl(raw: unknown): string | undefined {
   }
 }
 
-/** A picture address for the thank-you screen: one of our uploads, a built-in picture, or an https address; never anything that could leave an attribute. */
+/**
+ * A picture address in a theme (the thank-you picture, a remembered crop): one of our uploads, a built-in picture, or an https address; never anything
+ * that could leave an attribute. An upload comes back with the backend's own full address, which is http when its proxy does not say otherwise; such a
+ * file is only ever asked for through this app (uploadSrc), so its scheme and host do not matter.
+ */
 function cleanPicture(raw: unknown): string | undefined {
   if (typeof raw !== 'string') return undefined;
   const v = raw.trim();
@@ -317,7 +321,8 @@ function cleanPicture(raw: unknown): string | undefined {
   if (v.startsWith('/api/upload/file/') || isBuiltInPictureUrl(v)) return v;
   try {
     const u = new URL(v);
-    return u.protocol === 'https:' && !u.username && !u.password ? v : undefined;
+    const upload = u.protocol === 'http:' && u.pathname.startsWith('/api/upload/file/');
+    return (u.protocol === 'https:' || upload) && !u.username && !u.password ? v : undefined;
   } catch {
     return undefined;
   }
