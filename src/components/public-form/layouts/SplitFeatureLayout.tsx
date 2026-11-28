@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- arbitrary backend-served upload URLs, same tradeoff as FormBanner (no remotePatterns configured). */
+import { useEffect, useRef } from 'react';
 import { brandPanelStyle } from '@/lib/formTheme';
 import { BrandMark, hasBrandMark, logoPx } from '../BrandMark';
 import { BannerExtras } from '../BannerExtras';
@@ -6,20 +7,30 @@ import { Backdrop, widthClass, type LayoutFrameProps } from './shared';
 import { uploadSrc } from '@/lib/uploadSrc';
 
 // Split Feature: a full-height brand panel beside the form (a real two-pane screen on desktop, not a card on a
-// blank page). The panel carries the logo, a large headline and the current step. From 768 up, what it shows is never
-// taller than the screen and stays in view while a long form scrolls past, so the picture is not blown up to the form's
-// height (the card clips with `overflow-clip`, which unlike `hidden` leaves `sticky` working). Below 768 the panel
-// becomes a header above the form; below 480 it is hidden entirely (the form title is already inside the form).
-export function SplitFeatureLayout({ branding, title, stepNames, currentPage, previewMode, hideCover, children }: LayoutFrameProps) {
+// blank page). The panel carries the logo, a large headline and the current step. From 768 up, on a page of its own
+// (`fitScreen`), the whole card stays inside the screen with the page's margin above and below it and the form scrolls
+// inside the card, so the picture is not blown up to the form's height. Where the card cannot be held to the screen (an
+// embed that grows to its content), the panel's picture stays no taller than the screen and in view (the card clips with
+// `overflow-clip`, which unlike `hidden` leaves `sticky` working). Below 768 the panel becomes a header above the form;
+// below 480 it is hidden entirely (the form title is already inside the form).
+export function SplitFeatureLayout({ branding, title, stepNames, currentPage, previewMode, hideCover, fitScreen, children }: LayoutFrameProps) {
   const { coverImageUrl } = branding;
   const stepLabel = stepNames.length > 1 ? stepNames[currentPage] : '';
   const wordsOnTop = branding.theme?.layout?.panelText === 'top';
+  // A new page of the form starts at its top, also where the form scrolls inside the card.
+  const formColumn = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (formColumn.current) formColumn.current.scrollTop = 0;
+  }, [currentPage]);
   return (
     <Backdrop branding={branding} previewMode={previewMode}>
-      <div className={`form-card bg-(--surface-card) w-full overflow-clip flex flex-col md:grid md:grid-cols-5 ${widthClass('split_feature', branding)} md:rounded-2xl md:shadow-xl ${previewMode ? '' : 'md:min-h-[min(46rem,calc(100vh-5rem))]'}`}>
+      <div className={`form-card bg-(--surface-card) w-full overflow-clip flex flex-col md:grid md:grid-cols-5 ${widthClass('split_feature', branding)} md:rounded-2xl md:shadow-xl ${previewMode ? '' : 'md:min-h-[min(46rem,calc(100vh-5rem))]'} ${fitScreen ? 'md:max-h-[calc(100dvh-5rem)] md:grid-rows-[minmax(0,1fr)]' : ''}`}>
         {/* The panel is decorative, so it comes AFTER the form in DOM order (wireframe a11y note) and is
             moved before it visually: first in the column below 768, left of the form from md up. */}
-        <div className="split-form md:col-span-3 md:order-2 md:flex md:flex-col md:justify-center">{children}</div>
+        {/* `justify-center-safe`: centred while it fits, and from the top (never cut off) once it has to scroll. */}
+        <div ref={formColumn} className={`split-form md:col-span-3 md:order-2 md:flex md:flex-col md:justify-center-safe ${fitScreen ? 'md:min-h-0 md:overflow-y-auto' : ''}`}>
+          {children}
+        </div>
         <div className="split-panel order-first relative text-white md:order-1 md:col-span-2 max-[480px]:hidden" style={brandPanelStyle(branding)}>
           <div
             className={`relative flex h-full flex-col gap-10 p-6 md:sticky md:top-0 md:max-h-[min(100dvh,90rem)] md:p-10 ${wordsOnTop ? 'justify-start' : 'justify-between'}`}

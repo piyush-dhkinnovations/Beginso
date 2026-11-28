@@ -265,6 +265,40 @@ describe('SplitFeatureLayout picture and words', () => {
   });
 });
 
+describe('SplitFeatureLayout held to the screen', () => {
+  const draw = (over: Partial<LayoutFrameProps>) =>
+    render(
+      <SplitFeatureLayout {...base('split_feature', over)}>
+        <p>BODY</p>
+      </SplitFeatureLayout>
+    );
+
+  it('keeps the whole card inside the screen, with the form scrolling in it', () => {
+    const { container } = draw({ fitScreen: true });
+    expect(container.querySelector('.form-card')).toHaveClass('md:max-h-[calc(100dvh-5rem)]', 'md:grid-rows-[minmax(0,1fr)]');
+    // centred only while it fits, so a long form is never cut off at the top
+    expect(container.querySelector('.split-form')).toHaveClass('md:overflow-y-auto', 'md:min-h-0', 'md:justify-center-safe');
+  });
+
+  it('lets the card grow with the form where there is no screen to hold it to (an embed)', () => {
+    const { container } = draw({});
+    expect(container.querySelector('.form-card')?.className).not.toContain('md:max-h-');
+    expect(container.querySelector('.split-form')).not.toHaveClass('md:overflow-y-auto');
+  });
+
+  it('starts each page of the form at its top', () => {
+    const { container, rerender } = draw({ fitScreen: true, currentPage: 0 });
+    const column = container.querySelector('.split-form') as HTMLElement;
+    column.scrollTop = 400;
+    rerender(
+      <SplitFeatureLayout {...base('split_feature', { fitScreen: true, currentPage: 1 })}>
+        <p>BODY</p>
+      </SplitFeatureLayout>
+    );
+    expect(column.scrollTop).toBe(0);
+  });
+});
+
 describe('layout helpers', () => {
   it.each<[LayoutPreset, 'narrow' | 'standard' | 'wide' | undefined, string]>([
     ['classic', undefined, 'max-w-2xl'],
