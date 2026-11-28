@@ -25,7 +25,7 @@ export const REPORT_STATUS_LABELS: Record<ReportStatus, string> = {
  * is `search`. `ids` (an explicit selection) takes the place of the filters.
  */
 export interface CreateReportPayload
-  extends Pick<ResponseFilters, 'tagIds' | 'assigneeId' | 'unread' | 'duplicate' | 'field' | 'value' | 'granularity'> {
+  extends Pick<ResponseFilters, 'tagIds' | 'assigneeId' | 'unread' | 'duplicate' | 'field' | 'value' | 'granularity' | 'chart' | 'includeTest'> {
   format: ReportFormat;
   formId?: string;
   stageId?: string;
