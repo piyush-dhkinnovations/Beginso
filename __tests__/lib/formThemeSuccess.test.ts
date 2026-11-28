@@ -58,7 +58,7 @@ describe('cleanTheme: success', () => {
     for (const picture of ['/api/upload/file/u1/f1/brand/pic.png', '/form-pictures/aurora-mint.jpg', 'https://images.example.com/p.jpg']) {
       expect(cleanTheme({ v: 1, success: { picture } })?.success?.picture).toBe(picture);
     }
-    for (const picture of ['http://x.test/p.jpg', 'data:image/png;base64,AAA', '/etc/passwd', 'https://u:p@x.test/p.jpg', 'https://x.test/a"b.jpg', 'https://x.test/a b.jpg']) {
+    for (const picture of ['http://x.test/p.jpg', 'http://x.test/other/api/upload/file/p.jpg', 'http://u:p@api.test/api/upload/file/u1/p.jpg', 'ftp://api.test/api/upload/file/u1/p.jpg', 'data:image/png;base64,AAA', '/etc/passwd', 'https://u:p@x.test/p.jpg', 'https://x.test/a"b.jpg', 'https://x.test/a b.jpg']) {
       expect(cleanTheme({ v: 1, success: { picture } })).toBeUndefined();
     }
   });
@@ -74,6 +74,13 @@ describe('brandSuccess', () => {
     expect(s).toMatchObject({ headline: "You're in!", colour: '#16A34A', picture: '/form-pictures/aurora-mint.jpg', confetti: true });
     expect(s.redirect).toEqual({ url: 'https://example.com/welcome?from=form', seconds: 8 });
     expect(brandSuccess({ theme: { v: 1, success: { redirect: { url: 'https://example.com' } } } }).redirect).toEqual({ url: 'https://example.com', seconds: 5 });
+  });
+
+  // An upload is answered with the backend's own address, which is http behind a proxy: it was dropped, so the picture never appeared or saved.
+  it.each(['http://api.beginso.com/api/upload/file/u1/f1/brand/pic.png', 'https://old-backend.test/api/upload/file/u1/f1/brand/pic.png'])('keeps a picture just uploaded (%s), saves it, and asks for it through the app', (picture) => {
+    const theme: FormTheme = { v: 1, success: { picture } };
+    expect(cleanTheme(theme)?.success?.picture).toBe(picture);
+    expect(brandSuccess({ theme }).picture).toBe('/api/backend/api/upload/file/u1/f1/brand/pic.png');
   });
 
   it('asks for an uploaded picture through the app', () => {

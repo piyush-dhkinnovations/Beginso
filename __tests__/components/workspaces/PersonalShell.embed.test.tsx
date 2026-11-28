@@ -12,21 +12,20 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
 
-import { PersonalShell, isEmbeddedPreview } from '@/components/workspaces/PersonalShell';
+import { PersonalShell, isFormPreview } from '@/components/workspaces/PersonalShell';
 import Loading from '@/app/(user)/forms/[id]/loading';
 
-describe('an embedded form preview', () => {
-  it('is recognised by its address: the form preview with embed=1, and nothing else', () => {
-    expect(isEmbeddedPreview('/forms/f1/preview', '1')).toBe(true);
-    expect(isEmbeddedPreview('/forms/f1/preview/', '1')).toBe(true);
-    expect(isEmbeddedPreview('/forms/f1/preview', null)).toBe(false); // the preview page with its own bar
-    expect(isEmbeddedPreview('/forms/f1/edit', '1')).toBe(false);
-    expect(isEmbeddedPreview('/dashboard', '1')).toBe(false);
+describe('a form preview', () => {
+  it('is recognised by its address, and nothing else is', () => {
+    expect(isFormPreview('/forms/f1/preview')).toBe(true);
+    expect(isFormPreview('/forms/f1/preview/')).toBe(true);
+    expect(isFormPreview('/forms/f1/edit')).toBe(false);
+    expect(isFormPreview('/dashboard')).toBe(false);
   });
 
-  it('is drawn with no app frame around it: just the form (in the studio\'s frame, or in its Full screen tab)', () => {
+  it.each(['', 'embed=1', 'bare=1'])('is drawn with no app frame around it (?%s)', (search) => {
     nav.pathname = '/forms/f1/preview';
-    nav.search = 'bare=1';
+    nav.search = search;
     const { container } = render(
       <PersonalShell initialCollapsed={false}>
         <p>the form</p>

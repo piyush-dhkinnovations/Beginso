@@ -3,7 +3,7 @@
 import { CharCount } from '@/components/ui/CharCount';
 import { useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, CheckCircle2, ExternalLink, UploadCloud, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ExternalLink, UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { FormHeader } from '@/components/forms/FormHeader';
@@ -27,6 +27,10 @@ export interface BuilderHeaderProps {
   savedAt: Date | null;
   onRetrySave: () => void;
   /** The caller may publish (Owner/Admin). Without it there is no Publish button — a convenience; the server enforces. */
+  /** See SaveIndicator: unsaved changes brought back from this browser, and how to drop them. */
+  restoredAt?: number | null;
+  onDiscardRestored?: () => void;
+  autoSave?: boolean;
   canPublish: boolean;
   status: FormStatus;
   /** True once an edit is staged on the draft (the form is published and someone changed it since): shows the orange "Publish changes" button
@@ -62,6 +66,9 @@ export function BuilderHeader({
   onReload,
   savedAt,
   onRetrySave,
+  restoredAt,
+  onDiscardRestored,
+  autoSave,
   canPublish,
   status,
   hasUnpublishedChanges,
@@ -120,7 +127,7 @@ export function BuilderHeader({
   const badge = <StatusBadge variant={status}>{STATUS_LABEL[status]}</StatusBadge>;
   // One SaveIndicator instance (one live region).
   const saveState = (
-    <SaveIndicator compact={inTopBar} dirty={dirty} saving={isSaving} error={saveFailed} detail={saveDetail} conflict={saveConflict} unsavedCount={unsavedCount} onReload={onReload} savedAt={savedAt} onRetry={onRetrySave} />
+    <SaveIndicator compact={inTopBar} dirty={dirty} saving={isSaving} error={saveFailed} detail={saveDetail} conflict={saveConflict} unsavedCount={unsavedCount} onReload={onReload} savedAt={savedAt} onRetry={onRetrySave} restoredAt={restoredAt} onDiscardRestored={onDiscardRestored} autoSave={autoSave} />
   );
   const actions = (
     <>
@@ -142,15 +149,9 @@ export function BuilderHeader({
             Publish changes
           </Button>
           {onDiscardDraft && (
-            <button
-              type="button"
-              onClick={onDiscardDraft}
-              aria-label="Discard unpublished changes"
-              title="Discard these changes"
-              className="flex size-8 items-center justify-center rounded-md text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-primary)"
-            >
-              <X size={15} aria-hidden="true" />
-            </button>
+            <Button size={size} variant="ghost" onClick={onDiscardDraft} aria-label="Discard unpublished changes" title="Go back to the published form">
+              Discard
+            </Button>
           )}
         </div>
       ) : status === 'published' ? (

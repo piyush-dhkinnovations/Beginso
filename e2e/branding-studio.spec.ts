@@ -20,7 +20,7 @@ test('the Branding tab gives the room to the controls and the preview, and a cho
   const builderTabs = (await page.getByRole('tablist', { name: 'Form Builder sections' }).boundingBox())!;
   const sectionTabs = (await sections.boundingBox())!;
   expect(sectionTabs.y - (builderTabs.y + builderTabs.height), 'space between the builder tabs and the controls').toBeLessThan(40);
-  await expect(page.getByRole('group', { name: 'Preview device' })).toBeVisible();
+  await expect(page.getByRole('radiogroup', { name: 'Preview device' })).toBeVisible();
 
   // the preview takes the rest of the screen
   const stage = (await page.getByTitle('Live form preview').boundingBox())!;
@@ -52,7 +52,7 @@ test('the Branding tab gives the room to the controls and the preview, and a cho
   await expect(classic.getByText('Suggested')).toBeVisible();
 
   // every section is a click away
-  for (const name of ['Colour', 'Text', 'Style', 'Header']) {
+  for (const name of ['Arrange', 'Colours', 'Fonts', 'Background', 'Header', 'Fields', 'Buttons', 'Thank you']) {
     await sections.getByRole('tab', { name }).click();
     await expect(page.getByRole('tabpanel')).toBeVisible();
   }
@@ -65,8 +65,8 @@ test('Full screen is the real form alone: no top bar, no text about previewing, 
   await expect(page.locator('label').first()).toBeVisible({ timeout: 60000 });
   await expect(page.getByText('Preview mode')).toHaveCount(0);
   await expect(page.getByText('Respondents see this exactly as shown')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Back to editor' })).toHaveCount(0);
-  await expect(page.getByRole('group', { name: 'Preview device' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Back to editor' })).toHaveCount(0);
+  await expect(page.getByRole('radiogroup', { name: 'Preview device' })).toHaveCount(0);
   await expect(page.locator('iframe')).toHaveCount(0); // the form itself, not a frame of it
   await expect(page.locator('aside')).toHaveCount(0); // none of the app's own frame
 });
@@ -83,4 +83,22 @@ test('the builder header is the same on the Branding tab as on Build', async ({ 
   expect(onBranding.height, 'same height').toBeCloseTo(onBuild.height, 0);
   expect(onBranding.y, 'same place').toBeCloseTo(onBuild.y, 0);
   expect(onBranding.width, 'same width').toBeCloseTo(onBuild.width, 0);
+});
+
+test('the preview is one screen: the form full size, and a framed narrower one for tablet and mobile', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/forms/e2e-branding/preview');
+  const frame = page.getByTitle('Form preview');
+  await expect(page.frameLocator('iframe[title="Form preview"]').locator('label').first()).toBeVisible({ timeout: 60000 });
+  expect(await frame.boundingBox()).toMatchObject({ x: 0, y: 0, width: 1440, height: 900 });
+  await expect(page.locator('aside, header')).toHaveCount(0);
+  for (const [device, width] of [['Tablet', 768], ['Mobile', 375]] as const) {
+    await page.getByRole('radio', { name: device }).click();
+    await expect.poll(async () => (await frame.boundingBox())!.width).toBe(width);
+    // framed: in from the top and bottom edges, so it is plainly not the desktop
+    await expect.poll(async () => (await frame.boundingBox())!.y).toBeGreaterThan(40);
+    const box = (await frame.boundingBox())!;
+    expect(box.y + box.height).toBeLessThan(900);
+  }
+  expect(await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.scrollHeight])).toEqual([1440, 900]);
 });

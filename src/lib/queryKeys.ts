@@ -57,6 +57,12 @@ export const responseActivityKeys = {
   list: (scope: string, responseId: string) => ['responses', scope, 'detail', responseId, 'activity'] as const,
 };
 
+/** Every cached response timeline. Invalidate it after one's own change so the open one updates at once, not at its next poll. */
+export const allResponseActivity = {
+  queryKey: ['responses'] as const,
+  predicate: (query: { queryKey: readonly unknown[] }) => query.queryKey[4] === 'activity',
+};
+
 // How a form's submitted response is laid out for the caller. Deliberately NOT under 'responses', so changing the
 // layout never refetches the response lists.
 export const responseViewKeys = {

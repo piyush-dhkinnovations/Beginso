@@ -15,9 +15,16 @@ export interface PageSwitcherProps {
 
 const fieldsText = (n: number) => `${n} ${n === 1 ? 'field' : 'fields'}`;
 
-// The row of page buttons above the canvas. One page is always active; its questions are the only ones shown. A button
-// reads the page's name, or "Page N" while it has none. From 1024px the active one carries an X that deletes the page
-// (Undo brings it back); below that, renaming and deleting stay desktop-only, said so rather than silently missing.
+/** An arrow step: notched where it follows another, pointed where another follows it. The first and last ends stay square. */
+function stepShape(first: boolean, last: boolean): string {
+  const right = last ? '100% 0, 100% 100%' : 'calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%';
+  return `polygon(0 0, ${right}, 0 100%${first ? '' : ', 12px 50%'})`;
+}
+
+// The row of page steps above the canvas, drawn as joined arrows in page order. One page is always active; its
+// questions are the only ones shown. A step reads its number and the page's name, or "Page N" while it has none. From
+// 1024px the active one carries an X that deletes the page (Undo brings it back); below that, renaming and deleting
+// stay desktop-only, said so rather than silently missing.
 export function PageSwitcher({ pages, activePageId, fieldCounts, onSelectPage, onAddPage, onDeletePage }: PageSwitcherProps) {
   const rowRef = useRef<HTMLDivElement>(null);
 
@@ -34,45 +41,60 @@ export function PageSwitcher({ pages, activePageId, fieldCounts, onSelectPage, o
   return (
     <div className="mx-auto flex w-full max-w-190 shrink-0 flex-col gap-1 py-2 max-lg:border-b max-lg:border-(--border-default) max-lg:bg-(--surface-card) max-lg:px-3">
       <div className="flex items-center gap-3">
-        <div ref={rowRef} role="group" aria-label="Pages" className="relative flex min-w-0 flex-1 items-center gap-2 overflow-x-auto scrollbar-none">
-          {pages.map((page, index) => {
-            const active = page.id === activePageId;
-            const title = page.title?.trim();
-            return (
-              <div
-                key={page.id}
-                data-active={active}
-                className={`flex shrink-0 items-center rounded-md border bg-body-sm font-semibold ${
-                  active
-                    ? 'border-(--action-primary-hover) bg-(--accent-soft) text-(--accent-soft-text)'
-                    : 'border-(--border-default) bg-(--surface-card) text-(--text-secondary) hover:border-(--border-strong)'
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => onSelectPage(page.id)}
-                  aria-pressed={active}
-                  title={`${title || 'Untitled form'} — ${fieldsText(fieldCounts[page.id] ?? 0)}`}
-                  className="flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-md px-3 focus-visible:outline-2 focus-visible:outline-(--border-focus) lg:min-h-9"
+        <div role="group" aria-label="Pages" className="flex min-w-0 flex-1 items-center gap-2">
+          {/* Only the steps scroll: "Add page" stays in view however many pages there are. */}
+          <div ref={rowRef} className="relative flex min-w-0 items-center overflow-x-auto scrollbar-none">
+            {pages.map((page, index) => {
+              const active = page.id === activePageId;
+              const title = page.title?.trim();
+              const first = index === 0;
+              const last = index === pages.length - 1;
+              const clipPath = stepShape(first, last);
+              const ends = `${first ? 'rounded-l-md' : ''} ${last ? 'rounded-r-md' : ''}`;
+              return (
+                <div
+                  key={page.id}
+                  data-active={active}
+                  // The element's own colour is the outline; the layer inside, 1px in (2px on keyboard focus), is the fill.
+                  style={{ clipPath }}
+                  className={`group relative isolate flex shrink-0 items-center bg-body-sm font-semibold has-focus-visible:bg-(--border-focus) ${ends} ${first ? '' : '-ml-2'} ${
+                    active ? 'bg-(--action-primary-hover) text-(--accent-soft-text)' : 'bg-(--border-default) text-(--text-secondary) hover:bg-(--border-strong)'
+                  }`}
                 >
-                  <span className="max-w-40 truncate">{title || `Page ${index + 1}`}</span>
-                </button>
-                {active && pages.length > 1 && (
-                  <span className="hidden pr-1 lg:inline-flex">
-                    <button
-                      type="button"
-                      onClick={() => onDeletePage(page.id)}
-                      aria-label={`Delete page ${index + 1}`}
-                      title="Delete page"
-                      className="flex size-7 items-center justify-center rounded text-(--accent-soft-text) hover:bg-(--error-surface) hover:text-(--error-text) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
-                    >
-                      <X size={14} aria-hidden="true" />
-                    </button>
-                  </span>
-                )}
-              </div>
-            );
-          })}
+                  <span
+                    aria-hidden="true"
+                    style={{ clipPath }}
+                    className={`absolute inset-px -z-10 group-has-focus-visible:inset-0.5 ${ends} ${active ? 'bg-(--accent-soft)' : 'bg-(--surface-card)'}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => onSelectPage(page.id)}
+                    aria-pressed={active}
+                    title={`${title || 'Untitled form'} — ${fieldsText(fieldCounts[page.id] ?? 0)}`}
+                    className={`flex min-h-11 min-w-11 items-center justify-center gap-1 outline-none lg:min-h-9 ${first ? 'pl-3' : 'pl-5'} ${
+                      active && pages.length > 1 ? (last ? 'pr-3 lg:pr-1' : 'pr-5 lg:pr-1') : last ? 'pr-3' : 'pr-5'
+                    }`}
+                  >
+                    {title && <span aria-hidden="true">{index + 1}.</span>}
+                    <span className="max-w-40 truncate">{title || `Page ${index + 1}`}</span>
+                  </button>
+                  {active && pages.length > 1 && (
+                    <span className={`hidden lg:inline-flex ${last ? 'pr-1' : 'pr-3'}`}>
+                      <button
+                        type="button"
+                        onClick={() => onDeletePage(page.id)}
+                        aria-label={`Delete page ${index + 1}`}
+                        title="Delete page"
+                        className="flex size-7 items-center justify-center rounded text-(--accent-soft-text) hover:text-(--error-text) focus-visible:outline-2 focus-visible:outline-(--border-focus)"
+                      >
+                        <X size={14} aria-hidden="true" />
+                      </button>
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
           <button
             type="button"
             onClick={onAddPage}

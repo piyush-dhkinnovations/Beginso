@@ -17,6 +17,8 @@ const filtersArb = fc.record(
     from: fc.option(fc.string(), { nil: undefined }),
     to: fc.option(fc.string(), { nil: undefined }),
     q: fc.option(fc.string(), { nil: undefined }),
+    chart: fc.option(fc.string(), { nil: undefined }),
+    includeTest: fc.option(fc.boolean(), { nil: undefined }),
   },
   { requiredKeys: [] }
 );
@@ -38,6 +40,12 @@ describe('exportPayloadFromFilters — equals the list request', () => {
   it('example: search + stage + unread reach the backend', () => {
     const filters: ResponseFilters = { stageId: 's1', unread: true, q: 'alice' };
     expect(exportPayloadFromFilters('pdf', 'form-1', filters)).toEqual({ format: 'pdf', formId: 'form-1', stageId: 's1', unread: true, search: 'alice' });
+  });
+
+  it('a chart drill-through and test responses are exported as the list shows them', () => {
+    const filters: ResponseFilters = { chart: '{"definition":{}}', includeTest: true };
+    expect(exportPayloadFromFilters('csv', 'form-1', filters)).toEqual({ format: 'csv', formId: 'form-1', ...filters });
+    expect(exportPayloadFromTarget('csv', { formId: 'form-1', filter: filters })).toEqual({ format: 'csv', formId: 'form-1', ...filters });
   });
 
   it('a personal stage is a fixed category, which the backend filters as `status`', () => {

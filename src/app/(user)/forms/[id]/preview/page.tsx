@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { formsService } from '@/services/forms';
+import { useAuth } from '@/hooks/useAuth';
+import { useUnsavedPreview } from '@/lib/builderBackup';
 import type { FormBranding } from '@/types/form';
 import { lookBranding, normaliseLayout } from '@/lib/layoutPresets';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
@@ -13,11 +15,13 @@ import { FormThemeScope } from '@/components/public-form/FormThemeScope';
 import { SuccessScreen } from '@/components/public-form/SuccessScreen';
 import { PreviewBar } from '@/components/preview/PreviewBar';
 import { PreviewFrame } from '@/components/preview/PreviewFrame';
+import { FormPageWash } from '@/components/preview/FormPageWash';
 import type { PreviewDevice } from '@/components/preview/DeviceToggle';
 import type { PublicFormSchema } from '@/types/publicForm';
 
 // Modes of one route:
-//  • default — admin chrome: PreviewBar + a same-origin iframe of this route in `?embed=1` mode.
+//  • default — the form's page over the whole screen, a same-origin iframe of this route (`?embed=1&bg=0`) as the form, and
+//    the small floating PreviewBar. Choosing a device narrows only the iframe.
 //  • `?bare=1` — the Branding studio's "Full screen": the form alone, filling the tab, with no bar and no frame around it, so it reads as the
 //    published form does (it is still a preview: nothing is submitted for real).
 //  • `?embed=1` — just the respondent view, in the form's own light theme (FormThemeScope). Also
@@ -30,6 +34,8 @@ export default function FormPreviewPage() {
   const embed = searchParams.get('embed') === '1';
   const bare = searchParams.get('bare') === '1';
   const formOnly = embed || bare;
+  // The default mode's frame: see-through, because the page around it draws the form's background.
+  const seeThrough = embed && searchParams.get('bg') === '0';
   const layoutOverride = searchParams.get('layout') ?? undefined;
   const [device, setDevice] = useState<PreviewDevice>('desktop');
   // The Branding tab streams its unsaved branding + layout in over postMessage (same-origin only), so its preview is the
@@ -46,9 +52,10 @@ export default function FormPreviewPage() {
     return () => window.removeEventListener('message', onMessage);
   }, [embed]);
 
-  // Inside the studio's frame the form still scrolls, but without a scrollbar drawn over the preview.
+  // Inside a frame the form still scrolls, but without a scrollbar drawn over the preview; the full-screen preview keeps no
+  // empty strip for one either.
   useEffect(() => {
-    if (!embed) return;
+    if (bare) return;
     const root = document.documentElement;
     root.style.scrollbarWidth = 'none';
     root.style.scrollbarGutter = 'auto';
@@ -56,32 +63,24 @@ export default function FormPreviewPage() {
       root.style.scrollbarWidth = '';
       root.style.scrollbarGutter = '';
     };
-  }, [embed]);
+  }, [bare]);
 
-  const { data: form, isLoading, error } = useQuery({
+  const { data: savedForm, isLoading: loadingForm, error } = useQuery({
     queryKey: ['form', id],
     queryFn: () => formsService.getFormById(id),
     retry: false,
-    enabled: formOnly,
   });
+  // Changes not saved yet are read from this browser and drawn over the saved form: the preview never saves anything.
+  const { user, isLoading: loadingUser } = useAuth();
+  const { form, unsaved } = useUnsavedPreview(id, user?.id, savedForm);
+  const isLoading = loadingForm || loadingUser;
 
-  // Tells the Branding studio when the form is on screen, so it can hold its own placeholder until then.
-  const drawn = embed && !isLoading && !!form;
+  // Tells the page holding this frame (the full-screen preview, the Branding studio) when there is something to see - the
+  // form, or why it cannot be shown - so it can keep its own placeholder until then.
+  const drawn = embed && !isLoading && (!!form || !!error);
   useEffect(() => {
     if (drawn) window.parent.postMessage({ type: 'beginso-preview-drawn' }, window.location.origin);
   }, [drawn]);
-
-  if (!formOnly) {
-    return (
-      // Fixed full-viewport overlay, independent of the user shell's <main> box model.
-      <div className="fixed inset-0 z-50 overflow-hidden flex flex-col bg-(--bg-subtle)">
-        <PreviewBar device={device} onDeviceChange={setDevice} backHref={`/forms/${id}/edit`} />
-        <div className="flex-1 min-h-0 flex justify-center p-2 md:p-4">
-          <PreviewFrame formId={id} device={device} title="Form preview" />
-        </div>
-      </div>
-    );
-  }
 
   const schema: PublicFormSchema | undefined = form && {
     title: live?.title ?? form.title,
@@ -99,10 +98,29 @@ export default function FormPreviewPage() {
     },
   };
 
+  if (!formOnly) {
+    return (
+      // Fixed over everything, so the screen never scrolls.
+      <FormThemeScope>
+        <FormPageWash branding={schema?.branding} layout={schema?.settings.layout} className="fixed inset-0 z-50">
+          <PreviewFrame formId={id} device={device} title="Form preview" />
+          <PreviewBar device={device} onDeviceChange={setDevice} backHref={`/forms/${id}/edit`} unsaved={unsaved} />
+        </FormPageWash>
+      </FormThemeScope>
+    );
+  }
+
   return (
     <FormThemeScope>
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-(--bg-subtle)">
-        {isLoading ? (
+      <div
+        className={
+          seeThrough
+            ? // The form's own background is switched off here: the page around this frame draws it.
+              'fixed inset-0 z-50 overflow-y-auto bg-transparent scrollbar-none [&::-webkit-scrollbar]:hidden [&_.bg-form-type]:bg-transparent! [&_.bg-form-type]:bg-none! [&_.bg-form-type>div[aria-hidden]]:hidden'
+            : 'fixed inset-0 z-50 overflow-y-auto bg-(--bg-subtle)'
+        }
+      >
+        {isLoading && seeThrough ? null : isLoading ? ( // the page around the frame is already showing the placeholder
           <div className="mx-auto flex max-w-160 flex-col gap-4 px-4 py-12" aria-busy="true">
             <Skeleton variant="title" width="60%" height={32} />
             {Array.from({ length: 4 }).map((_, i) => (
@@ -122,6 +140,8 @@ export default function FormPreviewPage() {
             slug={form.slug ?? form._id}
             previewMode
             onTestSubmit={async (answers) => {
+              // A test response is checked against the saved form, which does not have these changes yet.
+              if (unsaved) throw new Error('Save your changes first, then send a test response.');
               try {
                 await formsService.sendTestSubmission(id, answers);
               } catch (err) {

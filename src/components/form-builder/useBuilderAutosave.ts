@@ -4,13 +4,21 @@ import { isAxiosError } from 'axios';
 import { formsService } from '@/services/forms';
 import { cleanTheme } from '@/lib/formTheme';
 import { useBuilderStore } from '@/store/builderStore';
+import { readAutoSave, useAutoSave } from '@/lib/builderPrefs';
+import { clearBackup } from '@/lib/builderBackup';
 import { useToast } from '@/components/ui/Toast';
 import { flushPendingEdits, hasPendingEdits } from '@/lib/pendingEdits';
 import type { FormBranding, FormField, FormPage, FormSettings } from '@/types/form';
 
-// Single source of truth for the PATCH payload shape — the debounced autosave, the
-// unmount flush, the publish-click flush, and the leave-guard flush all call this
-// instead of each hand-rolling the same field-name mapping.
+// Saving the builder. By default a person saves with the Save button (or Ctrl/Cmd+S); with Auto save on (a setting) the
+// form also saves by itself once they stop editing. Publishing and "Save and leave" save first. Until a save succeeds the
+// changes are kept in this browser (useBuilderBackup).
+
+/** With Auto save on: how long after the last change the form is saved. */
+export const AUTOSAVE_DELAY_MS = 5000;
+
+// Single source of truth for the PATCH payload shape — every kind of save calls this instead of hand-rolling the same
+// field-name mapping.
 // Saves go through ONE queue. Each save waits for the previous one and then reads the version the previous one
 // returned, so a user's own consecutive saves never conflict with each other (a second save sent while the first
 // is in flight would carry the old version and be refused as stale).
@@ -82,6 +90,7 @@ export function saveFormSnapshot(
       }
       if (own && typeof saved?.contentVersion === 'number') useBuilderStore.getState().setContentVersion(saved.contentVersion);
       if (own && typeof saved?.hasUnpublishedChanges === 'boolean') useBuilderStore.getState().setHasUnpublishedChanges(saved.hasUnpublishedChanges);
+      if (own && saved && saved.draftSavedAt !== undefined) useBuilderStore.getState().setDraftSavedAt(saved.draftSavedAt);
       if (themeWasDropped(snap.branding, saved)) throw new ThemeNotSavedError();
       return saved;
     } catch (err) {
@@ -102,6 +111,7 @@ export function syncBuilderVersion(formId: string) {
       const store = useBuilderStore.getState();
       if (store.formId === formId && typeof form?.contentVersion === 'number' && !store.stale) store.setContentVersion(form.contentVersion);
       if (store.formId === formId && typeof form?.hasUnpublishedChanges === 'boolean') store.setHasUnpublishedChanges(form.hasUnpublishedChanges);
+      if (store.formId === formId && form && !store.stale) store.setDraftSavedAt(form.draftSavedAt ?? null);
     } catch {
       // keep the version we have; a real conflict will still be caught by the server
     }
@@ -114,12 +124,54 @@ export function syncBuilderVersion(formId: string) {
 let reloadRequested = false;
 export function reloadBuilder() {
   reloadRequested = true;
+  // Reloading means giving the unsaved changes up (the person was told how many): do not bring them back afterwards.
+  const { formId, discardUnsaved } = useBuilderStore.getState();
+  discardUnsaved();
+  if (formId) clearBackup(formId);
   window.location.reload();
+}
+
+/** A choice question with no options: the server would refuse the whole form. */
+export class IncompleteChoiceError extends Error {
+  constructor() {
+    super('Add at least one option to every choice question');
+    this.name = 'IncompleteChoiceError';
+  }
+}
+
+const hasEmptyChoice = (fields: FormField[]) =>
+  fields.some((f) => !f.deleted && (f.type === 'dropdown' || f.type === 'multiple_choice' || f.type === 'checkbox') && !f.options?.length);
+
+/** After a successful save: the form is clean only if nothing was changed while the save was on its way. */
+function settleSaved(sent: ReturnType<typeof freshState>) {
+  const now = useBuilderStore.getState();
+  const unchanged =
+    now.formId === sent.formId && now.fields === sent.fields && now.formTitle === sent.formTitle && now.pages === sent.pages && now.branding === sent.branding && now.settings === sent.settings;
+  if (!unchanged || !sent.formId) return;
+  now.markSaved();
+  clearBackup(sent.formId);
+}
+
+/** Save now whatever is unsaved, typed-but-uncommitted text included. Does nothing when the form is clean. */
+export async function saveBuilderNow(opts: { keepalive?: boolean } = {}): Promise<void> {
+  flushPendingEdits();
+  const sent = freshState();
+  if (!sent.dirty || !sent.formId || sent.formId === 'undefined') return;
+  if (hasEmptyChoice(sent.fields)) throw new IncompleteChoiceError();
+  await saveFormSnapshot(sent.formId, sent, opts);
+  settleSaved(sent);
+}
+
+// Set when the person opens the preview, which shows the unsaved changes: leaving for it is not "leaving the form".
+let previewNext = false;
+export function expectPreview() {
+  previewNext = true;
 }
 
 // The server's own reason for a rejected save ("Option value cannot be empty"), not just "Save failed".
 export function saveErrorDetail(err: unknown): string | null {
   if (err instanceof ThemeNotSavedError) return STYLE_NOT_SAVED;
+  if (err instanceof IncompleteChoiceError) return err.message;
   if (!isAxiosError(err)) return null;
   // No reply at all: offline, or Beginso cannot be reached. Say so instead of a bare "Save failed" (QA D3-002).
   if (!err.response) return "Can't reach Beginso. Check your connection";
@@ -142,11 +194,12 @@ const freshState = () => {
 
 export function useBuilderAutosave() {
   const { toast } = useToast();
-  // read inside the debounced save without making it a dependency (the toast function is a new one on every render)
+  // read inside callbacks without making it a dependency (the toast function is a new one on every render)
   const toastRef = useRef(toast);
   useEffect(() => {
     toastRef.current = toast;
   });
+  const autoSave = useAutoSave();
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [saveDetail, setSaveDetail] = useState<string | null>(null);
@@ -159,41 +212,61 @@ export function useBuilderAutosave() {
   const dirty = useBuilderStore((state) => state.dirty);
   const branding = useBuilderStore((state) => state.branding);
   const settings = useBuilderStore((state) => state.settings);
-  const markSaved = useBuilderStore((state) => state.markSaved);
   const stale = useBuilderStore((state) => state.stale);
 
-  // Autosave
+  const showSaved = useCallback(() => {
+    setSaveState('saved');
+    setSaveDetail(null);
+    setSavedAt(new Date());
+    // idleTimerRef keeps this handle so the unmount cleanup below can cancel it
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    idleTimerRef.current = setTimeout(() => {
+      idleTimerRef.current = null;
+      setSaveState('idle');
+    }, 2000);
+  }, []);
 
+  /** The Save button, Ctrl/Cmd+S, Retry and "Save and leave". Resolves to whether everything is now saved. */
+  const saveNow = useCallback(async (): Promise<boolean> => {
+    flushPendingEdits();
+    const before = useBuilderStore.getState();
+    if (before.stale) return false; // the header says to reload
+    if (!before.dirty) return true;
+    try {
+      setSaveState('saving');
+      await saveBuilderNow();
+      showSaved();
+      return true;
+    } catch (err) {
+      if (isFormStale(err)) {
+        setSaveState('idle');
+        return false;
+      }
+      const detail = saveErrorDetail(err);
+      setSaveDetail(detail);
+      setSaveState('error');
+      toastRef.current(err instanceof ThemeNotSavedError ? STYLE_NOT_SAVED : detail ? `Could not save: ${detail}` : 'Could not save. Please try again.', 'error');
+      return false;
+    }
+  }, [showSaved]);
+
+  // Auto save
   useEffect(() => {
-    if (!dirty || !formId || formId === 'undefined' || stale) return;
+    if (!autoSave || !dirty || !formId || formId === 'undefined' || stale) return;
 
     const timer = setTimeout(async () => {
-      const hasEmptyChoiceOptions = fields.some(
-        (f) =>
-          !f.deleted &&
-          (f.type === 'dropdown' || f.type === 'multiple_choice' || f.type === 'checkbox') &&
-          (!f.options || f.options.length === 0)
-      );
-      if (hasEmptyChoiceOptions) {
+      const sent = { dirty, fields, formTitle, pages, formId, branding, settings };
+      if (hasEmptyChoice(fields)) {
         setSaveState('error');
+        setSaveDetail(new IncompleteChoiceError().message);
         return;
       }
 
       try {
         setSaveState('saving');
-        await saveFormSnapshot(formId, { fields, formTitle, pages, branding, settings });
-        markSaved();
-        setSaveState('saved');
-        setSaveDetail(null);
-        setSavedAt(new Date());
-
-        // Reset save state back to idle after showing success indicator for 2 seconds
-        // idleTimerRef keeps this handle so the unmount cleanup below can cancel it
-        if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-        idleTimerRef.current = setTimeout(() => {
-          idleTimerRef.current = null;
-          setSaveState('idle');
-        }, 2000);
+        await saveFormSnapshot(formId, sent);
+        settleSaved(sent);
+        showSaved();
       } catch (err) {
         // A stale save is not a failure to retry: the header switches to the reload message instead.
         if (isFormStale(err)) {
@@ -209,12 +282,12 @@ export function useBuilderAutosave() {
         setSaveState('error');
         if (err instanceof ThemeNotSavedError) toastRef.current(STYLE_NOT_SAVED, 'error');
       }
-    }, 2000);
+    }, AUTOSAVE_DELAY_MS);
 
     return () => {
       clearTimeout(timer);
     };
-  }, [dirty, fields, formTitle, pages, formId, branding, settings, markSaved, stale]);
+  }, [autoSave, dirty, fields, formTitle, pages, formId, branding, settings, stale, showSaved]);
 
   // Cancel the idle reset timer on unmount to prevent setState on unmounted component
   useEffect(() => {
@@ -223,26 +296,24 @@ export function useBuilderAutosave() {
     };
   }, []);
 
-  // Use refs to avoid re-binding and firing effect on every stroke
-  const saveStateRef = useRef({ dirty, fields, formTitle, pages, formId, branding, settings });
+  // Ctrl/Cmd+S saves, also while typing, instead of the browser's "save page".
   useEffect(() => {
-    saveStateRef.current = { dirty, fields, formTitle, pages, formId, branding, settings };
-  }, [dirty, fields, formTitle, pages, formId, branding, settings]);
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey || e.shiftKey || e.key?.toLowerCase() !== 's') return;
+      e.preventDefault();
+      void saveNow();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [saveNow]);
 
-  // Flush unsaved edits when the tab is hidden or the page is going away (autosave is a 2s debounce, so
-  // the last edits would otherwise be lost). Same save path as autosave.
+  // With Auto save on, save when the tab is hidden or the page is going away (auto save waits a few seconds, so the last
+  // edits would otherwise not be sent).
   useEffect(() => {
     const flush = () => {
-      // First commit anything typed in the last moments (a debounced input has not reached the store yet), THEN read the store:
-      // the ref above only catches up after a render, which does not happen while the page is closing.
-      flushPendingEdits();
-      const c = freshState();
-      if (!c.dirty || !c.formId || c.formId === 'undefined') return;
-      const hasEmptyChoice = c.fields.some(
-        (f) => !f.deleted && (f.type === 'dropdown' || f.type === 'multiple_choice' || f.type === 'checkbox') && !f.options?.length
-      );
-      if (hasEmptyChoice) return;
-      saveFormSnapshot(c.formId, c, { keepalive: true }).then(() => useBuilderStore.getState().markSaved()).catch(() => {});
+      if (!readAutoSave()) return;
+      // keepalive: the browser finishes the request after the page is gone.
+      void saveBuilderNow({ keepalive: true }).catch(() => {});
     };
     const onVisibility = () => {
       if (document.visibilityState === 'hidden') flush();
@@ -255,8 +326,12 @@ export function useBuilderAutosave() {
     };
   }, []);
 
-  // Synchronous flush on unmount or tab close
+  // Closing or reloading with unsaved changes asks first. Leaving the builder inside the app: auto save sends them;
+  // otherwise they stay in this browser and the person is told (the leave dialog usually asks before it gets this far).
+  const alive = useRef(false);
   useEffect(() => {
+    alive.current = true;
+    previewNext = false;
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       // Typed-but-uncommitted text counts: the store is not dirty until the debounce fires.
       if ((useBuilderStore.getState().dirty || hasPendingEdits()) && !reloadRequested) {
@@ -270,33 +345,20 @@ export function useBuilderAutosave() {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
 
+      alive.current = false;
       flushPendingEdits();
-      const current = freshState();
-      if (current.dirty && current.formId && current.formId !== 'undefined') {
-        saveFormSnapshot(current.formId, current).catch(() => {});
+      if (!useBuilderStore.getState().dirty) return;
+      if (readAutoSave()) {
+        void saveBuilderNow().catch(() => {});
+        return;
       }
+      if (previewNext) return;
+      // Only if the builder is really gone (React's development mode removes and re-adds it at once).
+      queueMicrotask(() => {
+        if (!alive.current) toastRef.current('Your unsaved changes are kept in this browser. Open the form again to save them.', 'warning');
+      });
     };
   }, []);
 
-  // Retry after a failed autosave (SaveIndicator). A failed save leaves `dirty` true, so the leave
-  // guard already treats it as unsaved; this just re-runs the same save immediately.
-  const handleRetrySave = useCallback(async () => {
-    const current = saveStateRef.current;
-    if (!current.formId || current.formId === 'undefined') return;
-    try {
-      setSaveState('saving');
-      await saveFormSnapshot(current.formId, current);
-      markSaved();
-      setSaveState('saved');
-      setSaveDetail(null);
-      setSavedAt(new Date());
-    } catch (err) {
-      const detail = saveErrorDetail(err);
-      setSaveDetail(detail);
-      setSaveState('error');
-      toast(err instanceof ThemeNotSavedError ? STYLE_NOT_SAVED : detail ? `Could not save: ${detail}` : 'Could not save. Please try again.', 'error');
-    }
-  }, [markSaved, toast]);
-
-  return { saveState, setSaveState, savedAt, saveDetail, handleRetrySave };
+  return { saveState, setSaveState, savedAt, saveDetail, saveNow, autoSave };
 }

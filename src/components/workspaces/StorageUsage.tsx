@@ -44,7 +44,7 @@ export function StorageUsage() {
         {level === 'full' && (
           <>
             {' · '}
-            <Link href="/trash" className="underline">
+            <Link href="/trash" prefetch={false} className="underline">
               Free up space
             </Link>
           </>

@@ -117,8 +117,12 @@ describe('BuilderHeader', () => {
 });
 
 describe('BuilderHeader in the top bar', () => {
-  const desktop = (matches: boolean) =>
-    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({ matches, media: query, addEventListener: vi.fn(), removeEventListener: vi.fn() }) as unknown as MediaQueryList);
+  // Put the real one back by hand: `mockRestore` on the shared mock leaves it returning nothing for the tests after.
+  const desktop = (matches: boolean) => {
+    const original = window.matchMedia;
+    window.matchMedia = (query) => ({ matches, media: query, addEventListener: vi.fn(), removeEventListener: vi.fn() }) as unknown as MediaQueryList;
+    return { mockRestore: () => { window.matchMedia = original; } };
+  };
 
   it('from 1024px the name and actions move to the top bar and the save state to the tabs strip, once each', async () => {
     const media = desktop(true);
@@ -152,5 +156,17 @@ describe('BuilderHeader in the top bar', () => {
     expect(slot).toBeEmptyDOMElement();
     slot.remove();
     media.mockRestore();
+  });
+});
+
+describe('BuilderHeader unpublished changes', () => {
+  it('offers Publish changes and a Discard button that says what it does in words', async () => {
+    const onDiscardDraft = vi.fn();
+    render(<BuilderHeader {...props({ status: 'published', hasUnpublishedChanges: true, onPublishChanges: vi.fn(), onDiscardDraft })} />);
+    expect(screen.getByRole('button', { name: /Publish changes/ })).toBeInTheDocument();
+    const discard = screen.getByRole('button', { name: 'Discard unpublished changes' });
+    expect(discard).toHaveTextContent('Discard');
+    await userEvent.click(discard);
+    expect(onDiscardDraft).toHaveBeenCalledTimes(1);
   });
 });

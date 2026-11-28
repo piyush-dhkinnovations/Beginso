@@ -174,19 +174,16 @@ function PersonalShellFrame({ initialCollapsed, children }: PersonalShellProps) 
   );
 }
 
-/** The respondent view inside the Branding studio's frame and the layout preview: the form alone, in a document of its own. */
-export const isEmbeddedPreview = (pathname: string, embed: string | null) => embed === '1' && /^\/forms\/[^/]+\/preview\/?$/.test(pathname);
+/** A form's preview, in any of its modes (the full screen, the frame inside it, the Branding studio's frame and Full screen tab). */
+export const isFormPreview = (pathname: string) => /^\/forms\/[^/]+\/preview\/?$/.test(pathname);
 
 /**
- * The page frame (sidebar, top bar, the "Personal" label) is for people moving around the app. The Branding studio shows the form in an
- * <iframe> of this very app, and with the frame around it the frame showed first: the app's own dashboard for a few seconds, then the form.
- * An embedded preview is therefore drawn with no frame at all, and does not fetch the form, the workspaces or anything else the frame needs.
+ * The page frame (sidebar, top bar, the "Personal" label) is for people moving around the app. A preview is the form alone: with the
+ * frame around it the app's own dashboard showed first and the page behind could scroll. It is drawn with no frame at all, and does
+ * not fetch the form, the workspaces or anything else the frame needs.
  */
 export function PersonalShell(props: PersonalShellProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  // `?embed=1` is the studio's frame; `?bare=1` is its "Full screen" tab. Both are the form alone.
-  const formOnly = searchParams.get('embed') === '1' || searchParams.get('bare') === '1';
-  if (isEmbeddedPreview(pathname, formOnly ? '1' : null)) return <>{props.children}</>;
+  if (isFormPreview(pathname)) return <>{props.children}</>;
   return <PersonalShellFrame {...props} />;
 }

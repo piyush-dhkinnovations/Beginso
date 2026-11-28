@@ -9,9 +9,10 @@ import { SESSION_COOKIE_NAME } from '@/lib/sessionCookie';
  * segment, per `SPRINT6_HANDOFF.md`), so this proxy does the same rather than a dynamic route.
  */
 export async function GET(request: NextRequest) {
-  const jobId = request.nextUrl.searchParams.get('jobId');
-  if (!jobId) {
-    return NextResponse.json({ success: false, message: 'Missing jobId' }, { status: 400 });
+  const jobId = request.nextUrl.searchParams.get('jobId') ?? '';
+  // The backend names an export job with a Mongo ObjectId, like a report.
+  if (!/^[a-f\d]{24}$/i.test(jobId)) {
+    return NextResponse.json({ success: false, message: 'Invalid job ID' }, { status: 400 });
   }
 
   const apiBase = process.env.NEXT_PUBLIC_API_URL;

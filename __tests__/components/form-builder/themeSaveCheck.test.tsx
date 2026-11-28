@@ -11,6 +11,7 @@ vi.mock('@/components/ui/Toast', () => ({ useToast: () => ({ toast }) }));
 
 import { formsService } from '@/services/forms';
 import { useBuilderStore } from '@/store/builderStore';
+import { storeAutoSave } from '@/lib/builderPrefs';
 import { useBuilderAutosave, saveFormSnapshot, themeWasDropped, ThemeNotSavedError, saveErrorDetail, STYLE_NOT_SAVED } from '@/components/form-builder/useBuilderAutosave';
 import type { Form, FormTheme } from '@/types/form';
 
@@ -60,11 +61,12 @@ describe('saving', () => {
 
   it('autosave tells the person, keeps the local style, and leaves the form unsaved', async () => {
     vi.useFakeTimers();
+    storeAutoSave(true);
     updateForm.mockResolvedValue({ branding: {} });
     renderHook(() => useBuilderAutosave());
     act(() => useBuilderStore.getState().setBranding({ theme: THEME }));
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(2100);
+      await vi.advanceTimersByTimeAsync(5100);
     });
     expect(toast).toHaveBeenCalledWith(STYLE_NOT_SAVED, 'error');
     expect(useBuilderStore.getState().branding.theme).toEqual(THEME);

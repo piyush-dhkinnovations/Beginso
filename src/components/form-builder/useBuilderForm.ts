@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { formsService } from '@/services/forms';
 import { workspacesService } from '@/services/workspaces';
 import { workspaceKeys } from '@/lib/queryKeys';
@@ -13,6 +13,11 @@ export function useBuilderForm(id: string) {
   const router = useRouter();
   const { toast } = useToast();
   const initForm = useBuilderStore((state) => state.initForm);
+
+  // Saves do not rewrite the cached form, so it is dropped on leaving: the next visit loads what was saved, never an
+  // older copy (whose old version number would make the next save look like a conflict).
+  const queryClient = useQueryClient();
+  useEffect(() => () => queryClient.removeQueries({ queryKey: ['form', id] }), [id, queryClient]);
 
   const { data: form, isLoading, error } = useQuery({
     queryKey: ['form', id],
@@ -55,6 +60,9 @@ export function useBuilderForm(id: string) {
   useEffect(() => {
     if (form && initializedFormId.current !== form._id) {
       initializedFormId.current = form._id;
+      // Coming back (from the preview, say) with unsaved changes still in the editor: keep them, do not load over them.
+      const current = useBuilderStore.getState();
+      if (current.formId === form._id && current.dirty) return;
       initForm(form);
     }
   }, [form, initForm]);

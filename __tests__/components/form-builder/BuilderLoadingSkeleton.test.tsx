@@ -9,4 +9,11 @@ describe('BuilderLoadingSkeleton', () => {
     expect(el).toHaveAttribute('aria-busy', 'true');
     expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
+
+  it('is drawn from the shared shimmering piece, hidden from a screen reader', () => {
+    const { container } = render(<BuilderLoadingSkeleton />);
+    const pieces = container.querySelectorAll('.bg-skeleton');
+    expect(pieces.length).toBeGreaterThan(20);
+    pieces.forEach((piece) => expect(piece).toHaveAttribute('aria-hidden', 'true'));
+  });
 });

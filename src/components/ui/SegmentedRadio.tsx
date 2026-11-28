@@ -16,8 +16,8 @@ export interface SegmentedRadioProps {
   value: string;
   onChange: (id: string) => void;
   ariaLabel: string;
-  /** Hide the text labels (icons only) below this width: they stay in the accessible name. */
-  iconOnlyBelow?: "lg" | "md";
+  /** Hide the text labels (icons only) below this width, or at every width: they stay in the accessible name. */
+  iconOnlyBelow?: "lg" | "md" | "all";
   /** Fill the width of the parent, the options sharing it equally (e.g. inside a popover). */
   fullWidth?: boolean;
   className?: string;
@@ -57,7 +57,7 @@ export function SegmentedRadio({ options, value, onChange, ariaLabel, iconOnlyBe
     }
   };
 
-  const hideLabel = iconOnlyBelow === "lg" ? "max-lg:sr-only" : iconOnlyBelow === "md" ? "max-md:sr-only" : "";
+  const hideLabel = iconOnlyBelow === "all" ? "sr-only" : iconOnlyBelow === "lg" ? "max-lg:sr-only" : iconOnlyBelow === "md" ? "max-md:sr-only" : "";
 
   return (
     <div role="radiogroup" aria-label={ariaLabel} className={bx("bg-segmented", fullWidth && "w-full", className)}>

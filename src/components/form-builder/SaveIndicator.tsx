@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { CloudAlert, CloudCheck, CloudOff, LoaderCircle } from 'lucide-react';
+import { formatRelativeTime } from '@/lib/formatters';
 
 // Pure derived label — owns no save state. The three
 // states from the feature list are Unsaved changes → Saving… → All changes saved, plus a failure
@@ -19,16 +20,23 @@ export interface SaveIndicatorProps {
   onReload?: () => void;
   savedAt: Date | null;
   onRetry: () => void;
+  /** When unsaved changes that are back in the editor were kept in this browser; null or unset = nothing was restored. */
+  restoredAt?: number | null;
+  /** Drops those restored changes and shows the saved form again. */
+  onDiscardRestored?: () => void;
+  /** Auto save is on: every state says so, and unsaved changes are on their way with nothing for the person to do. */
+  autoSave?: boolean;
   /** One small line without the time, for the tabs strip. A long message is cut short there; Reload and Retry stay in reach. */
   compact?: boolean;
 }
 
 type Label = 'conflict' | 'error' | 'saving' | 'unsaved' | 'saved';
 
-export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedCount = 0, onReload, savedAt, onRetry, compact = false }: SaveIndicatorProps) {
+export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedCount = 0, onReload, savedAt, onRetry, restoredAt = null, onDiscardRestored, autoSave = false, compact = false }: SaveIndicatorProps) {
   // A conflict outranks everything: "All changes saved" would be a lie while this tab's edits cannot be saved.
   const label: Label = conflict ? 'conflict' : saving ? 'saving' : error ? 'error' : dirty ? 'unsaved' : 'saved';
 
+  const restored = label === 'unsaved' && restoredAt !== null;
   // Announce once the label has been stable for 500 ms — not on every keystroke,
   // which flips Unsaved ⇄ Saving… constantly while typing.
   const [announced, setAnnounced] = useState<Label>(label);
@@ -39,18 +47,20 @@ export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedC
 
   const text: Record<Label, string> = {
     conflict: 'This form changed in another tab or by someone else. Reload to continue.',
-    error: detail ? `Save failed: ${detail}` : 'Save failed',
-    saving: 'Saving…',
-    unsaved: 'Unsaved changes',
-    saved: 'All changes saved',
+    error: `${autoSave ? 'Auto save failed' : 'Save failed'}${detail ? `: ${detail}` : ''}`,
+    saving: autoSave ? 'Auto saving…' : 'Saving…',
+    unsaved: restored ? 'Your unsaved changes are back' : autoSave ? 'Auto save on · saving in a moment' : 'Unsaved changes',
+    saved: autoSave ? 'Auto save on · All changes saved' : 'All changes saved',
   };
+  const autoSaveHint = autoSave ? 'Change this in Account settings → Form builder.' : undefined;
 
   const actionClass = `shrink-0 px-2 font-semibold text-(--text-primary) underline underline-offset-2 ${compact ? 'min-h-6 bg-caption' : 'min-h-11 bg-body-sm'}`;
   const longClass = compact ? 'flex min-w-0 items-center gap-x-2 whitespace-nowrap' : 'inline-flex flex-wrap items-center gap-x-2';
 
+  // Outside the one-line strip it wraps, so Reload, Retry and Discard are never cut off by a narrow header.
   return (
-    <div className={`select-none flex items-center gap-2 ${compact ? 'min-w-0 bg-caption' : 'bg-body-sm'}`}>
-      <span aria-hidden="true" className={compact ? 'min-w-0' : undefined}>
+    <div className={`select-none flex items-center gap-2 ${compact ? 'min-w-0 bg-caption' : 'flex-wrap whitespace-normal bg-body-sm'}`}>
+      <span aria-hidden="true" className={compact ? 'flex min-w-0 items-center' : undefined}>
         {label === 'saving' ? (
           <span className="inline-flex items-center gap-1.5 text-(--text-muted) font-medium animate-pulse">
             <LoaderCircle size={14} className="animate-spin" /> {text.saving}
@@ -65,12 +75,15 @@ export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedC
             <CloudAlert size={14} /> <span className="max-w-64 truncate" title={text.error}>{text.error}</span>
           </span>
         ) : label === 'unsaved' ? (
-          <span className="inline-flex items-center gap-1.5 text-(--warning-text) font-medium">
-            <CloudOff size={14} /> {text.unsaved}
+          <span
+            className="inline-flex items-center gap-1.5 text-(--warning-text) font-medium"
+            title={restored ? `Kept in this browser ${formatRelativeTime(new Date(restoredAt as number).toISOString())}, not saved yet.` : autoSaveHint}
+          >
+            <CloudOff size={14} className="shrink-0" /> {text.unsaved}
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1.5 text-(--success-text) font-medium">
-            <CloudCheck size={14} /> {text.saved}
+          <span className="inline-flex items-center gap-1.5 text-(--success-text) font-medium" title={autoSaveHint}>
+            <CloudCheck size={14} className="shrink-0" /> {text.saved}
             {savedAt && !compact && (
               <span className="ml-1 font-normal text-(--text-muted)">
                 · {savedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -82,6 +95,11 @@ export function SaveIndicator({ dirty, saving, error, detail, conflict, unsavedC
       {label === 'conflict' && onReload && (
         <button type="button" onClick={onReload} className={actionClass}>
           Reload
+        </button>
+      )}
+      {restored && onDiscardRestored && (
+        <button type="button" onClick={onDiscardRestored} className={actionClass}>
+          Discard
         </button>
       )}
       {label === 'error' && (

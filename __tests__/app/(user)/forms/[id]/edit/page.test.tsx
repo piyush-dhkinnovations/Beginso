@@ -24,8 +24,9 @@ vi.mock('@/components/form-builder/useBuilderForm', () => ({
 }));
 vi.mock('@/components/form-builder/useBuilderAutosave', () => ({
   reloadBuilder: vi.fn(),
-  useBuilderAutosave: () => ({ saveState: 'idle', setSaveState: vi.fn(), savedAt: null, saveDetail: null, handleRetrySave: vi.fn() }),
+  useBuilderAutosave: () => ({ saveState: 'idle', setSaveState: vi.fn(), savedAt: null, saveDetail: null, saveNow: vi.fn(), autoSave: false }),
 }));
+vi.mock('@/hooks/useAuth', () => ({ useAuth: () => ({ user: undefined }) }));
 vi.mock('@/components/form-builder/useBuilderUndoShortcuts', () => ({ useBuilderUndoShortcuts: () => {} }));
 let publishSetActiveTab: ((tab: BuilderTarget) => void) | null = null;
 vi.mock('@/components/form-builder/useBuilderPublishFlow', () => ({

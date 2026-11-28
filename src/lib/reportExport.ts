@@ -3,14 +3,14 @@ import type { CreateReportPayload, ReportFormat } from '@/types/report';
 import { PERSONAL_DEFAULT_STAGES } from '@/types/stage';
 
 // The backend reads these at the top level of the request and silently drops keys it does not know, and it calls the
-// search text `search`. `chart` and `includeTest` have no export equivalent in the backend yet.
+// search text `search`. A chart drill-through (`chart`) and `includeTest` are sent too, so the file holds the list's rows.
 function reportFields(filters: ResponseFilters): Omit<CreateReportPayload, 'format' | 'formId' | 'ids'> {
-  const { stageId, tagIds, assigneeId, unread, duplicate, from, to, q, field, value, granularity } = filters;
+  const { stageId, tagIds, assigneeId, unread, duplicate, from, to, q, field, value, granularity, chart, includeTest } = filters;
   // Personal stages are the fixed categories, not stored stages: the backend filters them as `status`.
   const personal = PERSONAL_DEFAULT_STAGES.find((s) => s.id === stageId);
   return {
     ...(personal ? { status: personal.category } : { stageId }),
-    tagIds, assigneeId, unread, duplicate, from, to, search: q, field, value, granularity,
+    tagIds, assigneeId, unread, duplicate, from, to, search: q, field, value, granularity, chart, includeTest,
   };
 }
 

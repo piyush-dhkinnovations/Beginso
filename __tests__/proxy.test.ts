@@ -3,8 +3,10 @@
  */
 
 import { beforeEach, describe, it, expect, vi } from 'vitest';
-import { proxy } from '../src/proxy';
+import { config, proxy } from '../src/proxy';
 import { NextRequest } from 'next/server';
+import { unstable_doesMiddlewareMatch } from 'next/dist/experimental/testing/server/middleware-testing-utils';
+import { PROTECTED_PATHS, AUTH_PATHS } from '@/lib/authRoutes';
 import { SESSION_COOKIE_NAME } from '@/lib/sessionCookie';
 
 /** Helper: build a NextRequest with the same HttpOnly session cookie the BFF writes. */
@@ -196,5 +198,103 @@ describe('Next.js Edge Proxy (auth guard)', () => {
       const res = await proxy(makeRequest('/inbox/resp-1', true));
       expect(res.headers.get('location')).toBeNull();
     });
+  });
+});
+
+// A page Next loads ahead of a click (a router prefetch) only needs the session cookie; a real visit gets the backend check.
+// config.matcher decides which requests reach proxy(), so these go through the matcher first, exactly as Next does.
+describe('Router prefetch rule', () => {
+  const PREFETCH = { 'next-router-prefetch': '1', rsc: '1' };
+  const me = vi.fn();
+
+  beforeEach(() => {
+    vi.stubEnv('NEXT_PUBLIC_API_URL', 'https://backend.example');
+    me.mockReset().mockResolvedValue(new Response(null, { status: 200 }));
+    vi.stubGlobal('fetch', me);
+  });
+
+  /** What happens to one request: null when it never reaches proxy() (it passes straight through). */
+  async function visit(path: string, { prefetch = false, cookie }: { prefetch?: boolean; cookie?: string } = {}) {
+    const headers: Record<string, string> = prefetch ? { ...PREFETCH } : {};
+    const cookies: Record<string, string> = cookie === undefined ? {} : { [SESSION_COOKIE_NAME]: cookie };
+    const url = `http://localhost:3000${path}`;
+    if (!unstable_doesMiddlewareMatch({ config, url, headers, cookies })) return null;
+    const req = new NextRequest(url);
+    if (cookie !== undefined) req.cookies.set(SESSION_COOKIE_NAME, cookie);
+    return proxy(req);
+  }
+
+  const outsideWorkspace = PROTECTED_PATHS.filter((root) => root !== '/w').flatMap((root) => [root, `${root}/abc123`]);
+  const workspace = ['/w/acme', '/w/acme/forms', '/w/acme/inbox/r1'];
+
+  it.each([...outsideWorkspace, ...workspace])('%s: a prefetch without the cookie goes to /login, asking the backend nothing', async (path) => {
+    const res = await visit(path, { prefetch: true });
+    expect(res?.status).toBe(307);
+    expect(res?.headers.get('location')).toContain('/login');
+    expect(me).not.toHaveBeenCalled();
+  });
+
+  it('an empty cookie counts as no cookie', async () => {
+    const res = await visit('/dashboard', { prefetch: true, cookie: '' });
+    expect(res?.headers.get('location')).toContain('/login');
+    expect(me).not.toHaveBeenCalled();
+  });
+
+  it.each(outsideWorkspace)('%s: a prefetch with the cookie passes without a backend call', async (path) => {
+    expect(await visit(path, { prefetch: true, cookie: 'jwt' })).toBeNull();
+    expect(me).not.toHaveBeenCalled();
+  });
+
+  it.each(workspace)('%s: a workspace prefetch keeps the full check, since its response carries the workspace name', async (path) => {
+    const res = await visit(path, { prefetch: true, cookie: 'jwt' });
+    expect(res?.headers.get('location')).toBeNull();
+    expect(me).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([...outsideWorkspace, ...workspace])('%s: a real visit asks the backend', async (path) => {
+    const res = await visit(path, { cookie: 'jwt' });
+    expect(res?.headers.get('location')).toBeNull();
+    expect(me).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['/dashboard', '/forms/abc123/edit', '/settings', '/w/acme'])(
+    '%s: a real visit with an invalid or expired session goes to /login, clears the cookie, and /login then stays put',
+    async (path) => {
+      me.mockResolvedValue(new Response(null, { status: 401 }));
+      const res = await visit(path, { cookie: 'expired' });
+      expect(res?.status).toBe(307);
+      expect(new URL(res!.headers.get('location')!).searchParams.get('next')).toBe(path);
+      expect(res?.headers.get('set-cookie')).toContain(`${SESSION_COOKIE_NAME}=;`);
+
+      // No loop: the login page lets the same bad cookie in (and a cleared one too).
+      expect((await visit('/login', { cookie: 'expired' }))?.headers.get('location')).toBeNull();
+      expect((await visit('/login'))?.headers.get('location')).toBeNull();
+    }
+  );
+
+  it('a visitor with no cookie is sent to /login on a real visit', async () => {
+    const res = await visit('/dashboard');
+    expect(res?.headers.get('location')).toContain('/login');
+    expect(me).not.toHaveBeenCalled();
+  });
+
+  it('sign-in pages keep the full check, prefetched or not', async () => {
+    for (const path of AUTH_PATHS) {
+      const res = await visit(path, { prefetch: true, cookie: 'jwt' });
+      expect(res?.headers.get('location')).toContain('/dashboard');
+    }
+    expect(me).toHaveBeenCalledTimes(AUTH_PATHS.length);
+  });
+
+  it('an old /inbox/<id>?scope= link is still redirected when prefetched', async () => {
+    const res = await visit('/inbox/r1?scope=acme', { prefetch: true, cookie: 'jwt' });
+    expect(res?.status).toBe(308);
+    expect(res?.headers.get('location')).toContain('/w/acme/inbox/r1');
+  });
+
+  it('does not run on public pages', async () => {
+    for (const path of ['/', '/terms', '/f/some-form', '/forms-help']) {
+      expect(await visit(path, { cookie: 'jwt' })).toBeNull();
+    }
   });
 });

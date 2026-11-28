@@ -201,7 +201,7 @@ export interface FormTheme {
   colors?: { text?: string; heading?: string; card?: string; field?: string; fieldBorder?: string; buttonText?: string };
   fields?: { style?: FieldStyle; radius?: number; label?: LabelPosition; choice?: ChoiceStyle };
   card?: { radius?: number; shadow?: number };
-  layout?: { maxWidth?: number; fieldGap?: number; /** Split Feature: which side the picture panel is on (start = the left in left-to-right languages). */ panelSide?: 'start' | 'end'; /** Split Feature: how much of the card the picture panel takes, 20 to 80 (percent). */ panelSplit?: number };
+  layout?: { maxWidth?: number; fieldGap?: number; /** Split Feature: which side the picture panel is on (start = the left in left-to-right languages). */ panelSide?: 'start' | 'end'; /** Split Feature: how much of the card the picture panel takes, 20 to 80 (percent). */ panelSplit?: number; /** Split Feature: where the title sits on the picture panel (the bottom when unset). */ panelText?: 'top' | 'bottom' };
   /** The typeface of the headings (the form title and page titles); absent = the same as the form's font. */
   fonts?: { heading?: FormFont };
   /** Who took the Unsplash photo used as the cover and/or the page background (one credit each), shown on the form. Only an unsplash.com profile address. */
@@ -324,6 +324,7 @@ export interface Form {
   /** Once published, an edit is staged on a draft instead of changing the live form (see fields/pages/branding/settings above, which ARE the
    * draft's content while one exists). True while that staged draft has not been published or discarded. */
   hasUnpublishedChanges?: boolean;
+  draftSavedAt?: string | null; // when that staged draft was last written
   publishedAt?: string;      // ISO 8601
   /** The caller's own role on this form (per-form grant, workspace role, or owner). Set by GET /api/forms/:id. */
   myRole?: import('./workspace').Role;
