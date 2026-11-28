@@ -3,7 +3,7 @@
 import { CharCount } from '@/components/ui/CharCount';
 import { useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, CheckCircle2, ExternalLink, UploadCloud, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, ExternalLink, UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { FormHeader } from '@/components/forms/FormHeader';
@@ -142,15 +142,9 @@ export function BuilderHeader({
             Publish changes
           </Button>
           {onDiscardDraft && (
-            <button
-              type="button"
-              onClick={onDiscardDraft}
-              aria-label="Discard unpublished changes"
-              title="Discard these changes"
-              className="flex size-8 items-center justify-center rounded-md text-(--text-muted) hover:bg-(--surface-hover) hover:text-(--text-primary)"
-            >
-              <X size={15} aria-hidden="true" />
-            </button>
+            <Button size={size} variant="ghost" onClick={onDiscardDraft} aria-label="Discard unpublished changes" title="Go back to the published form">
+              Discard
+            </Button>
           )}
         </div>
       ) : status === 'published' ? (
