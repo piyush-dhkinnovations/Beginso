@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { getVisiblePageFields } from '@/lib/logicEngine';
 import type { FormField, FormPage } from '@/types/form';
@@ -9,11 +10,11 @@ import { InlineFieldEdit } from './InlineFieldEdit';
 import { addressLines, currencyOf, formatCurrency, formatDateTime, formatTime12, isDrawnSignature } from '@/lib/fieldDisplay';
 
 // Wireframe 36 "Review Before Submit". Every answer from every page on one
-// flat screen: one card per page (card header = page title), each row the field label (small) over
-// the answer (strong) with an Edit button. Edit swaps just that row for the real input in place
-// (InlineFieldEdit). Pure presentation over the shell's form state — it holds no values and runs no
-// validation of its own: the shell supplies `renderField` and `validateField`, so "Save answer"
-// re-runs the form's existing per-page rules.
+// flat screen: one card per page (card header = page title), each row the field label (small) and
+// the answer (strong), side by side where the card is wide enough, with a small Edit button. Edit swaps
+// just that row for the real input in place (InlineFieldEdit). Pure presentation over the shell's form
+// state — it holds no values and runs no validation of its own: the shell supplies `renderField` and
+// `validateField`, so "Save answer" re-runs the form's existing per-page rules.
 export interface ReviewStepProps {
   formTitle: string;
   pages: FormPage[];
@@ -133,9 +134,9 @@ export function ReviewStep({
         <section
           key={group.page.id}
           aria-label={group.title}
-          className="rounded-lg border border-(--border-default) bg-(--surface-card)"
+          className="@container rounded-lg border border-(--border-default) bg-(--surface-card)"
         >
-          <h3 className="px-4 py-3 border-b border-(--border-default) bg-body font-semibold text-(--text-primary)">
+          <h3 className="px-4 py-2 border-b border-(--border-default) bg-body font-semibold text-(--text-primary)">
             {group.title}
           </h3>
           <dl className="divide-y divide-(--border-subtle)">
@@ -151,10 +152,10 @@ export function ReviewStep({
                   </InlineFieldEdit>
                 </div>
               ) : (
-                <div key={field.fieldId} className="flex items-start justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
-                    <dt className="bg-caption text-(--text-muted)">{field.label}</dt>
-                    <dd className="bg-body font-semibold text-(--text-primary) break-words">
+                <div key={field.fieldId} className="flex items-center justify-between gap-3 py-1.5 pl-4 pr-2">
+                  <div className="min-w-0 flex-1 @md:grid @md:grid-cols-3 @md:items-baseline @md:gap-3">
+                    <dt className="bg-caption text-(--text-muted) break-words">{field.label}</dt>
+                    <dd className="bg-body-sm font-semibold text-(--text-primary) break-words @md:col-span-2">
                       {displayValue(field, values[field.fieldId], fileNames[field.fieldId])}
                     </dd>
                   </div>
@@ -163,13 +164,14 @@ export function ReviewStep({
                       editButtons.current[field.fieldId] = el;
                     }}
                     type="button"
-                    variant="secondary"
+                    variant="ghost"
                     size="small"
-                    className="shrink-0 min-h-11"
+                    className="shrink-0 pointer-coarse:min-h-11"
                     onClick={() => startEdit(field)}
                     disabled={editingId !== null || isSubmitting}
                     aria-label={`Edit ${field.label}`}
                   >
+                    <Pencil size={14} aria-hidden="true" />
                     Edit
                   </Button>
                 </div>
