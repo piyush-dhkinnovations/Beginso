@@ -1,5 +1,5 @@
 /* eslint-disable @next/next/no-img-element -- arbitrary backend-served upload URLs, same tradeoff as FormBanner (no remotePatterns configured). */
-import { brandCoverObjectPosition, brandPanelStyle } from '@/lib/formTheme';
+import { brandPanelStyle } from '@/lib/formTheme';
 import { BrandMark, hasBrandMark, logoPx } from '../BrandMark';
 import { BannerExtras } from '../BannerExtras';
 import { Backdrop, widthClass, type LayoutFrameProps } from './shared';
@@ -26,7 +26,7 @@ export function SplitFeatureLayout({ branding, title, stepNames, currentPage, pr
           >
             {coverImageUrl && !hideCover && (
               <>
-                <img src={uploadSrc(coverImageUrl)} alt="" className="absolute inset-0 w-full h-full object-cover" style={{ objectPosition: brandCoverObjectPosition(branding) }} />
+                <img src={uploadSrc(coverImageUrl)} alt="" className="absolute inset-0 w-full h-full object-cover" />
                 {/* darkest behind the words, so white text stays readable on any picture */}
                 <div className={`absolute inset-0 ${wordsOnTop ? 'bg-linear-to-b' : 'bg-linear-to-t'} from-black/70 via-black/30 to-black/20`} />
               </>

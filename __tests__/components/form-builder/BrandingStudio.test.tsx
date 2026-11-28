@@ -331,8 +331,8 @@ describe('only what the chosen layout draws is offered', () => {
     expect(screen.queryByLabelText('Card')).not.toBeInTheDocument();
   });
 
-  it('Split Feature lets the owner place the title, and choose the part of its picture once there is one', async () => {
-    draw({ layout: 'split_feature' });
+  it('Split Feature lets the owner place the title on its picture, and says which picture suits it', async () => {
+    draw({ layout: 'split_feature', branding: { coverImageUrl: 'https://x.test/c.jpg' } });
     await sections('Header');
     expect(screen.getByRole('group', { name: 'Title position' })).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'Show the' })).not.toBeInTheDocument();

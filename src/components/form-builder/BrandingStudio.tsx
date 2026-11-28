@@ -552,9 +552,6 @@ export function BrandingStudio({ formId, branding, layout, fieldCount, isPublic,
             {layout === 'split_feature' && (
               <>
                 <p className="bg-caption text-(--text-muted)">A tall picture works best for this layout. Keep faces and important details away from the title.</p>
-                {branding.coverImageUrl && (
-                  <ChipChoice<CoverPosition> label="Show the" value={branding.coverPosition ?? 'center'} options={[{ value: 'top', label: 'Top' }, { value: 'center', label: 'Middle' }, { value: 'bottom', label: 'Bottom' }]} onChange={(coverPosition) => set({ coverPosition })} />
-                )}
                 <ChipChoice<'top' | 'bottom'> label="Title position" value={theme?.layout?.panelText ?? 'bottom'} columns={2} options={[{ value: 'top', label: 'Top' }, { value: 'bottom', label: 'Bottom' }]} onChange={(next) => setTheme('layout', { panelText: next === 'top' ? 'top' : undefined })} />
               </>
             )}

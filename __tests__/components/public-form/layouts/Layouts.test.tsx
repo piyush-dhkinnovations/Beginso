@@ -255,14 +255,6 @@ describe('SplitFeatureLayout picture and words', () => {
     expect(container.querySelector('.form-card')).not.toHaveClass('overflow-hidden');
   });
 
-  it.each([
-    [undefined, 'center'],
-    ['top', 'top'],
-    ['bottom', 'bottom'],
-  ] as const)('shows the part of the picture the owner chose (%s)', (coverPosition, expected) => {
-    expect(draw({ ...picture, coverPosition }).querySelector('img')).toHaveStyle({ objectPosition: expected });
-  });
-
   it('puts the words at the bottom unless the owner chose the top, with the shade behind them', () => {
     const below = draw(picture);
     expect((below.querySelector('img') as HTMLElement).parentElement).toHaveClass('justify-between');
