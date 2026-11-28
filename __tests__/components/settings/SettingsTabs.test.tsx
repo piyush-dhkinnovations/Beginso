@@ -7,11 +7,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { SettingsTabs } from '@/components/settings/SettingsTabs';
 
 describe('SettingsTabs', () => {
-  it('renders all 10 tabs, grouped', () => {
+  it('renders every tab, grouped', () => {
     render(<SettingsTabs activeTab="profile" onChange={vi.fn()} />);
     // Grouped vertical nav: General, Response handling, then Account.
     expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual([
-      'Profile', 'Appearance', 'Workspace', 'Branding', 'Notifications', 'Tags', 'Stages', 'Scoring', 'Security', 'Sessions & Devices',
+      'Profile', 'Appearance', 'Form builder', 'Workspace', 'Branding', 'Notifications', 'Tags', 'Stages', 'Scoring', 'Security', 'Sessions & Devices',
     ]);
     ['Profile', 'Appearance', 'Workspace', 'Branding', 'Notifications', 'Security', 'Sessions & Devices', 'Tags', 'Stages', 'Scoring'].forEach((label) => {
       expect(screen.getByText(label)).toBeInTheDocument();

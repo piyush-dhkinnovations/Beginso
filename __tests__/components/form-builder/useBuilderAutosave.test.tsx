@@ -7,6 +7,7 @@ vi.mock('@/components/ui/Toast', () => ({ useToast: () => ({ toast }) }));
 
 import { formsService } from '@/services/forms';
 import { useBuilderStore } from '@/store/builderStore';
+import { storeAutoSave } from '@/lib/builderPrefs';
 import { useBuilderAutosave, saveFormSnapshot } from '@/components/form-builder/useBuilderAutosave';
 import { setPendingEdit, hasPendingEdits, resetPendingEdits } from '@/lib/pendingEdits';
 import type { Form } from '@/types/form';
@@ -37,6 +38,7 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.spyOn(console, 'error').mockImplementation(() => {});
   updateForm.mockResolvedValue({});
+  storeAutoSave(true); // this file covers the Auto save setting; manualSave.test.tsx covers the default
   store().initForm(baseForm());
 });
 afterEach(() => {
@@ -62,13 +64,13 @@ describe('useBuilderAutosave - debounce', () => {
     expect(result.current.savedAt).toBeNull();
   });
 
-  it('saves 2s after an edit, marks the store clean and returns to idle after 2s more', async () => {
+  it('saves 5s after an edit, marks the store clean and returns to idle after 2s more', async () => {
     const { result } = renderHook(() => useBuilderAutosave());
     act(() => store().setFormTitle('Renamed'));
     expect(store().dirty).toBe(true);
 
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1999);
+      await vi.advanceTimersByTimeAsync(4999);
     });
     expect(updateForm).not.toHaveBeenCalled();
 
@@ -92,15 +94,15 @@ describe('useBuilderAutosave - debounce', () => {
     renderHook(() => useBuilderAutosave());
     act(() => store().setFormTitle('A'));
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1500);
+      await vi.advanceTimersByTimeAsync(4000);
     });
     act(() => store().setFormTitle('AB'));
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(1500);
+      await vi.advanceTimersByTimeAsync(4000);
     });
     expect(updateForm).not.toHaveBeenCalled();
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(600);
+      await vi.advanceTimersByTimeAsync(1100);
     });
     expect(updateForm).toHaveBeenCalledTimes(1);
     expect(updateForm.mock.calls[0][1]).toMatchObject({ title: 'AB' });
@@ -111,7 +113,7 @@ describe('useBuilderAutosave - debounce', () => {
     const { result } = renderHook(() => useBuilderAutosave());
     act(() => store().setFormTitle('X'));
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(2100);
+      await vi.advanceTimersByTimeAsync(5100);
     });
     expect(result.current.saveState).toBe('error');
     expect(store().dirty).toBe(true);
@@ -124,7 +126,7 @@ describe('useBuilderAutosave - debounce', () => {
     const { result } = renderHook(() => useBuilderAutosave());
     act(() => store().setFormTitle('X'));
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(2100);
+      await vi.advanceTimersByTimeAsync(5100);
     });
     expect(updateForm).not.toHaveBeenCalled();
     expect(result.current.saveState).toBe('error');
@@ -134,30 +136,30 @@ describe('useBuilderAutosave - debounce', () => {
     useBuilderStore.setState({ formId: null, dirty: true });
     renderHook(() => useBuilderAutosave());
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(3000);
+      await vi.advanceTimersByTimeAsync(6000);
     });
     expect(updateForm).not.toHaveBeenCalled();
   });
 });
 
 describe('useBuilderAutosave - retry and flush', () => {
-  it('handleRetrySave saves immediately and reports success', async () => {
+  it('saveNow (the Retry button) saves immediately and reports success', async () => {
     const { result } = renderHook(() => useBuilderAutosave());
     act(() => store().setFormTitle('Retry'));
     await act(async () => {
-      await result.current.handleRetrySave();
+      await result.current.saveNow();
     });
     expect(updateForm).toHaveBeenCalledTimes(1);
     expect(result.current.saveState).toBe('saved');
     expect(store().dirty).toBe(false);
   });
 
-  it('handleRetrySave toasts when it fails again', async () => {
+  it('saveNow toasts when it fails again', async () => {
     updateForm.mockRejectedValue(new Error('x'));
     const { result } = renderHook(() => useBuilderAutosave());
     act(() => store().setFormTitle('Retry'));
     await act(async () => {
-      await result.current.handleRetrySave();
+      await result.current.saveNow();
     });
     expect(result.current.saveState).toBe('error');
     expect(toast).toHaveBeenCalledWith('Could not save. Please try again.', 'error');

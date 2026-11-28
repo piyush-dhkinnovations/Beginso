@@ -7,8 +7,15 @@
 const STORAGE_AREAS = /\/api\/(forms|responses|trash|upload|workspaces|templates)(\/|\?|$)/;
 const WRITES = new Set(['post', 'put', 'patch', 'delete']);
 
+// Saving a form's content (the builder's Save and auto save) does not move the numbers in any way a person would see,
+// so it does not cost an extra request each time. Uploads, deletes and everything else above still refresh at once.
+const FORM_CONTENT_SAVE = /\/api\/forms\/[^/?]+(\?|$)/;
+
 export function affectsStorage(method: string | undefined, url: string | undefined): boolean {
-  return !!method && !!url && WRITES.has(method.toLowerCase()) && STORAGE_AREAS.test(url);
+  if (!method || !url) return false;
+  const m = method.toLowerCase();
+  if ((m === 'patch' || m === 'put') && FORM_CONTENT_SAVE.test(url)) return false;
+  return WRITES.has(m) && STORAGE_AREAS.test(url);
 }
 
 type Listener = () => void;
