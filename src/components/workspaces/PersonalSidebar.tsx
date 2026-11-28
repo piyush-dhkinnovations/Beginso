@@ -89,25 +89,26 @@ export function PersonalSidebar({ collapsed = false }: PersonalSidebarProps) {
         {
           label: 'Library',
           items: [
-            { label: 'Shared with me', href: '/shared', icon: Share2, count: sharedUnread > 0 ? sharedUnread : undefined, countLabel: 'new', active: pathname.startsWith('/shared'), onClick: guard('/shared') },
-            { label: 'Templates', href: '/templates', icon: LayoutTemplate, active: pathname.startsWith('/templates'), onClick: guard('/templates') },
+            { prefetch: false as const, label: 'Shared with me', href: '/shared', icon: Share2, count: sharedUnread > 0 ? sharedUnread : undefined, countLabel: 'new', active: pathname.startsWith('/shared'), onClick: guard('/shared') },
+            { prefetch: false as const, label: 'Templates', href: '/templates', icon: LayoutTemplate, active: pathname.startsWith('/templates'), onClick: guard('/templates') },
             // Wireframe 31: always in the personal nav (an empty state explains it).
-            { label: 'My Submissions', href: '/my-submissions', icon: ClipboardList, active: pathname.startsWith('/my-submissions'), onClick: guard('/my-submissions') },
+            { prefetch: false as const, label: 'My Submissions', href: '/my-submissions', icon: ClipboardList, active: pathname.startsWith('/my-submissions'), onClick: guard('/my-submissions') },
             ...(hasForms || pathname.startsWith('/exports')
-              ? [{ label: 'Exports', href: '/exports', icon: Download, active: pathname.startsWith('/exports'), onClick: guard('/exports') }]
+              ? [{ prefetch: false as const, label: 'Exports', href: '/exports', icon: Download, active: pathname.startsWith('/exports'), onClick: guard('/exports') }]
               : []),
           ],
         },
         {
           label: 'Account',
           items: [
-            { label: 'Trash', href: '/trash', icon: Trash2, active: pathname.startsWith('/trash'), onClick: guard('/trash') },
-            { label: 'Settings', href: '/settings', icon: Settings, active: pathname.startsWith('/settings'), onClick: guard('/settings') },
+            { prefetch: false as const, label: 'Trash', href: '/trash', icon: Trash2, active: pathname.startsWith('/trash'), onClick: guard('/trash') },
+            { prefetch: false as const, label: 'Settings', href: '/settings', icon: Settings, active: pathname.startsWith('/settings'), onClick: guard('/settings') },
           ],
         },
         {
           items: [
             {
+              prefetch: false as const,
               label: 'Create workspace',
               href: '/workspaces/new',
               icon: Plus,

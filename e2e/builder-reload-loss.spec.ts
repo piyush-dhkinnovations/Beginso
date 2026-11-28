@@ -6,8 +6,9 @@ import { test, expect, type BrowserContext, type Page } from '@playwright/test';
  * close and real offline mode. The backend is a fake that lives in the test: it records every PATCH it receives, so "was the
  * edit saved" is read from what the server was actually sent, never from the page's own claim.
  *
- * Each case types, acts within a fraction of a second (well inside the 600 ms input debounce and the 2 s autosave), then
- * checks the server's copy of the label.
+ * Each case types, acts within a fraction of a second (well inside the 600 ms input debounce and the 5 s auto save), then
+ * checks the server's copy of the label. These cases run with the Auto save setting on; builder-manual-save.spec.ts covers
+ * the default, where nothing is sent until Save.
  */
 const FORM_ID = 'e2e-form-1';
 const ORIGINAL = 'Original question';
@@ -59,6 +60,10 @@ async function openBuilder(page: Page, formId = FORM_ID) {
 }
 
 test.describe('builder: typed text survives leaving the page', () => {
+  test.beforeEach(async ({ context }) => {
+    await context.addInitScript(() => window.localStorage.setItem('beginso.builderAutoSave', 'on'));
+  });
+
   // Real HTTP to the mock backend, like the tab-close case: a request sent while the page reloads does not reliably reach Playwright's own
   // route hooks (it did on Playwright 1.61, not on 1.64), but it always reaches a real server.
   test('typing then a reload 250 ms later keeps the edit, or asks first', async ({ page, context }) => {
@@ -119,7 +124,7 @@ test.describe('builder: typed text survives leaving the page', () => {
       prompted = true;
       await d.dismiss(); // "Stay"
     });
-    await page.waitForTimeout(3000); // autosave tries and fails
+    await page.waitForTimeout(6000); // auto save tries and fails
     await expect(page.getByText(/Save failed|Unsaved changes/).first()).toBeVisible();
     await expect(page.getByText('All changes saved')).toHaveCount(0);
     // Reload from inside the page: Playwright's own reload() waits for a navigation that "Stay" cancels, and would just hang.

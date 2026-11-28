@@ -23,6 +23,9 @@ import { useBuilderUndoShortcuts } from '@/components/form-builder/useBuilderUnd
 import { useBuilderPublishFlow } from '@/components/form-builder/useBuilderPublishFlow';
 import { useBuilderLeaveGuard } from '@/components/form-builder/useBuilderLeaveGuard';
 import { useBuilderDnd } from '@/components/form-builder/useBuilderDnd';
+import { useBuilderBackup } from '@/components/form-builder/useBuilderBackup';
+import { UnsavedChangesNotice } from '@/components/form-builder/UnsavedChangesNotice';
+import { useAuth } from '@/hooks/useAuth';
 import { canSeeShare, canPublishForm } from '@/lib/roles';
 import type { FieldType } from '@/types/form';
 
@@ -90,14 +93,16 @@ export default function BuilderPageShell() {
   // the builder where the server drew the skeleton made React throw the page away and start again.
   const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
 
-  const { isLoading, formWorkspaceSlug, formsListHref, overviewHref, formRole } = useBuilderForm(id);
+  const { form, isLoading, formWorkspaceSlug, formsListHref, overviewHref, formRole } = useBuilderForm(id);
+  const { user } = useAuth();
+  const backup = useBuilderBackup(id, user?.id, form?._id === id);
 
   // Landing on ?tab=share (or switching to it from another tab): the section exists once the builder has loaded.
   useEffect(() => {
     if (wantsShare && !isLoading) shareRef.current?.scrollIntoView({ block: 'start' });
   }, [wantsShare, isLoading]);
 
-  const { saveState, setSaveState, savedAt, saveDetail, handleRetrySave } = useBuilderAutosave();
+  const { saveState, setSaveState, savedAt, saveDetail, saveNow, autoSave } = useBuilderAutosave();
   const stale = useBuilderStore((state) => state.stale);
   const unsavedCount = useBuilderStore(unsavedEdits);
   useBuilderUndoShortcuts();
@@ -106,7 +111,9 @@ export default function BuilderPageShell() {
     useBuilderPublishFlow({ id, setActiveTab, setSaveState });
   const hasUnpublishedChanges = useBuilderStore((state) => state.hasUnpublishedChanges);
 
-  const { showLeaveModal, handleBack, handleLeaveWithoutSaving, handleStay } = useBuilderLeaveGuard({ overviewHref, formsListHref });
+  const { showLeaveModal, savingToLeave, handleBack, handleLeaveWithoutSaving, handleSaveAndLeave, handleStay } = useBuilderLeaveGuard({ formId: id, overviewHref, formsListHref, onSave: saveNow });
+  // A published form with changes that are not live yet, saved or not: "Publish changes" saves first, then publishes.
+  const changesToPublish = hasUnpublishedChanges || (status === 'published' && dirty);
 
   const dnd = useBuilderDnd();
 
@@ -142,17 +149,18 @@ export default function BuilderPageShell() {
             unsavedCount={unsavedCount}
             onReload={reloadBuilder}
             savedAt={savedAt}
-            onRetrySave={handleRetrySave}
+            onRetrySave={() => void saveNow()}
             status={status}
-            hasUnpublishedChanges={hasUnpublishedChanges}
+            hasUnpublishedChanges={changesToPublish}
             onPublishChanges={handlePublishChanges}
-            onDiscardDraft={handleDiscardDraft}
+            // There is something on the server to discard only once an edit has been saved.
+            onDiscardDraft={hasUnpublishedChanges ? handleDiscardDraft : undefined}
             onTitleChange={setFormTitle}
             onPreview={handlePreview}
             canPublish={canPublishForm(formRole)}
             onPublish={handlePublishClick}
             onBack={handleBack}
-            // Same logo as Branding → Logo: it goes through the builder store, so it autosaves like every other edit.
+            // Same logo as Branding → Logo: it goes through the builder store, so it is saved like every other edit.
             icon={<FormLogoButton mark={branding} title={formTitle} canEdit={formRole !== 'viewer' && formRole !== 'reviewer'} onSave={(mark) => setBranding({ logoUrl: mark.logoUrl ?? undefined, iconName: mark.iconName ?? undefined})} />}
           />
 
@@ -167,6 +175,18 @@ export default function BuilderPageShell() {
                 onRedo={redo}
                 showShare={canSeeShare(formRole)}
                 fieldCount={liveFieldCount}
+                onSave={() => void saveNow()}
+                unsaved={dirty}
+                saving={saveState === 'saving'}
+                saveBlocked={stale}
+              />
+
+              <UnsavedChangesNotice
+                restoredAt={dirty ? backup.restoredAt : null}
+                conflict={backup.conflict}
+                onSave={() => void saveNow()}
+                onDiscard={() => backup.discard(form)}
+                onRestore={backup.restoreMine}
               />
 
               <div className={`flex items-start gap-6 ${activeTab === 'build' ? 'lg:gap-0' : ''}`}>
@@ -238,6 +258,9 @@ export default function BuilderPageShell() {
       <LeaveBuilderModal
         isOpen={showLeaveModal}
         formTitle={formTitle}
+        autoSave={autoSave}
+        saving={savingToLeave}
+        onSave={() => void handleSaveAndLeave()}
         onDiscard={handleLeaveWithoutSaving}
         onStay={handleStay}
       />

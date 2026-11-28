@@ -1,10 +1,10 @@
 'use client';
 
 import { useRef, type ReactNode } from 'react';
-import { Bell, Building2, Database, Gauge, GitBranch, MonitorSmartphone, Palette, Paintbrush, ShieldCheck, Tag, User } from 'lucide-react';
+import { Bell, Building2, Database, Gauge, GitBranch, MonitorSmartphone, Palette, Paintbrush, PencilRuler, ShieldCheck, Tag, User } from 'lucide-react';
 import { bx } from '@/lib/utils';
 
-export type SettingsTab = 'profile' | 'appearance' | 'workspace' | 'branding' | 'notifications' | 'security' | 'sessions' | 'tags' | 'stages' | 'scoring' | 'data';
+export type SettingsTab = 'profile' | 'appearance' | 'builder' | 'workspace' | 'branding' | 'notifications' | 'security' | 'sessions' | 'tags' | 'stages' | 'scoring' | 'data';
 
 interface SettingsTabsProps {
   activeTab: SettingsTab;
@@ -21,6 +21,8 @@ const TABS: { id: SettingsTab; label: string }[] = [
   { id: 'profile', label: 'Profile' },
   // Account → Appearance: colour theme (saved on the account), colour styles and text size (per device).
   { id: 'appearance', label: 'Appearance' },
+  // Account → Form builder: how the builder saves (per device).
+  { id: 'builder', label: 'Form builder' },
   { id: 'workspace', label: 'Workspace' },
   { id: 'branding', label: 'Branding' },
   { id: 'notifications', label: 'Notifications' },
@@ -44,6 +46,7 @@ const TABS: { id: SettingsTab; label: string }[] = [
 const ICONS: Record<SettingsTab, ReactNode> = {
   profile: <User size={16} />,
   appearance: <Palette size={16} />,
+  builder: <PencilRuler size={16} />,
   workspace: <Building2 size={16} />,
   branding: <Paintbrush size={16} />,
   notifications: <Bell size={16} />,
@@ -56,7 +59,7 @@ const ICONS: Record<SettingsTab, ReactNode> = {
 };
 
 const GROUPS: { title: string; ids: SettingsTab[] }[] = [
-  { title: 'General', ids: ['profile', 'appearance', 'workspace', 'branding', 'notifications'] },
+  { title: 'General', ids: ['profile', 'appearance', 'builder', 'workspace', 'branding', 'notifications'] },
   { title: 'Response handling', ids: ['tags', 'stages', 'scoring'] },
   { title: 'Account', ids: ['security', 'sessions', 'data'] },
 ];

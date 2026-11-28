@@ -11,6 +11,8 @@ export interface PreviewBarProps {
   device: PreviewDevice;
   onDeviceChange: (device: PreviewDevice) => void;
   backHref: string;
+  /** The form on screen includes changes that are not saved yet. */
+  unsaved?: boolean;
 }
 
 const DEVICES = [
@@ -28,7 +30,7 @@ export function DeviceSwitch({ device, onChange }: { device: PreviewDevice; onCh
   return <SegmentedRadio ariaLabel="Preview device" value={device} options={DEVICES} onChange={(id) => onChange(id as PreviewDevice)} iconOnlyBelow="all" className="rounded-full! [&>button]:rounded-full!" />;
 }
 
-export function PreviewBar({ device, onDeviceChange, backHref }: PreviewBarProps) {
+export function PreviewBar({ device, onDeviceChange, backHref, unsaved = false }: PreviewBarProps) {
   return (
     <div className={FLOATING_BAR}>
       <Link
@@ -43,9 +45,13 @@ export function PreviewBar({ device, onDeviceChange, backHref }: PreviewBarProps
       <div className="hidden md:flex">
         <DeviceSwitch device={device} onChange={onDeviceChange} />
       </div>
-      <span title="Respondents see this exactly as shown. Nothing is submitted." className="flex items-center gap-1.5 px-2 bg-body-sm font-semibold">
+      <span
+        title={unsaved ? 'Only you can see these changes. Save them in the editor to keep them. Nothing is submitted.' : 'Respondents see this exactly as shown. Nothing is submitted.'}
+        className="flex items-center gap-1.5 px-2 bg-body-sm font-semibold"
+      >
         <Eye size={14} aria-hidden="true" />
         Preview
+        {unsaved && <span className="rounded-full bg-(--warning-surface) px-2 py-0.5 bg-caption font-semibold whitespace-nowrap text-(--warning-text)">Unsaved changes</span>}
       </span>
     </div>
   );

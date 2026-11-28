@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { formsService } from '@/services/forms';
+import { useAuth } from '@/hooks/useAuth';
+import { useUnsavedPreview } from '@/lib/builderBackup';
 import type { FormBranding } from '@/types/form';
 import { lookBranding, normaliseLayout } from '@/lib/layoutPresets';
 import { getFriendlyErrorMessage } from '@/lib/errorHelpers';
@@ -63,11 +65,15 @@ export default function FormPreviewPage() {
     };
   }, [bare]);
 
-  const { data: form, isLoading, error } = useQuery({
+  const { data: savedForm, isLoading: loadingForm, error } = useQuery({
     queryKey: ['form', id],
     queryFn: () => formsService.getFormById(id),
     retry: false,
   });
+  // Changes not saved yet are read from this browser and drawn over the saved form: the preview never saves anything.
+  const { user, isLoading: loadingUser } = useAuth();
+  const { form, unsaved } = useUnsavedPreview(id, user?.id, savedForm);
+  const isLoading = loadingForm || loadingUser;
 
   // Tells the page holding this frame (the full-screen preview, the Branding studio) when there is something to see - the
   // form, or why it cannot be shown - so it can keep its own placeholder until then.
@@ -98,7 +104,7 @@ export default function FormPreviewPage() {
       <FormThemeScope>
         <FormPageWash branding={schema?.branding} layout={schema?.settings.layout} className="fixed inset-0 z-50">
           <PreviewFrame formId={id} device={device} title="Form preview" />
-          <PreviewBar device={device} onDeviceChange={setDevice} backHref={`/forms/${id}/edit`} />
+          <PreviewBar device={device} onDeviceChange={setDevice} backHref={`/forms/${id}/edit`} unsaved={unsaved} />
         </FormPageWash>
       </FormThemeScope>
     );
@@ -134,6 +140,8 @@ export default function FormPreviewPage() {
             slug={form.slug ?? form._id}
             previewMode
             onTestSubmit={async (answers) => {
+              // A test response is checked against the saved form, which does not have these changes yet.
+              if (unsaved) throw new Error('Save your changes first, then send a test response.');
               try {
                 await formsService.sendTestSubmission(id, answers);
               } catch (err) {

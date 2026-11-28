@@ -77,7 +77,7 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role, 
         : href === base
           ? pathname === base
           : pathname.startsWith(href);
-  const toItem = (item: { label: string; href: string; icon: React.ComponentType<{ className?: string }>; count?: number; countLabel?: string }) => ({
+  const toItem = (item: { label: string; href: string; icon: React.ComponentType<{ className?: string }>; count?: number; countLabel?: string; prefetch?: false }) => ({
     ...item,
     active: isActive(item.href),
     onClick: guard(item.href),
@@ -93,20 +93,20 @@ export function WorkspaceSidebar({ slug, currentLabel, collapsed = false, role, 
 
   // Settings is visible to every role (members reach their own notification setting there; the page only lists
   // the sections the role can use) and still fails closed while the role is unknown.
-  const settings = role ? [toItem({ label: 'Settings', href: `${base}/settings`, icon: Settings })] : [];
+  const settings = role ? [toItem({ prefetch: false, label: 'Settings', href: `${base}/settings`, icon: Settings })] : [];
   const adminOnly = [
-    ...(canManageMembers(role) ? [toItem({ label: 'Team', href: `${base}/team`, icon: Users })] : []),
-    ...(canViewAudit(role) ? [toItem({ label: 'Audit log', href: `${base}/audit`, icon: Shield })] : []),
+    ...(canManageMembers(role) ? [toItem({ prefetch: false, label: 'Team', href: `${base}/team`, icon: Users })] : []),
+    ...(canViewAudit(role) ? [toItem({ prefetch: false, label: 'Audit log', href: `${base}/audit`, icon: Shield })] : []),
     // Trash is an Owner/Admin surface (the server returns 403 to everyone else).
-    ...(canRestoreResponse(role) ? [toItem({ label: 'Trash', href: `${base}/trash`, icon: Trash2 })] : []),
+    ...(canRestoreResponse(role) ? [toItem({ prefetch: false, label: 'Trash', href: `${base}/trash`, icon: Trash2 })] : []),
   ];
 
   const workspaceItems = [
     // Reviewers cannot create forms, so they get no Templates item.
-    ...(canViewTemplates(role) ? [toItem({ label: 'Templates', href: `${base}/templates`, icon: LayoutTemplate })] : []),
-    ...(canViewExports(role) ? [toItem({ label: 'Exports', href: `${base}/exports`, icon: Download })] : []),
+    ...(canViewTemplates(role) ? [toItem({ prefetch: false, label: 'Templates', href: `${base}/templates`, icon: LayoutTemplate })] : []),
+    ...(canViewExports(role) ? [toItem({ prefetch: false, label: 'Exports', href: `${base}/exports`, icon: Download })] : []),
     // Seeing what happened in a workspace you belong to is not manager-only.
-    toItem({ label: 'Activity', href: `${base}/activity`, icon: History }),
+    toItem({ prefetch: false, label: 'Activity', href: `${base}/activity`, icon: History }),
     // With no admin items, Settings belongs with the rest of the workspace group instead of a lone "Admin" label.
     ...(adminOnly.length === 0 ? settings : []),
   ];

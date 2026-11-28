@@ -324,6 +324,7 @@ export interface Form {
   /** Once published, an edit is staged on a draft instead of changing the live form (see fields/pages/branding/settings above, which ARE the
    * draft's content while one exists). True while that staged draft has not been published or discarded. */
   hasUnpublishedChanges?: boolean;
+  draftSavedAt?: string | null; // when that staged draft was last written
   publishedAt?: string;      // ISO 8601
   /** The caller's own role on this form (per-form grant, workspace role, or owner). Set by GET /api/forms/:id. */
   myRole?: import('./workspace').Role;

@@ -148,6 +148,7 @@ export function UserProfileDropdown({ variant = 'avatar', collapsed = false }: U
           <div className="py-1">
             <Link
               href="/settings"
+              prefetch={false}
               onClick={() => setIsOpen(false)}
               className="flex min-h-11 items-center gap-2 px-4 py-2 bg-body-sm text-(--text-primary) hover:bg-(--surface-hover) transition-colors"
             >
@@ -159,6 +160,7 @@ export function UserProfileDropdown({ variant = 'avatar', collapsed = false }: U
           <div className="py-1">
             <Link
               href="/terms"
+              prefetch={false}
               target="_blank"
               rel="noopener"
               onClick={() => setIsOpen(false)}
@@ -169,6 +171,7 @@ export function UserProfileDropdown({ variant = 'avatar', collapsed = false }: U
             </Link>
             <Link
               href="/privacy"
+              prefetch={false}
               target="_blank"
               rel="noopener"
               onClick={() => setIsOpen(false)}

@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const mockRequestWorkspaceExport = vi.fn();
@@ -108,6 +108,56 @@ describe('DangerZoneSection', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
 
     expect(await screen.findByRole('button', { name: 'Export your data' })).toBeInTheDocument();
+  });
+
+  describe('when the status check itself fails', () => {
+    const job = (status: string) => ({ id: 'job-1', status, expiresAt: '' });
+
+    it('says so with a Try again action, instead of "Preparing" forever', async () => {
+      mockRequestWorkspaceExport.mockResolvedValue(job('queued'));
+      mockGetExportStatus.mockRejectedValue(new Error('Network Error'));
+      renderSection();
+
+      await startExport();
+
+      expect(await screen.findByText("Couldn't check on your export.")).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
+      expect(screen.queryByText('Preparing your export…')).not.toBeInTheDocument();
+    });
+
+    it('"Try again" checks the same export again, without starting a new one', async () => {
+      mockRequestWorkspaceExport.mockResolvedValue(job('queued'));
+      mockGetExportStatus.mockRejectedValueOnce(new Error('Network Error')).mockResolvedValue(job('completed'));
+      renderSection();
+
+      await startExport();
+      fireEvent.click(await screen.findByRole('button', { name: 'Try again' }));
+
+      expect(await screen.findByRole('button', { name: /Download export/ })).toBeInTheDocument();
+      expect(mockGetExportStatus).toHaveBeenLastCalledWith('job-1');
+      expect(mockRequestWorkspaceExport).toHaveBeenCalledTimes(1);
+    });
+
+    it('also after earlier checks worked: stops polling, shows the error, and resumes after Try again', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      mockRequestWorkspaceExport.mockResolvedValue(job('queued'));
+      mockGetExportStatus.mockResolvedValueOnce(job('processing')).mockRejectedValueOnce(new Error('502')).mockResolvedValue(job('processing'));
+      renderSection();
+      const wait = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
+
+      await startExport();
+      await screen.findByText('Preparing your export…');
+      await wait(5_100);
+      expect(await screen.findByText("Couldn't check on your export.")).toBeInTheDocument();
+      await wait(60_000);
+      expect(mockGetExportStatus).toHaveBeenCalledTimes(2);
+
+      fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
+      expect(await screen.findByText('Preparing your export…')).toBeInTheDocument();
+      await wait(5_100);
+      expect(mockGetExportStatus).toHaveBeenCalledTimes(4);
+      vi.useRealTimers();
+    });
   });
 
   it('opens DeleteWorkspaceModal when Delete account is clicked', () => {

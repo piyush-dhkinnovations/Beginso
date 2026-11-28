@@ -3,6 +3,7 @@ import { publicFormSlug } from '@/lib/publicFormUrl';
 import { wouldCreateCycle } from '@/lib/logicGraph';
 import { convertField, rememberSettings, ruleCanMatch, typeDefaults, type FieldMemory } from '@/lib/fieldConversion';
 import { create } from 'zustand';
+import type { BuilderDraft } from '@/lib/builderBackup';
 import type {
   Form,
   FormField,
@@ -45,6 +46,8 @@ export interface BuilderState {
   stale: boolean;
   /** Once published, an edit is staged on a draft instead of the live form; true while that draft exists (the orange "Publish changes" button). */
   hasUnpublishedChanges: boolean;
+  /** When the server last wrote that draft (it has no version of its own): used to notice that it changed elsewhere. */
+  draftSavedAt: string | null;
   // The top of the undoStack at the last successful save: the snapshots after it are the unsaved edits (see unsavedEdits).
   savedSnapshot: BuilderSnapshot | undefined;
   /** Per question, the settings of the types it has been (never saved): switching back restores them. */
@@ -53,6 +56,11 @@ export interface BuilderState {
   initForm: (form: Form) => void;
   setContentVersion: (contentVersion: number) => void;
   setHasUnpublishedChanges: (value: boolean) => void;
+  setDraftSavedAt: (draftSavedAt: string | null) => void;
+  /** Put unsaved changes kept in the browser back into the editor. */
+  restoreDraft: (draft: BuilderDraft) => void;
+  /** Give the unsaved changes up: the editor counts as clean and the next load starts from the server's copy. */
+  discardUnsaved: () => void;
   markStale: () => void;
   setFormTitle: (title: string) => void;
   addField: (type: FieldType, insertIndex?: number) => void;
@@ -160,6 +168,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
   contentVersion: null,
   stale: false,
   hasUnpublishedChanges: false,
+  draftSavedAt: null,
   savedSnapshot: undefined,
   typeMemory: {},
 
@@ -208,6 +217,7 @@ export const useBuilderStore = create<BuilderState>((set) => ({
         contentVersion: form.contentVersion ?? 0,
         stale: false,
         hasUnpublishedChanges: form.hasUnpublishedChanges ?? false,
+        draftSavedAt: form.draftSavedAt ?? null,
         savedSnapshot: undefined,
         typeMemory: {},
       };
@@ -487,6 +497,18 @@ export const useBuilderStore = create<BuilderState>((set) => ({
 
   setContentVersion: (contentVersion) => set({ contentVersion }),
   setHasUnpublishedChanges: (hasUnpublishedChanges) => set({ hasUnpublishedChanges }),
+  setDraftSavedAt: (draftSavedAt) => set({ draftSavedAt }),
+  restoreDraft: (draft) =>
+    set((state) => ({
+      ...draft,
+      activePageId: draft.pages.some((p) => p.id === state.activePageId) ? state.activePageId : (draft.pages[0]?.id ?? null),
+      activeFieldId: null,
+      dirty: true,
+      undoStack: [],
+      redoStack: [],
+      savedSnapshot: undefined,
+    })),
+  discardUnsaved: () => set({ dirty: false, pendingLeaveUrl: null }),
   markStale: () => set({ stale: true }),
 
   setBranding: (updates) =>

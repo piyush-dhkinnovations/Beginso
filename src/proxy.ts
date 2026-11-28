@@ -73,27 +73,31 @@ export async function proxy(request: NextRequest) {
   return token && !sessionIsValid && !sessionIsUnknown ? clearInvalidSession(response) : response;
 }
 
+// Which requests reach proxy() above. For the protected pages listed in the first two entries, a router prefetch (a page
+// Next loads ahead of a click) only needs the session cookie to be there:
+//   - a real request (no next-router-prefetch header) runs proxy() and its backend check;
+//   - a prefetch without the cookie runs it too, and is sent to /login;
+//   - a prefetch with the cookie skips it, so it costs no backend call.
+// This is safe because those responses hold no user data: the pages fetch it in the browser, through the BFF, and the
+// backend authorizes every call. A new protected page whose server render reads user data must not be listed there:
+// give it its own plain entry, like /w, whose layout resolves the workspace on the server.
+// The rule lives in the matcher because Next removes the next-router-prefetch header before proxy() runs, and the
+// matcher values must be literal strings (hence the repeated list).
 export const config = {
   matcher: [
-    '/dashboard/:path*',
-    '/forms/:path*',
-    '/templates/:path*',
-    '/inbox/:path*',
-    '/insights/:path*',
-    '/exports/:path*',
-    '/responses/:path*',
-    '/form-responses/:path*',
-    '/analytics/:path*',
-    '/reports/:path*',
-    '/settings/:path*',
-    '/onboarding/:path*',
+    {
+      source: '/:root(dashboard|forms|templates|inbox|insights|exports|responses|form-responses|analytics|reports|settings|onboarding|shared|workspaces|my-submissions|trash|notifications|search)/:path*',
+      missing: [{ type: 'header', key: 'next-router-prefetch' }],
+    },
+    {
+      source: '/:root(dashboard|forms|templates|inbox|insights|exports|responses|form-responses|analytics|reports|settings|onboarding|shared|workspaces|my-submissions|trash|notifications|search)/:path*',
+      has: [{ type: 'header', key: 'next-router-prefetch' }],
+      missing: [{ type: 'cookie', key: 'beginso_session' }],
+    },
+    // Old /inbox/<id>?scope=<slug> links are redirected by proxy() even when prefetched.
+    { source: '/inbox/:id', has: [{ type: 'query', key: 'scope' }] },
+    // Always the full check.
     '/w/:path*',
-    '/shared/:path*',
-    '/workspaces/:path*',
-    '/my-submissions/:path*',
-    '/trash/:path*',
-    '/notifications/:path*',
-    '/search/:path*',
     '/login',
     '/signup',
     '/verify-email',

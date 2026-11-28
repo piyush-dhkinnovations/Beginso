@@ -5,12 +5,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push }) }));
-vi.mock('@/services/forms', () => ({ formsService: { updateForm: vi.fn() } }));
+vi.mock('@/services/forms', () => ({ formsService: { updateForm: vi.fn(), publishDraftChanges: vi.fn() } }));
 const toast = vi.fn();
 vi.mock('@/components/ui/Toast', () => ({ useToast: () => ({ toast }) }));
 
 import { formsService } from '@/services/forms';
 import { useBuilderStore } from '@/store/builderStore';
+import { storeAutoSave } from '@/lib/builderPrefs';
 import { useBuilderPublishFlow } from '@/components/form-builder/useBuilderPublishFlow';
 import type { Form } from '@/types/form';
 
@@ -29,6 +30,7 @@ function setup() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  localStorage.clear();
   document.body.innerHTML = '';
   useBuilderStore.setState({
     formId: 'f1',
@@ -102,7 +104,17 @@ describe('handlePreview', () => {
     expect(updateForm).not.toHaveBeenCalled();
   });
 
-  it('saves first when dirty', async () => {
+  it('does not save when dirty: the preview draws the changes from the browser', async () => {
+    useBuilderStore.setState({ dirty: true });
+    const { result } = setup();
+    await act(() => result.current.handlePreview());
+    expect(updateForm).not.toHaveBeenCalled();
+    expect(push).toHaveBeenCalledWith('/forms/f1/preview');
+    expect(useBuilderStore.getState().dirty).toBe(true);
+  });
+
+  it('with Auto save on, saves first when dirty', async () => {
+    storeAutoSave(true);
     updateForm.mockResolvedValue({});
     useBuilderStore.setState({ dirty: true });
     const { result } = setup();
@@ -111,7 +123,8 @@ describe('handlePreview', () => {
     expect(push).toHaveBeenCalledWith('/forms/f1/preview');
   });
 
-  it('blocks navigation when the save fails, so edits are not lost', async () => {
+  it('with Auto save on, blocks navigation when the save fails, so edits are not lost', async () => {
+    storeAutoSave(true);
     updateForm.mockRejectedValue(new Error('x'));
     useBuilderStore.setState({ dirty: true });
     const { result, remove } = setup();
@@ -119,6 +132,30 @@ describe('handlePreview', () => {
     expect(push).not.toHaveBeenCalled();
     expect(remove).not.toHaveBeenCalled();
     expect(toast).toHaveBeenCalledWith('Could not save your changes, so Preview was not opened. Please try again.', 'error');
+  });
+});
+
+describe('handlePublishChanges', () => {
+  const publishDraftChanges = formsService.publishDraftChanges as ReturnType<typeof vi.fn>;
+
+  it('saves first, then publishes the changes', async () => {
+    const order: string[] = [];
+    updateForm.mockImplementation(async () => (order.push('save'), { contentVersion: 2 }));
+    publishDraftChanges.mockImplementation(async () => (order.push('publish'), { contentVersion: 3 }));
+    useBuilderStore.setState({ dirty: true, status: 'published' });
+    const { result } = setup();
+    await act(() => result.current.handlePublishChanges());
+    expect(order).toEqual(['save', 'publish']);
+    expect(useBuilderStore.getState()).toMatchObject({ dirty: false, contentVersion: 3, hasUnpublishedChanges: false });
+  });
+
+  it('publishes nothing when the save fails', async () => {
+    updateForm.mockRejectedValue(new Error('x'));
+    useBuilderStore.setState({ dirty: true, status: 'published' });
+    const { result } = setup();
+    await act(() => result.current.handlePublishChanges());
+    expect(publishDraftChanges).not.toHaveBeenCalled();
+    expect(useBuilderStore.getState().dirty).toBe(true);
   });
 });
 
@@ -181,7 +218,21 @@ describe('handlePreviewInNewTab (Full screen in the Branding studio)', () => {
     open.mockRestore();
   });
 
-  it('closes the tab again and says so when the save fails', async () => {
+  it('does not save: the new tab draws the unsaved changes from the browser', async () => {
+    const tab = { location: { href: '' }, close: vi.fn() };
+    const open = vi.spyOn(window, 'open').mockReturnValue(tab as never);
+    useBuilderStore.setState({ dirty: true });
+    const { result } = setup();
+    await act(async () => {
+      await result.current.handlePreviewInNewTab();
+    });
+    expect(updateForm).not.toHaveBeenCalled();
+    expect(tab.location.href).toBe('/forms/f1/preview?bare=1');
+    open.mockRestore();
+  });
+
+  it('with Auto save on, closes the tab again and says so when the save fails', async () => {
+    storeAutoSave(true);
     const tab = { location: { href: '' }, close: vi.fn() };
     const open = vi.spyOn(window, 'open').mockReturnValue(tab as never);
     updateForm.mockRejectedValueOnce(new Error('offline'));
